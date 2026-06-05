@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -59,6 +60,7 @@ function OrdersTooltip({ active, payload, label }: any) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerAnalytics() {
+  usePageTitle('Analytics');
   const [period, setPeriod] = useState('Last 6 months');
 
   return (

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -50,6 +51,7 @@ const CONVERSATIONS: Conversation[] = [
 ];
 
 export function SellerMessages() {
+  usePageTitle('Messages');
   const [activeId, setActiveId] = useState<number>(1);
   const [reply, setReply] = useState('');
 

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { SolvexoIcon } from '@/components/ui/SolvexoLogo';
@@ -569,6 +570,7 @@ function SummaryTab() {
 // ── Main POS Register ─────────────────────────────────────────────────────────
 export function POSRegister() {
   const navigate = useNavigate();
+  usePageTitle('POS Register');
   const [activeTab, setActiveTab] = useState<ActiveTab>('sale');
 
   return (

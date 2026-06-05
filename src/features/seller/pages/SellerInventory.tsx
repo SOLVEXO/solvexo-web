@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button }      from '@/components/ui/Button';
 import { Card }        from '@/components/ui/Card';
 import { MetricCard }  from '@/components/ui/MetricCard';
@@ -52,6 +53,7 @@ const TD: React.CSSProperties = {
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerInventory() {
   const navigate  = useNavigate();
+  usePageTitle('Inventory');
   const [search,  setSearch]  = useState('');
   const [typeF,   setTypeF]   = useState('');
   const [statusF, setStatusF] = useState('');

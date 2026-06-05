@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Palette, LayoutGrid, PanelTop, Package, PanelBottom, Search, Monitor, Smartphone, BookOpen, Pencil, Microscope, Lock, type LucideIcon } from 'lucide-react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Input';
@@ -37,6 +38,7 @@ const PREVIEW_PRODUCTS: { Icon: LucideIcon; name: string; price: string }[] = [
 ];
 
 export function StoreBuilder() {
+  usePageTitle('Store Builder');
   const [activeSection, setActiveSection] = useState<Section>('theme');
   const [layoutStyle, setLayoutStyle]     = useState<LayoutStyle>('Grid');
   const [font, setFont]                   = useState('Inter');

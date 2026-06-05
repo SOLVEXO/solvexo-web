@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
@@ -40,6 +41,7 @@ const INFO_ROWS: { Icon: LucideIcon; label: string; value: string }[] = [
 
 export function ProductDetail() {
   const navigate = useNavigate();
+  usePageTitle('Product Detail');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: C.cream }}>

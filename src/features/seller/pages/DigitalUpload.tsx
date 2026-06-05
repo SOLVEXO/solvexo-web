@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -32,6 +33,7 @@ const LICENSES: { id: LicenseType; label: string; desc: string }[] = [
 ];
 
 export function DigitalUpload() {
+  usePageTitle('Digital Upload');
   const [files, setFiles]   = useState<UploadFile[]>(INITIAL_FILES);
   const [license, setLicense] = useState<LicenseType>('classroom');
   const [pdfStamp, setPdfStamp] = useState(true);

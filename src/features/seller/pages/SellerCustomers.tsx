@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Mail, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -62,6 +63,7 @@ const TD: React.CSSProperties = {
 };
 
 export function SellerCustomers() {
+  usePageTitle('Customers');
   const [search, setSearch] = useState('');
   const [seg, setSeg]       = useState('');
   const [sort, setSort]     = useState('');

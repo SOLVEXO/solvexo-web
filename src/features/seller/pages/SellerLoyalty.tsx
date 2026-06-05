@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -31,6 +32,7 @@ const POINTS_ACTIVITY = [
 ];
 
 export function SellerLoyalty() {
+  usePageTitle('Loyalty');
   const [activeTab, setActiveTab] = useState('overview');
 
   return (

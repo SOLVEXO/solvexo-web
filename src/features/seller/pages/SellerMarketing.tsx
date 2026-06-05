@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Gift, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -94,6 +95,7 @@ const statusColor = (s: string) => {
 };
 
 export function SellerMarketing() {
+  usePageTitle('Marketing');
   const [tab, setTab] = useState<Tab>('coupons');
   const [couponCode, setCouponCode]     = useState('');
   const [discountType, setDiscountType] = useState('');

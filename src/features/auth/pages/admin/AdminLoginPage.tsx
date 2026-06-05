@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Eye, EyeOff, Globe, Smartphone, Share2 } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
@@ -39,6 +40,7 @@ const SOCIAL = [
 // ── Component ─────────────────────────────────────────────────────────────────
 export function AdminLoginPage() {
   const navigate = useNavigate();
+  usePageTitle('Admin Login');
 
   const [showPass, setShowPass] = useState(false);
   const [apiError, setApiError] = useState('');

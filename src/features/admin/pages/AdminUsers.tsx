@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
@@ -39,6 +40,7 @@ const STATUS_COLORS: Record<string, 'green' | 'red' | 'yellow'> = {
 };
 
 export function AdminUsers() {
+  usePageTitle('Users');
   const [search, setSearch]     = useState('');
   const [roleFilter, setRole]   = useState('');
   const [statusFilter, setStatusF] = useState('');

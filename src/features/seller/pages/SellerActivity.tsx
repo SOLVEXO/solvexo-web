@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -200,6 +201,7 @@ function CategoryPill({ category, isAlert }: { category: string; isAlert?: boole
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function SellerActivity() {
+  usePageTitle('Activity');
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('all');
   const [activeMember, setActiveMember] = useState<TeamMember>('all');
   const [dateRange, setDateRange] = useState('last7');

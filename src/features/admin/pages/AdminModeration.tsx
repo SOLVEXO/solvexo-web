@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { Badge } from '@/components/ui/Badge';
 import { ArrowLeft, AlertCircle, AlertTriangle, Info } from 'lucide-react';
@@ -59,6 +60,7 @@ const ActionBtn = ({ label, bg }: { label: string; bg: string }) => (
 
 export function AdminModeration() {
   const navigate = useNavigate();
+  usePageTitle('Moderation');
   const [search, setSearch] = useState('');
   const [typeF,  setTypeF]  = useState('');
   const [riskF,  setRiskF]  = useState('');

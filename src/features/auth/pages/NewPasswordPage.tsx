@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Eye, EyeOff, ArrowRight, Check, Circle } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
@@ -131,6 +132,7 @@ function PasswordInput({
 // ── Main Component ────────────────────────────────────────────────────────────
 export function NewPasswordPage() {
   const navigate = useNavigate();
+  usePageTitle('New Password');
   const [success,   setSuccess]  = useState(false);
   const [loading,   setLoading]  = useState(false);
   const [otp,       setOtp]      = useState('');      // 6-digit OTP from email

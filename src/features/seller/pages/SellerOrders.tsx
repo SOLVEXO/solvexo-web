@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button }      from '@/components/ui/Button';
 import { Card }        from '@/components/ui/Card';
 import { MetricCard }  from '@/components/ui/MetricCard';
@@ -39,6 +40,7 @@ const TD_STYLE: React.CSSProperties = {
 };
 
 export function SellerOrders() {
+  usePageTitle('Orders');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [type,   setType]   = useState('');

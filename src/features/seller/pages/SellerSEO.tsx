@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button }      from '@/components/ui/Button';
 import { Card }        from '@/components/ui/Card';
 import { MetricCard }  from '@/components/ui/MetricCard';
@@ -62,6 +63,7 @@ function ScoreCircle({ score }: { score: number }) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerSEO() {
+  usePageTitle('SEO');
   const [selectedId, setSelectedId] = useState<string>('grade5');
   const selected = PRODUCTS.find(p => p.id === selectedId) ?? PRODUCTS[0];
 

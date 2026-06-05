@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button }      from '@/components/ui/Button';
 import { RadioButton } from '@/components/ui/RadioButton';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
@@ -73,6 +74,7 @@ function Field({
 // ── Main Component ────────────────────────────────────────────────────────────
 export function RegisterPage() {
   const navigate = useNavigate();
+  usePageTitle('Register');
   const [loading,  setLoading]  = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [apiError, setApiError] = useState('');

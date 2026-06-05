@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   User, KeyRound, ShieldCheck, Bell,
   Store, Search, CreditCard, Package, Receipt,
@@ -65,6 +66,7 @@ const SETTINGS_NAV: { group: string; items: { id: SettingSection; label: string;
 ];
 
 export function SellerSettings() {
+  usePageTitle('Settings');
   const [active, setActive] = useState<SettingSection>('profile');
   const [firstName, setFirstName] = useState('Alex');
   const [lastName,  setLastName]  = useState('Chen');

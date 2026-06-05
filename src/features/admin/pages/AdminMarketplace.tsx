@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { MetricCard } from '@/components/ui/MetricCard';
@@ -33,6 +34,7 @@ const STATUS_COLORS: Record<string, 'green' | 'red' | 'yellow'> = {
 };
 
 export function AdminMarketplace() {
+  usePageTitle('Marketplace');
   const [search, setSearch]   = useState('');
   const [catFilter, setCat]   = useState('');
   const [statFilter, setStat] = useState('');

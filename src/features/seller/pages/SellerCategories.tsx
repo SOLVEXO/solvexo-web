@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pencil, Trash2, ChevronDown, Lightbulb, Star, BookOpen, Download, Gem, Home, Briefcase, Palette, FileText, Music, Monitor, Camera, Mic, Edit3, Leaf, Target, Gift, Microscope, Footprints, Scissors, Image, Package } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { MetricCard } from '@/components/ui/MetricCard';
@@ -70,6 +71,7 @@ const DEFAULT_CATS: Cat[] = [
 ];
 
 export function SellerCategories() {
+  usePageTitle('Categories');
   const [cats, setCats]         = useState<Cat[]>(DEFAULT_CATS);
   const [expanded, setExpanded] = useState<number[]>([1]);
   const [addingCat, setAddingCat] = useState(false);

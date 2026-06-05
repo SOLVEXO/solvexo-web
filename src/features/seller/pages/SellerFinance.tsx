@@ -1,3 +1,4 @@
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button }      from '@/components/ui/Button';
 import { Card }        from '@/components/ui/Card';
 import { MetricCard }  from '@/components/ui/MetricCard';
@@ -70,6 +71,7 @@ const TAX_REPORTS: TaxReport[] = [
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerFinance() {
+  usePageTitle('Finance');
   return (
     <>
       <SellerPageHeader

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
@@ -53,6 +54,7 @@ function ChartTooltip({ active, payload, label }: any) {
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerDashboard() {
   const navigate = useNavigate();
+  usePageTitle('Seller Dashboard');
 
   return (
     <>

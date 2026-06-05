@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button }      from '@/components/ui/Button';
 import { Card }        from '@/components/ui/Card';
 import { MetricCard }  from '@/components/ui/MetricCard';
@@ -49,6 +50,7 @@ const RETURNS: ReturnEntry[] = [
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerReturns() {
+  usePageTitle('Returns');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [type, setType]     = useState('');

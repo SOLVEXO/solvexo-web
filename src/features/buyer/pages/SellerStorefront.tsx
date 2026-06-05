@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
@@ -39,6 +40,7 @@ const PRODUCTS: { name: string; price: string; Img: LucideIcon; rating: string; 
 
 export function SellerStorefront() {
   const navigate = useNavigate();
+  usePageTitle('Storefront');
   const [activeTab, setActiveTab] = useState('All Products');
 
   return (

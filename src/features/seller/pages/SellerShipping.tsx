@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button }      from '@/components/ui/Button';
 import { Badge }       from '@/components/ui/Badge';
 import { MetricCard }  from '@/components/ui/MetricCard';
@@ -98,6 +99,7 @@ function PlaceholderTab({ label }: { label: string }) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerShipping() {
+  usePageTitle('Shipping');
   const [activeTab, setActiveTab] = useState('zones');
 
   return (

@@ -1,5 +1,6 @@
 import { useState, useRef, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { AlertTriangle, ArrowRight, Check } from 'lucide-react';
 import { runSchema, otpSchema } from '@/utils/validation/schemas';
@@ -126,6 +127,7 @@ function ResendTimer() {
 // ── Main Component ────────────────────────────────────────────────────────────
 export function VerifyOTPPage() {
   const navigate = useNavigate();
+  usePageTitle('Verify OTP');
   const [otp,     setOtp]     = useState(['', '', '', '', '', '']);
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);

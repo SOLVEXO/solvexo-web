@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -41,6 +42,7 @@ const WEBHOOK_EVENTS = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function SellerIntegrations() {
+  usePageTitle('Integrations');
   const [activeTab, setActiveTab] = useState<AppTab>('connected');
   const [searchQuery, setSearchQuery] = useState('');
   const [apiKey] = useState('sk_live_••••••••••••••••••••••••4821');
