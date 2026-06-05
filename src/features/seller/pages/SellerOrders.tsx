@@ -79,7 +79,7 @@ export function SellerOrders() {
           {/* Filter row */}
           <div className="flex gap-2.5 mb-4 flex-wrap items-center">
             <input
-              placeholder="🔍 Search orders..."
+              placeholder="Search orders..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{

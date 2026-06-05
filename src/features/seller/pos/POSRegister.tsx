@@ -3,27 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { SolvexoIcon } from '@/components/ui/SolvexoLogo';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ShoppingCart, ClipboardList, Package, BarChart2, Coffee, ShoppingBag, Image, Flame, Circle, Droplets, Pencil, Camera, Ribbon, BookOpen, FlaskConical, Key, UtensilsCrossed, Wind, CreditCard, Banknote, Smartphone, Zap, CheckCircle, User, Tag, Printer, Mail, Star, Pause } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { PaymentMethod, DiscountType, AppliedDiscount } from '@/types';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
-const POS_PRODUCTS = [
-  { name: 'Ceramic Mug',       price: 28, emoji: '☕', sku: 'MUG-001', category: 'Ceramics',     stock: 34 },
-  { name: 'Linen Tote',        price: 42, emoji: '👜', sku: 'TOT-002', category: 'Accessories',  stock: 18 },
-  { name: 'Wall Print A3',     price: 18, emoji: '🖼️', sku: 'PRT-003', category: 'Prints',       stock: 52 },
-  { name: 'Scented Candle',    price: 24, emoji: '🕯️', sku: 'CND-004', category: 'Candles',      stock: 0  },
-  { name: 'Cork Coasters 4pk', price: 16, emoji: '🪨', sku: 'CST-005', category: 'Accessories',  stock: 29 },
-  { name: 'Hand Lotion 100ml', price: 14, emoji: '🧴', sku: 'LOT-006', category: 'Accessories',  stock: 45 },
-  { name: 'Bamboo Pen Set',    price: 22, emoji: '✏️', sku: 'PEN-007', category: 'Accessories',  stock: 12 },
-  { name: 'Photo Book S',      price: 36, emoji: '📷', sku: 'PHO-008', category: 'Prints',       stock: 8  },
-  { name: 'Silk Scrunchie 3pk',price: 12, emoji: '🎀', sku: 'SCR-009', category: 'Accessories',  stock: 67 },
-  { name: 'Travel Journal',    price: 20, emoji: '📓', sku: 'JRN-010', category: 'Stationery',   stock: 23 },
-  { name: 'Essential Oil 30ml',price: 19, emoji: '🧪', sku: 'OIL-011', category: 'Candles',      stock: 31 },
-  { name: 'Macrame Keyring',   price: 10, emoji: '🔑', sku: 'KEY-012', category: 'Accessories',  stock: 44 },
-  { name: 'Ceramic Bowl Set',  price: 55, emoji: '🍜', sku: 'BWL-013', category: 'Ceramics',     stock: 7  },
-  { name: 'Beeswax Candle',    price: 18, emoji: '🕯', sku: 'BCN-014', category: 'Candles',      stock: 19 },
-  { name: 'Washi Tape Set',    price: 9,  emoji: '🎀', sku: 'WSH-015', category: 'Stationery',   stock: 88 },
-  { name: 'Linen Napkins 4pk', price: 32, emoji: '🍽️', sku: 'NAP-016', category: 'Accessories',  stock: 14 },
+const POS_PRODUCTS: { name: string; price: number; Icon: LucideIcon; sku: string; category: string; stock: number }[] = [
+  { name: 'Ceramic Mug',       price: 28, Icon: Coffee,          sku: 'MUG-001', category: 'Ceramics',     stock: 34 },
+  { name: 'Linen Tote',        price: 42, Icon: ShoppingBag,     sku: 'TOT-002', category: 'Accessories',  stock: 18 },
+  { name: 'Wall Print A3',     price: 18, Icon: Image,           sku: 'PRT-003', category: 'Prints',       stock: 52 },
+  { name: 'Scented Candle',    price: 24, Icon: Flame,           sku: 'CND-004', category: 'Candles',      stock: 0  },
+  { name: 'Cork Coasters 4pk', price: 16, Icon: Circle,          sku: 'CST-005', category: 'Accessories',  stock: 29 },
+  { name: 'Hand Lotion 100ml', price: 14, Icon: Droplets,        sku: 'LOT-006', category: 'Accessories',  stock: 45 },
+  { name: 'Bamboo Pen Set',    price: 22, Icon: Pencil,          sku: 'PEN-007', category: 'Accessories',  stock: 12 },
+  { name: 'Photo Book S',      price: 36, Icon: Camera,          sku: 'PHO-008', category: 'Prints',       stock: 8  },
+  { name: 'Silk Scrunchie 3pk',price: 12, Icon: Ribbon,          sku: 'SCR-009', category: 'Accessories',  stock: 67 },
+  { name: 'Travel Journal',    price: 20, Icon: BookOpen,        sku: 'JRN-010', category: 'Stationery',   stock: 23 },
+  { name: 'Essential Oil 30ml',price: 19, Icon: FlaskConical,    sku: 'OIL-011', category: 'Candles',      stock: 31 },
+  { name: 'Macrame Keyring',   price: 10, Icon: Key,             sku: 'KEY-012', category: 'Accessories',  stock: 44 },
+  { name: 'Ceramic Bowl Set',  price: 55, Icon: UtensilsCrossed, sku: 'BWL-013', category: 'Ceramics',     stock: 7  },
+  { name: 'Beeswax Candle',    price: 18, Icon: Wind,            sku: 'BCN-014', category: 'Candles',      stock: 19 },
+  { name: 'Washi Tape Set',    price: 9,  Icon: Ribbon,          sku: 'WSH-015', category: 'Stationery',   stock: 88 },
+  { name: 'Linen Napkins 4pk', price: 32, Icon: UtensilsCrossed, sku: 'NAP-016', category: 'Accessories',  stock: 14 },
 ];
 
 const HELD_SALES = [
@@ -45,7 +46,7 @@ const POS_CUSTOMERS = [
   { name: 'Lena Kowalski',  email: 'lena@email.com',  points: 60,  segment: 'New'   },
 ];
 
-type CartItem = { name: string; price: number; emoji: string; sku: string; qty: number; customPrice: number | null };
+type CartItem = { name: string; price: number; Icon: LucideIcon; sku: string; qty: number; customPrice: number | null };
 type PosView = 'charge' | 'customer' | 'discount' | 'receipt';
 type ActiveTab = 'sale' | 'orders' | 'products' | 'summary';
 
@@ -68,7 +69,7 @@ function POSTopBar({ activeTab, setActiveTab, navigate }: { activeTab: ActiveTab
             className="px-3.5 py-1.5 rounded-md text-[12px] font-medium capitalize cursor-pointer transition-all"
             style={{ background: activeTab === tab ? '#D97757' : 'transparent', color: activeTab === tab ? '#fff' : '#6A6866' }}
           >
-            {tab === 'sale' ? '🛒 Sale' : tab === 'orders' ? '📋 Orders' : tab === 'products' ? '📦 Products' : '📊 Summary'}
+            {tab === 'sale' ? <><ShoppingCart size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />Sale</> : tab === 'orders' ? <><ClipboardList size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />Orders</> : tab === 'products' ? <><Package size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />Products</> : <><BarChart2 size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />Summary</>}
           </button>
         ))}
       </div>
@@ -142,11 +143,11 @@ function SaleTab() {
         <div className="flex gap-2.5 items-center px-4 py-2.5 border-b flex-shrink-0" style={{ background: C.surface, borderColor: C.border }}>
           <input
             value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            placeholder="🔍 Search products or scan barcode (SKU)..."
+            placeholder="Search products or scan barcode (SKU)..."
             className="flex-1 rounded-lg px-3.5 py-2 text-[13px] text-white outline-none border"
             style={{ fontFamily: "'Poppins',sans-serif", background: C.border, borderColor: C.border, color: C.white }}
           />
-          <button className="px-3 py-2 rounded-lg text-[12px] cursor-pointer" style={{ background: C.border, color: C.faint }}>📷 Scan</button>
+          <button className="px-3 py-2 rounded-lg text-[12px] cursor-pointer flex items-center gap-1.5" style={{ background: C.border, color: C.faint }}><Camera size={12} />Scan</button>
           <button className="px-3 py-2 rounded-lg text-[12px] cursor-pointer" style={{ background: C.border, color: C.faint }}>+ Custom Item</button>
         </div>
 
@@ -175,7 +176,7 @@ function SaleTab() {
                       {inCart.qty}
                     </div>
                   )}
-                  <span className="block text-[28px] mb-1.5">{p.emoji}</span>
+                  <span className="flex items-center justify-center mb-1.5" style={{ height: 36 }}><p.Icon size={28} style={{ color: p.stock === 0 ? C.muted : C.orange }} /></span>
                   <span className="block text-[11px] font-medium text-white mb-0.5 leading-tight">{p.name}</span>
                   <span className="block text-[10px] mb-1" style={{ color: C.muted }}>{p.sku}</span>
                   <span className="text-[13px] font-bold" style={{ color: p.stock === 0 ? C.muted : C.orange }}>${p.price.toFixed(2)}</span>
@@ -215,14 +216,14 @@ function SaleTab() {
           </div>
           <div className="flex gap-1.5">
             <button onClick={() => setPosView(posView === 'customer' ? 'charge' : 'customer')}
-              className="px-2.5 py-1.5 rounded-lg text-[11px] cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-[11px] cursor-pointer flex items-center gap-1"
               style={{ background: posView === 'customer' ? '#B95A3A' : C.border, color: customer ? C.orange : C.faint }}>
-              👤 {customer ? customer.name.split(' ')[0] : 'Customer'}
+              <User size={11} />{customer ? customer.name.split(' ')[0] : 'Customer'}
             </button>
             <button onClick={() => setPosView(posView === 'discount' ? 'charge' : 'discount')}
-              className="px-2.5 py-1.5 rounded-lg text-[11px] cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-[11px] cursor-pointer flex items-center gap-1"
               style={{ background: posView === 'discount' ? '#B95A3A' : C.border, color: appliedDiscount ? C.orange : C.faint }}>
-              🏷️ {appliedDiscount ? appliedDiscount.label : 'Discount'}
+              <Tag size={11} />{appliedDiscount ? appliedDiscount.label : 'Discount'}
             </button>
           </div>
         </div>
@@ -241,7 +242,7 @@ function SaleTab() {
                   <p className="text-[12px] font-medium text-white">{c.name}</p>
                   <p className="text-[10px]" style={{ color: C.muted }}>{c.email}</p>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: '#FBECE4', color: '#B95A3A' }}>⭐ {c.points} pts</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1" style={{ background: '#FBECE4', color: '#B95A3A' }}><Star size={9} style={{ fill: '#B95A3A' }} />{c.points} pts</span>
               </button>
             ))}
             <button onClick={() => { setCustomer(null); setPosView('charge'); }} className="w-full text-center py-1.5 text-[11px] cursor-pointer" style={{ color: C.muted }}>× Clear customer</button>
@@ -279,14 +280,14 @@ function SaleTab() {
         <div className="flex-1 overflow-y-auto px-[18px] py-2.5">
           {cart.length === 0 ? (
             <div className="text-center py-10">
-              <span className="block text-[36px] mb-2.5">🛒</span>
+              <span className="flex items-center justify-center mb-2.5"><ShoppingCart size={36} style={{ color: '#3A3836' }} /></span>
               <p className="text-[13px]" style={{ color: '#3A3836' }}>Tap a product to add it</p>
               <p className="text-[11px] mt-1" style={{ color: C.border }}>or enter a barcode / SKU</p>
             </div>
           ) : cart.map(item => (
             <div key={item.name} className="py-2.5 border-b" style={{ borderColor: C.border }}>
               <div className="flex items-start gap-2.5">
-                <span className="text-[20px] mt-0.5">{item.emoji}</span>
+                <span className="mt-0.5"><item.Icon size={20} style={{ color: C.orange }} /></span>
                 <div className="flex-1">
                   <p className="text-[12px] font-medium text-white">{item.name}</p>
                   <p className="text-[10px]" style={{ color: C.muted }}>{item.sku}</p>
@@ -313,7 +314,7 @@ function SaleTab() {
             </div>
           ))}
           {cart.length > 0 && (
-            <input value={note} onChange={e => setNote(e.target.value)} placeholder="📝 Add order note..."
+            <input value={note} onChange={e => setNote(e.target.value)} placeholder="Add order note..."
               className="w-full mt-2.5 rounded-lg px-2.5 py-1.5 text-[11px] outline-none border" style={{ fontFamily: "'Poppins',sans-serif", background: '#141312', borderColor: C.border, color: C.faint, boxSizing: 'border-box' }} />
           )}
         </div>
@@ -324,7 +325,7 @@ function SaleTab() {
             <>
               <div className="mb-2.5">
                 <div className="flex justify-between mb-1"><span className="text-[12px]" style={{ color: C.faint }}>Subtotal</span><span className="text-[12px] text-white">${subtotal.toFixed(2)}</span></div>
-                {appliedDiscount && <div className="flex justify-between mb-1"><span className="text-[12px]" style={{ color: '#2D8A4E' }}>🏷️ {appliedDiscount.label}</span><span className="text-[12px]" style={{ color: '#2D8A4E' }}>−${discountAmt.toFixed(2)}</span></div>}
+                {appliedDiscount && <div className="flex justify-between mb-1"><span className="text-[12px] flex items-center gap-1" style={{ color: '#2D8A4E' }}><Tag size={10} />{appliedDiscount.label}</span><span className="text-[12px]" style={{ color: '#2D8A4E' }}>−${discountAmt.toFixed(2)}</span></div>}
                 <div className="flex justify-between mb-1.5"><span className="text-[12px]" style={{ color: C.faint }}>Tax (8%)</span><span className="text-[12px] text-white">${tax.toFixed(2)}</span></div>
                 <div className="flex justify-between pt-2 border-t" style={{ borderColor: C.border }}>
                   <span className="text-[16px] font-bold text-white">Total</span>
@@ -332,17 +333,17 @@ function SaleTab() {
                 </div>
                 {customer && (
                   <div className="mt-1.5 rounded-lg px-2.5 py-1.5 flex justify-between" style={{ background: C.surface }}>
-                    <span className="text-[11px]" style={{ color: C.faint }}>👤 {customer.name}</span>
+                    <span className="text-[11px] flex items-center gap-1" style={{ color: C.faint }}><User size={10} />{customer.name}</span>
                     <span className="text-[11px]" style={{ color: C.orange }}>+{Math.floor(total)} pts</span>
                   </div>
                 )}
               </div>
               <div className="grid grid-cols-4 gap-1.5 mb-2.5">
-                {([['card','💳','Card'],['cash','💵','Cash'],['tap','📱','Tap'],['split','⚡','Split']] as const).map(([id, icon, label]) => (
+                {([['card', CreditCard, 'Card'],['cash', Banknote, 'Cash'],['tap', Smartphone, 'Tap'],['split', Zap, 'Split']] as [PaymentMethod, LucideIcon, string][]).map(([id, IconComp, label]) => (
                   <button key={id} onClick={() => setPaymentMethod(id)}
-                    className="py-2 rounded-lg text-center cursor-pointer border"
+                    className="py-2 rounded-lg text-center cursor-pointer border flex flex-col items-center gap-0.5"
                     style={{ background: paymentMethod === id ? '#B95A3A' : C.border, border: `1px solid ${paymentMethod === id ? C.orange : 'transparent'}` }}>
-                    <span className="block text-[14px]">{icon}</span>
+                    <IconComp size={14} style={{ color: paymentMethod === id ? C.white : C.faint }} />
                     <span className="text-[10px] font-medium" style={{ color: paymentMethod === id ? C.white : C.faint }}>{label}</span>
                   </button>
                 ))}
@@ -371,15 +372,19 @@ function SaleTab() {
             onClick={() => cart.length > 0 && setPosView('receipt')}
             className="w-full rounded-[10px] py-3.5 text-center text-[15px] font-bold text-white cursor-pointer"
             style={{ background: cart.length === 0 ? C.border : C.orange, opacity: cart.length === 0 ? 0.4 : 1 }}>
-            {cart.length === 0 ? 'Charge $0.00' : `Charge $${total.toFixed(2)} · ${paymentMethod === 'card' ? '💳 Card' : paymentMethod === 'cash' ? '💵 Cash' : paymentMethod === 'tap' ? '📱 Tap' : '⚡ Split'}`}
+            {cart.length === 0 ? 'Charge $0.00' : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>Charge ${total.toFixed(2)} · {paymentMethod === 'card' ? <><CreditCard size={14} />Card</> : paymentMethod === 'cash' ? <><Banknote size={14} />Cash</> : paymentMethod === 'tap' ? <><Smartphone size={14} />Tap</> : <><Zap size={14} />Split</>}</span>}
           </button>
           {cart.length > 0 && (
             <div className="flex gap-2 mt-2">
-              {[['× Clear', resetSale], ['⏸ Hold', () => {}], ['🖨 Print', () => {}]].map(([label, action]) => (
-                <button key={label as string} onClick={action as () => void} className="flex-1 py-2 rounded-lg text-center border cursor-pointer" style={{ background: C.surface, borderColor: C.border }}>
-                  <span className="text-[11px]" style={{ color: C.muted }}>{label as string}</span>
-                </button>
-              ))}
+              <button onClick={resetSale} className="flex-1 py-2 rounded-lg text-center border cursor-pointer" style={{ background: C.surface, borderColor: C.border }}>
+                <span className="text-[11px]" style={{ color: C.muted }}>× Clear</span>
+              </button>
+              <button onClick={() => {}} className="flex-1 py-2 rounded-lg border cursor-pointer flex items-center justify-center gap-1" style={{ background: C.surface, borderColor: C.border }}>
+                <Pause size={11} style={{ color: C.muted }} /><span className="text-[11px]" style={{ color: C.muted }}>Hold</span>
+              </button>
+              <button onClick={() => {}} className="flex-1 py-2 rounded-lg border cursor-pointer flex items-center justify-center gap-1" style={{ background: C.surface, borderColor: C.border }}>
+                <Printer size={11} style={{ color: C.muted }} /><span className="text-[11px]" style={{ color: C.muted }}>Print</span>
+              </button>
             </div>
           )}
         </div>
@@ -389,7 +394,7 @@ function SaleTab() {
           <div className="absolute inset-0 flex items-center justify-center z-20" style={{ background: 'rgba(0,0,0,0.85)' }}>
             <div className="rounded-2xl p-6 w-[340px] border" style={{ background: C.surface, borderColor: C.border }}>
               <div className="text-center mb-5">
-                <div className="text-[48px] mb-2">✅</div>
+                <div className="flex items-center justify-center mb-2"><CheckCircle size={48} style={{ color: '#2D8A4E' }} /></div>
                 <p className="text-[18px] font-bold text-white">Payment Complete</p>
                 <p className="text-[28px] font-bold mt-2 mb-1" style={{ color: '#D97757' }}>${total.toFixed(2)}</p>
                 <p className="text-[12px]" style={{ color: C.faint }}>{new Date().toLocaleTimeString()} · {paymentMethod}</p>
@@ -413,8 +418,8 @@ function SaleTab() {
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <button className="rounded-lg py-2.5 text-center cursor-pointer text-[12px] text-white" style={{ background: C.border }}>📧 Email Receipt</button>
-                <button className="rounded-lg py-2.5 text-center cursor-pointer text-[12px] text-white" style={{ background: C.border }}>🖨 Print Receipt</button>
+                <button className="rounded-lg py-2.5 cursor-pointer text-[12px] text-white flex items-center justify-center gap-1.5" style={{ background: C.border }}><Mail size={13} />Email Receipt</button>
+                <button className="rounded-lg py-2.5 cursor-pointer text-[12px] text-white flex items-center justify-center gap-1.5" style={{ background: C.border }}><Printer size={13} />Print Receipt</button>
                 <button onClick={resetSale} className="rounded-lg py-3 text-center cursor-pointer text-[13px] font-bold text-white" style={{ background: '#D97757' }}>New Sale <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></button>
               </div>
             </div>
@@ -442,7 +447,7 @@ function OrdersTab() {
       <div className="rounded-xl border overflow-hidden" style={{ background: C.surface, borderColor: C.border }}>
         <div className="flex items-center gap-2.5 px-4 py-3.5 border-b" style={{ borderColor: C.border }}>
           <p className="text-[14px] font-semibold text-white flex-1">Recent Transactions</p>
-          <input placeholder="🔍 Search..." className="rounded-lg px-3 py-1.5 text-[12px] text-white outline-none border" style={{ fontFamily: "'Poppins',sans-serif", background: C.border, borderColor: C.border }} />
+          <input placeholder="Search..." className="rounded-lg px-3 py-1.5 text-[12px] text-white outline-none border" style={{ fontFamily: "'Poppins',sans-serif", background: C.border, borderColor: C.border }} />
           <button className="px-3 py-1.5 rounded-lg cursor-pointer" style={{ background: C.border }}><span className="text-[11px]" style={{ color: C.faint }}>Export</span></button>
         </div>
         <table className="w-full border-collapse">
@@ -483,7 +488,7 @@ function ProductsTab() {
     <div className="flex-1 overflow-y-auto p-6">
       <div className="flex items-center gap-2.5 mb-5">
         <p className="text-[16px] font-bold text-white flex-1">Product Catalog</p>
-        <input placeholder="🔍 Search SKU or name..." className="rounded-lg px-3.5 py-2 text-[13px] text-white outline-none border" style={{ fontFamily: "'Poppins',sans-serif", background: C.surface, borderColor: C.border }} />
+        <input placeholder="Search SKU or name..." className="rounded-lg px-3.5 py-2 text-[13px] text-white outline-none border" style={{ fontFamily: "'Poppins',sans-serif", background: C.surface, borderColor: C.border }} />
         <button className="px-4 py-2 rounded-lg cursor-pointer text-[12px] font-semibold text-white" style={{ background: C.orange }}>+ Add Product</button>
       </div>
       <div className="rounded-xl border overflow-hidden" style={{ background: C.surface, borderColor: C.border }}>
@@ -497,7 +502,7 @@ function ProductsTab() {
             {POS_PRODUCTS.map(p => (
               <tr key={p.sku} style={{ borderBottom: `1px solid ${C.border}` }}>
                 <td className="px-4 py-3"><span className="text-[11px] font-mono" style={{ color: C.muted }}>{p.sku}</span></td>
-                <td className="px-4 py-3"><div className="flex items-center gap-2"><span className="text-[18px]">{p.emoji}</span><span className="text-[12px] font-medium text-white">{p.name}</span></div></td>
+                <td className="px-4 py-3"><div className="flex items-center gap-2"><p.Icon size={18} style={{ color: C.orange, flexShrink: 0 }} /><span className="text-[12px] font-medium text-white">{p.name}</span></div></td>
                 <td className="px-4 py-3"><Badge color="gray">{p.category}</Badge></td>
                 <td className="px-4 py-3"><span className="text-[13px] font-semibold" style={{ color: C.orange }}>${p.price.toFixed(2)}</span></td>
                 <td className="px-4 py-3"><span className="text-[12px]" style={{ color: p.stock === 0 ? '#C13030' : p.stock <= 8 ? '#C08B1E' : C.faint }}>{p.stock === 0 ? 'Out of stock' : `${p.stock} units`}</span></td>
@@ -539,7 +544,7 @@ function SummaryTab() {
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-xl border p-4" style={{ background: C.surface, borderColor: C.border }}>
           <p className="text-[13px] font-semibold text-white mb-3.5">Top Sellers Today</p>
-          {[['☕ Ceramic Mug',8,'$224.00'],['🕯️ Scented Candle',6,'$144.00'],['✏️ Bamboo Pen Set',5,'$110.00'],['👜 Linen Tote',4,'$168.00']].map(([name,qty,revenue]) => (
+          {[['Ceramic Mug',8,'$224.00'],['Scented Candle',6,'$144.00'],['Bamboo Pen Set',5,'$110.00'],['Linen Tote',4,'$168.00']].map(([name,qty,revenue]) => (
             <div key={name as string} className="flex items-center gap-2.5 mb-2.5">
               <span className="text-[12px] text-white flex-1">{name as string}</span>
               <span className="text-[11px]" style={{ color: C.muted }}>{qty} sold</span>

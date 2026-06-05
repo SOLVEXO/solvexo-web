@@ -4,7 +4,7 @@ import {
   Store, Search, CreditCard, Package, Receipt,
   Users, Lock,
   DollarSign, ArrowDownToLine, FileText,
-  Trash2, Camera, Settings,
+  Trash2, Camera, Settings, Check,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -135,7 +135,7 @@ export function SellerSettings() {
                       defaultValue="alex@myshop.com"
                       className="flex-1 text-[13px] text-charcoal px-3 py-2.5 rounded-lg border border-bone bg-cream outline-none"
                     />
-                    <Badge color="green">✓ Verified</Badge>
+                    <Badge color="green"><Check size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />Verified</Badge>
                   </div>
                 </div>
 

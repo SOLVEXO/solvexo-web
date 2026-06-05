@@ -6,7 +6,7 @@ import {
   Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
   Package, Download, Calendar, Repeat, MonitorSmartphone,
   Sparkles, User, CreditCard, Plus, Wrench, ShoppingCart,
-  ArrowRight, ArrowLeft,
+  ArrowRight, ArrowLeft, Check,
 } from 'lucide-react';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ function StepProgress({ current }: { current: number }) {
                 color:      done || active ? C.white : C.slate,
                 boxShadow:  active ? `0 0 0 4px ${C.paleOrange}` : 'none',
               }}>
-                {done ? '✓' : n}
+                {done ? <Check size={12} /> : n}
               </div>
               <span style={{
                 marginTop: 6, fontSize: 10, fontWeight: 500,
@@ -323,7 +323,7 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
                 background: selected === t.id ? C.orange : C.white,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}>
-                {selected === t.id && <span style={{ fontSize: 10, color: C.white, fontWeight: 700 }}>✓</span>}
+                {selected === t.id && <Check size={10} style={{ color: C.white }} />}
               </div>
             </div>
             <p style={{ fontSize: 14, fontWeight: 700, color: C.carbon, fontFamily: FONT, marginBottom: 4 }}>{t.title}</p>

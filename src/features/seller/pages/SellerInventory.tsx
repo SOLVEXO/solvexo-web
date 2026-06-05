@@ -6,11 +6,13 @@ import { MetricCard }  from '@/components/ui/MetricCard';
 import { Badge, StatusBadge } from '@/components/ui/Badge';
 import { Input, Select } from '@/components/ui/Input';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { Ruler, Coffee, Image, BookOpen, Flame, Palette, Layers, Music } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 // ── Data (same products as SellerProducts) ────────────────────────────────────
 type Product = {
   sku: string;
-  emoji: string;
+  Icon: LucideIcon;
   name: string;
   type: 'Digital' | 'Physical';
   stock: number | null;
@@ -20,14 +22,14 @@ type Product = {
 };
 
 const PRODUCTS: Product[] = [
-  { sku: 'MTH-001', emoji: '📐', name: 'Grade 5 Math Bundle',             type: 'Digital',  stock: null, status: 'Active',       price: 49, sales: 847 },
-  { sku: 'MUG-004', emoji: '☕', name: 'Ceramic Mug Set (2pk)',            type: 'Physical', stock: 34,   status: 'Active',       price: 58, sales: 203 },
-  { sku: 'WAL-012', emoji: '🖼️', name: 'Linen Wall Hanging',              type: 'Physical', stock: 7,    status: 'Low Stock',    price: 72, sales: 144 },
-  { sku: 'ELA-005', emoji: '📖', name: 'Reading Comprehension Passages',   type: 'Digital',  stock: null, status: 'Active',       price: 22, sales: 623 },
-  { sku: 'CVL-019', emoji: '🕯️', name: 'Scented Soy Candle',             type: 'Physical', stock: 0,    status: 'Out of Stock', price: 24, sales: 312 },
-  { sku: 'TMP-030', emoji: '🎨', name: 'Brand Identity Figma Kit',         type: 'Digital',  stock: null, status: 'Active',       price: 39, sales: 519 },
-  { sku: 'SCF-027', emoji: '🧣', name: 'Silk Scarf - Midnight Blue',       type: 'Physical', stock: 12,   status: 'Active',       price: 88, sales: 68  },
-  { sku: 'MUS-008', emoji: '🎵', name: 'Lo-Fi Chill Music Pack',           type: 'Digital',  stock: null, status: 'Draft',        price: 19, sales: 0   },
+  { sku: 'MTH-001', Icon: Ruler,   name: 'Grade 5 Math Bundle',             type: 'Digital',  stock: null, status: 'Active',       price: 49, sales: 847 },
+  { sku: 'MUG-004', Icon: Coffee,  name: 'Ceramic Mug Set (2pk)',            type: 'Physical', stock: 34,   status: 'Active',       price: 58, sales: 203 },
+  { sku: 'WAL-012', Icon: Image,   name: 'Linen Wall Hanging',              type: 'Physical', stock: 7,    status: 'Low Stock',    price: 72, sales: 144 },
+  { sku: 'ELA-005', Icon: BookOpen,name: 'Reading Comprehension Passages',   type: 'Digital',  stock: null, status: 'Active',       price: 22, sales: 623 },
+  { sku: 'CVL-019', Icon: Flame,   name: 'Scented Soy Candle',             type: 'Physical', stock: 0,    status: 'Out of Stock', price: 24, sales: 312 },
+  { sku: 'TMP-030', Icon: Palette, name: 'Brand Identity Figma Kit',         type: 'Digital',  stock: null, status: 'Active',       price: 39, sales: 519 },
+  { sku: 'SCF-027', Icon: Layers,  name: 'Silk Scarf - Midnight Blue',       type: 'Physical', stock: 12,   status: 'Active',       price: 88, sales: 68  },
+  { sku: 'MUS-008', Icon: Music,   name: 'Lo-Fi Chill Music Pack',           type: 'Digital',  stock: null, status: 'Draft',        price: 19, sales: 0   },
 ];
 
 function StockCell({ stock }: { stock: number | null }) {
@@ -146,7 +148,7 @@ export function SellerInventory() {
                       <td style={{ ...TD, fontSize: 12, color: '#8C8A82', fontFamily: 'monospace' }}>{p.sku}</td>
                       <td style={TD}>
                         <div className="flex items-center gap-2.5">
-                          <span className="text-[20px]">{p.emoji}</span>
+                          <p.Icon size={20} style={{ color: '#D97757', flexShrink: 0 }} />
                           <span className="font-medium text-carbon">{p.name}</span>
                         </div>
                       </td>

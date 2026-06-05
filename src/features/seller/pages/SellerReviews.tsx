@@ -34,7 +34,7 @@ const REVIEWS: Review[] = [
     product: 'Fractions Mastery Kit',
     date: 'May 14',
     text: 'Excellent kit with clear instructions and engaging materials. My class loved it!',
-    reply: "Thank you David! So glad it's working well for your class. See you next year! 🎉",
+    reply: "Thank you David! So glad it's working well for your class. See you next year!",
   },
   {
     id: 3,

@@ -2,16 +2,17 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 // ── Exact data from reference site ───────────────────────────────────────────
-const FEATURES = [
-  { icon: '🛍️', title: 'Marketplace',            bg: '#FBECE4', desc: 'Join thousands of buyers discovering your products in the Solvexo marketplace.',          path: '/marketplace' },
-  { icon: '📚', title: 'Educational Resources',   bg: '#EBF7EF', desc: 'Sell lesson plans, courses, worksheets and digital curricula to educators worldwide.',      path: '/education'   },
-  { icon: '💾', title: 'Digital Downloads',        bg: '#E6F1FB', desc: 'Sell ebooks, music, software, templates and files with instant delivery.',                  path: '/marketplace' },
-  { icon: '🏪', title: 'Your Own Store',           bg: '#FEF7E5', desc: 'Launch a branded store with a custom domain, no coding required.',                          path: '/sellers'     },
-  { icon: '🖥️', title: 'Point of Sale',           bg: '#FBECE4', desc: 'Accept payments in-person with the Solvexo POS app, fully synced to your dashboard.',       path: '/sellers'     },
-  { icon: '✨', title: 'AI Commerce Tools',        bg: '#F5F0FB', desc: 'Write listings, optimize pricing, auto-generate descriptions with built-in AI.',             path: '/sellers'     },
+const FEATURES: { Icon: LucideIcon; title: string; bg: string; desc: string; path: string }[] = [
+  { Icon: ShoppingBag, title: 'Marketplace',            bg: '#FBECE4', desc: 'Join thousands of buyers discovering your products in the Solvexo marketplace.',          path: '/marketplace' },
+  { Icon: BookOpen,    title: 'Educational Resources',   bg: '#EBF7EF', desc: 'Sell lesson plans, courses, worksheets and digital curricula to educators worldwide.',      path: '/education'   },
+  { Icon: Download,    title: 'Digital Downloads',        bg: '#E6F1FB', desc: 'Sell ebooks, music, software, templates and files with instant delivery.',                  path: '/marketplace' },
+  { Icon: Store,       title: 'Your Own Store',           bg: '#FEF7E5', desc: 'Launch a branded store with a custom domain, no coding required.',                          path: '/sellers'     },
+  { Icon: Monitor,     title: 'Point of Sale',           bg: '#FBECE4', desc: 'Accept payments in-person with the Solvexo POS app, fully synced to your dashboard.',       path: '/sellers'     },
+  { Icon: Sparkles,    title: 'AI Commerce Tools',        bg: '#F5F0FB', desc: 'Write listings, optimize pricing, auto-generate descriptions with built-in AI.',             path: '/sellers'     },
 ];
 
 const TESTIMONIALS = [
@@ -48,7 +49,7 @@ export function Homepage() {
         <div style={{ maxWidth: 680, position: 'relative', zIndex: 1 }}>
           {/* Badge */}
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(217,119,87,0.15)', border: '1px solid rgba(217,119,87,0.3)', borderRadius: 20, padding: '5px 14px', marginBottom: 24 }}>
-            <span style={{ fontSize: 12 }}>✨</span>
+            <Sparkles size={12} style={{ color: '#D97757' }} />
             <span style={{ fontSize: 12, fontWeight: 500, color: '#D97757' }}>AI-powered commerce. One platform.</span>
           </div>
 
@@ -107,8 +108,8 @@ export function Homepage() {
           {FEATURES.map(f => (
             <Card key={f.title} hover padding="none" onClick={() => navigate(f.path)}>
               <div style={{ padding: 24 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: f.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, fontSize: 20 }}>
-                  {f.icon}
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: f.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+                  <f.Icon size={20} style={{ color: '#D97757' }} />
                 </div>
                 <p style={{ fontSize: 16, fontWeight: 700, color: '#141413', display: 'block', marginBottom: 8 }}>{f.title}</p>
                 <p style={{ fontSize: 13, color: '#8C8A82', display: 'block', lineHeight: 1.6, marginBottom: 14 }}>{f.desc}</p>

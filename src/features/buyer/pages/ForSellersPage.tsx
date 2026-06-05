@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Avatar } from '@/components/ui/Avatar';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, GraduationCap, Palette, Store, Gem, Briefcase, Building2, ShoppingBag, Hammer, Download, Sparkles, BarChart2, Monitor, CreditCard, Lock } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -47,24 +48,24 @@ function Btn({
 }
 
 // ── Data ─────────────────────────────────────────────────────────────────────
-const SELLER_TYPES = [
-  { emoji: '🎓', title: 'Educators',         desc: 'Sell lesson plans, worksheets, bundles, and courses to teachers and students worldwide.',    cta: 'Sell as Educator'   },
-  { emoji: '🎨', title: 'Creators & Designers', desc: 'Digital downloads, templates, fonts, and design assets with instant delivery.',          cta: 'Start Creating'     },
-  { emoji: '🏪', title: 'Retailers',          desc: 'Launch your online store and sell physical products to customers everywhere.',              cta: 'Open Your Store'    },
-  { emoji: '🏺', title: 'Handmade Sellers',   desc: 'Showcase your handcrafted goods on the Solvexo marketplace and your own store.',           cta: 'List Your Craft'    },
-  { emoji: '💼', title: 'Brands & Agencies',  desc: 'White-label storefronts, multi-seat management, and advanced analytics.',                  cta: 'Go Enterprise'      },
-  { emoji: '🏫', title: 'Schools & Districts',desc: 'Institutional accounts with volume pricing and centralized resource management.',           cta: 'Contact Us'         },
+const SELLER_TYPES: { Icon: LucideIcon; title: string; desc: string; cta: string }[] = [
+  { Icon: GraduationCap, title: 'Educators',         desc: 'Sell lesson plans, worksheets, bundles, and courses to teachers and students worldwide.',    cta: 'Sell as Educator'   },
+  { Icon: Palette,       title: 'Creators & Designers', desc: 'Digital downloads, templates, fonts, and design assets with instant delivery.',          cta: 'Start Creating'     },
+  { Icon: Store,         title: 'Retailers',          desc: 'Launch your online store and sell physical products to customers everywhere.',              cta: 'Open Your Store'    },
+  { Icon: Gem,           title: 'Handmade Sellers',   desc: 'Showcase your handcrafted goods on the Solvexo marketplace and your own store.',           cta: 'List Your Craft'    },
+  { Icon: Briefcase,     title: 'Brands & Agencies',  desc: 'White-label storefronts, multi-seat management, and advanced analytics.',                  cta: 'Go Enterprise'      },
+  { Icon: Building2,     title: 'Schools & Districts',desc: 'Institutional accounts with volume pricing and centralized resource management.',           cta: 'Contact Us'         },
 ];
 
-const FEATURES = [
-  { emoji: '🛍️', title: 'Marketplace Listings', desc: 'Reach buyers already shopping on Solvexo.'             },
-  { emoji: '🏗️', title: 'Custom Storefront',     desc: 'Your brand, your domain, your store.'                 },
-  { emoji: '💾', title: 'Digital Delivery',      desc: 'Instant file delivery for digital products.'           },
-  { emoji: '✨', title: 'AI Tools',              desc: 'AI-powered listing optimization and pricing.'           },
-  { emoji: '📊', title: 'Analytics',             desc: 'Real-time sales data and customer insights.'           },
-  { emoji: '🖥️', title: 'Point of Sale',        desc: 'Accept payments in person with our mobile POS.'        },
-  { emoji: '💳', title: 'Fast Payouts',          desc: 'Get paid within 2 business days, every time.'          },
-  { emoji: '🔒', title: 'Seller Protection',     desc: 'Fraud protection and dispute resolution support.'      },
+const FEATURES: { Icon: LucideIcon; title: string; desc: string }[] = [
+  { Icon: ShoppingBag, title: 'Marketplace Listings', desc: 'Reach buyers already shopping on Solvexo.'             },
+  { Icon: Hammer,      title: 'Custom Storefront',     desc: 'Your brand, your domain, your store.'                 },
+  { Icon: Download,    title: 'Digital Delivery',      desc: 'Instant file delivery for digital products.'           },
+  { Icon: Sparkles,    title: 'AI Tools',              desc: 'AI-powered listing optimization and pricing.'           },
+  { Icon: BarChart2,   title: 'Analytics',             desc: 'Real-time sales data and customer insights.'           },
+  { Icon: Monitor,     title: 'Point of Sale',        desc: 'Accept payments in person with our mobile POS.'        },
+  { Icon: CreditCard,  title: 'Fast Payouts',          desc: 'Get paid within 2 business days, every time.'          },
+  { Icon: Lock,        title: 'Seller Protection',     desc: 'Fraud protection and dispute resolution support.'      },
 ];
 
 const STATS = [
@@ -142,7 +143,7 @@ export function ForSellersPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             {SELLER_TYPES.map(s => (
               <div key={s.title} style={{ background: C.white, borderRadius: 16, padding: 28, border: `1px solid ${C.bone}` }}>
-                <span style={{ fontSize: 36, display: 'block', marginBottom: 16 }}>{s.emoji}</span>
+                <s.Icon size={36} style={{ display: 'block', marginBottom: 16, color: '#D97757' }} />
                 <p style={{ fontSize: 17, fontWeight: 700, color: C.carbon, marginBottom: 8 }}>{s.title}</p>
                 <p style={{ fontSize: 13, color: C.slate, lineHeight: 1.7, marginBottom: 20 }}>{s.desc}</p>
                 <Btn variant="secondary" size="sm" onClick={() => navigate('/onboarding')}>
@@ -166,7 +167,7 @@ export function ForSellersPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
             {FEATURES.map(f => (
               <div key={f.title} style={{ background: C.cream, borderRadius: 12, padding: '20px 18px' }}>
-                <span style={{ fontSize: 28, display: 'block', marginBottom: 12 }}>{f.emoji}</span>
+                <f.Icon size={28} style={{ display: 'block', marginBottom: 12, color: '#D97757' }} />
                 <p style={{ fontSize: 13, fontWeight: 700, color: C.carbon, marginBottom: 6 }}>{f.title}</p>
                 <p style={{ fontSize: 12, color: C.slate, lineHeight: 1.6 }}>{f.desc}</p>
               </div>

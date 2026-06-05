@@ -3,20 +3,22 @@ import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { MetricCard } from '@/components/ui/MetricCard';
+import { Star, Trophy, Gift, Users, Settings, Award, Gem } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-const TABS = [
-  { id: 'overview',       label: '⭐ Overview'         },
-  { id: 'tiers',          label: '🏆 Tiers'            },
-  { id: 'rewards',        label: '🎁 Rewards Catalog'  },
-  { id: 'members',        label: '👥 Member Activity'  },
-  { id: 'earning-rules',  label: '⚙️ Earning Rules'    },
+const TABS: { id: string; Icon: LucideIcon; label: string }[] = [
+  { id: 'overview',       Icon: Star,     label: 'Overview'        },
+  { id: 'tiers',          Icon: Trophy,   label: 'Tiers'           },
+  { id: 'rewards',        Icon: Gift,     label: 'Rewards Catalog' },
+  { id: 'members',        Icon: Users,    label: 'Member Activity' },
+  { id: 'earning-rules',  Icon: Settings, label: 'Earning Rules'   },
 ];
 
-const TIERS = [
-  { icon: '🥉', name: 'Bronze',   members: 892, pct: 67, color: 'bg-charcoal'      },
-  { icon: '🥈', name: 'Silver',   members: 312, pct: 24, color: 'bg-slate'         },
-  { icon: '🥇', name: 'Gold',     members: 94,  pct: 7,  color: 'bg-yellow-400'    },
-  { icon: '💎', name: 'Platinum', members: 28,  pct: 2,  color: 'bg-blue-400'      },
+const TIERS: { Icon: LucideIcon; iconColor: string; name: string; members: number; pct: number; color: string }[] = [
+  { Icon: Award, iconColor: '#CD7F32', name: 'Bronze',   members: 892, pct: 67, color: 'bg-charcoal'   },
+  { Icon: Award, iconColor: '#C0C0C0', name: 'Silver',   members: 312, pct: 24, color: 'bg-slate'      },
+  { Icon: Award, iconColor: '#FFD700', name: 'Gold',     members: 94,  pct: 7,  color: 'bg-yellow-400' },
+  { Icon: Gem,   iconColor: '#4A90D9', name: 'Platinum', members: 28,  pct: 2,  color: 'bg-blue-400'   },
 ];
 
 const POINTS_ACTIVITY = [
@@ -86,7 +88,7 @@ export function SellerLoyalty() {
                   : 'text-slate hover:text-charcoal',
               ].join(' ')}
             >
-              {tab.label}
+              <tab.Icon size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 5 }} />{tab.label}
             </button>
           ))}
         </div>
@@ -103,7 +105,7 @@ export function SellerLoyalty() {
                   <div key={tier.name}>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-[18px]">{tier.icon}</span>
+                        <tier.Icon size={18} style={{ color: tier.iconColor }} />
                         <span className="text-[13px] font-semibold text-charcoal">{tier.name}</span>
                       </div>
                       <span className="text-[12px] text-slate">{tier.members.toLocaleString()} members</span>

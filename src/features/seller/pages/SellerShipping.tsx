@@ -3,15 +3,17 @@ import { Button }      from '@/components/ui/Button';
 import { Badge }       from '@/components/ui/Badge';
 import { MetricCard }  from '@/components/ui/MetricCard';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { MapPin, Truck, Tag, Home } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 // ── Types & Data ──────────────────────────────────────────────────────────────
-type Tab = { id: string; icon: string; label: string };
+type Tab = { id: string; Icon: LucideIcon; label: string };
 
 const TABS: Tab[] = [
-  { id: 'zones',    icon: '📍', label: 'Zones'               },
-  { id: 'carriers', icon: '🚚', label: 'Carriers'            },
-  { id: 'labels',   icon: '🏷️', label: 'Labels & Tracking'  },
-  { id: 'local',    icon: '🏠', label: 'Local Delivery'      },
+  { id: 'zones',    Icon: MapPin, label: 'Zones'               },
+  { id: 'carriers', Icon: Truck,  label: 'Carriers'            },
+  { id: 'labels',   Icon: Tag,    label: 'Labels & Tracking'  },
+  { id: 'local',    Icon: Home,   label: 'Local Delivery'      },
 ];
 
 type Service = { name: string; days: string; price: string };
@@ -133,7 +135,7 @@ export function SellerShipping() {
                     : 'border-transparent text-slate hover:text-charcoal',
                 ].join(' ')}
               >
-                <span className="text-[14px]">{tab.icon}</span>
+                <tab.Icon size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
                 {tab.label}
               </button>
             ))}

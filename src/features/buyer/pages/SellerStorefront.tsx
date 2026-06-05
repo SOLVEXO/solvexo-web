@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
+import { ShoppingCart, BookOpen, Star, Divide, BookMarked, Microscope, Map, Pencil, FileText, Ruler, Check } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 const C = {
   orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
@@ -24,15 +26,15 @@ function SolvexoIcon({ size = 32 }: { size?: number }) {
 
 const STORE_TABS = ['All Products', 'Math', 'Reading', 'Science', 'Social Studies', 'Bundles'];
 
-const PRODUCTS = [
-  { name: 'Grade 5 Math Bundle', price: '$49', img: '📚', rating: '5.0', sold: '847sold' },
-  { name: 'Fractions Mastery Kit', price: '$18', img: '➗', rating: '4.9', sold: '623sold' },
-  { name: 'Reading Comprehension Pack', price: '$22', img: '📖', rating: '4.9', sold: '501sold' },
-  { name: 'Science Lab Worksheets', price: '$15', img: '🔬', rating: '4.8', sold: '389sold' },
-  { name: 'State Capitals Flash Cards', price: '$9', img: '🗺️', rating: '4.7', sold: '302sold' },
-  { name: 'Creative Writing Prompts', price: '$12', img: '✏️', rating: '4.8', sold: '278sold' },
-  { name: 'Year-End Test Prep Bundle', price: '$35', img: '📝', rating: '5.0', sold: '244sold' },
-  { name: 'Geometry Exploration Kit', price: '$21', img: '📐', rating: '4.9', sold: '198sold' },
+const PRODUCTS: { name: string; price: string; Img: LucideIcon; rating: string; sold: string }[] = [
+  { name: 'Grade 5 Math Bundle',        price: '$49', Img: BookOpen,   rating: '5.0', sold: '847sold' },
+  { name: 'Fractions Mastery Kit',      price: '$18', Img: Divide,     rating: '4.9', sold: '623sold' },
+  { name: 'Reading Comprehension Pack', price: '$22', Img: BookMarked, rating: '4.9', sold: '501sold' },
+  { name: 'Science Lab Worksheets',     price: '$15', Img: Microscope, rating: '4.8', sold: '389sold' },
+  { name: 'State Capitals Flash Cards', price: '$9',  Img: Map,        rating: '4.7', sold: '302sold' },
+  { name: 'Creative Writing Prompts',   price: '$12', Img: Pencil,     rating: '4.8', sold: '278sold' },
+  { name: 'Year-End Test Prep Bundle',  price: '$35', Img: FileText,   rating: '5.0', sold: '244sold' },
+  { name: 'Geometry Exploration Kit',   price: '$21', Img: Ruler,      rating: '4.9', sold: '198sold' },
 ];
 
 export function SellerStorefront() {
@@ -57,7 +59,7 @@ export function SellerStorefront() {
         </div>
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
           <input
-            placeholder="🔍 Search marketplace..."
+            placeholder="Search marketplace..."
             style={{
               width: '100%', maxWidth: 440,
               padding: '8px 14px', borderRadius: 8,
@@ -72,9 +74,9 @@ export function SellerStorefront() {
             width: 32, height: 32, borderRadius: '50%',
             backgroundColor: C.orange, display: 'flex',
             alignItems: 'center', justifyContent: 'center',
-            fontSize: 16, cursor: 'pointer',
+            cursor: 'pointer',
           }}>
-            🛒
+            <ShoppingCart size={16} style={{ color: '#fff' }} />
           </div>
         </div>
       </nav>
@@ -90,19 +92,19 @@ export function SellerStorefront() {
           width: 80, height: 80, borderRadius: 20,
           backgroundColor: C.white,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 40, flexShrink: 0,
+          flexShrink: 0,
         }}>
-          📚
+          <BookOpen size={40} style={{ color: '#D97757' }} />
         </div>
 
         {/* Store info */}
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 26, fontWeight: 700, color: C.white, marginBottom: 6 }}>TeachersPro</div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 10 }}>
-            Veteran educator • 2,140 sales • ⭐ 5.0 • Member since 2021
+            Veteran educator • 2,140 sales • <Star size={12} style={{ display: 'inline', verticalAlign: 'middle', color: '#D97757', fill: '#D97757' }} /> 5.0 • Member since 2021
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <Badge color="green">✓ Top Seller</Badge>
+            <Badge color="green"><Check size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />Top Seller</Badge>
             <Badge color="blue">Education Specialist</Badge>
           </div>
         </div>
@@ -167,9 +169,9 @@ export function SellerStorefront() {
               <div style={{
                 height: 130, backgroundColor: C.successBg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 48, borderRadius: '12px 12px 0 0',
+                borderRadius: '12px 12px 0 0',
               }}>
-                {p.img}
+                <p.Img size={48} style={{ color: '#2D8A4E' }} />
               </div>
               {/* Content */}
               <div style={{ padding: 14 }}>
@@ -180,7 +182,7 @@ export function SellerStorefront() {
                   {p.name}
                 </div>
                 <div style={{ fontSize: 11, color: C.slate, marginBottom: 8 }}>
-                  ⭐ {p.rating} • {p.sold}
+                  <Star size={11} style={{ display: 'inline', verticalAlign: 'middle', color: '#D97757', fill: '#D97757' }} /> {p.rating} • {p.sold}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontWeight: 700, fontSize: 14, color: C.carbon }}>{p.price}</span>

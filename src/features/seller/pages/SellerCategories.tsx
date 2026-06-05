@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pencil, Trash2, ChevronDown, Lightbulb } from 'lucide-react';
+import { Pencil, Trash2, ChevronDown, Lightbulb, Star, BookOpen, Download, Gem, Home, Briefcase, Palette, FileText, Music, Monitor, Camera, Mic, Edit3, Leaf, Target, Gift, Microscope, Footprints, Scissors, Image, Package } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { MetricCard } from '@/components/ui/MetricCard';
@@ -7,12 +8,12 @@ import { Badge } from '@/components/ui/Badge';
 import { Input, Textarea } from '@/components/ui/Input';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 
-const CATEGORY_ICONS = ['📚','💾','🏺','🏠','💼','🎨','📝','🎵','💻','📷','🎶','✏️','🌿','🎯','🧸','🔬','⚽','🧵','📸','📦'];
+const CATEGORY_ICONS: LucideIcon[] = [BookOpen, Download, Gem, Home, Briefcase, Palette, FileText, Music, Monitor, Camera, Mic, Edit3, Leaf, Target, Gift, Microscope, Footprints, Scissors, Image, Package];
 
 interface SubCat { name: string; slug: string; count: number }
 interface Cat {
   id: number;
-  icon: string;
+  icon: LucideIcon;
   name: string;
   slug: string;
   products: number;
@@ -23,7 +24,7 @@ interface Cat {
 
 const DEFAULT_CATS: Cat[] = [
   {
-    id: 1, icon: '📚', name: 'Educational Resources', slug: 'educational-resources',
+    id: 1, icon: BookOpen, name: 'Educational Resources', slug: 'educational-resources',
     products: 184, status: 'Active', featured: true,
     subs: [
       { name: 'Math',    slug: 'math',    count: 62 },
@@ -34,7 +35,7 @@ const DEFAULT_CATS: Cat[] = [
     ],
   },
   {
-    id: 2, icon: '💾', name: 'Digital Downloads', slug: 'digital-downloads',
+    id: 2, icon: Download, name: 'Digital Downloads', slug: 'digital-downloads',
     products: 97, status: 'Active', featured: true,
     subs: [
       { name: 'Templates',  slug: 'templates',  count: 34 },
@@ -44,7 +45,7 @@ const DEFAULT_CATS: Cat[] = [
     ],
   },
   {
-    id: 3, icon: '🏺', name: 'Handmade & Crafts', slug: 'handmade-crafts',
+    id: 3, icon: Gem, name: 'Handmade & Crafts', slug: 'handmade-crafts',
     products: 43, status: 'Active', featured: false,
     subs: [
       { name: 'Ceramics', slug: 'ceramics', count: 16 },
@@ -53,7 +54,7 @@ const DEFAULT_CATS: Cat[] = [
     ],
   },
   {
-    id: 4, icon: '🏠', name: 'Home & Lifestyle', slug: 'home-lifestyle',
+    id: 4, icon: Home, name: 'Home & Lifestyle', slug: 'home-lifestyle',
     products: 29, status: 'Active', featured: false,
     subs: [
       { name: 'Decor',    slug: 'decor',    count: 12 },
@@ -62,7 +63,7 @@ const DEFAULT_CATS: Cat[] = [
     ],
   },
   {
-    id: 5, icon: '💼', name: 'Business Tools', slug: 'business-tools',
+    id: 5, icon: Briefcase, name: 'Business Tools', slug: 'business-tools',
     products: 0, status: 'Draft', featured: false,
     subs: [],
   },
@@ -75,7 +76,7 @@ export function SellerCategories() {
   const [editCatId, setEditCatId] = useState<number | null>(null);
   const [addingSubId, setAddingSubId] = useState<number | null>(null);
   const [editSubIdx, setEditSubIdx]   = useState<{ catId: number; idx: number } | null>(null);
-  const [selectedIcon, setSelectedIcon] = useState('📚');
+  const [selectedIcon, setSelectedIcon] = useState<LucideIcon>(() => BookOpen);
 
   // New cat form state
   const [newName, setNewName]   = useState('');
@@ -107,7 +108,7 @@ export function SellerCategories() {
     };
     setCats(prev => [...prev, newCat]);
     setAddingCat(false);
-    setNewName(''); setNewSlug(''); setNewDesc(''); setSelectedIcon('📚');
+    setNewName(''); setNewSlug(''); setNewDesc(''); setSelectedIcon(() => BookOpen);
   };
 
   const addSub = (catId: number) => {
@@ -168,17 +169,17 @@ export function SellerCategories() {
               <div>
                 <p className="text-[12px] font-medium text-charcoal mb-2">Icon</p>
                 <div className="flex flex-wrap gap-2">
-                  {CATEGORY_ICONS.map(icon => (
+                  {CATEGORY_ICONS.map((IconComp, idx) => (
                     <button
-                      key={icon}
-                      onClick={() => setSelectedIcon(icon)}
-                      className="w-9 h-9 rounded-lg flex items-center justify-center text-[18px] border-2 transition-all cursor-pointer"
+                      key={idx}
+                      onClick={() => setSelectedIcon(() => IconComp)}
+                      className="w-9 h-9 rounded-lg flex items-center justify-center border-2 transition-all cursor-pointer"
                       style={{
-                        borderColor: selectedIcon === icon ? '#D97757' : '#E8E6DC',
-                        background:  selectedIcon === icon ? '#FBECE4' : '#FFFFFF',
+                        borderColor: selectedIcon === IconComp ? '#D97757' : '#E8E6DC',
+                        background:  selectedIcon === IconComp ? '#FBECE4' : '#FFFFFF',
                       }}
                     >
-                      {icon}
+                      <IconComp size={18} style={{ color: selectedIcon === IconComp ? '#D97757' : '#8C8A82' }} />
                     </button>
                   ))}
                 </div>
@@ -212,9 +213,9 @@ export function SellerCategories() {
                   {/* Icon */}
                   <div
                     className="flex items-center justify-center flex-shrink-0"
-                    style={{ width: 40, height: 40, borderRadius: 10, background: '#FBECE4', fontSize: 22 }}
+                    style={{ width: 40, height: 40, borderRadius: 10, background: '#FBECE4' }}
                   >
-                    {cat.icon}
+                    <cat.icon size={22} style={{ color: '#D97757' }} />
                   </div>
 
                   {/* Info */}
@@ -239,7 +240,7 @@ export function SellerCategories() {
 
                   {/* Badges */}
                   <div className="flex items-center gap-2">
-                    {cat.featured && <Badge color="orange">⭐ Featured</Badge>}
+                    {cat.featured && <Badge color="orange"><Star size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3, color: '#fff', fill: '#fff' }} />Featured</Badge>}
                     <Badge color={cat.status === 'Active' ? 'green' : 'gray'}>{cat.status}</Badge>
                   </div>
 
@@ -250,7 +251,7 @@ export function SellerCategories() {
                       className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-cream cursor-pointer transition-colors"
                       title="Toggle featured"
                     >
-                      <span style={{ opacity: cat.featured ? 1 : 0.4 }}>⭐</span>
+                      <Star size={14} style={{ opacity: cat.featured ? 1 : 0.4, color: '#D97757', fill: cat.featured ? '#D97757' : 'none' }} />
                     </button>
                     <button
                       onClick={() => toggleStatus(cat.id)}

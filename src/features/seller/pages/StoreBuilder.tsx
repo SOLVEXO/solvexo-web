@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Palette, LayoutGrid, PanelTop, Package, PanelBottom, Search, Monitor, Smartphone, type LucideIcon } from 'lucide-react';
+import { Palette, LayoutGrid, PanelTop, Package, PanelBottom, Search, Monitor, Smartphone, BookOpen, Pencil, Microscope, Lock, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Input';
@@ -30,10 +30,10 @@ const LAYOUT_OPTIONS: { id: LayoutStyle; desc: string }[] = [
   { id: 'Minimal',  desc: 'Clean whitespace-focused design for premium brands' },
 ];
 
-const PREVIEW_PRODUCTS = [
-  { emoji: '📚', name: 'Math Bundle',       price: '$49.00' },
-  { emoji: '✏️', name: 'Writing Prompts',   price: '$12.00' },
-  { emoji: '🔬', name: 'Science Worksheets', price: '$15.00' },
+const PREVIEW_PRODUCTS: { Icon: LucideIcon; name: string; price: string }[] = [
+  { Icon: BookOpen,    name: 'Math Bundle',        price: '$49.00' },
+  { Icon: Pencil,      name: 'Writing Prompts',    price: '$12.00' },
+  { Icon: Microscope,  name: 'Science Worksheets', price: '$15.00' },
 ];
 
 export function StoreBuilder() {
@@ -165,7 +165,7 @@ export function StoreBuilder() {
               {/* URL bar */}
               <div className="flex-1 flex items-center justify-center">
                 <div className="bg-white border border-bone rounded-lg px-3 py-1 text-[12px] text-slate" style={{ minWidth: 220, textAlign: 'center' }}>
-                  🔒 myshop.solvexo.store
+                  <Lock size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />myshop.solvexo.store
                 </div>
               </div>
               {/* Desktop/mobile toggle */}
@@ -215,9 +215,9 @@ export function StoreBuilder() {
                     <div key={p.name} className="rounded-xl border border-bone bg-white overflow-hidden">
                       <div
                         className="flex items-center justify-center"
-                        style={{ height: 100, background: '#FBECE4', fontSize: 36 }}
+                        style={{ height: 100, background: '#FBECE4' }}
                       >
-                        {p.emoji}
+                        <p.Icon size={36} style={{ color: '#D97757' }} />
                       </div>
                       <div className="p-3">
                         <p className="text-[12px] font-semibold text-carbon">{p.name}</p>

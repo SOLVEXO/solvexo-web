@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input, Select } from '@/components/ui/Input';
 import { Divider } from '@/components/ui/Divider';
+import { AlertCircle, AlertTriangle } from 'lucide-react';
 
 interface Toggle {
   id:      string;
@@ -66,7 +67,7 @@ export function AdminConfig() {
       <Card className={maintenance ? 'border-2 border-error' : ''}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[14px] font-bold text-carbon">🚨 Maintenance Mode</p>
+            <p className="text-[14px] font-bold text-carbon flex items-center gap-1.5"><AlertCircle size={15} style={{ color: '#C13030' }} /> Maintenance Mode</p>
             <p className="text-[12px] text-slate mt-0.5">
               When enabled, the platform shows a maintenance page to all users.
             </p>
@@ -81,8 +82,8 @@ export function AdminConfig() {
               value={maintenanceMsg}
               onChange={e => setMaintenanceMsg(e.target.value)}
             />
-            <p className="text-[11px] mt-1.5 font-semibold" style={{ color: '#C13030' }}>
-              ⚠️ Maintenance mode is ON — users cannot access the platform.
+            <p className="text-[11px] mt-1.5 font-semibold flex items-center gap-1" style={{ color: '#C13030' }}>
+              <AlertTriangle size={11} /> Maintenance mode is ON — users cannot access the platform.
             </p>
           </div>
         )}

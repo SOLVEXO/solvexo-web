@@ -58,7 +58,7 @@ export function SellerDashboard() {
     <>
       <SellerPageHeader
         title="Dashboard"
-        subtitle="Welcome back, Alex 👋  Here's your store overview."
+        subtitle="Welcome back, Alex — Here's your store overview."
         actions={
           <>
             <Button variant="secondary" size="sm" onClick={() => navigate('/seller/products/add')}>
