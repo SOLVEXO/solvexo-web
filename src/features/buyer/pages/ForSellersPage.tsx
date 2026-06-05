@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Avatar } from '@/components/ui/Avatar';
 import { ArrowRight } from 'lucide-react';
 
@@ -83,6 +84,7 @@ const TESTIMONIALS = [
 // ── Component ────────────────────────────────────────────────────────────────
 export function ForSellersPage() {
   const navigate = useNavigate();
+  usePageTitle('For Sellers');
 
   return (
     <div style={{ background: C.white, minHeight: '100%', fontFamily: FONT }}>

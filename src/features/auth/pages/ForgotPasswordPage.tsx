@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
@@ -40,6 +41,7 @@ const errorStyle: CSSProperties = {
 
 export function ForgotPasswordPage() {
   const navigate     = useNavigate();
+  usePageTitle('Forgot Password');
   const [loading,  setLoading]  = useState(false);
   const [apiError, setApiError] = useState('');
   const [submitted] = useState(false);  // kept for existing JSX structure

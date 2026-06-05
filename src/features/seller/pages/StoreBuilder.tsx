@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Palette, LayoutGrid, PanelTop, Package, PanelBottom, Search, Monitor, Smartphone, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -37,6 +38,7 @@ const PREVIEW_PRODUCTS = [
 ];
 
 export function StoreBuilder() {
+  usePageTitle('Store Builder');
   const [activeSection, setActiveSection] = useState<Section>('theme');
   const [layoutStyle, setLayoutStyle]     = useState<LayoutStyle>('Grid');
   const [font, setFont]                   = useState('Inter');

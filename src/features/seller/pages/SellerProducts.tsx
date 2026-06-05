@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button }      from '@/components/ui/Button';
 import { Card }        from '@/components/ui/Card';
 import { Badge, StatusBadge } from '@/components/ui/Badge';
@@ -55,6 +56,7 @@ const TD: React.CSSProperties = {
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerProducts() {
   const navigate  = useNavigate();
+  usePageTitle('Products');
   const [search,  setSearch]  = useState('');
   const [typeF,   setTypeF]   = useState('');
   const [statusF, setStatusF] = useState('');

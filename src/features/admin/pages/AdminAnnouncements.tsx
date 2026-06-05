@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
@@ -55,6 +56,7 @@ const STATUS_COLORS: Record<string, 'green' | 'gray' | 'blue'> = {
 };
 
 export function AdminAnnouncements() {
+  usePageTitle('Announcements');
   const [announcements, setAnnouncements] = useState<Announcement[]>(ANNOUNCEMENTS);
   const [title,    setTitle]    = useState('');
   const [body,     setBody]     = useState('');

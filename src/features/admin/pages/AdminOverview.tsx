@@ -1,3 +1,4 @@
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
@@ -35,6 +36,7 @@ const ADMIN_ACTIONS = [
 ];
 
 export function AdminOverview() {
+  usePageTitle('Admin Overview');
   return (
     <div className="p-7 flex flex-col gap-6">
       {/* Header */}

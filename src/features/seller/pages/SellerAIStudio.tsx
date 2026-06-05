@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { PenLine, TrendingUp, BookOpen, Search, Mail, ImagePlus, Sparkles, Bot, FileText, CheckCircle, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -19,6 +20,7 @@ const TOOLS: { id: AITool; Icon: LucideIcon; title: string; desc: string }[] = [
 ];
 
 export function SellerAIStudio() {
+  usePageTitle('AI Studio');
   const [activeAI, setActiveAI] = useState<AITool>('listing');
   const [tone, setTone] = useState<'Professional' | 'Friendly' | 'Academic'>('Professional');
   const [generated, setGenerated] = useState(false);

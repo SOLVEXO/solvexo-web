@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input, Textarea, Select } from '@/components/ui/Input';
@@ -15,6 +16,7 @@ const PRODUCT_TYPES: { id: ProductType; emoji: string; label: string; desc: stri
 const DEFAULT_TAGS = ['math', 'grade 5', 'common core', 'fractions', 'worksheets'];
 
 export function AddProduct() {
+  usePageTitle('Add Product');
   const [productType, setProductType] = useState<ProductType>('educational');
   const [tags, setTags]               = useState<string[]>(DEFAULT_TAGS);
   const [tagInput, setTagInput]       = useState('');

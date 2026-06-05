@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
@@ -31,6 +32,7 @@ const STATUS_COLORS: Record<string, 'yellow' | 'blue' | 'green' | 'red'> = {
 };
 
 export function AdminFinance() {
+  usePageTitle('Finance');
   const [payouts, setPayouts] = useState<Payout[]>(PAYOUTS);
 
   const approve = (id: string) =>

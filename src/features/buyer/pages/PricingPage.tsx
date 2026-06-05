@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { ArrowRight } from 'lucide-react';
 
 // ── Design tokens (exact reference C object) ──────────────────────────────────
@@ -135,6 +136,7 @@ const FAQS = [
 // ── Component ─────────────────────────────────────────────────────────────────
 export function PricingPage() {
   const navigate  = useNavigate();
+  usePageTitle('Pricing');
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
 
   const getPrice = (plan: typeof PLANS[0]) => {

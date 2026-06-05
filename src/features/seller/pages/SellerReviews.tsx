@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -91,6 +92,7 @@ function StarDisplay({ count, size = 'sm' }: { count: number; size?: 'sm' | 'lg'
 }
 
 export function SellerReviews() {
+  usePageTitle('Reviews');
   const [ratingFilter, setRatingFilter] = useState('');
   const [sortFilter, setSortFilter]     = useState('');
 

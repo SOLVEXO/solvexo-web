@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Pencil, Trash2, ChevronDown, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -69,6 +70,7 @@ const DEFAULT_CATS: Cat[] = [
 ];
 
 export function SellerCategories() {
+  usePageTitle('Categories');
   const [cats, setCats]         = useState<Cat[]>(DEFAULT_CATS);
   const [expanded, setExpanded] = useState<number[]>([1]);
   const [addingCat, setAddingCat] = useState(false);

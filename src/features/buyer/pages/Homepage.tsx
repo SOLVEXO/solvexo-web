@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
@@ -28,6 +29,7 @@ const STATS = [
 
 export function Homepage() {
   const navigate = useNavigate();
+  usePageTitle('Home');
 
   return (
     <div style={{ background: '#FFFFFF', minHeight: '100%' }}>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input, Select } from '@/components/ui/Input';
@@ -42,6 +43,7 @@ function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
 }
 
 export function AdminConfig() {
+  usePageTitle('Config');
   const [flags, setFlags]           = useState<Toggle[]>(DEFAULT_FLAGS);
   const [aiCredits, setAiCredits]   = useState('1000');
   const [aiModel, setAiModel]       = useState('claude-sonnet-4-6');

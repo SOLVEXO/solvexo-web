@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { SolvexoLogo } from '@/components/ui/SolvexoLogo';
 import {
@@ -514,6 +515,7 @@ function Step4({ onFinish }: { onFinish: () => void }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export function OnboardingPage() {
   const navigate  = useNavigate();
+  usePageTitle('Onboarding');
   const [step, setStep] = useState(1);
 
   const next = () => setStep(s => Math.min(s + 1, 4));

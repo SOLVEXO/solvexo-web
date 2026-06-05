@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -108,6 +109,7 @@ const SUBSCRIBERS: Subscriber[] = [
 const SUB_TABS = ['Active', 'Paused', 'Canceled'];
 
 export function SellerSubscriptions() {
+  usePageTitle('Subscriptions');
   const [subTab, setSubTab] = useState('Active');
 
   return (
