@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 const C = {
   orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
   carbon: '#141413', charcoal: '#2C2A28', slate: '#8C8A82',
@@ -74,7 +75,7 @@ export function ProductDetail() {
           />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')}>← Marketplace</Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')}><ArrowLeft size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> Marketplace</Button>
           <div style={{
             width: 32, height: 32, borderRadius: '50%',
             backgroundColor: C.orange, display: 'flex',
@@ -182,7 +183,7 @@ export function ProductDetail() {
                   TeachersPro is a team of certified educators creating premium K–12 learning resources.
                   All materials are classroom-tested and fully standards-aligned.
                 </p>
-                <Button variant="ghost" size="sm" onClick={() => navigate('/seller/teacherspro')}>View Store →</Button>
+                <Button variant="ghost" size="sm" onClick={() => navigate('/seller/teacherspro')}>View Store <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></Button>
               </div>
             </div>
 
@@ -233,7 +234,7 @@ export function ProductDetail() {
               <div style={{ fontSize: 11, color: C.success, marginBottom: 20 }}>✓ Instant digital download</div>
 
               <Button variant="primary" size="lg" fullWidth style={{ justifyContent: 'center', marginBottom: 10 }}>
-                Buy Now → $49.00
+                Buy Now <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /> $49.00
               </Button>
               <Button variant="secondary" size="md" fullWidth style={{ justifyContent: 'center', marginBottom: 20 }}>
                 Add to Cart

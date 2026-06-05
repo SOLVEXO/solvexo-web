@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
+import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { useForm } from '@/hooks/useForm';
+import { newPasswordSchema, type NewPasswordFormData } from '@/utils/validation/schemas';
+import { apiResetPassword, AuthContext } from '@/api/auth';
 import type { CSSProperties } from 'react';
 
 const C = {
@@ -87,8 +91,11 @@ function StrengthBar({ password }: { password: string }) {
 
 // ── Eye toggle ────────────────────────────────────────────────────────────────
 function PasswordInput({
-  label, placeholder, value, onChange,
-}: { label: string; placeholder: string; value: string; onChange: (v: string) => void }) {
+  label, placeholder, value, onChange, onBlur, error,
+}: {
+  label: string; placeholder: string; value: string;
+  onChange: (v: string) => void; onBlur?: () => void; error?: string;
+}) {
   const [show, setShow] = useState(false);
   return (
     <div>
@@ -99,7 +106,8 @@ function PasswordInput({
           placeholder={placeholder}
           value={value}
           onChange={e => onChange(e.target.value)}
-          style={{ ...inputStyle, paddingRight: 42 }}
+          onBlur={onBlur}
+          style={{ ...inputStyle, paddingRight: 42, borderColor: error ? C.error : C.bone }}
         />
         <button
           type="button"
@@ -107,12 +115,15 @@ function PasswordInput({
           style={{
             position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
             background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 16, color: C.slate, padding: 0, lineHeight: 1,
+            color: C.slate, padding: 0, display: 'flex',
           }}
         >
-          {show ? '🙈' : '👁️'}
+          {show ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
+      {error && (
+        <p style={{ fontSize: 11, color: C.error, marginTop: 5, fontFamily: FONT }}>{error}</p>
+      )}
     </div>
   );
 }
@@ -120,27 +131,48 @@ function PasswordInput({
 // ── Main Component ────────────────────────────────────────────────────────────
 export function NewPasswordPage() {
   const navigate = useNavigate();
-  const [password,  setPassword]  = useState('');
-  const [confirm,   setConfirm]   = useState('');
-  const [error,     setError]     = useState('');
-  const [success,   setSuccess]   = useState(false);
-  const [loading,   setLoading]   = useState(false);
+  const [success,   setSuccess]  = useState(false);
+  const [loading,   setLoading]  = useState(false);
+  const [otp,       setOtp]      = useState('');      // 6-digit OTP from email
+  const [otpError,  setOtpError] = useState('');
+  const [apiError,  setApiError] = useState('');
 
-  const passwordsMatch = password === confirm && confirm !== '';
-  const isReady     = password.length >= 8 && passwordsMatch;
+  // Email stored by ForgotPasswordPage
+  const ctx       = AuthContext.get();
+  const userEmail = ctx?.email ?? '';
 
-  const handleSubmit = () => {
-    if (!password)              { setError('Please enter a new password.');      return; }
-    if (password.length < 8)    { setError('Password must be at least 8 characters.'); return; }
-    if (password !== confirm)   { setError('Passwords do not match.');           return; }
+  const { values, errors, setValue, blur, handleSubmit } = useForm(
+    newPasswordSchema,
+    { password: '', confirmPassword: '' },
+    {
+      onSubmit: async (data: NewPasswordFormData) => {
+        // Validate OTP locally first
+        if (!otp || otp.length < 6) { setOtpError('Enter the 6-digit code from your email.'); return; }
+        if (!userEmail) { setApiError('Session expired. Please start again.'); return; }
 
-    setError('');
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess(true);
-    }, 900);
-  };
+        setApiError('');
+        setOtpError('');
+        setLoading(true);
+        try {
+          // Single API call: POST auth/reset-password with email+role+otp+newPassword
+          await apiResetPassword({
+            email:       userEmail,
+            role:        'user',
+            otp,
+            newPassword: data.password,
+          });
+          AuthContext.clear();
+          setSuccess(true);
+        } catch (err) {
+          setApiError(err instanceof Error ? err.message : 'Invalid or expired code. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      },
+    },
+  );
+
+  const passwordsMatch = values.password === values.confirmPassword && values.confirmPassword !== '';
 
   if (success) {
     return (
@@ -166,7 +198,7 @@ export function NewPasswordPage() {
             Your password has been changed successfully. You can now sign in with your new password.
           </p>
           <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/login')}>
-            Sign In Now →
+            Sign In Now <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
           </Button>
         </div>
       </div>
@@ -197,21 +229,52 @@ export function NewPasswordPage() {
 
         {/* Heading */}
         <h1 style={{ fontSize: 22, fontWeight: 700, color: C.carbon, textAlign: 'center', marginBottom: 8 }}>
-          Set new password
+          Reset your password
         </h1>
-        <p style={{ fontSize: 13, color: C.slate, textAlign: 'center', lineHeight: 1.6, marginBottom: 28 }}>
-          Create a strong password for your account. Must be at least 8 characters.
-        </p>
+        {userEmail && (
+          <p style={{ fontSize: 13, color: C.slate, textAlign: 'center', marginBottom: 20, lineHeight: 1.6 }}>
+            Enter the 6-digit code sent to <strong style={{ color: C.carbon }}>{userEmail}</strong>
+          </p>
+        )}
+
+        {/* OTP input — single text field (6 digits) */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={labelStyle}>Verification Code</label>
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="Enter 6-digit OTP"
+            value={otp}
+            onChange={e => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
+            style={{
+              ...inputStyle,
+              letterSpacing: otp ? '0.3em' : 0,
+              fontWeight:    otp ? 700 : 400,
+              fontSize:      otp ? 18 : 13,
+              textAlign:     'center',
+              borderColor: otpError ? C.error : otp.length === 6 ? C.success : C.bone,
+            }}
+          />
+          {otpError && (
+            <p style={{ fontSize: 11, color: C.error, marginTop: 5, fontFamily: FONT }}>{otpError}</p>
+          )}
+          {otp.length === 6 && !otpError && (
+            <p style={{ fontSize: 11, color: C.success, marginTop: 5, fontFamily: FONT }}>✓ Code entered</p>
+          )}
+        </div>
 
         {/* New password */}
         <div style={{ marginBottom: 16 }}>
           <PasswordInput
             label="New Password"
             placeholder="Enter new password"
-            value={password}
-            onChange={v => { setPassword(v); setError(''); }}
+            value={values.password}
+            onChange={v => setValue('password', v)}
+            onBlur={blur('password')}
+            error={errors.password}
           />
-          <StrengthBar password={password} />
+          <StrengthBar password={values.password} />
         </div>
 
         {/* Confirm password */}
@@ -219,24 +282,25 @@ export function NewPasswordPage() {
           <PasswordInput
             label="Confirm Password"
             placeholder="Confirm new password"
-            value={confirm}
-            onChange={v => { setConfirm(v); setError(''); }}
+            value={values.confirmPassword}
+            onChange={v => setValue('confirmPassword', v)}
+            onBlur={blur('confirmPassword')}
+            error={errors.confirmPassword}
           />
-          {confirm && (
+          {values.confirmPassword && (
             <p style={{ fontSize: 11, marginTop: 5, fontFamily: FONT, color: passwordsMatch ? C.success : C.error }}>
               {passwordsMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
             </p>
           )}
         </div>
 
-        {/* Error */}
-        {error && (
+        {/* API error */}
+        {apiError && (
           <div style={{
             background: C.errorBg, borderRadius: 8, padding: '10px 14px',
-            marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center',
+            marginBottom: 16, fontSize: 13, color: C.error, fontFamily: FONT,
           }}>
-            <span style={{ fontSize: 14 }}>⚠️</span>
-            <span style={{ fontSize: 13, color: C.error, fontFamily: FONT }}>{error}</span>
+            {apiError}
           </div>
         )}
 
@@ -246,13 +310,15 @@ export function NewPasswordPage() {
           size="lg"
           fullWidth
           onClick={handleSubmit}
-          disabled={!isReady || loading}
+          disabled={loading}
         >
-          {loading ? 'Updating...' : 'Update Password →'}
+          {loading
+            ? 'Resetting...'
+            : <span>Reset Password <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></span>}
         </Button>
 
         {/* Back */}
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
+        {/* <div style={{ textAlign: 'center', marginTop: 16 }}>
           <button
             onClick={() => navigate('/login')}
             style={{
@@ -262,7 +328,7 @@ export function NewPasswordPage() {
           >
             ← Back to Sign In
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

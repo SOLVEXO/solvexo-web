@@ -1,6 +1,9 @@
 import { useState, useRef, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
+import { AlertTriangle, ArrowRight } from 'lucide-react';
+import { runSchema, otpSchema } from '@/utils/validation/schemas';
+import { apiVerifyOtp, AuthContext, TokenStorage } from '@/api/auth';
 import type { CSSProperties } from 'react';
 
 const C = {
@@ -134,15 +137,29 @@ export function VerifyOTPPage() {
     setError('');
   };
 
-  const handleVerify = () => {
+  // Get email stored by RegisterPage
+  const ctx = AuthContext.get();
+  const userEmail = ctx?.email ?? '';
+
+  const handleVerify = async () => {
     const code = otp.join('');
-    if (code.length < 6) { setError('Please enter all 6 digits.'); return; }
+    const errs = runSchema(otpSchema, { otp: code });
+    if (errs.otp) { setError(errs.otp); return; }
+    if (!userEmail) { setError('Session expired. Please register again.'); return; }
+
     setLoading(true);
-    // Simulate API call — any 6 digits accepted in demo
-    setTimeout(() => {
+    try {
+      const res = await apiVerifyOtp({ email: userEmail, role: 'user', otp: code });
+      // Save tokens + user
+      TokenStorage.save(res.data.token.accessToken, res.data.token.refreshToken);
+      TokenStorage.saveUser(res.data.user);
+      AuthContext.clear();
+      navigate('/seller/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid or expired code. Please try again.');
+    } finally {
       setLoading(false);
-      navigate('/new-password');
-    }, 800);
+    }
   };
 
   return (
@@ -175,7 +192,7 @@ export function VerifyOTPPage() {
           We sent a 6-digit verification code to
         </p>
         <p style={{ fontSize: 14, fontWeight: 600, color: C.carbon, textAlign: 'center', marginBottom: 28 }}>
-          alex@example.com
+          {userEmail || '—'}
         </p>
 
         {/* OTP boxes */}
@@ -189,7 +206,7 @@ export function VerifyOTPPage() {
             background: C.errorBg, borderRadius: 8, padding: '10px 14px',
             marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8,
           }}>
-            <span style={{ fontSize: 14 }}>⚠️</span>
+            <AlertTriangle size={14} style={{ color: C.error, flexShrink: 0 }} />
             <span style={{ fontSize: 13, color: C.error }}>{error}</span>
           </div>
         )}
@@ -202,7 +219,7 @@ export function VerifyOTPPage() {
           onClick={handleVerify}
           disabled={otp.join('').length < 6}
         >
-          {loading ? 'Verifying...' : 'Verify Code →'}
+          {loading ? 'Verifying...' : <span>Verify Code <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></span>}
         </Button>
 
         {/* Resend */}
@@ -212,7 +229,7 @@ export function VerifyOTPPage() {
         </div>
 
         {/* Change email */}
-        <div style={{ textAlign: 'center', marginTop: 12 }}>
+        {/* <div style={{ textAlign: 'center', marginTop: 12 }}>
           <button
             onClick={() => navigate('/forgot-password')}
             style={{
@@ -222,7 +239,7 @@ export function VerifyOTPPage() {
           >
             ← Change email address
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

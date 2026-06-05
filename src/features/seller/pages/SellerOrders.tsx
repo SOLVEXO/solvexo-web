@@ -5,6 +5,8 @@ import { MetricCard }  from '@/components/ui/MetricCard';
 import { Badge, StatusBadge } from '@/components/ui/Badge';
 import { Avatar }      from '@/components/ui/Avatar';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 // Reference exact data — includes email under customer name
 const ORDERS = [
@@ -183,7 +185,7 @@ export function SellerOrders() {
           <div className="flex items-center justify-between mt-4">
             <span style={{ fontSize: 12, color: '#8C8A82' }}>Showing {filtered.length} of 284 orders</span>
             <div className="flex items-center gap-1.5">
-              {['←', '1', '2', '3', '…', '28', '→'].map((p, i) => (
+              {([<ChevronLeft size={14} />, '1', '2', '3', '…', '28', <ChevronRight size={14} />] as ReactNode[]).map((p, i) => (
                 <button
                   key={i}
                   style={{

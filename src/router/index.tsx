@@ -19,7 +19,9 @@ import { ForSellersPage }       from '@/features/buyer/pages/ForSellersPage';
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 import { LoginPage }            from '@/features/auth/pages/LoginPage';
-import { OnboardingPage }       from '@/features/auth/pages/OnboardingPage';
+import { AdminLoginPage }       from '@/features/auth/pages/admin/AdminLoginPage';
+import { RegisterPage }         from '@/features/auth/pages/RegisterPage';
+import { OnboardingPage }       from '@/features/auth/pages/onboard/OnboardingPage';
 import { ForgotPasswordPage }   from '@/features/auth/pages/ForgotPasswordPage';
 import { VerifyOTPPage }        from '@/features/auth/pages/VerifyOTPPage';
 import { NewPasswordPage }      from '@/features/auth/pages/NewPasswordPage';
@@ -84,6 +86,8 @@ export const router = createBrowserRouter([
 
       // ── Auth ──────────────────────────────────────────────────────────
       { path: '/login',           element: <LoginPage /> },
+      { path: '/admin/login',     element: <AdminLoginPage /> },
+      { path: '/register',        element: <RegisterPage /> },
       { path: '/onboarding',      element: <OnboardingPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/verify-otp',      element: <VerifyOTPPage /> },

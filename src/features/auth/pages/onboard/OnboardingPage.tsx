@@ -2,6 +2,12 @@ import { useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { SolvexoLogo } from '@/components/ui/SolvexoLogo';
+import {
+  Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
+  Package, Download, Calendar, Repeat, MonitorSmartphone,
+  Sparkles, User, CreditCard, Plus, Wrench, ShoppingCart,
+  ArrowRight, ArrowLeft,
+} from 'lucide-react';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -13,24 +19,24 @@ const C = {
 const FONT = "'Poppins', sans-serif";
 
 // ── Step data ─────────────────────────────────────────────────────────────────
-const STEPS = ['Account', 'Store Info', 'Seller Type', 'What You Sell', 'Go Live'];
+const STEPS = ['Store Info', 'Seller Type', 'What You Sell', 'Go Live'];
 
 const SELLER_TYPES = [
-  { id: 'creator',    emoji: '🎨', title: 'Creator',          desc: 'Sell digital art, templates, fonts, music, presets' },
-  { id: 'educator',   emoji: '📚', title: 'Educator',          desc: 'Worksheets, lesson plans, curriculum, assessments' },
-  { id: 'retailer',   emoji: '🏪', title: 'Retailer',          desc: 'Physical goods, handmade products, branded items' },
-  { id: 'brand',      emoji: '💼', title: 'Brand / Business',  desc: 'Run a full online store with inventory and POS' },
-  { id: 'freelancer', emoji: '💻', title: 'Freelancer',        desc: 'Offer services, bookings, or consulting packages' },
-  { id: 'multiple',   emoji: '🌐', title: 'Mix of the above',  desc: 'I sell across multiple categories and formats' },
+  { id: 'creator',    Icon: Palette,    title: 'Creator',          desc: 'Sell digital art, templates, fonts, music, presets' },
+  { id: 'educator',   Icon: BookOpen,   title: 'Educator',          desc: 'Worksheets, lesson plans, curriculum, assessments' },
+  { id: 'retailer',   Icon: Store,      title: 'Retailer',          desc: 'Physical goods, handmade products, branded items' },
+  { id: 'brand',      Icon: Briefcase,  title: 'Brand / Business',  desc: 'Run a full online store with inventory and POS' },
+  { id: 'freelancer', Icon: Monitor,    title: 'Freelancer',        desc: 'Offer services, bookings, or consulting packages' },
+  { id: 'multiple',   Icon: Globe,      title: 'Mix of the above',  desc: 'I sell across multiple categories and formats' },
 ];
 
 const PRODUCT_TYPES = [
-  { id: 'physical',      emoji: '📦', title: 'Physical Products',    desc: 'Ship items to customers' },
-  { id: 'digital',       emoji: '💾', title: 'Digital Downloads',    desc: 'PDFs, files, audio, video' },
-  { id: 'educational',   emoji: '📚', title: 'Educational Resources',desc: 'Worksheets, lesson plans' },
-  { id: 'services',      emoji: '📅', title: 'Services / Bookings',  desc: 'Appointments and packages' },
-  { id: 'subscriptions', emoji: '🔁', title: 'Subscriptions',        desc: 'Recurring membership access' },
-  { id: 'pos',           emoji: '🖥️', title: 'In-Person / POS',     desc: 'Sell at a physical location' },
+  { id: 'physical',      Icon: Package,          title: 'Physical Products',    desc: 'Ship items to customers' },
+  { id: 'digital',       Icon: Download,         title: 'Digital Downloads',    desc: 'PDFs, files, audio, video' },
+  { id: 'educational',   Icon: BookOpen,         title: 'Educational Resources',desc: 'Worksheets, lesson plans' },
+  { id: 'services',      Icon: Calendar,         title: 'Services / Bookings',  desc: 'Appointments and packages' },
+  { id: 'subscriptions', Icon: Repeat,           title: 'Subscriptions',        desc: 'Recurring membership access' },
+  { id: 'pos',           Icon: MonitorSmartphone,title: 'In-Person / POS',     desc: 'Sell at a physical location' },
 ];
 
 // ── Shared styles ─────────────────────────────────────────────────────────────
@@ -95,31 +101,7 @@ function StepProgress({ current }: { current: number }) {
   );
 }
 
-// ── Social Button ─────────────────────────────────────────────────────────────
-function SocialBtn({ icon, label }: { icon: string; label: string }) {
-  return (
-    <button style={{
-      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-      padding: '10px 12px', borderRadius: 8, fontSize: 13, fontWeight: 500,
-      fontFamily: FONT, cursor: 'pointer', background: C.white,
-      border: `1px solid ${C.bone}`, color: C.charcoal, transition: 'background 0.15s',
-    }}>
-      <span style={{ fontSize: 16 }}>{icon}</span>
-      {label}
-    </button>
-  );
-}
-
-// ── OR Divider ────────────────────────────────────────────────────────────────
-function OrDivider() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
-      <div style={{ flex: 1, height: 1, background: C.bone }} />
-      <span style={{ fontSize: 12, color: C.slate, fontFamily: FONT }}>or continue with</span>
-      <div style={{ flex: 1, height: 1, background: C.bone }} />
-    </div>
-  );
-}
+// SocialBtn and OrDivider removed — moved to RegisterPage
 
 // ── Page Header ───────────────────────────────────────────────────────────────
 function PageHeader({ onSignIn }: { onSignIn: () => void }) {
@@ -139,74 +121,73 @@ function PageHeader({ onSignIn }: { onSignIn: () => void }) {
 }
 
 // ── Step 1 — Create Account ───────────────────────────────────────────────────
-function Step1({ onNext }: { onNext: () => void }) {
-  return (
-    <div style={{ maxWidth: 520, width: '100%', margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: 36 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: C.carbon, fontFamily: FONT, marginBottom: 8 }}>
-          Create your free account
-        </h1>
-        <p style={{ fontSize: 14, color: C.slate, fontFamily: FONT }}>
-          Commerce. Solved. — Start selling in minutes.
-        </p>
-      </div>
+// function Step1({ onNext }: { onNext: () => void }) {
+//   return (
+//     <div style={{ maxWidth: 520, width: '100%', margin: '0 auto' }}>
+//       <div style={{ textAlign: 'center', marginBottom: 36 }}>
+//         <h1 style={{ fontSize: 28, fontWeight: 700, color: C.carbon, fontFamily: FONT, marginBottom: 8 }}>
+//           Create your free account
+//         </h1>
+//         <p style={{ fontSize: 14, color: C.slate, fontFamily: FONT }}>
+//           Commerce. Solved. — Start selling in minutes.
+//         </p>
+//       </div>
 
-      <div style={cardStyle}>
-        {/* Name row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-          <div>
-            <label style={labelStyle}>First Name</label>
-            <input defaultValue="Alex" style={inputStyle} />
-          </div>
-          <div>
-            <label style={labelStyle}>Last Name</label>
-            <input defaultValue="Chen" style={inputStyle} />
-          </div>
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>Email Address</label>
-          <input type="email" placeholder="alex@example.com" style={inputStyle} />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>Password</label>
-          <input type="password" placeholder="Minimum 8 characters" style={inputStyle} />
-        </div>
-        <div style={{ marginBottom: 20 }}>
-          <label style={labelStyle}>Country</label>
-          <select defaultValue="United States" style={{ ...inputStyle, cursor: 'pointer' }}>
-            <option>United States</option>
-            <option>Canada</option>
-            <option>United Kingdom</option>
-            <option>Australia</option>
-            <option>Other</option>
-          </select>
-        </div>
+//       <div style={cardStyle}>
+//         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+//           <div>
+//             <label style={labelStyle}>First Name</label>
+//             <input defaultValue="Alex" style={inputStyle} />
+//           </div>
+//           <div>
+//             <label style={labelStyle}>Last Name</label>
+//             <input defaultValue="Chen" style={inputStyle} />
+//           </div>
+//         </div>
+//         <div style={{ marginBottom: 16 }}>
+//           <label style={labelStyle}>Email Address</label>
+//           <input type="email" placeholder="alex@example.com" style={inputStyle} />
+//         </div>
+//         <div style={{ marginBottom: 16 }}>
+//           <label style={labelStyle}>Password</label>
+//           <input type="password" placeholder="Minimum 8 characters" style={inputStyle} />
+//         </div>
+//         <div style={{ marginBottom: 20 }}>
+//           <label style={labelStyle}>Country</label>
+//           <select defaultValue="United States" style={{ ...inputStyle, cursor: 'pointer' }}>
+//             <option>United States</option>
+//             <option>Canada</option>
+//             <option>United Kingdom</option>
+//             <option>Australia</option>
+//             <option>Other</option>
+//           </select>
+//         </div>
 
-        <OrDivider />
+//         <OrDivider />
 
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-          <SocialBtn icon="🌐" label="Google"   />
-          <SocialBtn icon="🍎" label="Apple"    />
-          <SocialBtn icon="📘" label="Facebook" />
-        </div>
+//         <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+//           <SocialBtn icon="🌐" label="Google"   />
+//           <SocialBtn icon="🍎" label="Apple"    />
+//           <SocialBtn icon="📘" label="Facebook" />
+//         </div>
 
-        <Button variant="primary" size="lg" fullWidth onClick={onNext}>
-          Create Free Account →
-        </Button>
+//         <Button variant="primary" size="lg" fullWidth onClick={onNext}>
+//           Create Free Account →
+//         </Button>
 
-        <p style={{ textAlign: 'center', fontSize: 11, color: C.slate, marginTop: 12, fontFamily: FONT }}>
-          By signing up you agree to our{' '}
-          <span style={{ color: C.orange, cursor: 'pointer' }}>Terms of Service</span>
-          {' '}and{' '}
-          <span style={{ color: C.orange, cursor: 'pointer' }}>Privacy Policy</span>
-        </p>
-      </div>
-    </div>
-  );
-}
+//         <p style={{ textAlign: 'center', fontSize: 11, color: C.slate, marginTop: 12, fontFamily: FONT }}>
+//           By signing up you agree to our{' '}
+//           <span style={{ color: C.orange, cursor: 'pointer' }}>Terms of Service</span>
+//           {' '}and{' '}
+//           <span style={{ color: C.orange, cursor: 'pointer' }}>Privacy Policy</span>
+//         </p>
+//       </div>
+//     </div>
+//   );
+// }
 
 // ── Step 2 — Store Info ───────────────────────────────────────────────────────
-function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+function Step1({ onNext }: { onNext: () => void }) {
   const [name, setName] = useState('');
   return (
     <div style={{ maxWidth: 520, width: '100%', margin: '0 auto' }}>
@@ -225,13 +206,19 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
           display: 'flex', gap: 20, alignItems: 'center',
           padding: 16, background: C.cream, borderRadius: 12, marginBottom: 24,
         }}>
-          <div style={{
+          <label style={{
             width: 72, height: 72, borderRadius: 16, background: C.paleOrange,
             border: `2px dashed ${C.orange}`, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', flexShrink: 0, cursor: 'pointer', fontSize: 28,
+            justifyContent: 'center', flexShrink: 0, cursor: 'pointer',
           }}>
-            📷
-          </div>
+            <Camera size={28} style={{ color: C.orange }} />
+            <input
+              type="file"
+              accept="image/png,image/jpeg"
+              style={{ display: 'none' }}
+              onChange={e => console.log('Selected file:', e.target.files?.[0]?.name)}
+            />
+          </label>
           <div>
             <p style={{ fontSize: 13, fontWeight: 600, color: C.carbon, fontFamily: FONT, marginBottom: 4 }}>
               Upload your store logo
@@ -291,9 +278,9 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
         </div>
 
         <div style={{ display: 'flex', gap: 10 }}>
-          <Button variant="ghost" size="md" onClick={onBack}>← Back</Button>
+          {/* <Button variant="ghost" size="md" onClick={onBack}><ArrowLeft size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> Back</Button> */}
           <Button variant="primary" size="lg" style={{ flex: 1, justifyContent: 'center' }} onClick={onNext}>
-            Continue →
+            Continue <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
           </Button>
         </div>
       </div>
@@ -302,7 +289,7 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
 }
 
 // ── Step 3 — Seller Type ──────────────────────────────────────────────────────
-function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const [selected, setSelected] = useState<string | null>(null);
   return (
     <div style={{ maxWidth: 760, width: '100%', margin: '0 auto' }}>
@@ -329,7 +316,7 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-              <span style={{ fontSize: 32 }}>{t.emoji}</span>
+              <t.Icon size={32} />
               <div style={{
                 width: 20, height: 20, borderRadius: '50%',
                 border: `2px solid ${selected === t.id ? C.orange : C.bone}`,
@@ -346,13 +333,13 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
       </div>
 
       <div style={{ display: 'flex', gap: 10 }}>
-        <Button variant="ghost" size="md" onClick={onBack} style={{ flexShrink: 0 }}>← Back</Button>
+        <Button variant="ghost" size="md" onClick={onBack} style={{ flexShrink: 0 }}><ArrowLeft size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> Back</Button>
         <Button
           variant="primary" size="lg"
           style={{ flex: 1, justifyContent: 'center' }}
           onClick={() => selected && onNext()}
         >
-          {selected ? 'Continue →' : 'Select one to continue'}
+          {selected ? <span>Continue <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></span> : 'Select one to continue'}
         </Button>
       </div>
     </div>
@@ -360,7 +347,7 @@ function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
 }
 
 // ── Step 4 — What You Sell ────────────────────────────────────────────────────
-function Step4({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+function Step3({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const toggle = (id: string) =>
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -400,7 +387,7 @@ function Step4({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
                   <span style={{ fontSize: 10, color: C.white, fontWeight: 700 }}>✓</span>
                 </div>
               )}
-              <span style={{ fontSize: 30, display: 'block', marginBottom: 10 }}>{t.emoji}</span>
+              <t.Icon size={30} style={{ display: 'block', marginBottom: 10 }} />
               <p style={{ fontSize: 13, fontWeight: 700, color: C.carbon, fontFamily: FONT, marginBottom: 4 }}>{t.title}</p>
               <p style={{ fontSize: 11, color: C.slate, fontFamily: FONT }}>{t.desc}</p>
             </div>
@@ -413,7 +400,7 @@ function Step4({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
           background: C.paleOrange, borderRadius: 12, padding: '14px 18px',
           marginBottom: 20, display: 'flex', gap: 12, alignItems: 'flex-start',
         }}>
-          <span style={{ fontSize: 18 }}>✨</span>
+          <Sparkles size={18} style={{ color: C.deepOrange, flexShrink: 0 }} />
           <div>
             <p style={{ fontSize: 13, fontWeight: 600, color: C.deepOrange, fontFamily: FONT, marginBottom: 6 }}>
               We'll activate these tools for you:
@@ -432,13 +419,13 @@ function Step4({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
       )}
 
       <div style={{ display: 'flex', gap: 10 }}>
-        <Button variant="ghost" size="md" onClick={onBack} style={{ flexShrink: 0 }}>← Back</Button>
+        <Button variant="ghost" size="md" onClick={onBack} style={{ flexShrink: 0 }}><ArrowLeft size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> Back</Button>
         <Button
           variant="primary" size="lg"
           style={{ flex: 1, justifyContent: 'center' }}
           onClick={() => selected.length > 0 && onNext()}
         >
-          {selected.length > 0 ? 'Continue →' : 'Select at least one'}
+          {selected.length > 0 ? <span>Continue <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></span> : 'Select at least one'}
         </Button>
       </div>
     </div>
@@ -452,7 +439,7 @@ const tagStyle: CSSProperties = {
 };
 
 // ── Step 5 — Go Live ──────────────────────────────────────────────────────────
-function Step5({ onFinish }: { onFinish: () => void }) {
+function Step4({ onFinish }: { onFinish: () => void }) {
   return (
     <div style={{ maxWidth: 580, width: '100%', margin: '0 auto' }}>
       <div style={{
@@ -475,14 +462,14 @@ function Step5({ onFinish }: { onFinish: () => void }) {
             Your Solvexo Setup
           </p>
           {[
-            ['🏪', 'Store',             'My Solvexo Store'],
-            ['👤', 'Seller type',       'Creator'],
-            ['📦', 'Products activated','Physical Products, Digital Downloads'],
-            ['💳', 'Plan',              'Starter — Free'],
-            ['✨', 'AI Credits',        '100 free credits included'],
-          ].map(([icon, label, value]) => (
+            { Icon: Store,      label: 'Store',              value: 'My Solvexo Store' },
+            { Icon: User,       label: 'Seller type',        value: 'Creator' },
+            { Icon: Package,    label: 'Products activated', value: 'Physical Products, Digital Downloads' },
+            { Icon: CreditCard, label: 'Plan',               value: 'Starter — Free' },
+            { Icon: Sparkles,   label: 'AI Credits',         value: '100 free credits included' },
+          ].map(({ Icon, label, value }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <span style={{ fontSize: 16, width: 24, textAlign: 'center' }}>{icon}</span>
+              <Icon size={16} style={{ width: 24, color: C.slate }} />
               <span style={{ fontSize: 12, color: C.slate, fontFamily: FONT, width: 140, flexShrink: 0 }}>{label}</span>
               <span style={{ fontSize: 12, fontWeight: 600, color: C.carbon, fontFamily: FONT }}>{value}</span>
             </div>
@@ -495,23 +482,23 @@ function Step5({ onFinish }: { onFinish: () => void }) {
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 28 }}>
           {[
-            { icon: '✚', label: 'Add your first product' },
-            { icon: '🏗️', label: 'Customise your store' },
-            { icon: '🛒', label: 'Browse the marketplace' },
-          ].map(item => (
-            <div key={item.label} style={{
+            { Icon: Plus,         label: 'Add your first product' },
+            { Icon: Wrench,       label: 'Customise your store' },
+            { Icon: ShoppingCart, label: 'Browse the marketplace' },
+          ].map(({ Icon, label }) => (
+            <div key={label} style={{
               padding: '14px 12px', borderRadius: 12,
               border: `1.5px solid ${C.bone}`, background: C.white,
               textAlign: 'center', cursor: 'pointer',
             }}>
-              <span style={{ fontSize: 24, display: 'block', marginBottom: 6 }}>{item.icon}</span>
-              <p style={{ fontSize: 12, fontWeight: 500, color: C.charcoal, fontFamily: FONT }}>{item.label}</p>
+              <Icon size={24} style={{ display: 'block', margin: '0 auto 6px', color: C.charcoal }} />
+              <p style={{ fontSize: 12, fontWeight: 500, color: C.charcoal, fontFamily: FONT }}>{label}</p>
             </div>
           ))}
         </div>
 
         <Button variant="primary" size="lg" fullWidth onClick={onFinish}>
-          Go to My Dashboard →
+          Go to My Dashboard <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
         </Button>
 
         <p style={{ fontSize: 11, color: C.slate, marginTop: 12, fontFamily: FONT }}>
@@ -529,7 +516,7 @@ export function OnboardingPage() {
   const navigate  = useNavigate();
   const [step, setStep] = useState(1);
 
-  const next = () => setStep(s => Math.min(s + 1, 5));
+  const next = () => setStep(s => Math.min(s + 1, 4));
   const back = () => setStep(s => Math.max(s - 1, 1));
 
   return (
@@ -554,8 +541,7 @@ export function OnboardingPage() {
         {step === 1 && <Step1 onNext={next} />}
         {step === 2 && <Step2 onNext={next} onBack={back} />}
         {step === 3 && <Step3 onNext={next} onBack={back} />}
-        {step === 4 && <Step4 onNext={next} onBack={back} />}
-        {step === 5 && <Step5 onFinish={() => navigate('/seller/dashboard')} />}
+        {step === 4 && <Step4 onFinish={() => navigate('/seller/dashboard')} />}
       </div>
     </div>
   );

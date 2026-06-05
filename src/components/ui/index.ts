@@ -9,3 +9,5 @@ export { Avatar }                        from './Avatar';
 export { MetricCard }                    from './MetricCard';
 export { Divider, Tag }                  from './Divider';
 export { SolvexoLogo, SolvexoIcon }      from './SolvexoLogo';
+export { RadioButton }                   from './RadioButton';
+export type { RadioOption }              from './RadioButton';

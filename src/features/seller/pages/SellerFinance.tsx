@@ -4,6 +4,7 @@ import { MetricCard }  from '@/components/ui/MetricCard';
 import { Badge }       from '@/components/ui/Badge';
 import { Select }      from '@/components/ui/Input';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { ArrowRight } from 'lucide-react';
 
 // ── Types & Data ──────────────────────────────────────────────────────────────
 type Transaction = {
@@ -97,7 +98,7 @@ export function SellerFinance() {
               <span className="text-[11px] text-slate">Method: Bank ••4821</span>
             </div>
           </div>
-          <Button variant="primary" size="md">Request Payout →</Button>
+          <Button variant="primary" size="md">Request Payout <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></Button>
         </div>
 
         {/* Metrics */}

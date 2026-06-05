@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
+import { ArrowRight } from 'lucide-react';
+import { useForm } from '@/hooks/useForm';
+import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/utils/validation/schemas';
+import { apiForgotPassword, AuthContext } from '@/api/auth';
 import type { CSSProperties } from 'react';
 
 // ── Design tokens (shared across all auth pages) ──────────────────────────────
@@ -30,15 +34,37 @@ const cardStyle: CSSProperties = {
   border: `1px solid ${C.bone}`,
 };
 
-export function ForgotPasswordPage() {
-  const navigate = useNavigate();
-  const [email,     setEmail]     = useState('');
-  const [submitted, setSubmitted] = useState(false);
+const errorStyle: CSSProperties = {
+  fontSize: 11, color: '#C13030', marginTop: 5, fontFamily: FONT,
+};
 
-  const handleSubmit = () => {
-    if (!email) return;
-    setSubmitted(true);
-  };
+export function ForgotPasswordPage() {
+  const navigate     = useNavigate();
+  const [loading,  setLoading]  = useState(false);
+  const [apiError, setApiError] = useState('');
+  const [submitted] = useState(false);  // kept for existing JSX structure
+
+  const { values, errors, set, blur, handleSubmit } = useForm(
+    forgotPasswordSchema,
+    { email: '' },
+    {
+      onSubmit: async (data: ForgotPasswordFormData) => {
+        setApiError('');
+        setLoading(true);
+        try {
+          // POST auth/forgot-password → {email, role: "user"}
+          await apiForgotPassword({ email: data.email, role: 'user' });
+          // Store email so NewPasswordPage can use it for the OTP + reset call
+          AuthContext.set({ email: data.email, role: 'user', flow: 'forgot' });
+          navigate('/new-password');
+        } catch (err) {
+          setApiError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      },
+    },
+  );
 
   return (
     <div style={{
@@ -77,20 +103,27 @@ export function ForgotPasswordPage() {
               <label style={labelStyle}>Email Address</label>
               <input
                 type="email"
-                placeholder="alex@example.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                style={inputStyle}
+                placeholder="Enter your email"
+                value={values.email}
+                onChange={set('email')}
+                onBlur={blur('email')}
                 onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                style={{ ...inputStyle, borderColor: errors.email ? C.error : C.bone }}
               />
+              {errors.email && <p style={errorStyle}>{errors.email}</p>}
             </div>
 
-            <Button variant="primary" size="lg" fullWidth onClick={handleSubmit}>
-              Send Reset Link
+            <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={loading}>
+              {loading ? 'Sending...' : 'Send Reset Link'}
             </Button>
+            {apiError && (
+              <p style={{ fontSize: 13, color: C.error, textAlign: 'center', marginTop: 10, fontFamily: FONT }}>
+                {apiError}
+              </p>
+            )}
 
             {/* Back to login */}
-            <div style={{ textAlign: 'center', marginTop: 20 }}>
+            {/* <div style={{ textAlign: 'center', marginTop: 20 }}>
               <button
                 onClick={() => navigate('/login')}
                 style={{
@@ -100,7 +133,7 @@ export function ForgotPasswordPage() {
               >
                 ← Back to Sign In
               </button>
-            </div>
+            </div> */}
           </>
         ) : (
           <>
@@ -120,7 +153,7 @@ export function ForgotPasswordPage() {
               We sent a password reset link to
             </p>
             <p style={{ fontSize: 14, fontWeight: 600, color: C.carbon, textAlign: 'center', marginBottom: 28 }}>
-              {email}
+              {values.email}
             </p>
 
             <Button
@@ -129,13 +162,13 @@ export function ForgotPasswordPage() {
               fullWidth
               onClick={() => navigate('/verify-otp')}
             >
-              Enter Verification Code →
+              Enter Verification Code <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
             </Button>
 
             <div style={{ textAlign: 'center', marginTop: 16 }}>
               <span style={{ fontSize: 12, color: C.slate }}>Didn't receive it? </span>
               <button
-                onClick={() => setSubmitted(false)}
+                onClick={() => navigate('/forgot-password')}
                 style={{
                   fontSize: 12, color: C.orange, fontWeight: 600,
                   background: 'none', border: 'none', cursor: 'pointer', fontFamily: FONT,
@@ -145,7 +178,7 @@ export function ForgotPasswordPage() {
               </button>
             </div>
 
-            <div style={{ textAlign: 'center', marginTop: 8 }}>
+            {/* <div style={{ textAlign: 'center', marginTop: 8 }}>
               <button
                 onClick={() => navigate('/login')}
                 style={{
@@ -155,7 +188,7 @@ export function ForgotPasswordPage() {
               >
                 ← Back to Sign In
               </button>
-            </div>
+            </div> */}
           </>
         )}
       </div>

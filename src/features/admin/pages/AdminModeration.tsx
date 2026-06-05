@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { Badge } from '@/components/ui/Badge';
+import { ArrowLeft } from 'lucide-react';
 
 type Risk     = 'high' | 'medium' | 'low';
 type ItemType = 'Listing' | 'Seller' | 'Review';
@@ -106,7 +107,7 @@ export function AdminModeration() {
               fontFamily: "'Poppins', sans-serif",
             }}
           >
-            ← Back to Demo
+            <ArrowLeft size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> Back to Demo
           </button>
         </div>
       </div>

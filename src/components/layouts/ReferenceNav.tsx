@@ -23,11 +23,8 @@ const PUBLIC_PAGES: NavPage[] = [
 ];
 
 const AUTH_PAGES: NavPage[] = [
-  { label: 'Login',           path: '/login',           Icon: LogIn    },
-  { label: 'Onboarding',      path: '/onboarding',      Icon: Rocket   },
-  // { label: 'Forgot Password', path: '/forgot-password', Icon: KeyRound },
-  // { label: 'Verify OTP',      path: '/verify-otp',      Icon: Smartphone},
-  // { label: 'New Password',    path: '/new-password',    Icon: Lock     },
+  { label: 'Login',        path: '/login',        Icon: LogIn       },
+  { label: 'Onboarding',   path: '/onboarding',   Icon: Rocket      },
 ];
 
 const SELLER_PAGES: NavPage[] = [

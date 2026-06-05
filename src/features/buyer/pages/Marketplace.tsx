@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
+import { ArrowRight } from 'lucide-react';
 // Select imported for future use
 
 const C = {
@@ -104,7 +105,7 @@ export function Marketplace() {
           <p style={{ fontSize: 14, color: C.slate, marginBottom: 20 }}>
             Shop unique products from independent sellers, creators, and educators.
           </p>
-          <Button variant="primary" size="md" onClick={() => {}}>Shop Now →</Button>
+          <Button variant="primary" size="md" onClick={() => {}}>Shop Now <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></Button>
         </div>
         <div style={{ fontSize: 80 }}>🛍️</div>
       </div>

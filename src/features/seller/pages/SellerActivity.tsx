@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Input, Select } from '@/components/ui/Input';
 import { Avatar } from '@/components/ui/Avatar';
 import { MetricCard } from '@/components/ui/MetricCard';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -381,7 +382,7 @@ export function SellerActivity() {
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   className="w-8 h-8 flex items-center justify-center rounded-lg border border-bone text-[13px] text-charcoal hover:bg-cream transition-colors cursor-pointer"
                 >
-                  ←
+                  <ChevronLeft size={14} />
                 </button>
 
                 {/* Page 1 */}
@@ -442,7 +443,7 @@ export function SellerActivity() {
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   className="w-8 h-8 flex items-center justify-center rounded-lg border border-bone text-[13px] text-charcoal hover:bg-cream transition-colors cursor-pointer"
                 >
-                  →
+                  <ChevronRight size={14} />
                 </button>
               </div>
             </div>

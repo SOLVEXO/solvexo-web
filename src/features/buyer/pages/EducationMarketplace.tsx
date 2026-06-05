@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
+import { ArrowRight } from 'lucide-react';
 
 const C = {
   orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
@@ -243,7 +244,7 @@ export function EducationMarketplace() {
               Generate custom worksheets, quizzes, and lesson activities in seconds with AI. Save hours of prep time.
             </p>
           </div>
-          <Button variant="primary" size="md" onClick={() => {}}>Try AI Builder →</Button>
+          <Button variant="primary" size="md" onClick={() => {}}>Try AI Builder <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></Button>
         </div>
       </div>
     </div>

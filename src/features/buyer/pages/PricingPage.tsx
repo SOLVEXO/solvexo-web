@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 
 // ── Design tokens (exact reference C object) ──────────────────────────────────
 const C = {
@@ -370,7 +371,7 @@ export function PricingPage() {
               color: C.white, border: 'none', transition: 'all 0.18s',
             }}
           >
-            Create Free Account →
+            Create Free Account <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
           </button>
           <button
             onClick={() => navigate('/marketplace')}

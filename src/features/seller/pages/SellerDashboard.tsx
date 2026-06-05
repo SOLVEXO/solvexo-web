@@ -3,7 +3,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import {
-  Package, Monitor, Sparkles, BarChart2, ClipboardList,
+  Package, Monitor, Sparkles, BarChart2, ClipboardList, ArrowRight,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button }      from '@/components/ui/Button';
@@ -144,7 +144,7 @@ export function SellerDashboard() {
           <div className="px-5 pt-5 pb-3 flex items-center justify-between">
             <p className="text-[14px] font-bold text-carbon">Recent Orders</p>
             <Button variant="ghost" size="sm" onClick={() => navigate('/seller/orders')}>
-              View All →
+              View All <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
             </Button>
           </div>
           <div className="overflow-x-auto">

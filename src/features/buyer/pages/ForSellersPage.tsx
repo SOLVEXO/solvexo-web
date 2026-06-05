@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Avatar } from '@/components/ui/Avatar';
+import { ArrowRight } from 'lucide-react';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -117,7 +118,7 @@ export function ForSellersPage() {
           </p>
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-            <Btn onClick={() => navigate('/onboarding')}>Start for Free →</Btn>
+            <Btn onClick={() => navigate('/onboarding')}>Start for Free <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></Btn>
             <Btn
               variant="ghost"
               onClick={() => navigate('/pricing')}
@@ -145,7 +146,7 @@ export function ForSellersPage() {
                 <p style={{ fontSize: 17, fontWeight: 700, color: C.carbon, marginBottom: 8 }}>{s.title}</p>
                 <p style={{ fontSize: 13, color: C.slate, lineHeight: 1.7, marginBottom: 20 }}>{s.desc}</p>
                 <Btn variant="secondary" size="sm" onClick={() => navigate('/onboarding')}>
-                  {s.cta} →
+                  {s.cta} <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
                 </Btn>
               </div>
             ))}
@@ -217,7 +218,7 @@ export function ForSellersPage() {
           No credit card required. Get your store live in minutes. Upgrade when you're ready.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <Btn onClick={() => navigate('/onboarding')}>Create Free Account →</Btn>
+          <Btn onClick={() => navigate('/onboarding')}>Create Free Account <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></Btn>
           <Btn
             variant="ghost"
             onClick={() => navigate('/pricing')}

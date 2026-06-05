@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
+import { ArrowRight } from 'lucide-react';
 
 // ── Exact data from reference site ───────────────────────────────────────────
 const FEATURES = [
@@ -64,7 +65,7 @@ export function Homepage() {
           {/* CTAs */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 0 }}>
             <Button size="lg" onClick={() => navigate('/onboarding')} style={{ fontSize: 15 }}>
-              Start for Free →
+              Start for Free <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
             </Button>
             <Button
               size="lg"
@@ -111,7 +112,7 @@ export function Homepage() {
                 </div>
                 <p style={{ fontSize: 16, fontWeight: 700, color: '#141413', display: 'block', marginBottom: 8 }}>{f.title}</p>
                 <p style={{ fontSize: 13, color: '#8C8A82', display: 'block', lineHeight: 1.6, marginBottom: 14 }}>{f.desc}</p>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#D97757', cursor: 'pointer' }}>Learn more →</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#D97757', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>Learn more <ArrowRight size={12} /></span>
               </div>
             </Card>
           ))}
@@ -152,7 +153,7 @@ export function Homepage() {
           Join 50,000+ sellers on Solvexo. Free to start, no credit card required.
         </p>
         <Button variant="dark" size="lg" onClick={() => navigate('/onboarding')} style={{ fontSize: 15 }}>
-          Create Your Account →
+          Create Your Account <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
         </Button>
       </div>
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { SolvexoIcon } from '@/components/ui/SolvexoLogo';
+import { ArrowRight } from 'lucide-react';
 import type { PaymentMethod, DiscountType, AppliedDiscount } from '@/types';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
@@ -414,7 +415,7 @@ function SaleTab() {
               <div className="flex flex-col gap-2">
                 <button className="rounded-lg py-2.5 text-center cursor-pointer text-[12px] text-white" style={{ background: C.border }}>📧 Email Receipt</button>
                 <button className="rounded-lg py-2.5 text-center cursor-pointer text-[12px] text-white" style={{ background: C.border }}>🖨 Print Receipt</button>
-                <button onClick={resetSale} className="rounded-lg py-3 text-center cursor-pointer text-[13px] font-bold text-white" style={{ background: '#D97757' }}>New Sale →</button>
+                <button onClick={resetSale} className="rounded-lg py-3 text-center cursor-pointer text-[13px] font-bold text-white" style={{ background: '#D97757' }}>New Sale <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></button>
               </div>
             </div>
           </div>

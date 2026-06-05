@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/Button';
 import { Eye, EyeOff, Globe, Smartphone, Share2 } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
-import { apiLogin, TokenStorage, getRoleRedirect, type AppRole } from '@/api/auth';
+import { apiLogin, TokenStorage } from '@/api/auth';
 import type { CSSProperties } from 'react';
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
+// ── Design tokens (same as LoginPage) ──────────────────────────────────────────
 const C = {
   orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
   carbon: '#141413', charcoal: '#2C2A28', slate: '#8C8A82',
@@ -30,59 +30,19 @@ const errorStyle: CSSProperties = {
   fontSize: 11, color: C.error, marginTop: 5, fontFamily: FONT,
 };
 
-// ── Switch toggle for role ─────────────────────────────────────────────────────
-function RoleSwitch({
-  role,
-  onToggle,
-}: {
-  role: AppRole;
-  onToggle: (r: AppRole) => void;
-}) {
-  return (
-    <div style={{
-      display: 'flex', borderRadius: 10, overflow: 'hidden',
-      background: '#F0EDE6', padding: 4, gap: 4,
-    }}>
-      {(['user', 'seller'] as AppRole[]).map((r) => {
-        const active = role === r;
-        return (
-          <button
-            key={r}
-            type="button"
-            onClick={() => onToggle(r)}
-            style={{
-              flex: 1, padding: '10px 0', fontSize: 13, fontFamily: FONT,
-              fontWeight: active ? 600 : 400, cursor: 'pointer',
-              border: 'none', transition: 'all 0.2s',
-              borderRadius: 8,
-              background: active ? C.white : 'transparent',
-              color: active ? C.carbon : C.slate,
-              boxShadow: active ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
-            }}
-          >
-            {r === 'user' ? 'Buyer' : 'Seller'}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// ── Social buttons ────────────────────────────────────────────────────────────
 const SOCIAL = [
-  { Icon: Globe, label: 'Google', color: '#4285F4' },
-  { Icon: Smartphone, label: 'Apple', color: '#141413' },
-  { Icon: Share2, label: 'Facebook', color: '#1877F2' },
+  { Icon: Globe,      label: 'Google',   color: '#4285F4' },
+  { Icon: Smartphone, label: 'Apple',    color: '#141413' },
+  { Icon: Share2,     label: 'Facebook', color: '#1877F2' },
 ];
 
-// ── Main Component ────────────────────────────────────────────────────────────
-export function LoginPage() {
+// ── Component ─────────────────────────────────────────────────────────────────
+export function AdminLoginPage() {
   const navigate = useNavigate();
 
-  const [role, setRole] = useState<AppRole>('user');   // default: Buyer
   const [showPass, setShowPass] = useState(false);
   const [apiError, setApiError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading,  setLoading]  = useState(false);
 
   const { values, errors, set, blur, handleSubmit } = useForm(
     loginSchema,
@@ -92,21 +52,17 @@ export function LoginPage() {
         setApiError('');
         setLoading(true);
         try {
-          // Single API call — role from radio selection
           const res = await apiLogin({
-            email: data.email,
+            email:    data.email,
             password: data.password,
-            role,                       // "user" or "seller" — set by radio
+            role:     'admin',
           });
 
           TokenStorage.save(res.data.token.accessToken, res.data.token.refreshToken);
           TokenStorage.saveUser(res.data.user);
-
-          // Use server role for final redirect (source of truth)
-          const serverRole = (res.data.user.role ?? role) as AppRole;
-          navigate(getRoleRedirect(serverRole), { replace: true });
+          navigate('/admin', { replace: true });
         } catch (err) {
-          setApiError(err instanceof Error ? err.message : 'Invalid credentials. Please try again.');
+          setApiError(err instanceof Error ? err.message : 'Invalid admin credentials.');
         } finally {
           setLoading(false);
         }
@@ -129,24 +85,18 @@ export function LoginPage() {
 
         {/* Heading */}
         <h1 style={{ fontSize: 24, fontWeight: 700, color: C.carbon, marginBottom: 4, textAlign: 'center' }}>
-          Welcome back
+          Admin Sign In
         </h1>
-        <p style={{ fontSize: 13, color: C.slate, marginBottom: 24, textAlign: 'center' }}>
-          Sign in to your Solvexo account
+        <p style={{ fontSize: 13, color: C.slate, marginBottom: 28, textAlign: 'center' }}>
+          Access the Solvexo admin panel
         </p>
-
-        {/* ── Role switch ────────────────────────────────────────────────── */}
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ ...labelStyle, marginBottom: 10 }}>Sign in as</label>
-          <RoleSwitch role={role} onToggle={setRole} />
-        </div>
 
         {/* ── Email ───────────────────────────────────────────────────────── */}
         <div style={{ marginBottom: 16 }}>
           <label style={labelStyle}>Email Address</label>
           <input
             type="email"
-            placeholder="Enter your email"
+            placeholder="Enter Your Email"
             value={values.email}
             onChange={set('email')}
             onBlur={blur('email')}
@@ -161,7 +111,7 @@ export function LoginPage() {
           <div style={{ position: 'relative' }}>
             <input
               type={showPass ? 'text' : 'password'}
-              placeholder="Enter your password"
+              placeholder="Enter Your password"
               value={values.password}
               onChange={set('password')}
               onBlur={blur('password')}
@@ -238,20 +188,6 @@ export function LoginPage() {
           ))}
         </div>
 
-        {/* ── Links row ────────────────────────────────────────────────────── */}
-          <p style={{ textAlign: 'center', fontSize: 12, color: C.slate, marginTop: 20 }}>
-
-            Don't have an account?{' '}
-            <button
-              onClick={() => navigate('/register')}
-              style={{
-                color: C.orange, fontWeight: 600, fontSize: 12,
-                background: 'none', border: 'none', cursor: 'pointer', fontFamily: FONT,
-              }}
-            >
-              Register 
-            </button>
-          </p>
       </div>
     </div>
   );
