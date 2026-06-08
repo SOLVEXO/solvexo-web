@@ -1,40 +1,62 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Input, Textarea, Select } from '@/components/ui/Input';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { Package, Download, BookOpen, Sparkles, Camera } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
+// ── Types & Data ──────────────────────────────────────────────────────────────
 type ProductType = 'physical' | 'digital' | 'educational';
 
 const PRODUCT_TYPES: { id: ProductType; Icon: LucideIcon; label: string; desc: string }[] = [
-  { id: 'physical',     Icon: Package,  label: 'Physical',     desc: 'Shipped to buyer' },
-  { id: 'digital',      Icon: Download, label: 'Digital',      desc: 'Instant download' },
-  { id: 'educational',  Icon: BookOpen, label: 'Educational',  desc: 'Learning resource' },
+  { id: 'physical',    Icon: Package,  label: 'Physical Product',    desc: 'Shipped to buyer'   },
+  { id: 'digital',     Icon: Download, label: 'Digital Download',    desc: 'Instant download'   },
+  { id: 'educational', Icon: BookOpen, label: 'Educational Resource',desc: 'Learning resource'  },
 ];
 
 const DEFAULT_TAGS = ['math', 'grade 5', 'common core', 'fractions', 'worksheets'];
 
+const poppins = "'Poppins', sans-serif";
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '9px 12px', fontSize: 13,
+  border: '1px solid #E8E6DC', borderRadius: 8,
+  outline: 'none', fontFamily: poppins, color: '#2C2A28',
+  background: '#fff', boxSizing: 'border-box',
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: 12, fontWeight: 500, color: '#4A4945',
+  marginBottom: 5, display: 'block', fontFamily: poppins,
+};
+
+const cardStyle: React.CSSProperties = {
+  background: '#fff', border: '1px solid #E8E6DC',
+  borderRadius: 10, padding: '20px 22px',
+  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+};
+
+const sectionTitle: React.CSSProperties = {
+  fontSize: 14, fontWeight: 700, color: '#141413',
+  marginBottom: 16, fontFamily: poppins,
+};
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export function AddProduct() {
   usePageTitle('Add Product');
-  const [productType, setProductType] = useState<ProductType>('educational');
-  const [tags, setTags]               = useState<string[]>(DEFAULT_TAGS);
-  const [tagInput, setTagInput]       = useState('');
-  const [title, setTitle]             = useState('');
-  const [desc, setDesc]               = useState('');
-  const [price, setPrice]             = useState('');
-  const [comparePrice, setComparePrice] = useState('');
+  const [productType,   setProductType]   = useState<ProductType>('physical');
+  const [tags,          setTags]          = useState<string[]>(DEFAULT_TAGS);
+  const [tagInput,      setTagInput]      = useState('');
+  const [title,         setTitle]         = useState('');
+  const [desc,          setDesc]          = useState('');
+  const [price,         setPrice]         = useState('');
+  const [comparePrice,  setComparePrice]  = useState('');
 
   const addTag = (tag: string) => {
     const t = tag.trim().toLowerCase();
     if (t && !tags.includes(t)) setTags(prev => [...prev, t]);
     setTagInput('');
   };
-
-  const removeTag = (tag: string) =>
-    setTags(prev => prev.filter(t => t !== tag));
+  const removeTag = (tag: string) => setTags(prev => prev.filter(t => t !== tag));
 
   return (
     <>
@@ -43,207 +65,274 @@ export function AddProduct() {
         subtitle="Fill in product details to create your listing."
         actions={
           <>
-            <Button variant="ghost"   size="sm">Save Draft</Button>
-            <Button variant="primary" size="sm">Publish Listing</Button>
+            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+              Save Draft
+            </button>
+            <button style={{ padding: '7px 16px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+              Publish Listing
+            </button>
           </>
         }
       />
 
-      <div className="p-7">
-        <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 320px' }}>
-          {/* LEFT column */}
-          <div className="flex flex-col gap-5">
+      <div style={{ padding: '20px 28px 32px', fontFamily: poppins }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20 }}>
+
+          {/* ── LEFT column ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
             {/* Product Type */}
-            <Card>
-              <p className="text-[14px] font-bold text-carbon mb-4">Product Type</p>
-              <div className="grid grid-cols-3 gap-3">
+            <div style={cardStyle}>
+              <p style={sectionTitle}>Product Type</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
                 {PRODUCT_TYPES.map(pt => (
                   <button
                     key={pt.id}
                     onClick={() => setProductType(pt.id)}
-                    className="text-left p-4 rounded-xl border-2 transition-all cursor-pointer"
                     style={{
-                      borderColor: productType === pt.id ? '#D97757' : '#E8E6DC',
-                      background:  productType === pt.id ? '#FBECE4' : '#FFFFFF',
+                      padding: '20px 16px', textAlign: 'center',
+                      borderRadius: 10, cursor: 'pointer',
+                      border: `2px solid ${productType === pt.id ? '#D97757' : '#E8E6DC'}`,
+                      background: productType === pt.id ? '#FBECE4' : '#fff',
+                      fontFamily: poppins, transition: 'all 0.12s',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
                     }}
                   >
-                    <pt.Icon size={24} className="mb-2" style={{ color: productType === pt.id ? '#B95A3A' : '#8C8A82' }} />
-                    <p className="text-[13px] font-semibold" style={{ color: productType === pt.id ? '#B95A3A' : '#141413' }}>
+                    <pt.Icon size={28} style={{ color: productType === pt.id ? '#B95A3A' : '#8C8A82' }} />
+                    <p style={{ fontSize: 13, fontWeight: 600, color: productType === pt.id ? '#B95A3A' : '#141413' }}>
                       {pt.label}
-                    </p>
-                    <p className="text-[11px] mt-0.5" style={{ color: productType === pt.id ? '#B95A3A' : '#8C8A82' }}>
-                      {pt.desc}
                     </p>
                   </button>
                 ))}
               </div>
-            </Card>
+            </div>
 
             {/* Basic Information */}
-            <Card>
-              <p className="text-[14px] font-bold text-carbon mb-4">Basic Information</p>
-              <div className="flex flex-col gap-4">
-                <Input
-                  label="Product Title"
-                  placeholder="e.g. Grade 5 Math Mastery Bundle…"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                />
+            <div style={cardStyle}>
+              <p style={sectionTitle}>Basic Information</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Title */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[12px] font-medium text-charcoal">Description</label>
-                    <Button variant="secondary" size="sm"><Sparkles size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />AI Write</Button>
-                  </div>
-                  <Textarea
-                    placeholder="Describe your product — what's included, who it's for, key benefits…"
-                    rows={5}
-                    value={desc}
-                    onChange={e => setDesc(e.target.value)}
+                  <label style={labelStyle}>Product Title *</label>
+                  <input
+                    placeholder="e.g. Grade 5 Math Bundle — Full Year Curriculum"
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    style={inputStyle}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Select label="Category">
-                    <option value="">Select category…</option>
-                    <option>Educational Resources</option>
-                    <option>Digital Downloads</option>
-                    <option>Handmade & Crafts</option>
-                    <option>Home & Lifestyle</option>
-                    <option>Business Tools</option>
-                  </Select>
-                  <Select label="Sub-category">
-                    <option value="">Select sub-category…</option>
-                    <option>Math</option>
-                    <option>Science</option>
-                    <option>English</option>
-                    <option>History</option>
-                    <option>Art</option>
-                  </Select>
+
+                {/* Description */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <label style={{ ...labelStyle, marginBottom: 0 }}>Description *</label>
+                    <button style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      padding: '4px 10px', background: '#FBECE4',
+                      border: '1px solid #E8CE B4', borderRadius: 6,
+                      fontSize: 11, fontWeight: 500, color: '#B95A3A',
+                      cursor: 'pointer', fontFamily: poppins,
+                    }}>
+                      <Sparkles size={11} /> AI Write
+                    </button>
+                  </div>
+                  <textarea
+                    rows={5}
+                    placeholder="Describe your product in detail. Include what's included, who it's for, and how to use it."
+                    value={desc}
+                    onChange={e => setDesc(e.target.value)}
+                    style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
+                  />
+                </div>
+
+                {/* Category + Sub-category */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={labelStyle}>Category</label>
+                    <select style={{ ...inputStyle, cursor: 'pointer' }}>
+                      <option value="">Select category...</option>
+                      <option>Educational Resources</option>
+                      <option>Digital Downloads</option>
+                      <option>Handmade &amp; Crafts</option>
+                      <option>Home &amp; Lifestyle</option>
+                      <option>Business Tools</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Sub-category</label>
+                    <select style={{ ...inputStyle, cursor: 'pointer' }}>
+                      <option value="">Select sub-category...</option>
+                      <option>Math</option>
+                      <option>Science</option>
+                      <option>English</option>
+                      <option>History</option>
+                      <option>Art</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </Card>
+            </div>
 
             {/* Product Images */}
-            <Card>
-              <p className="text-[14px] font-bold text-carbon mb-4">Product Images</p>
-              <div
-                className="rounded-xl border-2 border-dashed flex flex-col items-center justify-center py-12 cursor-pointer transition-colors hover:bg-cream"
-                style={{ borderColor: '#E8E6DC' }}
+            <div style={cardStyle}>
+              <p style={sectionTitle}>Product Images</p>
+              <div style={{
+                border: '2px dashed #E8E6DC', borderRadius: 10,
+                padding: '48px 24px', textAlign: 'center',
+                cursor: 'pointer', transition: 'background 0.12s',
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
-                <Camera size={36} className="mb-3" style={{ color: '#8C8A82' }} />
-                <p className="text-[14px] font-semibold text-carbon mb-1">Drag & drop images here</p>
-                <p className="text-[12px] text-slate mb-4">PNG, JPG, WEBP — up to 10 files, max 10 MB each</p>
-                <Button variant="ghost" size="sm">Browse Files</Button>
+                <Camera size={36} style={{ color: '#8C8A82', marginBottom: 12 }} />
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#141413', marginBottom: 6 }}>
+                  Drag &amp; drop images here or click to browse
+                </p>
+                <p style={{ fontSize: 12, color: '#8C8A82' }}>
+                  PNG, JPG, WEBP up to 10MB each. First image is the cover.
+                </p>
               </div>
-            </Card>
+            </div>
 
             {/* Tags & SEO */}
-            <Card>
-              <p className="text-[14px] font-bold text-carbon mb-4">Tags & SEO</p>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <Input
-                      label="Add Tags"
-                      placeholder="Type a tag and press Enter…"
-                      value={tagInput}
-                      onChange={e => setTagInput(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(tagInput); } }}
-                    />
-                  </div>
-                  <Button variant="secondary" size="sm" className="mb-0.5" onClick={() => addTag(tagInput)}>
-                    <Sparkles size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />AI Suggest Tags
-                  </Button>
-                </div>
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {tags.map(tag => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-medium cursor-default"
-                        style={{ background: '#FBECE4', borderColor: '#E8E6DC', color: '#B95A3A' }}
-                      >
-                        {tag}
-                        <button
-                          onClick={() => removeTag(tag)}
-                          className="text-[10px] hover:text-error cursor-pointer"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <p style={{ ...sectionTitle, marginBottom: 0 }}>Tags &amp; SEO</p>
+                <button style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  padding: '5px 12px', background: '#FBECE4',
+                  border: '1px solid #E8CEB4', borderRadius: 6,
+                  fontSize: 11, fontWeight: 500, color: '#B95A3A',
+                  cursor: 'pointer', fontFamily: poppins,
+                }}>
+                  <Sparkles size={11} /> AI Suggest Tags
+                </button>
               </div>
-            </Card>
+              <input
+                placeholder="Add tags separated by commas (e.g. math, grade 5, common core)"
+                value={tagInput}
+                onChange={e => setTagInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(tagInput); } }}
+                style={{ ...inputStyle, marginBottom: 12 }}
+              />
+              {tags.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {tags.map(tag => (
+                    <span
+                      key={tag}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        padding: '3px 10px', borderRadius: 6,
+                        background: '#FBECE4', border: '1px solid #E8CEB4',
+                        fontSize: 12, fontWeight: 500, color: '#B95A3A',
+                      }}
+                    >
+                      {tag}
+                      <button
+                        onClick={() => removeTag(tag)}
+                        style={{ fontSize: 13, color: '#B95A3A', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1, padding: 0 }}
+                      >×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
 
-          {/* RIGHT column */}
-          <div className="flex flex-col gap-5">
+          {/* ── RIGHT column ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
             {/* Pricing */}
-            <Card>
-              <p className="text-[14px] font-bold text-carbon mb-4">Pricing</p>
-              <div className="flex flex-col gap-3">
-                <Input
-                  label="Price"
-                  leftAddon="$"
-                  type="number"
-                  placeholder="0.00"
-                  value={price}
-                  onChange={e => setPrice(e.target.value)}
-                />
-                <Input
-                  label="Compare-at Price"
-                  leftAddon="$"
-                  type="number"
-                  placeholder="0.00"
-                  value={comparePrice}
-                  onChange={e => setComparePrice(e.target.value)}
-                />
-                <div
-                  className="rounded-lg p-3 text-[12px]"
-                  style={{ background: '#FBECE4', color: '#B95A3A' }}
-                >
-                  <p className="font-semibold mb-1 flex items-center gap-1"><Sparkles size={12} />AI Price Suggester</p>
-                  <p style={{ color: '#8C6050' }}>
-                    Based on similar products in Educational Resources, the suggested price is <strong>$39 – $55</strong>.
+            <div style={cardStyle}>
+              <p style={sectionTitle}>Pricing</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {/* Price */}
+                <div>
+                  <label style={labelStyle}>Price *</label>
+                  <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #E8E6DC', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+                    <span style={{ padding: '9px 10px', background: '#FAF9F5', fontSize: 13, color: '#8C8A82', borderRight: '1px solid #E8E6DC', fontFamily: poppins }}>$</span>
+                    <input type="number" placeholder="0.00" value={price} onChange={e => setPrice(e.target.value)}
+                      style={{ flex: 1, padding: '9px 12px', fontSize: 13, border: 'none', outline: 'none', fontFamily: poppins, color: '#2C2A28', background: 'transparent' }} />
+                  </div>
+                </div>
+
+                {/* Compare-at Price */}
+                <div>
+                  <label style={labelStyle}>Compare-at Price</label>
+                  <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #E8E6DC', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+                    <span style={{ padding: '9px 10px', background: '#FAF9F5', fontSize: 13, color: '#8C8A82', borderRight: '1px solid #E8E6DC', fontFamily: poppins }}>$</span>
+                    <input type="number" placeholder="0.00" value={comparePrice} onChange={e => setComparePrice(e.target.value)}
+                      style={{ flex: 1, padding: '9px 12px', fontSize: 13, border: 'none', outline: 'none', fontFamily: poppins, color: '#2C2A28', background: 'transparent' }} />
+                  </div>
+                </div>
+
+                {/* AI Price hint */}
+                <div style={{ background: '#FBECE4', borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <Sparkles size={13} style={{ color: '#B95A3A', flexShrink: 0, marginTop: 1 }} />
+                  <p style={{ fontSize: 12, color: '#8C6050', lineHeight: 1.5, fontFamily: poppins }}>
+                    AI Price Suggester: Based on similar listings, <strong style={{ color: '#B95A3A' }}>$44–$54</strong> is the optimal range.
                   </p>
                 </div>
               </div>
-            </Card>
+            </div>
 
-            {/* Inventory (physical only) */}
-            {productType === 'physical' && (
-              <Card>
-                <p className="text-[14px] font-bold text-carbon mb-4">Inventory</p>
-                <div className="flex flex-col gap-3">
-                  <Input label="Stock Quantity"   type="number" placeholder="0" />
-                  <Input label="SKU / Barcode"    placeholder="e.g. SKU-12345" />
-                  <Input label="Shipping Weight (kg)" type="number" placeholder="0.00" />
+            {/* Inventory & Shipping */}
+            <div style={cardStyle}>
+              <p style={sectionTitle}>Inventory &amp; Shipping</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>Stock Quantity</label>
+                  <input type="number" placeholder="0" style={inputStyle} />
                 </div>
-              </Card>
-            )}
+                <div>
+                  <label style={labelStyle}>SKU / Barcode</label>
+                  <input placeholder="Optional" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Shipping Weight</label>
+                  <input placeholder="e.g. 0.5 kg" style={inputStyle} />
+                </div>
+              </div>
+            </div>
 
             {/* Listing Status */}
-            <Card>
-              <p className="text-[14px] font-bold text-carbon mb-4">Listing Status</p>
-              <div className="flex flex-col gap-3">
-                <Select label="Status">
-                  <option>Active</option>
-                  <option>Draft</option>
-                  <option>Scheduled</option>
-                </Select>
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input type="checkbox" defaultChecked className="accent-brand-orange" />
-                  <span className="text-[13px] text-charcoal">Also list in Marketplace</span>
+            <div style={cardStyle}>
+              <p style={sectionTitle}>Listing Status</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <select style={{ ...inputStyle, cursor: 'pointer' }}>
+                    <option>Active — Visible in marketplace</option>
+                    <option>Draft</option>
+                    <option>Scheduled</option>
+                  </select>
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input type="checkbox" style={{ accentColor: '#D97757' }} />
+                  <span style={{ fontSize: 13, color: '#4A4945', fontFamily: poppins }}>Also list in Solvexo Marketplace</span>
                 </label>
               </div>
-            </Card>
-
-            {/* Publish */}
-            <div className="flex flex-col gap-2">
-              <Button variant="primary" size="md" fullWidth>Publish Listing</Button>
-              <Button variant="ghost"   size="md" fullWidth>Save as Draft</Button>
             </div>
+
+            {/* Publish + Draft buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button style={{
+                width: '100%', padding: '13px 0', background: '#D97757',
+                border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600,
+                color: '#fff', cursor: 'pointer', fontFamily: poppins,
+              }}>
+                Publish Listing
+              </button>
+              <button style={{
+                width: '100%', padding: '11px 0', background: '#fff',
+                border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 13,
+                fontWeight: 500, color: '#8C8A82', cursor: 'pointer', fontFamily: poppins,
+              }}>
+                Save as Draft
+              </button>
+            </div>
+
           </div>
         </div>
       </div>
