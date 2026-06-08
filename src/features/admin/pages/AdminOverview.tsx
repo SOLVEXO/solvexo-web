@@ -67,7 +67,7 @@ export function AdminOverview() {
 
       {/* ── Metrics Row ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-        {METRICS.map((m, i) => (
+        {METRICS.map((m) => (
           <div
             key={m.label}
             style={{
