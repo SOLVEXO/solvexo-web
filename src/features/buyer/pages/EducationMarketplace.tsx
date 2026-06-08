@@ -4,7 +4,8 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ShoppingCart, GraduationCap, Star, Sparkles, BookOpen, BookMarked, Microscope, Heart } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 const C = {
   orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
@@ -27,11 +28,11 @@ function SolvexoIcon({ size = 32 }: { size?: number }) {
 const GRADE_LEVELS = ['All Grades', 'PreK', 'K–2', '3–5', '6–8', '9–12', 'Higher Ed', 'Adult Ed'];
 const SUBJECTS = ['All', 'Math', 'ELA', 'Science', 'Social Studies', 'Art', 'SEL'];
 
-const PRODUCTS = [
-  { name: 'Grade 5 Math Bundle – Full Year', seller: 'TeachersPro', price: '$49.00', grade: 'Grade 5', subject: 'Math', img: '📚', rating: '5.0', sold: 847 },
-  { name: 'Reading Comprehension Passages', seller: 'LiteracyLab', price: '$22.00', grade: 'Grade 3–5', subject: 'ELA', img: '📖', rating: '4.9', sold: 623 },
-  { name: 'Science Inquiry Lab Pack', seller: 'ScienceFirst', price: '$31.00', grade: 'Grade 6–8', subject: 'Science', img: '🔬', rating: '4.9', sold: 501 },
-  { name: 'Social-Emotional Learning Kit', seller: 'HeartMinds', price: '$28.00', grade: 'K–5', subject: 'SEL', img: '❤️', rating: '4.8', sold: 412 },
+const PRODUCTS: { name: string; seller: string; price: string; grade: string; subject: string; Img: LucideIcon; rating: string; sold: number }[] = [
+  { name: 'Grade 5 Math Bundle – Full Year', seller: 'TeachersPro', price: '$49.00', grade: 'Grade 5', subject: 'Math', Img: BookOpen,   rating: '5.0', sold: 847 },
+  { name: 'Reading Comprehension Passages', seller: 'LiteracyLab', price: '$22.00', grade: 'Grade 3–5', subject: 'ELA', Img: BookMarked, rating: '4.9', sold: 623 },
+  { name: 'Science Inquiry Lab Pack', seller: 'ScienceFirst', price: '$31.00', grade: 'Grade 6–8', subject: 'Science', Img: Microscope,  rating: '4.9', sold: 501 },
+  { name: 'Social-Emotional Learning Kit', seller: 'HeartMinds', price: '$28.00', grade: 'K–5', subject: 'SEL', Img: Heart,       rating: '4.8', sold: 412 },
 ];
 
 export function EducationMarketplace() {
@@ -58,7 +59,7 @@ export function EducationMarketplace() {
         </div>
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
           <input
-            placeholder="🔍 Search marketplace..."
+            placeholder="Search marketplace..."
             style={{
               width: '100%', maxWidth: 440,
               padding: '8px 14px', borderRadius: 8,
@@ -75,8 +76,9 @@ export function EducationMarketplace() {
             backgroundColor: C.orange, display: 'flex',
             alignItems: 'center', justifyContent: 'center',
             fontSize: 16, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            🛒
+            <ShoppingCart size={16} style={{ color: '#fff' }} />
           </div>
         </div>
       </nav>
@@ -114,7 +116,7 @@ export function EducationMarketplace() {
             <Button variant="primary" size="md" onClick={() => navigate('/onboarding')}>Sell Your Resources</Button>
           </div>
         </div>
-        <div style={{ fontSize: 80 }}>🏫</div>
+        <div style={{ color: 'rgba(255,255,255,0.6)' }}><GraduationCap size={80} /></div>
       </div>
 
       {/* Grade level + subject filter bar */}
@@ -181,8 +183,8 @@ export function EducationMarketplace() {
       {/* Content */}
       <div style={{ padding: '24px 40px' }}>
         {/* Section header */}
-        <div style={{ fontSize: 18, fontWeight: 700, color: C.carbon, marginBottom: 4 }}>
-          ⭐ Bestselling Resources
+        <div style={{ fontSize: 18, fontWeight: 700, color: C.carbon, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Star size={18} style={{ color: '#D97757', fill: '#D97757' }} /> Bestselling Resources
         </div>
         <p style={{ fontSize: 13, color: C.slate, marginBottom: 20 }}>
           Top-rated resources trusted by thousands of educators.
@@ -196,9 +198,9 @@ export function EducationMarketplace() {
               <div style={{
                 height: 140, backgroundColor: C.successBg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 56, borderRadius: '12px 12px 0 0',
+                borderRadius: '12px 12px 0 0',
               }}>
-                {p.img}
+                <p.Img size={56} style={{ color: '#2D8A4E' }} />
               </div>
               {/* Content */}
               <div style={{ padding: 14 }}>
@@ -214,7 +216,7 @@ export function EducationMarketplace() {
                   {p.name}
                 </div>
                 <div style={{ fontSize: 11, color: C.slate, marginBottom: 8 }}>
-                  by {p.seller} • ⭐ {p.rating} • {p.sold} sold
+                  by {p.seller} • <Star size={11} style={{ display: 'inline', verticalAlign: 'middle', color: '#D97757', fill: '#D97757' }} /> {p.rating} • {p.sold} sold
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontWeight: 700, fontSize: 15, color: C.carbon }}>{p.price}</span>
@@ -237,7 +239,7 @@ export function EducationMarketplace() {
           borderRadius: 16, padding: 20,
           display: 'flex', alignItems: 'center', gap: 20,
         }}>
-          <span style={{ fontSize: 48, flexShrink: 0 }}>✨</span>
+          <Sparkles size={48} style={{ color: '#D97757', flexShrink: 0 }} />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: C.carbon, marginBottom: 4 }}>
               AI Worksheet Builder — Try Free

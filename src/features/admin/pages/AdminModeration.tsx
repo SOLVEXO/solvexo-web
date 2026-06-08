@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { Badge } from '@/components/ui/Badge';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 type Risk     = 'high' | 'medium' | 'low';
 type ItemType = 'Listing' | 'Seller' | 'Review';
@@ -22,10 +23,10 @@ const ITEMS: ModerationItem[] = [
   { id: 'R-3396', type: 'Seller',  item: 'QuickSell Store',           seller: 'QuickSell',     reason: 'High refund rate (42%)',       risk: 'medium', reported: 'Yesterday' },
 ];
 
-const RISK: Record<Risk, { label: string; badge: 'red' | 'yellow' | 'gray'; emoji: string }> = {
-  high:   { label: 'High',   badge: 'red',    emoji: '🚨' },
-  medium: { label: 'Medium', badge: 'yellow', emoji: '⚠️' },
-  low:    { label: 'Low',    badge: 'gray',   emoji: 'ℹ️' },
+const RISK: Record<Risk, { label: string; badge: 'red' | 'yellow' | 'gray'; Icon: LucideIcon }> = {
+  high:   { label: 'High',   badge: 'red',    Icon: AlertCircle   },
+  medium: { label: 'Medium', badge: 'yellow', Icon: AlertTriangle },
+  low:    { label: 'Low',    badge: 'gray',   Icon: Info          },
 };
 
 const TYPE_COLOR: Record<ItemType, 'blue' | 'orange' | 'gray'> = {
@@ -98,8 +99,8 @@ export function AdminModeration() {
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Badge color="red">🚨 14 Urgent</Badge>
-          <Badge color="yellow">⚠️ 38 Pending</Badge>
+          <Badge color="red"><AlertCircle size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />14 Urgent</Badge>
+          <Badge color="yellow"><AlertTriangle size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />38 Pending</Badge>
           <button
             onClick={() => navigate('/seller/dashboard')}
             style={{
@@ -142,7 +143,7 @@ export function AdminModeration() {
             }}
           >
             <input
-              placeholder="🔍 Search flagged items..."
+              placeholder="Search flagged items..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{
@@ -207,7 +208,7 @@ export function AdminModeration() {
                       <td style={{ ...TD, color: '#2C2A28', whiteSpace: 'nowrap' }}>{item.seller}</td>
                       <td style={{ ...TD, color: '#2C2A28', maxWidth: 200 }}>{item.reason}</td>
                       <td style={TD}>
-                        <Badge color={risk.badge}>{risk.emoji} {risk.label}</Badge>
+                        <Badge color={risk.badge}><risk.Icon size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />{risk.label}</Badge>
                       </td>
                       <td style={{ ...TD, color: '#8C8A82', whiteSpace: 'nowrap' }}>{item.reported}</td>
                       <td style={TD}>

@@ -77,32 +77,32 @@ export const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'blue' | 'gray' 
 
 // ── Seller Sidebar Navigation ────────────────────────────────────────────────
 export const SELLER_NAV_ITEMS = [
-  { id: 'dashboard',   label: 'Dashboard',     icon: '⬛', path: '/seller/dashboard'  },
-  { id: 'orders',      label: 'Orders',         icon: '📦', path: '/seller/orders'     },
-  { id: 'products',    label: 'Products',       icon: '🛍️', path: '/seller/products'   },
-  { id: 'inventory',   label: 'Inventory',      icon: '📋', path: '/seller/inventory'  },
-  { id: 'store',       label: 'Store Builder',  icon: '🏗️', path: '/seller/store'      },
-  { id: 'pos',         label: 'POS Register',   icon: '🖥️', path: '/seller/pos'        },
-  { id: 'ai',          label: 'AI Studio',      icon: '✨', path: '/seller/ai'         },
-  { id: 'analytics',   label: 'Analytics',      icon: '📊', path: '/seller/analytics'  },
+  { id: 'dashboard',   label: 'Dashboard',     icon: 'dashboard',  path: '/seller/dashboard'  },
+  { id: 'orders',      label: 'Orders',         icon: 'orders',     path: '/seller/orders'     },
+  { id: 'products',    label: 'Products',       icon: 'products',   path: '/seller/products'   },
+  { id: 'inventory',   label: 'Inventory',      icon: 'inventory',  path: '/seller/inventory'  },
+  { id: 'store',       label: 'Store Builder',  icon: 'store',      path: '/seller/store'      },
+  { id: 'pos',         label: 'POS Register',   icon: 'pos',        path: '/seller/pos'        },
+  { id: 'ai',          label: 'AI Studio',      icon: 'ai',         path: '/seller/ai'         },
+  { id: 'analytics',   label: 'Analytics',      icon: 'analytics',  path: '/seller/analytics'  },
 ] as const;
 
 export const SELLER_ACCOUNT_ITEMS = [
-  { id: 'customers',  label: 'Customers',  icon: '👥', path: '/seller/customers' },
-  { id: 'finance',    label: 'Finance',    icon: '💰', path: '/seller/finance'   },
-  { id: 'marketing',  label: 'Marketing',  icon: '📣', path: '/seller/marketing' },
-  { id: 'settings',   label: 'Settings',   icon: '⚙️', path: '/seller/settings'  },
+  { id: 'customers',  label: 'Customers',  icon: 'customers',  path: '/seller/customers' },
+  { id: 'finance',    label: 'Finance',    icon: 'finance',    path: '/seller/finance'   },
+  { id: 'marketing',  label: 'Marketing',  icon: 'marketing',  path: '/seller/marketing' },
+  { id: 'settings',   label: 'Settings',   icon: 'settings',   path: '/seller/settings'  },
 ] as const;
 
 // ── Admin Sidebar Navigation ─────────────────────────────────────────────────
 export const ADMIN_NAV_ITEMS = [
-  { id: 'overview',     label: 'Overview',         icon: '📊', path: '/admin'                   },
-  { id: 'users',        label: 'Users & Sellers',   icon: '👥', path: '/admin/users'             },
-  { id: 'moderation',   label: 'Moderation',        icon: '🛡️', path: '/admin/moderation'        },
-  { id: 'marketplace',  label: 'Marketplace',       icon: '🪐', path: '/admin/marketplace'       },
-  { id: 'finance',      label: 'Finance',           icon: '💰', path: '/admin/finance'           },
-  { id: 'announcements',label: 'Announcements',     icon: '📣', path: '/admin/announcements'     },
-  { id: 'config',       label: 'Platform Config',   icon: '⚙️', path: '/admin/config'            },
+  { id: 'overview',     label: 'Overview',         icon: 'overview',      path: '/admin'                   },
+  { id: 'users',        label: 'Users & Sellers',   icon: 'users',         path: '/admin/users'             },
+  { id: 'moderation',   label: 'Moderation',        icon: 'moderation',    path: '/admin/moderation'        },
+  { id: 'marketplace',  label: 'Marketplace',       icon: 'marketplace',   path: '/admin/marketplace'       },
+  { id: 'finance',      label: 'Finance',           icon: 'finance',       path: '/admin/finance'           },
+  { id: 'announcements',label: 'Announcements',     icon: 'announcements', path: '/admin/announcements'     },
+  { id: 'config',       label: 'Platform Config',   icon: 'config',        path: '/admin/config'            },
 ] as const;
 
 // ── Public Navigation ────────────────────────────────────────────────────────
@@ -123,21 +123,21 @@ export const ONBOARDING_STEPS = [
 ] as const;
 
 export const SELLER_TYPES = [
-  { id: 'creator',    icon: '🎨', title: 'Creator',           desc: 'Sell digital art, templates, fonts, music, presets' },
-  { id: 'educator',   icon: '📚', title: 'Educator',          desc: 'Worksheets, lesson plans, curriculum, assessments'  },
-  { id: 'retailer',   icon: '🏪', title: 'Retailer',          desc: 'Physical goods, handmade products, branded items'   },
-  { id: 'brand',      icon: '💼', title: 'Brand / Business',  desc: 'Run a full online store with inventory and POS'     },
-  { id: 'freelancer', icon: '💻', title: 'Freelancer',        desc: 'Offer services, bookings, or consulting packages'   },
-  { id: 'multiple',   icon: '🎁', title: 'Mix of the above',  desc: 'I sell across multiple categories and formats'      },
+  { id: 'creator',    icon: 'palette',    title: 'Creator',           desc: 'Sell digital art, templates, fonts, music, presets' },
+  { id: 'educator',   icon: 'book-open',  title: 'Educator',          desc: 'Worksheets, lesson plans, curriculum, assessments'  },
+  { id: 'retailer',   icon: 'store',      title: 'Retailer',          desc: 'Physical goods, handmade products, branded items'   },
+  { id: 'brand',      icon: 'briefcase',  title: 'Brand / Business',  desc: 'Run a full online store with inventory and POS'     },
+  { id: 'freelancer', icon: 'monitor',    title: 'Freelancer',        desc: 'Offer services, bookings, or consulting packages'   },
+  { id: 'multiple',   icon: 'gift',       title: 'Mix of the above',  desc: 'I sell across multiple categories and formats'      },
 ] as const;
 
 export const PRODUCT_TYPES = [
-  { id: 'physical',       icon: '📦', label: 'Physical Products',     desc: 'Ship items to customers'      },
-  { id: 'digital',        icon: '💾', label: 'Digital Downloads',     desc: 'PDFs, files, audio, video'   },
-  { id: 'educational',    icon: '📚', label: 'Educational Resources', desc: 'Worksheets, lesson plans'    },
-  { id: 'services',       icon: '🗓️', label: 'Services / Bookings',  desc: 'Appointments and packages'   },
-  { id: 'subscriptions',  icon: '🔁', label: 'Subscriptions',         desc: 'Recurring membership access' },
-  { id: 'pos',            icon: '🖥️', label: 'In-Person / POS',      desc: 'Sell at a physical location'  },
+  { id: 'physical',       icon: 'package',   label: 'Physical Products',     desc: 'Ship items to customers'      },
+  { id: 'digital',        icon: 'download',  label: 'Digital Downloads',     desc: 'PDFs, files, audio, video'   },
+  { id: 'educational',    icon: 'book-open', label: 'Educational Resources', desc: 'Worksheets, lesson plans'    },
+  { id: 'services',       icon: 'calendar',  label: 'Services / Bookings',  desc: 'Appointments and packages'   },
+  { id: 'subscriptions',  icon: 'repeat',    label: 'Subscriptions',         desc: 'Recurring membership access' },
+  { id: 'pos',            icon: 'monitor',   label: 'In-Person / POS',      desc: 'Sell at a physical location'  },
 ] as const;
 
 // ── Pricing Plans ────────────────────────────────────────────────────────────

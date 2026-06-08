@@ -3,6 +3,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { MetricCard } from '@/components/ui/MetricCard';
+import { CheckCircle, AlertTriangle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 const RECENT_SIGNUPS = [
   { name: 'priya.sharma@edu.in',      role: 'Seller',  date: 'Today 9:04 AM' },
@@ -12,11 +14,11 @@ const RECENT_SIGNUPS = [
   { name: 'maths4kids@yahoo.com',     role: 'Seller',  date: 'Yesterday' },
 ];
 
-const PLATFORM_HEALTH = [
-  { label: 'API',       status: 'healthy',   emoji: '✅' },
-  { label: 'Payments',  status: 'healthy',   emoji: '✅' },
-  { label: 'Search',    status: 'degraded',  emoji: '⚠️' },
-  { label: 'Email',     status: 'healthy',   emoji: '✅' },
+const PLATFORM_HEALTH: { label: string; status: string; Icon: LucideIcon }[] = [
+  { label: 'API',       status: 'healthy',   Icon: CheckCircle   },
+  { label: 'Payments',  status: 'healthy',   Icon: CheckCircle   },
+  { label: 'Search',    status: 'degraded',  Icon: AlertTriangle },
+  { label: 'Email',     status: 'healthy',   Icon: CheckCircle   },
 ];
 
 const TOP_CATEGORIES = [
@@ -83,7 +85,7 @@ export function AdminOverview() {
           <div className="flex flex-col gap-3">
             {PLATFORM_HEALTH.map(item => (
               <div key={item.label} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: '#FAF9F5' }}>
-                <span style={{ fontSize: 18 }}>{item.emoji}</span>
+                <item.Icon size={18} style={{ color: item.status === 'healthy' ? '#2D8A4E' : '#C08B1E', flexShrink: 0 }} />
                 <span className="text-[13px] font-medium text-carbon flex-1">{item.label}</span>
                 <Badge
                   color={item.status === 'healthy' ? 'green' : item.status === 'degraded' ? 'yellow' : 'red'}

@@ -4,6 +4,7 @@ import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
+import { Sparkles } from 'lucide-react';
 
 interface Conversation {
   id: number;
@@ -140,7 +141,7 @@ export function SellerMessages() {
             <div className="bg-brand-pale-orange p-4 rounded-xl mx-5 mt-4 mb-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-brand-deep-orange mb-1.5">✨ AI Suggested Reply</p>
+                  <p className="text-[13px] font-semibold text-brand-deep-orange mb-1.5 flex items-center gap-1"><Sparkles size={12} />AI Suggested Reply</p>
                   <p className="text-[13px] text-charcoal leading-relaxed">
                     Hi Sarah! Yes, the Google Slides version is fully compatible with Google Classroom. You can assign individual slides as assignments. For the school license, you can upgrade directly from your Orders page. Let me know if you need any help!
                   </p>

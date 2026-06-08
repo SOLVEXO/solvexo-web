@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Select, Textarea } from '@/components/ui/Input';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { FolderOpen, Archive, FileText, BookOpen, Sparkles } from 'lucide-react';
 
 type FileStatus = 'Ready' | 'Uploading';
 
@@ -66,7 +67,7 @@ export function DigitalUpload() {
                 className="rounded-xl border-2 border-dashed flex flex-col items-center justify-center py-10 mb-4 cursor-pointer transition-colors hover:bg-cream"
                 style={{ borderColor: '#D97757' }}
               >
-                <div style={{ fontSize: 40 }} className="mb-3">📂</div>
+                <FolderOpen size={40} className="mb-3" style={{ color: '#D97757' }} />
                 <p className="text-[14px] font-semibold text-carbon mb-1">Drop your files here</p>
                 <p className="text-[12px] text-slate mb-4">PDF, ZIP, DOCX, MP3, MP4 — max 500 MB per file</p>
                 <Button variant="ghost" size="sm">Browse Files</Button>
@@ -83,7 +84,7 @@ export function DigitalUpload() {
                       className="w-9 h-9 rounded-lg flex items-center justify-center text-[16px] flex-shrink-0"
                       style={{ background: '#FBECE4' }}
                     >
-                      {file.name.endsWith('.zip') ? '📦' : '📄'}
+                      {file.name.endsWith('.zip') ? <Archive size={16} style={{ color: '#D97757' }} /> : <FileText size={16} style={{ color: '#D97757' }} />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[12px] font-semibold text-carbon truncate">{file.name}</p>
@@ -116,16 +117,16 @@ export function DigitalUpload() {
                 {/* Preview */}
                 <div
                   className="rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ width: 140, height: 140, background: '#FBECE4', fontSize: 48 }}
+                  style={{ width: 140, height: 140, background: '#FBECE4' }}
                 >
-                  📚
+                  <BookOpen size={48} style={{ color: '#D97757' }} />
                 </div>
                 <div className="flex flex-col gap-2">
                   <p className="text-[12px] text-slate">
                     Recommended: 1000×1000px, JPG or PNG.
                   </p>
                   <Button variant="ghost"     size="sm">Upload Cover Image</Button>
-                  <Button variant="secondary" size="sm">✨ AI Generate Cover</Button>
+                  <Button variant="secondary" size="sm"><Sparkles size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />AI Generate Cover</Button>
                 </div>
               </div>
             </Card>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
-import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Check, Circle } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { newPasswordSchema, type NewPasswordFormData } from '@/utils/validation/schemas';
 import { apiResetPassword, AuthContext } from '@/api/auth';
@@ -77,8 +77,8 @@ function StrengthBar({ password }: { password: string }) {
           [/[^A-Za-z0-9]/.test(password), 'One special character'],
         ].map(([met, req]) => (
           <div key={req as string} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12, color: met ? C.success : C.slate }}>
-              {met ? '✓' : '○'}
+            <span style={{ color: met ? C.success : C.slate, display: 'flex' }}>
+              {met ? <Check size={12} /> : <Circle size={12} />}
             </span>
             <span style={{ fontSize: 11, color: met ? C.success : C.slate, fontFamily: FONT }}>
               {req as string}
@@ -262,7 +262,7 @@ export function NewPasswordPage() {
             <p style={{ fontSize: 11, color: C.error, marginTop: 5, fontFamily: FONT }}>{otpError}</p>
           )}
           {otp.length === 6 && !otpError && (
-            <p style={{ fontSize: 11, color: C.success, marginTop: 5, fontFamily: FONT }}>✓ Code entered</p>
+            <p style={{ fontSize: 11, color: C.success, marginTop: 5, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 4 }}><Check size={11} /> Code entered</p>
           )}
         </div>
 
@@ -291,7 +291,7 @@ export function NewPasswordPage() {
           />
           {values.confirmPassword && (
             <p style={{ fontSize: 11, marginTop: 5, fontFamily: FONT, color: passwordsMatch ? C.success : C.error }}>
-              {passwordsMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
+              {passwordsMatch ? <><Check size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />Passwords match</> : <>✗ Passwords do not match</>}
             </p>
           )}
         </div>

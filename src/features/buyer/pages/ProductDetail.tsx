@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Package, Download, ClipboardList, CheckCircle, Search, ShoppingCart, BookOpen, FileText, BarChart2, Pencil, Star, Link2, Mail, Smartphone } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 const C = {
   orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
   carbon: '#141413', charcoal: '#2C2A28', slate: '#8C8A82',
@@ -31,11 +32,11 @@ const REVIEWS = [
   { name: 'Lisa T.', rating: 4, text: 'Very thorough. A few of the assessments needed minor tweaks for my district.', date: 'Mar 2025' },
 ];
 
-const INFO_ROWS = [
-  { icon: '📦', label: "What's included", value: '36 weeks of lessons, 200+ worksheets, assessments, answer keys' },
-  { icon: '📥', label: 'Delivery', value: 'Instant download after purchase' },
-  { icon: '📋', label: 'License', value: 'Single classroom use' },
-  { icon: '✅', label: 'Format', value: 'PDF, editable Google Slides' },
+const INFO_ROWS: { Icon: LucideIcon; label: string; value: string }[] = [
+  { Icon: Package,       label: "What's included", value: '36 weeks of lessons, 200+ worksheets, assessments, answer keys' },
+  { Icon: Download,      label: 'Delivery',         value: 'Instant download after purchase' },
+  { Icon: ClipboardList, label: 'License',           value: 'Single classroom use' },
+  { Icon: CheckCircle,   label: 'Format',            value: 'PDF, editable Google Slides' },
 ];
 
 export function ProductDetail() {
@@ -49,42 +50,46 @@ export function ProductDetail() {
         position: 'sticky', top: 0, zIndex: 50,
         backgroundColor: C.white, borderBottom: `1px solid ${C.bone}`,
         height: 60, display: 'flex', alignItems: 'center',
-        gap: 16, paddingLeft: 40, paddingRight: 40,
+        paddingLeft: 40, paddingRight: 40,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        {/* Left: logo */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
           <SolvexoIcon size={28} />
           <span style={{ fontWeight: 700, fontSize: 15, color: C.carbon }}>Solvex</span>
           <span style={{ fontWeight: 700, fontSize: 15, color: C.orange }}>o</span>
-          <span style={{ color: C.bone, marginLeft: 4, marginRight: 4 }}>|</span>
-          <span style={{ fontSize: 13, color: C.slate }}>Marketplace</span>
         </div>
-        {/* Search bar — flex-1, max 440px, reference style */}
-        <div style={{ flex: 1, maxWidth: 440, margin: '0 24px', position: 'relative' }}>
+
+        {/* Center: Search bar */}
+        <div style={{ width: 440, position: 'relative', flexShrink: 0 }}>
           <span style={{
             position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-            fontSize: 14, color: C.slate, pointerEvents: 'none',
-          }}>🔍</span>
+            color: C.slate, pointerEvents: 'none', display: 'flex',
+          }}><Search size={14} /></span>
           <input
-            placeholder="Search marketplace..."
+            placeholder="Search..."
             style={{
               width: '100%', paddingLeft: 36, paddingRight: 14,
               paddingTop: 9, paddingBottom: 9,
-              borderRadius: 8, border: `1px solid ${C.bone}`,
+              borderRadius: 20, border: `1px solid ${C.bone}`,
               backgroundColor: C.cream, fontSize: 13, color: C.charcoal,
               outline: 'none', fontFamily: "'Poppins', sans-serif",
               boxSizing: 'border-box',
             }}
           />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')}><ArrowLeft size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> Marketplace</Button>
+
+        {/* Right: nav actions */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')}>
+            <ArrowLeft size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> Marketplace
+          </Button>
           <div style={{
             width: 32, height: 32, borderRadius: '50%',
             backgroundColor: C.orange, display: 'flex',
             alignItems: 'center', justifyContent: 'center',
-            fontSize: 16, cursor: 'pointer',
+            cursor: 'pointer',
           }}>
-            🛒
+            <ShoppingCart size={16} style={{ color: '#fff' }} />
           </div>
         </div>
       </nav>
@@ -103,30 +108,30 @@ export function ProductDetail() {
         </div>
 
         {/* 2-col grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 36, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 36, alignItems: 'start', minWidth: 0 }}>
           {/* LEFT */}
-          <div>
+          <div style={{ minWidth: 0 }}>
             {/* Main image */}
             <div style={{
               height: 340, borderRadius: 16,
               background: 'linear-gradient(135deg, #FBECE4, #FFF5EE)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 100, marginBottom: 16,
+              marginBottom: 16,
             }}>
-              �
+              <BookOpen size={100} style={{ color: '#D97757' }} />
             </div>
 
             {/* Thumbnails */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-              {['📚', '📝', '📊', '✏️'].map((emoji, i) => (
+              {([BookOpen, FileText, BarChart2, Pencil] as LucideIcon[]).map((Icon, i) => (
                 <div key={i} style={{
                   width: 70, height: 70, borderRadius: 10,
                   backgroundColor: C.paleOrange,
                   border: `2px solid ${i === 0 ? C.orange : 'transparent'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 28, cursor: 'pointer',
+                  cursor: 'pointer',
                 }}>
-                  {emoji}
+                  <Icon size={28} style={{ color: '#D97757' }} />
                 </div>
               ))}
             </div>
@@ -178,8 +183,8 @@ export function ProductDetail() {
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: C.carbon, marginBottom: 4 }}>TeachersPro</div>
-                <div style={{ fontSize: 12, color: C.slate, marginBottom: 6 }}>
-                  ⭐ 5.0 • 2,140 sales • Member since 2021
+                <div style={{ fontSize: 12, color: C.slate, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <Star size={12} style={{ color: '#D97757', fill: '#D97757' }} /> 5.0 • 2,140 sales • Member since 2021
                 </div>
                 <p style={{ fontSize: 12, color: C.slate, lineHeight: 1.6, marginBottom: 10 }}>
                   TeachersPro is a team of certified educators creating premium K–12 learning resources.
@@ -218,59 +223,78 @@ export function ProductDetail() {
           </div>
 
           {/* RIGHT: sticky card */}
-          <div style={{ position: 'sticky', top: 80 }}>
-            <Card padding="md">
-              <div>
+          <div style={{ position: 'sticky', top: 80, minWidth: 0 }}>
+            <Card padding="none">
+              <div style={{ padding: '24px 24px 0' }}>
                 <Badge color="green">Education</Badge>
-              </div>
-              <h1 style={{
-                fontFamily: "'Lora', Georgia, serif", fontSize: 22, fontWeight: 700,
-                color: C.carbon, marginTop: 10, marginBottom: 4, lineHeight: 1.3,
-              }}>
-                Grade 5 Math Bundle – Full Year
-              </h1>
-              <p style={{ fontSize: 12, color: C.slate, marginBottom: 14 }}>
-                by TeachersPro • ⭐ 5.0 (847 reviews)
-              </p>
-              <div style={{ fontSize: 28, fontWeight: 700, color: C.carbon, marginBottom: 4 }}>$49.00</div>
-              <div style={{ fontSize: 11, color: C.success, marginBottom: 20 }}>✓ Instant digital download</div>
+                <h1 style={{
+                  fontFamily: "'Lora', Georgia, serif", fontSize: 21, fontWeight: 700,
+                  color: C.carbon, marginTop: 12, marginBottom: 6, lineHeight: 1.35,
+                  wordBreak: 'break-word', overflowWrap: 'break-word',
+                }}>
+                  Grade 5 Math Bundle – Full Year
+                </h1>
+                <p style={{ fontSize: 12, color: C.slate, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                  by TeachersPro
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    • <Star size={11} style={{ color: '#D97757', fill: '#D97757' }} /> 5.0 (847 reviews)
+                  </span>
+                </p>
 
-              <Button variant="primary" size="lg" fullWidth style={{ justifyContent: 'center', marginBottom: 10 }}>
-                Buy Now <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /> $49.00
-              </Button>
-              <Button variant="secondary" size="md" fullWidth style={{ justifyContent: 'center', marginBottom: 20 }}>
-                Add to Cart
-              </Button>
+                {/* Price */}
+                <div style={{ fontSize: 32, fontWeight: 800, color: C.carbon, marginBottom: 4, letterSpacing: '-0.5px' }}>$49.00</div>
+                <div style={{ fontSize: 12, color: C.success, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <CheckCircle size={13} /> Instant digital download
+                </div>
+
+                {/* Buttons */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+                  <Button variant="primary" size="lg" fullWidth style={{ justifyContent: 'center' }}>
+                    Buy Now <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 6 }} /> $49.00
+                  </Button>
+                  <Button variant="secondary" size="md" fullWidth style={{ justifyContent: 'center' }}>
+                    Add to Cart
+                  </Button>
+                </div>
+              </div>
 
               {/* Divider */}
-              <div style={{ height: 1, backgroundColor: C.bone, margin: '0 0 16px 0' }} />
+              <div style={{ height: 1, backgroundColor: C.bone }} />
 
               {/* Info rows */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+              <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {INFO_ROWS.map((row) => (
-                  <div key={row.label} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: 16 }}>{row.icon}</span>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 12, color: C.charcoal }}>{row.label}</div>
-                      <div style={{ fontSize: 11, color: C.slate }}>{row.value}</div>
+                  <div key={row.label} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 8,
+                      backgroundColor: C.paleOrange, display: 'flex',
+                      alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <row.Icon size={15} style={{ color: '#D97757' }} />
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 12, color: C.charcoal, marginBottom: 2 }}>{row.label}</div>
+                      <div style={{ fontSize: 11, color: C.slate, overflowWrap: 'break-word', lineHeight: 1.55 }}>{row.value}</div>
                     </div>
                   </div>
                 ))}
               </div>
 
               {/* Divider */}
-              <div style={{ height: 1, backgroundColor: C.bone, margin: '0 0 12px 0' }} />
+              <div style={{ height: 1, backgroundColor: C.bone }} />
 
               {/* Share */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 12, color: C.slate }}>Share this listing</span>
-                {['🔗', '📧', '🤳'].map((icon) => (
-                  <button key={icon} style={{
-                    fontSize: 16, background: 'none', border: 'none',
-                    cursor: 'pointer', padding: '2px 6px',
-                    borderRadius: 6, color: C.slate,
+              <div style={{ padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12, color: C.slate, flex: 1 }}>Share this listing</span>
+                {([Link2, Mail, Smartphone] as LucideIcon[]).map((Icon, i) => (
+                  <button key={i} style={{
+                    width: 30, height: 30, borderRadius: 8,
+                    background: C.cream, border: `1px solid ${C.bone}`,
+                    cursor: 'pointer', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    color: C.slate,
                   }}>
-                    {icon}
+                    <Icon size={14} />
                   </button>
                 ))}
               </div>

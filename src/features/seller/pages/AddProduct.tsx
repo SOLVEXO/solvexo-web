@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input, Textarea, Select } from '@/components/ui/Input';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { Package, Download, BookOpen, Sparkles, Camera } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 type ProductType = 'physical' | 'digital' | 'educational';
 
-const PRODUCT_TYPES: { id: ProductType; emoji: string; label: string; desc: string }[] = [
-  { id: 'physical',     emoji: '📦', label: 'Physical',     desc: 'Shipped to buyer' },
-  { id: 'digital',      emoji: '💾', label: 'Digital',      desc: 'Instant download' },
-  { id: 'educational',  emoji: '📚', label: 'Educational',  desc: 'Learning resource' },
+const PRODUCT_TYPES: { id: ProductType; Icon: LucideIcon; label: string; desc: string }[] = [
+  { id: 'physical',     Icon: Package,  label: 'Physical',     desc: 'Shipped to buyer' },
+  { id: 'digital',      Icon: Download, label: 'Digital',      desc: 'Instant download' },
+  { id: 'educational',  Icon: BookOpen, label: 'Educational',  desc: 'Learning resource' },
 ];
 
 const DEFAULT_TAGS = ['math', 'grade 5', 'common core', 'fractions', 'worksheets'];
@@ -65,7 +67,7 @@ export function AddProduct() {
                       background:  productType === pt.id ? '#FBECE4' : '#FFFFFF',
                     }}
                   >
-                    <div style={{ fontSize: 24 }} className="mb-2">{pt.emoji}</div>
+                    <pt.Icon size={24} className="mb-2" style={{ color: productType === pt.id ? '#B95A3A' : '#8C8A82' }} />
                     <p className="text-[13px] font-semibold" style={{ color: productType === pt.id ? '#B95A3A' : '#141413' }}>
                       {pt.label}
                     </p>
@@ -90,7 +92,7 @@ export function AddProduct() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-[12px] font-medium text-charcoal">Description</label>
-                    <Button variant="secondary" size="sm">✨ AI Write</Button>
+                    <Button variant="secondary" size="sm"><Sparkles size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />AI Write</Button>
                   </div>
                   <Textarea
                     placeholder="Describe your product — what's included, who it's for, key benefits…"
@@ -127,7 +129,7 @@ export function AddProduct() {
                 className="rounded-xl border-2 border-dashed flex flex-col items-center justify-center py-12 cursor-pointer transition-colors hover:bg-cream"
                 style={{ borderColor: '#E8E6DC' }}
               >
-                <div style={{ fontSize: 36 }} className="mb-3">📸</div>
+                <Camera size={36} className="mb-3" style={{ color: '#8C8A82' }} />
                 <p className="text-[14px] font-semibold text-carbon mb-1">Drag & drop images here</p>
                 <p className="text-[12px] text-slate mb-4">PNG, JPG, WEBP — up to 10 files, max 10 MB each</p>
                 <Button variant="ghost" size="sm">Browse Files</Button>
@@ -149,7 +151,7 @@ export function AddProduct() {
                     />
                   </div>
                   <Button variant="secondary" size="sm" className="mb-0.5" onClick={() => addTag(tagInput)}>
-                    ✨ AI Suggest Tags
+                    <Sparkles size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />AI Suggest Tags
                   </Button>
                 </div>
                 {tags.length > 0 && (
@@ -201,7 +203,7 @@ export function AddProduct() {
                   className="rounded-lg p-3 text-[12px]"
                   style={{ background: '#FBECE4', color: '#B95A3A' }}
                 >
-                  <p className="font-semibold mb-1">✨ AI Price Suggester</p>
+                  <p className="font-semibold mb-1 flex items-center gap-1"><Sparkles size={12} />AI Price Suggester</p>
                   <p style={{ color: '#8C6050' }}>
                     Based on similar products in Educational Resources, the suggested price is <strong>$39 – $55</strong>.
                   </p>

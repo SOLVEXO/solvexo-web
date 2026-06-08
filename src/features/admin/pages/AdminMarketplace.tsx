@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { Input, Select } from '@/components/ui/Input';
+import { Star } from 'lucide-react';
 
 interface Product {
   id:       string;
@@ -115,7 +116,7 @@ export function AdminMarketplace() {
                   <td className="px-4 py-3.5 text-carbon">{p.sales.toLocaleString()}</td>
                   <td className="px-4 py-3.5"><Badge color={STATUS_COLORS[p.status]}>{p.status}</Badge></td>
                   <td className="px-4 py-3.5">
-                    <span style={{ fontSize: 14 }}>{p.featured ? '⭐' : '—'}</span>
+                    <span style={{ fontSize: 14 }}>{p.featured ? <Star size={14} style={{ color: '#D97757', fill: '#D97757' }} /> : '—'}</span>
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-2">

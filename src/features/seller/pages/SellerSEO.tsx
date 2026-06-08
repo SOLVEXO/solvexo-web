@@ -6,6 +6,7 @@ import { MetricCard }  from '@/components/ui/MetricCard';
 import { Badge }       from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { Sparkles, Check, X } from 'lucide-react';
 
 // ── Types & Data ──────────────────────────────────────────────────────────────
 type Product = {
@@ -73,7 +74,7 @@ export function SellerSEO() {
         subtitle="Optimize your store and products for search engines."
         actions={
           <>
-            <Button variant="secondary" size="sm">✨ AI SEO Audit</Button>
+            <Button variant="secondary" size="sm"><Sparkles size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />AI SEO Audit</Button>
             <Button variant="primary"   size="sm">Save All Changes</Button>
           </>
         }
@@ -155,16 +156,16 @@ export function SellerSEO() {
                     <div>
                       <p className="text-[15px] font-bold text-carbon mb-0.5">{selected.name}</p>
                       <p className="text-[12px] text-success font-medium mb-2">
-                        {selected.score >= 80 ? '✓ Excellent SEO' : selected.score >= 60 ? '~ Good SEO' : '✗ Needs Work'}
+                        {selected.score >= 80 ? <><Check size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />Excellent SEO</> : selected.score >= 60 ? '~ Good SEO' : <><X size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />Needs Work</>}
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        {['Title ✓', 'Description ✓', 'Keywords ✓', 'Images ✓'].map(tag => (
+                        {['Title', 'Description', 'Keywords', 'Images'].map(tag => (
                           <Badge key={tag} color="gray">{tag}</Badge>
                         ))}
                       </div>
                     </div>
                   </div>
-                  <Button variant="secondary" size="sm" className="flex-shrink-0">✨ AI Optimize All</Button>
+                  <Button variant="secondary" size="sm" className="flex-shrink-0"><Sparkles size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />AI Optimize All</Button>
                 </div>
               </Card>
 
@@ -189,7 +190,7 @@ export function SellerSEO() {
                   <div className="w-full">
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-[12px] font-medium text-charcoal">SEO Title</label>
-                      <span className="text-[11px] text-success font-medium">58/60 chars ✓</span>
+                      <span className="text-[11px] text-success font-medium flex items-center gap-1"><Check size={11} />58/60 chars</span>
                     </div>
                     <input
                       defaultValue="Grade 5 Math Bundle — Printable Worksheets for Grade 5"
@@ -199,7 +200,7 @@ export function SellerSEO() {
                   <div className="w-full">
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-[12px] font-medium text-charcoal">Meta Description</label>
-                      <span className="text-[11px] text-success font-medium">148/160 chars ✓</span>
+                      <span className="text-[11px] text-success font-medium flex items-center gap-1"><Check size={11} />148/160 chars</span>
                     </div>
                     <textarea
                       rows={3}
@@ -221,7 +222,7 @@ export function SellerSEO() {
                 <div className="flex flex-col gap-2">
                   {SEO_CHECKS.map(item => (
                     <div key={item} className="flex items-center gap-2">
-                      <span className="text-[13px] text-success flex-shrink-0">✓</span>
+                      <Check size={13} className="text-success flex-shrink-0" />
                       <span className="text-[13px] text-charcoal">{item}</span>
                     </div>
                   ))}

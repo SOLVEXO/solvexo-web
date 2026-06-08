@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { MetricCard } from '@/components/ui/MetricCard';
+import { CreditCard, DollarSign, BarChart2, Mail, Package, Zap, Check } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -13,55 +15,19 @@ type AppTab = 'connected' | 'available';
 
 interface AppDef {
   id: string;
-  icon: string;
+  Icon: LucideIcon;
   iconBg: string;
   name: string;
   desc: string;
 }
 
 const CONNECTED_APPS: AppDef[] = [
-  {
-    id: 'stripe',
-    icon: '💳',
-    iconBg: 'bg-[#EEF2FF]',
-    name: 'Stripe',
-    desc: 'Accept credit cards, Apple Pay, Google Pay.',
-  },
-  {
-    id: 'paypal',
-    icon: 'P',
-    iconBg: 'bg-[#E8F4FD]',
-    name: 'PayPal',
-    desc: 'PayPal checkout and payout.',
-  },
-  {
-    id: 'google-analytics',
-    icon: '📊',
-    iconBg: 'bg-[#FFF8E1]',
-    name: 'Google Analytics',
-    desc: 'Track store traffic and conversions.',
-  },
-  {
-    id: 'mailchimp',
-    icon: '📧',
-    iconBg: 'bg-[#FFF3E0]',
-    name: 'Mailchimp',
-    desc: 'Sync customers and send email campaigns.',
-  },
-  {
-    id: 'shippo',
-    icon: '📦',
-    iconBg: 'bg-[#E8F5E9]',
-    name: 'Shippo',
-    desc: 'Discounted shipping labels and tracking.',
-  },
-  {
-    id: 'zapier',
-    icon: '⚡',
-    iconBg: 'bg-[#FFF3E0]',
-    name: 'Zapier',
-    desc: 'Connect Solvexo to 5,000+ apps.',
-  },
+  { id: 'stripe',           Icon: CreditCard,  iconBg: 'bg-[#EEF2FF]', name: 'Stripe',           desc: 'Accept credit cards, Apple Pay, Google Pay.'  },
+  { id: 'paypal',           Icon: DollarSign,  iconBg: 'bg-[#E8F4FD]', name: 'PayPal',           desc: 'PayPal checkout and payout.'                  },
+  { id: 'google-analytics', Icon: BarChart2,   iconBg: 'bg-[#FFF8E1]', name: 'Google Analytics', desc: 'Track store traffic and conversions.'          },
+  { id: 'mailchimp',        Icon: Mail,        iconBg: 'bg-[#FFF3E0]', name: 'Mailchimp',        desc: 'Sync customers and send email campaigns.'      },
+  { id: 'shippo',           Icon: Package,     iconBg: 'bg-[#E8F5E9]', name: 'Shippo',           desc: 'Discounted shipping labels and tracking.'      },
+  { id: 'zapier',           Icon: Zap,         iconBg: 'bg-[#FFF3E0]', name: 'Zapier',           desc: 'Connect Solvexo to 5,000+ apps.'               },
 ];
 
 const WEBHOOK_EVENTS = [
@@ -120,7 +86,7 @@ export function SellerIntegrations() {
                 : 'border border-bone text-charcoal hover:bg-cream'
             }`}
           >
-            ✓ Connected (6)
+            <Check size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />Connected (6)
           </button>
           <button
             onClick={() => setActiveTab('available')}
@@ -141,14 +107,14 @@ export function SellerIntegrations() {
               <Card key={app.id} padding="md" className="relative">
                 {/* Connected badge */}
                 <div className="absolute top-4 right-4">
-                  <Badge color="green">✓ Connected</Badge>
+                  <Badge color="green"><Check size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />Connected</Badge>
                 </div>
 
                 {/* Icon */}
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-[22px] mb-3 flex-shrink-0 ${app.iconBg}`}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 flex-shrink-0 ${app.iconBg}`}
                 >
-                  {app.icon}
+                  <app.Icon size={22} style={{ color: '#6B7280' }} />
                 </div>
 
                 {/* Name + desc */}

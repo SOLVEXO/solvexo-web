@@ -2,7 +2,7 @@ import { useState, useRef, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
-import { AlertTriangle, ArrowRight } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check } from 'lucide-react';
 import { runSchema, otpSchema } from '@/utils/validation/schemas';
 import { apiVerifyOtp, AuthContext, TokenStorage } from '@/api/auth';
 import type { CSSProperties } from 'react';
@@ -81,8 +81,8 @@ function OTPInput({ values, onChange }: {
         ))}
       </div>
       {filled && (
-        <p style={{ textAlign: 'center', fontSize: 11, color: C.success, fontFamily: FONT }}>
-          ✓ Code entered — click Verify to continue
+        <p style={{ textAlign: 'center', fontSize: 11, color: C.success, fontFamily: FONT, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+          <Check size={11} /> Code entered — click Verify to continue
         </p>
       )}
     </div>

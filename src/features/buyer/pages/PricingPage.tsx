@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowRight, Sparkles, User, Lock, Star, Receipt, MessageSquare, Check, X } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { ArrowRight } from 'lucide-react';
 
 // ── Design tokens (exact reference C object) ──────────────────────────────────
 const C = {
@@ -100,13 +101,13 @@ const PLANS = [
 ];
 
 // ── Add-ons exact from reference ──────────────────────────────────────────────
-const ADDONS = [
-  { icon: '✨', name: 'Extra AI Credits',              price: '$10',   unit: 'per 500 credits'       },
-  { icon: '👤', name: 'Additional Staff Seats',         price: '$5',    unit: 'per seat / month'      },
-  { icon: '🔒', name: 'Custom Domain SSL',              price: 'Free',  unit: 'included on Pro+'      },
-  { icon: '⭐', name: 'Priority Marketplace Placement', price: '$29',   unit: 'per month'             },
-  { icon: '🧾', name: 'Advanced Tax Compliance',        price: '$15',   unit: 'per month'             },
-  { icon: '💬', name: 'SMS Notifications',              price: '$0.05', unit: 'per message'           },
+const ADDONS: { Icon: LucideIcon; name: string; price: string; unit: string }[] = [
+  { Icon: Sparkles,       name: 'Extra AI Credits',              price: '$10',   unit: 'per 500 credits'       },
+  { Icon: User,           name: 'Additional Staff Seats',         price: '$5',    unit: 'per seat / month'      },
+  { Icon: Lock,           name: 'Custom Domain SSL',              price: 'Free',  unit: 'included on Pro+'      },
+  { Icon: Star,           name: 'Priority Marketplace Placement', price: '$29',   unit: 'per month'             },
+  { Icon: Receipt,        name: 'Advanced Tax Compliance',        price: '$15',   unit: 'per month'             },
+  { Icon: MessageSquare,  name: 'SMS Notifications',              price: '$0.05', unit: 'per message'           },
 ];
 
 // ── FAQ exact from reference ───────────────────────────────────────────────────
@@ -282,7 +283,7 @@ export function PricingPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {plan.features.map(f => (
                   <div key={f} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: 13, color: C.success, flexShrink: 0, marginTop: 1 }}>✓</span>
+                    <Check size={13} style={{ color: C.success, flexShrink: 0, marginTop: 1 }} />
                     <span style={{ fontSize: 12, color: isPro ? '#D0CEC8' : C.charcoal, lineHeight: 1.5, fontFamily: FONT }}>
                       {f}
                     </span>
@@ -290,7 +291,7 @@ export function PricingPage() {
                 ))}
                 {plan.missing.map(f => (
                   <div key={f} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', opacity: 0.4 }}>
-                    <span style={{ fontSize: 13, color: C.slate, flexShrink: 0, marginTop: 1 }}>✗</span>
+                    <X size={13} style={{ color: C.slate, flexShrink: 0, marginTop: 1 }} />
                     <span style={{ fontSize: 12, color: C.slate, lineHeight: 1.5, fontFamily: FONT }}>
                       {f}
                     </span>
@@ -319,7 +320,7 @@ export function PricingPage() {
                 border: `1px solid ${C.bone}`, display: 'flex', gap: 14, alignItems: 'center',
               }}
             >
-              <span style={{ fontSize: 28, flexShrink: 0 }}>{a.icon}</span>
+              <a.Icon size={28} style={{ color: '#D97757', flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: C.carbon, fontFamily: FONT, marginBottom: 2 }}>{a.name}</p>
                 <p style={{ fontSize: 11, color: C.slate, fontFamily: FONT }}>{a.unit}</p>

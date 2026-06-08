@@ -4,8 +4,8 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
-import { ArrowRight } from 'lucide-react';
-// Select imported for future use
+import { ArrowRight, ShoppingCart, ShoppingBag, Star, Leaf, BookOpen, Coffee, Palette, Scissors, Music } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 const C = {
   orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
@@ -27,13 +27,13 @@ function SolvexoIcon({ size = 32 }: { size?: number }) {
 
 const TABS = ['All', 'Physical', 'Digital', 'Education', 'Art & Design', 'Templates', 'Music'];
 
-const PRODUCTS = [
-  { id: 1, name: 'Watercolor Botanical Prints', seller: 'ArtByMia', price: '$24.00', tag: 'Digital', tagColor: 'blue' as const, rating: '4.9', reviews: 312, img: '🌿' },
-  { id: 2, name: 'Grade 5 Math Bundle – Full Year', seller: 'TeachersPro', price: '$49.00', tag: 'Education', tagColor: 'green' as const, rating: '5.0', reviews: 847, img: '📚' },
-  { id: 3, name: 'Handmade Ceramic Mug Set', seller: 'KiloKraft', price: '$58.00', tag: 'Physical', tagColor: 'orange' as const, rating: '4.8', reviews: 203, img: '☕' },
-  { id: 4, name: 'Brand Identity Figma Kit', seller: 'DesignVault', price: '$39.00', tag: 'Digital', tagColor: 'blue' as const, rating: '4.9', reviews: 519, img: '🎨' },
-  { id: 5, name: 'Linen Wall Hanging – Boho', seller: 'ThreadCo', price: '$72.00', tag: 'Physical', tagColor: 'orange' as const, rating: '4.7', reviews: 144, img: '🪢' },
-  { id: 6, name: 'Lo-Fi Chill Music Pack (25 tracks)', seller: 'BeatsByKai', price: '$19.00', tag: 'Digital', tagColor: 'blue' as const, rating: '4.8', reviews: 290, img: '🎵' },
+const PRODUCTS: { id: number; name: string; seller: string; price: string; tag: string; tagColor: 'blue' | 'green' | 'orange'; rating: string; reviews: number; Img: LucideIcon }[] = [
+  { id: 1, name: 'Watercolor Botanical Prints', seller: 'ArtByMia', price: '$24.00', tag: 'Digital', tagColor: 'blue', rating: '4.9', reviews: 312, Img: Leaf     },
+  { id: 2, name: 'Grade 5 Math Bundle – Full Year', seller: 'TeachersPro', price: '$49.00', tag: 'Education', tagColor: 'green', rating: '5.0', reviews: 847, Img: BookOpen },
+  { id: 3, name: 'Handmade Ceramic Mug Set', seller: 'KiloKraft', price: '$58.00', tag: 'Physical', tagColor: 'orange', rating: '4.8', reviews: 203, Img: Coffee  },
+  { id: 4, name: 'Brand Identity Figma Kit', seller: 'DesignVault', price: '$39.00', tag: 'Digital', tagColor: 'blue', rating: '4.9', reviews: 519, Img: Palette  },
+  { id: 5, name: 'Linen Wall Hanging – Boho', seller: 'ThreadCo', price: '$72.00', tag: 'Physical', tagColor: 'orange', rating: '4.7', reviews: 144, Img: Scissors },
+  { id: 6, name: 'Lo-Fi Chill Music Pack (25 tracks)', seller: 'BeatsByKai', price: '$19.00', tag: 'Digital', tagColor: 'blue', rating: '4.8', reviews: 290, Img: Music   },
 ];
 
 const PRICE_FILTERS = ['Under $10', '$10–$50', '$50–$100', '$100+'];
@@ -66,7 +66,7 @@ export function Marketplace() {
         {/* Center: search */}
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
           <input
-            placeholder="🔍 Search marketplace..."
+            placeholder="Search marketplace..."
             style={{
               width: '100%', maxWidth: 440,
               padding: '8px 14px', borderRadius: 8,
@@ -84,9 +84,9 @@ export function Marketplace() {
             width: 32, height: 32, borderRadius: '50%',
             backgroundColor: C.orange, display: 'flex',
             alignItems: 'center', justifyContent: 'center',
-            fontSize: 16, cursor: 'pointer',
+            cursor: 'pointer',
           }}>
-            🛒
+            <ShoppingCart size={16} style={{ color: '#fff' }} />
           </div>
         </div>
       </nav>
@@ -109,7 +109,7 @@ export function Marketplace() {
           </p>
           <Button variant="primary" size="md" onClick={() => {}}>Shop Now <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></Button>
         </div>
-        <div style={{ fontSize: 80 }}>🛍️</div>
+        <ShoppingBag size={80} style={{ color: '#D97757' }} />
       </div>
 
       {/* Category tabs */}
@@ -226,10 +226,9 @@ export function Marketplace() {
                 <div style={{
                   height: 160, backgroundColor: C.paleOrange,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 60,
                   borderRadius: '12px 12px 0 0',
                 }}>
-                  {p.img}
+                  <p.Img size={60} style={{ color: '#D97757' }} />
                 </div>
                 {/* Content */}
                 <div style={{ padding: 16 }}>
@@ -239,8 +238,8 @@ export function Marketplace() {
                   <div style={{ fontSize: 11, color: C.slate, marginBottom: 6 }}>by {p.seller}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                     <Badge color={p.tagColor}>{p.tag}</Badge>
-                    <span style={{ fontSize: 11, color: C.charcoal }}>
-                      ⭐ {p.rating} ({p.reviews})
+                    <span style={{ fontSize: 11, color: C.charcoal, display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <Star size={11} style={{ color: '#D97757', fill: '#D97757' }} /> {p.rating} ({p.reviews})
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

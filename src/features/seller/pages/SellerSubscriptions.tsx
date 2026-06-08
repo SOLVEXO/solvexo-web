@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { StatusBadge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
+import { Check } from 'lucide-react';
 
 interface Plan {
   name: string;
@@ -173,7 +174,7 @@ export function SellerSubscriptions() {
               <ul className="flex flex-col gap-1.5 mb-5">
                 {plan.features.map(feat => (
                   <li key={feat} className="flex items-center gap-2 text-[13px] text-charcoal">
-                    <span className="text-success text-[12px] font-bold flex-shrink-0">✓</span>
+                    <Check size={13} className="text-success flex-shrink-0" />
                     {feat}
                   </li>
                 ))}
