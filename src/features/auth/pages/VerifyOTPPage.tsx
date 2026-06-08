@@ -1,33 +1,27 @@
 import { useState, useRef, type KeyboardEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useVerifyOtp } from '@/hooks/auth/useVerifyOtp';
 import { Button } from '@/components/ui/Button';
 import { AlertTriangle, ArrowRight, Check } from 'lucide-react';
 import { runSchema, otpSchema } from '@/utils/validation/schemas';
-import { apiVerifyOtp, AuthContext, TokenStorage } from '@/api/auth';
+import { AuthContext } from '@/api/auth';
 import type { CSSProperties } from 'react';
 
 const C = {
-  orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
-  carbon: '#141413', charcoal: '#2C2A28', slate: '#8C8A82',
-  bone: '#E8E6DC', cream: '#FAF9F5', white: '#FFFFFF',
-  success: '#2D8A4E', successBg: '#EBF7EF',
+  orange: '#D97757', carbon: '#141413', charcoal: '#2C2A28',
+  slate: '#8C8A82', bone: '#E8E6DC', cream: '#FAF9F5', white: '#FFFFFF',
+  paleOrange: '#FBECE4', success: '#2D8A4E',
   error: '#C13030', errorBg: '#FDEAEA',
 };
 const FONT = "'Poppins', sans-serif";
 
 const cardStyle: CSSProperties = {
   background: C.white, borderRadius: 20,
-  // boxShadow: '0 8px 40px rgba(0,0,0,0.08)',
   padding: '36px 40px', width: '100%', maxWidth: 440,
   border: `1px solid ${C.bone}`,
 };
 
-// ── OTP Input Box ─────────────────────────────────────────────────────────────
-function OTPInput({ values, onChange }: {
-  values: string[];
-  onChange: (index: number, value: string) => void;
-}) {
+function OTPInput({ values, onChange }: { values: string[]; onChange: (i: number, v: string) => void }) {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleChange = (i: number, val: string) => {
@@ -37,9 +31,7 @@ function OTPInput({ values, onChange }: {
   };
 
   const handleKeyDown = (i: number, e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !values[i] && i > 0) {
-      refs.current[i - 1]?.focus();
-    }
+    if (e.key === 'Backspace' && !values[i] && i > 0) refs.current[i - 1]?.focus();
     if (e.key === 'ArrowLeft'  && i > 0) refs.current[i - 1]?.focus();
     if (e.key === 'ArrowRight' && i < 5) refs.current[i + 1]?.focus();
   };
@@ -57,25 +49,18 @@ function OTPInput({ values, onChange }: {
     <div>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 8 }}>
         {values.map((val, i) => (
-          <input
-            key={i}
+          <input key={i}
             ref={el => { refs.current[i] = el; }}
-            type="text"
-            inputMode="numeric"
-            maxLength={1}
-            value={val}
+            type="text" inputMode="numeric" maxLength={1} value={val}
             onChange={e => handleChange(i, e.target.value)}
             onKeyDown={e => handleKeyDown(i, e)}
             onPaste={handlePaste}
             style={{
-              width: 52, height: 56, textAlign: 'center',
-              fontSize: 22, fontWeight: 700, fontFamily: FONT,
-              borderRadius: 10,
+              width: 52, height: 56, textAlign: 'center', fontSize: 22, fontWeight: 700,
+              fontFamily: FONT, borderRadius: 10,
               border: `2px solid ${val ? C.orange : C.bone}`,
               background: val ? C.paleOrange : C.white,
-              color: C.carbon, outline: 'none',
-              transition: 'all 0.15s',
-              cursor: 'text',
+              color: C.carbon, outline: 'none', transition: 'all 0.15s', cursor: 'text',
             }}
           />
         ))}
@@ -89,9 +74,8 @@ function OTPInput({ values, onChange }: {
   );
 }
 
-// ── Resend Timer ──────────────────────────────────────────────────────────────
 function ResendTimer() {
-  const [seconds, setSeconds] = useState(59);
+  const [seconds,   setSeconds]   = useState(59);
   const [canResend, setCanResend] = useState(false);
 
   useState(() => {
@@ -106,13 +90,8 @@ function ResendTimer() {
 
   if (canResend) {
     return (
-      <button
-        onClick={() => { setSeconds(59); setCanResend(false); }}
-        style={{
-          fontSize: 13, color: C.orange, fontWeight: 600,
-          background: 'none', border: 'none', cursor: 'pointer', fontFamily: FONT,
-        }}
-      >
+      <button onClick={() => { setSeconds(59); setCanResend(false); }}
+        style={{ fontSize: 13, color: C.orange, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontFamily: FONT }}>
         Resend code
       </button>
     );
@@ -124,44 +103,25 @@ function ResendTimer() {
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
 export function VerifyOTPPage() {
-  const navigate = useNavigate();
   usePageTitle('Verify OTP');
-  const [otp,     setOtp]     = useState(['', '', '', '', '', '']);
-  const [error,   setError]   = useState('');
-  const [loading, setLoading] = useState(false);
+  const verifyOtp  = useVerifyOtp();
+  const [otp, setOtp]     = useState(['', '', '', '', '', '']);
+  const [error, setError] = useState('');
+
+  const ctx       = AuthContext.get();
+  const userEmail = ctx?.email ?? '';
 
   const handleChange = (i: number, val: string) => {
-    const next = [...otp];
-    next[i] = val;
-    setOtp(next);
-    setError('');
+    const next = [...otp]; next[i] = val; setOtp(next); setError('');
   };
-
-  // Get email stored by RegisterPage
-  const ctx = AuthContext.get();
-  const userEmail = ctx?.email ?? '';
 
   const handleVerify = async () => {
     const code = otp.join('');
     const errs = runSchema(otpSchema, { otp: code });
     if (errs.otp) { setError(errs.otp); return; }
-    if (!userEmail) { setError('Session expired. Please register again.'); return; }
-
-    setLoading(true);
-    try {
-      const res = await apiVerifyOtp({ email: userEmail, role: 'user', otp: code });
-      // Save tokens + user
-      TokenStorage.save(res.data.token.accessToken, res.data.token.refreshToken);
-      TokenStorage.saveUser(res.data.user);
-      AuthContext.clear();
-      navigate('/seller/dashboard');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid or expired code. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    await verifyOtp.execute(code);
+    if (verifyOtp.error) setError(verifyOtp.error);
   };
 
   return (
@@ -171,22 +131,7 @@ export function VerifyOTPPage() {
       alignItems: 'center', justifyContent: 'center',
       padding: '48px 16px', fontFamily: FONT,
     }}>
-      {/* Logo */}
-      {/* <div style={{ marginBottom: 32 }}>
-        <SolvexoLogo size={36} />
-      </div> */}
-
       <div style={cardStyle}>
-        {/* Icon */}
-        {/* <div style={{
-          width: 56, height: 56, borderRadius: '50%',
-          background: C.paleOrange, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: 26, margin: '0 auto 20px',
-        }}>
-          📱
-        </div> */}
-
-        {/* Heading */}
         <h1 style={{ fontSize: 22, fontWeight: 700, color: C.carbon, textAlign: 'center', marginBottom: 8 }}>
           Verify your email
         </h1>
@@ -197,51 +142,25 @@ export function VerifyOTPPage() {
           {userEmail || '—'}
         </p>
 
-        {/* OTP boxes */}
         <div style={{ marginBottom: 20 }}>
           <OTPInput values={otp} onChange={handleChange} />
         </div>
 
-        {/* Error message */}
-        {error && (
-          <div style={{
-            background: C.errorBg, borderRadius: 8, padding: '10px 14px',
-            marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8,
-          }}>
+        {(error || verifyOtp.error) && (
+          <div style={{ background: C.errorBg, borderRadius: 8, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
             <AlertTriangle size={14} style={{ color: C.error, flexShrink: 0 }} />
-            <span style={{ fontSize: 13, color: C.error }}>{error}</span>
+            <span style={{ fontSize: 13, color: C.error }}>{error || verifyOtp.error}</span>
           </div>
         )}
 
-        {/* Verify button */}
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          onClick={handleVerify}
-          disabled={otp.join('').length < 6}
-        >
-          {loading ? 'Verifying...' : <span>Verify Code <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></span>}
+        <Button variant="primary" size="lg" fullWidth onClick={handleVerify} disabled={otp.join('').length < 6 || verifyOtp.loading}>
+          {verifyOtp.loading ? 'Verifying...' : <span>Verify Code <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></span>}
         </Button>
 
-        {/* Resend */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 20 }}>
           <span style={{ fontSize: 13, color: C.slate }}>Didn't receive it?</span>
           <ResendTimer />
         </div>
-
-        {/* Change email */}
-        {/* <div style={{ textAlign: 'center', marginTop: 12 }}>
-          <button
-            onClick={() => navigate('/forgot-password')}
-            style={{
-              fontSize: 12, color: C.slate, background: 'none',
-              border: 'none', cursor: 'pointer', fontFamily: FONT,
-            }}
-          >
-            ← Change email address
-          </button>
-        </div> */}
       </div>
     </div>
   );

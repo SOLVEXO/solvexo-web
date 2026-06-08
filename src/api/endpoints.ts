@@ -7,14 +7,20 @@ export const ENDPOINTS = {
 
   // ── AUTH ───────────────────────────────────────────────────────────────────
   AUTH: {
-    REGISTER:        '/auth/register',        // POST  {name, email, password, phone, address, role}
-    LOGIN:           '/auth/login',            // POST  {email, password, role}
-    VERIFY_OTP:      '/auth/verifyOtp',        // POST  {email, role, otp}
-    FORGOT_PASSWORD: '/auth/forgot-password',  // POST  {email, role}
-    RESET_PASSWORD:  '/auth/reset-password',   // POST  {email, role, otp, newPassword}
-    REFRESH_TOKEN:   '/auth/refresh',          // POST  {refreshToken}
-    // LOGOUT:          '/auth/logout',           // POST
-    // ME:              '/auth/me',               // GET
+    REGISTER:        '/api/auth/register',        // POST  {name, email, password, phone, address, role}
+    LOGIN:           '/api/auth/login',            // POST  {email, password, role}
+    VERIFY_OTP:      '/api/auth/verifyOtp',        // POST  {email, role, otp}
+    FORGOT_PASSWORD: '/api/auth/forgot-password',  // POST  {email, role}
+    RESET_PASSWORD:  '/api/auth/reset-password',   // POST  {email, role, otp, newPassword}
+    REFRESH_TOKEN:   '/api/auth/refresh',          // POST  {refreshToken}
+  },
+
+  // ── STORE ─────────────────────────────────────────────────────────────────
+  STORE: {
+    CREATE:     '/api/store/create-store',                       // POST {name,logo,categoryId,description,sellerType,productTypes}
+    UPDATE:     '/api/store/update-store',                       // PUT  {storeId,name,logo,categoryId,description,productTypes}
+    GET_BY_ID:  (id: string) => `/api/store/getStoreById/${id}`, // GET
+    MY_STORES:  '/api/store/my-stores',                          // GET  → {success,count,data:[]}
   },
 
   // ── MARKETPLACE (Buyer) ───────────────────────────────────────────────────
