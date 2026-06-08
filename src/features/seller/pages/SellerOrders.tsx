@@ -201,7 +201,7 @@ export function SellerOrders() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((o, i) => {
+                {filtered.map((o) => {
                   const av = avatarColor[o.initials] ?? { bg: '#F0EEE6', color: '#5A5852' };
                   const st = statusStyle[o.status]   ?? { bg: '#F0EEE6', color: '#5A5852' };
                   const ty = typeStyle[o.type]        ?? { bg: '#F0EEE6', color: '#5A5852' };

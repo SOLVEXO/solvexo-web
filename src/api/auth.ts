@@ -127,8 +127,3 @@ export function apiResetPassword(payload: ResetPayload) {
   return client.post<never, ApiResponse<Record<string, never>>>(ENDPOINTS.AUTH.RESET_PASSWORD, payload);
 }
 
-/** POST /auth/logout */
-export function apiLogout() {
-  const refreshToken = TokenStorage.getRefresh();
-  return client.post(ENDPOINTS.AUTH.LOGOUT, { refreshToken });
-}

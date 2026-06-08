@@ -73,8 +73,7 @@ export function EducationMarketplace() {
           <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')}>Sell on Solvexo</Button>
           <div style={{
             width: 32, height: 32, borderRadius: '50%',
-            backgroundColor: C.orange, display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
+            backgroundColor: C.orange,
             fontSize: 16, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>

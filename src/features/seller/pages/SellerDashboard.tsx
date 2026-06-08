@@ -7,8 +7,6 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button }      from '@/components/ui/Button';
-import { Card }        from '@/components/ui/Card';
-import { Badge, StatusBadge } from '@/components/ui/Badge';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
