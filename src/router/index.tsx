@@ -38,7 +38,7 @@ import { SellerAIStudio }     from '@/features/seller/pages/SellerAIStudio';
 import { SellerCustomers }    from '@/features/seller/pages/SellerCustomers';
 import { SellerMarketing }    from '@/features/seller/pages/SellerMarketing';
 import { SellerCategories }   from '@/features/seller/pages/SellerCategories';
-import { StoreBuilder }       from '@/features/seller/pages/StoreBuilder';
+import { StoreBuilder }       from '@/features/seller/pages/storemodule/StoreBuilder';
 import { SellerSettings }     from '@/features/seller/pages/SellerSettings';
 import { POSRegister }        from '@/features/seller/pos/POSRegister';
 import { SellerReturns }      from '@/features/seller/pages/SellerReturns';
@@ -51,6 +51,9 @@ import { SellerLoyalty }      from '@/features/seller/pages/SellerLoyalty';
 import { SellerSubscriptions } from '@/features/seller/pages/SellerSubscriptions';
 import { SellerIntegrations } from '@/features/seller/pages/SellerIntegrations';
 import { SellerActivity }     from '@/features/seller/pages/SellerActivity';
+import { SellerStoreDetail } from '@/features/seller/pages/storemodule/SellerStoreDetail';
+import { SellerStoreEdit } from '@/features/seller/pages/storemodule/SellerStoreEdit';
+import { SellerStoreList } from '@/features/seller/pages/storemodule/SellerStoreList';
 
 // ── Admin Pages ───────────────────────────────────────────────────────────────
 import { AdminOverview }      from '@/features/admin/pages/AdminOverview';
@@ -122,6 +125,9 @@ export const router = createBrowserRouter([
           { path: 'reviews',          element: <SellerReviews /> },
           { path: 'integrations',     element: <SellerIntegrations /> },
           { path: 'activity',         element: <SellerActivity /> },
+          { path: 'stores',             element: <SellerStoreList /> },
+          { path: 'stores/:id',       element: <SellerStoreDetail /> },
+          { path: 'stores/:id/edit',  element: <SellerStoreEdit /> },
           { path: 'store',            element: <StoreBuilder /> },
           { path: 'settings',         element: <SellerSettings /> },
           { path: 'categories',       element: <SellerCategories /> },

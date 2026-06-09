@@ -1,11 +1,11 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, CornerUpLeft, ShoppingBag, Plus, Upload,
   Store, Monitor, BarChart2, Search, Sparkles, Users, Star, RefreshCw,
   Megaphone, Wallet, ClipboardList, Truck, MessageSquare, Plug, Activity,
-  Settings, FolderOpen, Bell,
+  Settings, FolderOpen, Bell, ChevronDown, List,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/ui/SolvexoLogo';
 
@@ -16,9 +16,16 @@ interface NavItem {
   label: string;
   path:  string;
 }
+interface NavDropdown {
+  id:       string;
+  Icon:     LucideIcon;
+  label:    string;
+  children: NavItem[];
+}
+type NavEntry = NavItem | NavDropdown;
 interface NavSection {
   label: string;
-  items: NavItem[];
+  items: NavEntry[];
 }
 
 const NAV_SECTIONS: NavSection[] = [
@@ -31,7 +38,13 @@ const NAV_SECTIONS: NavSection[] = [
       { id: 'products',    Icon: ShoppingBag,      label: 'Products',        path: '/seller/products'         },
       { id: 'add-product', Icon: Plus,             label: 'Add Product',   path: '/seller/products/add'     },
       { id: 'digital',     Icon: Upload,           label: 'Digital Upload',  path: '/seller/products/digital' },
-      { id: 'store',       Icon: Store,            label: 'Store Builder',   path: '/seller/store'            },
+      {
+        id: 'my-store', Icon: Store, label: 'My Store',
+        children: [
+          { id: 'store-list',    Icon: List,   label: 'Store List',    path: '/seller/stores' },
+          { id: 'store-builder', Icon: Store,  label: 'Store Builder', path: '/seller/store'   },
+        ],
+      },
       { id: 'pos',         Icon: Monitor,          label: 'POS Register',    path: '/seller/pos'              },
     ],
   },
@@ -69,13 +82,23 @@ const NAV_SECTIONS: NavSection[] = [
 ];
 
 // ── Sidebar ──────────────────────────────────────────────────────────────────
+function isDropdown(item: NavEntry): item is NavDropdown {
+  return 'children' in item;
+}
+
 function SellerSidebar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
 
   const isActive = (path: string) => {
     if (path === '/seller/products') return pathname === '/seller/products';
-    return pathname.startsWith(path);
+    // Exact match or path prefix with "/" separator (avoids /seller/store matching /seller/stores)
+    return pathname === path || pathname.startsWith(path + '/');
+  };
+
+  const toggleDropdown = (id: string) => {
+    setOpenDropdowns(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
@@ -129,6 +152,91 @@ function SellerSidebar() {
             </p>
 
             {section.items.map(item => {
+              if (isDropdown(item)) {
+                const isOpen = openDropdowns[item.id] ?? false;
+                const anyChildActive = item.children.some(c => isActive(c.path));
+                return (
+                  <div key={item.id} style={{ marginBottom: 2 }}>
+                    <div
+                      onClick={() => toggleDropdown(item.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '9px 10px', borderRadius: 8,
+                        cursor: 'pointer', transition: 'background 0.15s',
+                      }}
+                    >
+                      <item.Icon
+                        size={15}
+                        style={{
+                          opacity: anyChildActive ? 1 : 0.45,
+                          color: anyChildActive ? '#D97757' : '#8C8A82',
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span style={{
+                        fontSize: 13,
+                        fontWeight: anyChildActive ? 600 : 400,
+                        color: anyChildActive ? '#FFFFFF' : '#8C8A82',
+                        flex: 1,
+                      }}>
+                        {item.label}
+                      </span>
+                      <ChevronDown
+                        size={14}
+                        style={{
+                          color: '#8C8A82',
+                          transition: 'transform 0.2s',
+                          transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        }}
+                      />
+                    </div>
+                    {isOpen && (
+                      <div style={{ paddingLeft: 18 }}>
+                        {item.children.map(child => {
+                          const active = isActive(child.path);
+                          return (
+                            <div
+                              key={child.id}
+                              onClick={() => navigate(child.path)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 10,
+                                padding: '8px 10px', borderRadius: 8, marginBottom: 2,
+                                cursor: 'pointer',
+                                background: active ? '#1E1C1A' : 'transparent',
+                                transition: 'background 0.15s',
+                              }}
+                            >
+                              <child.Icon
+                                size={13}
+                                style={{
+                                  opacity: active ? 1 : 0.45,
+                                  color: active ? '#D97757' : '#8C8A82',
+                                  flexShrink: 0,
+                                }}
+                              />
+                              <span style={{
+                                fontSize: 12,
+                                fontWeight: active ? 600 : 400,
+                                color: active ? '#FFFFFF' : '#8C8A82',
+                                flex: 1,
+                              }}>
+                                {child.label}
+                              </span>
+                              {active && (
+                                <div style={{
+                                  width: 3, height: 14, borderRadius: 2,
+                                  background: '#D97757', flexShrink: 0,
+                                }} />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               const active = isActive(item.path);
               return (
                 <div

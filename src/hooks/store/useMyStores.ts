@@ -9,7 +9,11 @@ export function useMyStores() {
   useEffect(() => {
     setLoading(true);
     apiGetMyStores()
-      .then(res  => setStores(res.data))
+      .then(res  => {
+        // Handle both { success, data } wrapper and direct array
+        const storesArray = (res as { data?: MyStoreItem[] }).data ?? res as unknown as MyStoreItem[];
+        setStores(storesArray);
+      })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load stores.'))
       .finally(() => setLoading(false));
   }, []);

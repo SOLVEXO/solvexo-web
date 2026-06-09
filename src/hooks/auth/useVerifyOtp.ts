@@ -18,7 +18,8 @@ export function useVerifyOtp() {
       TokenStorage.save(res.data.token.accessToken, res.data.token.refreshToken);
       TokenStorage.saveUser(res.data.user);
       AuthContext.clear();
-      navigate(getRoleRedirect(ctx.role as AppRole), { replace: true });
+      // navigate(getRoleRedirect(ctx.role as AppRole), { replace: true });
+      navigate('/login', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid or expired code. Please try again.');
     } finally {

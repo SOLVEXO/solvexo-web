@@ -35,7 +35,7 @@ export type AppRole = 'user' | 'seller' | 'admin';
 export function getRoleRedirect(role: AppRole): string {
   switch (role) {
     case 'admin':  return '/admin';
-    case 'seller': return '/onboarding';
+    case 'seller': return '/seller/dashboard';
     default:       return '/marketplace';       // "user" / buyer
   }
 }
