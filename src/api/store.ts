@@ -56,9 +56,9 @@ export function apiCreateStore(payload: CreateStorePayload) {
   return client.post<never, ApiResponse<StoreData>>(ENDPOINTS.STORE.CREATE, payload);
 }
 
-/** PUT /api/store/update-store */
+/** POST /api/store/update-store */
 export function apiUpdateStore(payload: UpdateStorePayload) {
-  return client.put<never, ApiResponse<StoreData>>(ENDPOINTS.STORE.UPDATE, payload);
+  return client.post<never, ApiResponse<StoreData>>(ENDPOINTS.STORE.UPDATE, payload);
 }
 
 /** GET /api/store/getStoreById/:id */

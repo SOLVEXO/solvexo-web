@@ -1,22 +1,21 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { apiCreateStore, type CreateStorePayload, type StoreData } from '@/api/store';
 
 export function useCreateStore() {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
   const [store,   setStore]   = useState<StoreData | null>(null);
 
-  async function execute(payload: CreateStorePayload) {
+  async function execute(payload: CreateStorePayload): Promise<StoreData | null> {
     setError('');
     setLoading(true);
     try {
       const res = await apiCreateStore(payload);
       setStore(res.data);
-      navigate('/seller/dashboard', { replace: true });
+      return res.data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create store. Please try again.');
+      return null;
     } finally {
       setLoading(false);
     }

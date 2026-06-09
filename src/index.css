@@ -84,3 +84,7 @@ body {
 /* ── POS Dark scrollbar ── */
 .pos-dark ::-webkit-scrollbar-track { background: #2C2A28; }
 .pos-dark ::-webkit-scrollbar-thumb { background: #5C5A58; }
+
+/* ── Hidden scrollbar utility ── */
+.scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }

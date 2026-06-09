@@ -8,11 +8,10 @@ import {
   Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
   Package, Download, Calendar, Repeat, MonitorSmartphone,
   Sparkles, User, CreditCard, Plus, Wrench, ShoppingCart,
-  ArrowRight, ArrowLeft, Check, AlertTriangle,
+  ArrowRight, ArrowLeft, Check, AlertTriangle, Loader,
 } from 'lucide-react';
-import type { SellerType, ProductType } from '@/api/store';
+import type { SellerType, ProductType, StoreData } from '@/api/store';
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
   orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
   carbon: '#141413', charcoal: '#2C2A28', slate: '#8C8A82',
@@ -23,23 +22,22 @@ const FONT = "'Poppins', sans-serif";
 
 const STEPS = ['Store Info', 'Seller Type', 'What You Sell', 'Go Live'];
 
-// IDs match API values exactly
 const SELLER_TYPES: { id: SellerType; Icon: React.ElementType; title: string; desc: string }[] = [
-  { id: 'creator',  Icon: Palette,   title: 'Creator',         desc: 'Sell digital art, templates, fonts, music, presets' },
-  { id: 'creator',  Icon: BookOpen,  title: 'Educator',        desc: 'Worksheets, lesson plans, curriculum, assessments' },
-  { id: 'retailer', Icon: Store,     title: 'Retailer',        desc: 'Physical goods, handmade products, branded items' },
-  { id: 'brand',    Icon: Briefcase, title: 'Brand / Business',desc: 'Run a full online store with inventory and POS' },
-  { id: 'reseller', Icon: Monitor,   title: 'Reseller',        desc: 'Source and resell products from suppliers' },
-  { id: 'creator',  Icon: Globe,     title: 'Mix of the above',desc: 'I sell across multiple categories and formats' },
+  { id: 'creator',  Icon: Palette,   title: 'Creator',          desc: 'Sell digital art, templates, fonts, music, presets' },
+  { id: 'creator',  Icon: BookOpen,  title: 'Educator',         desc: 'Worksheets, lesson plans, curriculum, assessments' },
+  { id: 'retailer', Icon: Store,     title: 'Retailer',         desc: 'Physical goods, handmade products, branded items' },
+  { id: 'brand',    Icon: Briefcase, title: 'Brand / Business', desc: 'Run a full online store with inventory and POS' },
+  { id: 'reseller', Icon: Monitor,   title: 'Reseller',         desc: 'Source and resell products from suppliers' },
+  { id: 'creator',  Icon: Globe,     title: 'Mix of the above', desc: 'I sell across multiple categories and formats' },
 ];
 
 const PRODUCT_TYPES: { id: ProductType; Icon: React.ElementType; title: string; desc: string }[] = [
-  { id: 'physical_products',  Icon: Package,          title: 'Physical Products',     desc: 'Ship items to customers' },
-  { id: 'digital_downloads',  Icon: Download,         title: 'Digital Downloads',     desc: 'PDFs, files, audio, video' },
-  { id: 'digital_downloads',  Icon: BookOpen,         title: 'Educational Resources', desc: 'Worksheets, lesson plans' },
-  { id: 'services',           Icon: Calendar,         title: 'Services / Bookings',   desc: 'Appointments and packages' },
-  { id: 'services',           Icon: Repeat,           title: 'Subscriptions',         desc: 'Recurring membership access' },
-  { id: 'in_person_pos',      Icon: MonitorSmartphone,title: 'In-Person / POS',      desc: 'Sell at a physical location' },
+  { id: 'physical_products', Icon: Package,           title: 'Physical Products',     desc: 'Ship items to customers' },
+  { id: 'digital_downloads', Icon: Download,          title: 'Digital Downloads',     desc: 'PDFs, files, audio, video' },
+  { id: 'digital_downloads', Icon: BookOpen,          title: 'Educational Resources', desc: 'Worksheets, lesson plans' },
+  { id: 'services',          Icon: Calendar,          title: 'Services / Bookings',   desc: 'Appointments and packages' },
+  { id: 'services',          Icon: Repeat,            title: 'Subscriptions',         desc: 'Recurring membership access' },
+  { id: 'in_person_pos',     Icon: MonitorSmartphone, title: 'In-Person / POS',       desc: 'Sell at a physical location' },
 ];
 
 const CATEGORIES = [
@@ -48,7 +46,6 @@ const CATEGORIES = [
   'Fashion & Apparel', 'Technology', 'Arts & Crafts',
 ];
 
-// ── Shared styles ─────────────────────────────────────────────────────────────
 const inputStyle: CSSProperties = {
   width: '100%', padding: '10px 12px', borderRadius: 8,
   border: `1px solid ${C.bone}`, fontSize: 13, fontFamily: FONT,
@@ -67,27 +64,31 @@ const tagStyle: CSSProperties = {
   fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, fontFamily: FONT,
 };
 
-// ── Shared state lifted to parent ─────────────────────────────────────────────
 interface StoreForm {
   storeName:    string;
   categoryId:   string;
   description:  string;
   logo:         string;
   sellerType:   SellerType | '';
-  sellerKey:    string;   // tracks which seller type card is selected (idx-based)
+  sellerKey:    string;
   productTypes: ProductType[];
 }
 
 // ── Step Progress ─────────────────────────────────────────────────────────────
-function StepProgress({ current }: { current: number }) {
+function StepProgress({ current, maxReached, onStepClick }: { current: number; maxReached: number; onStepClick: (step: number) => void }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT }}>
       {STEPS.map((label, i) => {
         const n = i + 1;
-        const done = n < current; const active = n === current;
+        const done = n <= maxReached && n !== current; // green = visited but not current
+        const active = n === current;                  // orange = current step
+        const clickable = n <= maxReached && n !== current; // can jump to any visited step
         return (
           <div key={n} style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: clickable ? 'pointer' : 'default' }}
+              onClick={() => clickable && onStepClick(n)}
+            >
               <div style={{
                 width: 32, height: 32, borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -103,7 +104,7 @@ function StepProgress({ current }: { current: number }) {
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div style={{ width: 60, height: 2, marginBottom: 16, marginLeft: 4, marginRight: 4, background: n < current ? C.success : C.bone, borderRadius: 2, transition: 'all 0.3s' }} />
+              <div style={{ width: 60, height: 2, marginBottom: 16, marginLeft: 4, marginRight: 4, background: n < maxReached ? C.success : C.bone, borderRadius: 2, transition: 'all 0.3s' }} />
             )}
           </div>
         );
@@ -112,7 +113,6 @@ function StepProgress({ current }: { current: number }) {
   );
 }
 
-// ── Page Header ───────────────────────────────────────────────────────────────
 function PageHeader({ onSignIn }: { onSignIn: () => void }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', height: 64, borderBottom: `1px solid ${C.bone}`, background: C.white, position: 'sticky', top: 44, zIndex: 10 }}>
@@ -127,8 +127,8 @@ function PageHeader({ onSignIn }: { onSignIn: () => void }) {
 
 // ── Step 1 — Store Info ───────────────────────────────────────────────────────
 function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void }) {
-  const canProceed = form.storeName.trim().length > 0 && form.categoryId.length > 0;
   const [preview, setPreview] = useState('');
+  const canProceed = form.storeName.trim().length > 0 && form.categoryId.length > 0;
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -162,12 +162,9 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
 
         <div style={{ marginBottom: 16 }}>
           <label style={labelStyle}>Store Name <span style={{ color: C.orange }}>*</span></label>
-          <input
-            placeholder="e.g. Creative Classroom Resources"
-            value={form.storeName}
-            onChange={e => setForm({ ...form, storeName: e.target.value })}
-            style={inputStyle}
-          />
+          <input placeholder="e.g. Creative Classroom Resources"
+            value={form.storeName} onChange={e => setForm({ ...form, storeName: e.target.value })}
+            style={inputStyle} />
           {form.storeName && (
             <p style={{ fontSize: 11, color: C.slate, marginTop: 5, fontFamily: FONT }}>
               Your store URL: <span style={{ color: C.orange }}>{form.storeName.toLowerCase().replace(/\s+/g, '-')}.solvexo.store</span>
@@ -177,11 +174,8 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
 
         <div style={{ marginBottom: 16 }}>
           <label style={labelStyle}>Store Category <span style={{ color: C.orange }}>*</span></label>
-          <select
-            value={form.categoryId}
-            onChange={e => setForm({ ...form, categoryId: e.target.value })}
-            style={{ ...inputStyle, cursor: 'pointer' }}
-          >
+          <select value={form.categoryId} onChange={e => setForm({ ...form, categoryId: e.target.value })}
+            style={{ ...inputStyle, cursor: 'pointer' }}>
             <option value="">Select your main category...</option>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
@@ -189,12 +183,9 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
 
         <div style={{ marginBottom: 24 }}>
           <label style={labelStyle}>Store Description <span style={{ color: C.slate, fontWeight: 400 }}>(optional)</span></label>
-          <textarea
-            placeholder="Tell buyers what makes your store special..."
-            rows={4} value={form.description}
-            onChange={e => setForm({ ...form, description: e.target.value })}
-            style={{ ...inputStyle, resize: 'vertical' }}
-          />
+          <textarea placeholder="Tell buyers what makes your store special..."
+            rows={4} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
+            style={{ ...inputStyle, resize: 'vertical' }} />
         </div>
 
         <Button variant="primary" size="lg" fullWidth onClick={() => canProceed && onNext()} disabled={!canProceed}>
@@ -219,7 +210,7 @@ function Step2({ form, setForm, onNext, onBack }: { form: StoreForm; setForm: (f
           const isSelected = form.sellerKey === selKey;
           return (
             <div key={selKey} onClick={() => setForm({ ...form, sellerType: t.id, sellerKey: selKey })}
-              style={{ background: C.white, borderRadius: 14, padding: 20, border: `2px solid ${isSelected ? C.orange : C.bone}`, cursor: 'pointer', transition: 'all 0.2s', boxShadow: isSelected ? `0 0 0 4px ${C.paleOrange}` : 'none', position: 'relative' }}>
+              style={{ background: C.white, borderRadius: 14, padding: 20, border: `2px solid ${isSelected ? C.orange : C.bone}`, cursor: 'pointer', transition: 'all 0.2s', boxShadow: isSelected ? `0 0 0 4px ${C.paleOrange}` : 'none' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <t.Icon size={32} />
                 <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${isSelected ? C.orange : C.bone}`, background: isSelected ? C.orange : C.white, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -242,8 +233,12 @@ function Step2({ form, setForm, onNext, onBack }: { form: StoreForm; setForm: (f
   );
 }
 
-// ── Step 3 — Product Types ────────────────────────────────────────────────────
-function Step3({ form, setForm, onNext, onBack }: { form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void; onBack: () => void }) {
+// ── Step 3 — What You Sell (store create hota hai yahan) ─────────────────────
+function Step3({ form, setForm, onNext, onBack, loading, error }: {
+  form: StoreForm; setForm: (f: StoreForm) => void;
+  onNext: () => void; onBack: () => void;
+  loading: boolean; error: string;
+}) {
   const toggle = (id: ProductType) =>
     setForm({ ...form, productTypes: form.productTypes.includes(id) ? form.productTypes.filter(x => x !== id) : [...form.productTypes, id] });
 
@@ -289,20 +284,38 @@ function Step3({ form, setForm, onNext, onBack }: { form: StoreForm; setForm: (f
         </div>
       )}
 
+      {error && (
+        <div style={{ background: C.errorBg, borderRadius: 8, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AlertTriangle size={14} style={{ color: C.error, flexShrink: 0 }} />
+          <span style={{ fontSize: 13, color: C.error, fontFamily: FONT }}>{error}</span>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 10 }}>
-        <Button variant="ghost" size="md" onClick={onBack} style={{ flexShrink: 0 }}><ArrowLeft size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> Back</Button>
-        <Button variant="primary" size="lg" style={{ flex: 1, justifyContent: 'center' }} onClick={() => form.productTypes.length > 0 && onNext()} disabled={form.productTypes.length === 0}>
-          {form.productTypes.length > 0 ? <span>Continue <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></span> : 'Select at least one'}
+        <Button variant="ghost" size="md" onClick={onBack} style={{ flexShrink: 0 }} disabled={loading}>
+          <ArrowLeft size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> Back
+        </Button>
+        <Button variant="primary" size="lg" style={{ flex: 1, justifyContent: 'center' }}
+          onClick={() => form.productTypes.length > 0 && onNext()}
+          disabled={form.productTypes.length === 0 || loading}>
+          {loading
+            ? <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}><Loader size={14} /> Creating your store...</span>
+            : form.productTypes.length > 0
+              ? <span>Create Store <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></span>
+              : 'Select at least one'}
         </Button>
       </div>
     </div>
   );
 }
 
-// ── Step 4 — Go Live ──────────────────────────────────────────────────────────
-function Step4({ form, onFinish, loading, error }: { form: StoreForm; onFinish: () => void; loading: boolean; error: string }) {
-  const sellerLabel = SELLER_TYPES.find(t => t.id === form.sellerType)?.title ?? form.sellerType;
-  const productLabels = form.productTypes.map(p => PRODUCT_TYPES.find(t => t.id === p)?.title ?? p).join(', ');
+// ── Step 4 — Go Live (direct store data from createStore) ─────────────────────
+function Step4({ store }: { store: StoreData | null }) {
+  const navigate = useNavigate();
+
+  const sellerLabel   = SELLER_TYPES.find(t => t.id === store?.sellerType)?.title ?? store?.sellerType ?? '—';
+  const productLabels = (store?.productTypes ?? []).map(p => PRODUCT_TYPES.find(t => t.id === p)?.title ?? p).filter((v, i, a) => a.indexOf(v) === i).join(', ');
+  const toolLabels    = (store?.enabledTools ?? []).map(t => t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())).join(', ');
 
   return (
     <div style={{ maxWidth: 580, width: '100%', margin: '0 auto' }}>
@@ -312,48 +325,48 @@ function Step4({ form, onFinish, loading, error }: { form: StoreForm; onFinish: 
           Welcome to Solvexo. Your seller dashboard is set up and your tools are activated.
         </p>
 
-        {/* Summary */}
+        {/* Real store summary from API — 2 column layout */}
         <div style={{ background: C.cream, borderRadius: 14, padding: 20, marginBottom: 28, textAlign: 'left' }}>
           <p style={{ fontSize: 12, fontWeight: 600, color: C.carbon, fontFamily: FONT, marginBottom: 14 }}>Your Solvexo Setup</p>
-          {[
-            { Icon: Store,      label: 'Store',              value: form.storeName },
-            { Icon: User,       label: 'Seller type',        value: sellerLabel },
-            { Icon: Package,    label: 'Products',           value: productLabels || '—' },
-            { Icon: CreditCard, label: 'Plan',               value: 'Starter — Free' },
-            { Icon: Sparkles,   label: 'AI Credits',         value: '100 free credits included' },
-          ].map(({ Icon, label, value }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <Icon size={16} style={{ width: 24, color: C.slate }} />
-              <span style={{ fontSize: 12, color: C.slate, fontFamily: FONT, width: 140, flexShrink: 0 }}>{label}</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: C.carbon, fontFamily: FONT }}>{value}</span>
-            </div>
-          ))}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 16px' }}>
+            {[
+              { Icon: Store,      label: 'Store',         value: store?.name ?? '—' },
+              { Icon: Globe,      label: 'Store URL',     value: store?.slug ? `${store.slug}.solvexo.store` : '—' },
+              { Icon: User,       label: 'Seller type',   value: sellerLabel },
+              { Icon: Package,    label: 'Category',      value: store?.categoryId ?? '—' },
+              { Icon: Download,   label: 'Products',      value: productLabels || '—' },
+              { Icon: CreditCard, label: 'Plan',           value: store?.plan ? `${store.plan.charAt(0).toUpperCase() + store.plan.slice(1)} — Free` : 'Starter — Free' },
+              { Icon: Sparkles,   label: 'AI Credits',    value: store?.aiCredits != null ? `${store.aiCredits} free credits included` : '—' },
+              { Icon: Wrench,     label: 'Active Tools',  value: toolLabels || '—', fullWidth: true },
+            ].map(({ Icon, label, value, fullWidth }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, gridColumn: fullWidth ? '1 / -1' : undefined }}>
+                <Icon size={16} style={{ width: 24, color: C.slate, flexShrink: 0 }} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ fontSize: 10, color: C.slate, fontFamily: FONT }}>{label}</p>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: C.carbon, fontFamily: FONT }}>{value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Next steps */}
+        {/* Recommended next steps */}
         <p style={{ fontSize: 13, fontWeight: 600, color: C.carbon, fontFamily: FONT, marginBottom: 14 }}>Recommended next steps</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 28 }}>
           {[
-            { Icon: Plus,         label: 'Add your first product' },
-            { Icon: Wrench,       label: 'Customise your store' },
-            { Icon: ShoppingCart, label: 'Browse the marketplace' },
-          ].map(({ Icon, label }) => (
-            <div key={label} style={{ padding: '14px 12px', borderRadius: 12, border: `1.5px solid ${C.bone}`, background: C.white, textAlign: 'center', cursor: 'pointer' }}>
+            { Icon: Plus,         label: 'Add your first product', path: '/seller/products/add' },
+            { Icon: Wrench,       label: 'Customise your store',   path: '/seller/store' },
+            { Icon: ShoppingCart, label: 'Browse the marketplace',  path: '/marketplace' },
+          ].map(({ Icon, label, path }) => (
+            <div key={label} onClick={() => navigate(path, { replace: true })} style={{ padding: '14px 12px', borderRadius: 12, border: `1.5px solid ${C.bone}`, background: C.white, textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s' }} onMouseEnter={e => (e.currentTarget.style.borderColor = C.orange)} onMouseLeave={e => (e.currentTarget.style.borderColor = C.bone)}>
               <Icon size={24} style={{ display: 'block', margin: '0 auto 6px', color: C.charcoal }} />
               <p style={{ fontSize: 12, fontWeight: 500, color: C.charcoal, fontFamily: FONT }}>{label}</p>
             </div>
           ))}
         </div>
 
-        {error && (
-          <div style={{ background: C.errorBg, borderRadius: 8, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left' }}>
-            <AlertTriangle size={14} style={{ color: C.error, flexShrink: 0 }} />
-            <span style={{ fontSize: 13, color: C.error, fontFamily: FONT }}>{error}</span>
-          </div>
-        )}
-
-        <Button variant="primary" size="lg" fullWidth onClick={onFinish} disabled={loading}>
-          {loading ? 'Creating your store...' : <span>Go to My Dashboard <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></span>}
+        <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/seller/dashboard', { replace: true })}>
+          Go to My Dashboard <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
         </Button>
       </div>
     </div>
@@ -362,28 +375,34 @@ function Step4({ form, onFinish, loading, error }: { form: StoreForm; onFinish: 
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export function OnboardingPage() {
-  const navigate     = useNavigate();
+  const navigate    = useNavigate();
   usePageTitle('Onboarding');
-  const createStore  = useCreateStore();
-  const [step, setStep] = useState(1);
+  const createStore = useCreateStore();
+  const [step, setStep]               = useState(1);
+  const [maxReached, setMaxReached]   = useState(1); // tracks highest step visited
   const [form, setForm] = useState<StoreForm>({
     storeName: '', categoryId: '', description: '', logo: '',
     sellerType: '', sellerKey: '', productTypes: [],
   });
 
-  const next = () => setStep(s => Math.min(s + 1, 4));
+  const next = () => setStep(s => { const n = Math.min(s + 1, 4); setMaxReached(m => Math.max(m, n)); return n; });
   const back = () => setStep(s => Math.max(s - 1, 1));
+  const jumpTo = (target: number) => setStep(target); // click on completed step
 
-  const handleFinish = async () => {
-    if (!form.sellerType) return;
-    await createStore.execute({
+  // Step 3 — API call on Continue
+  const handleStep3Next = async () => {
+    if (!form.sellerType || form.productTypes.length === 0) return;
+    const result = await createStore.execute({
       name:         form.storeName,
-      logo:         form.logo || undefined,
       categoryId:   form.categoryId,
       description:  form.description,
       sellerType:   form.sellerType as SellerType,
       productTypes: [...new Set(form.productTypes)],
     });
+    if (result) {
+      setMaxReached(4);
+      setStep(4);
+    }
   };
 
   return (
@@ -392,15 +411,21 @@ export function OnboardingPage() {
 
       <div style={{ background: C.white, borderBottom: `1px solid ${C.bone}`, padding: '12px 40px' }}>
         <div style={{ maxWidth: 500, margin: '0 auto' }}>
-          <StepProgress current={step} />
+          <StepProgress current={step} maxReached={maxReached} onStepClick={jumpTo} />
         </div>
       </div>
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '32px 24px 60px' }}>
         {step === 1 && <Step1 form={form} setForm={setForm} onNext={next} />}
         {step === 2 && <Step2 form={form} setForm={setForm} onNext={next} onBack={back} />}
-        {step === 3 && <Step3 form={form} setForm={setForm} onNext={next} onBack={back} />}
-        {step === 4 && <Step4 form={form} onFinish={handleFinish} loading={createStore.loading} error={createStore.error} />}
+        {step === 3 && (
+          <Step3
+            form={form} setForm={setForm}
+            onNext={handleStep3Next} onBack={back}
+            loading={createStore.loading} error={createStore.error}
+          />
+        )}
+        {step === 4 && <Step4 store={createStore.store} />}
       </div>
     </div>
   );
