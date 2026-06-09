@@ -3,8 +3,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import {
-  Package, Monitor, Sparkles, BarChart2, ClipboardList, ArrowRight,
-  Store,
+  Package, Monitor, Sparkles, BarChart2, ClipboardList, ArrowRight, Store,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -193,7 +192,7 @@ function MyStoreCard() {
           return (
             <button
               key={store._id}
-              onClick={() => navigate(`/seller/stores/${store._id}`)}
+              onClick={() => navigate(`/seller/store/${store._id}/dashboard`)}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 12,
                 padding: '11px 10px', background: 'transparent', border: 'none',
@@ -253,17 +252,15 @@ function ChartTooltip({ active, payload, label }: any) {
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerDashboard() {
   const navigate = useNavigate();
+  const subtitle = "Welcome back — Here's your store overview.";
 
   return (
     <>
       <SellerPageHeader
         title="Dashboard"
-        subtitle="Welcome back, Alex — Here's your store overview."
+        subtitle={subtitle}
         actions={
           <>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/onboarding')}>
-              + New Store
-            </Button>
             <Button variant="secondary" size="sm" onClick={() => navigate('/seller/products/add')}>
               + Add Product
             </Button>
@@ -276,9 +273,7 @@ export function SellerDashboard() {
 
       <div style={{ padding: '16px 20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-
-
-        {/* ── Row 1: Metric Cards (separate boxes) ── */}
+        {/* ── Row 1: Metric Cards ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {metrics.map((m) => (
             <div

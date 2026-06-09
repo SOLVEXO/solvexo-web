@@ -100,8 +100,8 @@ function StoreActionsMenu({ storeId }: { storeId: string }) {
           background: '#FFFFFF', border: '1px solid #E8E6DC', borderRadius: 8,
           boxShadow: '0 6px 20px rgba(0,0,0,0.10)', minWidth: 140, padding: 4,
         }}>
-          {item(Eye,    'View',       () => { navigate(`/seller/stores/${storeId}`);            setOpen(false); })}
-          {item(Pencil, 'Edit Store', () => { navigate(`/seller/stores/${storeId}?edit=true`); setOpen(false); })}
+          {item(Eye,    'View',       () => { navigate(`/seller/store/${storeId}/dashboard`); setOpen(false); })}
+          {item(Pencil, 'Edit Store', () => { navigate(`/seller/store/${storeId}/settings`);  setOpen(false); })}
         </div>
       )}
     </div>
