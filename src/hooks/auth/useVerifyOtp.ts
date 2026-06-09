@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiVerifyOtp, AuthContext, TokenStorage, getRoleRedirect, type AppRole } from '@/api/auth';
+import { apiVerifyOtp, AuthContext, TokenStorage } from '@/api/auth';
 
 export function useVerifyOtp() {
   const navigate = useNavigate();
