@@ -51,9 +51,16 @@ import { SellerLoyalty }      from '@/features/seller/pages/SellerLoyalty';
 import { SellerSubscriptions } from '@/features/seller/pages/SellerSubscriptions';
 import { SellerIntegrations } from '@/features/seller/pages/SellerIntegrations';
 import { SellerActivity }     from '@/features/seller/pages/SellerActivity';
-import { SellerStoreDetail } from '@/features/seller/pages/storemodule/SellerStoreDetail';
-import { SellerStoreEdit } from '@/features/seller/pages/storemodule/SellerStoreEdit';
 import { SellerStoreList } from '@/features/seller/pages/storemodule/SellerStoreList';
+
+// ── Store Workspace (own layout, own sidebar) ─────────────────────────────────
+import { StoreLayout }    from '@/components/layouts/StoreLayout';
+import StoreDashboard     from '@/features/store/pages/StoreDashboard';
+import StoreOrders        from '@/features/store/pages/StoreOrders';
+import StoreProducts      from '@/features/store/pages/StoreProducts';
+import StoreCustomers     from '@/features/store/pages/StoreCustomers';
+import StoreAnalytics     from '@/features/store/pages/StoreAnalytics';
+import StoreSettings      from '@/features/store/pages/StoreSettings';
 
 // ── Admin Pages ───────────────────────────────────────────────────────────────
 import { AdminOverview }      from '@/features/admin/pages/AdminOverview';
@@ -126,11 +133,24 @@ export const router = createBrowserRouter([
           { path: 'integrations',     element: <SellerIntegrations /> },
           { path: 'activity',         element: <SellerActivity /> },
           { path: 'stores',             element: <SellerStoreList /> },
-          { path: 'stores/:id',       element: <SellerStoreDetail /> },
-          { path: 'stores/:id/edit',  element: <SellerStoreEdit /> },
           { path: 'store',            element: <StoreBuilder /> },
           { path: 'settings',         element: <SellerSettings /> },
           { path: 'categories',       element: <SellerCategories /> },
+        ],
+      },
+
+      // ── Store Workspace (each store's own mini-admin panel) ──────────
+      {
+        path: '/seller/store/:storeId',
+        element: <StoreLayout />,
+        children: [
+          { index: true,            element: <Navigate to="dashboard" replace /> },
+          { path: 'dashboard',      element: <StoreDashboard /> },
+          { path: 'orders',         element: <StoreOrders /> },
+          { path: 'products',       element: <StoreProducts /> },
+          { path: 'customers',      element: <StoreCustomers /> },
+          { path: 'analytics',      element: <StoreAnalytics /> },
+          { path: 'settings',       element: <StoreSettings /> },
         ],
       },
 

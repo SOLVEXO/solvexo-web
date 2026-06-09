@@ -1,4 +1,5 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useState, useRef, useEffect } from 'react';
+import { ActiveStoreProvider, useActiveStore } from '@/contexts/ActiveStoreContext';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -81,6 +82,155 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
+// ── Sidebar Store Switcher ────────────────────────────────────────────────────
+function SidebarStoreSwitcher() {
+  const navigate = useNavigate();
+  const { stores, loading } = useActiveStore();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const displayName = loading ? 'Loading…' : 'My Stores';
+  const displaySub  = loading ? '' : `${stores.length} store${stores.length !== 1 ? 's' : ''}`;
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      {/* Trigger */}
+      <button
+        onClick={() => setOpen(p => !p)}
+        style={{
+          width: '100%', background: open ? '#2C2A28' : '#1E1C1A',
+          borderRadius: 8, padding: '8px 10px',
+          display: 'flex', alignItems: 'center', gap: 8,
+          cursor: 'pointer', border: 'none', transition: 'background 0.15s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = '#2C2A28')}
+        onMouseLeave={e => (e.currentTarget.style.background = open ? '#2C2A28' : '#1E1C1A')}
+      >
+        {/* Store icon */}
+        <div style={{
+          width: 24, height: 24, borderRadius: 6, background: '#D97757',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <Store size={13} style={{ color: '#fff' }} />
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: '#fff', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {displayName}
+          </p>
+          {displaySub && (
+            <p style={{ fontSize: 10, color: '#8C8A82', lineHeight: 1.3 }}>{displaySub}</p>
+          )}
+        </div>
+        <ChevronDown
+          size={13}
+          style={{
+            color: '#8C8A82', flexShrink: 0,
+            transform: open ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.2s',
+          }}
+        />
+      </button>
+
+      {/* Dropdown — opens downward */}
+      {open && (
+        <div style={{
+          position: 'absolute', left: 0, right: 0, top: 'calc(100% + 4px)', zIndex: 200,
+          background: '#1A1917', border: '1px solid #2C2A28', borderRadius: 10,
+          boxShadow: '0 8px 28px rgba(0,0,0,0.35)', padding: 6,
+        }}>
+          <p style={{ fontSize: 10, fontWeight: 600, color: '#4A4845', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '4px 10px 8px', fontFamily: "'Poppins', sans-serif" }}>
+            Switch Store
+          </p>
+
+          <div style={{ maxHeight: 205, overflowY: 'auto' }}>
+            {stores.map(store => (
+              <SidebarStoreItem
+                key={store._id}
+                label={store.name}
+                sub={`/${store.slug} · ${store.plan}`}
+                logo={store.logo}
+                onClick={() => { navigate(`/seller/store/${store._id}/dashboard`); setOpen(false); }}
+              />
+            ))}
+
+            {stores.length === 0 && !loading && (
+              <p style={{ fontSize: 11, color: '#4A4845', padding: '6px 10px' }}>No stores yet</p>
+            )}
+          </div>
+
+          <div style={{ height: 1, background: '#2C2A28', margin: '4px 6px' }} />
+
+          <button
+            onClick={() => { setOpen(false); navigate('/onboarding'); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              width: '100%', padding: '8px 10px', borderRadius: 7,
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              fontSize: 11, fontWeight: 600, color: '#D97757',
+              fontFamily: "'Poppins', sans-serif",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#2C2A28')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          >
+            <Plus size={12} /> New Store
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SidebarStoreItem({ label, sub, logo, onClick }: {
+  label:   string;
+  sub:     string;
+  logo?:   string | null;
+  onClick: () => void;
+}) {
+  const initials = label.slice(0, 2).toUpperCase();
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 9,
+        width: '100%', padding: '7px 10px', borderRadius: 8,
+        background: 'transparent', border: 'none', cursor: 'pointer',
+        textAlign: 'left', transition: 'background 0.12s',
+        fontFamily: "'Poppins', sans-serif",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.background = '#242220'; }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+    >
+      <div style={{
+        width: 26, height: 26, borderRadius: 7, flexShrink: 0,
+        background: '#2C2A28', overflow: 'hidden',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 9, fontWeight: 700, color: '#8C8A82',
+      }}>
+        {logo
+          ? <img src={logo} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : initials}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 12, fontWeight: 500, color: '#C0BDB5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {label}
+        </p>
+        <p style={{ fontSize: 10, color: '#4A4845' }}>{sub}</p>
+      </div>
+    </button>
+  );
+}
+
 // ── Sidebar ──────────────────────────────────────────────────────────────────
 function isDropdown(item: NavEntry): item is NavDropdown {
   return 'children' in item;
@@ -106,12 +256,12 @@ function SellerSidebar() {
       style={{
         width: 220, background: '#141413',
         display: 'flex', flexDirection: 'column', flexShrink: 0,
-        position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
+        position: 'sticky', top: 0, height: '100vh',
         fontFamily: "'Poppins', sans-serif",
       }}
     >
       {/* Logo + Store selector */}
-      <div style={{ padding: '20px 20px 16px' }}>
+      <div style={{ padding: '20px 20px 16px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 16 }}>
           <SolvexoIcon size={32} />
           <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -121,22 +271,7 @@ function SellerSidebar() {
         </div>
 
         {/* Store selector */}
-        <div style={{
-          background: '#1E1C1A', borderRadius: 8, padding: '8px 10px',
-          display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
-        }}>
-          <div style={{
-            width: 22, height: 22, borderRadius: 5, background: '#D97757',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#fff' }}>M</span>
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: '#fff', lineHeight: 1.3 }}>My Shop</p>
-            <p style={{ fontSize: 10, color: '#8C8A82', lineHeight: 1.3 }}>Professional Plan</p>
-          </div>
-          <span style={{ fontSize: 12, color: '#8C8A82' }}>⌄</span>
-        </div>
+        <SidebarStoreSwitcher />
       </div>
 
       {/* Nav sections */}
@@ -281,7 +416,7 @@ function SellerSidebar() {
       </nav>
 
       {/* AI Credits + User */}
-      <div style={{ padding: '12px 16px', borderTop: '1px solid #1E1C1A' }}>
+      <div style={{ padding: '12px 16px', borderTop: '1px solid #1E1C1A', flexShrink: 0 }}>
         <div style={{ background: '#1E1C1A', borderRadius: 8, padding: '10px 12px', marginBottom: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -350,13 +485,15 @@ export function SellerPageHeader({ title, subtitle, actions }: SellerPageHeaderP
 // ── Layout ────────────────────────────────────────────────────────────────────
 export function SellerLayout() {
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#FAF9F5', overflow: 'hidden' }}>
-      <SellerSidebar />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          <Outlet />
+    <ActiveStoreProvider>
+      <div style={{ display: 'flex', height: '100vh', background: '#FAF9F5', overflow: 'hidden' }}>
+        <SellerSidebar />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            <Outlet />
+          </div>
         </div>
       </div>
-    </div>
+    </ActiveStoreProvider>
   );
 }
