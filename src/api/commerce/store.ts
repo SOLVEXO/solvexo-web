@@ -1,5 +1,5 @@
-import client from './client';
-import { ENDPOINTS } from './endpoints';
+import client from '../client';
+import { ENDPOINTS } from '../endpoints';
 
 export type SellerType  = 'creator' | 'reseller' | 'brand' | 'retailer';
 export type ProductType = 'physical_products' | 'digital_downloads' | 'services' | 'in_person_pos';

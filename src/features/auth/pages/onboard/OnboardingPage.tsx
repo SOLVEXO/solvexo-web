@@ -10,7 +10,7 @@ import {
   Sparkles, User, CreditCard, Plus, Wrench, ShoppingCart,
   ArrowRight, ArrowLeft, Check, AlertTriangle, Loader,
 } from 'lucide-react';
-import type { SellerType, ProductType, StoreData } from '@/api/store';
+import type { SellerType, ProductType, StoreData } from '@/api/commerce/store';
 
 const C = {
   orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',

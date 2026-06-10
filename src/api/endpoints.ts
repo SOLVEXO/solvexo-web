@@ -27,10 +27,15 @@ export const ENDPOINTS = {
   PRODUCT: {
     CREATE_PHYSICAL: '/api/product/create-physical-product',
     CREATE_DIGITAL:  '/api/product/create-digital-product',
-    EDIT_PHYSICAL:   (id: string) => `/api/product/edit-physical-product/${id}`,
-    EDIT_DIGITAL:    (id: string) => `/api/product/edit-digital-product/${id}`,
-    GET_MY_ALL_PRODUCT:  `/api/product/getProductById`,
-    GET_MY_PRODUCT_BY_ID: (id: string) => `/api/product/getProductById/${id}`,
+    EDIT_PHYSICAL:   (id: string) => `/api/products/edit-product${id}`,
+    EDIT_DIGITAL:    (id: string) => `/api/products/edit-product/${id}`,
+    GET_MY_PRODUCT_BY_ID: (id: string) => `/api/products/get-my-product/${id}`,
+  },
+
+  // ── MARKETPLACE ───────────────────────────────────────────────────────────
+  MARKETPLACE: {
+    PRODUCTS_BY_CATEGORY: `/api/products/products-by-category`,
+    PRODUCT_BY_ID: (id: string) => `/api/products/getProductById/${id}`,
   },
 
 } as const;

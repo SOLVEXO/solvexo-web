@@ -419,7 +419,7 @@ function SellerSidebar() {
 
       {/* AI Credits + User */}
       <div style={{ padding: '12px 16px', borderTop: '1px solid #1E1C1A', flexShrink: 0 }}>
-        <div style={{ background: '#1E1C1A', borderRadius: 8, padding: '10px 12px', marginBottom: 10 }}>
+        {/* <div style={{ background: '#1E1C1A', borderRadius: 8, padding: '10px 12px', marginBottom: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <Sparkles size={11} style={{ color: '#D97757' }} />
@@ -430,7 +430,7 @@ function SellerSidebar() {
           <div style={{ height: 4, background: '#2C2A28', borderRadius: 2 }}>
             <div style={{ width: '75%', height: '100%', background: '#D97757', borderRadius: 2 }} />
           </div>
-        </div>
+        </div> */}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{

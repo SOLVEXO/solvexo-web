@@ -6,7 +6,7 @@ import {
   Settings, Sparkles, Bell, ChevronLeft,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/ui/SolvexoLogo';
-import { apiGetStoreById, type StoreData } from '@/api/store';
+import { apiGetStoreById, type StoreData } from '@/api/commerce/store';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
 interface StoreWorkspaceValue {

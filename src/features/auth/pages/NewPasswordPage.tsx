@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Eye, EyeOff, ArrowRight, Check, Circle } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { newPasswordSchema, type NewPasswordFormData } from '@/utils/validation/schemas';
-import { AuthContext } from '@/api/auth';
+import { AuthContext } from '@/api/commerce/auth';
 import type { CSSProperties } from 'react';
 
 const C = {

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { apiGetMyStores, type MyStoreItem } from '@/api/store';
+import { apiGetMyStores, type MyStoreItem } from '@/api/commerce/store';
 
 const STORAGE_KEY = 'solvexo_active_store';
 

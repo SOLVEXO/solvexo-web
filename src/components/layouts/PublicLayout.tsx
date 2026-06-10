@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
-import { TokenStorage } from '@/api/auth';
+import { TokenStorage } from '@/api/commerce/auth';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
