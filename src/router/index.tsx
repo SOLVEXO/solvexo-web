@@ -13,6 +13,7 @@ import { Homepage }             from '@/features/buyer/pages/Homepage';
 import { UserProfile }          from '@/features/buyer/pages/settings/UserProfile';
 import { Marketplace }          from '@/features/buyer/pages/Marketplace';
 import { ProductDetail }        from '@/features/buyer/pages/ProductDetail';
+import { CartPage }             from '@/features/buyer/pages/CartPage';
 import { SellerStorefront }     from '@/features/buyer/pages/SellerStorefront';
 import { EducationMarketplace } from '@/features/buyer/pages/EducationMarketplace';
 import { PricingPage }          from '@/features/buyer/pages/PricingPage';
@@ -93,6 +94,7 @@ export const router = createBrowserRouter([
 
       // ── Marketplace pages — own embedded nav ──────────────────────────
       { path: '/marketplace',     element: <Marketplace /> },
+      { path: '/cart',            element: <CartPage /> },
       { path: '/marketplace/:id', element: <ProductDetail /> },
       { path: '/store/:slug',     element: <SellerStorefront /> },
       { path: '/education',       element: <EducationMarketplace /> },

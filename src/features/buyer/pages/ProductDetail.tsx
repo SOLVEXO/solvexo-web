@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductById } from '@/hooks/marketplace/useProductById';
+import { useCartContext } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import {
   ArrowRight, ArrowLeft, Package, Download, ClipboardList, CheckCircle,
-  Search, ShoppingCart, Star, Link2, Mail, Smartphone, ImageOff,
+  Search, ShoppingCart, Star, Link2, Mail, Smartphone, ImageOff, Loader2,
 } from 'lucide-react';
 import type { ProductVariant } from '@/api/commerce/marketplace';
 
@@ -173,9 +174,11 @@ export function ProductDetail() {
   usePageTitle('Product Detail');
 
   const { detail, loading, error } = useProductById(id);
+  const { cartCount, addToCart, adding } = useCartContext();
 
   const [selectedImgIdx, setSelectedImgIdx] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [addedFeedback, setAddedFeedback] = useState(false);
 
   const product       = detail?.product ?? null;
   const variants      = detail?.variants ?? [];
@@ -221,12 +224,27 @@ export function ProductDetail() {
           <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')}>
             <ArrowLeft size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> Marketplace
           </Button>
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%',
-            backgroundColor: C.orange, display: 'flex',
-            alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-          }}>
+          <div
+            onClick={() => navigate('/cart')}
+            style={{
+              position: 'relative', width: 36, height: 36, borderRadius: '50%',
+              backgroundColor: C.orange, display: 'flex',
+              alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            }}
+          >
             <ShoppingCart size={16} style={{ color: '#fff' }} />
+            {cartCount > 0 && (
+              <span style={{
+                position: 'absolute', top: -4, right: -4,
+                minWidth: 18, height: 18, borderRadius: 9,
+                background: '#E11D48', color: '#fff',
+                fontSize: 10, fontWeight: 700, lineHeight: '18px',
+                textAlign: 'center', padding: '0 4px',
+                boxShadow: '0 0 0 2px #fff',
+              }}>
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
           </div>
         </div>
       </nav>
@@ -376,12 +394,34 @@ export function ProductDetail() {
 
                   {/* Buttons */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-                    <Button variant="primary" size="lg" fullWidth style={{ justifyContent: 'center' }}>
+                    <Button
+                      variant="primary" size="lg" fullWidth
+                      style={{ justifyContent: 'center' }}
+                      onClick={async () => {
+                        if (!product || !activeVariant) return;
+                        await addToCart(product._id, activeVariant._id);
+                        navigate('/cart');
+                      }}
+                    >
                       Buy Now <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 6 }} />
                       {activeVariant ? ` $${activeVariant.price.toLocaleString()}` : ''}
                     </Button>
-                    <Button variant="secondary" size="md" fullWidth style={{ justifyContent: 'center' }}>
-                      Add to Cart
+                    <Button
+                      variant="secondary" size="md" fullWidth
+                      style={{ justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 6 }}
+                      onClick={async () => {
+                        if (!product || !activeVariant) return;
+                        await addToCart(product._id, activeVariant._id);
+                        setAddedFeedback(true);
+                        setTimeout(() => setAddedFeedback(false), 2000);
+                      }}
+                    >
+                      {adding === activeVariant?._id
+                        ? <><Loader2 size={13} style={{ animation: 'spin 0.7s linear infinite' }} /> Adding…</>
+                        : addedFeedback
+                          ? '✓ Added to Cart'
+                          : 'Add to Cart'
+                      }
                     </Button>
                   </div>
                 </div>
@@ -433,6 +473,7 @@ export function ProductDetail() {
           </div>
         </div>
       )}
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }

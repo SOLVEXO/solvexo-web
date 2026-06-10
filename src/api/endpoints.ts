@@ -41,4 +41,13 @@ export const ENDPOINTS = {
     PRODUCT_BY_ID: (id: string) => `/api/products/getProductById/${id}`,
   },
 
+  // ── CART ──────────────────────────────────────────────────────────────────
+  CART: {
+    ADD:             '/api/cart/add-to-cart',
+    GET:             '/api/cart/get-cart',
+    UPDATE_QUANTITY: '/api/cart/update-cart-quantity',
+    REMOVE_ITEM:     '/api/cart/remove-cart-item',
+    CLEAR:           '/api/cart/clear-cart',
+  },
+
 } as const;

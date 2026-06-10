@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import {
-  Home, ShoppingCart, FileText, Store, DollarSign, Users, BookOpen,
+  Home, ShoppingCart, Store, DollarSign, Users, BookOpen,
   LogIn, Rocket,
   LayoutDashboard, Package, Plus, Upload, Monitor, ClipboardList, CornerUpLeft,
   BarChart2, Search, Sparkles, Star, RefreshCw, Megaphone, Wallet,

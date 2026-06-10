@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductsByCategory } from '@/hooks/marketplace/useProductsByCategory';
+import { useCartContext } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { ArrowRight, ShoppingCart, ShoppingBag, Star, Heart, ImageOff } from 'lucide-react';
+import { ArrowRight, ShoppingCart, ShoppingBag, Star, Heart, ImageOff, Loader2 } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/commerce/marketplace';
 
 const C = {
@@ -99,7 +100,12 @@ function StarRating({ rating, count }: { rating: number; count?: number }) {
 }
 
 // ── Product Card ──────────────────────────────────────────────────────────────
-function ProductCard({ product, onClick }: { product: MarketplaceProduct; onClick: () => void }) {
+function ProductCard({ product, onClick, onAddToCart, isAdding }: {
+  product:    MarketplaceProduct;
+  onClick:    () => void;
+  onAddToCart: (e: React.MouseEvent) => void;
+  isAdding:   boolean;
+}) {
   const [wishlisted, setWishlisted] = useState(false);
 
   const pType = product.productType ?? product.type ?? 'physical';
@@ -189,8 +195,16 @@ function ProductCard({ product, onClick }: { product: MarketplaceProduct; onClic
               </span>
             )}
           </div>
-          <Button variant="secondary" size="sm" onClick={e => e.stopPropagation()}>
-            Add to Cart
+          <Button
+            variant="secondary" size="sm"
+            onClick={onAddToCart}
+            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+          >
+            {isAdding
+              ? <Loader2 size={11} style={{ animation: 'spin 0.7s linear infinite' }} />
+              : <ShoppingCart size={11} />
+            }
+            {isAdding ? 'Adding…' : 'Add to Cart'}
           </Button>
         </div>
       </div>
@@ -211,6 +225,7 @@ export function Marketplace() {
   const LIMIT = 10;
 
   const { products, total, loading, error } = useProductsByCategory(page, LIMIT);
+  const { cartCount, addToCart, adding } = useCartContext();
 
   const totalPages = Math.ceil(total / LIMIT) || 1;
 
@@ -258,12 +273,27 @@ export function Marketplace() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <Button variant="ghost" size="sm" onClick={() => navigate('/')}>Home</Button>
           <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')}>Sell on Solvexo</Button>
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%',
-            backgroundColor: C.orange, display: 'flex',
-            alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-          }}>
+          <div
+            onClick={() => navigate('/cart')}
+            style={{
+              position: 'relative', width: 36, height: 36, borderRadius: '50%',
+              backgroundColor: C.orange, display: 'flex',
+              alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            }}
+          >
             <ShoppingCart size={16} style={{ color: '#fff' }} />
+            {cartCount > 0 && (
+              <span style={{
+                position: 'absolute', top: -4, right: -4,
+                minWidth: 18, height: 18, borderRadius: 9,
+                background: '#E11D48', color: '#fff',
+                fontSize: 10, fontWeight: 700, lineHeight: '18px',
+                textAlign: 'center', padding: '0 4px',
+                boxShadow: '0 0 0 2px #fff',
+              }}>
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
           </div>
         </div>
       </nav>
@@ -364,13 +394,21 @@ export function Marketplace() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
             {loading
               ? Array.from({ length: 9 }).map((_, i) => <ProductCardSkeleton key={i} />)
-              : filtered.map(p => (
-                  <ProductCard
-                    key={p._id}
-                    product={p}
-                    onClick={() => navigate(`/marketplace/${p._id}`)}
-                  />
-                ))
+              : filtered.map(p => {
+                  const defVariant = p.variants.find(v => v.isDefault) ?? p.variants[0];
+                  return (
+                    <ProductCard
+                      key={p._id}
+                      product={p}
+                      onClick={() => navigate(`/marketplace/${p._id}`)}
+                      isAdding={adding === (defVariant?._id ?? '')}
+                      onAddToCart={e => {
+                        e.stopPropagation();
+                        if (defVariant) addToCart(p._id, defVariant._id);
+                      }}
+                    />
+                  );
+                })
             }
           </div>
 
@@ -446,6 +484,7 @@ export function Marketplace() {
           )}
         </div>
       </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }
