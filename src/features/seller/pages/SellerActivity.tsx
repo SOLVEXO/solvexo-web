@@ -85,7 +85,6 @@ export function SellerActivity() {
   const [searchQuery,    setSearchQuery]    = useState('');
   const [actionFilter,   setActionFilter]   = useState('all');
   const [currentPage,    setCurrentPage]    = useState(1);
-  const totalPages = 284;
 
   return (
     <>
