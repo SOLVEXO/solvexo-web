@@ -4,7 +4,7 @@ import { useVerifyOtp } from '@/hooks/auth/useVerifyOtp';
 import { Button } from '@/components/ui/Button';
 import { AlertTriangle, ArrowRight, Check } from 'lucide-react';
 import { runSchema, otpSchema } from '@/utils/validation/schemas';
-import { AuthContext } from '@/api/auth';
+import { AuthContext } from '@/api/commerce/auth';
 import type { CSSProperties } from 'react';
 
 const C = {

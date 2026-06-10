@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Eye, EyeOff, Globe, Smartphone, Share2 } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
-import { apiLogin, TokenStorage } from '@/api/auth';
+import { apiLogin, TokenStorage } from '@/api/commerce/auth';
 import type { CSSProperties } from 'react';
 
 // ── Design tokens (same as LoginPage) ──────────────────────────────────────────

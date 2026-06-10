@@ -5,7 +5,7 @@ import {
   Camera, Check, Shield, LogOut, type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
-import { TokenStorage } from '@/api/auth';
+import { TokenStorage } from '@/api/commerce/auth';
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const FONT = "'Poppins', sans-serif";

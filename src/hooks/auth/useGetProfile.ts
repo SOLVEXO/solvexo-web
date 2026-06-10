@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiGetProfile, TokenStorage, type ProfileData } from '@/api/auth';
+import { apiGetProfile, TokenStorage, type ProfileData } from '@/api/commerce/auth';
 
 export function useGetProfile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);

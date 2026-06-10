@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Save, Store, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import { apiUpdateStore, type ProductType } from '@/api/store';
+import { apiUpdateStore, type ProductType } from '@/api/commerce/store';
 
 const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   physical_products: 'Physical Products',

@@ -1,5 +1,5 @@
-import client from './client';
-import { ENDPOINTS } from './endpoints';
+import client from '../client';
+import { ENDPOINTS } from '../endpoints';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TOKEN STORAGE

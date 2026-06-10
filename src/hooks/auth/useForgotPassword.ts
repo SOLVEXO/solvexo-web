@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiForgotPassword, AuthContext, type AppRole } from '@/api/auth';
+import { apiForgotPassword, AuthContext, type AppRole } from '@/api/commerce/auth';
 
 export function useForgotPassword() {
   const navigate = useNavigate();

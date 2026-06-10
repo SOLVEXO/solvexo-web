@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { apiCreateStore, type CreateStorePayload, type StoreData } from '@/api/store';
+import { apiCreateStore, type CreateStorePayload, type StoreData } from '@/api/commerce/store';
 
 export function useCreateStore() {
   const [loading, setLoading] = useState(false);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiRegister, AuthContext, type RegisterPayload } from '@/api/auth';
+import { apiRegister, AuthContext, type RegisterPayload } from '@/api/commerce/auth';
 
 export function useRegister() {
   const navigate = useNavigate();

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Eye, EyeOff, Globe, Smartphone, Share2 } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
-import type { AppRole } from '@/api/auth';
+import type { AppRole } from '@/api/commerce/auth';
 import type { CSSProperties } from 'react';
 
 const C = {
