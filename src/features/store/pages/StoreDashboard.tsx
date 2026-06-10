@@ -1,4 +1,4 @@
-import { TrendingUp, ShoppingBag, Package, Users, Store, CheckCircle, Clock, Globe } from 'lucide-react';
+import { TrendingUp, ShoppingBag, Package, Users, CheckCircle, Clock, Globe } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────

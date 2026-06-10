@@ -73,7 +73,6 @@ export function SellerSEO() {
   const selected = PRODUCTS.find(p => p.id === selectedId) ?? PRODUCTS[0];
 
   const scoreColor = selected.score >= 80 ? '#2D8A4E' : selected.score >= 60 ? '#C08B1E' : '#C13030';
-  const scoreBg    = selected.score >= 80 ? '#E3F4EA' : selected.score >= 60 ? '#FFF4DC' : '#FDECEA';
 
   return (
     <>
