@@ -13,6 +13,7 @@ export const ENDPOINTS = {
     FORGOT_PASSWORD: '/api/auth/forgot-password',  // POST  {email, role}
     RESET_PASSWORD:  '/api/auth/reset-password',   // POST  {email, role, otp, newPassword}
     REFRESH_TOKEN:   '/api/auth/refresh',          // POST  {refreshToken}
+    GET_PROFILE:     '/api/auth/getprofile',          // GET 
   },
 
   // ── STORE ─────────────────────────────────────────────────────────────────
