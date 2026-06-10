@@ -1,47 +1,52 @@
 import { useState } from 'react';
-import { Palette, LayoutGrid, PanelTop, Package, PanelBottom, Search, Monitor, Smartphone, BookOpen, Pencil, Microscope, Lock, type LucideIcon } from 'lucide-react';
+import {
+  Palette, LayoutGrid, PanelTop, Package, PanelBottom, Search,
+  Monitor, Smartphone, BookOpen, Pencil, Microscope, Lock,
+  type LucideIcon,
+} from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Select } from '@/components/ui/Input';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 
-type Section = 'theme' | 'layout' | 'header' | 'products' | 'footer' | 'seo';
+// ── Types & Data ──────────────────────────────────────────────────────────────
+type Section     = 'theme' | 'layout' | 'header' | 'products' | 'footer' | 'seo';
 type LayoutStyle = 'Grid' | 'Magazine' | 'Minimal';
 
 const SECTIONS: { id: Section; label: string; Icon: LucideIcon }[] = [
-  { id: 'theme',    label: 'Theme Colors',  Icon: Palette     },
-  { id: 'layout',   label: 'Layout Style',  Icon: LayoutGrid  },
-  { id: 'header',   label: 'Header',        Icon: PanelTop    },
-  { id: 'products', label: 'Products Grid', Icon: Package     },
-  { id: 'footer',   label: 'Footer',        Icon: PanelBottom },
-  { id: 'seo',      label: 'SEO & Meta',    Icon: Search      },
+  { id: 'theme',    label: 'Theme',    Icon: Palette     },
+  { id: 'layout',   label: 'Layout',   Icon: LayoutGrid  },
+  { id: 'header',   label: 'Header',   Icon: PanelTop    },
+  { id: 'products', label: 'Products', Icon: Package     },
+  { id: 'footer',   label: 'Footer',   Icon: PanelBottom },
+  { id: 'seo',      label: 'Seo',      Icon: Search      },
 ];
 
 const THEME_COLORS = [
   { label: 'Primary',    value: '#D97757' },
   { label: 'Background', value: '#FAF9F5' },
-  { label: 'Text',       value: '#141413' },
+  { label: 'Text',       value: '#2C2A28' },
   { label: 'Accent',     value: '#B95A3A' },
 ];
 
 const LAYOUT_OPTIONS: { id: LayoutStyle; desc: string }[] = [
-  { id: 'Grid',     desc: 'Classic product grid, best for large catalogues' },
-  { id: 'Magazine', desc: 'Editorial layout with featured products in hero spots' },
-  { id: 'Minimal',  desc: 'Clean whitespace-focused design for premium brands' },
+  { id: 'Grid',     desc: 'Classic product grid, best for large catalogues'             },
+  { id: 'Magazine', desc: 'Editorial layout with featured products in hero spots'       },
+  { id: 'Minimal',  desc: 'Clean whitespace-focused design for premium brands'          },
 ];
 
 const PREVIEW_PRODUCTS: { Icon: LucideIcon; name: string; price: string }[] = [
-  { Icon: BookOpen,    name: 'Math Bundle',        price: '$49.00' },
-  { Icon: Pencil,      name: 'Writing Prompts',    price: '$12.00' },
-  { Icon: Microscope,  name: 'Science Worksheets', price: '$15.00' },
+  { Icon: Pencil,     name: 'Product Name 1', price: '$12.00' },
+  { Icon: BookOpen,   name: 'Product Name 2', price: '$24.00' },
+  { Icon: Microscope, name: 'Product Name 3', price: '$36.00' },
 ];
 
+const poppins = "'Poppins', sans-serif";
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export function StoreBuilder() {
   usePageTitle('Store Builder');
   const [activeSection, setActiveSection] = useState<Section>('theme');
-  const [layoutStyle, setLayoutStyle]     = useState<LayoutStyle>('Grid');
-  const [font, setFont]                   = useState('Inter');
+  const [layoutStyle,   setLayoutStyle]   = useState<LayoutStyle>('Grid');
+  const [font,          setFont]          = useState('Poppins (Current)');
 
   return (
     <>
@@ -50,187 +55,258 @@ export function StoreBuilder() {
         subtitle="Customize your storefront — changes save automatically."
         actions={
           <>
-            <Button variant="ghost"     size="sm">Preview</Button>
-            <Button variant="secondary" size="sm">Undo</Button>
-            <Button variant="primary"   size="sm">Publish Changes</Button>
+            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+              Preview
+            </button>
+            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+              Undo
+            </button>
+            <button style={{ padding: '7px 16px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+              Publish Changes
+            </button>
           </>
         }
       />
 
-      <div className="p-7">
-        <div className="grid gap-5" style={{ gridTemplateColumns: '260px 1fr', height: 'calc(100vh - 200px)' }}>
-          {/* LEFT: section list + panel */}
-          <div className="flex flex-col gap-4 overflow-y-auto">
-            {/* Section list */}
-            <Card padding="none">
+      <div style={{ padding: '20px 28px 32px', fontFamily: poppins }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '220px 1fr',
+          gap: 16,
+          height: 'calc(100vh - 160px)',
+        }}>
+
+          {/* ── LEFT: section list + panel ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
+
+            {/* Section nav */}
+            <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
               {SECTIONS.map((sec, i) => (
                 <button
                   key={sec.id}
                   onClick={() => setActiveSection(sec.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer ${i < SECTIONS.length - 1 ? 'border-b border-bone' : ''}`}
                   style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '11px 14px', textAlign: 'left', cursor: 'pointer',
                     background: activeSection === sec.id ? '#FBECE4' : 'transparent',
+                    border: 'none',
+                    borderBottom: i < SECTIONS.length - 1 ? '1px solid #F0EEE6' : 'none',
+                    fontFamily: poppins, transition: 'background 0.12s',
                   }}
                 >
-                  <sec.Icon size={16} style={{ color: activeSection === sec.id ? '#B95A3A' : '#8C8A82', flexShrink: 0 }} />
-                  <span
-                    className="text-[13px] font-medium"
-                    style={{ color: activeSection === sec.id ? '#B95A3A' : '#141413' }}
-                  >
+                  <sec.Icon size={15} style={{ color: activeSection === sec.id ? '#B95A3A' : '#8C8A82', flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: activeSection === sec.id ? '#B95A3A' : '#141413' }}>
                     {sec.label}
                   </span>
-                  <span className="ml-auto text-[12px] text-slate">›</span>
+                  <span style={{ fontSize: 14, color: '#C0BDB5' }}>›</span>
                 </button>
               ))}
-            </Card>
+            </div>
 
             {/* Theme panel */}
             {activeSection === 'theme' && (
-              <Card>
-                <p className="text-[13px] font-bold text-carbon mb-4">Theme Colors</p>
-                <div className="flex flex-col gap-3">
+              <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '16px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#141413', marginBottom: 14 }}>Theme Colors</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {THEME_COLORS.map(tc => (
-                    <div key={tc.label} className="flex items-center justify-between">
-                      <span className="text-[12px] text-charcoal">{tc.label}</span>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-6 h-6 rounded border border-bone cursor-pointer"
-                          style={{ background: tc.value }}
-                        />
-                        <span className="text-[11px] font-mono text-slate">{tc.value}</span>
+                    <div key={tc.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 12, color: '#4A4945' }}>{tc.label}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{
+                          width: 22, height: 22, borderRadius: 5,
+                          background: tc.value,
+                          border: '1px solid #E8E6DC', cursor: 'pointer', flexShrink: 0,
+                        }} />
+                        <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#8C8A82' }}>{tc.value}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4">
-                  <Select label="Font" value={font} onChange={e => setFont(e.target.value)}>
-                    <option>Inter</option>
-                    <option>DM Sans</option>
-                    <option>Lato</option>
-                    <option>Playfair Display</option>
-                    <option>Merriweather</option>
-                  </Select>
+                {/* Font */}
+                <div style={{ marginTop: 16 }}>
+                  <p style={{ fontSize: 12, fontWeight: 500, color: '#4A4945', marginBottom: 6 }}>Font</p>
+                  <select
+                    value={font}
+                    onChange={e => setFont(e.target.value)}
+                    style={{
+                      width: '100%', padding: '8px 12px', fontSize: 13,
+                      border: '1px solid #E8E6DC', borderRadius: 8,
+                      background: '#fff', color: '#2C2A28', outline: 'none',
+                      cursor: 'pointer', fontFamily: poppins,
+                    }}
+                  >
+                    {['Poppins (Current)','Inter','DM Sans','Lato','Playfair Display','Merriweather'].map(f => (
+                      <option key={f}>{f}</option>
+                    ))}
+                  </select>
                 </div>
-              </Card>
+              </div>
             )}
 
             {/* Layout panel */}
             {activeSection === 'layout' && (
-              <Card>
-                <p className="text-[13px] font-bold text-carbon mb-4">Layout Style</p>
-                <div className="flex flex-col gap-2">
+              <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '16px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#141413', marginBottom: 12 }}>Layout Style</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {LAYOUT_OPTIONS.map(opt => (
                     <button
                       key={opt.id}
                       onClick={() => setLayoutStyle(opt.id)}
-                      className="w-full text-left p-3 rounded-lg border-2 transition-all cursor-pointer"
                       style={{
-                        borderColor: layoutStyle === opt.id ? '#D97757' : '#E8E6DC',
-                        background:  layoutStyle === opt.id ? '#FBECE4' : '#FFFFFF',
+                        width: '100%', textAlign: 'left', padding: '10px 12px',
+                        borderRadius: 8, cursor: 'pointer', border: `2px solid ${layoutStyle === opt.id ? '#D97757' : '#E8E6DC'}`,
+                        background: layoutStyle === opt.id ? '#FBECE4' : '#fff',
+                        fontFamily: poppins, transition: 'all 0.12s',
                       }}
                     >
-                      <p className="text-[13px] font-semibold" style={{ color: layoutStyle === opt.id ? '#B95A3A' : '#141413' }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: layoutStyle === opt.id ? '#B95A3A' : '#141413', marginBottom: 2 }}>
                         {opt.id}
                       </p>
-                      <p className="text-[11px] mt-0.5" style={{ color: layoutStyle === opt.id ? '#B95A3A' : '#8C8A82' }}>
+                      <p style={{ fontSize: 11, color: layoutStyle === opt.id ? '#B95A3A' : '#8C8A82' }}>
                         {opt.desc}
                       </p>
                     </button>
                   ))}
                 </div>
-              </Card>
+              </div>
             )}
 
-            {/* Generic panel for other sections */}
+            {/* Generic panel */}
             {(activeSection === 'header' || activeSection === 'products' || activeSection === 'footer' || activeSection === 'seo') && (
-              <Card>
-                <p className="text-[13px] font-bold text-carbon mb-2">
+              <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '16px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#141413', marginBottom: 6 }}>
                   {SECTIONS.find(s => s.id === activeSection)?.label} Settings
                 </p>
-                <p className="text-[12px] text-slate">
+                <p style={{ fontSize: 12, color: '#8C8A82' }}>
                   Advanced settings for this section are coming soon.
                 </p>
-              </Card>
+              </div>
             )}
           </div>
 
-          {/* RIGHT: Store preview */}
-          <div className="flex flex-col overflow-hidden rounded-xl border border-bone bg-white">
+          {/* ── RIGHT: Store preview ── */}
+          <div style={{
+            display: 'flex', flexDirection: 'column',
+            border: '1px solid #E8E6DC', borderRadius: 12,
+            background: '#fff', overflow: 'hidden',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+          }}>
+
             {/* Browser chrome */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-bone bg-[#F5F4F0] flex-shrink-0">
-              {/* Traffic light dots */}
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full" style={{ background: '#E05252' }} />
-                <div className="w-3 h-3 rounded-full" style={{ background: '#E0BE52' }} />
-                <div className="w-3 h-3 rounded-full" style={{ background: '#52C45A' }} />
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 16px', borderBottom: '1px solid #E8E6DC',
+              background: '#F5F4F0', flexShrink: 0,
+            }}>
+              {/* Traffic lights */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#E05252' }} />
+                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#E0BE52' }} />
+                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#52C45A' }} />
               </div>
+
               {/* URL bar */}
-              <div className="flex-1 flex items-center justify-center">
-                <div className="bg-white border border-bone rounded-lg px-3 py-1 text-[12px] text-slate" style={{ minWidth: 220, textAlign: 'center' }}>
-                  <Lock size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />myshop.solvexo.store
+              <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                <div style={{
+                  background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8,
+                  padding: '4px 14px', fontSize: 12, color: '#8C8A82',
+                  minWidth: 220, textAlign: 'center', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center', gap: 4,
+                }}>
+                  <Lock size={10} /> myshop.solvexo.store
                 </div>
               </div>
-              {/* Desktop/mobile toggle */}
-              <div className="flex items-center gap-1">
-                <button className="w-7 h-7 rounded flex items-center justify-center bg-brand-pale-orange cursor-pointer"><Monitor size={14} /></button>
-                <button className="w-7 h-7 rounded flex items-center justify-center hover:bg-bone cursor-pointer"><Smartphone size={14} /></button>
+
+              {/* Device toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                <button style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FBECE4', border: 'none', cursor: 'pointer' }}>
+                  <Monitor size={14} style={{ color: '#B95A3A' }} />
+                </button>
+                <button style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0EEE6', border: 'none', cursor: 'pointer' }}>
+                  <Smartphone size={14} style={{ color: '#8C8A82' }} />
+                </button>
               </div>
             </div>
 
-            {/* Store preview content */}
-            <div className="flex-1 overflow-y-auto">
+            {/* Preview content */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+
               {/* Store header */}
-              <header className="flex items-center justify-between px-8 py-4 border-b" style={{ background: '#2C2A28', borderColor: '#3A3836' }}>
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[12px] font-bold text-white" style={{ background: '#D97757' }}>M</div>
-                  <span className="text-[14px] font-bold text-white">My Shop</span>
+              <header style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '14px 32px', background: '#2C2A28', borderBottom: '1px solid #3A3836',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: 7, background: '#D97757',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 700, color: '#fff',
+                  }}>M</div>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>My Shop</span>
                 </div>
-                <nav className="flex items-center gap-6">
+                <nav style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
                   {['Shop', 'About', 'Contact'].map(link => (
-                    <a key={link} href="#" className="text-[12px] text-[#B0AEA8] hover:text-white transition-colors">{link}</a>
+                    <a key={link} href="#" style={{ fontSize: 13, color: '#B0AEA8', textDecoration: 'none' }}>{link}</a>
                   ))}
                 </nav>
-                <div className="flex items-center gap-3">
-                  <button className="text-[#8C8A82] hover:text-white cursor-pointer"><Search size={14} /></button>
-                  <button className="text-[#8C8A82] hover:text-white cursor-pointer"><Package size={14} /></button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <span style={{ fontSize: 13, color: '#B0AEA8', cursor: 'pointer' }}>Search</span>
+                  <span style={{ fontSize: 13, color: '#B0AEA8', cursor: 'pointer' }}>Cart (0)</span>
                 </div>
               </header>
 
               {/* Hero */}
-              <section className="px-8 py-12 text-center" style={{ background: '#FBECE4' }}>
-                <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#D97757' }}>Welcome</p>
-                <h2 className="text-[28px] font-bold text-carbon mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>Welcome to My Shop</h2>
-                <p className="text-[14px] text-slate mb-6">Discover amazing educational resources and digital downloads.</p>
-                <button
-                  className="px-6 py-2.5 rounded-lg text-[13px] font-semibold text-white cursor-pointer"
-                  style={{ background: '#D97757' }}
-                >
+              <section style={{
+                padding: '60px 32px', textAlign: 'center',
+                background: '#FBECE4',
+              }}>
+                <h2 style={{
+                  fontSize: 32, fontWeight: 700, color: '#141413',
+                  fontFamily: 'Georgia, serif', marginBottom: 10, lineHeight: 1.2,
+                }}>
+                  Welcome to My Shop
+                </h2>
+                <p style={{ fontSize: 14, color: '#8C8A82', marginBottom: 24 }}>
+                  Handcrafted educational resources for modern classrooms.
+                </p>
+                <button style={{
+                  padding: '11px 28px', background: '#D97757', border: 'none',
+                  borderRadius: 8, fontSize: 14, fontWeight: 600, color: '#fff',
+                  cursor: 'pointer', fontFamily: poppins,
+                }}>
                   Shop Now
                 </button>
               </section>
 
-              {/* Products */}
-              <section className="px-8 py-8">
-                <h3 className="text-[16px] font-bold text-carbon mb-5">Featured Products</h3>
-                <div className="grid grid-cols-3 gap-4">
+              {/* Featured Products */}
+              <section style={{ padding: '32px 32px' }}>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: '#141413', marginBottom: 20 }}>
+                  Featured Products
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
                   {PREVIEW_PRODUCTS.map(p => (
-                    <div key={p.name} className="rounded-xl border border-bone bg-white overflow-hidden">
-                      <div
-                        className="flex items-center justify-center"
-                        style={{ height: 100, background: '#FBECE4' }}
-                      >
-                        <p.Icon size={36} style={{ color: '#D97757' }} />
+                    <div key={p.name} style={{
+                      border: '1px solid #E8E6DC', borderRadius: 10,
+                      background: '#fff', overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        height: 120, background: '#EAF4EE',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <p.Icon size={38} style={{ color: '#5A8A6A' }} />
                       </div>
-                      <div className="p-3">
-                        <p className="text-[12px] font-semibold text-carbon">{p.name}</p>
-                        <p className="text-[13px] font-bold mt-0.5" style={{ color: '#D97757' }}>{p.price}</p>
+                      <div style={{ padding: '12px 14px' }}>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: '#141413', marginBottom: 4 }}>{p.name}</p>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: '#D97757' }}>{p.price}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               </section>
+
             </div>
           </div>
+
         </div>
       </div>
     </>

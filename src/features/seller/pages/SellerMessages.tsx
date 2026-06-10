@@ -1,61 +1,40 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Avatar } from '@/components/ui/Avatar';
 import { Sparkles } from 'lucide-react';
 
+// ── Data ──────────────────────────────────────────────────────────────────────
 interface Conversation {
-  id: number;
-  name: string;
-  time: string;
-  subject: string;
-  preview: string;
-  unread: boolean;
+  id: number; name: string; initials: string; time: string;
+  subject: string; preview: string; unread: boolean;
 }
 
 const CONVERSATIONS: Conversation[] = [
-  {
-    id: 1,
-    name: 'Sarah Mitchell',
-    time: '2 min ago',
-    subject: 'Re: Grade 5 Math Bundle',
-    preview: 'Hi! Can I use this for multiple classrooms...',
-    unread: true,
-  },
-  {
-    id: 2,
-    name: 'David Reynolds',
-    time: '1h ago',
-    subject: 'Re: Fractions Mastery Kit',
-    preview: 'Thank you so much! The resources are...',
-    unread: false,
-  },
-  {
-    id: 3,
-    name: 'Lena Kowalski',
-    time: '3h ago',
-    subject: 'Re: Ceramic Mug Set',
-    preview: 'Is there an editable version available?',
-    unread: true,
-  },
-  {
-    id: 4,
-    name: 'Tom Barnes',
-    time: 'Yesterday',
-    subject: 'Re: Ceramic Mug Set',
-    preview: 'When will the order ship?',
-    unread: false,
-  },
+  { id: 1, name: 'Sarah Mitchell', initials: 'SM', time: '2 min ago', subject: 'Re: Grade 5 Math Bundle',   preview: 'Hi! Can I use this for multiple classrooms...', unread: true  },
+  { id: 2, name: 'David Reynolds', initials: 'DR', time: '1h ago',    subject: 'Re: Fractions Mastery Kit', preview: 'Thank you so much! The resources are...',        unread: false },
+  { id: 3, name: 'Lena Kowalski',  initials: 'LK', time: '3h ago',    subject: 'Re: Ceramic Mug Set',       preview: 'Is there an editable version available?',        unread: true  },
+  { id: 4, name: 'Tom Barnes',     initials: 'TB', time: 'Yesterday', subject: 'Re: Ceramic Mug Set',       preview: 'When will the order ship?',                       unread: false },
 ];
 
+const avatarColors: Record<string, { bg: string; color: string }> = {
+  SM: { bg: '#FDECEA', color: '#C0392B' },
+  DR: { bg: '#EAF3FB', color: '#2156A8' },
+  LK: { bg: '#EAF7EF', color: '#1E7A3C' },
+  TB: { bg: '#FFF4E5', color: '#B36200' },
+};
+
+const AI_REPLY = "Hi Sarah! Yes, the Google Slides version is fully compatible with Google Classroom. You can assign individual slides as assignments. For the school license, you can upgrade directly from your Orders page. Let me know if you need any help!";
+
+const poppins = "'Poppins', sans-serif";
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export function SellerMessages() {
   usePageTitle('Messages');
   const [activeId, setActiveId] = useState<number>(1);
-  const [reply, setReply] = useState('');
+  const [reply,    setReply]    = useState('');
 
   const activeConvo = CONVERSATIONS.find(c => c.id === activeId)!;
+  const av = avatarColors[activeConvo.initials] ?? { bg: '#F0EEE6', color: '#5A5852' };
 
   return (
     <>
@@ -63,92 +42,112 @@ export function SellerMessages() {
         title="Messages"
         subtitle="Respond to buyer questions and support requests."
         actions={
-          <>
-            <Badge color="red">4 Unread</Badge>
-          </>
+          <span style={{ padding: '4px 12px', background: '#FDECEA', borderRadius: 6, fontSize: 12, fontWeight: 600, color: '#C0392B', fontFamily: poppins }}>
+            4 Unread
+          </span>
         }
       />
 
       {/* 2-col layout */}
-      <div className="flex flex-1 h-[calc(100vh-65px)] overflow-hidden">
+      <div style={{ display: 'flex', flex: 1, height: 'calc(100vh - 108px)', overflow: 'hidden', fontFamily: poppins }}>
 
-        {/* LEFT SIDEBAR */}
-        <div className="w-[340px] flex-shrink-0 border-r border-bone flex flex-col bg-white">
+        {/* ── LEFT: Conversation list ── */}
+        <div style={{ width: 300, flexShrink: 0, borderRight: '1px solid #E8E6DC', display: 'flex', flexDirection: 'column', background: '#fff' }}>
 
           {/* Search */}
-          <div className="p-3 border-b border-bone">
+          <div style={{ padding: '12px 14px', borderBottom: '1px solid #E8E6DC' }}>
             <input
               type="text"
               placeholder="Search..."
-              className="w-full text-[13px] text-charcoal placeholder:text-slate px-3 py-2 rounded-lg border border-bone bg-white outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 transition-colors duration-150"
+              style={{
+                width: '100%', fontSize: 13, color: '#4A4945', padding: '8px 12px',
+                borderRadius: 8, border: '1px solid #E8E6DC', background: '#fff',
+                outline: 'none', fontFamily: poppins, boxSizing: 'border-box',
+              }}
             />
           </div>
 
-          {/* Conversation list */}
-          <div className="flex-1 overflow-y-auto">
-            {CONVERSATIONS.map(convo => (
-              <div
-                key={convo.id}
-                onClick={() => setActiveId(convo.id)}
-                className="relative p-4 border-b border-bone cursor-pointer hover:bg-cream transition-colors duration-150"
-              >
-                {/* Active indicator */}
-                {convo.id === activeId && (
-                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-brand-orange rounded-r-full" />
-                )}
+          {/* List */}
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {CONVERSATIONS.map(convo => {
+              const cav = avatarColors[convo.initials] ?? { bg: '#F0EEE6', color: '#5A5852' };
+              const isActive = convo.id === activeId;
+              return (
+                <div
+                  key={convo.id}
+                  onClick={() => setActiveId(convo.id)}
+                  style={{
+                    position: 'relative', padding: '14px 16px',
+                    borderBottom: '1px solid #F0EEE6', cursor: 'pointer',
+                    background: isActive ? '#FBECE4' : 'transparent',
+                    transition: 'background 0.12s',
+                  }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#FAF9F5'; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {/* Active left bar */}
+                  {isActive && (
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: '#D97757', borderRadius: '0 3px 3px 0' }} />
+                  )}
 
-                <div className="flex items-start gap-3">
-                  <Avatar name={convo.name} size={38} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-[13px] font-bold text-carbon truncate">{convo.name}</span>
-                      <span className="text-[11px] text-slate flex-shrink-0 ml-2">{convo.time}</span>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    {/* Avatar */}
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: cav.bg, color: cav.color, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {convo.initials}
                     </div>
-                    <p className="text-[12px] text-slate mb-0.5">{convo.subject}</p>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[12px] text-charcoal truncate">{convo.preview}</p>
-                      {convo.unread && (
-                        <div className="w-2 h-2 rounded-full bg-brand-orange flex-shrink-0" />
-                      )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#141413', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{convo.name}</span>
+                        <span style={{ fontSize: 11, color: '#8C8A82', flexShrink: 0, marginLeft: 8 }}>{convo.time}</span>
+                      </div>
+                      <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 2 }}>{convo.subject}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <p style={{ fontSize: 12, color: '#4A4945', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{convo.preview}</p>
+                        {convo.unread && (
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#D97757', flexShrink: 0 }} />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* RIGHT PANEL */}
-        <div className="flex-1 flex flex-col bg-cream min-w-0">
+        {/* ── RIGHT: Chat panel ── */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#FAF9F5', minWidth: 0 }}>
 
           {/* Top bar */}
-          <div className="bg-white border-b border-bone px-5 py-3 flex items-center gap-3 flex-shrink-0">
-            <Avatar name={activeConvo.name} size={40} />
-            <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-bold text-carbon leading-tight">{activeConvo.name}</p>
-              <p className="text-[12px] text-slate">{activeConvo.subject}</p>
+          <div style={{ background: '#fff', borderBottom: '1px solid #E8E6DC', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: av.bg, color: av.color, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {activeConvo.initials}
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm">Order History</Button>
-              <Button variant="ghost" size="sm">Block</Button>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', lineHeight: 1.3 }}>{activeConvo.name}</p>
+              <p style={{ fontSize: 12, color: '#8C8A82' }}>{activeConvo.subject}</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button style={{ padding: '5px 12px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>Order History</button>
+              <button style={{ padding: '5px 12px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>Block</button>
             </div>
           </div>
 
-          {/* Scrollable message area */}
-          <div className="flex-1 overflow-y-auto flex flex-col">
+          {/* Message area */}
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
 
             {/* AI Suggested Reply */}
-            <div className="bg-brand-pale-orange p-4 rounded-xl mx-5 mt-4 mb-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-brand-deep-orange mb-1.5 flex items-center gap-1"><Sparkles size={12} />AI Suggested Reply</p>
-                  <p className="text-[13px] text-charcoal leading-relaxed">
-                    Hi Sarah! Yes, the Google Slides version is fully compatible with Google Classroom. You can assign individual slides as assignments. For the school license, you can upgrade directly from your Orders page. Let me know if you need any help!
+            <div style={{ background: '#FBECE4', borderRadius: 12, margin: '16px 20px 12px', padding: '14px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#B95A3A', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Sparkles size={12} /> AI Suggested Reply
                   </p>
+                  <p style={{ fontSize: 13, color: '#4A4945', lineHeight: 1.6 }}>{AI_REPLY}</p>
                 </div>
                 <button
-                  onClick={() => setReply("Hi Sarah! Yes, the Google Slides version is fully compatible with Google Classroom. You can assign individual slides as assignments. For the school license, you can upgrade directly from your Orders page. Let me know if you need any help!")}
-                  className="text-[13px] font-medium text-brand-orange cursor-pointer whitespace-nowrap hover:text-brand-deep-orange transition-colors flex-shrink-0"
+                  onClick={() => setReply(AI_REPLY)}
+                  style={{ fontSize: 13, fontWeight: 500, color: '#D97757', cursor: 'pointer', background: 'none', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, fontFamily: poppins }}
                 >
                   Use Reply
                 </button>
@@ -156,41 +155,48 @@ export function SellerMessages() {
             </div>
 
             {/* Messages */}
-            <div className="px-5 flex flex-col gap-3 pb-4">
+            <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
               {/* Buyer message (left) */}
-              <div className="flex flex-col items-start max-w-lg">
-                <div className="bg-brand-pale-orange rounded-xl p-4">
-                  <p className="text-[13px] text-charcoal leading-relaxed">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: 480 }}>
+                <div style={{ background: '#FBECE4', borderRadius: 12, padding: '12px 16px' }}>
+                  <p style={{ fontSize: 13, color: '#4A4945', lineHeight: 1.6 }}>
                     Hi! I just purchased the Grade 5 Math Bundle. Can I use this for multiple classrooms at my school?
                   </p>
                 </div>
-                <span className="text-[11px] text-slate mt-1 ml-1">2:14 PM</span>
+                <span style={{ fontSize: 11, color: '#8C8A82', marginTop: 4, marginLeft: 4 }}>2:14 PM</span>
               </div>
 
               {/* Seller message (right) */}
-              <div className="flex flex-col items-end ml-auto max-w-lg">
-                <div className="bg-carbon rounded-xl p-4">
-                  <p className="text-[13px] text-white leading-relaxed">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: 'auto', maxWidth: 480 }}>
+                <div style={{ background: '#141413', borderRadius: 12, padding: '12px 16px' }}>
+                  <p style={{ fontSize: 13, color: '#fff', lineHeight: 1.6 }}>
                     Hi Sarah! Great question. The standard license covers a single classroom. For multiple classrooms, I'd recommend the School License which gives access for up to 30 teachers — it's $149. Would that work for you?
                   </p>
                 </div>
-                <span className="text-[11px] text-[#8C8A82] mt-1 mr-1">2:16 PM</span>
+                <span style={{ fontSize: 11, color: '#8C8A82', marginTop: 4, marginRight: 4 }}>2:16 PM</span>
               </div>
             </div>
           </div>
 
-          {/* Bottom input bar */}
-          <div className="border-t border-bone p-4 flex gap-3 bg-white flex-shrink-0">
+          {/* Reply input */}
+          <div style={{ borderTop: '1px solid #E8E6DC', padding: '14px 20px', display: 'flex', gap: 12, background: '#fff', flexShrink: 0 }}>
             <textarea
               placeholder="Type your reply..."
               rows={3}
               value={reply}
               onChange={e => setReply(e.target.value)}
-              className="flex-1 border border-bone rounded-xl p-3 text-[13px] text-charcoal placeholder:text-slate resize-none outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 transition-colors duration-150 bg-white"
+              style={{
+                flex: 1, border: '1px solid #E8E6DC', borderRadius: 10,
+                padding: '10px 14px', fontSize: 13, color: '#4A4945',
+                resize: 'none', outline: 'none', fontFamily: poppins,
+                background: '#fff', lineHeight: 1.5,
+              }}
             />
-            <div className="flex flex-col justify-end">
-              <Button variant="primary" size="sm">Send</Button>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+              <button style={{ padding: '9px 20px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+                Send
+              </button>
             </div>
           </div>
         </div>

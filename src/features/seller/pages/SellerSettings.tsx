@@ -1,20 +1,13 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
-  User, KeyRound, ShieldCheck, Bell,
-  Store, Search, CreditCard, Package, Receipt,
-  Users, Lock,
-  DollarSign, ArrowDownToLine, FileText,
-  Trash2, Camera, Settings, Check,
-  type LucideIcon,
+  User, KeyRound, ShieldCheck, Bell, Store, Search, CreditCard,
+  Package, Receipt, Users, Lock, DollarSign, ArrowDownToLine,
+  FileText, Trash2, Camera, Settings, Check, type LucideIcon,
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Input, Textarea, Select } from '@/components/ui/Input';
-import { Divider } from '@/components/ui/Divider';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 
+// ── Data ──────────────────────────────────────────────────────────────────────
 type SettingSection =
   | 'profile' | 'email-password' | 'two-factor' | 'notifications'
   | 'store-info' | 'domain-seo' | 'payment-methods' | 'shipping' | 'tax'
@@ -22,56 +15,66 @@ type SettingSection =
   | 'plan-billing' | 'payouts' | 'invoices'
   | 'delete-account';
 
-const SETTINGS_NAV: { group: string; items: { id: SettingSection; label: string; Icon: LucideIcon }[] }[] = [
+const SETTINGS_NAV: { group: string; isDanger?: boolean; items: { id: SettingSection; label: string; Icon: LucideIcon }[] }[] = [
   {
     group: 'Account',
     items: [
-      { id: 'profile',          label: 'Profile',           Icon: User          },
-      { id: 'email-password',   label: 'Email & Password',  Icon: KeyRound      },
-      { id: 'two-factor',       label: 'Two-Factor Auth',   Icon: ShieldCheck   },
-      { id: 'notifications',    label: 'Notifications',     Icon: Bell          },
+      { id: 'profile',         label: 'Profile',          Icon: User           },
+      { id: 'email-password',  label: 'Email & Password', Icon: KeyRound       },
+      { id: 'two-factor',      label: 'Two-Factor Auth',  Icon: ShieldCheck    },
+      { id: 'notifications',   label: 'Notifications',    Icon: Bell           },
     ],
   },
   {
     group: 'Store',
     items: [
-      { id: 'store-info',       label: 'Store Info',        Icon: Store         },
-      { id: 'domain-seo',       label: 'Domain & SEO',      Icon: Search        },
-      { id: 'payment-methods',  label: 'Payment Methods',   Icon: CreditCard    },
-      { id: 'shipping',         label: 'Shipping',          Icon: Package       },
-      { id: 'tax',              label: 'Tax Settings',      Icon: Receipt       },
+      { id: 'store-info',      label: 'Store Info',       Icon: Store          },
+      { id: 'domain-seo',      label: 'Domain & SEO',     Icon: Search         },
+      { id: 'payment-methods', label: 'Payment Methods',  Icon: CreditCard     },
+      { id: 'shipping',        label: 'Shipping',         Icon: Package        },
+      { id: 'tax',             label: 'Tax Settings',     Icon: Receipt        },
     ],
   },
   {
     group: 'Team',
     items: [
-      { id: 'staff',            label: 'Staff Members',     Icon: Users         },
-      { id: 'permissions',      label: 'Permissions',       Icon: Lock          },
+      { id: 'staff',           label: 'Staff Members',    Icon: Users          },
+      { id: 'permissions',     label: 'Permissions',      Icon: Lock           },
     ],
   },
   {
     group: 'Billing',
     items: [
-      { id: 'plan-billing',     label: 'Plan & Billing',    Icon: DollarSign    },
-      { id: 'payouts',          label: 'Payouts',           Icon: ArrowDownToLine },
-      { id: 'invoices',         label: 'Invoices',          Icon: FileText      },
+      { id: 'plan-billing',    label: 'Plan & Billing',   Icon: DollarSign     },
+      { id: 'payouts',         label: 'Payouts',          Icon: ArrowDownToLine},
+      { id: 'invoices',        label: 'Invoices',         Icon: FileText       },
     ],
   },
   {
     group: 'Danger Zone',
+    isDanger: true,
     items: [
-      { id: 'delete-account',   label: 'Delete Account',    Icon: Trash2        },
+      { id: 'delete-account',  label: 'Delete Account',   Icon: Trash2         },
     ],
   },
 ];
 
+const poppins   = "'Poppins', sans-serif";
+const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '24px 26px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
+const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, outline: 'none', fontFamily: poppins, color: '#2C2A28', background: '#fff', boxSizing: 'border-box' as const };
+const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 500, color: '#4A4945', marginBottom: 5, display: 'block', fontFamily: poppins };
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export function SellerSettings() {
   usePageTitle('Settings');
-  const [active, setActive] = useState<SettingSection>('profile');
+  const [active,    setActive]    = useState<SettingSection>('profile');
   const [firstName, setFirstName] = useState('Alex');
   const [lastName,  setLastName]  = useState('Chen');
   const [phone,     setPhone]     = useState('+1 (555) 234-5678');
   const [bio,       setBio]       = useState('Passionate educator and digital creator. Selling high-quality math resources for K–8 students.');
+
+  const allItems = SETTINGS_NAV.flatMap(g => g.items);
+  const activeItem = allItems.find(i => i.id === active);
 
   return (
     <>
@@ -80,80 +83,72 @@ export function SellerSettings() {
         subtitle="Manage your account and store preferences."
       />
 
-      <div className="p-7">
-        <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 280px' }}>
-          {/* LEFT: main content */}
-          <div>
-            {/* Main content */}
-            {active === 'profile' && (
-              <Card>
-                <p className="text-[16px] font-bold text-carbon mb-5">Profile</p>
+      <div style={{ padding: '20px 28px 32px', fontFamily: poppins }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: 20 }}>
 
-                {/* Photo upload */}
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="relative">
-                    <div
-                      className="rounded-full flex items-center justify-center text-[28px] font-bold flex-shrink-0"
-                      style={{ width: 80, height: 80, background: '#FBECE4', color: '#B95A3A' }}
-                    >
+          {/* ── LEFT: Content ── */}
+          <div>
+
+            {/* Profile section */}
+            {active === 'profile' && (
+              <div style={cardStyle}>
+                <p style={{ fontSize: 16, fontWeight: 700, color: '#141413', marginBottom: 22 }}>Profile</p>
+
+                {/* Photo */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 22 }}>
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <div style={{ width: 76, height: 76, borderRadius: '50%', background: '#FBECE4', color: '#B95A3A', fontSize: 26, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       AC
                     </div>
-                    <button
-                      className="absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center text-white cursor-pointer"
-                      style={{ background: '#D97757' }}
-                    >
-                      <Camera size={12} />
+                    <button style={{ position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: '50%', background: '#D97757', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                      <Camera size={12} style={{ color: '#fff' }} />
                     </button>
                   </div>
                   <div>
-                    <p className="text-[13px] font-semibold text-carbon">Profile Photo</p>
-                    <p className="text-[12px] text-slate mb-2">JPG, PNG — max 2 MB</p>
-                    <Button variant="ghost" size="sm">Upload Photo</Button>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#141413', marginBottom: 3 }}>Profile Photo</p>
+                    <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 8 }}>JPG, PNG — max 2 MB</p>
+                    <button style={{ padding: '5px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+                      Upload Photo
+                    </button>
                   </div>
                 </div>
 
-                <Divider my={4} />
+                <div style={{ height: 1, background: '#F0EEE6', margin: '0 0 20px' }} />
 
                 {/* Name */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <Input
-                    label="First Name"
-                    value={firstName}
-                    onChange={e => setFirstName(e.target.value)}
-                  />
-                  <Input
-                    label="Last Name"
-                    value={lastName}
-                    onChange={e => setLastName(e.target.value)}
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+                  <div>
+                    <label style={labelStyle}>First Name</label>
+                    <input value={firstName} onChange={e => setFirstName(e.target.value)} style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Last Name</label>
+                    <input value={lastName} onChange={e => setLastName(e.target.value)} style={inputStyle} />
+                  </div>
                 </div>
 
                 {/* Email */}
-                <div className="mb-4">
-                  <label className="block text-[12px] font-medium text-charcoal mb-1.5">Email</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      readOnly
-                      defaultValue="alex@myshop.com"
-                      className="flex-1 text-[13px] text-charcoal px-3 py-2.5 rounded-lg border border-bone bg-cream outline-none"
-                    />
-                    <Badge color="green"><Check size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />Verified</Badge>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={labelStyle}>Email</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <input readOnly defaultValue="alex@myshop.com"
+                      style={{ ...inputStyle, flex: 1, background: '#FAF9F5', color: '#8C8A82' }} />
+                    <span style={{ padding: '4px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#E3F4EA', color: '#1E7A3C', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                      <Check size={10} /> Verified
+                    </span>
                   </div>
                 </div>
 
                 {/* Phone */}
-                <div className="mb-4">
-                  <Input
-                    label="Phone Number"
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    placeholder="+1 (555) 000-0000"
-                  />
+                <div style={{ marginBottom: 16 }}>
+                  <label style={labelStyle}>Phone Number</label>
+                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" style={inputStyle} />
                 </div>
 
                 {/* Country */}
-                <div className="mb-4">
-                  <Select label="Country">
+                <div style={{ marginBottom: 16 }}>
+                  <label style={labelStyle}>Country</label>
+                  <select style={{ ...inputStyle, cursor: 'pointer' }}>
                     <option>United States</option>
                     <option>United Kingdom</option>
                     <option>Canada</option>
@@ -161,79 +156,87 @@ export function SellerSettings() {
                     <option>South Africa</option>
                     <option>Nigeria</option>
                     <option>Kenya</option>
-                  </Select>
+                  </select>
                 </div>
 
                 {/* Bio */}
-                <div className="mb-6">
-                  <Textarea
-                    label="Bio"
-                    rows={3}
-                    value={bio}
-                    onChange={e => setBio(e.target.value)}
+                <div style={{ marginBottom: 22 }}>
+                  <label style={labelStyle}>Bio</label>
+                  <textarea rows={3} value={bio} onChange={e => setBio(e.target.value)}
                     placeholder="Tell buyers about yourself…"
-                  />
+                    style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }} />
                 </div>
 
-                <Button variant="primary" size="md">Save Changes</Button>
-              </Card>
+                <button style={{ padding: '10px 24px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+                  Save Changes
+                </button>
+              </div>
             )}
 
+            {/* Other sections */}
             {active !== 'profile' && (
-              <Card>
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="mb-3" style={{ color: '#8C8A82' }}>
-                    {(() => { const found = SETTINGS_NAV.flatMap(g => g.items).find(i => i.id === active); return found ? <found.Icon size={40} /> : <Settings size={40} />; })()}
+              <div style={cardStyle}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', textAlign: 'center' }}>
+                  <div style={{ color: '#8C8A82', marginBottom: 14 }}>
+                    {activeItem ? <activeItem.Icon size={40} /> : <Settings size={40} />}
                   </div>
-                  <p className="text-[15px] font-semibold text-carbon mb-1">
-                    {SETTINGS_NAV.flatMap(g => g.items).find(i => i.id === active)?.label ?? 'Settings'}
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#141413', marginBottom: 6, fontFamily: poppins }}>
+                    {activeItem?.label ?? 'Settings'}
                   </p>
-                  <p className="text-[13px] text-slate">
+                  <p style={{ fontSize: 13, color: '#8C8A82', fontFamily: poppins }}>
                     {active === 'delete-account'
                       ? 'Permanently delete your account and all data.'
                       : 'Settings for this section are coming soon.'}
                   </p>
                   {active === 'delete-account' && (
-                    <Button variant="danger" size="sm" className="mt-4">Delete My Account</Button>
+                    <button style={{ marginTop: 16, padding: '8px 18px', background: '#FDECEA', border: '1px solid #F5C6C2', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#C0392B', cursor: 'pointer', fontFamily: poppins }}>
+                      Delete My Account
+                    </button>
                   )}
                 </div>
-              </Card>
+              </div>
             )}
           </div>
 
-          {/* RIGHT: sidebar nav */}
+          {/* ── RIGHT: Nav sidebar ── */}
           <div>
-            <Card padding="none" className="sticky top-[70px]">
+            <div style={{ ...cardStyle, padding: 0, position: 'sticky', top: 70 }}>
               {SETTINGS_NAV.map((group, gi) => (
                 <div key={group.group}>
-                  {gi > 0 && <div className="h-px bg-bone" />}
-                  <div className="px-4 py-2 pt-3">
-                    <p className="text-[10px] font-semibold text-slate uppercase tracking-wider">{group.group}</p>
+                  {gi > 0 && <div style={{ height: 1, background: '#F0EEE6' }} />}
+                  <div style={{ padding: '10px 16px 4px' }}>
+                    <p style={{ fontSize: 10, fontWeight: 600, color: group.isDanger ? '#C0392B' : '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: poppins }}>
+                      {group.group}
+                    </p>
                   </div>
-                  {group.items.map(item => (
-                    <button
-                      key={item.id}
-                      onClick={() => setActive(item.id)}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left transition-colors cursor-pointer border-l-2"
-                      style={{
-                        borderLeftColor: active === item.id ? '#D97757' : 'transparent',
-                        background:      active === item.id ? '#FBECE4' : 'transparent',
-                        color:           active === item.id ? '#B95A3A' : '#2C2A28',
-                      }}
-                    >
-                      <item.Icon size={14} />
-                      <span
-                        className="text-[13px]"
-                        style={{ fontWeight: active === item.id ? 600 : 400 }}
+                  {group.items.map(item => {
+                    const isActive = active === item.id;
+                    const isDanger = group.isDanger;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setActive(item.id)}
+                        style={{
+                          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '9px 16px', cursor: 'pointer', border: 'none',
+                          borderLeft: `3px solid ${isActive ? (isDanger ? '#C0392B' : '#D97757') : 'transparent'}`,
+                          background: isActive ? (isDanger ? '#FDECEA' : '#FBECE4') : 'transparent',
+                          color: isActive ? (isDanger ? '#C0392B' : '#B95A3A') : (isDanger ? '#C0392B' : '#4A4945'),
+                          textAlign: 'left', fontFamily: poppins, transition: 'background 0.12s',
+                        }}
+                        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#FAF9F5'; }}
+                        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
                       >
-                        {item.label}
-                      </span>
-                    </button>
-                  ))}
+                        <item.Icon size={14} style={{ flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               ))}
-            </Card>
+            </div>
           </div>
+
         </div>
       </div>
     </>

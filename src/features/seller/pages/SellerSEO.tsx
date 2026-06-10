@@ -1,27 +1,15 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Button }      from '@/components/ui/Button';
-import { Card }        from '@/components/ui/Card';
-import { MetricCard }  from '@/components/ui/MetricCard';
-import { Badge }       from '@/components/ui/Badge';
-import { Input } from '@/components/ui/Input';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { Sparkles, Check, X } from 'lucide-react';
 
-// ── Types & Data ──────────────────────────────────────────────────────────────
-type Product = {
-  id: string;
-  name: string;
-  score: number;
-  scoreColor: 'green' | 'yellow' | 'red';
-  barColor: string;
-  barWidth: string;
-};
+// ── Data ──────────────────────────────────────────────────────────────────────
+type Product = { id: string; name: string; score: number };
 
 const PRODUCTS: Product[] = [
-  { id: 'grade5',     name: 'Grade 5 Math Bundle',      score: 88, scoreColor: 'green',  barColor: 'bg-success', barWidth: 'w-[88%]'  },
-  { id: 'fractions',  name: 'Fractions Mastery Kit',    score: 62, scoreColor: 'yellow', barColor: 'bg-warning', barWidth: 'w-[62%]'  },
-  { id: 'figma',      name: 'Brand Identity Figma Kit', score: 45, scoreColor: 'red',    barColor: 'bg-error',   barWidth: 'w-[45%]'  },
+  { id: 'grade5',    name: 'Grade 5 Math Bundle',      score: 88 },
+  { id: 'fractions', name: 'Fractions Mastery Kit',    score: 62 },
+  { id: 'figma',     name: 'Brand Identity Figma Kit', score: 45 },
 ];
 
 const SEO_CHECKS = [
@@ -34,27 +22,44 @@ const SEO_CHECKS = [
   'Canonical URL configured',
 ];
 
+const metrics = [
+  { label: 'Avg SEO Score',      value: '65/100', trend: '3 products need work', sub: null,           trendUp: false },
+  { label: 'Organic Traffic',    value: '1,284',  trend: '+22% vs last month',   sub: null,           trendUp: true  },
+  { label: 'Search Impressions', value: '48,200', trend: null,                   sub: 'Last 28 days', trendUp: false },
+  { label: 'Click-Through Rate', value: '3.8%',   trend: 'Avg is 2.1%',          sub: null,           trendUp: true  },
+] as const;
+
+const poppins = "'Poppins', sans-serif";
+
+const cardStyle: React.CSSProperties = {
+  background: '#fff', border: '1px solid #E8E6DC',
+  borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+};
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '8px 12px', fontSize: 13,
+  border: '1px solid #E8E6DC', borderRadius: 8,
+  outline: 'none', fontFamily: poppins, color: '#2C2A28',
+  background: '#fff', boxSizing: 'border-box',
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: 12, fontWeight: 500, color: '#4A4945',
+  marginBottom: 5, display: 'block', fontFamily: poppins,
+};
+
 // ── Score Circle ──────────────────────────────────────────────────────────────
 function ScoreCircle({ score }: { score: number }) {
   const radius = 32;
   const circ   = 2 * Math.PI * radius;
   const dash   = (score / 100) * circ;
-
-  const strokeColor = score >= 80 ? '#2D8A4E' : score >= 60 ? '#C08B1E' : '#C13030';
-
+  const stroke = score >= 80 ? '#2D8A4E' : score >= 60 ? '#C08B1E' : '#C13030';
   return (
-    <svg width="84" height="84" viewBox="0 0 84 84" className="flex-shrink-0">
+    <svg width="84" height="84" viewBox="0 0 84 84" style={{ flexShrink: 0 }}>
       <circle cx="42" cy="42" r={radius} fill="none" stroke="#E8E6DC" strokeWidth="7" />
-      <circle
-        cx="42" cy="42" r={radius}
-        fill="none"
-        stroke={strokeColor}
-        strokeWidth="7"
-        strokeDasharray={`${dash} ${circ - dash}`}
-        strokeLinecap="round"
-        transform="rotate(-90 42 42)"
-      />
-      <text x="42" y="46" textAnchor="middle" className="text-[14px] font-bold" fontSize="14" fontWeight="700" fill="#141413">
+      <circle cx="42" cy="42" r={radius} fill="none" stroke={stroke} strokeWidth="7"
+        strokeDasharray={`${dash} ${circ - dash}`} strokeLinecap="round" transform="rotate(-90 42 42)" />
+      <text x="42" y="47" textAnchor="middle" fontSize="15" fontWeight="700" fill="#141413" fontFamily={poppins}>
         {score}
       </text>
     </svg>
@@ -64,8 +69,11 @@ function ScoreCircle({ score }: { score: number }) {
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerSEO() {
   usePageTitle('SEO');
-  const [selectedId, setSelectedId] = useState<string>('grade5');
+  const [selectedId, setSelectedId] = useState('grade5');
   const selected = PRODUCTS.find(p => p.id === selectedId) ?? PRODUCTS[0];
+
+  const scoreColor = selected.score >= 80 ? '#2D8A4E' : selected.score >= 60 ? '#C08B1E' : '#C13030';
+  const scoreBg    = selected.score >= 80 ? '#E3F4EA' : selected.score >= 60 ? '#FFF4DC' : '#FDECEA';
 
   return (
     <>
@@ -74,164 +82,190 @@ export function SellerSEO() {
         subtitle="Optimize your store and products for search engines."
         actions={
           <>
-            <Button variant="secondary" size="sm"><Sparkles size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />AI SEO Audit</Button>
-            <Button variant="primary"   size="sm">Save All Changes</Button>
+            <button style={{ padding: '7px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <Sparkles size={12} /> AI SEO Audit
+            </button>
+            <button style={{ padding: '7px 16px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+              Save All Changes
+            </button>
           </>
         }
       />
 
-      <div className="p-7 flex flex-col gap-5">
+      <div style={{ padding: '20px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
 
-        {/* Metrics */}
-        <div className="grid grid-cols-4 gap-4">
-          <MetricCard label="Avg SEO Score"       value="65/100"  trend="3 products need work"            trendUp={false} />
-          <MetricCard label="Organic Traffic"     value="1,284"   trend="+22% vs last month"              trendUp />
-          <MetricCard label="Search Impressions"  value="48,200"  sub="Last 28 days" />
-          <MetricCard label="Click-Through Rate"  value="3.8%"    trend="Avg is 2.1%"                     trendUp />
+        {/* ── Metrics ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          {metrics.map(m => (
+            <div key={m.label} style={{ ...cardStyle, padding: '16px 20px' }}>
+              <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</p>
+              <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{m.value}</p>
+              {m.trend && (
+                <p style={{ fontSize: 12, color: m.trendUp ? '#2D8A4E' : '#C08B1E', marginTop: 4 }}>
+                  {m.trendUp ? '▲' : '▼'} {m.trend}
+                </p>
+              )}
+              {m.sub && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>}
+            </div>
+          ))}
         </div>
 
-        {/* 2-col layout */}
-        <div className="flex gap-6 items-start">
+        {/* ── 2-col layout ── */}
+        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
 
-            {/* LEFT — Product List */}
-            <div className="w-[260px] flex-shrink-0 flex flex-col gap-4">
-              <Card padding="none">
-                <div className="px-4 py-3 border-b border-bone">
-                  <p className="text-[13px] font-semibold text-carbon">All Products</p>
-                </div>
-                {PRODUCTS.map((p, i) => (
+          {/* LEFT */}
+          <div style={{ width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* Product list */}
+            <div style={{ ...cardStyle, overflow: 'hidden' }}>
+              <div style={{ padding: '11px 16px', borderBottom: '1px solid #F0EEE6' }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#141413' }}>All Products</p>
+              </div>
+              {PRODUCTS.map((p, i) => {
+                const sc = p.score >= 80 ? '#2D8A4E' : p.score >= 60 ? '#C08B1E' : '#C13030';
+                const sb = p.score >= 80 ? '#E3F4EA' : p.score >= 60 ? '#FFF4DC' : '#FDECEA';
+                const bc = p.score >= 80 ? '#2D8A4E' : p.score >= 60 ? '#C08B1E' : '#C13030';
+                return (
                   <div
                     key={p.id}
                     onClick={() => setSelectedId(p.id)}
-                    className={[
-                      'px-4 py-3.5 cursor-pointer transition-colors',
-                      i < PRODUCTS.length - 1 ? 'border-b border-bone' : '',
-                      selectedId === p.id ? 'bg-brand-pale-orange' : 'hover:bg-cream',
-                    ].join(' ')}
+                    style={{
+                      padding: '12px 16px', cursor: 'pointer',
+                      background: selectedId === p.id ? '#FBECE4' : 'transparent',
+                      borderBottom: i < PRODUCTS.length - 1 ? '1px solid #F0EEE6' : 'none',
+                      transition: 'background 0.12s',
+                    }}
+                    onMouseEnter={e => { if (selectedId !== p.id) e.currentTarget.style.background = '#FAF9F5'; }}
+                    onMouseLeave={e => { if (selectedId !== p.id) e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[13px] font-medium text-charcoal leading-tight">{p.name}</span>
-                      <Badge color={p.scoreColor}>{p.score}/100</Badge>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: '#141413', lineHeight: 1.3 }}>{p.name}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 5, background: sb, color: sc, flexShrink: 0, marginLeft: 8 }}>
+                        {p.score}/100
+                      </span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-bone overflow-hidden">
-                      <div className={`h-full rounded-full ${p.barColor} ${p.barWidth} transition-all`} />
+                    <div style={{ height: 5, background: '#E8E6DC', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ width: `${p.score}%`, height: '100%', background: bc, borderRadius: 3 }} />
                     </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Store-level SEO */}
+            <div style={{ ...cardStyle, padding: '16px 18px' }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#141413', marginBottom: 14 }}>Store-level SEO</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>Store Meta Title</label>
+                  <input defaultValue="My Solvexo Store — Education" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Meta Description</label>
+                  <textarea rows={3} defaultValue="High-quality educational worksheets and resources for students and teachers."
+                    style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
+                </div>
+                <button style={{ padding: '7px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+                  Save Store SEO
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT */}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* Score + Tags */}
+            <div style={{ ...cardStyle, padding: '18px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <ScoreCircle score={selected.score} />
+                  <div>
+                    <p style={{ fontSize: 15, fontWeight: 700, color: '#141413', marginBottom: 4 }}>{selected.name}</p>
+                    <p style={{ fontSize: 12, fontWeight: 500, color: scoreColor, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {selected.score >= 80
+                        ? <><Check size={12} /> Excellent SEO</>
+                        : selected.score >= 60
+                        ? '~ Good SEO'
+                        : <><X size={12} /> Needs Work</>
+                      }
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {['Title', 'Description', 'Keywords', 'Images'].map(tag => (
+                        <span key={tag} style={{ padding: '2px 9px', background: '#F0EEE6', borderRadius: 5, fontSize: 11, color: '#5A5852', fontFamily: poppins }}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <button style={{ padding: '7px 12px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins, display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                  <Sparkles size={12} /> AI Optimize All
+                </button>
+              </div>
+            </div>
+
+            {/* Search Preview */}
+            <div style={{ ...cardStyle, padding: '16px 20px' }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#141413', marginBottom: 12 }}>Search Preview</p>
+              <p style={{ fontSize: 15, fontWeight: 500, color: '#1A72C2', cursor: 'pointer', marginBottom: 3, lineHeight: 1.4 }}>
+                Grade 5 Math Bundle — Printable Worksheets for Grade 5
+              </p>
+              <p style={{ fontSize: 12, color: '#2D8A4E', marginBottom: 5 }}>
+                https://myshop.solvexo.store/products/grade-5-math-bundle
+              </p>
+              <p style={{ fontSize: 12, color: '#8C8A82', lineHeight: 1.6 }}>
+                Comprehensive Grade 5 math worksheets covering fractions, decimals, geometry, and more. Printable PDF format. Aligned to curriculum standards.
+              </p>
+            </div>
+
+            {/* SEO Fields */}
+            <div style={{ ...cardStyle, padding: '18px 20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* SEO Title */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                    <label style={{ ...labelStyle, marginBottom: 0 }}>SEO Title</label>
+                    <span style={{ fontSize: 11, color: '#2D8A4E', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <Check size={11} /> 58/60 chars
+                    </span>
+                  </div>
+                  <input defaultValue="Grade 5 Math Bundle — Printable Worksheets for Grade 5" style={inputStyle} />
+                </div>
+                {/* Meta Description */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                    <label style={{ ...labelStyle, marginBottom: 0 }}>Meta Description</label>
+                    <span style={{ fontSize: 11, color: '#2D8A4E', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <Check size={11} /> 148/160 chars
+                    </span>
+                  </div>
+                  <textarea rows={3} defaultValue="Comprehensive Grade 5 math worksheets covering fractions, decimals, geometry, and more. Printable PDF format. Aligned to curriculum standards."
+                    style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
+                </div>
+                {/* Focus Keywords */}
+                <div>
+                  <label style={labelStyle}>Focus Keywords</label>
+                  <input defaultValue="grade 5 math, printable worksheets, math bundle" placeholder="Comma-separated keywords" style={inputStyle} />
+                </div>
+              </div>
+            </div>
+
+            {/* Technical SEO Checklist */}
+            <div style={{ ...cardStyle, padding: '16px 20px' }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#141413', marginBottom: 12 }}>Technical SEO Checklist</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {SEO_CHECKS.map(item => (
+                  <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Check size={13} style={{ color: '#2D8A4E', flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, color: '#4A4945', fontFamily: poppins }}>{item}</span>
                   </div>
                 ))}
-              </Card>
-
-              {/* Store-level SEO */}
-              <Card padding="none">
-                <div className="p-4">
-                  <p className="text-[13px] font-semibold text-carbon mb-3">Store-level SEO</p>
-                  <div className="flex flex-col gap-3">
-                    <Input
-                      label="Store Meta Title"
-                      defaultValue="My Solvexo Store — Education"
-                    />
-                    <div className="w-full">
-                      <label className="block text-[12px] font-medium text-charcoal mb-1.5">
-                        Meta Description
-                      </label>
-                      <textarea
-                        rows={3}
-                        defaultValue="High-quality educational worksheets and resources for students and teachers."
-                        className="w-full font-sans text-[13px] text-charcoal placeholder:text-slate px-3 py-2.5 rounded-lg border border-bone bg-white outline-none transition-colors duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 resize-vertical"
-                      />
-                    </div>
-                    <Button variant="secondary" size="sm">Save Store SEO</Button>
-                  </div>
-                </div>
-              </Card>
+              </div>
             </div>
 
-            {/* RIGHT — Product SEO Detail */}
-            <div className="flex-1 min-w-0 flex flex-col gap-4">
-
-              {/* Score + Tags */}
-              <Card padding="md">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <ScoreCircle score={selected.score} />
-                    <div>
-                      <p className="text-[15px] font-bold text-carbon mb-0.5">{selected.name}</p>
-                      <p className="text-[12px] text-success font-medium mb-2">
-                        {selected.score >= 80 ? <><Check size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />Excellent SEO</> : selected.score >= 60 ? '~ Good SEO' : <><X size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />Needs Work</>}
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {['Title', 'Description', 'Keywords', 'Images'].map(tag => (
-                          <Badge key={tag} color="gray">{tag}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <Button variant="secondary" size="sm" className="flex-shrink-0"><Sparkles size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />AI Optimize All</Button>
-                </div>
-              </Card>
-
-              {/* Search Preview */}
-              <div className="p-4 border border-bone rounded-xl bg-white">
-                <p className="text-[13px] font-semibold text-carbon mb-3">Search Preview</p>
-                <p className="text-[15px] font-medium text-info hover:underline cursor-pointer leading-snug mb-0.5">
-                  Grade 5 Math Bundle — Printable Worksheets for Grade 5
-                </p>
-                <p className="text-[12px] text-success mb-1">
-                  https://myshop.solvexo.store/products/grade-5-math-bundle
-                </p>
-                <p className="text-[12px] text-slate leading-relaxed">
-                  Comprehensive Grade 5 math worksheets covering fractions, decimals, geometry, and more.
-                  Printable PDF format. Aligned to curriculum standards.
-                </p>
-              </div>
-
-              {/* SEO Fields */}
-              <Card padding="md">
-                <div className="flex flex-col gap-4">
-                  <div className="w-full">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[12px] font-medium text-charcoal">SEO Title</label>
-                      <span className="text-[11px] text-success font-medium flex items-center gap-1"><Check size={11} />58/60 chars</span>
-                    </div>
-                    <input
-                      defaultValue="Grade 5 Math Bundle — Printable Worksheets for Grade 5"
-                      className="w-full font-sans text-[13px] text-charcoal placeholder:text-slate px-3 py-2.5 rounded-lg border border-bone bg-white outline-none transition-colors duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
-                    />
-                  </div>
-                  <div className="w-full">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[12px] font-medium text-charcoal">Meta Description</label>
-                      <span className="text-[11px] text-success font-medium flex items-center gap-1"><Check size={11} />148/160 chars</span>
-                    </div>
-                    <textarea
-                      rows={3}
-                      defaultValue="Comprehensive Grade 5 math worksheets covering fractions, decimals, geometry, and more. Printable PDF format. Aligned to curriculum standards."
-                      className="w-full font-sans text-[13px] text-charcoal placeholder:text-slate px-3 py-2.5 rounded-lg border border-bone bg-white outline-none transition-colors duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 resize-vertical"
-                    />
-                  </div>
-                  <Input
-                    label="Focus Keywords"
-                    defaultValue="grade 5 math, printable worksheets, math bundle"
-                    placeholder="Comma-separated keywords"
-                  />
-                </div>
-              </Card>
-
-              {/* Technical SEO Checklist */}
-              <div className="p-4 border border-bone rounded-xl bg-white">
-                <p className="text-[13px] font-semibold text-carbon mb-3">Technical SEO Checklist</p>
-                <div className="flex flex-col gap-2">
-                  {SEO_CHECKS.map(item => (
-                    <div key={item} className="flex items-center gap-2">
-                      <Check size={13} className="text-success flex-shrink-0" />
-                      <span className="text-[13px] text-charcoal">{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-            </div>
+          </div>
         </div>
-
       </div>
     </>
   );
