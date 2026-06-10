@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import {
   User, KeyRound, ShieldCheck, Bell, Store, Search, CreditCard,
   Package, Receipt, Users, Lock, DollarSign, ArrowDownToLine,
@@ -68,10 +69,21 @@ const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 500, color: 
 export function SellerSettings() {
   usePageTitle('Settings');
   const [active,    setActive]    = useState<SettingSection>('profile');
-  const [firstName, setFirstName] = useState('Alex');
-  const [lastName,  setLastName]  = useState('Chen');
-  const [phone,     setPhone]     = useState('+1 (555) 234-5678');
-  const [bio,       setBio]       = useState('Passionate educator and digital creator. Selling high-quality math resources for K–8 students.');
+  const [firstName, setFirstName] = useState('');
+  const [lastName,  setLastName]  = useState('');
+  const [phone,     setPhone]     = useState('');
+  const [address,   setAddress]   = useState('');
+
+  const { profile, loading: profileLoading } = useGetProfile();
+
+  useEffect(() => {
+    if (!profile) return;
+    const parts = profile.name.split(' ');
+    setFirstName(parts[0] ?? '');
+    setLastName(parts.slice(1).join(' '));
+    setPhone(profile.phone ?? '');
+    setAddress(profile.address ?? '');
+  }, [profile]);
 
   const allItems = SETTINGS_NAV.flatMap(g => g.items);
   const activeItem = allItems.find(i => i.id === active);
@@ -94,82 +106,104 @@ export function SellerSettings() {
               <div style={cardStyle}>
                 <p style={{ fontSize: 16, fontWeight: 700, color: '#141413', marginBottom: 22 }}>Profile</p>
 
-                {/* Photo */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 22 }}>
-                  <div style={{ position: 'relative', flexShrink: 0 }}>
-                    <div style={{ width: 76, height: 76, borderRadius: '50%', background: '#FBECE4', color: '#B95A3A', fontSize: 26, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      AC
+                {profileLoading ? (
+                  <div>
+                    {/* Avatar skeleton */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 22 }}>
+                      <div className="animate-pulse" style={{ width: 76, height: 76, borderRadius: '50%', background: '#E8E6DC', flexShrink: 0 }} />
+                      <div>
+                        <div className="animate-pulse" style={{ width: 110, height: 13, borderRadius: 4, background: '#E8E6DC', marginBottom: 8 }} />
+                        <div className="animate-pulse" style={{ width: 80, height: 11, borderRadius: 4, background: '#E8E6DC' }} />
+                      </div>
                     </div>
-                    <button style={{ position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: '50%', background: '#D97757', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                      <Camera size={12} style={{ color: '#fff' }} />
+                    <div style={{ height: 1, background: '#F0EEE6', margin: '0 0 20px' }} />
+                    {[1,2,3,4].map(i => (
+                      <div key={i} style={{ marginBottom: 16 }}>
+                        <div className="animate-pulse" style={{ width: 80, height: 11, borderRadius: 4, background: '#E8E6DC', marginBottom: 6 }} />
+                        <div className="animate-pulse" style={{ width: '100%', height: 38, borderRadius: 8, background: '#E8E6DC' }} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {/* Photo */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 22 }}>
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <div style={{ width: 76, height: 76, borderRadius: '50%', background: '#FBECE4', color: '#B95A3A', fontSize: 26, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                          {profile?.profileImage
+                            ? <img src={profile.profileImage} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            : (profile?.name?.slice(0, 2).toUpperCase() ?? 'ME')}
+                        </div>
+                        <button style={{ position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: '50%', background: '#D97757', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                          <Camera size={12} style={{ color: '#fff' }} />
+                        </button>
+                      </div>
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: '#141413', marginBottom: 3 }}>Profile Photo</p>
+                        <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 8 }}>JPG, PNG — max 2 MB</p>
+                        <button style={{ padding: '5px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+                          Upload Photo
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ height: 1, background: '#F0EEE6', margin: '0 0 20px' }} />
+
+                    {/* Name */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+                      <div>
+                        <label style={labelStyle}>First Name</label>
+                        <input value={firstName} onChange={e => setFirstName(e.target.value)} style={inputStyle} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Last Name</label>
+                        <input value={lastName} onChange={e => setLastName(e.target.value)} style={inputStyle} />
+                      </div>
+                    </div>
+
+                    {/* Email */}
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={labelStyle}>Email</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <input readOnly value={profile?.email ?? ''}
+                          style={{ ...inputStyle, flex: 1, background: '#FAF9F5', color: '#8C8A82' }} />
+                        {profile?.isVerified && (
+                          <span style={{ padding: '4px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#E3F4EA', color: '#1E7A3C', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                            <Check size={10} /> Verified
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Phone */}
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={labelStyle}>Phone Number</label>
+                      <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. +92 300 0000000" style={inputStyle} />
+                    </div>
+
+                    {/* Address */}
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={labelStyle}>Address</label>
+                      <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address" style={inputStyle} />
+                    </div>
+
+                    {/* Role + Status — read only */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 22 }}>
+                      <div>
+                        <label style={labelStyle}>Role</label>
+                        <input readOnly value={profile?.role ?? ''} style={{ ...inputStyle, background: '#FAF9F5', color: '#8C8A82', textTransform: 'capitalize' }} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Account Status</label>
+                        <input readOnly value={profile?.status ?? ''} style={{ ...inputStyle, background: '#FAF9F5', color: profile?.status === 'active' ? '#1E7A3C' : '#8C8A82', textTransform: 'capitalize' }} />
+                      </div>
+                    </div>
+
+                    <button style={{ padding: '10px 24px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+                      Save Changes
                     </button>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: '#141413', marginBottom: 3 }}>Profile Photo</p>
-                    <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 8 }}>JPG, PNG — max 2 MB</p>
-                    <button style={{ padding: '5px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
-                      Upload Photo
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{ height: 1, background: '#F0EEE6', margin: '0 0 20px' }} />
-
-                {/* Name */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
-                  <div>
-                    <label style={labelStyle}>First Name</label>
-                    <input value={firstName} onChange={e => setFirstName(e.target.value)} style={inputStyle} />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Last Name</label>
-                    <input value={lastName} onChange={e => setLastName(e.target.value)} style={inputStyle} />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div style={{ marginBottom: 16 }}>
-                  <label style={labelStyle}>Email</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <input readOnly defaultValue="alex@myshop.com"
-                      style={{ ...inputStyle, flex: 1, background: '#FAF9F5', color: '#8C8A82' }} />
-                    <span style={{ padding: '4px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#E3F4EA', color: '#1E7A3C', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                      <Check size={10} /> Verified
-                    </span>
-                  </div>
-                </div>
-
-                {/* Phone */}
-                <div style={{ marginBottom: 16 }}>
-                  <label style={labelStyle}>Phone Number</label>
-                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" style={inputStyle} />
-                </div>
-
-                {/* Country */}
-                <div style={{ marginBottom: 16 }}>
-                  <label style={labelStyle}>Country</label>
-                  <select style={{ ...inputStyle, cursor: 'pointer' }}>
-                    <option>United States</option>
-                    <option>United Kingdom</option>
-                    <option>Canada</option>
-                    <option>Australia</option>
-                    <option>South Africa</option>
-                    <option>Nigeria</option>
-                    <option>Kenya</option>
-                  </select>
-                </div>
-
-                {/* Bio */}
-                <div style={{ marginBottom: 22 }}>
-                  <label style={labelStyle}>Bio</label>
-                  <textarea rows={3} value={bio} onChange={e => setBio(e.target.value)}
-                    placeholder="Tell buyers about yourself…"
-                    style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }} />
-                </div>
-
-                <button style={{ padding: '10px 24px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
-                  Save Changes
-                </button>
+                  </>
+                )}
               </div>
             )}
 

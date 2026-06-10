@@ -127,3 +127,22 @@ export function apiResetPassword(payload: ResetPayload) {
   return client.post<never, ApiResponse<Record<string, never>>>(ENDPOINTS.AUTH.RESET_PASSWORD, payload);
 }
 
+/** GET /auth/getprofile — returns logged-in user's profile */
+export interface ProfileData {
+  _id:          string;
+  name:         string;
+  email:        string;
+  phone:        string;
+  address:      string;
+  isVerified:   boolean;
+  profileImage: string | null;
+  status:       string;
+  role:         AppRole;
+  createdAt:    string;
+  updatedAt:    string;
+}
+
+export function apiGetProfile() {
+  return client.get<never, ApiResponse<ProfileData>>(ENDPOINTS.AUTH.GET_PROFILE);
+}
+

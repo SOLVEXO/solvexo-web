@@ -10,6 +10,7 @@ import { AdminLayout }      from '@/components/layouts/AdminLayout';
 
 // ── Public / Buyer Pages ──────────────────────────────────────────────────────
 import { Homepage }             from '@/features/buyer/pages/Homepage';
+import { UserProfile }          from '@/features/buyer/pages/settings/UserProfile';
 import { Marketplace }          from '@/features/buyer/pages/Marketplace';
 import { ProductDetail }        from '@/features/buyer/pages/ProductDetail';
 import { SellerStorefront }     from '@/features/buyer/pages/SellerStorefront';
@@ -39,7 +40,7 @@ import { SellerCustomers }    from '@/features/seller/pages/SellerCustomers';
 import { SellerMarketing }    from '@/features/seller/pages/SellerMarketing';
 import { SellerCategories }   from '@/features/seller/pages/SellerCategories';
 import { StoreBuilder }       from '@/features/seller/pages/storemodule/StoreBuilder';
-import { SellerSettings }     from '@/features/seller/pages/SellerSettings';
+import { SellerSettings }     from '@/features/seller/pages/settings/SellerSettings';
 import { POSRegister }        from '@/features/seller/pos/POSRegister';
 import { SellerReturns }      from '@/features/seller/pages/SellerReturns';
 import { SellerSEO }          from '@/features/seller/pages/SellerSEO';
@@ -70,6 +71,7 @@ import { AdminMarketplace }   from '@/features/admin/pages/AdminMarketplace';
 import { AdminFinance }       from '@/features/admin/pages/AdminFinance';
 import { AdminAnnouncements } from '@/features/admin/pages/AdminAnnouncements';
 import { AdminConfig }        from '@/features/admin/pages/AdminConfig';
+import { AdminSettings }      from '@/features/admin/pages/settings/AdminSettings';
 
 export const router = createBrowserRouter([
   {
@@ -82,9 +84,10 @@ export const router = createBrowserRouter([
         path: '/',
         element: <PublicLayout />,
         children: [
-          { index: true,     element: <Homepage /> },
-          { path: 'pricing', element: <PricingPage /> },
-          { path: 'sellers', element: <ForSellersPage /> },
+          { index: true,          element: <Homepage /> },
+          { path: 'pricing',      element: <PricingPage /> },
+          { path: 'sellers',      element: <ForSellersPage /> },
+          { path: 'account/profile', element: <UserProfile /> },
         ],
       },
 
@@ -166,6 +169,7 @@ export const router = createBrowserRouter([
           { path: 'finance',       element: <AdminFinance /> },
           { path: 'announcements', element: <AdminAnnouncements /> },
           { path: 'config',        element: <AdminConfig /> },
+          { path: 'settings',      element: <AdminSettings /> },
         ],
       },
 

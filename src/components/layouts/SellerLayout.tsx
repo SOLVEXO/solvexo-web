@@ -1,5 +1,6 @@
 import { type ReactNode, useState, useRef, useEffect } from 'react';
 import { ActiveStoreProvider, useActiveStore } from '@/contexts/ActiveStoreContext';
+import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -240,6 +241,7 @@ function SellerSidebar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
+  const { profile, loading: profileLoading } = useGetProfile();
 
   const isActive = (path: string) => {
     if (path === '/seller/products') return pathname === '/seller/products';
@@ -432,15 +434,29 @@ function SellerSidebar() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{
-            width: 28, height: 28, borderRadius: '50%',
+            width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
             background: '#2C2A28', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', flexShrink: 0,
+            justifyContent: 'center', overflow: 'hidden',
           }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#D97757' }}>AC</span>
+            {profileLoading
+              ? <div className="animate-pulse" style={{ width: '100%', height: '100%', background: '#3C3A38' }} />
+              : profile?.profileImage
+                ? <img src={profile.profileImage} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <span style={{ fontSize: 10, fontWeight: 700, color: '#D97757' }}>{profile?.name?.slice(0, 2).toUpperCase() ?? '--'}</span>
+            }
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 12, fontWeight: 500, color: '#fff', lineHeight: 1.3 }}>Alex Chen</p>
-            <p style={{ fontSize: 10, color: '#8C8A82', lineHeight: 1.3 }}>alex@myshop.com</p>
+            {profileLoading ? (
+              <>
+                <div className="animate-pulse" style={{ width: 80, height: 11, borderRadius: 3, background: '#2C2A28', marginBottom: 4 }} />
+                <div className="animate-pulse" style={{ width: 110, height: 9, borderRadius: 3, background: '#2C2A28' }} />
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: 12, fontWeight: 500, color: '#fff', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile?.name ?? '—'}</p>
+                <p style={{ fontSize: 10, color: '#8C8A82', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile?.email ?? '—'}</p>
+              </>
+            )}
           </div>
         </div>
       </div>

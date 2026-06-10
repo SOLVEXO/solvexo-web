@@ -1,8 +1,9 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings,
+  LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useGetProfile } from '@/hooks/auth/useGetProfile';
 
 interface AdminNavItem {
   id:    string;
@@ -19,11 +20,13 @@ const ADMIN_NAV: AdminNavItem[] = [
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',          path: '/admin/finance'        },
   { id: 'announcements', Icon: Bell,            label: 'Announcements',    path: '/admin/announcements'  },
   { id: 'config',        Icon: Settings,        label: 'Platform Config',  path: '/admin/config'         },
+  { id: 'settings',      Icon: UserCog,         label: 'My Settings',       path: '/admin/settings'       },
 ];
 
 function AdminSidebar() {
   const navigate  = useNavigate();
   const { pathname } = useLocation();
+  const { profile, loading: profileLoading } = useGetProfile();
 
   const isActive = (path: string) =>
     path === '/admin' ? pathname === '/admin' : pathname.startsWith(path);
@@ -51,9 +54,33 @@ function AdminSidebar() {
           </div>
         </div>
         <div style={{ background: '#1A1918', borderRadius: 6, padding: '6px 10px' }}>
-          <span style={{ fontSize: 10, color: '#5C5A58' }}>Logged in as: </span>
-          <span style={{ fontSize: 10, fontWeight: 600, color: '#fff' }}>admin@solvexo.com</span>
+          {profileLoading ? (
+            <div className="animate-pulse" style={{ width: 140, height: 10, borderRadius: 3, background: '#2C2A28' }} />
+          ) : (
+            <>
+              <span style={{ fontSize: 10, color: '#5C5A58' }}>Logged in as: </span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: '#fff' }}>{profile?.email ?? '—'}</span>
+            </>
+          )}
         </div>
+        {/* Profile name row */}
+        {!profileLoading && profile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <div style={{
+              width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+              background: '#C13030', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', overflow: 'hidden', fontSize: 9, fontWeight: 700, color: '#fff',
+            }}>
+              {profile.profileImage
+                ? <img src={profile.profileImage} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : profile.name.slice(0, 2).toUpperCase()}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name}</p>
+              <p style={{ fontSize: 9, color: '#5C5A58', textTransform: 'capitalize' }}>{profile.role}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Nav */}
