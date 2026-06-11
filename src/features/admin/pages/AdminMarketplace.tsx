@@ -1,21 +1,12 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Badge } from '@/components/ui/Badge';
-import { Card } from '@/components/ui/Card';
-import { MetricCard } from '@/components/ui/MetricCard';
-import { Input, Select } from '@/components/ui/Input';
 import { Star } from 'lucide-react';
 
+// ── Data ──────────────────────────────────────────────────────────────────────
 interface Product {
-  id:       string;
-  title:    string;
-  seller:   string;
-  category: string;
-  price:    string;
-  sales:    number;
-  status:   'Active' | 'Flagged' | 'Removed';
-  featured: boolean;
-  listed:   string;
+  id: string; title: string; seller: string; category: string;
+  price: string; sales: number; status: 'Active' | 'Flagged' | 'Removed';
+  featured: boolean; listed: string;
 }
 
 const PRODUCTS: Product[] = [
@@ -27,117 +18,147 @@ const PRODUCTS: Product[] = [
   { id: 'P-8816', title: 'Ceramic Mug Set — Handmade',    seller: 'CeramicsBy Anna',  category: 'Handmade',    price: '$58.00', sales: 22,  status: 'Active',  featured: false, listed: 'Jun 2024' },
 ];
 
-const STATUS_COLORS: Record<string, 'green' | 'red' | 'yellow'> = {
-  Active:  'green',
-  Flagged: 'yellow',
-  Removed: 'red',
+const statusStyle: Record<string, { bg: string; color: string }> = {
+  Active:  { bg: '#E3F4EA', color: '#1E7A3C' },
+  Flagged: { bg: '#FFF4DC', color: '#B36200' },
+  Removed: { bg: '#FDECEA', color: '#C0392B' },
 };
 
+const metrics = [
+  { label: 'Total Listings', value: '28,492', trend: '+314 this week', sub: null,                  trendUp: true  },
+  { label: 'Active',         value: '27,840', trend: null,             sub: 'Live on marketplace', trendUp: false },
+  { label: 'Flagged',        value: '127',    trend: null,             sub: 'Pending review',      trendUp: false },
+  { label: 'GMV This Month', value: '$8.4M',  trend: '+18.2%',         sub: null,                  trendUp: true  },
+] as const;
+
+const poppins   = "'Poppins', sans-serif";
+const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export function AdminMarketplace() {
   usePageTitle('Marketplace');
-  const [search, setSearch]   = useState('');
-  const [catFilter, setCat]   = useState('');
-  const [statFilter, setStat] = useState('');
+  const [search,     setSearch] = useState('');
+  const [catFilter,  setCat]    = useState('');
+  const [statFilter, setStat]   = useState('');
 
   const filtered = PRODUCTS.filter(p => {
     const q = search.toLowerCase();
     if (q && !p.title.toLowerCase().includes(q) && !p.seller.toLowerCase().includes(q)) return false;
-    if (catFilter  && p.category !== catFilter) return false;
-    if (statFilter && p.status   !== statFilter) return false;
+    if (catFilter  && catFilter  !== 'All Categories' && p.category !== catFilter)  return false;
+    if (statFilter && statFilter !== 'All Statuses'   && p.status   !== statFilter) return false;
     return true;
   });
 
   return (
-    <div className="p-7 flex flex-col gap-6">
-      {/* Header */}
+    <div style={{ padding: '24px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+
+      {/* ── Header ── */}
       <div>
-        <h1 className="text-[18px] font-bold text-carbon">Marketplace Management</h1>
-        <p className="text-[12px] text-slate mt-0.5">Review, feature and manage all marketplace listings.</p>
+        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#141413', marginBottom: 3 }}>Marketplace Management</h1>
+        <p style={{ fontSize: 12, color: '#8C8A82' }}>Review, feature and manage all marketplace listings.</p>
       </div>
 
-      {/* Metrics */}
-      <div className="grid grid-cols-4 gap-4">
-        <MetricCard label="Total Listings"   value="28,492" trend="+314 this week" trendUp />
-        <MetricCard label="Active"           value="27,840" sub="Live on marketplace" />
-        <MetricCard label="Flagged"          value="127"    sub="Pending review" />
-        <MetricCard label="GMV This Month"   value="$8.4M"  trend="+18.2%"        trendUp />
+      {/* ── Metrics ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        {metrics.map(m => (
+          <div key={m.label} style={{ ...cardStyle, padding: '16px 20px' }}>
+            <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</p>
+            <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{m.value}</p>
+            {m.trend && <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {m.trend}</p>}
+            {m.sub   && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>}
+          </div>
+        ))}
       </div>
 
-      {/* Table */}
-      <Card padding="none">
+      {/* ── Table card ── */}
+      <div style={{ ...cardStyle, overflow: 'hidden' }}>
+
         {/* Filters */}
-        <div className="px-5 py-4 flex items-end gap-3 border-b border-bone">
-          <div style={{ maxWidth: 280 }} className="flex-1">
-            <Input placeholder="Search listings or sellers…" value={search} onChange={e => setSearch(e.target.value)} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px', borderBottom: '1px solid #E8E6DC', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #E8E6DC', borderRadius: 8, padding: '0 12px', background: '#fff', flex: 1, maxWidth: 300 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input placeholder="Search listings or sellers…" value={search} onChange={e => setSearch(e.target.value)}
+              style={{ border: 'none', outline: 'none', fontSize: 13, padding: '8px 0', width: '100%', fontFamily: poppins, color: '#2C2A28', background: 'transparent' }} />
           </div>
-          <div className="w-[150px]">
-            <Select value={catFilter} onChange={e => setCat(e.target.value)}>
-              <option value="">All Categories</option>
-              <option>Educational</option>
-              <option>Digital</option>
-              <option>Handmade</option>
-              <option>Business Tools</option>
-            </Select>
-          </div>
-          <div className="w-[140px]">
-            <Select value={statFilter} onChange={e => setStat(e.target.value)}>
-              <option value="">All Statuses</option>
-              <option>Active</option>
-              <option>Flagged</option>
-              <option>Removed</option>
-            </Select>
-          </div>
+          <select value={catFilter} onChange={e => setCat(e.target.value)}
+            style={{ padding: '8px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, background: '#fff', color: '#2C2A28', outline: 'none', cursor: 'pointer', fontFamily: poppins }}>
+            {['All Categories','Educational','Digital','Handmade','Business Tools'].map(o => <option key={o}>{o}</option>)}
+          </select>
+          <select value={statFilter} onChange={e => setStat(e.target.value)}
+            style={{ padding: '8px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, background: '#fff', color: '#2C2A28', outline: 'none', cursor: 'pointer', fontFamily: poppins }}>
+            {['All Statuses','Active','Flagged','Removed'].map(o => <option key={o}>{o}</option>)}
+          </select>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr className="border-b border-bone">
-                {['ID', 'Title', 'Seller', 'Category', 'Price', 'Sales', 'Status', 'Featured', 'Actions'].map(h => (
-                  <th key={h} className="text-left text-[11px] font-semibold text-slate uppercase tracking-wider px-4 py-3">{h}</th>
+              <tr>
+                {['ID','Title','Seller','Category','Price','Sales','Status','Featured','Actions'].map(h => (
+                  <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontSize: 11, fontWeight: 600, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #E8E6DC', background: '#FAF9F5', whiteSpace: 'nowrap', fontFamily: poppins }}>
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p, i) => (
-                <tr
-                  key={p.id}
-                  className={`hover:bg-cream/50 transition-colors ${i < filtered.length - 1 ? 'border-b border-bone' : ''}`}
-                  style={{ background: p.status === 'Flagged' ? '#FFFAF9' : undefined }}
-                >
-                  <td className="px-4 py-3.5 font-semibold text-carbon whitespace-nowrap">{p.id}</td>
-                  <td className="px-4 py-3.5 text-charcoal max-w-[180px]">
-                    <p className="truncate font-medium">{p.title}</p>
-                  </td>
-                  <td className="px-4 py-3.5 text-charcoal whitespace-nowrap">{p.seller}</td>
-                  <td className="px-4 py-3.5"><Badge color="gray">{p.category}</Badge></td>
-                  <td className="px-4 py-3.5 font-semibold text-carbon">{p.price}</td>
-                  <td className="px-4 py-3.5 text-carbon">{p.sales.toLocaleString()}</td>
-                  <td className="px-4 py-3.5"><Badge color={STATUS_COLORS[p.status]}>{p.status}</Badge></td>
-                  <td className="px-4 py-3.5">
-                    <span style={{ fontSize: 14 }}>{p.featured ? <Star size={14} style={{ color: '#D97757', fill: '#D97757' }} /> : '—'}</span>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="text-[11px] font-medium cursor-pointer hover:underline"
-                        style={{ color: p.featured ? '#8C8A82' : '#D97757' }}
-                      >
-                        {p.featured ? 'Unfeature' : 'Feature'}
-                      </button>
-                      <span className="text-bone">|</span>
-                      <button className="text-[11px] font-medium cursor-pointer hover:underline" style={{ color: '#C13030' }}>
-                        Remove
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filtered.map((p, i) => {
+                const ss = statusStyle[p.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
+                return (
+                  <tr key={p.id}
+                    style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none', background: p.status === 'Flagged' ? '#FFFAF9' : 'transparent', transition: 'background 0.12s' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
+                    onMouseLeave={e => (e.currentTarget.style.background = p.status === 'Flagged' ? '#FFFAF9' : 'transparent')}
+                  >
+                    {/* ID */}
+                    <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: '#141413', whiteSpace: 'nowrap', fontFamily: poppins }}>{p.id}</td>
+                    {/* Title */}
+                    <td style={{ padding: '12px 16px', maxWidth: 200 }}>
+                      <p style={{ fontSize: 13, fontWeight: 500, color: '#4A4945', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0, fontFamily: poppins }}>{p.title}</p>
+                    </td>
+                    {/* Seller */}
+                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#4A4945', whiteSpace: 'nowrap', fontFamily: poppins }}>{p.seller}</td>
+                    {/* Category */}
+                    <td style={{ padding: '12px 16px' }}>
+                      <span style={{ padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#F0EEE6', color: '#5A5852', fontFamily: poppins }}>{p.category}</span>
+                    </td>
+                    {/* Price */}
+                    <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: '#141413', fontFamily: poppins }}>{p.price}</td>
+                    {/* Sales */}
+                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#141413', fontFamily: poppins }}>{p.sales.toLocaleString()}</td>
+                    {/* Status */}
+                    <td style={{ padding: '12px 16px' }}>
+                      <span style={{ padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: ss.bg, color: ss.color, fontFamily: poppins }}>{p.status}</span>
+                    </td>
+                    {/* Featured */}
+                    <td style={{ padding: '12px 16px' }}>
+                      {p.featured
+                        ? <Star size={14} style={{ color: '#D97757', fill: '#D97757' }} />
+                        : <span style={{ fontSize: 13, color: '#C0BDB5' }}>—</span>
+                      }
+                    </td>
+                    {/* Actions */}
+                    <td style={{ padding: '12px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button style={{ fontSize: 11, fontWeight: 500, color: p.featured ? '#8C8A82' : '#D97757', background: 'none', border: 'none', cursor: 'pointer', fontFamily: poppins }}>
+                          {p.featured ? 'Unfeature' : 'Feature'}
+                        </button>
+                        <span style={{ color: '#E8E6DC', fontSize: 13 }}>|</span>
+                        <button style={{ fontSize: 11, fontWeight: 500, color: '#C13030', background: 'none', border: 'none', cursor: 'pointer', fontFamily: poppins }}>
+                          Remove
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
