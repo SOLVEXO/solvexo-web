@@ -3,12 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useCartContext } from '@/contexts/CartContext';
+import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import {
   ArrowRight, ArrowLeft, Package, Download, ClipboardList, CheckCircle,
-  Search, ShoppingCart, Star, Link2, Mail, Smartphone, ImageOff, Loader2,
+  Search, ShoppingCart, Star, Link2, Mail, Smartphone, ImageOff, Loader2, Heart,
 } from 'lucide-react';
 import type { ProductVariant } from '@/api/commerce/marketplace';
 
@@ -175,6 +176,7 @@ export function ProductDetail() {
 
   const { detail, loading, error } = useProductById(id);
   const { cartCount, addToCart, adding } = useCartContext();
+  const { wishlistCount, isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
 
   const [selectedImgIdx, setSelectedImgIdx] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -224,6 +226,32 @@ export function ProductDetail() {
           <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')}>
             <ArrowLeft size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> Marketplace
           </Button>
+
+          {/* Wishlist icon */}
+          <div
+            onClick={() => navigate('/account/profile?tab=wishlist')}
+            style={{
+              position: 'relative', width: 36, height: 36, borderRadius: '50%',
+              backgroundColor: '#FFF0F5', border: '1px solid #FECDD3',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            }}
+          >
+            <Heart size={16} style={{ color: '#E11D48', fill: wishlistCount > 0 ? '#E11D48' : 'none' }} />
+            {wishlistCount > 0 && (
+              <span style={{
+                position: 'absolute', top: -4, right: -4,
+                minWidth: 18, height: 18, borderRadius: 9,
+                background: '#E11D48', color: '#fff',
+                fontSize: 10, fontWeight: 700, lineHeight: '18px',
+                textAlign: 'center', padding: '0 4px',
+                boxShadow: '0 0 0 2px #fff',
+              }}>
+                {wishlistCount > 99 ? '99+' : wishlistCount}
+              </span>
+            )}
+          </div>
+
+          {/* Cart icon */}
           <div
             onClick={() => navigate('/cart')}
             style={{
@@ -406,23 +434,55 @@ export function ProductDetail() {
                       Buy Now <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 6 }} />
                       {activeVariant ? ` $${activeVariant.price.toLocaleString()}` : ''}
                     </Button>
-                    <Button
-                      variant="secondary" size="md" fullWidth
-                      style={{ justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 6 }}
-                      onClick={async () => {
-                        if (!product || !activeVariant) return;
-                        await addToCart(product._id, activeVariant._id);
-                        setAddedFeedback(true);
-                        setTimeout(() => setAddedFeedback(false), 2000);
-                      }}
-                    >
-                      {adding === activeVariant?._id
-                        ? <><Loader2 size={13} style={{ animation: 'spin 0.7s linear infinite' }} /> Adding…</>
-                        : addedFeedback
-                          ? '✓ Added to Cart'
-                          : 'Add to Cart'
-                      }
-                    </Button>
+
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <Button
+                        variant="secondary" size="md" fullWidth
+                        style={{ justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}
+                        onClick={async () => {
+                          if (!product || !activeVariant) return;
+                          await addToCart(product._id, activeVariant._id);
+                          setAddedFeedback(true);
+                          setTimeout(() => setAddedFeedback(false), 2000);
+                        }}
+                      >
+                        {adding === activeVariant?._id
+                          ? <><Loader2 size={13} style={{ animation: 'spin 0.7s linear infinite' }} /> Adding…</>
+                          : addedFeedback
+                            ? '✓ Added to Cart'
+                            : 'Add to Cart'
+                        }
+                      </Button>
+
+                      {/* Wishlist toggle button */}
+                      {product && activeVariant && (() => {
+                        const wishlisted = isWishlisted(product._id, activeVariant._id);
+                        const busy       = wishlisting === activeVariant._id;
+                        return (
+                          <button
+                            onClick={() => toggleWishlist(product._id, activeVariant._id)}
+                            disabled={busy}
+                            title={wishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
+                            style={{
+                              width: 40, flexShrink: 0, borderRadius: 10,
+                              border: `1.5px solid ${wishlisted ? '#FECDD3' : C.bone}`,
+                              background: wishlisted ? '#FFF0F5' : C.white,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              cursor: busy ? 'wait' : 'pointer', transition: 'all 0.15s',
+                            }}
+                          >
+                            <Heart
+                              size={16}
+                              style={{
+                                color: wishlisted ? '#E11D48' : C.slate,
+                                fill:  wishlisted ? '#E11D48' : 'none',
+                                transition: 'color 0.15s, fill 0.15s',
+                              }}
+                            />
+                          </button>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </div>
 

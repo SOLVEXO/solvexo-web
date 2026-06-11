@@ -47,4 +47,20 @@ export const ENDPOINTS = {
     CLEAR:           '/api/cart/clear-cart',
   },
 
+  // ── WISHLIST ───────────────────────────────────────────────────────────────
+  WISHLIST: {
+    ADD:      '/api/cart/add-to-wishlist',
+    GET:      '/api/cart/get-wishlist',
+    GET_ITEM: '/api/cart/get-wishlist-item',
+    REMOVE:   '/api/cart/remove-from-wishlist',
+  },
+
+  // ── ADDRESS ────────────────────────────────────────────────────────────────
+  ADDRESS: {
+    ADD:             '/address/add-address',
+    GET_ALL:         '/address/getMyAddresses',
+    GET_DEFAULT:     '/address/getDefaultAddress',
+    UPDATE:          '/address/update-address',
+  },
+
 } as const;
