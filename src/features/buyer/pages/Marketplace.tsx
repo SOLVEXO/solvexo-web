@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductsByCategory } from '@/hooks/marketplace/useProductsByCategory';
 import { useCartContext } from '@/contexts/CartContext';
+import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ArrowRight, ShoppingCart, ShoppingBag, Star, Heart, ImageOff, Loader2 } from 'lucide-react';
@@ -100,14 +101,15 @@ function StarRating({ rating, count }: { rating: number; count?: number }) {
 }
 
 // ── Product Card ──────────────────────────────────────────────────────────────
-function ProductCard({ product, onClick, onAddToCart, isAdding }: {
-  product:    MarketplaceProduct;
-  onClick:    () => void;
-  onAddToCart: (e: React.MouseEvent) => void;
-  isAdding:   boolean;
+function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, isWishlisting, onToggleWishlist }: {
+  product:          MarketplaceProduct;
+  onClick:          () => void;
+  onAddToCart:      (e: React.MouseEvent) => void;
+  isAdding:         boolean;
+  isWishlisted:     boolean;
+  isWishlisting:    boolean;
+  onToggleWishlist: (e: React.MouseEvent) => void;
 }) {
-  const [wishlisted, setWishlisted] = useState(false);
-
   const pType = product.productType ?? product.type ?? 'physical';
   const isDigital = pType === 'digital';
 
@@ -126,13 +128,15 @@ function ProductCard({ product, onClick, onAddToCart, isAdding }: {
 
         {/* Wishlist heart */}
         <button
-          onClick={e => { e.stopPropagation(); setWishlisted(w => !w); }}
+          onClick={onToggleWishlist}
+          disabled={isWishlisting}
           style={{
             position: 'absolute', top: 10, right: 10,
             width: 32, height: 32, borderRadius: '50%',
             background: 'rgba(255,255,255,0.92)', border: 'none',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+            cursor: isWishlisting ? 'wait' : 'pointer',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
             transition: 'transform 0.15s',
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.15)'; }}
@@ -141,8 +145,8 @@ function ProductCard({ product, onClick, onAddToCart, isAdding }: {
           <Heart
             size={15}
             style={{
-              color: wishlisted ? '#E11D48' : C.slate,
-              fill:  wishlisted ? '#E11D48' : 'none',
+              color: isWishlisted ? '#E11D48' : C.slate,
+              fill:  isWishlisted ? '#E11D48' : 'none',
               transition: 'color 0.15s, fill 0.15s',
             }}
           />
@@ -222,10 +226,11 @@ export function Marketplace() {
   usePageTitle('Marketplace');
   const [activeTab, setActiveTab] = useState('All');
   const [page, setPage] = useState(1);
-  const LIMIT = 10;
+  const LIMIT = 15;
 
   const { products, total, loading, error } = useProductsByCategory(page, LIMIT);
   const { cartCount, addToCart, adding } = useCartContext();
+  const { wishlistCount, isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
 
   const totalPages = Math.ceil(total / LIMIT) || 1;
 
@@ -273,6 +278,32 @@ export function Marketplace() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <Button variant="ghost" size="sm" onClick={() => navigate('/')}>Home</Button>
           <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')}>Sell on Solvexo</Button>
+
+          {/* Wishlist icon */}
+          <div
+            onClick={() => navigate('/account/profile?tab=wishlist')}
+            style={{
+              position: 'relative', width: 36, height: 36, borderRadius: '50%',
+              backgroundColor: '#FFF0F5', border: '1px solid #FECDD3',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            }}
+          >
+            <Heart size={16} style={{ color: '#E11D48', fill: wishlistCount > 0 ? '#E11D48' : 'none' }} />
+            {wishlistCount > 0 && (
+              <span style={{
+                position: 'absolute', top: -4, right: -4,
+                minWidth: 18, height: 18, borderRadius: 9,
+                background: '#E11D48', color: '#fff',
+                fontSize: 10, fontWeight: 700, lineHeight: '18px',
+                textAlign: 'center', padding: '0 4px',
+                boxShadow: '0 0 0 2px #fff',
+              }}>
+                {wishlistCount > 99 ? '99+' : wishlistCount}
+              </span>
+            )}
+          </div>
+
+          {/* Cart icon */}
           <div
             onClick={() => navigate('/cart')}
             style={{
@@ -396,15 +427,22 @@ export function Marketplace() {
               ? Array.from({ length: 9 }).map((_, i) => <ProductCardSkeleton key={i} />)
               : filtered.map(p => {
                   const defVariant = p.variants.find(v => v.isDefault) ?? p.variants[0];
+                  const vId = defVariant?._id ?? '';
                   return (
                     <ProductCard
                       key={p._id}
                       product={p}
                       onClick={() => navigate(`/marketplace/${p._id}`)}
-                      isAdding={adding === (defVariant?._id ?? '')}
+                      isAdding={adding === vId}
                       onAddToCart={e => {
                         e.stopPropagation();
-                        if (defVariant) addToCart(p._id, defVariant._id);
+                        if (defVariant) addToCart(p._id, vId);
+                      }}
+                      isWishlisted={isWishlisted(p._id, vId)}
+                      isWishlisting={wishlisting === vId}
+                      onToggleWishlist={e => {
+                        e.stopPropagation();
+                        if (defVariant) toggleWishlist(p._id, vId);
                       }}
                     />
                   );

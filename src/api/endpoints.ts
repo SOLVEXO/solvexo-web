@@ -50,4 +50,12 @@ export const ENDPOINTS = {
     CLEAR:           '/api/cart/clear-cart',
   },
 
+  // ── WISHLIST ───────────────────────────────────────────────────────────────
+  WISHLIST: {
+    ADD:      '/api/cart/add-to-wishlist',
+    GET:      '/api/cart/get-wishlist',
+    GET_ITEM: '/api/cart/get-wishlist-item',
+    REMOVE:   '/api/cart/remove-from-wishlist',
+  },
+
 } as const;

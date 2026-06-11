@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   User, ShoppingBag, Heart, MapPin, Phone, Mail,
-  Camera, Check, Shield, LogOut, type LucideIcon,
+  Camera, Check, Shield, LogOut, ShoppingCart, ImageOff, Loader2, Star,
+  type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { TokenStorage } from '@/api/commerce/auth';
+import { useWishlistContext } from '@/contexts/WishlistContext';
+import { useCartContext } from '@/contexts/CartContext';
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const FONT = "'Poppins', sans-serif";
@@ -56,10 +59,190 @@ function PlaceholderTab({ Icon, label, desc }: { Icon: LucideIcon; label: string
   );
 }
 
+// ── Wishlist item image ───────────────────────────────────────────────────────
+function WishlistImg({ images, name }: { images?: string[]; name: string }) {
+  const [err, setErr] = useState(false);
+  const src = images?.[0];
+  if (!src || err) {
+    return (
+      <div style={{ width: 80, height: 80, borderRadius: 10, background: '#FBECE4', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <ImageOff size={20} style={{ color: '#D97757', opacity: 0.45 }} />
+      </div>
+    );
+  }
+  return (
+    <img src={src} alt={name} onError={() => setErr(true)}
+      style={{ width: 80, height: 80, borderRadius: 10, objectFit: 'cover', flexShrink: 0, display: 'block' }} />
+  );
+}
+
+// ── Wishlist tab content ──────────────────────────────────────────────────────
+function WishlistTab() {
+  const navigate = useNavigate();
+  const { wishlistItems, wishlistCount, loading: wLoading, wishlisting, removeFromWishlist } = useWishlistContext();
+  const { addToCart, adding } = useCartContext();
+
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [addingId,   setAddingId]   = useState<string | null>(null);
+
+  const handleRemove = async (productId: string, variantId: string) => {
+    setRemovingId(variantId);
+    try { await removeFromWishlist(productId, variantId); }
+    finally { setRemovingId(null); }
+  };
+
+  const handleAddToCart = async (productId: string, variantId: string) => {
+    setAddingId(variantId);
+    try { await addToCart(productId, variantId); }
+    finally { setAddingId(null); }
+  };
+
+  if (wLoading) {
+    return (
+      <div style={card}>
+        <p style={{ fontSize: 15, fontWeight: 700, color: '#141413', marginBottom: 18, fontFamily: FONT }}>Saved Items</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ display: 'flex', gap: 14, padding: '16px 0', borderBottom: '1px solid #F0EEE6' }}>
+              <div className="animate-pulse" style={{ width: 80, height: 80, borderRadius: 10, background: '#E8E6DC', flexShrink: 0 }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div className="animate-pulse" style={{ height: 13, borderRadius: 6, background: '#E8E6DC', width: '50%' }} />
+                <div className="animate-pulse" style={{ height: 11, borderRadius: 4, background: '#E8E6DC', width: '25%' }} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div className="animate-pulse" style={{ height: 30, width: 96, borderRadius: 8, background: '#E8E6DC' }} />
+                  <div className="animate-pulse" style={{ height: 30, width: 76, borderRadius: 8, background: '#E8E6DC' }} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+    );
+  }
+
+  if (wishlistCount === 0) {
+    return (
+      <PlaceholderTab
+        Icon={Heart}
+        label="Wishlist is empty"
+        desc="Save products you love to your wishlist and find them here anytime."
+      />
+    );
+  }
+
+  return (
+    <div style={card}>
+      <p style={{ fontSize: 15, fontWeight: 700, color: '#141413', marginBottom: 4, fontFamily: FONT }}>Saved Items</p>
+      <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 20, fontFamily: FONT }}>{wishlistCount} item{wishlistCount !== 1 ? 's' : ''}</p>
+
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {wishlistItems.map((item, idx) => {
+          const p       = item.product;
+          const variant = item.variants[0];
+          const isRemoving = removingId === variant?._id || wishlisting === variant?._id;
+          const isAdding   = addingId === variant?._id || adding === variant?._id;
+          const isLast     = idx === wishlistItems.length - 1;
+
+          return (
+            <div
+              key={p._id}
+              style={{
+                display: 'flex', gap: 14, padding: '16px 0',
+                borderBottom: isLast ? 'none' : '1px solid #F0EEE6',
+                opacity: isRemoving ? 0.4 : 1, transition: 'opacity 0.2s',
+              }}
+            >
+              <WishlistImg images={p.images ?? []} name={p.name} />
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p
+                  onClick={() => navigate(`/marketplace/${p._id}`)}
+                  style={{ fontWeight: 600, fontSize: 14, color: '#141413', marginBottom: 3, cursor: 'pointer', fontFamily: FONT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >
+                  {p.name}
+                </p>
+
+                {/* Stars */}
+                <div style={{ display: 'flex', gap: 2, marginBottom: 6 }}>
+                  {[1,2,3,4,5].map(i => (
+                    <Star key={i} size={10} style={{
+                      color: i <= Math.round(p.averageRating) ? '#D97757' : '#E8E6DC',
+                      fill:  i <= Math.round(p.averageRating) ? '#D97757' : '#E8E6DC',
+                    }} />
+                  ))}
+                </div>
+
+                {variant && (
+                  <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 10, fontFamily: FONT }}>
+                    {variant.color && <span>{variant.color}</span>}
+                    {variant.color && variant.size && <span> · </span>}
+                    {variant.size && <span>{variant.size}</span>}
+                    {(variant.color || variant.size) && <span style={{ margin: '0 6px', color: '#E8E6DC' }}>|</span>}
+                    <span style={{ fontWeight: 600, color: '#141413' }}>${variant.price.toLocaleString()}</span>
+                    {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
+                      <span style={{ marginLeft: 6, textDecoration: 'line-through', color: '#8C8A82' }}>
+                        ${variant.compareAtPrice.toLocaleString()}
+                      </span>
+                    )}
+                  </p>
+                )}
+
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {variant && (
+                    <button
+                      onClick={() => handleAddToCart(p._id, variant._id)}
+                      disabled={isAdding}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                        background: '#D97757', color: '#fff', border: 'none',
+                        cursor: isAdding ? 'not-allowed' : 'pointer', opacity: isAdding ? 0.7 : 1,
+                        fontFamily: FONT,
+                      }}
+                    >
+                      {isAdding
+                        ? <Loader2 size={11} style={{ animation: 'spin 0.7s linear infinite' }} />
+                        : <ShoppingCart size={11} />
+                      }
+                      {isAdding ? 'Adding…' : 'Add to Cart'}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => variant && handleRemove(p._id, variant._id)}
+                    disabled={isRemoving}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 500,
+                      background: '#FFF0F5', color: '#E11D48',
+                      border: '1px solid #FECDD3',
+                      cursor: isRemoving ? 'not-allowed' : 'pointer',
+                      fontFamily: FONT,
+                    }}
+                  >
+                    {isRemoving
+                      ? <Loader2 size={11} style={{ animation: 'spin 0.7s linear infinite' }} />
+                      : <Heart size={11} style={{ fill: '#E11D48' }} />
+                    }
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function UserProfile() {
   const navigate = useNavigate();
-  const [tab,       setTab]       = useState<Tab>('profile');
+  const [searchParams] = useSearchParams();
+  const initialTab = (searchParams.get('tab') as Tab | null) ?? 'profile';
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
   const [phone,     setPhone]     = useState('');
@@ -285,13 +468,7 @@ export function UserProfile() {
           />
         )}
 
-        {tab === 'wishlist' && (
-          <PlaceholderTab
-            Icon={Heart}
-            label="Wishlist is empty"
-            desc="Save products you love to your wishlist and find them here anytime."
-          />
-        )}
+        {tab === 'wishlist' && <WishlistTab />}
 
       </div>
     </div>
