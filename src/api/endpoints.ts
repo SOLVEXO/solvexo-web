@@ -58,4 +58,12 @@ export const ENDPOINTS = {
     REMOVE:   '/api/cart/remove-from-wishlist',
   },
 
+  // ── ADDRESS ────────────────────────────────────────────────────────────────
+  ADDRESS: {
+    ADD:             '/address/add-address',
+    GET_ALL:         '/address/getMyAddresses',
+    GET_DEFAULT:     '/address/getDefaultAddress',
+    UPDATE:          '/address/update-address',
+  },
+
 } as const;

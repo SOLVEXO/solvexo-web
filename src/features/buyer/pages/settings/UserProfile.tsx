@@ -3,12 +3,17 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   User, ShoppingBag, Heart, MapPin, Phone, Mail,
   Camera, Check, Shield, LogOut, ShoppingCart, ImageOff, Loader2, Star,
+  Plus, Pencil, ArrowLeft, Home, Briefcase, Star as StarIcon,
   type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { TokenStorage } from '@/api/commerce/auth';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useCartContext } from '@/contexts/CartContext';
+import {
+  apiGetMyAddresses, apiAddAddress, apiUpdateAddress,
+  type Address, type AddressPayload,
+} from '@/api/commerce/address';
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const FONT = "'Poppins', sans-serif";
@@ -29,11 +34,12 @@ const labelStyle: React.CSSProperties = {
 };
 
 // ── Tab nav ───────────────────────────────────────────────────────────────────
-type Tab = 'profile' | 'orders' | 'wishlist';
+type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses';
 const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
-  { id: 'profile',  label: 'My Profile', Icon: User       },
-  { id: 'orders',   label: 'My Orders',  Icon: ShoppingBag},
-  { id: 'wishlist', label: 'Wishlist',   Icon: Heart      },
+  { id: 'profile', label: 'My Profile', Icon: User },
+  { id: 'orders', label: 'My Orders', Icon: ShoppingBag },
+  { id: 'wishlist', label: 'Wishlist', Icon: Heart },
+  { id: 'addresses', label: 'Addresses', Icon: MapPin },
 ];
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -83,7 +89,7 @@ function WishlistTab() {
   const { addToCart, adding } = useCartContext();
 
   const [removingId, setRemovingId] = useState<string | null>(null);
-  const [addingId,   setAddingId]   = useState<string | null>(null);
+  const [addingId, setAddingId] = useState<string | null>(null);
 
   const handleRemove = async (productId: string, variantId: string) => {
     setRemovingId(variantId);
@@ -138,11 +144,11 @@ function WishlistTab() {
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {wishlistItems.map((item, idx) => {
-          const p       = item.product;
+          const p = item.product;
           const variant = item.variants[0];
           const isRemoving = removingId === variant?._id || wishlisting === variant?._id;
-          const isAdding   = addingId === variant?._id || adding === variant?._id;
-          const isLast     = idx === wishlistItems.length - 1;
+          const isAdding = addingId === variant?._id || adding === variant?._id;
+          const isLast = idx === wishlistItems.length - 1;
 
           return (
             <div
@@ -165,10 +171,10 @@ function WishlistTab() {
 
                 {/* Stars */}
                 <div style={{ display: 'flex', gap: 2, marginBottom: 6 }}>
-                  {[1,2,3,4,5].map(i => (
+                  {[1, 2, 3, 4, 5].map(i => (
                     <Star key={i} size={10} style={{
                       color: i <= Math.round(p.averageRating) ? '#D97757' : '#E8E6DC',
-                      fill:  i <= Math.round(p.averageRating) ? '#D97757' : '#E8E6DC',
+                      fill: i <= Math.round(p.averageRating) ? '#D97757' : '#E8E6DC',
                     }} />
                   ))}
                 </div>
@@ -237,6 +243,370 @@ function WishlistTab() {
   );
 }
 
+// ── Address helpers ───────────────────────────────────────────────────────────
+const EMPTY_FORM: AddressPayload = {
+  label: 'Home', recipientName: '', phoneNumber: '',
+  addressLine1: '', addressLine2: '', state: '', city: '', zipCode: '',
+  isDefault: false,
+};
+
+// ── Defined at module scope so the reference stays stable across re-renders ───
+function AddrField({
+  label, value, onChange, placeholder, half,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  half?: boolean;
+}) {
+  return (
+    <div style={{ gridColumn: half ? 'auto' : 'span 2' }}>
+      <label style={labelStyle}>{label}</label>
+      <input
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={inputStyle}
+      />
+    </div>
+  );
+}
+
+function AddressForm({
+  initial, onSave, onCancel, saving,
+}: {
+  initial: AddressPayload;
+  onSave: (data: AddressPayload) => void;
+  onCancel: () => void;
+  saving: boolean;
+}) {
+  const [form, setForm] = useState<AddressPayload>(initial);
+  const set = (k: keyof AddressPayload, v: string | boolean) =>
+    setForm(prev => ({ ...prev, [k]: v }));
+
+  return (
+    <div style={{
+      border: '1.5px solid #D97757', borderRadius: 12,
+      padding: '20px 18px', background: '#FFFAF7',
+    }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        {/* Label select */}
+        <div style={{ gridColumn: 'span 2' }}>
+          <label style={labelStyle}>Label</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {['Home', 'Work', 'Other'].map(l => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => set('label', l)}
+                style={{
+                  padding: '6px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                  border: `1.5px solid ${form.label === l ? '#D97757' : '#E8E6DC'}`,
+                  background: form.label === l ? '#FBECE4' : '#fff',
+                  color: form.label === l ? '#B95A3A' : '#8C8A82',
+                  cursor: 'pointer', fontFamily: FONT,
+                }}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <AddrField label="Recipient Name" value={form.recipientName} onChange={v => set('recipientName', v)} placeholder="Full name" half />
+        <AddrField label="Phone Number" value={form.phoneNumber} onChange={v => set('phoneNumber', v)} placeholder="e.g. 03001234567" half />
+        <AddrField label="Address Line 1" value={form.addressLine1} onChange={v => set('addressLine1', v)} placeholder="House no, Street" />
+        <AddrField label="Address Line 2 (Optional)" value={form.addressLine2 ?? ''} onChange={v => set('addressLine2', v)} placeholder="Landmark, Area" />
+        <AddrField label="City" value={form.city} onChange={v => set('city', v)} placeholder="e.g. Karachi" half />
+        <AddrField label="State" value={form.state} onChange={v => set('state', v)} placeholder="e.g. Sindh" half />
+        <AddrField label="Zip Code" value={form.zipCode} onChange={v => set('zipCode', v)} placeholder="e.g. 75300" half />
+
+        {/* Default checkbox */}
+        <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            type="checkbox"
+            id="addr-isDefault"
+            checked={form.isDefault ?? false}
+            onChange={e => set('isDefault', e.target.checked)}
+            style={{ width: 15, height: 15, accentColor: '#D97757', cursor: 'pointer' }}
+          />
+          <label htmlFor="addr-isDefault" style={{ fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: FONT }}>
+            Set as default address
+          </label>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+        <button
+          onClick={() => onSave(form)}
+          disabled={saving}
+          style={{
+            padding: '9px 24px', borderRadius: 9, fontSize: 13, fontWeight: 600,
+            background: '#D97757', color: '#fff', border: 'none',
+            cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1,
+            display: 'flex', alignItems: 'center', gap: 6, fontFamily: FONT,
+          }}
+        >
+          {saving && <Loader2 size={13} style={{ animation: 'spin 0.7s linear infinite' }} />}
+          {saving ? 'Saving…' : 'Save Address'}
+        </button>
+        <button
+          onClick={onCancel}
+          style={{
+            padding: '9px 18px', borderRadius: 9, fontSize: 13,
+            border: '1px solid #E8E6DC', background: '#fff',
+            color: '#8C8A82', cursor: 'pointer', fontFamily: FONT,
+          }}
+        >
+          Discard
+        </button>
+      </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+}
+
+// ── Address tab ───────────────────────────────────────────────────────────────
+type AddrView = 'list' | 'add' | 'edit';
+
+function AddressTab() {
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [view, setView] = useState<AddrView>('list');
+  const [editTarget, setEditTarget] = useState<Address | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetMyAddresses()
+      .then(res => { if (!cancelled) setAddresses(res.data ?? []); })
+      .catch(() => { })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const goList = () => { setView('list'); setEditTarget(null); };
+
+  const handleSave = async (data: AddressPayload) => {
+    setSaving(true);
+    try {
+      if (view === 'add') {
+        const res = await apiAddAddress(data);
+        setAddresses(prev =>
+          data.isDefault
+            ? [...prev.map(a => ({ ...a, isDefault: false })), res.data]
+            : [...prev, res.data],
+        );
+      } else if (view === 'edit' && editTarget) {
+        const res = await apiUpdateAddress(editTarget._id, data);
+        setAddresses(prev =>
+          data.isDefault
+            ? prev.map(a => a._id === editTarget._id ? res.data : { ...a, isDefault: false })
+            : prev.map(a => a._id === editTarget._id ? res.data : a),
+        );
+      }
+      goList();
+    } catch {
+      // keep form open
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Loading skeleton ──────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={card}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[1, 2].map(i => (
+            <div key={i} style={{ border: '1px solid #E8E6DC', borderRadius: 12, padding: 18 }}>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div className="animate-pulse" style={{ width: 36, height: 36, borderRadius: 10, background: '#E8E6DC', flexShrink: 0 }} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div className="animate-pulse" style={{ height: 13, width: '30%', borderRadius: 6, background: '#E8E6DC' }} />
+                  <div className="animate-pulse" style={{ height: 11, width: '50%', borderRadius: 4, background: '#E8E6DC' }} />
+                  <div className="animate-pulse" style={{ height: 11, width: '70%', borderRadius: 4, background: '#E8E6DC' }} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Form view (Add or Edit) ───────────────────────────────────────────────
+  if (view === 'add' || view === 'edit') {
+    return (
+      <div style={card}>
+        {/* Back header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22, paddingBottom: 16, borderBottom: '1px solid #F0EEE6' }}>
+          <button
+            onClick={goList}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '6px 12px', borderRadius: 8, fontSize: 12,
+              border: '1px solid #E8E6DC', background: '#FAF9F5',
+              color: '#4A4945', cursor: 'pointer', fontFamily: FONT,
+            }}
+          >
+            <ArrowLeft size={15} /> Back
+          </button>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#141413', fontFamily: FONT }}>
+            {view === 'edit' ? 'Edit Address' : 'Add New Address'}
+          </p>
+        </div>
+
+        <AddressForm
+          initial={editTarget
+            ? { label: editTarget.label, recipientName: editTarget.recipientName, phoneNumber: editTarget.phoneNumber, addressLine1: editTarget.addressLine1, addressLine2: editTarget.addressLine2, state: editTarget.state, city: editTarget.city, zipCode: editTarget.zipCode, isDefault: editTarget.isDefault }
+            : EMPTY_FORM
+          }
+          onSave={handleSave}
+          onCancel={goList}
+          saving={saving}
+        />
+      </div>
+    );
+  }
+
+  // ── List view (table style — matches seller dashboard Recent Orders) ─────────
+  return (
+    <div style={{
+      background: '#FFFFFF', border: '1px solid #E8E6DC',
+      borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+    }}>
+      {/* Header */}
+      <div style={{ padding: '16px 20px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', fontFamily: FONT }}>Saved Addresses</p>
+        <button
+          onClick={() => setView('add')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+            background: '#D97757', color: '#fff', border: 'none',
+            cursor: 'pointer', fontFamily: FONT,
+          }}
+        >
+          <Plus size={18} /> Add Address
+        </button>
+      </div>
+
+      {addresses.length === 0 ? (
+        <div style={{ padding: '48px 20px', textAlign: 'center', borderTop: '1px solid #E8E6DC' }}>
+          <div style={{ width: 52, height: 52, borderRadius: 12, background: '#FAF9F5', border: '1px solid #E8E6DC', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+            <MapPin size={22} style={{ color: '#D97757', opacity: 0.6 }} />
+          </div>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 4, fontFamily: FONT }}>No addresses saved</p>
+          <p style={{ fontSize: 12, color: '#8C8A82', fontFamily: FONT }}>Add a shipping address to speed up checkout.</p>
+        </div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, fontFamily: FONT }}>
+            <thead>
+              <tr style={{ borderTop: '1px solid #E8E6DC', borderBottom: '1px solid #E8E6DC' }}>
+                {['#', 'Label', 'Recipient', 'Phone', 'Address', 'Status', 'Actions'].map(h => (
+                  <th key={h} style={{
+                    textAlign: 'left', fontSize: 11, fontWeight: 600,
+                    color: '#8C8A82', textTransform: 'uppercase',
+                    letterSpacing: '0.05em', padding: '10px 18px',
+                    fontFamily: FONT,
+                  }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {addresses.map((addr, i) => (
+                <tr
+                  key={addr._id}
+                  style={{ borderBottom: i < addresses.length - 1 ? '1px solid #F5F4EF' : 'none', transition: 'background 0.12s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  {/* S.No */}
+                  <td style={{ padding: '11px 18px', color: '#8C8A82', fontSize: 12 }}>{i + 1}</td>
+
+                  {/* Label */}
+                  <td style={{ padding: '11px 18px' }}>
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      background: '#FBECE4', color: '#B95A3A',
+                      fontSize: 11, fontWeight: 600,
+                      padding: '3px 10px', borderRadius: 5,
+                    }}>
+                      {addr.label === 'Home' && <Home size={10} />}
+                      {addr.label === 'Work' && <Briefcase size={10} />}
+                      {addr.label === 'Other' && <StarIcon size={10} />}
+                      {addr.label}
+                    </span>
+                  </td>
+
+                  {/* Recipient */}
+                  <td style={{ padding: '11px 18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{
+                        width: 26, height: 26, borderRadius: '50%',
+                        background: '#EAF3FB', color: '#2156A8',
+                        fontSize: 9, fontWeight: 700,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        {addr.recipientName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                      </div>
+                      <span style={{ color: '#4A4945' }}>{addr.recipientName}</span>
+                    </div>
+                  </td>
+
+                  {/* Phone */}
+                  <td style={{ padding: '11px 18px', color: '#4A4945' }}>{addr.phoneNumber}</td>
+
+                  {/* Address */}
+                  <td style={{ padding: '11px 18px', color: '#4A4945', maxWidth: 240 }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                      {addr.addressLine1}{addr.addressLine2 ? `, ${addr.addressLine2}` : ''}, {addr.city}, {addr.state}
+                    </span>
+                  </td>
+
+                  {/* Status */}
+                  <td style={{ padding: '11px 18px' }}>
+                    <span style={{
+                      display: 'inline-block',
+                      background: addr.isDefault ? '#E3F4EA' : '#F0EEE6',
+                      color: addr.isDefault ? '#1E7A3C' : '#8C8A82',
+                      fontSize: 11, fontWeight: 600,
+                      padding: '3px 10px', borderRadius: 5,
+                    }}>
+                      {addr.isDefault ? 'Default' : 'Saved'}
+                    </span>
+                  </td>
+
+                  {/* Actions */}
+                  <td style={{ padding: '11px 18px' }}>
+                    <button
+                      onClick={() => { setEditTarget(addr); setView('edit'); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 500,
+                        border: '1px solid #E8E6DC', background: '#FAF9F5',
+                        color: '#4A4945', cursor: 'pointer', fontFamily: FONT,
+                      }}
+                    >
+                      <Pencil size={12} /> Edit
+
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function UserProfile() {
   const navigate = useNavigate();
@@ -244,9 +614,9 @@ export function UserProfile() {
   const initialTab = (searchParams.get('tab') as Tab | null) ?? 'profile';
   const [tab, setTab] = useState<Tab>(initialTab);
   const [firstName, setFirstName] = useState('');
-  const [lastName,  setLastName]  = useState('');
-  const [phone,     setPhone]     = useState('');
-  const [address,   setAddress]   = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
 
   const { profile, loading } = useGetProfile();
 
@@ -310,7 +680,7 @@ export function UserProfile() {
                 <>
                   <Skeleton w={160} h={18} /><div style={{ height: 8 }} />
                   <Skeleton w={200} h={12} /><div style={{ height: 8 }} />
-                  <Skeleton w={60}  h={20} radius={10} />
+                  <Skeleton w={60} h={20} radius={10} />
                 </>
               ) : (
                 <>
@@ -357,9 +727,9 @@ export function UserProfile() {
           {!loading && (
             <div style={{ display: 'flex', gap: 20, marginTop: 20, paddingTop: 18, borderTop: '1px solid #F0EEE6', flexWrap: 'wrap' }}>
               {[
-                { Icon: Phone,   value: profile?.phone   || '—', label: 'Phone'   },
-                { Icon: MapPin,  value: profile?.address || '—', label: 'Address' },
-                { Icon: Shield,  value: 'Secure Account',         label: 'Security'},
+                { Icon: Phone, value: profile?.phone || '—', label: 'Phone' },
+                { Icon: MapPin, value: profile?.address || '—', label: 'Address' },
+                { Icon: Shield, value: 'Secure Account', label: 'Security' },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <item.Icon size={13} style={{ color: '#D97757', flexShrink: 0 }} />
@@ -407,7 +777,7 @@ export function UserProfile() {
 
             {loading ? (
               <div>
-                {[1,2,3,4].map(i => (
+                {[1, 2, 3, 4].map(i => (
                   <div key={i} style={{ marginBottom: 18 }}>
                     <Skeleton w={90} h={11} /><div style={{ height: 6 }} />
                     <Skeleton w="100%" h={40} />
@@ -469,6 +839,7 @@ export function UserProfile() {
         )}
 
         {tab === 'wishlist' && <WishlistTab />}
+        {tab === 'addresses' && <AddressTab />}
 
       </div>
     </div>
