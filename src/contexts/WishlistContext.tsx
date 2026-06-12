@@ -5,6 +5,7 @@ import {
   apiGetWishlist, apiAddToWishlist, apiRemoveFromWishlist, apiGetWishlistItem,
   type WishlistListItem,
 } from '@/api/commerce/wishlist';
+import { TokenStorage } from '@/api/commerce/auth';
 
 export interface WishlistContextValue {
   wishlistItems:      WishlistListItem[];
@@ -40,6 +41,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
   // Initial fetch — silently skip if not authenticated
   useEffect(() => {
+    if (!TokenStorage.isLoggedIn()) { setLoading(false); return; }
     let cancelled = false;
     setLoading(true);
     apiGetWishlist()

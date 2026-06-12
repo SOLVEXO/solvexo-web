@@ -57,12 +57,15 @@ import { SellerStoreList } from '@/features/seller/pages/storemodule/SellerStore
 
 // ── Store Workspace (own layout, own sidebar) ─────────────────────────────────
 import { StoreLayout }    from '@/components/layouts/StoreLayout';
-import StoreDashboard     from '@/features/store/pages/StoreDashboard';
-import StoreOrders        from '@/features/store/pages/StoreOrders';
-import StoreProducts      from '@/features/store/pages/StoreProducts';
-import StoreCustomers     from '@/features/store/pages/StoreCustomers';
-import StoreAnalytics     from '@/features/store/pages/StoreAnalytics';
-import StoreSettings      from '@/features/store/pages/StoreSettings';
+import StoreDashboard     from '@/features/store/StoreDashboard';
+import StoreOrders        from '@/features/store/StoreOrders';
+import StoreProductList   from '@/features/store/products/StoreProductList';
+import StoreAddProduct    from '@/features/store/products/StoreAddProduct';
+import StoreEditProduct   from '@/features/store/products/StoreEditProduct';
+import StoreProductDetail from '@/features/store/products/StoreProductDetail';
+import StoreCustomers     from '@/features/store/StoreCustomers';
+import StoreAnalytics     from '@/features/store/StoreAnalytics';
+import StoreSettings      from '@/features/store/StoreSettings';
 
 // ── Admin Pages ───────────────────────────────────────────────────────────────
 import { AdminOverview }      from '@/features/admin/pages/AdminOverview';
@@ -152,7 +155,10 @@ export const router = createBrowserRouter([
           { index: true,            element: <Navigate to="dashboard" replace /> },
           { path: 'dashboard',      element: <StoreDashboard /> },
           { path: 'orders',         element: <StoreOrders /> },
-          { path: 'products',       element: <StoreProducts /> },
+          { path: 'products',                    element: <StoreProductList /> },
+          { path: 'products/add',              element: <StoreAddProduct /> },
+          { path: 'products/edit/:productId',   element: <StoreEditProduct /> },
+          { path: 'products/detail/:productId', element: <StoreProductDetail /> },
           { path: 'customers',      element: <StoreCustomers /> },
           { path: 'analytics',      element: <StoreAnalytics /> },
           { path: 'settings',       element: <StoreSettings /> },
