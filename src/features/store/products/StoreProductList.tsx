@@ -63,7 +63,6 @@ export default function StoreProductList() {
 
   const [products, setProducts] = useState<ProductEntry[]>([]);
 
-  // Sync from in-memory cache whenever we mount (e.g. after navigating back from add/edit)
   useEffect(() => {
     setProducts(getCachedProducts(storeId));
   }, [storeId]);

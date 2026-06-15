@@ -26,9 +26,10 @@ export const ENDPOINTS = {
 
   PRODUCT: {
     CREATE_PHYSICAL:      '/api/products/add-physical-product',
-    CREATE_DIGITAL:       '/api/products/add-digital-product',
+    CREATE_DIGITAL:       '/api/product/add-digital-product',
     EDIT_PHYSICAL:        (id: string) => `/api/products/edit-product${id}`,
     EDIT_DIGITAL:         (id: string) => `/api/products/edit-product/${id}`,
+    // GET_MY_ALL_PRODUCT:   '/api/products/get-my-product',
     GET_MY_PRODUCT_BY_ID: (id: string) => `/api/products/get-my-product/${id}`,
   },
 

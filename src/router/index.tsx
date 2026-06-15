@@ -30,9 +30,6 @@ import { NewPasswordPage }      from '@/features/auth/pages/NewPasswordPage';
 
 // ── Seller Pages ──────────────────────────────────────────────────────────────
 import { SellerDashboard }    from '@/features/seller/pages/SellerDashboard';
-import { SellerProducts }     from '@/features/seller/pages/SellerProducts';
-import { AddProduct }         from '@/features/seller/pages/AddProduct';
-import { DigitalUpload }      from '@/features/seller/pages/DigitalUpload';
 import { SellerOrders }       from '@/features/seller/pages/SellerOrders';
 import { SellerInventory }    from '@/features/seller/pages/SellerInventory';
 import { SellerAnalytics }    from '@/features/seller/pages/SellerAnalytics';
@@ -121,9 +118,6 @@ export const router = createBrowserRouter([
         children: [
           { index: true,              element: <Navigate to="/seller/dashboard" replace /> },
           { path: 'dashboard',        element: <SellerDashboard /> },
-          { path: 'products',         element: <SellerProducts /> },
-          { path: 'products/add',     element: <AddProduct /> },
-          { path: 'products/digital', element: <DigitalUpload /> },
           { path: 'orders',           element: <SellerOrders /> },
           { path: 'returns',          element: <SellerReturns /> },
           { path: 'inventory',        element: <SellerInventory /> },

@@ -4,7 +4,7 @@ import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import {
-  LayoutDashboard, Package, CornerUpLeft, ShoppingBag, Plus, Upload,
+  LayoutDashboard, Package, CornerUpLeft,
   Store, Monitor, BarChart2, Search, Sparkles, Users, Star, RefreshCw,
   Megaphone, Wallet, ClipboardList, Truck, MessageSquare, Plug, Activity,
   Settings, FolderOpen, Bell, ChevronDown, List,
@@ -37,9 +37,6 @@ const NAV_SECTIONS: NavSection[] = [
       { id: 'dashboard',   Icon: LayoutDashboard, label: 'Dashboard',      path: '/seller/dashboard'        },
       { id: 'orders',      Icon: Package,          label: 'Orders',          path: '/seller/orders'           },
       { id: 'returns',     Icon: CornerUpLeft,     label: 'Returns',         path: '/seller/returns'          },
-      { id: 'products',    Icon: ShoppingBag,      label: 'Products',        path: '/seller/products'         },
-      { id: 'add-product', Icon: Plus,             label: 'Add Product',   path: '/seller/products/add'     },
-      { id: 'digital',     Icon: Upload,           label: 'Digital Upload',  path: '/seller/products/digital' },
       {
         id: 'my-store', Icon: Store, label: 'My Store',
         children: [
@@ -244,7 +241,6 @@ function SellerSidebar() {
   const { profile, loading: profileLoading } = useGetProfile();
 
   const isActive = (path: string) => {
-    if (path === '/seller/products') return pathname === '/seller/products';
     // Exact match or path prefix with "/" separator (avoids /seller/store matching /seller/stores)
     return pathname === path || pathname.startsWith(path + '/');
   };

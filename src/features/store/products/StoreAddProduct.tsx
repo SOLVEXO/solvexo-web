@@ -137,8 +137,11 @@ type DigForm  = typeof initDig;
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function StoreAddProduct() {
-  const navigate    = useNavigate();
-  const { storeId } = useStoreWorkspace();
+  const navigate          = useNavigate();
+  const { storeId, store } = useStoreWorkspace();
+
+  const supportsPhysical = !store || store.productTypes.includes('physical_products');
+  const supportsDigital  = !store || store.productTypes.includes('digital_downloads');
 
   const [pType,  setPType]  = useState<ProductType>('physical');
   const [saving, setSaving] = useState(false);
@@ -258,29 +261,41 @@ export default function StoreAddProduct() {
             <SectionTitle title="Product Type" />
             <div style={{ display: 'flex', gap: 10 }}>
               {([
-                { t: 'physical' as const, Icon: Package,  label: 'Physical Product', desc: 'Shipped to customers' },
-                { t: 'digital'  as const, Icon: Download, label: 'Digital Product',  desc: 'Downloadable file' },
-              ]).map(({ t, Icon, label, desc }) => (
-                <button key={t} onClick={() => setPType(t)} style={{
-                  flex: 1, padding: '14px 16px', borderRadius: 9, cursor: 'pointer', fontFamily: FONT,
-                  border: `2px solid ${pType === t ? ACCENT : BORDER}`,
-                  background: pType === t ? '#FBECE4' : '#fff',
-                  display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',
-                }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 9, flexShrink: 0,
-                    background: pType === t ? '#fff' : '#FAF9F5',
-                    border: `1px solid ${pType === t ? ACCENT : BORDER}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <Icon size={16} style={{ color: pType === t ? ACCENT : MUTED }} />
-                  </div>
-                  <div>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: pType === t ? ACCENT : '#141413', margin: 0 }}>{label}</p>
-                    <p style={{ fontSize: 11, color: MUTED, margin: '2px 0 0' }}>{desc}</p>
-                  </div>
-                </button>
-              ))}
+                { t: 'physical' as const, Icon: Package,  label: 'Physical Product', desc: 'Shipped to customers',  enabled: supportsPhysical },
+                { t: 'digital'  as const, Icon: Download, label: 'Digital Product',  desc: 'Downloadable file',     enabled: supportsDigital  },
+              ]).map(({ t, Icon, label, desc, enabled }) => {
+                const isSelected = pType === t;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => enabled && setPType(t)}
+                    disabled={!enabled}
+                    style={{
+                      flex: 1, padding: '14px 16px', borderRadius: 9, fontFamily: FONT,
+                      cursor: enabled ? 'pointer' : 'not-allowed',
+                      border: `2px solid ${isSelected ? ACCENT : enabled ? BORDER : '#E8E6DC'}`,
+                      background: isSelected ? '#FBECE4' : enabled ? '#fff' : '#F9F8F5',
+                      display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',
+                      opacity: enabled ? 1 : 0.5,
+                    }}
+                  >
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+                      background: isSelected ? '#fff' : '#FAF9F5',
+                      border: `1px solid ${isSelected ? ACCENT : BORDER}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Icon size={16} style={{ color: isSelected ? ACCENT : MUTED }} />
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: isSelected ? ACCENT : enabled ? '#141413' : MUTED, margin: 0 }}>{label}</p>
+                      <p style={{ fontSize: 11, color: MUTED, margin: '2px 0 0' }}>
+                        {enabled ? desc : 'Not available in your store plan'}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
