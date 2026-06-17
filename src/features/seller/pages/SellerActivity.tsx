@@ -73,9 +73,6 @@ const metrics = [
   { label: 'Last Login',          value: '2 min ago',sub: 'Alex Chen — Chrome',    trend: null,        trendUp: false },
 ] as const;
 
-const poppins   = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerActivity() {
   usePageTitle('Activity');
@@ -93,33 +90,33 @@ export function SellerActivity() {
         subtitle="Full audit trail of all staff actions, changes, and security events."
         actions={
           <>
-            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>Export Log</button>
-            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>Security Settings</button>
+            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">Export Log</button>
+            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">Security Settings</button>
           </>
         }
       />
 
-      <div style={{ padding: '20px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+      <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
         {/* ── Metrics ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {metrics.map(m => (
-            <div key={m.label} style={{ ...cardStyle, padding: '16px 20px' }}>
-              <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</p>
-              <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{m.value}</p>
-              {m.trend && <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {m.trend}</p>}
-              {m.sub   && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>}
+            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+              {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
+              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
 
         {/* ── 2-col layout ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 16 }}>
+        <div className="grid gap-4" style={{ gridTemplateColumns: '240px 1fr' }}>
 
           {/* LEFT: Sidebar filters */}
-          <div style={{ ...cardStyle, overflow: 'hidden' }}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid #E8E6DC' }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#141413' }}>Filter by Type</p>
+          <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#E8E6DC]">
+              <p className="text-[13px] font-semibold text-[#141413]">Filter by Type</p>
             </div>
             {FILTER_CATEGORIES.map(cat => {
               const isActive = activeCategory === cat.id;
@@ -127,19 +124,20 @@ export function SellerActivity() {
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
+                  className="w-full flex items-center justify-between px-4 py-[10px] border-b border-[#F0EEE6] cursor-pointer border-none text-left transition-[background] duration-[120ms]"
                   style={{
-                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '10px 16px', borderBottom: '1px solid #F0EEE6', cursor: 'pointer',
-                    background: isActive ? '#FBECE4' : 'transparent', border: 'none',
+                    background: isActive ? '#FBECE4' : 'transparent',
                     borderLeft: isActive ? '3px solid #D97757' : '3px solid transparent',
-                    textAlign: 'left', fontFamily: poppins, transition: 'background 0.12s',
                   }}
                   onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#FAF9F5'; }}
                   onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
                 >
-                  <span style={{ fontSize: 13, fontWeight: isActive ? 600 : 400, color: isActive ? '#B95A3A' : '#4A4945' }}>{cat.label}</span>
+                  <span
+                    className="text-[13px]"
+                    style={{ fontWeight: isActive ? 600 : 400, color: isActive ? '#B95A3A' : '#4A4945' }}
+                  >{cat.label}</span>
                   {cat.count != null && (
-                    <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#F0EEE6', fontSize: 11, fontWeight: 600, color: '#8C8A82', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span className="w-5 h-5 rounded-full bg-[#F0EEE6] text-[11px] font-semibold text-[#8C8A82] flex items-center justify-center">
                       {cat.count}
                     </span>
                   )}
@@ -148,69 +146,75 @@ export function SellerActivity() {
             })}
 
             {/* Team Member filter */}
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid #E8E6DC' }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: '#4A4945', marginBottom: 10 }}>Filter by Team Member</p>
+            <div className="px-4 py-[14px] border-b border-[#E8E6DC]">
+              <p className="text-xs font-semibold text-[#4A4945] mb-[10px]">Filter by Team Member</p>
               {TEAM_MEMBERS.map(m => (
-                <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
+                <label key={m.id} className="flex items-center gap-2 mb-2 cursor-pointer">
                   <button
                     type="button"
                     onClick={() => setActiveMember(m.id)}
+                    className="w-4 h-4 rounded-full shrink-0 flex items-center justify-center cursor-pointer"
                     style={{
-                      width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
                       border: `2px solid ${activeMember === m.id ? '#D97757' : '#E8E6DC'}`,
                       background: activeMember === m.id ? '#D97757' : '#fff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
                     }}
                   >
-                    {activeMember === m.id && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />}
+                    {activeMember === m.id && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </button>
-                  <span style={{ fontSize: 13, color: '#4A4945', fontFamily: poppins }}>
+                  <span className="text-[13px] text-[#4A4945]">
                     {m.label}
-                    {m.sub && <span style={{ fontSize: 11, color: '#8C8A82', marginLeft: 4 }}>({m.sub})</span>}
+                    {m.sub && <span className="text-[11px] text-[#8C8A82] ml-1">({m.sub})</span>}
                   </span>
                 </label>
               ))}
             </div>
 
             {/* Date Range */}
-            <div style={{ padding: '14px 16px' }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: '#4A4945', marginBottom: 8 }}>Date Range</p>
+            <div className="px-4 py-[14px]">
+              <p className="text-xs font-semibold text-[#4A4945] mb-2">Date Range</p>
               <select
                 value={dateRange}
                 onChange={e => setDateRange(e.target.value)}
-                style={{ width: '100%', padding: '8px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, background: '#fff', color: '#2C2A28', outline: 'none', cursor: 'pointer', fontFamily: poppins, marginBottom: 10 }}
+                className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer mb-[10px]"
               >
                 <option value="last7">Last 7 days</option>
                 <option value="last30">Last 30 days</option>
                 <option value="last90">Last 90 days</option>
                 <option value="custom">Custom range</option>
               </select>
-              <button style={{ width: '100%', padding: '7px 0', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+              <button className="w-full py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs text-[#4A4945] cursor-pointer">
                 Apply Filter
               </button>
             </div>
           </div>
 
           {/* RIGHT: Activity feed */}
-          <div style={{ ...cardStyle, overflow: 'hidden' }}>
+          <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
             {/* Filter row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid #E8E6DC' }}>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #E8E6DC', borderRadius: 8, padding: '0 12px', background: '#fff' }}>
+            <div className="flex items-center gap-[10px] px-4 py-3 border-b border-[#E8E6DC]">
+              <div className="flex-1 flex items-center gap-1.5 border border-[#E8E6DC] rounded-lg px-3 bg-white">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                <input placeholder="Search activity..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                  style={{ border: 'none', outline: 'none', fontSize: 13, padding: '8px 0', width: '100%', fontFamily: poppins, color: '#2C2A28', background: 'transparent' }} />
+                <input
+                  placeholder="Search activity..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="border-none outline-none text-[13px] py-2 w-full text-[#2C2A28] bg-transparent"
+                />
               </div>
-              <select value={actionFilter} onChange={e => setActionFilter(e.target.value)}
-                style={{ padding: '8px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, background: '#fff', color: '#2C2A28', outline: 'none', cursor: 'pointer', fontFamily: poppins, width: 150 }}>
+              <select
+                value={actionFilter}
+                onChange={e => setActionFilter(e.target.value)}
+                className="w-[150px] px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer"
+              >
                 <option value="all">All Actions</option>
                 <option value="products">Products</option>
                 <option value="orders">Orders</option>
                 <option value="finance">Finance</option>
                 <option value="security">Security</option>
               </select>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2D8A4E' }} />
-                <span style={{ fontSize: 11, color: '#2D8A4E', fontWeight: 500, fontFamily: poppins }}>Live</span>
+              <div className="flex items-center gap-[5px] shrink-0">
+                <span className="w-2 h-2 rounded-full bg-[#2D8A4E]" />
+                <span className="text-[11px] text-[#2D8A4E] font-medium">Live</span>
               </div>
             </div>
 
@@ -221,38 +225,42 @@ export function SellerActivity() {
               const cs  = item.isSecurity ? { bg: '#FDECEA', color: '#C0392B' } : (categoryStyle[item.category] ?? { bg: '#F0EEE6', color: '#5A5852' });
               const catLabel = item.isSecurity ? 'Security Alert' : item.category;
               return (
-                <div key={item.id} style={{ padding: '14px 16px', borderBottom: i < ACTIVITY_LOG.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: av.bg, color: av.color, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div key={item.id} className="px-4 py-[14px]" style={{ borderBottom: i < ACTIVITY_LOG.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div
+                      className="w-[30px] h-[30px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0"
+                      style={{ background: av.bg, color: av.color }}
+                    >
                       {item.initials}
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#141413', fontFamily: poppins }}>{item.user}</span>
-                    <span style={{ padding: '2px 7px', borderRadius: 20, fontSize: 10, fontWeight: 600, background: rs.bg, color: rs.color }}>{item.role}</span>
-                    <span style={{ padding: '2px 7px', borderRadius: 20, fontSize: 10, fontWeight: 600, background: cs.bg, color: cs.color }}>{catLabel}</span>
-                    <span style={{ marginLeft: 'auto', fontSize: 11, color: '#8C8A82', flexShrink: 0, fontFamily: poppins }}>{item.timestamp}</span>
+                    <span className="text-[13px] font-semibold text-[#141413]">{item.user}</span>
+                    <span className="px-[7px] py-[2px] rounded-[20px] text-[10px] font-semibold" style={{ background: rs.bg, color: rs.color }}>{item.role}</span>
+                    <span className="px-[7px] py-[2px] rounded-[20px] text-[10px] font-semibold" style={{ background: cs.bg, color: cs.color }}>{catLabel}</span>
+                    <span className="ml-auto text-[11px] text-[#8C8A82] shrink-0">{item.timestamp}</span>
                   </div>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#141413', paddingLeft: 38, marginBottom: 2, fontFamily: poppins }}>{item.title}</p>
-                  <p style={{ fontSize: 12, color: '#8C8A82', paddingLeft: 38, marginBottom: 2, fontFamily: poppins }}>{item.detail}</p>
-                  <p style={{ fontSize: 11, color: '#C0BDB5', paddingLeft: 38, fontFamily: poppins }}>IP: {item.ip}</p>
+                  <p className="text-[13px] font-semibold text-[#141413] pl-[38px] mb-0.5">{item.title}</p>
+                  <p className="text-xs text-[#8C8A82] pl-[38px] mb-0.5">{item.detail}</p>
+                  <p className="text-[11px] text-[#C0BDB5] pl-[38px]">IP: {item.ip}</p>
                 </div>
               );
             })}
 
             {/* Pagination */}
-            <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #E8E6DC' }}>
-              <span style={{ fontSize: 12, color: '#8C8A82', fontFamily: poppins }}>Showing 10 of 2,841 events</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div className="px-4 py-3 flex items-center justify-between border-t border-[#E8E6DC]">
+              <span className="text-xs text-[#8C8A82]">Showing 10 of 2,841 events</span>
+              <div className="flex items-center gap-1">
                 {[<ChevronLeft size={14} />, 1, 2, 3, '…', 284, <ChevronRight size={14} />].map((p, i) => (
-                  <button key={i} onClick={() => typeof p === 'number' && setCurrentPage(p)}
+                  <button
+                    key={i}
+                    onClick={() => typeof p === 'number' && setCurrentPage(p)}
+                    className="w-7 h-7 rounded-[6px] text-xs flex items-center justify-center cursor-pointer"
                     style={{
-                      width: 28, height: 28, borderRadius: 6, fontSize: 12,
                       fontWeight: p === currentPage ? 600 : 400,
                       border: `1px solid ${p === currentPage ? '#D97757' : '#E8E6DC'}`,
                       background: p === currentPage ? '#D97757' : 'transparent',
                       color: p === currentPage ? '#fff' : '#4A4945',
-                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontFamily: poppins,
-                    }}>
+                    }}
+                  >
                     {p}
                   </button>
                 ))}

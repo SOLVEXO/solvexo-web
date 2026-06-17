@@ -1,4 +1,5 @@
-import { type ButtonHTMLAttributes, type ReactNode, type CSSProperties } from 'react';
+import { type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { clsx } from 'clsx';
 import type { ButtonVariant, ButtonSize } from '@/types';
 
 export type { ButtonVariant, ButtonSize };
@@ -11,49 +12,23 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children:   ReactNode;
 }
 
-// ── Exact values from reference source (Btn component) ───────────────────────
-const BASE: CSSProperties = {
-  display:        'inline-flex',
-  alignItems:     'center',
-  justifyContent: 'center',
-  gap:            6,
-  borderRadius:   8,
-  fontFamily:     "'Poppins', sans-serif",
-  fontWeight:     500,
-  cursor:         'pointer',
-  border:         'none',           // overridden by ghost variant below
-  transition:     'all 0.18s ease',
-  whiteSpace:     'nowrap',
-  outline:        'none',
-  userSelect:     'none',
-  flexShrink:     0,
-  textDecoration: 'none',
-  lineHeight:     1.4,
-  boxSizing:      'border-box',
+const BASE =
+  'inline-flex items-center justify-center gap-[6px] rounded-md font-medium cursor-pointer ' +
+  'transition-all duration-[180ms] whitespace-nowrap outline-none select-none shrink-0 ' +
+  'no-underline leading-[1.4]';
+
+const SIZES: Record<ButtonSize, string> = {
+  sm: 'py-[6px] px-3 text-[12px]',
+  md: 'py-[10px] px-[18px] text-[13px]',
+  lg: 'py-[13px] px-6 text-[15px]',
 };
 
-const SIZES: Record<ButtonSize, CSSProperties> = {
-  sm: { padding: '6px 12px',  fontSize: 12 },
-  md: { padding: '10px 18px', fontSize: 13 },
-  lg: { padding: '13px 24px', fontSize: 15 },
-};
-
-// Colors exact from reference C object
-const VARIANTS: Record<ButtonVariant, CSSProperties> = {
-  primary:   { background: '#D97757', color: '#FFFFFF' },
-  secondary: { background: '#FBECE4', color: '#B95A3A' },
-  ghost:     { background: 'transparent', color: '#8C8A82', border: '1px solid #E8E6DC' },
-  dark:      { background: '#2C2A28', color: '#FFFFFF' },
-  danger:    { background: '#FDEAEA', color: '#C13030' },
-};
-
-// Hover darkening via opacity — applied on mouseenter/leave
-const HOVER_OPACITY: Record<ButtonVariant, number> = {
-  primary:   0.88,
-  secondary: 0.88,
-  ghost:     1,     // ghost uses bg on hover instead
-  dark:      0.88,
-  danger:    0.88,
+const VARIANTS: Record<ButtonVariant, string> = {
+  primary:   'bg-brand-orange text-white border-0 hover:opacity-[0.88]',
+  secondary: 'bg-brand-pale-orange text-brand-deep-orange border-0 hover:opacity-[0.88]',
+  ghost:     'bg-transparent text-slate border border-bone hover:bg-cream',
+  dark:      'bg-charcoal text-white border-0 hover:opacity-[0.88]',
+  danger:    'bg-error-bg text-error border-0 hover:opacity-[0.88]',
 };
 
 export function Button({
@@ -63,56 +38,26 @@ export function Button({
   fullWidth = false,
   style,
   className,
-  onMouseEnter,
-  onMouseLeave,
   disabled,
   children,
   ...props
 }: ButtonProps) {
-  // Merge: base ← size ← variant ← fullWidth ← user style overrides
-  // This is exactly how the reference works: { ...base, ...sizes[size], ...variants[variant], ...style }
-  const computedStyle: CSSProperties = {
-    ...BASE,
-    ...SIZES[size],
-    ...VARIANTS[variant],
-    ...(fullWidth  ? { width: '100%', justifyContent: 'center' } : {}),
-    ...(disabled   ? { opacity: 0.5, cursor: 'not-allowed', pointerEvents: 'none' } : {}),
-    ...style,  // user overrides last — e.g. borderColor override for dark-bg ghost buttons
-  };
-
-  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!disabled) {
-      if (variant === 'ghost') {
-        (e.currentTarget as HTMLButtonElement).style.background = '#FAF9F5';
-      } else {
-        (e.currentTarget as HTMLButtonElement).style.opacity = String(HOVER_OPACITY[variant]);
-      }
-    }
-    onMouseEnter?.(e);
-  };
-
-  const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!disabled) {
-      if (variant === 'ghost') {
-        (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-      } else {
-        (e.currentTarget as HTMLButtonElement).style.opacity = '1';
-      }
-    }
-    onMouseLeave?.(e);
-  };
-
   return (
     <button
-      style={computedStyle}
-      className={className}
+      className={clsx(
+        BASE,
+        SIZES[size],
+        VARIANTS[variant],
+        fullWidth && 'w-full',
+        disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
+        className,
+      )}
+      style={style}
       disabled={disabled}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       {...props}
     >
       {icon && (
-        <span style={{ fontSize: size === 'sm' ? 12 : 14, lineHeight: 1, flexShrink: 0 }}>
+        <span className={clsx('leading-none shrink-0', size === 'sm' ? 'text-[12px]' : 'text-[14px]')}>
           {icon}
         </span>
       )}

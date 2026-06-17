@@ -8,18 +8,13 @@ import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { apiGetMyProductById } from '@/api/commerce/product';
 import { getCachedProducts, type ProductEntry } from './_cache';
 
-const FONT   = "'Poppins', sans-serif";
-const ACCENT = '#D97757';
-const BORDER = '#E8E6DC';
-const MUTED  = '#8C8A82';
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function Pill({ label, color, bg }: { label: string; color: string; bg: string }) {
   return (
-    <span style={{
-      display: 'inline-block', fontSize: 11, fontWeight: 600,
-      padding: '3px 10px', borderRadius: 5, color, background: bg, fontFamily: FONT,
-    }}>
+    <span
+      className="inline-block text-[11px] font-semibold px-[10px] py-[3px] rounded-[5px]"
+      style={{ color, background: bg }}
+    >
       {label}
     </span>
   );
@@ -32,21 +27,21 @@ function statusPill(s: string) {
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
-      <span style={{ fontSize: 12, color: MUTED, fontFamily: FONT, flexShrink: 0, marginRight: 16, paddingTop: 1 }}>{label}</span>
-      <span style={{ fontSize: 13, color: '#141413', fontFamily: FONT, textAlign: 'right' }}>{value ?? '—'}</span>
+    <div className="flex justify-between items-start py-[10px] border-b border-bone">
+      <span className="text-[12px] text-slate shrink-0 mr-4 pt-[1px]">{label}</span>
+      <span className="text-[13px] text-charcoal text-right">{value ?? '—'}</span>
     </div>
   );
 }
 
 function Card({ title, icon: Icon, children }: { title: string; icon?: React.ElementType; children: React.ReactNode }) {
   return (
-    <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-      <div style={{ padding: '14px 20px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-        {Icon && <Icon size={15} style={{ color: ACCENT }} />}
-        <p style={{ fontSize: 13, fontWeight: 700, color: '#141413', fontFamily: FONT, margin: 0 }}>{title}</p>
+    <div className="bg-white border border-bone rounded-[10px] overflow-hidden mb-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+      <div className="px-5 py-[14px] border-b border-bone flex items-center gap-2">
+        {Icon && <Icon size={15} className="text-brand-orange" />}
+        <p className="text-[13px] font-bold text-charcoal m-0">{title}</p>
       </div>
-      <div style={{ padding: '4px 20px 14px' }}>{children}</div>
+      <div className="px-5 pt-1 pb-[14px]">{children}</div>
     </div>
   );
 }
@@ -81,8 +76,8 @@ export default function StoreProductDetail() {
 
   if (fetching) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#FAF9F5' }}>
-        <Loader2 size={24} style={{ color: ACCENT, animation: 'spin 1s linear infinite' }} />
+      <div className="flex items-center justify-center h-screen bg-bone">
+        <Loader2 size={24} className="text-brand-orange animate-spin" />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -93,40 +88,34 @@ export default function StoreProductDetail() {
   const isDigital = p.productType === 'digital';
 
   return (
-    <div style={{ fontFamily: FONT, background: '#FAF9F5', minHeight: '100vh' }}>
+    <div className="bg-bone min-h-screen">
       {/* ── Header ── */}
-      <div style={{
-        background: '#fff', borderBottom: `1px solid ${BORDER}`,
-        padding: '14px 28px', display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED, display: 'flex', alignItems: 'center', gap: 5, padding: 0, fontSize: 13, fontFamily: FONT }}>
+      <div className="bg-white border-b border-bone px-7 py-[14px] flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="bg-transparent border-none cursor-pointer text-slate flex items-center gap-[5px] p-0 text-[13px]"
+          >
             <ArrowLeft size={16} /> Back
           </button>
-          <span style={{ color: BORDER, fontSize: 16 }}>|</span>
+          <span className="text-bone text-[16px]">|</span>
           <div>
-            <h1 style={{ fontSize: 18, fontWeight: 700, color: '#141413', lineHeight: 1.3 }}>{p.name}</h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
+            <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">{p.name}</h1>
+            <div className="flex items-center gap-2 mt-[3px]">
               {statusPill(p.status)}
-              <span style={{ fontSize: 11, color: MUTED }}>/{p.slug}</span>
+              <span className="text-[11px] text-slate">/{p.slug}</span>
             </div>
           </div>
         </div>
         <button
           onClick={() => navigate(`/seller/store/${storeId}/products/edit/${p._id}`, { state: { entry } })}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: ACCENT, color: '#fff', border: 'none',
-            borderRadius: 9, padding: '10px 18px',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT,
-          }}
+          className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-[18px] py-[10px] text-[13px] font-semibold cursor-pointer"
         >
           <Edit2 size={14} /> Edit Product
         </button>
       </div>
 
-      <div style={{ padding: '24px 28px', display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'start' }}>
+      <div className="px-7 py-6 grid gap-5 items-start" style={{ gridTemplateColumns: '1fr 300px' }}>
 
         {/* ── Left ── */}
         <div>
@@ -134,28 +123,28 @@ export default function StoreProductDetail() {
           <Card title="Basic Information" icon={ShoppingBag}>
             <InfoRow label="Product Name"  value={<strong>{p.name}</strong>} />
             <InfoRow label="Product Type"  value={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                {isDigital ? <Download size={12} style={{ color: ACCENT }} /> : <Package size={12} style={{ color: ACCENT }} />}
+              <div className="flex items-center gap-1.5">
+                {isDigital ? <Download size={12} className="text-brand-orange" /> : <Package size={12} className="text-brand-orange" />}
                 {isDigital ? 'Digital' : 'Physical'}
               </div>
             } />
             <InfoRow label="Category"      value={p.categoryId || '—'} />
             <InfoRow label="Sub-Category"  value={p.subCategoryId || '—'} />
             {p.description && (
-              <div style={{ padding: '10px 0' }}>
-                <p style={{ fontSize: 12, color: MUTED, marginBottom: 5, fontFamily: FONT }}>Description</p>
-                <p style={{ fontSize: 13, color: '#141413', lineHeight: 1.7, fontFamily: FONT }}>{p.description}</p>
+              <div className="py-[10px]">
+                <p className="text-[12px] text-slate mb-[5px]">Description</p>
+                <p className="text-[13px] text-charcoal leading-[1.7]">{p.description}</p>
               </div>
             )}
           </Card>
 
           {/* Pricing */}
           <Card title="Pricing" icon={Tag}>
-            <InfoRow label="Selling Price"    value={<span style={{ fontWeight: 700, color: '#141413' }}>Rs {v.price.toLocaleString()}</span>} />
-            <InfoRow label="Compare At Price" value={v.compareAtPrice != null ? <span style={{ textDecoration: 'line-through', color: MUTED }}>Rs {v.compareAtPrice.toLocaleString()}</span> : '—'} />
+            <InfoRow label="Selling Price"    value={<span className="font-bold text-charcoal">Rs {v.price.toLocaleString()}</span>} />
+            <InfoRow label="Compare At Price" value={v.compareAtPrice != null ? <span className="line-through text-slate">Rs {v.compareAtPrice.toLocaleString()}</span> : '—'} />
             {v.compareAtPrice != null && v.compareAtPrice > v.price && (
               <InfoRow label="Discount"
-                value={<span style={{ color: '#1E7A3C', fontWeight: 600 }}>
+                value={<span className="text-[#1E7A3C] font-semibold">
                   {Math.round(((v.compareAtPrice - v.price) / v.compareAtPrice) * 100)}% off
                 </span>}
               />
@@ -165,7 +154,7 @@ export default function StoreProductDetail() {
           {/* Physical inventory */}
           {!isDigital && (
             <Card title="Inventory & Shipping" icon={Package}>
-              <InfoRow label="SKU"             value={<code style={{ fontSize: 12, background: '#FAF9F5', padding: '2px 6px', borderRadius: 4 }}>{v.sku}</code>} />
+              <InfoRow label="SKU"             value={<code className="text-[12px] bg-bone px-[6px] py-[2px] rounded">{v.sku}</code>} />
               <InfoRow label="Stock"           value={`${v.stock} units`} />
               <InfoRow label="Size"            value={v.size || '—'} />
               <InfoRow label="Color"           value={v.color || '—'} />
@@ -177,14 +166,14 @@ export default function StoreProductDetail() {
           {isDigital && p.digital && (
             <Card title="Digital Delivery" icon={Download}>
               {p.digital.files.length > 0 ? (
-                <div style={{ padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
-                  <p style={{ fontSize: 12, color: MUTED, marginBottom: 8, fontFamily: FONT }}>Attached File</p>
+                <div className="py-[10px] border-b border-bone">
+                  <p className="text-[12px] text-slate mb-2">Attached File</p>
                   {p.digital.files.map((f, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#FAF9F5', border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px' }}>
-                      <Download size={14} style={{ color: ACCENT, flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 13, fontWeight: 500, color: '#141413', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</p>
-                        <p style={{ fontSize: 11, color: MUTED }}>{f.mimeType} · {f.size > 0 ? `${(f.size / 1024 / 1024).toFixed(2)} MB` : '—'}</p>
+                    <div key={i} className="flex items-center gap-2.5 bg-bone border border-bone rounded-lg px-3 py-[10px]">
+                      <Download size={14} className="text-brand-orange shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">{f.name}</p>
+                        <p className="text-[11px] text-slate">{f.mimeType} · {f.size > 0 ? `${(f.size / 1024 / 1024).toFixed(2)} MB` : '—'}</p>
                       </div>
                     </div>
                   ))}
@@ -194,14 +183,14 @@ export default function StoreProductDetail() {
               )}
               <InfoRow label="Download Limit"   value={p.digital.downloadLimit === 'unlimited' ? 'Unlimited' : p.digital.downloadLimit} />
               <InfoRow label="Link Expiry"       value={p.digital.linkExpiryDays ? `${p.digital.linkExpiryDays} days` : 'No expiry'} />
-              <InfoRow label="License Type"      value={<span style={{ textTransform: 'capitalize' }}>{p.digital.licenseType}</span>} />
+              <InfoRow label="License Type"      value={<span className="capitalize">{p.digital.licenseType}</span>} />
               <InfoRow label="PDF Stamping"      value={p.digital.pdfStampingEnabled
-                ? <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#1E7A3C' }}><CheckCircle size={13} /> Enabled</span>
-                : <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: MUTED }}><XCircle size={13} /> Disabled</span>} />
+                ? <span className="flex items-center gap-1 text-[#1E7A3C]"><CheckCircle size={13} /> Enabled</span>
+                : <span className="flex items-center gap-1 text-slate"><XCircle size={13} /> Disabled</span>} />
               {p.digital.buyerDeliveryMessage && (
-                <div style={{ padding: '10px 0' }}>
-                  <p style={{ fontSize: 12, color: MUTED, marginBottom: 5, fontFamily: FONT }}>Buyer Message</p>
-                  <p style={{ fontSize: 13, color: '#141413', lineHeight: 1.6, fontStyle: 'italic', fontFamily: FONT }}>
+                <div className="py-[10px]">
+                  <p className="text-[12px] text-slate mb-[5px]">Buyer Message</p>
+                  <p className="text-[13px] text-charcoal leading-[1.6] italic">
                     "{p.digital.buyerDeliveryMessage}"
                   </p>
                 </div>
@@ -212,13 +201,9 @@ export default function StoreProductDetail() {
           {/* Tags */}
           {p.tags.length > 0 && (
             <Card title="Tags" icon={Tag}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 10 }}>
+              <div className="flex flex-wrap gap-1.5 pt-2.5">
                 {p.tags.map((t, i) => (
-                  <span key={i} style={{
-                    background: '#FAF9F5', border: `1px solid ${BORDER}`,
-                    borderRadius: 6, padding: '4px 10px', fontSize: 12,
-                    color: '#4A4945', fontFamily: FONT,
-                  }}>
+                  <span key={i} className="bg-bone border border-bone rounded-[6px] px-[10px] py-1 text-[12px] text-[#4A4945]">
                     {t}
                   </span>
                 ))}
@@ -230,26 +215,26 @@ export default function StoreProductDetail() {
         {/* ── Right sidebar ── */}
         <div>
           {/* Summary card */}
-          <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+          <div className="bg-white border border-bone rounded-[10px] overflow-hidden mb-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
             {/* Product image / icon */}
-            <div style={{ height: 160, background: '#FAF9F5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+            <div className="h-[160px] bg-bone flex items-center justify-center relative">
               {p.images[0]
-                ? <img src={p.images[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                    {isDigital ? <Download size={32} style={{ color: ACCENT, opacity: 0.4 }} /> : <Package size={32} style={{ color: ACCENT, opacity: 0.4 }} />}
-                    <span style={{ fontSize: 11, color: MUTED }}>No image</span>
+                ? <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                : <div className="flex flex-col items-center gap-2">
+                    {isDigital ? <Download size={32} className="text-brand-orange opacity-40" /> : <Package size={32} className="text-brand-orange opacity-40" />}
+                    <span className="text-[11px] text-slate">No image</span>
                   </div>}
             </div>
-            <div style={{ padding: '14px 16px' }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 4, fontFamily: FONT }}>{p.name}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+            <div className="px-4 py-[14px]">
+              <p className="text-[14px] font-bold text-charcoal mb-1">{p.name}</p>
+              <div className="flex items-center gap-1.5 mb-2.5">
                 {statusPill(p.status)}
               </div>
-              <p style={{ fontSize: 20, fontWeight: 700, color: ACCENT, fontFamily: FONT }}>
+              <p className="text-[20px] font-bold text-brand-orange">
                 Rs {v.price.toLocaleString()}
               </p>
               {!isDigital && (
-                <p style={{ fontSize: 12, color: MUTED, marginTop: 4, fontFamily: FONT }}>{v.stock} in stock</p>
+                <p className="text-[12px] text-slate mt-1">{v.stock} in stock</p>
               )}
             </div>
           </div>
@@ -259,17 +244,17 @@ export default function StoreProductDetail() {
             <InfoRow
               label="Solvexo Marketplace"
               value={p.isListedOnSolvexo
-                ? <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#1E7A3C' }}><CheckCircle size={13} /> Listed</span>
-                : <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: MUTED }}><XCircle size={13} /> Not listed</span>}
+                ? <span className="flex items-center gap-1 text-[#1E7A3C]"><CheckCircle size={13} /> Listed</span>
+                : <span className="flex items-center gap-1 text-slate"><XCircle size={13} /> Not listed</span>}
             />
-            {!isDigital && <InfoRow label="SKU" value={<code style={{ fontSize: 11, background: '#FAF9F5', padding: '2px 6px', borderRadius: 4 }}>{v.sku}</code>} />}
+            {!isDigital && <InfoRow label="SKU" value={<code className="text-[11px] bg-bone px-[6px] py-[2px] rounded">{v.sku}</code>} />}
           </Card>
 
           {/* Timestamps */}
           <Card title="Timeline" icon={Calendar}>
             <InfoRow label="Created"      value={formatDate(p.createdAt)} />
             <InfoRow label="Last Updated" value={formatDate(p.updatedAt)} />
-            <InfoRow label="Product ID"   value={<span style={{ fontSize: 10, color: MUTED, wordBreak: 'break-all' }}>{p._id}</span>} />
+            <InfoRow label="Product ID"   value={<span className="text-[10px] text-slate break-all">{p._id}</span>} />
           </Card>
         </div>
       </div>

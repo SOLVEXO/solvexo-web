@@ -44,9 +44,6 @@ const metrics = [
   { label: 'Suspended',      value: '127',    trend: null,              sub: 'Under review', trendUp: false },
 ] as const;
 
-const poppins   = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function AdminUsers() {
   usePageTitle('Users');
@@ -63,55 +60,55 @@ export function AdminUsers() {
   });
 
   return (
-    <div style={{ padding: '24px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+    <div className="px-7 pt-6 pb-8 flex flex-col gap-5">
 
       {/* ── Header ── */}
       <div>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#141413', marginBottom: 3 }}>Users &amp; Sellers</h1>
-        <p style={{ fontSize: 12, color: '#8C8A82' }}>Manage all platform users, sellers and accounts.</p>
+        <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Users &amp; Sellers</h1>
+        <p className="text-[12px] text-slate">Manage all platform users, sellers and accounts.</p>
       </div>
 
       {/* ── Metrics ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+      <div className="grid grid-cols-3 gap-3">
         {metrics.map(m => (
-          <div key={m.label} style={{ ...cardStyle, padding: '16px 20px' }}>
-            <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</p>
-            <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{m.value}</p>
-            {m.trend && <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {m.trend}</p>}
-            {m.sub   && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>}
+          <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
+            <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{m.value}</p>
+            {m.trend && <p className="text-[12px] text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
+            {m.sub   && <p className="text-[12px] text-slate mt-1">{m.sub}</p>}
           </div>
         ))}
       </div>
 
       {/* ── Table card ── */}
-      <div style={{ ...cardStyle, overflow: 'hidden' }}>
+      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
 
         {/* Filters */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px', borderBottom: '1px solid #E8E6DC', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #E8E6DC', borderRadius: 8, padding: '0 12px', background: '#fff', flex: 1, maxWidth: 280 }}>
+        <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
+          <div className="flex items-center gap-[6px] border border-bone rounded-lg px-3 bg-white flex-1 max-w-[280px]">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input placeholder="Search by name or email…" value={search} onChange={e => setSearch(e.target.value)}
-              style={{ border: 'none', outline: 'none', fontSize: 13, padding: '8px 0', width: '100%', fontFamily: poppins, color: '#2C2A28', background: 'transparent' }} />
+              className="border-none outline-none text-[13px] py-2 w-full text-[#2C2A28] bg-transparent" />
           </div>
           <select value={roleFilter} onChange={e => setRole(e.target.value)}
-            style={{ padding: '8px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, background: '#fff', color: '#2C2A28', outline: 'none', cursor: 'pointer', fontFamily: poppins }}>
+            className="px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer">
             {['All Roles','Seller','Buyer','Admin'].map(o => <option key={o}>{o}</option>)}
           </select>
           <select value={statusFilter} onChange={e => setStatusF(e.target.value)}
-            style={{ padding: '8px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, background: '#fff', color: '#2C2A28', outline: 'none', cursor: 'pointer', fontFamily: poppins }}>
+            className="px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer">
             {['All Statuses','Active','Suspended','Pending'].map(o => <option key={o}>{o}</option>)}
           </select>
         </div>
 
         {/* Table */}
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
             <thead>
               <tr>
                 {['User','Email','Role','Plan','Status','Joined','Actions'].map(h => (
-                  <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontSize: 11, fontWeight: 600, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #E8E6DC', background: '#FAF9F5', whiteSpace: 'nowrap', fontFamily: poppins }}>
+                  <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-[#FAF9F5] whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -124,42 +121,46 @@ export function AdminUsers() {
                 const ss = statusStyle[u.status]     ?? { bg: '#F0EEE6', color: '#5A5852' };
                 return (
                   <tr key={u.id}
-                    style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none', transition: 'background 0.12s' }}
+                    className="transition-colors duration-[120ms]"
+                    style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none' }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
                     {/* User */}
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: av.bg, color: av.color, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-[10px]">
+                        <div className="w-7 h-7 rounded-full text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                          style={{ background: av.bg, color: av.color }}>
                           {u.initials}
                         </div>
                         <div>
-                          <p style={{ fontSize: 12, fontWeight: 600, color: '#141413', fontFamily: poppins }}>{u.name}</p>
-                          <p style={{ fontSize: 11, color: '#8C8A82', fontFamily: poppins }}>{u.id}</p>
+                          <p className="text-[12px] font-semibold text-charcoal">{u.name}</p>
+                          <p className="text-[11px] text-slate">{u.id}</p>
                         </div>
                       </div>
                     </td>
                     {/* Email */}
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#4A4945', fontFamily: poppins }}>{u.email}</td>
+                    <td className="px-4 py-3 text-[13px] text-[#4A4945]">{u.email}</td>
                     {/* Role */}
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: rs.bg, color: rs.color, fontFamily: poppins }}>{u.role}</span>
+                    <td className="px-4 py-3">
+                      <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
+                        style={{ background: rs.bg, color: rs.color }}>{u.role}</span>
                     </td>
                     {/* Plan */}
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#4A4945', fontFamily: poppins }}>{u.plan}</td>
+                    <td className="px-4 py-3 text-[13px] text-[#4A4945]">{u.plan}</td>
                     {/* Status */}
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: ss.bg, color: ss.color, fontFamily: poppins }}>{u.status}</span>
+                    <td className="px-4 py-3">
+                      <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
+                        style={{ background: ss.bg, color: ss.color }}>{u.status}</span>
                     </td>
                     {/* Joined */}
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#8C8A82', fontFamily: poppins }}>{u.joined}</td>
+                    <td className="px-4 py-3 text-[13px] text-slate">{u.joined}</td>
                     {/* Actions */}
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <button style={{ fontSize: 12, fontWeight: 500, color: '#1A72C2', background: 'none', border: 'none', cursor: 'pointer', fontFamily: poppins }}>View</button>
-                        <span style={{ color: '#E8E6DC', fontSize: 13 }}>|</span>
-                        <button style={{ fontSize: 12, fontWeight: 500, color: '#C13030', background: 'none', border: 'none', cursor: 'pointer', fontFamily: poppins }}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button className="text-[12px] font-medium text-[#1A72C2] bg-transparent border-none cursor-pointer">View</button>
+                        <span className="text-[#E8E6DC] text-[13px]">|</span>
+                        <button className="text-[12px] font-medium text-[#C13030] bg-transparent border-none cursor-pointer">
                           {u.status === 'Suspended' ? 'Unsuspend' : 'Suspend'}
                         </button>
                       </div>

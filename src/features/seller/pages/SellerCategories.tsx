@@ -34,11 +34,6 @@ const DEFAULT_CATS: Cat[] = [
   { id: 5, icon: Briefcase, name: 'Business Tools', slug: 'business-tools', products: 0, status: 'Draft', featured: false, subs: [] },
 ];
 
-const poppins   = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden' };
-const inputStyle: React.CSSProperties = { padding: '8px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, outline: 'none', fontFamily: poppins, color: '#2C2A28', background: '#fff', boxSizing: 'border-box' as const };
-const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 500, color: '#4A4945', marginBottom: 5, display: 'block', fontFamily: poppins };
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerCategories() {
   usePageTitle('Categories');
@@ -86,125 +81,136 @@ export function SellerCategories() {
         subtitle="Build your product taxonomy."
         actions={
           <>
-            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>View Products</button>
-            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>Settings</button>
+            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">View Products</button>
+            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">Settings</button>
           </>
         }
       />
 
-      <div style={{ padding: '20px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* ── Metrics ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="grid grid-cols-4 gap-3">
           {[['Total Categories', cats.length],['Subcategories', totalSubs],['Featured', featured],['Products Categorised', productsTotal]].map(([label, value]) => (
-            <div key={label} style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-              <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{label}</p>
-              <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{value}</p>
+            <div key={label} className="bg-white border border-[#E8E6DC] rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{label}</p>
+              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{value}</p>
             </div>
           ))}
         </div>
 
         {/* ── Add Category button ── */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={() => setAddingCat(true)} style={{ padding: '8px 18px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+        <div className="flex justify-end">
+          <button onClick={() => setAddingCat(true)} className="px-[18px] py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
             + Add Category
           </button>
         </div>
 
         {/* ── Add Category Form ── */}
         {addingCat && (
-          <div style={{ border: '2px solid #D97757', borderRadius: 10, background: '#fff', padding: '20px 22px' }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 16 }}>New Category</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="border-2 border-brand-orange rounded-[10px] bg-white px-[22px] py-5">
+            <p className="text-sm font-bold text-[#141413] mb-4">New Category</p>
+            <div className="flex flex-col gap-3.5">
               <div>
-                <p style={labelStyle}>Icon</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <p className="text-xs font-medium text-[#4A4945] mb-[5px] block">Icon</p>
+                <div className="flex flex-wrap gap-2">
                   {CATEGORY_ICONS.map((IconComp, idx) => (
-                    <button key={idx} onClick={() => setSelectedIcon(() => IconComp)} style={{
-                      width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      border: `2px solid ${selectedIcon === IconComp ? '#D97757' : '#E8E6DC'}`,
-                      background: selectedIcon === IconComp ? '#FBECE4' : '#fff', cursor: 'pointer',
-                    }}>
+                    <button key={idx} onClick={() => setSelectedIcon(() => IconComp)}
+                      className="w-[34px] h-[34px] rounded-lg flex items-center justify-center cursor-pointer"
+                      style={{
+                        border: `2px solid ${selectedIcon === IconComp ? '#D97757' : '#E8E6DC'}`,
+                        background: selectedIcon === IconComp ? '#FBECE4' : '#fff',
+                      }}
+                    >
                       <IconComp size={16} style={{ color: selectedIcon === IconComp ? '#D97757' : '#8C8A82' }} />
                     </button>
                   ))}
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label style={labelStyle}>Name</label>
-                  <input placeholder="Category name…" value={newName} onChange={e => { setNewName(e.target.value); setNewSlug(e.target.value.toLowerCase().replace(/\s+/g, '-')); }} style={{ ...inputStyle, width: '100%' }} />
+                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Name</label>
+                  <input placeholder="Category name…" value={newName} onChange={e => { setNewName(e.target.value); setNewSlug(e.target.value.toLowerCase().replace(/\s+/g, '-')); }}
+                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                 </div>
                 <div>
-                  <label style={labelStyle}>Slug</label>
-                  <input placeholder="category-slug" value={newSlug} onChange={e => setNewSlug(e.target.value)} style={{ ...inputStyle, width: '100%' }} />
+                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Slug</label>
+                  <input placeholder="category-slug" value={newSlug} onChange={e => setNewSlug(e.target.value)}
+                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                 </div>
               </div>
               <div>
-                <label style={labelStyle}>Description (optional)</label>
+                <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Description (optional)</label>
                 <textarea rows={2} placeholder="Describe this category…" value={newDesc} onChange={e => setNewDesc(e.target.value)}
-                  style={{ ...inputStyle, width: '100%', resize: 'vertical', lineHeight: 1.5 }} />
+                  className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border resize-y leading-[1.5]" />
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={createCat} style={{ padding: '8px 18px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>Create Category</button>
-                <button onClick={() => setAddingCat(false)} style={{ padding: '8px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>Cancel</button>
+              <div className="flex gap-2">
+                <button onClick={createCat} className="px-[18px] py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">Create Category</button>
+                <button onClick={() => setAddingCat(false)} className="px-3.5 py-2 bg-white border border-[#E8E6DC] rounded-lg text-xs text-[#4A4945] cursor-pointer">Cancel</button>
               </div>
             </div>
           </div>
         )}
 
         {/* ── Categories List ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="flex flex-col gap-3">
           {cats.map(cat => {
             const isExpanded = expanded.includes(cat.id);
             const isEditing  = editCatId === cat.id;
             return (
-              <div key={cat.id} style={cardStyle}>
+              <div key={cat.id} className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
                 {/* Category row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px' }}>
-                  <span style={{ color: '#E8E6DC', fontSize: 16, cursor: 'grab', userSelect: 'none' }}>⋮⋮</span>
-                  <div style={{ width: 38, height: 38, borderRadius: 9, background: '#FBECE4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <span className="text-[#E8E6DC] text-base cursor-grab select-none">⋮⋮</span>
+                  <div className="w-[38px] h-[38px] rounded-[9px] bg-[#FBECE4] flex items-center justify-center shrink-0">
                     <cat.icon size={20} style={{ color: '#D97757' }} />
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="flex-1 min-w-0">
                     {isEditing ? (
                       <input defaultValue={cat.name} autoFocus
                         onBlur={e => { setCats(prev => prev.map(c => c.id === cat.id ? { ...c, name: e.target.value } : c)); setEditCatId(null); }}
-                        style={{ ...inputStyle, maxWidth: 240 }} />
+                        className="max-w-[240px] px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                     ) : (
                       <>
-                        <p style={{ fontSize: 14, fontWeight: 600, color: '#141413', fontFamily: poppins }}>{cat.name}</p>
-                        <p style={{ fontSize: 11, color: '#8C8A82', fontFamily: poppins }}>/{cat.slug} · {cat.products} products · {cat.subs.length} subcategories</p>
+                        <p className="text-sm font-semibold text-[#141413]">{cat.name}</p>
+                        <p className="text-[11px] text-[#8C8A82]">/{cat.slug} · {cat.products} products · {cat.subs.length} subcategories</p>
                       </>
                     )}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div className="flex items-center gap-1.5">
                     {cat.featured && (
-                      <span style={{ padding: '2px 9px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#FBECE4', color: '#B95A3A', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span className="px-[9px] py-[2px] rounded-[5px] text-[11px] font-semibold bg-[#FBECE4] text-[#B95A3A] flex items-center gap-1">
                         <Star size={9} style={{ fill: '#B95A3A', color: '#B95A3A' }} /> Featured
                       </span>
                     )}
-                    <span style={{ padding: '2px 9px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: cat.status === 'Active' ? '#E3F4EA' : '#F0EEE6', color: cat.status === 'Active' ? '#1E7A3C' : '#5A5852' }}>
+                    <span
+                      className="px-[9px] py-[2px] rounded-[5px] text-[11px] font-semibold"
+                      style={{ background: cat.status === 'Active' ? '#E3F4EA' : '#F0EEE6', color: cat.status === 'Active' ? '#1E7A3C' : '#5A5852' }}
+                    >
                       {cat.status}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <button onClick={() => toggleFeatured(cat.id)} title="Toggle featured" style={{ width: 28, height: 28, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => toggleFeatured(cat.id)} title="Toggle featured"
+                      className="w-7 h-7 rounded-[7px] flex items-center justify-center bg-transparent border-none cursor-pointer hover:bg-[#FAF9F5]">
                       <Star size={14} style={{ color: '#D97757', opacity: cat.featured ? 1 : 0.35, fill: cat.featured ? '#D97757' : 'none' }} />
                     </button>
-                    <button onClick={() => toggleStatus(cat.id)} style={{ padding: '3px 8px', borderRadius: 6, fontSize: 10, fontWeight: 600, cursor: 'pointer', border: 'none', background: cat.status === 'Active' ? '#2D8A4E' : '#E8E6DC', color: cat.status === 'Active' ? '#fff' : '#8C8A82', fontFamily: poppins }}>
+                    <button onClick={() => toggleStatus(cat.id)}
+                      className="px-2 py-[3px] rounded-[6px] text-[10px] font-semibold cursor-pointer border-none"
+                      style={{ background: cat.status === 'Active' ? '#2D8A4E' : '#E8E6DC', color: cat.status === 'Active' ? '#fff' : '#8C8A82' }}>
                       {cat.status}
                     </button>
-                    <button onClick={() => setEditCatId(cat.id)} style={{ width: 28, height: 28, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                    <button onClick={() => setEditCatId(cat.id)}
+                      className="w-7 h-7 rounded-[7px] flex items-center justify-center bg-transparent border-none cursor-pointer hover:bg-[#FAF9F5]">
                       <Pencil size={13} style={{ color: '#8C8A82' }} />
                     </button>
-                    <button onClick={() => deleteCat(cat.id)} style={{ width: 28, height: 28, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                    <button onClick={() => deleteCat(cat.id)}
+                      className="w-7 h-7 rounded-[7px] flex items-center justify-center bg-transparent border-none cursor-pointer hover:bg-[#FAF9F5]">
                       <Trash2 size={13} style={{ color: '#8C8A82' }} />
                     </button>
-                    <button onClick={() => toggleExpand(cat.id)} style={{ width: 28, height: 28, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                    <button onClick={() => toggleExpand(cat.id)}
+                      className="w-7 h-7 rounded-[7px] flex items-center justify-center bg-transparent border-none cursor-pointer transition-transform duration-200"
+                      style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                       <ChevronDown size={14} style={{ color: '#8C8A82' }} />
                     </button>
                   </div>
@@ -212,38 +218,38 @@ export function SellerCategories() {
 
                 {/* Subcategories */}
                 {isExpanded && (
-                  <div style={{ borderTop: '1px solid #F0EEE6', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div className="border-t border-[#F0EEE6] px-4 py-3 flex flex-col gap-2">
                     {cat.subs.map((sub, idx) => (
-                      <div key={sub.slug + idx} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 8, background: '#fff', border: '1px solid #F0EEE6' }}>
-                        <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#D97757', flexShrink: 0 }} />
+                      <div key={sub.slug + idx} className="flex items-center gap-2.5 px-3 py-[9px] rounded-lg bg-white border border-[#F0EEE6]">
+                        <div className="w-[7px] h-[7px] rounded-full bg-brand-orange shrink-0" />
                         {editSubIdx?.catId === cat.id && editSubIdx?.idx === idx ? (
                           <input defaultValue={sub.name} autoFocus
                             onBlur={e => { setCats(prev => prev.map(c => c.id === cat.id ? { ...c, subs: c.subs.map((s, i) => i === idx ? { ...s, name: e.target.value } : s) } : c)); setEditSubIdx(null); }}
-                            style={{ ...inputStyle, flex: 1 }} />
+                            className="flex-1 px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                         ) : (
                           <>
-                            <span style={{ fontSize: 13, fontWeight: 500, color: '#141413', flex: 1, fontFamily: poppins }}>{sub.name}</span>
-                            <span style={{ fontSize: 11, color: '#8C8A82', fontFamily: poppins }}>/{sub.slug}</span>
-                            <span style={{ fontSize: 11, color: '#8C8A82', fontFamily: poppins }}>{sub.count} products</span>
+                            <span className="text-[13px] font-medium text-[#141413] flex-1">{sub.name}</span>
+                            <span className="text-[11px] text-[#8C8A82]">/{sub.slug}</span>
+                            <span className="text-[11px] text-[#8C8A82]">{sub.count} products</span>
                           </>
                         )}
-                        <button onClick={() => setEditSubIdx({ catId: cat.id, idx })} style={{ fontSize: 11, color: '#8C8A82', background: 'none', border: 'none', cursor: 'pointer', fontFamily: poppins }}>Edit</button>
-                        <button onClick={() => deleteSub(cat.id, idx)} style={{ fontSize: 11, color: '#C0392B', background: 'none', border: 'none', cursor: 'pointer', fontFamily: poppins }}>Delete</button>
+                        <button onClick={() => setEditSubIdx({ catId: cat.id, idx })} className="text-[11px] text-[#8C8A82] bg-transparent border-none cursor-pointer">Edit</button>
+                        <button onClick={() => deleteSub(cat.id, idx)} className="text-[11px] text-[#C0392B] bg-transparent border-none cursor-pointer">Delete</button>
                       </div>
                     ))}
 
                     {/* Add sub form */}
                     {addingSubId === cat.id ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                      <div className="flex items-center gap-2 mt-1">
                         <input placeholder="Subcategory name…" value={subName} onChange={e => { setSubName(e.target.value); setSubSlug(e.target.value.toLowerCase().replace(/\s+/g, '-')); }}
-                          style={{ ...inputStyle, flex: 1 }} />
+                          className="flex-1 px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                         <input placeholder="slug" value={subSlug} onChange={e => setSubSlug(e.target.value)}
-                          style={{ ...inputStyle, width: 130 }} />
-                        <button onClick={() => addSub(cat.id)} style={{ padding: '8px 14px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>Add</button>
-                        <button onClick={() => { setAddingSubId(null); setSubName(''); setSubSlug(''); }} style={{ padding: '8px 12px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>Cancel</button>
+                          className="w-[130px] px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                        <button onClick={() => addSub(cat.id)} className="px-3.5 py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">Add</button>
+                        <button onClick={() => { setAddingSubId(null); setSubName(''); setSubSlug(''); }} className="px-3 py-2 bg-white border border-[#E8E6DC] rounded-lg text-xs text-[#4A4945] cursor-pointer">Cancel</button>
                       </div>
                     ) : (
-                      <button onClick={() => setAddingSubId(cat.id)} style={{ fontSize: 12, fontWeight: 500, color: '#D97757', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: poppins, marginTop: 2 }}>
+                      <button onClick={() => setAddingSubId(cat.id)} className="text-xs font-medium text-brand-orange bg-transparent border-none cursor-pointer text-left mt-0.5">
                         + Add Subcategory
                       </button>
                     )}
@@ -255,11 +261,11 @@ export function SellerCategories() {
         </div>
 
         {/* ── Tips card ── */}
-        <div style={{ borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'flex-start', gap: 12, background: '#FBECE4' }}>
-          <Lightbulb size={20} style={{ color: '#B95A3A', flexShrink: 0, marginTop: 1 }} />
+        <div className="rounded-[10px] px-[18px] py-3.5 flex items-start gap-3 bg-[#FBECE4]">
+          <Lightbulb size={20} className="text-[#B95A3A] shrink-0 mt-[1px]" />
           <div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#B95A3A', marginBottom: 4, fontFamily: poppins }}>Category Tips</p>
-            <p style={{ fontSize: 12, color: '#8C6050', lineHeight: 1.6, fontFamily: poppins }}>
+            <p className="text-[13px] font-semibold text-[#B95A3A] mb-1">Category Tips</p>
+            <p className="text-xs text-[#8C6050] leading-[1.6]">
               Use clear, descriptive names for categories. Featured categories appear on your storefront homepage.
               Drag to reorder categories and subcategories to control how buyers browse your shop.
             </p>

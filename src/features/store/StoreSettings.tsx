@@ -15,18 +15,18 @@ const ALL_PRODUCT_TYPES: ProductType[] = [
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function SettingsSkeleton() {
-  const box = (w: number | string, h: number) => (
-    <div className="animate-pulse" style={{ width: w, height: h, borderRadius: 6, background: '#E8E6DC' }} />
+  const box = (w: string, h: number) => (
+    <div className="animate-pulse rounded-[6px] bg-bone" style={{ width: w, height: h }} />
   );
   return (
-    <div style={{ padding: '24px 28px', fontFamily: "'Poppins', sans-serif" }}>
-      <div style={{ background: '#fff', borderRadius: 12, padding: 24, border: '1px solid #E8E6DC', maxWidth: 600 }}>
+    <div className="px-7 py-6">
+      <div className="bg-white rounded-xl p-6 border border-bone max-w-[600px]">
         {[1,2,3,4].map(i => (
-          <div key={i} style={{ marginBottom: 20 }}>
-            {box(100, 12)}<div style={{ marginTop: 8 }}>{box('100%', 38)}</div>
+          <div key={i} className="mb-5">
+            {box('100px', 12)}<div className="mt-2">{box('100%', 38)}</div>
           </div>
         ))}
-        {box(120, 36)}
+        {box('120px', 36)}
       </div>
     </div>
   );
@@ -35,8 +35,8 @@ function SettingsSkeleton() {
 // ── Field ─────────────────────────────────────────────────────────────────────
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 20 }}>
-      <label style={{ fontSize: 12, fontWeight: 600, color: '#141413', display: 'block', marginBottom: 6 }}>
+    <div className="mb-5">
+      <label className="text-[12px] font-semibold text-charcoal block mb-1.5">
         {label}
       </label>
       {children}
@@ -44,11 +44,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const INPUT_STYLE: React.CSSProperties = {
-  width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 13,
-  border: '1px solid #E8E6DC', background: '#FAF9F5', color: '#141413',
-  outline: 'none', fontFamily: "'Poppins', sans-serif", boxSizing: 'border-box',
-};
+const inputCls = "w-full px-3 py-[9px] rounded-lg text-[13px] border border-bone bg-bone text-charcoal outline-none box-border";
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function StoreSettings() {
@@ -94,7 +90,7 @@ export default function StoreSettings() {
         JSON.stringify((store.productTypes ?? []).slice().sort()));
 
   return (
-    <div style={{ fontFamily: "'Poppins', sans-serif" }}>
+    <div>
       <StorePageHeader
         title="Store Settings"
         subtitle={store?.name ?? ''}
@@ -102,34 +98,32 @@ export default function StoreSettings() {
           <button
             onClick={handleSave}
             disabled={!isDirty || saving}
+            className="flex items-center gap-[7px] px-[18px] py-2 rounded-lg border-none text-[13px] font-semibold transition-all duration-150"
             style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              padding: '8px 18px', borderRadius: 8, border: 'none',
               background: isDirty && !saving ? '#D97757' : '#E8E6DC',
               color: isDirty && !saving ? '#fff' : '#8C8A82',
-              fontSize: 13, fontWeight: 600, cursor: isDirty && !saving ? 'pointer' : 'not-allowed',
-              transition: 'all 0.15s',
+              cursor: isDirty && !saving ? 'pointer' : 'not-allowed',
             }}
           >
-            {saving ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={14} />}
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             Save Changes
           </button>
         }
       />
 
       {loading ? <SettingsSkeleton /> : (
-        <div style={{ padding: '24px 28px' }}>
+        <div className="px-7 py-6">
 
           {/* Status message */}
           {saveMsg && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '10px 14px', borderRadius: 8, marginBottom: 18,
-              background: saveMsg.ok ? '#F0FDF4' : '#FFF1F2',
-              border: `1px solid ${saveMsg.ok ? '#BBF7D0' : '#FECDD3'}`,
-              color: saveMsg.ok ? '#166534' : '#991B1B',
-              fontSize: 13,
-            }}>
+            <div
+              className="flex items-center gap-2 px-[14px] py-[10px] rounded-lg mb-[18px] text-[13px] border"
+              style={{
+                background: saveMsg.ok ? '#F0FDF4' : '#FFF1F2',
+                borderColor: saveMsg.ok ? '#BBF7D0' : '#FECDD3',
+                color: saveMsg.ok ? '#166534' : '#991B1B',
+              }}
+            >
               {saveMsg.ok
                 ? <CheckCircle size={15} />
                 : <AlertCircle size={15} />}
@@ -137,18 +131,15 @@ export default function StoreSettings() {
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
+          <div className="grid grid-cols-2 gap-5 items-start">
 
             {/* Left column */}
-            <div style={{ background: '#fff', borderRadius: 12, padding: 24, border: '1px solid #E8E6DC' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-                <div style={{
-                  width: 30, height: 30, borderRadius: 8, background: '#FBECE4',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Store size={15} style={{ color: '#D97757' }} />
+            <div className="bg-white rounded-xl p-6 border border-bone">
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-[30px] h-[30px] rounded-lg bg-brand-pale-orange flex items-center justify-center">
+                  <Store size={15} className="text-brand-orange" />
                 </div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#141413' }}>Basic Information</p>
+                <p className="text-[14px] font-semibold text-charcoal">Basic Information</p>
               </div>
 
               <Field label="Store Name *">
@@ -156,7 +147,7 @@ export default function StoreSettings() {
                   value={name}
                   onChange={e => setName(e.target.value)}
                   placeholder="Your store name"
-                  style={INPUT_STYLE}
+                  className={inputCls}
                 />
               </Field>
 
@@ -166,7 +157,7 @@ export default function StoreSettings() {
                   onChange={e => setDescription(e.target.value)}
                   placeholder="Describe your store…"
                   rows={4}
-                  style={{ ...INPUT_STYLE, resize: 'vertical', minHeight: 90 }}
+                  className={`${inputCls} resize-y min-h-[90px]`}
                 />
               </Field>
 
@@ -174,49 +165,51 @@ export default function StoreSettings() {
                 <input
                   value={store?.slug ?? ''}
                   readOnly
-                  style={{ ...INPUT_STYLE, color: '#8C8A82', cursor: 'default', background: '#F3F2EC' }}
+                  className={`${inputCls} text-slate cursor-default bg-[#F3F2EC]`}
                 />
-                <p style={{ fontSize: 10, color: '#8C8A82', marginTop: 4 }}>URL slug cannot be changed.</p>
+                <p className="text-[10px] text-slate mt-1">URL slug cannot be changed.</p>
               </Field>
 
               <Field label="Plan">
                 <input
                   value={store?.plan ?? ''}
                   readOnly
-                  style={{ ...INPUT_STYLE, color: '#8C8A82', cursor: 'default', background: '#F3F2EC' }}
+                  className={`${inputCls} text-slate cursor-default bg-[#F3F2EC]`}
                 />
               </Field>
             </div>
 
             {/* Right column */}
-            <div style={{ background: '#fff', borderRadius: 12, padding: 24, border: '1px solid #E8E6DC' }}>
-              <p style={{ fontSize: 14, fontWeight: 600, color: '#141413', marginBottom: 8 }}>Product Types</p>
-              <p style={{ fontSize: 11, color: '#8C8A82', marginBottom: 16 }}>What kind of products will you sell?</p>
+            <div className="bg-white rounded-xl p-6 border border-bone">
+              <p className="text-[14px] font-semibold text-charcoal mb-2">Product Types</p>
+              <p className="text-[11px] text-slate mb-4">What kind of products will you sell?</p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="flex flex-col gap-2.5">
                 {ALL_PRODUCT_TYPES.map(t => {
                   const active = productTypes.includes(t);
                   return (
                     <div
                       key={t}
                       onClick={() => toggleType(t)}
+                      className="flex items-center gap-3 px-[14px] py-3 rounded-[9px] cursor-pointer transition-all duration-150 border"
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 12,
-                        padding: '12px 14px', borderRadius: 9, cursor: 'pointer',
-                        border: `1px solid ${active ? '#D97757' : '#E8E6DC'}`,
+                        borderColor: active ? '#D97757' : '#E8E6DC',
                         background: active ? '#FBECE4' : '#FAF9F5',
-                        transition: 'all 0.15s',
                       }}
                     >
-                      <div style={{
-                        width: 18, height: 18, borderRadius: 5, flexShrink: 0,
-                        border: `2px solid ${active ? '#D97757' : '#CBCABA'}`,
-                        background: active ? '#D97757' : 'transparent',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        {active && <CheckCircle size={11} style={{ color: '#fff' }} />}
+                      <div
+                        className="w-[18px] h-[18px] rounded-[5px] shrink-0 flex items-center justify-center"
+                        style={{
+                          border: `2px solid ${active ? '#D97757' : '#CBCABA'}`,
+                          background: active ? '#D97757' : 'transparent',
+                        }}
+                      >
+                        {active && <CheckCircle size={11} className="text-white" />}
                       </div>
-                      <span style={{ fontSize: 13, fontWeight: active ? 600 : 400, color: active ? '#D97757' : '#141413' }}>
+                      <span
+                        className="text-[13px]"
+                        style={{ fontWeight: active ? 600 : 400, color: active ? '#D97757' : '#141413' }}
+                      >
                         {PRODUCT_TYPE_LABELS[t]}
                       </span>
                     </div>
@@ -225,20 +218,16 @@ export default function StoreSettings() {
               </div>
 
               {/* Read-only info */}
-              <div style={{ marginTop: 24, borderTop: '1px solid #E8E6DC', paddingTop: 18 }}>
-                <p style={{ fontSize: 12, fontWeight: 600, color: '#141413', marginBottom: 12 }}>Store Info</p>
+              <div className="mt-6 border-t border-bone pt-[18px]">
+                <p className="text-[12px] font-semibold text-charcoal mb-3">Store Info</p>
                 {[
                   { label: 'Status',   value: store?.status   ?? '—' },
                   { label: 'Seller',   value: store?.sellerType ?? '—' },
                   { label: 'AI Credits', value: String(store?.aiCredits ?? 0) },
                 ].map(r => (
-                  <div key={r.label} style={{
-                    display: 'flex', justifyContent: 'space-between',
-                    fontSize: 12, padding: '6px 0',
-                    borderBottom: '1px solid #F3F2EC',
-                  }}>
-                    <span style={{ color: '#8C8A82' }}>{r.label}</span>
-                    <span style={{ fontWeight: 600, color: '#141413' }}>{r.value}</span>
+                  <div key={r.label} className="flex justify-between text-[12px] py-1.5 border-b border-[#F3F2EC]">
+                    <span className="text-slate">{r.label}</span>
+                    <span className="font-semibold text-charcoal">{r.value}</span>
                   </div>
                 ))}
               </div>

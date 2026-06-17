@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useResetPassword } from '@/hooks/auth/useResetPassword';
 import { Button } from '@/components/ui/Button';
@@ -7,68 +8,46 @@ import { Eye, EyeOff, ArrowRight, Check, Circle } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { newPasswordSchema, type NewPasswordFormData } from '@/utils/validation/schemas';
 import { AuthContext } from '@/api/commerce/auth';
-import type { CSSProperties } from 'react';
-
-const C = {
-  orange: '#D97757', carbon: '#141413', charcoal: '#2C2A28',
-  slate: '#8C8A82', bone: '#E8E6DC', cream: '#FAF9F5', white: '#FFFFFF',
-  success: '#2D8A4E', successBg: '#EBF7EF',
-  error: '#C13030', errorBg: '#FDEAEA',
-  warning: '#C08B1E',
-};
-const FONT = "'Poppins', sans-serif";
-
-const inputStyle: CSSProperties = {
-  width: '100%', padding: '10px 12px', borderRadius: 8,
-  border: `1px solid ${C.bone}`, fontSize: 13, fontFamily: FONT,
-  color: C.charcoal, outline: 'none', boxSizing: 'border-box', background: C.white,
-};
-const labelStyle: CSSProperties = {
-  display: 'block', fontSize: 12, fontWeight: 500,
-  color: C.charcoal, marginBottom: 6, fontFamily: FONT,
-};
-const cardStyle: CSSProperties = {
-  background: C.white, borderRadius: 20,
-  padding: '36px 40px', width: '100%', maxWidth: 440,
-  border: `1px solid ${C.bone}`,
-};
 
 function getStrength(password: string) {
-  if (!password) return { score: 0, label: '', color: C.bone };
+  if (!password) return { score: 0, label: '', colorClass: '', bgClass: 'bg-bone' };
   let score = 0;
-  if (password.length >= 8)         score++;
-  if (/[A-Z]/.test(password))       score++;
-  if (/[0-9]/.test(password))       score++;
+  if (password.length >= 8)          score++;
+  if (/[A-Z]/.test(password))        score++;
+  if (/[0-9]/.test(password))        score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
-  if (password.length >= 12)        score++;
-  if (score <= 1) return { score, label: 'Weak',   color: C.error   };
-  if (score <= 2) return { score, label: 'Fair',   color: C.warning };
-  if (score <= 3) return { score, label: 'Good',   color: C.orange  };
-  return              { score, label: 'Strong', color: C.success };
+  if (password.length >= 12)         score++;
+  if (score <= 1) return { score, label: 'Weak',   colorClass: 'text-error',        bgClass: 'bg-error'        };
+  if (score <= 2) return { score, label: 'Fair',   colorClass: 'text-warning',      bgClass: 'bg-warning'      };
+  if (score <= 3) return { score, label: 'Good',   colorClass: 'text-brand-orange', bgClass: 'bg-brand-orange' };
+  return              { score, label: 'Strong', colorClass: 'text-success',      bgClass: 'bg-success'      };
 }
 
 function StrengthBar({ password }: { password: string }) {
-  const { score, label, color } = getStrength(password);
+  const { score, label, colorClass, bgClass } = getStrength(password);
   if (!password) return null;
+  const widthPct = `${Math.min(100, (score / 4) * 100)}%`;
   return (
-    <div style={{ marginTop: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-        <span style={{ fontSize: 11, color: C.slate, fontFamily: FONT }}>Password strength</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color, fontFamily: FONT }}>{label}</span>
+    <div className="mt-2">
+      <div className="flex justify-between mb-1">
+        <span className="text-[11px] text-slate">Password strength</span>
+        <span className={clsx('text-[11px] font-semibold', colorClass)}>{label}</span>
       </div>
-      <div style={{ height: 4, background: C.bone, borderRadius: 2, overflow: 'hidden' }}>
-        <div style={{ width: `${Math.min(100, (score / 4) * 100)}%`, height: '100%', background: color, borderRadius: 2, transition: 'width 0.3s' }} />
+      <div className="h-1 bg-bone rounded-sm overflow-hidden">
+        <div className={clsx('h-full rounded-sm transition-[width] duration-300', bgClass)} style={{ width: widthPct }} />
       </div>
-      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div className="mt-[10px] flex flex-col gap-1">
         {([
           [password.length >= 8,           'At least 8 characters'],
           [/[A-Z]/.test(password),         'One uppercase letter'],
           [/[0-9]/.test(password),         'One number'],
           [/[^A-Za-z0-9]/.test(password),  'One special character'],
         ] as [boolean, string][]).map(([met, req]) => (
-          <div key={req} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ color: met ? C.success : C.slate, display: 'flex' }}>{met ? <Check size={12} /> : <Circle size={12} />}</span>
-            <span style={{ fontSize: 11, color: met ? C.success : C.slate, fontFamily: FONT }}>{req}</span>
+          <div key={req} className="flex items-center gap-[6px]">
+            <span className={clsx('flex', met ? 'text-success' : 'text-slate')}>
+              {met ? <Check size={12} /> : <Circle size={12} />}
+            </span>
+            <span className={clsx('text-[11px]', met ? 'text-success' : 'text-slate')}>{req}</span>
           </div>
         ))}
       </div>
@@ -83,27 +62,30 @@ function PasswordInput({ label, placeholder, value, onChange, onBlur, error }: {
   const [show, setShow] = useState(false);
   return (
     <div>
-      <label style={labelStyle}>{label}</label>
-      <div style={{ position: 'relative' }}>
+      <label className="block text-[12px] font-medium text-charcoal mb-[6px]">{label}</label>
+      <div className="relative">
         <input type={show ? 'text' : 'password'} placeholder={placeholder} value={value}
           onChange={e => onChange(e.target.value)} onBlur={onBlur}
-          style={{ ...inputStyle, paddingRight: 42, borderColor: error ? C.error : C.bone }}
+          className={clsx(
+            'w-full px-3 pr-[42px] py-[10px] rounded-lg border text-[13px] text-charcoal outline-none bg-white',
+            error ? 'border-error' : 'border-bone',
+          )}
         />
         <button type="button" onClick={() => setShow(s => !s)}
-          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: C.slate, padding: 0, display: 'flex' }}>
+          className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate p-0 flex">
           {show ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
-      {error && <p style={{ fontSize: 11, color: C.error, marginTop: 5, fontFamily: FONT }}>{error}</p>}
+      {error && <p className="text-[11px] text-error mt-[5px]">{error}</p>}
     </div>
   );
 }
 
 export function NewPasswordPage() {
-  const navigate       = useNavigate();
+  const navigate      = useNavigate();
   usePageTitle('New Password');
-  const resetPassword  = useResetPassword();
-  const [otp, setOtp]         = useState('');
+  const resetPassword = useResetPassword();
+  const [otp, setOtp]           = useState('');
   const [otpError, setOtpError] = useState('');
 
   const ctx       = AuthContext.get();
@@ -125,16 +107,14 @@ export function NewPasswordPage() {
 
   if (resetPassword.success) {
     return (
-      <div style={{ minHeight: '100vh', background: C.cream, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 16px', fontFamily: FONT }}>
-        <div style={cardStyle}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: C.carbon, textAlign: 'center', marginBottom: 8 }}>
-            Password updated!
-          </h1>
-          <p style={{ fontSize: 13, color: C.slate, textAlign: 'center', lineHeight: 1.6, marginBottom: 28 }}>
+      <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
+        <div className="bg-white rounded-[20px] px-10 py-9 w-full max-w-[440px] border border-bone">
+          <h1 className="text-[22px] font-bold text-carbon text-center mb-2">Password updated!</h1>
+          <p className="text-[13px] text-slate text-center leading-[1.6] mb-7">
             Your password has been changed. You can now sign in.
           </p>
           <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/login')}>
-            Sign In Now <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
+            Sign In Now <ArrowRight size={14} className="inline align-middle ml-1" />
           </Button>
         </div>
       </div>
@@ -142,38 +122,37 @@ export function NewPasswordPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: C.cream, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 16px', fontFamily: FONT }}>
-      <div style={cardStyle}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: C.carbon, textAlign: 'center', marginBottom: 8 }}>
-          Reset your password
-        </h1>
+    <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
+      <div className="bg-white rounded-[20px] px-10 py-9 w-full max-w-[440px] border border-bone">
+        <h1 className="text-[22px] font-bold text-carbon text-center mb-2">Reset your password</h1>
         {userEmail && (
-          <p style={{ fontSize: 13, color: C.slate, textAlign: 'center', marginBottom: 20, lineHeight: 1.6 }}>
-            Enter the code sent to <strong style={{ color: C.carbon }}>{userEmail}</strong>
+          <p className="text-[13px] text-slate text-center mb-5 leading-[1.6]">
+            Enter the code sent to <strong className="text-carbon">{userEmail}</strong>
           </p>
         )}
 
         {/* OTP */}
-        <div style={{ marginBottom: 20 }}>
-          <label style={labelStyle}>Verification Code</label>
+        <div className="mb-5">
+          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Verification Code</label>
           <input
             type="text" inputMode="numeric" maxLength={6} placeholder="Enter 6-digit OTP" value={otp}
             onChange={e => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
-            style={{
-              ...inputStyle, textAlign: 'center', borderColor: otpError ? C.error : otp.length === 6 ? C.success : C.bone,
-              letterSpacing: otp ? '0.3em' : 0, fontWeight: otp ? 700 : 400, fontSize: otp ? 18 : 13,
-            }}
+            className={clsx(
+              'w-full px-3 py-[10px] rounded-lg border text-charcoal outline-none bg-white text-center',
+              otpError ? 'border-error' : otp.length === 6 ? 'border-success' : 'border-bone',
+              otp ? 'tracking-[0.3em] font-bold text-[18px]' : 'text-[13px]',
+            )}
           />
-          {otpError && <p style={{ fontSize: 11, color: C.error, marginTop: 5, fontFamily: FONT }}>{otpError}</p>}
+          {otpError && <p className="text-[11px] text-error mt-[5px]">{otpError}</p>}
           {otp.length === 6 && !otpError && (
-            <p style={{ fontSize: 11, color: C.success, marginTop: 5, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <p className="text-[11px] text-success mt-[5px] flex items-center gap-1">
               <Check size={11} /> Code entered
             </p>
           )}
         </div>
 
         {/* New password */}
-        <div style={{ marginBottom: 16 }}>
+        <div className="mb-4">
           <PasswordInput label="New Password" placeholder="Enter new password"
             value={values.password} onChange={v => setValue('password', v)}
             onBlur={blur('password')} error={errors.password} />
@@ -181,19 +160,21 @@ export function NewPasswordPage() {
         </div>
 
         {/* Confirm */}
-        <div style={{ marginBottom: 20 }}>
+        <div className="mb-5">
           <PasswordInput label="Confirm Password" placeholder="Confirm new password"
             value={values.confirmPassword} onChange={v => setValue('confirmPassword', v)}
             onBlur={blur('confirmPassword')} error={errors.confirmPassword} />
           {values.confirmPassword && (
-            <p style={{ fontSize: 11, marginTop: 5, fontFamily: FONT, color: passwordsMatch ? C.success : C.error }}>
-              {passwordsMatch ? <><Check size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />Passwords match</> : <>✗ Passwords do not match</>}
+            <p className={clsx('text-[11px] mt-[5px]', passwordsMatch ? 'text-success' : 'text-error')}>
+              {passwordsMatch
+                ? <><Check size={11} className="inline align-middle mr-[3px]" />Passwords match</>
+                : <>✗ Passwords do not match</>}
             </p>
           )}
         </div>
 
         {resetPassword.error && (
-          <div style={{ background: C.errorBg, borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: C.error, fontFamily: FONT }}>
+          <div className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 text-[13px] text-error">
             {resetPassword.error}
           </div>
         )}
@@ -201,7 +182,7 @@ export function NewPasswordPage() {
         <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={resetPassword.loading}>
           {resetPassword.loading
             ? 'Resetting...'
-            : <span>Reset Password <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></span>}
+            : <span>Reset Password <ArrowRight size={14} className="inline align-middle ml-1" /></span>}
         </Button>
       </div>
     </div>

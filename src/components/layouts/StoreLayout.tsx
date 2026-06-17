@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
@@ -54,73 +55,53 @@ const NAV: { group: string; items: NavItem[] }[] = [
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 function StoreSidebar() {
-  const navigate   = useNavigate();
+  const navigate     = useNavigate();
   const { pathname } = useLocation();
   const { store, storeId, loading } = useStoreWorkspace();
 
   const isActive = (seg: string) =>
     pathname === `/seller/store/${storeId}/${seg}`;
 
-  // Store initials
-  const initials = store?.name?.slice(0, 2).toUpperCase() ?? '..';
-
-  // AI credits
-  const credits    = store?.aiCredits ?? 0;
-  const maxCredits = 1000;
-  const pct        = Math.min(100, Math.round((credits / maxCredits) * 100));
+  const initials    = store?.name?.slice(0, 2).toUpperCase() ?? '..';
+  const credits     = store?.aiCredits ?? 0;
+  const maxCredits  = 1000;
+  const pct         = Math.min(100, Math.round((credits / maxCredits) * 100));
 
   return (
-    <aside style={{
-      width: 220, background: '#141413',
-      display: 'flex', flexDirection: 'column', flexShrink: 0,
-      height: '100vh', overflowY: 'auto',
-      fontFamily: "'Poppins', sans-serif",
-    }}>
+    <aside className="w-[220px] bg-carbon flex flex-col shrink-0 h-screen overflow-y-auto">
 
       {/* Back to All Stores */}
       <button
         onClick={() => navigate('/seller/dashboard')}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 7,
-          padding: '14px 16px 10px', background: 'transparent', border: 'none',
-          cursor: 'pointer', color: '#8C8A82', fontSize: 12, fontWeight: 500,
-          transition: 'color 0.15s', textAlign: 'left',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.color = '#D97757')}
-        onMouseLeave={e => (e.currentTarget.style.color = '#8C8A82')}
+        className="flex items-center gap-[7px] px-4 pt-[14px] pb-[10px] bg-transparent border-0 cursor-pointer text-slate text-[12px] font-medium transition-colors duration-150 text-left hover:text-brand-orange"
       >
         <ChevronLeft size={14} /> All Stores
       </button>
 
-      <div style={{ height: 1, background: '#1E1C1A', margin: '0 12px' }} />
+      <div className="h-px bg-dark-active mx-3" />
 
       {/* Store identity */}
-      <div style={{ padding: '14px 16px 12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 9, flexShrink: 0,
-            background: '#D97757', overflow: 'hidden',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 700, color: '#fff',
-          }}>
+      <div className="px-4 pt-[14px] pb-3">
+        <div className="flex items-center gap-[10px]">
+          <div className="size-9 rounded-[9px] shrink-0 bg-brand-orange overflow-hidden flex items-center justify-center text-[13px] font-bold text-white">
             {loading
-              ? <div className="animate-pulse" style={{ width: 36, height: 36, background: '#2C2A28', borderRadius: 9 }} />
+              ? <div className="animate-pulse size-9 bg-charcoal rounded-[9px]" />
               : store?.logo
-                ? <img src={store.logo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                ? <img src={store.logo} className="w-full h-full object-cover" alt="" />
                 : initials}
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="flex-1 min-w-0">
             {loading ? (
               <>
-                <div className="animate-pulse" style={{ width: 90, height: 12, borderRadius: 3, background: '#2C2A28', marginBottom: 5 }} />
-                <div className="animate-pulse" style={{ width: 55, height: 10, borderRadius: 3, background: '#2C2A28' }} />
+                <div className="animate-pulse w-[90px] h-3 rounded-[3px] bg-charcoal mb-[5px]" />
+                <div className="animate-pulse w-[55px] h-[10px] rounded-[3px] bg-charcoal" />
               </>
             ) : (
               <>
-                <p style={{ fontSize: 12, fontWeight: 700, color: '#fff', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <p className="text-[12px] font-bold text-white leading-[1.3] truncate">
                   {store?.name ?? 'Loading…'}
                 </p>
-                <p style={{ fontSize: 10, color: '#8C8A82', lineHeight: 1.3 }}>
+                <p className="text-[10px] text-slate leading-[1.3]">
                   {store?.plan ?? ''}{store?.slug ? ` · /${store.slug}` : ''}
                 </p>
               </>
@@ -129,17 +110,13 @@ function StoreSidebar() {
         </div>
       </div>
 
-      <div style={{ height: 1, background: '#1E1C1A', margin: '0 12px 6px' }} />
+      <div className="h-px bg-dark-active mx-3 mb-[6px]" />
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: '4px 10px', overflowY: 'auto' }}>
+      <nav className="flex-1 px-[10px] pt-1 overflow-y-auto">
         {NAV.map(section => (
-          <div key={section.group} style={{ marginBottom: 4 }}>
-            <p style={{
-              fontSize: 10, fontWeight: 600, color: '#4A4845',
-              padding: '4px 8px', textTransform: 'uppercase',
-              letterSpacing: '0.08em', marginBottom: 2,
-            }}>
+          <div key={section.group} className="mb-1">
+            <p className="text-[10px] font-semibold text-dark-label px-2 py-1 uppercase tracking-[0.08em] mb-0.5">
               {section.group}
             </p>
             {section.items.map(item => {
@@ -148,21 +125,26 @@ function StoreSidebar() {
                 <div
                   key={item.id}
                   onClick={() => navigate(`/seller/store/${storeId}/${item.path}`)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '9px 10px', borderRadius: 8, marginBottom: 2,
-                    cursor: 'pointer',
-                    background: active ? '#1E1C1A' : 'transparent',
-                    transition: 'background 0.15s',
-                  }}
-                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '#1A1917'; }}
-                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                  className={clsx(
+                    'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5',
+                    'cursor-pointer transition-colors duration-150',
+                    active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1A1917]',
+                  )}
                 >
-                  <item.Icon size={15} style={{ color: active ? '#D97757' : '#8C8A82', flexShrink: 0, opacity: active ? 1 : 0.55 }} />
-                  <span style={{ fontSize: 13, fontWeight: active ? 600 : 400, color: active ? '#fff' : '#8C8A82', flex: 1 }}>
+                  <item.Icon
+                    size={15}
+                    className={clsx(
+                      'shrink-0',
+                      active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55',
+                    )}
+                  />
+                  <span className={clsx(
+                    'text-[13px] flex-1',
+                    active ? 'font-semibold text-white' : 'font-normal text-slate',
+                  )}>
                     {item.label}
                   </span>
-                  {active && <div style={{ width: 3, height: 14, borderRadius: 2, background: '#D97757', flexShrink: 0 }} />}
+                  {active && <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
                 </div>
               );
             })}
@@ -171,25 +153,25 @@ function StoreSidebar() {
       </nav>
 
       {/* Footer: AI credits */}
-      <div style={{ padding: '12px 16px', borderTop: '1px solid #1E1C1A' }}>
-        <div style={{ background: '#1E1C1A', borderRadius: 8, padding: '10px 12px', marginBottom: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Sparkles size={11} style={{ color: '#D97757' }} />
-              <span style={{ fontSize: 11, color: '#8C8A82' }}>AI Credits</span>
+      <div className="px-4 py-3 border-t border-dark-active">
+        <div className="bg-dark-active rounded-md px-3 py-[10px] mb-[10px]">
+          <div className="flex justify-between mb-[6px]">
+            <div className="flex items-center gap-[5px]">
+              <Sparkles size={11} className="text-brand-orange" />
+              <span className="text-[11px] text-slate">AI Credits</span>
             </div>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#D97757' }}>
-              {credits}/{maxCredits}
-            </span>
+            <span className="text-[11px] font-semibold text-brand-orange">{credits}/{maxCredits}</span>
           </div>
-          <div style={{ height: 4, background: '#2C2A28', borderRadius: 2 }}>
-            <div style={{ width: `${pct}%`, height: '100%', background: '#D97757', borderRadius: 2, transition: 'width 0.3s' }} />
+          <div className="h-1 bg-charcoal rounded-[2px]">
+            <div
+              className="h-full bg-brand-orange rounded-[2px] transition-[width] duration-300"
+              style={{ width: `${pct}%` }}
+            />
           </div>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="flex items-center gap-2">
           <SolvexoIcon size={20} />
-          <p style={{ fontSize: 11, color: '#4A4845' }}>Solvexo Store</p>
+          <p className="text-[11px] text-dark-label">Solvexo Store</p>
         </div>
       </div>
     </aside>
@@ -205,24 +187,15 @@ export interface StorePageHeaderProps {
 
 export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderProps) {
   return (
-    <div style={{
-      background: '#FFFFFF', borderBottom: '1px solid #E8E6DC',
-      padding: '14px 28px', display: 'flex', alignItems: 'center',
-      justifyContent: 'space-between', position: 'sticky', top: 0,
-      zIndex: 10, flexShrink: 0, fontFamily: "'Poppins', sans-serif",
-    }}>
+    <div className="bg-white border-b border-bone px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
       <div>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#141413', lineHeight: 1.3 }}>{title}</h1>
-        {subtitle && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 2 }}>{subtitle}</p>}
+        <h1 className="text-[18px] font-bold text-carbon leading-[1.3]">{title}</h1>
+        {subtitle && <p className="text-[12px] text-slate mt-0.5">{subtitle}</p>}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div className="flex items-center gap-[10px]">
         {actions}
-        <div style={{
-          width: 34, height: 34, borderRadius: 8, background: '#FBECE4',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', flexShrink: 0,
-        }}>
-          <Bell size={16} style={{ color: '#D97757' }} />
+        <div className="size-[34px] rounded-md bg-brand-pale-orange flex items-center justify-center cursor-pointer shrink-0">
+          <Bell size={16} className="text-brand-orange" />
         </div>
       </div>
     </div>
@@ -261,10 +234,10 @@ function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
 export function StoreLayout() {
   return (
     <StoreWorkspaceProvider>
-      <div style={{ display: 'flex', height: '100vh', background: '#FAF9F5', overflow: 'hidden' }}>
+      <div className="flex h-screen bg-cream overflow-hidden">
         <StoreSidebar />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
             <Outlet />
           </div>
         </div>

@@ -37,9 +37,6 @@ const metrics = [
   { label: 'Refunds Issued',  value: '$12,480', trend: null,                sub: 'This month',        trendUp: false },
 ] as const;
 
-const poppins   = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function AdminFinance() {
   usePageTitle('Finance');
@@ -49,33 +46,33 @@ export function AdminFinance() {
   const hold    = (id: string) => setPayouts(prev => prev.map(p => p.id === id ? { ...p, status: 'Held'       as const } : p));
 
   return (
-    <div style={{ padding: '24px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+    <div className="px-7 pt-6 pb-8 flex flex-col gap-5">
 
       {/* ── Header ── */}
       <div>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#141413', marginBottom: 3 }}>Finance &amp; Payouts</h1>
-        <p style={{ fontSize: 12, color: '#8C8A82' }}>Review revenue, manage seller payouts and financial reports.</p>
+        <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Finance &amp; Payouts</h1>
+        <p className="text-[12px] text-slate">Review revenue, manage seller payouts and financial reports.</p>
       </div>
 
       {/* ── Metrics ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+      <div className="grid grid-cols-4 gap-3">
         {metrics.map(m => (
-          <div key={m.label} style={{ ...cardStyle, padding: '16px 20px' }}>
-            <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</p>
-            <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{m.value}</p>
-            {m.trend && <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {m.trend}</p>}
-            {m.sub   && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>}
+          <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
+            <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{m.value}</p>
+            {m.trend && <p className="text-[12px] text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
+            {m.sub   && <p className="text-[12px] text-slate mt-1">{m.sub}</p>}
           </div>
         ))}
       </div>
 
       {/* ── Revenue split ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="grid grid-cols-2 gap-4">
 
         {/* Revenue Breakdown */}
-        <div style={{ ...cardStyle, padding: '20px 22px' }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 18 }}>Revenue Breakdown</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5">
+          <p className="text-[14px] font-bold text-charcoal mb-[18px]">Revenue Breakdown</p>
+          <div className="flex flex-col gap-[14px]">
             {[
               { label: 'Gross Merchandise Value',   value: '$8,400,000', pct: 100 },
               { label: 'Platform Commission (15%)',  value: '$1,260,000', pct: 15  },
@@ -83,12 +80,12 @@ export function AdminFinance() {
               { label: 'Payment Fees (~2%)',           value: '$168,000',   pct: 2   },
             ].map(item => (
               <div key={item.label}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <span style={{ fontSize: 12, color: '#4A4945', fontFamily: poppins }}>{item.label}</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#141413', fontFamily: poppins }}>{item.value}</span>
+                <div className="flex justify-between mb-[5px]">
+                  <span className="text-[12px] text-[#4A4945]">{item.label}</span>
+                  <span className="text-[12px] font-semibold text-charcoal">{item.value}</span>
                 </div>
-                <div style={{ height: 6, borderRadius: 3, background: '#E8E6DC' }}>
-                  <div style={{ height: '100%', borderRadius: 3, width: `${item.pct}%`, background: '#D97757' }} />
+                <div className="h-[6px] rounded-[3px] bg-bone">
+                  <div className="h-full rounded-[3px] bg-brand-orange" style={{ width: `${item.pct}%` }} />
                 </div>
               </div>
             ))}
@@ -96,21 +93,22 @@ export function AdminFinance() {
         </div>
 
         {/* Payout Summary */}
-        <div style={{ ...cardStyle, padding: '20px 22px' }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 16 }}>Payout Summary</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5">
+          <p className="text-[14px] font-bold text-charcoal mb-4">Payout Summary</p>
+          <div className="flex flex-col gap-[10px]">
             {[
               { label: 'Pending',    count: 3, amount: '$3,764', color: '#C08B1E', bg: '#FEF7E5' },
               { label: 'Processing', count: 1, amount: '$980',   color: '#1A72C2', bg: '#E6F1FB' },
               { label: 'Held',       count: 1, amount: '$120',   color: '#C13030', bg: '#FDEAEA' },
               { label: 'Paid (May)', count: 1, amount: '$1,980', color: '#2D8A4E', bg: '#EBF7EF' },
             ].map(s => (
-              <div key={s.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 14px', borderRadius: 9, background: s.bg }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: s.color, fontFamily: poppins }}>{s.label}</span>
-                  <span style={{ fontSize: 11, color: s.color, fontFamily: poppins }}>{s.count} seller{s.count !== 1 ? 's' : ''}</span>
+              <div key={s.label} className="flex items-center justify-between px-[14px] py-[11px] rounded-[9px]"
+                style={{ background: s.bg }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-semibold" style={{ color: s.color }}>{s.label}</span>
+                  <span className="text-[11px]" style={{ color: s.color }}>{s.count} seller{s.count !== 1 ? 's' : ''}</span>
                 </div>
-                <span style={{ fontSize: 14, fontWeight: 700, color: s.color, fontFamily: poppins }}>{s.amount}</span>
+                <span className="text-[14px] font-bold" style={{ color: s.color }}>{s.amount}</span>
               </div>
             ))}
           </div>
@@ -118,16 +116,16 @@ export function AdminFinance() {
       </div>
 
       {/* ── Payouts table ── */}
-      <div style={{ ...cardStyle, overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px 10px' }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', fontFamily: poppins }}>Pending Payouts</p>
+      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="px-5 pt-4 pb-[10px]">
+          <p className="text-[14px] font-bold text-charcoal">Pending Payouts</p>
         </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
             <thead>
               <tr>
                 {['ID','Seller','Amount','Method','Period','Status','Actions'].map(h => (
-                  <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontSize: 11, fontWeight: 600, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #E8E6DC', background: '#FAF9F5', whiteSpace: 'nowrap', fontFamily: poppins }}>
+                  <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-[#FAF9F5] whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -139,45 +137,48 @@ export function AdminFinance() {
                 const ss = statusStyle[p.status];
                 return (
                   <tr key={p.id}
-                    style={{ borderBottom: i < payouts.length - 1 ? '1px solid #F0EEE6' : 'none', transition: 'background 0.12s' }}
+                    className="transition-colors duration-[120ms]"
+                    style={{ borderBottom: i < payouts.length - 1 ? '1px solid #F0EEE6' : 'none' }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
                     {/* ID */}
-                    <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: '#141413', fontFamily: poppins }}>{p.id}</td>
+                    <td className="px-4 py-3 text-[13px] font-semibold text-charcoal">{p.id}</td>
                     {/* Seller */}
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: av.bg, color: av.color, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-[10px]">
+                        <div className="w-7 h-7 rounded-full text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                          style={{ background: av.bg, color: av.color }}>
                           {p.initials}
                         </div>
                         <div>
-                          <p style={{ fontSize: 12, fontWeight: 500, color: '#141413', fontFamily: poppins }}>{p.seller}</p>
-                          <p style={{ fontSize: 11, color: '#8C8A82', fontFamily: poppins }}>{p.email}</p>
+                          <p className="text-[12px] font-medium text-charcoal">{p.seller}</p>
+                          <p className="text-[11px] text-slate">{p.email}</p>
                         </div>
                       </div>
                     </td>
                     {/* Amount */}
-                    <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 700, color: '#141413', fontFamily: poppins }}>{p.amount}</td>
+                    <td className="px-4 py-3 text-[13px] font-bold text-charcoal">{p.amount}</td>
                     {/* Method */}
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#4A4945', fontFamily: poppins }}>{p.method}</td>
+                    <td className="px-4 py-3 text-[13px] text-[#4A4945]">{p.method}</td>
                     {/* Period */}
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#8C8A82', fontFamily: poppins }}>{p.period}</td>
+                    <td className="px-4 py-3 text-[13px] text-slate">{p.period}</td>
                     {/* Status */}
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: ss.bg, color: ss.color, fontFamily: poppins }}>{p.status}</span>
+                    <td className="px-4 py-3">
+                      <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
+                        style={{ background: ss.bg, color: ss.color }}>{p.status}</span>
                     </td>
                     {/* Actions */}
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
                         {p.status === 'Pending' ? (
                           <>
-                            <button onClick={() => approve(p.id)} style={{ fontSize: 11, fontWeight: 500, color: '#2D8A4E', background: 'none', border: 'none', cursor: 'pointer', fontFamily: poppins }}>Approve</button>
-                            <span style={{ color: '#E8E6DC', fontSize: 13 }}>|</span>
-                            <button onClick={() => hold(p.id)}    style={{ fontSize: 11, fontWeight: 500, color: '#C13030', background: 'none', border: 'none', cursor: 'pointer', fontFamily: poppins }}>Hold</button>
+                            <button onClick={() => approve(p.id)} className="text-[11px] font-medium text-[#2D8A4E] bg-transparent border-none cursor-pointer">Approve</button>
+                            <span className="text-[#E8E6DC] text-[13px]">|</span>
+                            <button onClick={() => hold(p.id)}    className="text-[11px] font-medium text-[#C13030] bg-transparent border-none cursor-pointer">Hold</button>
                           </>
                         ) : (
-                          <button style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', background: 'none', border: 'none', cursor: 'pointer', fontFamily: poppins }}>View</button>
+                          <button className="text-[11px] font-medium text-slate bg-transparent border-none cursor-pointer">View</button>
                         )}
                       </div>
                     </td>

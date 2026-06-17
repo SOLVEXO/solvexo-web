@@ -76,24 +76,18 @@ function POSTopBar({
   navigate: ReturnType<typeof useNavigate>;
 }) {
   return (
-    <div
-      style={{
-        flexShrink: 0, display: 'flex', alignItems: 'center', gap: 16,
-        padding: '0 20px', height: 52,
-        background: C.surface, borderBottom: `1px solid ${C.border}`,
-      }}
-    >
+    <div className="shrink-0 flex items-center gap-4 px-5 h-[52px] bg-pos-surface border-b border-carbon">
       {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+      <div className="flex items-center gap-[10px] shrink-0">
         <SolvexoIcon size={26} />
-        <span style={{ fontSize: 13, fontWeight: 700, color: C.white }}>POS Register</span>
-        <div style={{ background: C.border, borderRadius: 6, padding: '2px 8px' }}>
-          <span style={{ fontSize: 10, color: C.orange }}>● Live</span>
+        <span className="text-[13px] font-bold text-white">POS Register</span>
+        <div className="bg-carbon rounded-[6px] px-2 py-[2px]">
+          <span className="text-[10px] text-brand-orange">● Live</span>
         </div>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 2, background: C.border, borderRadius: 8, padding: 3 }}>
+      <div className="flex gap-[2px] bg-carbon rounded-lg p-[3px]">
         {(['sale', 'orders', 'products', 'summary'] as const).map(tab => {
           const icons: Record<ActiveTab, LucideIcon> = { sale: ShoppingCart, orders: ClipboardList, products: Package, summary: BarChart2 };
           const Icon = icons[tab];
@@ -101,15 +95,10 @@ function POSTopBar({
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
+              className="px-[14px] py-[6px] rounded-[6px] text-[12px] font-medium cursor-pointer border-none flex items-center gap-[5px] capitalize transition-[background] duration-150"
               style={{
-                padding: '6px 14px', borderRadius: 6, fontSize: 12,
-                fontWeight: 500, cursor: 'pointer', border: 'none',
-                fontFamily: "'Poppins', sans-serif",
                 background: activeTab === tab ? C.orange : 'transparent',
                 color: activeTab === tab ? C.white : C.faint,
-                display: 'flex', alignItems: 'center', gap: 5,
-                textTransform: 'capitalize',
-                transition: 'background 0.15s',
               }}
             >
               <Icon size={12} />
@@ -119,22 +108,17 @@ function POSTopBar({
         })}
       </div>
 
-      <div style={{ flex: 1 }} />
+      <div className="flex-1" />
 
       {/* Shift info */}
-      <div style={{ textAlign: 'right', marginRight: 8 }}>
-        <p style={{ fontSize: 11, color: C.muted }}>Shift: 9:00 AM · Open</p>
-        <p style={{ fontSize: 11, fontWeight: 500, color: C.orange }}>Alex Chen · Register 1</p>
+      <div className="text-right mr-2">
+        <p className="text-[11px] text-carbon">Shift: 9:00 AM · Open</p>
+        <p className="text-[11px] font-medium text-brand-orange">Alex Chen · Register 1</p>
       </div>
       <Avatar name="Alex Chen" size={30} variant="pos" />
       <button
         onClick={() => navigate('/seller/dashboard')}
-        style={{
-          padding: '6px 12px', borderRadius: 8, fontSize: 11,
-          cursor: 'pointer', border: `1px solid ${C.border}`,
-          background: 'transparent', color: 'rgba(255,255,255,0.45)',
-          fontFamily: "'Poppins', sans-serif",
-        }}
+        className="px-3 py-[6px] rounded-lg text-[11px] cursor-pointer border border-carbon bg-transparent text-white/45"
       >
         ← Dashboard
       </button>
@@ -198,64 +182,38 @@ function SaleTab() {
   const resetSale = () => { setCart([]); setAppliedDiscount(null); setCustomer(null); setCashGiven(''); setNote(''); setPosView('charge'); };
 
   return (
-    <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+    <div className="flex flex-1 overflow-hidden">
 
       {/* ── Left: Product Grid ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRight: `1px solid ${C.border}` }}>
+      <div className="flex-1 flex flex-col overflow-hidden border-r border-carbon">
 
         {/* Search bar */}
-        <div style={{
-          display: 'flex', gap: 8, alignItems: 'center',
-          padding: '10px 16px', background: C.surface,
-          borderBottom: `1px solid ${C.border}`, flexShrink: 0,
-        }}>
-          <div style={{
-            flex: 1, display: 'flex', alignItems: 'center',
-            background: C.border, borderRadius: 8, overflow: 'hidden',
-          }}>
-            <Search size={13} style={{ color: C.faint, marginLeft: 12, flexShrink: 0 }} />
+        <div className="flex gap-2 items-center px-4 py-[10px] bg-pos-surface border-b border-carbon shrink-0">
+          <div className="flex-1 flex items-center bg-carbon rounded-lg overflow-hidden">
+            <Search size={13} className="ml-3 shrink-0" style={{ color: C.faint }} />
             <input
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search products or scan barcode (SKU)..."
-              style={{
-                flex: 1, padding: '8px 12px', fontSize: 13,
-                background: 'transparent', border: 'none', outline: 'none',
-                color: C.white, fontFamily: "'Poppins', sans-serif",
-              }}
+              className="flex-1 px-3 py-2 text-[13px] bg-transparent border-none outline-none text-white"
             />
           </div>
-          <button style={{
-            padding: '7px 14px', background: C.border, border: 'none',
-            borderRadius: 8, fontSize: 12, color: C.faint, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
-            fontFamily: "'Poppins', sans-serif",
-          }}>
+          <button className="px-[14px] py-[7px] bg-carbon border-none rounded-lg text-[12px] cursor-pointer flex items-center gap-[6px] shrink-0" style={{ color: C.faint }}>
             <Camera size={12} /> Scan
           </button>
-          <button style={{
-            padding: '7px 14px', background: C.border, border: 'none',
-            borderRadius: 8, fontSize: 12, color: C.faint, cursor: 'pointer',
-            flexShrink: 0, fontFamily: "'Poppins', sans-serif",
-          }}>
+          <button className="px-[14px] py-[7px] bg-carbon border-none rounded-lg text-[12px] cursor-pointer shrink-0" style={{ color: C.faint }}>
             + Custom Item
           </button>
         </div>
 
         {/* Category pills */}
-        <div style={{
-          display: 'flex', gap: 6, padding: '8px 16px',
-          background: C.surface, borderBottom: `1px solid ${C.border}`,
-          flexShrink: 0, overflowX: 'auto',
-        }}>
+        <div className="flex gap-[6px] px-4 py-2 bg-pos-surface border-b border-carbon shrink-0 overflow-x-auto">
           {categories.map(cat => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
+              className="shrink-0 px-[14px] py-[5px] rounded-[20px] text-[11px] font-medium cursor-pointer border-none"
               style={{
-                flexShrink: 0, padding: '5px 14px', borderRadius: 20,
-                fontSize: 11, fontWeight: 500, cursor: 'pointer', border: 'none',
-                fontFamily: "'Poppins', sans-serif",
                 background: activeCategory === cat ? C.orange : C.border,
                 color: activeCategory === cat ? C.white : C.faint,
               }}
@@ -266,86 +224,58 @@ function SaleTab() {
         </div>
 
         {/* Product cards grid */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-            gap: 12,
-          }}>
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
             {filtered.map(p => {
               const inCart = cart.find(i => i.name === p.name);
               return (
                 <button
                   key={p.name}
                   onClick={() => addItem(p)}
+                  className="relative flex flex-col items-center px-[14px] pt-5 pb-4 rounded-xl text-center transition-[border-color] duration-150"
                   style={{
-                    position: 'relative',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    padding: '20px 14px 16px',
                     background: C.surface,
                     border: `1px solid ${inCart ? C.orange : C.border}`,
-                    borderRadius: 12,
                     cursor: p.stock === 0 ? 'not-allowed' : 'pointer',
                     opacity: p.stock === 0 ? 0.45 : 1,
-                    transition: 'border-color 0.15s',
-                    textAlign: 'center',
                     minHeight: 0,
                   }}
                 >
                   {/* Qty badge */}
                   {inCart && (
-                    <div style={{
-                      position: 'absolute', top: 8, right: 8,
-                      width: 20, height: 20, borderRadius: '50%',
-                      background: C.orange, color: C.white,
-                      fontSize: 10, fontWeight: 700,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
+                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand-orange text-white text-[10px] font-bold flex items-center justify-center">
                       {inCart.qty}
                     </div>
                   )}
 
                   {/* Icon */}
-                  <div style={{
-                    width: 48, height: 48, marginBottom: 10,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                  }}>
+                  <div className="w-12 h-12 mb-[10px] flex items-center justify-center shrink-0">
                     <p.icon size={30} style={{ color: C.orange, opacity: p.stock === 0 ? 0.3 : 1 }} />
                   </div>
 
                   {/* Name */}
-                  <span style={{
-                    display: 'block', fontSize: 12, fontWeight: 600,
-                    color: C.white, lineHeight: 1.35, marginBottom: 4,
-                    wordBreak: 'break-word',
-                  }}>
+                  <span className="block text-[12px] font-semibold text-white leading-[1.35] mb-1 break-words">
                     {p.name}
                   </span>
 
                   {/* SKU */}
-                  <span style={{
-                    display: 'block', fontSize: 10, color: C.muted, marginBottom: 8,
-                  }}>
+                  <span className="block text-[10px] mb-2" style={{ color: C.muted }}>
                     {p.sku}
                   </span>
 
                   {/* Price */}
-                  <span style={{
-                    display: 'block', fontSize: 15, fontWeight: 700,
-                    color: p.stock === 0 ? C.muted : C.orange,
-                  }}>
+                  <span className="block text-[15px] font-bold" style={{ color: p.stock === 0 ? C.muted : C.orange }}>
                     ${p.price.toFixed(2)}
                   </span>
 
                   {/* Stock warning */}
                   {p.stock > 0 && p.stock <= 8 && (
-                    <span style={{ display: 'block', fontSize: 10, color: '#C08B1E', marginTop: 4 }}>
+                    <span className="block text-[10px] mt-1 text-[#C08B1E]">
                       Low: {p.stock} left
                     </span>
                   )}
                   {p.stock === 0 && (
-                    <span style={{ display: 'block', fontSize: 10, color: '#C13030', marginTop: 4 }}>
+                    <span className="block text-[10px] mt-1 text-[#C13030]">
                       Out of stock
                     </span>
                   )}
@@ -357,32 +287,19 @@ function SaleTab() {
 
         {/* Held sales bar */}
         {HELD_SALES.length > 0 && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '8px 16px', background: C.surface,
-            borderTop: `1px solid ${C.border}`, flexShrink: 0,
-          }}>
-            <span style={{ fontSize: 11, color: C.muted, flexShrink: 0 }}>On Hold:</span>
+          <div className="flex items-center gap-2 px-4 py-2 bg-pos-surface border-t border-carbon shrink-0">
+            <span className="text-[11px] shrink-0" style={{ color: C.muted }}>On Hold:</span>
             {HELD_SALES.map(h => (
               <button
                 key={h.id}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '5px 12px', background: C.border,
-                  border: 'none', borderRadius: 8, cursor: 'pointer',
-                  fontFamily: "'Poppins', sans-serif",
-                }}
+                className="flex items-center gap-2 px-3 py-[5px] bg-carbon border-none rounded-lg cursor-pointer"
               >
-                <span style={{ fontSize: 11, fontWeight: 500, color: C.white }}>{h.customer}</span>
-                <span style={{ fontSize: 11, color: C.orange }}>${h.total.toFixed(2)}</span>
-                <span style={{ fontSize: 10, color: C.muted }}>{h.time}</span>
+                <span className="text-[11px] font-medium text-white">{h.customer}</span>
+                <span className="text-[11px] text-brand-orange">${h.total.toFixed(2)}</span>
+                <span className="text-[10px]" style={{ color: C.muted }}>{h.time}</span>
               </button>
             ))}
-            <button style={{
-              marginLeft: 'auto', padding: '5px 12px', background: 'transparent',
-              border: `1px solid ${C.border}`, borderRadius: 8, cursor: 'pointer',
-              fontSize: 11, color: C.faint, fontFamily: "'Poppins', sans-serif",
-            }}>
+            <button className="ml-auto px-3 py-[5px] bg-transparent border border-carbon rounded-lg cursor-pointer text-[11px]" style={{ color: C.faint }}>
               Hold Current Sale
             </button>
           </div>
@@ -390,44 +307,34 @@ function SaleTab() {
       </div>
 
       {/* ── Right: Cart Panel ── */}
-      <div style={{
-        width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column',
-        position: 'relative', background: C.surface,
-      }}>
+      <div className="w-[300px] shrink-0 flex flex-col relative bg-pos-surface">
         {/* Cart header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 18px', borderBottom: `1px solid ${C.border}`, flexShrink: 0,
-        }}>
+        <div className="flex items-center justify-between px-[18px] py-3 border-b border-carbon shrink-0">
           <div>
-            <p style={{ fontSize: 14, fontWeight: 600, color: C.white }}>Current Sale</p>
+            <p className="text-[14px] font-semibold text-white">Current Sale</p>
             {cart.length > 0 && (
-              <p style={{ fontSize: 11, color: '#8C8A82', marginTop: 1 }}>
+              <p className="text-[11px] text-[#8C8A82] mt-[1px]">
                 {cart.reduce((s, i) => s + i.qty, 0)} items · ${subtotal.toFixed(2)} subtotal
               </p>
             )}
           </div>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div className="flex gap-[6px]">
             <button
               onClick={() => setPosView(posView === 'customer' ? 'charge' : 'customer')}
+              className="px-[10px] py-[5px] border-none rounded-lg text-[11px] cursor-pointer flex items-center gap-1"
               style={{
-                padding: '5px 10px', background: posView === 'customer' ? '#B95A3A' : C.border,
-                border: 'none', borderRadius: 8, fontSize: 11, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 4,
+                background: posView === 'customer' ? '#B95A3A' : C.border,
                 color: customer ? C.orange : C.faint,
-                fontFamily: "'Poppins', sans-serif",
               }}
             >
               <User size={11} />{customer ? customer.name.split(' ')[0] : 'Customer'}
             </button>
             <button
               onClick={() => setPosView(posView === 'discount' ? 'charge' : 'discount')}
+              className="px-[10px] py-[5px] border-none rounded-lg text-[11px] cursor-pointer flex items-center gap-1"
               style={{
-                padding: '5px 10px', background: posView === 'discount' ? '#B95A3A' : C.border,
-                border: 'none', borderRadius: 8, fontSize: 11, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 4,
+                background: posView === 'discount' ? '#B95A3A' : C.border,
                 color: appliedDiscount ? C.orange : C.faint,
-                fontFamily: "'Poppins', sans-serif",
               }}
             >
               <Tag size={11} />{appliedDiscount ? appliedDiscount.label : 'Discount'}
@@ -437,39 +344,30 @@ function SaleTab() {
 
         {/* Customer panel */}
         {posView === 'customer' && (
-          <div style={{ padding: '14px 18px', borderBottom: `1px solid ${C.border}`, background: '#141312', flexShrink: 0 }}>
-            <p style={{ fontSize: 12, fontWeight: 600, color: C.white, marginBottom: 10 }}>Attach Customer</p>
+          <div className="px-[18px] py-[14px] border-b border-carbon bg-[#141312] shrink-0">
+            <p className="text-[12px] font-semibold text-white mb-[10px]">Attach Customer</p>
             <input
               placeholder="Search by name or email..."
-              style={{
-                width: '100%', background: C.border, border: 'none', borderRadius: 8,
-                padding: '7px 12px', fontSize: 12, color: C.white, outline: 'none',
-                marginBottom: 10, fontFamily: "'Poppins', sans-serif", boxSizing: 'border-box',
-              }}
+              className="w-full bg-carbon border-none rounded-lg px-3 py-[7px] text-[12px] text-white outline-none mb-[10px] box-border"
             />
             {POS_CUSTOMERS.map(c => (
               <button
                 key={c.email}
                 onClick={() => { setCustomer(c); setPosView('charge'); }}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '7px 10px', borderRadius: 8, marginBottom: 4,
-                  background: customer?.email === c.email ? C.border : 'transparent',
-                  border: 'none', cursor: 'pointer', textAlign: 'left',
-                  fontFamily: "'Poppins', sans-serif",
-                }}
+                className="w-full flex items-center gap-[10px] px-[10px] py-[7px] rounded-lg mb-1 border-none cursor-pointer text-left"
+                style={{ background: customer?.email === c.email ? C.border : 'transparent' }}
               >
                 <Avatar name={c.name} size={28} variant="pos" />
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 12, fontWeight: 500, color: C.white }}>{c.name}</p>
-                  <p style={{ fontSize: 10, color: C.muted }}>{c.email}</p>
+                <div className="flex-1">
+                  <p className="text-[12px] font-medium text-white">{c.name}</p>
+                  <p className="text-[10px]" style={{ color: C.muted }}>{c.email}</p>
                 </div>
-                <span style={{ background: '#FBECE4', color: '#B95A3A', fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 3 }}>
+                <span className="bg-brand-pale-orange text-brand-deep-orange text-[10px] font-semibold px-[7px] py-[2px] rounded-[20px] flex items-center gap-[3px]">
                   <Star size={9} style={{ fill: '#B95A3A' }} />{c.points} pts
                 </span>
               </button>
             ))}
-            <button onClick={() => { setCustomer(null); setPosView('charge'); }} style={{ width: '100%', textAlign: 'center', padding: '6px 0', fontSize: 11, color: C.muted, background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Poppins', sans-serif" }}>
+            <button onClick={() => { setCustomer(null); setPosView('charge'); }} className="w-full text-center px-0 py-[6px] text-[11px] bg-none border-none cursor-pointer" style={{ color: C.muted }}>
               × Clear customer
             </button>
           </div>
@@ -477,17 +375,15 @@ function SaleTab() {
 
         {/* Discount panel */}
         {posView === 'discount' && (
-          <div style={{ padding: '14px 18px', borderBottom: `1px solid ${C.border}`, background: '#141312', flexShrink: 0 }}>
-            <p style={{ fontSize: 12, fontWeight: 600, color: C.white, marginBottom: 12 }}>Apply Discount</p>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+          <div className="px-[18px] py-[14px] border-b border-carbon bg-[#141312] shrink-0">
+            <p className="text-[12px] font-semibold text-white mb-3">Apply Discount</p>
+            <div className="flex gap-[6px] mb-[10px]">
               {(['pct', 'fixed', 'coupon'] as const).map(t => (
                 <button
                   key={t}
                   onClick={() => setDiscountType(t)}
+                  className="flex-1 py-[6px] text-center rounded-lg text-[11px] font-medium cursor-pointer"
                   style={{
-                    flex: 1, padding: '6px 0', textAlign: 'center', borderRadius: 8,
-                    fontSize: 11, fontWeight: 500, cursor: 'pointer',
-                    fontFamily: "'Poppins', sans-serif",
                     background: discountType === t ? '#B95A3A' : C.border,
                     border: `1px solid ${discountType === t ? C.orange : 'transparent'}`,
                     color: discountType === t ? C.white : C.faint,
@@ -502,66 +398,65 @@ function SaleTab() {
                 value={discountVal}
                 onChange={e => setDiscountVal(e.target.value)}
                 placeholder={discountType === 'pct' ? 'e.g. 10 (for 10%)' : 'e.g. 5.00'}
-                style={{ width: '100%', background: C.border, border: 'none', borderRadius: 8, padding: '7px 12px', fontSize: 12, color: C.white, outline: 'none', marginBottom: 8, fontFamily: "'Poppins', sans-serif", boxSizing: 'border-box' }}
+                className="w-full bg-carbon border-none rounded-lg px-3 py-[7px] text-[12px] text-white outline-none mb-2 box-border"
               />
             ) : (
               <input
                 value={couponCode}
                 onChange={e => setCouponCode(e.target.value)}
                 placeholder="Enter coupon code (try: SAVE10)"
-                style={{ width: '100%', background: C.border, border: 'none', borderRadius: 8, padding: '7px 12px', fontSize: 12, color: C.white, outline: 'none', marginBottom: 8, fontFamily: "'Poppins', sans-serif", boxSizing: 'border-box' }}
+                className="w-full bg-carbon border-none rounded-lg px-3 py-[7px] text-[12px] text-white outline-none mb-2 box-border"
               />
             )}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={applyDiscount} style={{ flex: 1, background: C.orange, border: 'none', borderRadius: 8, padding: '8px 0', fontSize: 12, fontWeight: 600, color: C.white, cursor: 'pointer', fontFamily: "'Poppins', sans-serif" }}>Apply</button>
+            <div className="flex gap-2">
+              <button onClick={applyDiscount} className="flex-1 bg-brand-orange border-none rounded-lg py-2 text-[12px] font-semibold text-white cursor-pointer">Apply</button>
               {appliedDiscount && (
-                <button onClick={() => { setAppliedDiscount(null); setPosView('charge'); }} style={{ padding: '8px 12px', background: C.border, border: 'none', borderRadius: 8, fontSize: 12, color: '#C13030', cursor: 'pointer', fontFamily: "'Poppins', sans-serif" }}>Remove</button>
+                <button onClick={() => { setAppliedDiscount(null); setPosView('charge'); }} className="px-3 py-2 bg-carbon border-none rounded-lg text-[12px] text-[#C13030] cursor-pointer">Remove</button>
               )}
             </div>
           </div>
         )}
 
         {/* Cart items */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 18px' }}>
+        <div className="flex-1 overflow-y-auto px-[18px] py-2">
           {cart.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', paddingTop: 40 }}>
-              <ShoppingCart size={48} style={{ color: C.border, marginBottom: 12 }} />
-              <p style={{ fontSize: 13, color: '#3A3836', textAlign: 'center', lineHeight: 1.5 }}>
+            <div className="flex flex-col items-center justify-center h-full pt-10">
+              <ShoppingCart size={48} className="mb-3" style={{ color: C.border }} />
+              <p className="text-[13px] text-[#3A3836] text-center leading-[1.5]">
                 Tap a product to add it<br />to the cart
               </p>
             </div>
           ) : (
             cart.map(item => (
-              <div key={item.name} style={{ padding: '10px 0', borderBottom: `1px solid ${C.border}` }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <item.icon size={18} style={{ color: C.orange, marginTop: 2, flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 12, fontWeight: 500, color: C.white }}>{item.name}</p>
-                    <p style={{ fontSize: 10, color: C.muted }}>{item.sku}</p>
+              <div key={item.name} className="py-[10px] border-b border-carbon">
+                <div className="flex items-start gap-[10px]">
+                  <item.icon size={18} className="mt-[2px] shrink-0 text-brand-orange" />
+                  <div className="flex-1">
+                    <p className="text-[12px] font-medium text-white">{item.name}</p>
+                    <p className="text-[10px]" style={{ color: C.muted }}>{item.sku}</p>
                   </div>
-                  <button onClick={() => removeItem(item.name)} style={{ fontSize: 16, color: '#3A3836', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1, marginTop: -2 }}>×</button>
+                  <button onClick={() => removeItem(item.name)} className="text-[16px] bg-none border-none cursor-pointer leading-none -mt-[2px]" style={{ color: '#3A3836' }}>×</button>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, paddingLeft: 28 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <button onClick={() => updateQty(item.name, -1)} style={{ width: 22, height: 22, borderRadius: 6, background: C.border, border: 'none', color: C.white, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>−</button>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: C.white, width: 20, textAlign: 'center' }}>{item.qty}</span>
-                    <button onClick={() => updateQty(item.name, 1)} style={{ width: 22, height: 22, borderRadius: 6, background: C.border, border: 'none', color: C.white, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>+</button>
+                <div className="flex items-center justify-between mt-2 pl-7">
+                  <div className="flex items-center gap-[6px]">
+                    <button onClick={() => updateQty(item.name, -1)} className="w-[22px] h-[22px] rounded-[6px] bg-carbon border-none text-white cursor-pointer flex items-center justify-center text-[14px]">−</button>
+                    <span className="text-[13px] font-semibold text-white w-5 text-center">{item.qty}</span>
+                    <button onClick={() => updateQty(item.name, 1)} className="w-[22px] h-[22px] rounded-[6px] bg-carbon border-none text-white cursor-pointer flex items-center justify-center text-[14px]">+</button>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: 10, color: C.muted }}>$</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px]" style={{ color: C.muted }}>$</span>
                     <input
                       value={item.customPrice ?? item.price}
                       onChange={e => setCustomPrice(item.name, e.target.value)}
+                      className="w-[52px] text-right rounded-[6px] px-[6px] py-[2px] text-[12px] outline-none"
                       style={{
-                        width: 52, textAlign: 'right', background: C.border,
+                        background: C.border,
                         border: `1px solid ${item.customPrice ? C.orange : C.border}`,
-                        borderRadius: 6, padding: '2px 6px', fontSize: 12, outline: 'none',
                         color: item.customPrice ? C.orange : C.white,
-                        fontFamily: "'Poppins', sans-serif",
                       }}
                     />
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: C.orange }}>
+                  <span className="text-[13px] font-bold text-brand-orange">
                     ${((item.customPrice ?? item.price) * item.qty).toFixed(2)}
                   </span>
                 </div>
@@ -573,88 +468,83 @@ function SaleTab() {
               value={note}
               onChange={e => setNote(e.target.value)}
               placeholder="Add order note..."
-              style={{
-                width: '100%', marginTop: 10, background: '#141312',
-                border: `1px solid ${C.border}`, borderRadius: 8,
-                padding: '6px 10px', fontSize: 11, color: C.faint,
-                outline: 'none', fontFamily: "'Poppins', sans-serif", boxSizing: 'border-box',
-              }}
+              className="w-full mt-[10px] bg-[#141312] border border-carbon rounded-lg px-[10px] py-[6px] text-[11px] outline-none box-border"
+              style={{ color: C.faint }}
             />
           )}
         </div>
 
         {/* Cart footer */}
-        <div style={{ padding: '14px 18px', borderTop: `1px solid ${C.border}`, background: '#141312', flexShrink: 0 }}>
+        <div className="px-[18px] py-[14px] border-t border-carbon bg-[#141312] shrink-0">
           {cart.length > 0 && (
             <>
               {/* Totals */}
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, color: C.faint }}>Subtotal</span>
-                  <span style={{ fontSize: 12, color: C.white }}>${subtotal.toFixed(2)}</span>
+              <div className="mb-3">
+                <div className="flex justify-between mb-1">
+                  <span className="text-[12px]" style={{ color: C.faint }}>Subtotal</span>
+                  <span className="text-[12px] text-white">${subtotal.toFixed(2)}</span>
                 </div>
                 {appliedDiscount && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 12, color: '#2D8A4E', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-[12px] text-[#2D8A4E] flex items-center gap-1">
                       <Tag size={10} />{appliedDiscount.label}
                     </span>
-                    <span style={{ fontSize: 12, color: '#2D8A4E' }}>−${discountAmt.toFixed(2)}</span>
+                    <span className="text-[12px] text-[#2D8A4E]">−${discountAmt.toFixed(2)}</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontSize: 12, color: C.faint }}>Tax (8%)</span>
-                  <span style={{ fontSize: 12, color: C.white }}>${tax.toFixed(2)}</span>
+                <div className="flex justify-between mb-2">
+                  <span className="text-[12px]" style={{ color: C.faint }}>Tax (8%)</span>
+                  <span className="text-[12px] text-white">${tax.toFixed(2)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: C.white }}>Total</span>
-                  <span style={{ fontSize: 20, fontWeight: 700, color: C.orange }}>${total.toFixed(2)}</span>
+                <div className="flex justify-between pt-2 border-t border-carbon">
+                  <span className="text-[16px] font-bold text-white">Total</span>
+                  <span className="text-[20px] font-bold text-brand-orange">${total.toFixed(2)}</span>
                 </div>
                 {customer && (
-                  <div style={{ marginTop: 6, background: C.surface, borderRadius: 8, padding: '6px 10px', display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 11, color: C.faint, display: 'flex', alignItems: 'center', gap: 4 }}><User size={10} />{customer.name}</span>
-                    <span style={{ fontSize: 11, color: C.orange }}>+{Math.floor(total)} pts</span>
+                  <div className="mt-[6px] bg-pos-surface rounded-lg px-[10px] py-[6px] flex justify-between">
+                    <span className="text-[11px] flex items-center gap-1" style={{ color: C.faint }}><User size={10} />{customer.name}</span>
+                    <span className="text-[11px] text-brand-orange">+{Math.floor(total)} pts</span>
                   </div>
                 )}
               </div>
 
               {/* Payment methods */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 10 }}>
+              <div className="grid grid-cols-4 gap-[6px] mb-[10px]">
                 {([['card', CreditCard, 'Card'],['cash', Banknote, 'Cash'],['tap', Smartphone, 'Tap'],['split', Zap, 'Split']] as [PaymentMethod, LucideIcon, string][]).map(([id, IconComp, label]) => (
                   <button
                     key={id}
                     onClick={() => setPaymentMethod(id)}
+                    className="px-1 py-2 rounded-lg cursor-pointer flex flex-col items-center gap-[3px]"
                     style={{
-                      padding: '8px 4px', borderRadius: 8, border: `1px solid ${paymentMethod === id ? C.orange : 'transparent'}`,
+                      border: `1px solid ${paymentMethod === id ? C.orange : 'transparent'}`,
                       background: paymentMethod === id ? '#B95A3A' : C.border,
-                      cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                      fontFamily: "'Poppins', sans-serif",
                     }}
                   >
                     <IconComp size={14} style={{ color: paymentMethod === id ? C.white : C.faint }} />
-                    <span style={{ fontSize: 10, fontWeight: 500, color: paymentMethod === id ? C.white : C.faint }}>{label}</span>
+                    <span className="text-[10px] font-medium" style={{ color: paymentMethod === id ? C.white : C.faint }}>{label}</span>
                   </button>
                 ))}
               </div>
 
               {/* Cash tendered */}
               {paymentMethod === 'cash' && (
-                <div style={{ background: C.surface, borderRadius: 8, padding: 12, marginBottom: 10 }}>
-                  <p style={{ fontSize: 11, color: C.faint, marginBottom: 6 }}>Cash tendered</p>
-                  <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                <div className="bg-pos-surface rounded-lg p-3 mb-[10px]">
+                  <p className="text-[11px] mb-[6px]" style={{ color: C.faint }}>Cash tendered</p>
+                  <div className="flex gap-[6px] mb-[6px]">
                     <input
                       value={cashGiven}
                       onChange={e => setCashGiven(e.target.value)}
                       placeholder="0.00"
-                      style={{ flex: 1, background: C.border, border: 'none', borderRadius: 8, padding: '6px 10px', fontSize: 13, color: C.white, outline: 'none', fontFamily: "'Poppins', sans-serif" }}
+                      className="flex-1 bg-carbon border-none rounded-lg px-[10px] py-[6px] text-[13px] text-white outline-none"
                     />
                     {[20, 50, 100].map(amt => (
-                      <button key={amt} onClick={() => setCashGiven(amt.toString())} style={{ padding: '6px 10px', background: C.border, border: 'none', borderRadius: 8, fontSize: 11, color: C.white, cursor: 'pointer', fontFamily: "'Poppins', sans-serif" }}>${amt}</button>
+                      <button key={amt} onClick={() => setCashGiven(amt.toString())} className="px-[10px] py-[6px] bg-carbon border-none rounded-lg text-[11px] text-white cursor-pointer">${amt}</button>
                     ))}
                   </div>
                   {cashGiven && parseFloat(cashGiven) >= total && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 12, color: C.faint }}>Change due</span>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#2D8A4E' }}>${cashChange.toFixed(2)}</span>
+                    <div className="flex justify-between">
+                      <span className="text-[12px]" style={{ color: C.faint }}>Change due</span>
+                      <span className="text-[14px] font-bold text-[#2D8A4E]">${cashChange.toFixed(2)}</span>
                     </div>
                   )}
                 </div>
@@ -665,14 +555,11 @@ function SaleTab() {
           {/* Charge button */}
           <button
             onClick={() => cart.length > 0 && setPosView('receipt')}
+            className="w-full rounded-[10px] py-[13px] text-center text-[15px] font-bold text-white border-none flex items-center justify-center gap-[6px]"
             style={{
-              width: '100%', borderRadius: 10, padding: '13px 0',
-              textAlign: 'center', fontSize: 15, fontWeight: 700,
-              color: C.white, border: 'none', cursor: cart.length === 0 ? 'default' : 'pointer',
+              cursor: cart.length === 0 ? 'default' : 'pointer',
               background: cart.length === 0 ? C.border : C.orange,
               opacity: cart.length === 0 ? 0.4 : 1,
-              fontFamily: "'Poppins', sans-serif",
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
           >
             {cart.length === 0 ? 'Charge $0.00' : <>Charge ${total.toFixed(2)}</>}
@@ -680,20 +567,15 @@ function SaleTab() {
 
           {/* Clear / Hold / Print */}
           {cart.length > 0 && (
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <div className="flex gap-2 mt-2">
               {[['× Clear', null, resetSale], ['Hold', Pause, () => {}], ['Print', Printer, () => {}]].map(([label, Icon, handler]: any) => (
                 <button
                   key={label as string}
                   onClick={handler}
-                  style={{
-                    flex: 1, padding: '7px 0', background: C.surface,
-                    border: `1px solid ${C.border}`, borderRadius: 8,
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                    fontFamily: "'Poppins', sans-serif",
-                  }}
+                  className="flex-1 py-[7px] bg-pos-surface border border-carbon rounded-lg cursor-pointer flex items-center justify-center gap-1"
                 >
                   {Icon && <Icon size={11} style={{ color: C.muted }} />}
-                  <span style={{ fontSize: 11, color: C.muted }}>{label as string}</span>
+                  <span className="text-[11px]" style={{ color: C.muted }}>{label as string}</span>
                 </button>
               ))}
             </div>
@@ -702,39 +584,39 @@ function SaleTab() {
 
         {/* Receipt overlay */}
         {posView === 'receipt' && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', zIndex: 20 }}>
-            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, width: 320 }}>
-              <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                <CheckCircle size={48} style={{ color: '#2D8A4E', margin: '0 auto 8px' }} />
-                <p style={{ fontSize: 18, fontWeight: 700, color: C.white }}>Payment Complete</p>
-                <p style={{ fontSize: 28, fontWeight: 700, color: C.orange, margin: '8px 0 4px' }}>${total.toFixed(2)}</p>
-                <p style={{ fontSize: 12, color: C.faint }}>{new Date().toLocaleTimeString()} · {paymentMethod}</p>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/85 z-20">
+            <div className="bg-pos-surface border border-carbon rounded-2xl p-6 w-[320px]">
+              <div className="text-center mb-5">
+                <CheckCircle size={48} className="text-[#2D8A4E] mx-auto mb-2" />
+                <p className="text-[18px] font-bold text-white">Payment Complete</p>
+                <p className="text-[28px] font-bold text-brand-orange my-2">${total.toFixed(2)}</p>
+                <p className="text-[12px]" style={{ color: C.faint }}>{new Date().toLocaleTimeString()} · {paymentMethod}</p>
               </div>
               {paymentMethod === 'cash' && cashChange > 0 && (
-                <div style={{ background: '#2D8A4E20', border: '1px solid #2D8A4E', borderRadius: 10, padding: 12, marginBottom: 16, textAlign: 'center' }}>
-                  <p style={{ fontSize: 12, color: C.faint, marginBottom: 4 }}>Change due</p>
-                  <p style={{ fontSize: 22, fontWeight: 700, color: '#2D8A4E' }}>${cashChange.toFixed(2)}</p>
+                <div className="bg-[#2D8A4E20] border border-[#2D8A4E] rounded-[10px] p-3 mb-4 text-center">
+                  <p className="text-[12px] mb-1" style={{ color: C.faint }}>Change due</p>
+                  <p className="text-[22px] font-bold text-[#2D8A4E]">${cashChange.toFixed(2)}</p>
                 </div>
               )}
-              <div style={{ marginBottom: 16 }}>
+              <div className="mb-4">
                 {cart.map(item => (
-                  <div key={item.name} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: `1px solid ${C.border}` }}>
-                    <span style={{ fontSize: 11, color: '#8C8A82' }}>{item.qty}× {item.name}</span>
-                    <span style={{ fontSize: 11, color: C.white }}>${((item.customPrice ?? item.price) * item.qty).toFixed(2)}</span>
+                  <div key={item.name} className="flex justify-between py-1 border-b border-carbon">
+                    <span className="text-[11px] text-[#8C8A82]">{item.qty}× {item.name}</span>
+                    <span className="text-[11px] text-white">${((item.customPrice ?? item.price) * item.qty).toFixed(2)}</span>
                   </div>
                 ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 6 }}>
-                  <span style={{ fontSize: 12, color: C.faint }}>Total paid</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: C.white }}>${total.toFixed(2)}</span>
+                <div className="flex justify-between pt-[6px]">
+                  <span className="text-[12px]" style={{ color: C.faint }}>Total paid</span>
+                  <span className="text-[12px] font-semibold text-white">${total.toFixed(2)}</span>
                 </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="flex flex-col gap-2">
                 {[[Mail, 'Email Receipt'],[Printer, 'Print Receipt']].map(([Icon, label]: any) => (
-                  <button key={label} style={{ background: C.border, border: 'none', borderRadius: 8, padding: '10px 0', fontSize: 12, color: C.white, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: "'Poppins', sans-serif" }}>
+                  <button key={label} className="bg-carbon border-none rounded-lg py-[10px] text-[12px] text-white cursor-pointer flex items-center justify-center gap-[6px]">
                     <Icon size={13} />{label}
                   </button>
                 ))}
-                <button onClick={resetSale} style={{ background: C.orange, border: 'none', borderRadius: 8, padding: '12px 0', fontSize: 13, fontWeight: 700, color: C.white, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: "'Poppins', sans-serif" }}>
+                <button onClick={resetSale} className="bg-brand-orange border-none rounded-lg py-3 text-[13px] font-bold text-white cursor-pointer flex items-center justify-center gap-[6px]">
                   New Sale <ArrowRight size={14} />
                 </button>
               </div>
@@ -749,46 +631,46 @@ function SaleTab() {
 // ── Orders Tab ────────────────────────────────────────────────────────────────
 function OrdersTab() {
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-      <div style={{ display: 'flex', gap: 14, marginBottom: 20 }}>
+    <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex gap-[14px] mb-5">
         {[["Today's Sales","$842.50","14 transactions"],["Avg Ticket","$60.18","↑ vs yesterday"],["Top Item","Ceramic Mug","8 sold today"],["Cash in Drawer","$340.00","Expected"]].map(([label,value,sub]) => (
-          <div key={label} style={{ flex: 1, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
-            <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.muted, marginBottom: 4 }}>{label}</p>
-            <p style={{ fontSize: 20, fontWeight: 700, color: C.white }}>{value}</p>
-            <p style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{sub}</p>
+          <div key={label} className="flex-1 bg-pos-surface border border-carbon rounded-xl p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] mb-1" style={{ color: C.muted }}>{label}</p>
+            <p className="text-[20px] font-bold text-white">{value}</p>
+            <p className="text-[11px] mt-[2px]" style={{ color: C.muted }}>{sub}</p>
           </div>
         ))}
       </div>
-      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: `1px solid ${C.border}` }}>
-          <p style={{ fontSize: 14, fontWeight: 600, color: C.white, flex: 1 }}>Recent Transactions</p>
-          <input placeholder="Search..." style={{ background: C.border, border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, color: C.white, outline: 'none', fontFamily: "'Poppins', sans-serif" }} />
-          <button style={{ background: C.border, border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 11, color: C.faint, cursor: 'pointer', fontFamily: "'Poppins', sans-serif" }}>Export</button>
+      <div className="bg-pos-surface border border-carbon rounded-xl overflow-hidden">
+        <div className="flex items-center gap-[10px] px-4 py-[14px] border-b border-carbon">
+          <p className="text-[14px] font-semibold text-white flex-1">Recent Transactions</p>
+          <input placeholder="Search..." className="bg-carbon border-none rounded-lg px-3 py-[6px] text-[12px] text-white outline-none" />
+          <button className="bg-carbon border-none rounded-lg px-3 py-[6px] text-[11px] cursor-pointer" style={{ color: C.faint }}>Export</button>
         </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table className="w-full border-collapse">
           <thead>
             <tr>{['Order','Customer','Items','Total','Method','Time','Actions'].map(h => (
-              <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: C.muted, background: '#141312', borderBottom: `1px solid ${C.border}` }}>{h}</th>
+              <th key={h} className="text-left px-4 py-[10px] text-[10px] font-semibold uppercase tracking-[0.07em] bg-[#141312] border-b border-carbon" style={{ color: C.muted }}>{h}</th>
             ))}</tr>
           </thead>
           <tbody>
             {RECENT_SALES.map(s => (
-              <tr key={s.id} style={{ borderBottom: `1px solid ${C.surface}` }}>
-                <td style={{ padding: '12px 16px' }}><span style={{ fontSize: 12, fontWeight: 700, color: C.orange }}>{s.id}</span></td>
-                <td style={{ padding: '12px 16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <tr key={s.id} className="border-b border-pos-surface">
+                <td className="px-4 py-3"><span className="text-[12px] font-bold text-brand-orange">{s.id}</span></td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
                     <Avatar name={s.customer === 'Walk-in' ? 'WI' : s.customer} size={24} variant="pos" />
-                    <span style={{ fontSize: 12, color: C.white }}>{s.customer}</span>
+                    <span className="text-[12px] text-white">{s.customer}</span>
                   </div>
                 </td>
-                <td style={{ padding: '12px 16px' }}><span style={{ fontSize: 12, color: C.faint }}>{s.items}</span></td>
-                <td style={{ padding: '12px 16px' }}><span style={{ fontSize: 13, fontWeight: 600, color: C.white }}>${s.total.toFixed(2)}</span></td>
-                <td style={{ padding: '12px 16px' }}><Badge color={s.method === 'Card' ? 'blue' : s.method === 'Cash' ? 'green' : 'orange'}>{s.method}</Badge></td>
-                <td style={{ padding: '12px 16px' }}><span style={{ fontSize: 11, color: C.muted }}>{s.time}</span></td>
-                <td style={{ padding: '12px 16px' }}>
-                  <div style={{ display: 'flex', gap: 6 }}>
+                <td className="px-4 py-3"><span className="text-[12px]" style={{ color: C.faint }}>{s.items}</span></td>
+                <td className="px-4 py-3"><span className="text-[13px] font-semibold text-white">${s.total.toFixed(2)}</span></td>
+                <td className="px-4 py-3"><Badge color={s.method === 'Card' ? 'blue' : s.method === 'Cash' ? 'green' : 'orange'}>{s.method}</Badge></td>
+                <td className="px-4 py-3"><span className="text-[11px]" style={{ color: C.muted }}>{s.time}</span></td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-[6px]">
                     {['Receipt','Refund'].map((a, i) => (
-                      <button key={a} style={{ padding: '4px 10px', background: C.border, border: 'none', borderRadius: 6, fontSize: 11, color: i === 1 ? '#C13030' : C.faint, cursor: 'pointer', fontFamily: "'Poppins', sans-serif" }}>{a}</button>
+                      <button key={a} className="px-[10px] py-1 bg-carbon border-none rounded-[6px] text-[11px] cursor-pointer" style={{ color: i === 1 ? '#C13030' : C.faint }}>{a}</button>
                     ))}
                   </div>
                 </td>
@@ -804,37 +686,37 @@ function OrdersTab() {
 // ── Products Tab ──────────────────────────────────────────────────────────────
 function ProductsTab() {
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-        <p style={{ fontSize: 16, fontWeight: 700, color: C.white, flex: 1 }}>Product Catalog</p>
-        <input placeholder="Search SKU or name..." style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 14px', fontSize: 13, color: C.white, outline: 'none', fontFamily: "'Poppins', sans-serif" }} />
-        <button style={{ padding: '8px 16px', background: C.orange, border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: C.white, cursor: 'pointer', fontFamily: "'Poppins', sans-serif" }}>+ Add Product</button>
+    <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex items-center gap-[10px] mb-5">
+        <p className="text-[16px] font-bold text-white flex-1">Product Catalog</p>
+        <input placeholder="Search SKU or name..." className="bg-pos-surface border border-carbon rounded-lg px-[14px] py-2 text-[13px] text-white outline-none" />
+        <button className="px-4 py-2 bg-brand-orange border-none rounded-lg text-[12px] font-semibold text-white cursor-pointer">+ Add Product</button>
       </div>
-      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div className="bg-pos-surface border border-carbon rounded-xl overflow-hidden">
+        <table className="w-full border-collapse">
           <thead>
             <tr>{['SKU','Product','Category','Price','Stock','Status','Actions'].map(h => (
-              <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: C.muted, background: '#141312', borderBottom: `1px solid ${C.border}` }}>{h}</th>
+              <th key={h} className="text-left px-4 py-[10px] text-[10px] font-semibold uppercase tracking-[0.07em] bg-[#141312] border-b border-carbon" style={{ color: C.muted }}>{h}</th>
             ))}</tr>
           </thead>
           <tbody>
             {POS_PRODUCTS.map(p => (
-              <tr key={p.sku} style={{ borderBottom: `1px solid ${C.border}` }}>
-                <td style={{ padding: '10px 16px' }}><span style={{ fontSize: 11, fontFamily: 'monospace', color: C.muted }}>{p.sku}</span></td>
-                <td style={{ padding: '10px 16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <p.icon size={18} style={{ color: C.orange, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, fontWeight: 500, color: C.white }}>{p.name}</span>
+              <tr key={p.sku} className="border-b border-carbon">
+                <td className="px-4 py-[10px]"><span className="text-[11px] font-mono" style={{ color: C.muted }}>{p.sku}</span></td>
+                <td className="px-4 py-[10px]">
+                  <div className="flex items-center gap-2">
+                    <p.icon size={18} className="text-brand-orange shrink-0" />
+                    <span className="text-[12px] font-medium text-white">{p.name}</span>
                   </div>
                 </td>
-                <td style={{ padding: '10px 16px' }}><Badge color="gray">{p.category}</Badge></td>
-                <td style={{ padding: '10px 16px' }}><span style={{ fontSize: 13, fontWeight: 600, color: C.orange }}>${p.price.toFixed(2)}</span></td>
-                <td style={{ padding: '10px 16px' }}><span style={{ fontSize: 12, color: p.stock === 0 ? '#C13030' : p.stock <= 8 ? '#C08B1E' : C.faint }}>{p.stock === 0 ? 'Out of stock' : `${p.stock} units`}</span></td>
-                <td style={{ padding: '10px 16px' }}><Badge color={p.stock === 0 ? 'red' : p.stock <= 8 ? 'yellow' : 'green'}>{p.stock === 0 ? 'Out of Stock' : p.stock <= 8 ? 'Low Stock' : 'In Stock'}</Badge></td>
-                <td style={{ padding: '10px 16px' }}>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button style={{ padding: '4px 10px', background: C.border, border: 'none', borderRadius: 6, fontSize: 11, color: C.faint, cursor: 'pointer', fontFamily: "'Poppins', sans-serif" }}>Edit</button>
-                    {p.stock <= 8 && <button style={{ padding: '4px 10px', background: C.border, border: 'none', borderRadius: 6, fontSize: 11, color: C.orange, cursor: 'pointer', fontFamily: "'Poppins', sans-serif" }}>Restock</button>}
+                <td className="px-4 py-[10px]"><Badge color="gray">{p.category}</Badge></td>
+                <td className="px-4 py-[10px]"><span className="text-[13px] font-semibold text-brand-orange">${p.price.toFixed(2)}</span></td>
+                <td className="px-4 py-[10px]"><span className="text-[12px]" style={{ color: p.stock === 0 ? '#C13030' : p.stock <= 8 ? '#C08B1E' : C.faint }}>{p.stock === 0 ? 'Out of stock' : `${p.stock} units`}</span></td>
+                <td className="px-4 py-[10px]"><Badge color={p.stock === 0 ? 'red' : p.stock <= 8 ? 'yellow' : 'green'}>{p.stock === 0 ? 'Out of Stock' : p.stock <= 8 ? 'Low Stock' : 'In Stock'}</Badge></td>
+                <td className="px-4 py-[10px]">
+                  <div className="flex gap-[6px]">
+                    <button className="px-[10px] py-1 bg-carbon border-none rounded-[6px] text-[11px] cursor-pointer" style={{ color: C.faint }}>Edit</button>
+                    {p.stock <= 8 && <button className="px-[10px] py-1 bg-carbon border-none rounded-[6px] text-[11px] text-brand-orange cursor-pointer">Restock</button>}
                   </div>
                 </td>
               </tr>
@@ -849,38 +731,38 @@ function ProductsTab() {
 // ── Summary Tab ───────────────────────────────────────────────────────────────
 function SummaryTab() {
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-        <p style={{ fontSize: 18, fontWeight: 700, color: C.white, flex: 1 }}>Shift Summary</p>
-        <p style={{ fontSize: 12, color: C.muted }}>Opened 9:00 AM · May 22, 2026</p>
-        <button style={{ padding: '8px 16px', background: '#C1303020', border: '1px solid #C13030', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#C13030', cursor: 'pointer', fontFamily: "'Poppins', sans-serif" }}>Close Shift</button>
+    <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex items-center gap-[10px] mb-6">
+        <p className="text-[18px] font-bold text-white flex-1">Shift Summary</p>
+        <p className="text-[12px]" style={{ color: C.muted }}>Opened 9:00 AM · May 22, 2026</p>
+        <button className="px-4 py-2 bg-[#C1303020] border border-[#C13030] rounded-lg text-[12px] font-semibold text-[#C13030] cursor-pointer">Close Shift</button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
+      <div className="grid grid-cols-3 gap-[14px] mb-6">
         {[["Total Sales","$842.50","14 transactions"],["Cash Sales","$340.00","5 transactions"],["Card Sales","$502.50","9 transactions"],["Avg Transaction","$60.18","+$4.20 vs yesterday"],["Items Sold","38 units","Across 16 products"],["Refunds","$0.00","0 refunds today"]].map(([label,value,sub]) => (
-          <div key={label} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
-            <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.muted, marginBottom: 4 }}>{label}</p>
-            <p style={{ fontSize: 22, fontWeight: 700, color: C.white }}>{value}</p>
-            <p style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{sub}</p>
+          <div key={label} className="bg-pos-surface border border-carbon rounded-xl p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] mb-1" style={{ color: C.muted }}>{label}</p>
+            <p className="text-[22px] font-bold text-white">{value}</p>
+            <p className="text-[11px] mt-[2px]" style={{ color: C.muted }}>{sub}</p>
           </div>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: C.white, marginBottom: 14 }}>Top Sellers Today</p>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-pos-surface border border-carbon rounded-xl p-4">
+          <p className="text-[13px] font-semibold text-white mb-[14px]">Top Sellers Today</p>
           {[['Ceramic Mug',8,'$224.00'],['Scented Candle',6,'$144.00'],['Bamboo Pen Set',5,'$110.00'],['Linen Tote',4,'$168.00']].map(([name,qty,revenue]) => (
-            <div key={name as string} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <span style={{ fontSize: 12, color: C.white, flex: 1 }}>{name as string}</span>
-              <span style={{ fontSize: 11, color: C.muted }}>{qty} sold</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: C.orange }}>{revenue}</span>
+            <div key={name as string} className="flex items-center gap-[10px] mb-[10px]">
+              <span className="text-[12px] text-white flex-1">{name as string}</span>
+              <span className="text-[11px]" style={{ color: C.muted }}>{qty} sold</span>
+              <span className="text-[12px] font-semibold text-brand-orange">{revenue}</span>
             </div>
           ))}
         </div>
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: C.white, marginBottom: 14 }}>Cash Drawer Reconciliation</p>
+        <div className="bg-pos-surface border border-carbon rounded-xl p-4">
+          <p className="text-[13px] font-semibold text-white mb-[14px]">Cash Drawer Reconciliation</p>
           {[['Opening Float','$200.00'],['Cash Sales','$340.00'],['Payouts','−$0.00'],['Expected','$540.00'],['Actual (counted)','$538.50'],['Variance','−$1.50']].map(([label,val],i) => (
-            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 8, marginBottom: 8, borderBottom: `1px solid ${C.border}` }}>
-              <span style={{ fontSize: 12, color: C.faint }}>{label}</span>
-              <span style={{ fontSize: 12, fontWeight: 500, color: i === 5 ? '#C08B1E' : C.white }}>{val}</span>
+            <div key={label} className="flex justify-between pb-2 mb-2 border-b border-carbon">
+              <span className="text-[12px]" style={{ color: C.faint }}>{label}</span>
+              <span className="text-[12px] font-medium" style={{ color: i === 5 ? '#C08B1E' : C.white }}>{val}</span>
             </div>
           ))}
         </div>
@@ -896,13 +778,9 @@ export function POSRegister() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('sale');
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column',
-      height: '100vh', background: C.bg,
-      fontFamily: "'Poppins', sans-serif",
-    }}>
+    <div className="flex flex-col h-screen bg-pos-bg">
       <POSTopBar activeTab={activeTab} setActiveTab={setActiveTab} navigate={navigate} />
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div className="flex flex-1 overflow-hidden">
         {activeTab === 'sale'     && <SaleTab />}
         {activeTab === 'orders'   && <OrdersTab />}
         {activeTab === 'products' && <ProductsTab />}

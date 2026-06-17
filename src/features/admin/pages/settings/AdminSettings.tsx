@@ -27,22 +27,12 @@ const NAV: { group: string; isDanger?: boolean; items: { id: Section; label: str
   },
 ];
 
-// ── Styles ────────────────────────────────────────────────────────────────────
-const poppins = "'Poppins', sans-serif";
-const card: React.CSSProperties  = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '24px 26px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
-const input: React.CSSProperties = { width: '100%', padding: '9px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, outline: 'none', fontFamily: poppins, color: '#2C2A28', background: '#fff', boxSizing: 'border-box' as const };
-const label: React.CSSProperties = { fontSize: 12, fontWeight: 500, color: '#4A4945', marginBottom: 5, display: 'block', fontFamily: poppins };
-
 // ── Page Header ───────────────────────────────────────────────────────────────
 function AdminPageHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div style={{
-      background: '#fff', borderBottom: '1px solid #E8E6DC',
-      padding: '14px 28px', position: 'sticky', top: 0, zIndex: 10,
-      fontFamily: poppins,
-    }}>
-      <h1 style={{ fontSize: 18, fontWeight: 700, color: '#141413', lineHeight: 1.3 }}>{title}</h1>
-      {subtitle && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 2 }}>{subtitle}</p>}
+    <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10">
+      <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">{title}</h1>
+      {subtitle && <p className="text-[12px] text-slate mt-[2px]">{subtitle}</p>}
     </div>
   );
 }
@@ -51,18 +41,18 @@ function AdminPageHeader({ title, subtitle }: { title: string; subtitle?: string
 function ProfileSkeleton() {
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 22 }}>
-        <div className="animate-pulse" style={{ width: 76, height: 76, borderRadius: '50%', background: '#E8E6DC', flexShrink: 0 }} />
+      <div className="flex items-center gap-4 mb-[22px]">
+        <div className="animate-pulse w-[76px] h-[76px] rounded-full bg-bone flex-shrink-0" />
         <div>
-          <div className="animate-pulse" style={{ width: 110, height: 13, borderRadius: 4, background: '#E8E6DC', marginBottom: 8 }} />
-          <div className="animate-pulse" style={{ width: 80, height: 11, borderRadius: 4, background: '#E8E6DC' }} />
+          <div className="animate-pulse w-[110px] h-[13px] rounded bg-bone mb-2" />
+          <div className="animate-pulse w-20 h-[11px] rounded bg-bone" />
         </div>
       </div>
-      <div style={{ height: 1, background: '#F0EEE6', marginBottom: 20 }} />
+      <div className="h-px bg-[#F0EEE6] mb-5" />
       {[1, 2, 3, 4].map(i => (
-        <div key={i} style={{ marginBottom: 16 }}>
-          <div className="animate-pulse" style={{ width: 80, height: 11, borderRadius: 4, background: '#E8E6DC', marginBottom: 6 }} />
-          <div className="animate-pulse" style={{ width: '100%', height: 38, borderRadius: 8, background: '#E8E6DC' }} />
+        <div key={i} className="mb-4">
+          <div className="animate-pulse w-20 h-[11px] rounded bg-bone mb-[6px]" />
+          <div className="animate-pulse w-full h-[38px] rounded-lg bg-bone" />
         </div>
       ))}
     </>
@@ -95,67 +85,64 @@ export function AdminSettings() {
     <>
       <AdminPageHeader title="Settings" subtitle="Manage your admin account and preferences." />
 
-      <div style={{ padding: '20px 28px 32px', fontFamily: poppins }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: 20 }}>
+      <div className="px-7 pt-5 pb-8">
+        <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 260px' }}>
 
           {/* ── LEFT: Content ── */}
           <div>
 
             {/* Profile */}
             {active === 'profile' && (
-              <div style={card}>
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#141413', marginBottom: 22 }}>Profile</p>
+              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                <p className="text-[16px] font-bold text-charcoal mb-[22px]">Profile</p>
 
                 {profileLoading ? <ProfileSkeleton /> : (
                   <>
                     {/* Avatar */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 22 }}>
-                      <div style={{ position: 'relative', flexShrink: 0 }}>
-                        <div style={{
-                          width: 76, height: 76, borderRadius: '50%',
-                          background: '#FDECEA', color: '#C0392B',
-                          fontSize: 26, fontWeight: 700,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          overflow: 'hidden',
-                        }}>
+                    <div className="flex items-center gap-4 mb-[22px]">
+                      <div className="relative flex-shrink-0">
+                        <div className="w-[76px] h-[76px] rounded-full bg-[#FDECEA] text-[#C0392B] text-[26px] font-bold flex items-center justify-center overflow-hidden">
                           {profile?.profileImage
-                            ? <img src={profile.profileImage} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ? <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
                             : (profile?.name?.slice(0, 2).toUpperCase() ?? 'AD')}
                         </div>
-                        <button style={{ position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: '50%', background: '#C13030', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                          <Camera size={12} style={{ color: '#fff' }} />
+                        <button className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#C13030] border-none flex items-center justify-center cursor-pointer">
+                          <Camera size={12} className="text-white" />
                         </button>
                       </div>
                       <div>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: '#141413', marginBottom: 3 }}>Profile Photo</p>
-                        <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 8 }}>JPG, PNG — max 2 MB</p>
-                        <button style={{ padding: '5px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+                        <p className="text-[13px] font-semibold text-charcoal mb-[3px]">Profile Photo</p>
+                        <p className="text-[12px] text-slate mb-2">JPG, PNG — max 2 MB</p>
+                        <button className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-[12px] text-[#4A4945] cursor-pointer">
                           Upload Photo
                         </button>
                       </div>
                     </div>
 
-                    <div style={{ height: 1, background: '#F0EEE6', marginBottom: 20 }} />
+                    <div className="h-px bg-[#F0EEE6] mb-5" />
 
                     {/* Name */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+                    <div className="grid grid-cols-2 gap-[14px] mb-4">
                       <div>
-                        <label style={label}>First Name</label>
-                        <input value={firstName} onChange={e => setFirstName(e.target.value)} style={input} />
+                        <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">First Name</label>
+                        <input value={firstName} onChange={e => setFirstName(e.target.value)}
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                       </div>
                       <div>
-                        <label style={label}>Last Name</label>
-                        <input value={lastName} onChange={e => setLastName(e.target.value)} style={input} />
+                        <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Last Name</label>
+                        <input value={lastName} onChange={e => setLastName(e.target.value)}
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                       </div>
                     </div>
 
                     {/* Email */}
-                    <div style={{ marginBottom: 16 }}>
-                      <label style={label}>Email</label>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <input readOnly value={profile?.email ?? ''} style={{ ...input, flex: 1, background: '#FAF9F5', color: '#8C8A82' }} />
+                    <div className="mb-4">
+                      <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Email</label>
+                      <div className="flex items-center gap-[10px]">
+                        <input readOnly value={profile?.email ?? ''}
+                          className="flex-1 px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-[#FAF9F5] box-border" />
                         {profile?.isVerified && (
-                          <span style={{ padding: '4px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#E3F4EA', color: '#1E7A3C', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                          <span className="px-[10px] py-1 rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C] flex items-center gap-1 flex-shrink-0">
                             <Check size={10} /> Verified
                           </span>
                         )}
@@ -163,30 +150,35 @@ export function AdminSettings() {
                     </div>
 
                     {/* Phone */}
-                    <div style={{ marginBottom: 16 }}>
-                      <label style={label}>Phone Number</label>
-                      <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. +92 300 0000000" style={input} />
+                    <div className="mb-4">
+                      <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Phone Number</label>
+                      <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. +92 300 0000000"
+                        className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                     </div>
 
                     {/* Address */}
-                    <div style={{ marginBottom: 16 }}>
-                      <label style={label}>Address</label>
-                      <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address" style={input} />
+                    <div className="mb-4">
+                      <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Address</label>
+                      <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address"
+                        className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                     </div>
 
                     {/* Role + Status */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 22 }}>
+                    <div className="grid grid-cols-2 gap-[14px] mb-[22px]">
                       <div>
-                        <label style={label}>Role</label>
-                        <input readOnly value={profile?.role ?? ''} style={{ ...input, background: '#FAF9F5', color: '#8C8A82', textTransform: 'capitalize' }} />
+                        <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Role</label>
+                        <input readOnly value={profile?.role ?? ''}
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-[#FAF9F5] box-border capitalize" />
                       </div>
                       <div>
-                        <label style={label}>Account Status</label>
-                        <input readOnly value={profile?.status ?? ''} style={{ ...input, background: '#FAF9F5', color: profile?.status === 'active' ? '#1E7A3C' : '#8C8A82', textTransform: 'capitalize' }} />
+                        <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Account Status</label>
+                        <input readOnly value={profile?.status ?? ''}
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none bg-[#FAF9F5] box-border capitalize"
+                          style={{ color: profile?.status === 'active' ? '#1E7A3C' : '#8C8A82' }} />
                       </div>
                     </div>
 
-                    <button style={{ padding: '10px 24px', background: '#C13030', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+                    <button className="px-6 py-[10px] bg-[#C13030] border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer">
                       Save Changes
                     </button>
                   </>
@@ -196,21 +188,21 @@ export function AdminSettings() {
 
             {/* Other sections */}
             {active !== 'profile' && (
-              <div style={card}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', textAlign: 'center' }}>
-                  <div style={{ color: '#8C8A82', marginBottom: 14 }}>
+              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                <div className="flex flex-col items-center justify-center py-[60px] text-center">
+                  <div className="text-slate mb-[14px]">
                     {activeItem ? <activeItem.Icon size={40} /> : <Settings size={40} />}
                   </div>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: '#141413', marginBottom: 6, fontFamily: poppins }}>
+                  <p className="text-[15px] font-semibold text-charcoal mb-[6px]">
                     {activeItem?.label ?? 'Settings'}
                   </p>
-                  <p style={{ fontSize: 13, color: '#8C8A82', fontFamily: poppins }}>
+                  <p className="text-[13px] text-slate">
                     {active === 'delete-account'
                       ? 'Permanently delete this admin account and all associated data.'
                       : 'Settings for this section are coming soon.'}
                   </p>
                   {active === 'delete-account' && (
-                    <button style={{ marginTop: 16, padding: '8px 18px', background: '#FDECEA', border: '1px solid #F5C6C2', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#C0392B', cursor: 'pointer', fontFamily: poppins }}>
+                    <button className="mt-4 px-[18px] py-2 bg-[#FDECEA] border border-[#F5C6C2] rounded-lg text-[13px] font-semibold text-[#C0392B] cursor-pointer">
                       Delete Admin Account
                     </button>
                   )}
@@ -221,12 +213,12 @@ export function AdminSettings() {
 
           {/* ── RIGHT: Nav sidebar ── */}
           <div>
-            <div style={{ ...card, padding: 0, position: 'sticky', top: 70 }}>
+            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] sticky top-[70px]" style={{ padding: 0 }}>
               {NAV.map((group, gi) => (
                 <div key={group.group}>
-                  {gi > 0 && <div style={{ height: 1, background: '#F0EEE6' }} />}
-                  <div style={{ padding: '10px 16px 4px' }}>
-                    <p style={{ fontSize: 10, fontWeight: 600, color: group.isDanger ? '#C0392B' : '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: poppins }}>
+                  {gi > 0 && <div className="h-px bg-[#F0EEE6]" />}
+                  <div className="px-4 pt-[10px] pb-1">
+                    <p className={`text-[10px] font-semibold uppercase tracking-[0.08em] ${group.isDanger ? 'text-[#C0392B]' : 'text-slate'}`}>
                       {group.group}
                     </p>
                   </div>
@@ -238,19 +230,17 @@ export function AdminSettings() {
                       <button
                         key={item.id}
                         onClick={() => setActive(item.id)}
+                        className="w-full flex items-center gap-[10px] px-4 py-[9px] cursor-pointer border-none text-left transition-colors duration-[120ms]"
                         style={{
-                          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                          padding: '9px 16px', cursor: 'pointer', border: 'none',
                           borderLeft: `3px solid ${isActive ? activeColor : 'transparent'}`,
                           background: isActive ? (isDanger ? '#FDECEA' : '#FFF0F0') : 'transparent',
                           color: isActive ? activeColor : (isDanger ? '#C0392B' : '#4A4945'),
-                          textAlign: 'left', fontFamily: poppins, transition: 'background 0.12s',
                         }}
                         onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#FAF9F5'; }}
                         onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
                       >
-                        <item.Icon size={14} style={{ flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
+                        <item.Icon size={14} className="flex-shrink-0" />
+                        <span className="text-[13px]" style={{ fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
                       </button>
                     );
                   })}

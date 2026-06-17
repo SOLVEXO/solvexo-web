@@ -4,13 +4,8 @@ import { useCartContext } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/Button';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ImageOff, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { clsx } from 'clsx';
 
-const C = {
-  orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
-  carbon: '#141413', charcoal: '#2C2A28', slate: '#8C8A82',
-  bone: '#E8E6DC', cream: '#FAF9F5', white: '#FFFFFF',
-  success: '#2D8A4E',
-};
 
 function SolvexoIcon({ size = 32 }: { size?: number }) {
   return (
@@ -28,18 +23,15 @@ function CartItemImage({ images, name }: { images?: string[]; name: string }) {
   const src = images?.[0];
   if (!src || errored) {
     return (
-      <div style={{
-        width: 80, height: 80, borderRadius: 10, background: C.paleOrange,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-      }}>
-        <ImageOff size={22} style={{ color: '#D97757', opacity: 0.5 }} />
+      <div className="w-20 h-20 rounded-[10px] bg-brand-pale-orange flex items-center justify-center flex-shrink-0">
+        <ImageOff size={22} className="text-brand-orange opacity-50" />
       </div>
     );
   }
   return (
     <img
       src={src} alt={name} onError={() => setErrored(true)}
-      style={{ width: 80, height: 80, borderRadius: 10, objectFit: 'cover', flexShrink: 0, display: 'block' }}
+      className="w-20 h-20 rounded-[10px] object-cover flex-shrink-0 block"
     />
   );
 }
@@ -76,45 +68,40 @@ export function CartPage() {
   const isEmpty = !loading && (!cart?.items.length);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: C.cream, fontFamily: "'Poppins', sans-serif" }}>
+    <div className="min-h-screen bg-cream">
       {/* Nav */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        backgroundColor: C.white, borderBottom: `1px solid ${C.bone}`,
-        height: 60, display: 'flex', alignItems: 'center',
-        paddingLeft: 40, paddingRight: 40, gap: 16,
-      }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-10 gap-4">
+        <div className="flex-1 flex items-center gap-2">
           <SolvexoIcon size={28} />
-          <span style={{ fontWeight: 700, fontSize: 15, color: C.carbon }}>Solvex</span>
-          <span style={{ fontWeight: 700, fontSize: 15, color: C.orange }}>o</span>
+          <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
+          <span className="font-bold text-[15px] text-brand-orange">o</span>
         </div>
         <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')}>
-          <ArrowLeft size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+          <ArrowLeft size={14} className="inline align-middle mr-1" />
           Continue Shopping
         </Button>
       </nav>
 
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: C.carbon, marginBottom: 4 }}>
+      <div className="max-w-[900px] mx-auto px-6 py-8">
+        <h1 className="text-[22px] font-bold text-[#141413] mb-1">
           Shopping Cart
         </h1>
-        <p style={{ fontSize: 13, color: C.slate, marginBottom: 28 }}>
+        <p className="text-[13px] text-[#8C8A82] mb-7">
           {loading ? 'Loading…' : `${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart`}
         </p>
 
         {/* Loading skeleton */}
         {loading && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="flex flex-col gap-3">
             {[1, 2, 3].map(i => (
-              <div key={i} style={{ background: C.white, borderRadius: 12, border: `1px solid ${C.bone}`, padding: 20, display: 'flex', gap: 16 }}>
-                <div className="animate-pulse" style={{ width: 80, height: 80, borderRadius: 10, background: '#E8E6DC', flexShrink: 0 }} />
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div className="animate-pulse" style={{ height: 14, borderRadius: 6, background: '#E8E6DC', width: '60%' }} />
-                  <div className="animate-pulse" style={{ height: 11, borderRadius: 4, background: '#E8E6DC', width: '30%' }} />
-                  <div className="animate-pulse" style={{ height: 32, borderRadius: 8, background: '#E8E6DC', width: 110 }} />
+              <div key={i} className="bg-white rounded-[12px] border border-bone p-5 flex gap-4">
+                <div className="animate-pulse w-20 h-20 rounded-[10px] bg-bone flex-shrink-0" />
+                <div className="flex-1 flex flex-col gap-[10px]">
+                  <div className="animate-pulse h-[14px] rounded-[6px] bg-bone w-[60%]" />
+                  <div className="animate-pulse h-[11px] rounded bg-bone w-[30%]" />
+                  <div className="animate-pulse h-8 rounded-lg bg-bone w-[110px]" />
                 </div>
-                <div className="animate-pulse" style={{ width: 70, height: 24, borderRadius: 6, background: '#E8E6DC' }} />
+                <div className="animate-pulse w-[70px] h-6 rounded-[6px] bg-bone" />
               </div>
             ))}
           </div>
@@ -122,10 +109,10 @@ export function CartPage() {
 
         {/* Empty */}
         {isEmpty && (
-          <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <ShoppingBag size={64} style={{ color: C.bone, marginBottom: 16 }} />
-            <p style={{ fontSize: 16, fontWeight: 600, color: C.carbon, marginBottom: 8 }}>Your cart is empty</p>
-            <p style={{ fontSize: 13, color: C.slate, marginBottom: 24 }}>
+          <div className="text-center py-20">
+            <ShoppingBag size={64} className="text-bone mx-auto mb-4" />
+            <p className="text-[16px] font-semibold text-[#141413] mb-2">Your cart is empty</p>
+            <p className="text-[13px] text-[#8C8A82] mb-6">
               Browse the marketplace and add products to get started.
             </p>
             <Button variant="primary" onClick={() => navigate('/marketplace')}>Browse Marketplace</Button>
@@ -134,9 +121,9 @@ export function CartPage() {
 
         {/* Cart items + summary */}
         {!loading && (cart?.items.length ?? 0) > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, alignItems: 'start' }}>
+          <div className="grid gap-6 items-start" style={{ gridTemplateColumns: '1fr 320px' }}>
             {/* Items list */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="flex flex-col gap-3">
               {cart!.items.map(item => {
                 const key = item.productVariantId;
                 const imgs = item.image ?? item.images;
@@ -148,56 +135,36 @@ export function CartPage() {
                 return (
                   <div
                     key={key}
-                    style={{
-                      background: C.white, borderRadius: 12,
-                      border: `1px solid ${C.bone}`, padding: 20,
-                      display: 'flex', gap: 16, alignItems: 'flex-start',
-                      opacity: isRemoving ? 0.5 : 1, transition: 'opacity 0.2s',
-                    }}
+                    className={clsx('bg-white rounded-[12px] border border-bone p-5 flex gap-4 items-start transition-opacity duration-200', isRemoving && 'opacity-50')}
                   >
                     <CartItemImage images={imgs} name={item.name} />
 
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontWeight: 600, fontSize: 14, color: C.carbon, marginBottom: 4, lineHeight: 1.35 }}>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-[14px] text-[#141413] mb-1 leading-[1.35]">
                         {item.name}
                       </p>
-                      <p style={{ fontSize: 12, color: C.slate, marginBottom: 12 }}>
+                      <p className="text-[12px] text-[#8C8A82] mb-3">
                         ${price.toLocaleString()} each
                       </p>
 
                       {/* Qty controls */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div className="flex items-center gap-[6px]">
                         <button
                           onClick={() => handleUpdateQty(item.productId, key, 'decrease')}
                           disabled={item.quantity <= 1 || isUpdating}
-                          style={{
-                            width: 30, height: 30, borderRadius: 7,
-                            border: `1px solid ${C.bone}`, background: C.cream,
-                            cursor: item.quantity <= 1 || isUpdating ? 'not-allowed' : 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: C.charcoal, opacity: item.quantity <= 1 ? 0.4 : 1,
-                          }}
+                          className={clsx('w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal', item.quantity <= 1 || isUpdating ? 'cursor-not-allowed' : 'cursor-pointer', item.quantity <= 1 && 'opacity-40')}
                         >
                           <Minus size={12} />
                         </button>
 
-                        <span style={{
-                          minWidth: 36, textAlign: 'center', fontSize: 14,
-                          fontWeight: 700, color: C.carbon,
-                        }}>
-                          {isUpdating ? <Loader2 size={13} style={{ animation: 'spin 0.8s linear infinite' }} /> : item.quantity}
+                        <span className="min-w-9 text-center text-[14px] font-bold text-[#141413]">
+                          {isUpdating ? <Loader2 size={13} className="animate-spin" /> : item.quantity}
                         </span>
 
                         <button
                           onClick={() => handleUpdateQty(item.productId, key, 'increase')}
                           disabled={isUpdating}
-                          style={{
-                            width: 30, height: 30, borderRadius: 7,
-                            border: `1px solid ${C.bone}`, background: C.cream,
-                            cursor: isUpdating ? 'not-allowed' : 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: C.charcoal,
-                          }}
+                          className={clsx('w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal', isUpdating ? 'cursor-not-allowed' : 'cursor-pointer')}
                         >
                           <Plus size={12} />
                         </button>
@@ -205,15 +172,10 @@ export function CartPage() {
                         <button
                           onClick={() => handleRemove(item.productId, key)}
                           disabled={isRemoving}
-                          style={{
-                            marginLeft: 8, padding: '4px 8px', borderRadius: 6,
-                            border: `1px solid #FECACA`, background: '#FFF0F0',
-                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
-                            fontSize: 11, color: '#C13030', fontWeight: 500,
-                          }}
+                          className="ml-2 px-2 py-1 rounded-[6px] border border-[#FECACA] bg-[#FFF0F0] cursor-pointer flex items-center gap-1 text-[11px] text-[#C13030] font-medium"
                         >
                           {isRemoving
-                            ? <Loader2 size={11} style={{ animation: 'spin 0.8s linear infinite' }} />
+                            ? <Loader2 size={11} className="animate-spin" />
                             : <Trash2 size={11} />
                           }
                           Remove
@@ -222,7 +184,7 @@ export function CartPage() {
                     </div>
 
                     {/* Line total */}
-                    <div style={{ fontWeight: 700, fontSize: 15, color: C.carbon, flexShrink: 0 }}>
+                    <div className="font-bold text-[15px] text-[#141413] flex-shrink-0">
                       ${total.toLocaleString()}
                     </div>
                   </div>
@@ -230,52 +192,44 @@ export function CartPage() {
               })}
 
               {/* Clear cart */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 4 }}>
+              <div className="flex justify-end pt-1">
                 <button
                   onClick={handleClear}
                   disabled={clearing}
-                  style={{
-                    padding: '6px 14px', borderRadius: 8, fontSize: 12,
-                    border: `1px solid ${C.bone}`, background: C.white,
-                    cursor: clearing ? 'not-allowed' : 'pointer', color: C.slate,
-                    display: 'flex', alignItems: 'center', gap: 6,
-                  }}
+                  className={clsx('px-[14px] py-[6px] rounded-lg text-[12px] border border-bone bg-white text-[#8C8A82] flex items-center gap-[6px]', clearing ? 'cursor-not-allowed' : 'cursor-pointer')}
                 >
-                  {clearing ? <Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Trash2 size={12} />}
+                  {clearing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                   Clear Cart
                 </button>
               </div>
             </div>
 
             {/* Order summary */}
-            <div style={{
-              background: C.white, borderRadius: 12, border: `1px solid ${C.bone}`,
-              padding: 24, position: 'sticky', top: 80,
-            }}>
-              <p style={{ fontSize: 15, fontWeight: 700, color: C.carbon, marginBottom: 18 }}>Order Summary</p>
+            <div className="bg-white rounded-[12px] border border-bone p-6 sticky top-20">
+              <p className="text-[15px] font-bold text-[#141413] mb-[18px]">Order Summary</p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                  <span style={{ color: C.slate }}>Subtotal ({cartCount} items)</span>
-                  <span style={{ fontWeight: 600, color: C.carbon }}>${(cart?.totalPrice ?? 0).toLocaleString()}</span>
+              <div className="flex flex-col gap-3 mb-5">
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-[#8C8A82]">Subtotal ({cartCount} items)</span>
+                  <span className="font-semibold text-[#141413]">${(cart?.totalPrice ?? 0).toLocaleString()}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                  <span style={{ color: C.slate }}>Shipping</span>
-                  <span style={{ color: C.success, fontWeight: 500 }}>Calculated at checkout</span>
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-[#8C8A82]">Shipping</span>
+                  <span className="text-success font-medium">Calculated at checkout</span>
                 </div>
               </div>
 
-              <div style={{ height: 1, background: C.bone, marginBottom: 16 }} />
+              <div className="h-px bg-bone mb-4" />
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 700, marginBottom: 20 }}>
-                <span style={{ color: C.carbon }}>Total</span>
-                <span style={{ color: C.carbon }}>${(cart?.totalPrice ?? 0).toLocaleString()}</span>
+              <div className="flex justify-between text-[16px] font-bold mb-5">
+                <span className="text-[#141413]">Total</span>
+                <span className="text-[#141413]">${(cart?.totalPrice ?? 0).toLocaleString()}</span>
               </div>
 
-              <Button variant="primary" size="lg" fullWidth style={{ justifyContent: 'center' }}>
+              <Button variant="primary" size="lg" fullWidth className="justify-center">
                 Proceed to Checkout
               </Button>
-              <Button variant="ghost" size="sm" fullWidth style={{ justifyContent: 'center', marginTop: 10 }}
+              <Button variant="ghost" size="sm" fullWidth className="justify-center mt-[10px]"
                 onClick={() => navigate('/marketplace')}>
                 Continue Shopping
               </Button>
@@ -284,7 +238,6 @@ export function CartPage() {
         )}
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

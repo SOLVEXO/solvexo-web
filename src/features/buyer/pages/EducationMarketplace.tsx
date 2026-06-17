@@ -7,12 +7,6 @@ import { Card } from '@/components/ui/Card';
 import { ArrowRight, ShoppingCart, GraduationCap, Star, Sparkles, BookOpen, BookMarked, Microscope, Heart } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-const C = {
-  orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
-  carbon: '#141413', charcoal: '#2C2A28', slate: '#8C8A82',
-  bone: '#E8E6DC', cream: '#FAF9F5', white: '#FFFFFF',
-  success: '#2D8A4E', successBg: '#EBF7EF',
-};
 
 function SolvexoIcon({ size = 32 }: { size?: number }) {
   return (
@@ -42,95 +36,66 @@ export function EducationMarketplace() {
   const [activeSubject, setActiveSubject] = useState('All');
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: C.cream }}>
+    <div className="min-h-screen bg-cream">
       {/* Nav */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        backgroundColor: C.white, borderBottom: `1px solid ${C.bone}`,
-        height: 60, display: 'flex', alignItems: 'center',
-        gap: 16, paddingLeft: 40, paddingRight: 40,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center gap-4 px-10">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <SolvexoIcon size={28} />
-          <span style={{ fontWeight: 700, fontSize: 15, color: C.carbon }}>Solvex</span>
-          <span style={{ fontWeight: 700, fontSize: 15, color: C.orange }}>o</span>
-          <span style={{ color: C.bone, marginLeft: 4, marginRight: 4 }}>|</span>
-          <span style={{ fontSize: 13, color: C.slate }}>Education Marketplace</span>
+          <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
+          <span className="font-bold text-[15px] text-brand-orange">o</span>
+          <span className="text-bone mx-1">|</span>
+          <span className="text-[13px] text-[#8C8A82]">Education Marketplace</span>
         </div>
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+        <div className="flex-1 flex justify-center">
           <input
             placeholder="Search marketplace..."
-            style={{
-              width: '100%', maxWidth: 440,
-              padding: '8px 14px', borderRadius: 8,
-              border: `1px solid ${C.bone}`, backgroundColor: C.cream,
-              fontSize: 13, color: C.charcoal, outline: 'none',
-            }}
+            className="w-full max-w-[440px] px-[14px] py-2 rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none"
           />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button variant="ghost" size="sm" onClick={() => navigate('/')}>Home</Button>
           <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')}>Sell on Solvexo</Button>
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%',
-            backgroundColor: C.orange,
-            fontSize: 16, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <ShoppingCart size={16} style={{ color: '#fff' }} />
+          <div className="w-8 h-8 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer">
+            <ShoppingCart size={16} className="text-white" />
           </div>
         </div>
       </nav>
 
       {/* Hero banner */}
-      <div style={{
-        background: 'linear-gradient(120deg, #1A4A2C, #2D7A4E)',
-        padding: '36px 40px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
+      <div
+        className="px-10 py-9 flex items-center justify-between"
+        style={{ background: 'linear-gradient(120deg, #1A4A2C, #2D7A4E)' }}
+      >
         <div>
-          <div style={{
-            fontSize: 11, color: 'rgba(255,255,255,0.6)',
-            textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8,
-          }}>
+          <div className="text-[11px] text-[rgba(255,255,255,0.6)] uppercase tracking-[0.1em] mb-2">
             EDUCATION MARKETPLACE
           </div>
-          <h1 style={{
-            fontFamily: 'Georgia, serif', fontSize: 30, fontWeight: 700,
-            color: C.white, marginBottom: 10, lineHeight: 1.25,
-          }}>
+          <h1
+            className="text-[30px] font-bold text-white mb-[10px] leading-[1.25]"
+            style={{ fontFamily: 'Georgia, serif' }}
+          >
             Resources Built by Educators,<br />for Educators
           </h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 20, lineHeight: 1.6 }}>
+          <p className="text-[13px] text-[rgba(255,255,255,0.7)] mb-5 leading-[1.6]">
             Discover curriculum, lesson plans, worksheets, and more from verified teachers.
           </p>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button style={{
-              padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 500,
-              backgroundColor: 'transparent', color: C.white,
-              border: `1px solid ${C.white}`, cursor: 'pointer',
-            }}>
+          <div className="flex gap-[10px]">
+            <button className="px-5 py-[10px] rounded-lg text-[13px] font-medium bg-transparent text-white border border-white cursor-pointer">
               Browse All Resources
             </button>
             <Button variant="primary" size="md" onClick={() => navigate('/onboarding')}>Sell Your Resources</Button>
           </div>
         </div>
-        <div style={{ color: 'rgba(255,255,255,0.6)' }}><GraduationCap size={80} /></div>
+        <div className="text-[rgba(255,255,255,0.6)]"><GraduationCap size={80} /></div>
       </div>
 
       {/* Grade level + subject filter bar */}
-      <div style={{
-        padding: '16px 40px',
-        backgroundColor: '#F0F9F4',
-        borderBottom: `1px solid ${C.bone}`,
-        display: 'flex', alignItems: 'center', gap: 0,
-        overflowX: 'auto',
-      }}>
+      <div
+        className="px-10 py-4 border-b border-bone flex items-center gap-0 overflow-x-auto"
+        style={{ backgroundColor: '#F0F9F4' }} /* education-specific green tint */
+      >
         {/* Grade Level label */}
-        <span style={{
-          fontSize: 12, fontWeight: 600, color: C.slate,
-          marginRight: 4, whiteSpace: 'nowrap',
-        }}>
+        <span className="text-[12px] font-semibold text-[#8C8A82] mr-1 whitespace-nowrap">
           Grade Level:
         </span>
 
@@ -139,13 +104,11 @@ export function EducationMarketplace() {
           <button
             key={g}
             onClick={() => setActiveGrade(g)}
+            className="px-3 py-[5px] rounded-[20px] text-[12px] font-medium cursor-pointer mr-[6px] whitespace-nowrap outline-none"
             style={{
-              padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500,
-              cursor: 'pointer', marginRight: 6, whiteSpace: 'nowrap',
-              border: `1px solid ${activeGrade === g ? C.success : C.bone}`,
-              backgroundColor: activeGrade === g ? C.success : C.white,
-              color: activeGrade === g ? C.white : C.charcoal,
-              outline: 'none',
+              border: `1px solid ${activeGrade === g ? '#2D8A4E' : '#E8E6DC'}`,
+              backgroundColor: activeGrade === g ? '#2D8A4E' : '#FFFFFF',
+              color: activeGrade === g ? '#FFFFFF' : '#2C2A28',
             }}
           >
             {g}
@@ -153,10 +116,7 @@ export function EducationMarketplace() {
         ))}
 
         {/* Subject label */}
-        <span style={{
-          fontSize: 12, fontWeight: 600, color: C.slate,
-          marginLeft: 12, marginRight: 4, whiteSpace: 'nowrap',
-        }}>
+        <span className="text-[12px] font-semibold text-[#8C8A82] ml-3 mr-1 whitespace-nowrap">
           Subject:
         </span>
 
@@ -165,13 +125,11 @@ export function EducationMarketplace() {
           <button
             key={s}
             onClick={() => setActiveSubject(s)}
+            className="px-3 py-[5px] rounded-[20px] text-[12px] font-medium cursor-pointer mr-[6px] whitespace-nowrap outline-none"
             style={{
-              padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500,
-              cursor: 'pointer', marginRight: 6, whiteSpace: 'nowrap',
-              border: `1px solid ${activeSubject === s ? C.success : C.bone}`,
-              backgroundColor: activeSubject === s ? C.success : C.white,
-              color: activeSubject === s ? C.white : C.charcoal,
-              outline: 'none',
+              border: `1px solid ${activeSubject === s ? '#2D8A4E' : '#E8E6DC'}`,
+              backgroundColor: activeSubject === s ? '#2D8A4E' : '#FFFFFF',
+              color: activeSubject === s ? '#FFFFFF' : '#2C2A28',
             }}
           >
             {s}
@@ -180,45 +138,38 @@ export function EducationMarketplace() {
       </div>
 
       {/* Content */}
-      <div style={{ padding: '24px 40px' }}>
+      <div className="px-10 py-6">
         {/* Section header */}
-        <div style={{ fontSize: 18, fontWeight: 700, color: C.carbon, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Star size={18} style={{ color: '#D97757', fill: '#D97757' }} /> Bestselling Resources
+        <div className="text-[18px] font-bold text-[#141413] mb-1 flex items-center gap-[6px]">
+          <Star size={18} className="text-brand-orange fill-brand-orange" /> Bestselling Resources
         </div>
-        <p style={{ fontSize: 13, color: C.slate, marginBottom: 20 }}>
+        <p className="text-[13px] text-[#8C8A82] mb-5">
           Top-rated resources trusted by thousands of educators.
         </p>
 
         {/* 4-col grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
+        <div className="grid grid-cols-4 gap-4 mb-7">
           {PRODUCTS.map((p) => (
             <Card key={p.name} padding="none" hover onClick={() => navigate('/marketplace/1')}>
               {/* Image area */}
-              <div style={{
-                height: 140, backgroundColor: C.successBg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: '12px 12px 0 0',
-              }}>
-                <p.Img size={56} style={{ color: '#2D8A4E' }} />
+              <div className="h-[140px] bg-success-bg flex items-center justify-center rounded-t-[12px]">
+                <p.Img size={56} className="text-success" />
               </div>
               {/* Content */}
-              <div style={{ padding: 14 }}>
+              <div className="p-[14px]">
                 {/* Grade + Subject badges */}
-                <div style={{ display: 'flex', gap: 4, marginBottom: 6, flexWrap: 'wrap' }}>
+                <div className="flex gap-1 mb-[6px] flex-wrap">
                   <Badge color="green">{p.grade}</Badge>
                   <Badge color="blue">{p.subject}</Badge>
                 </div>
-                <div style={{
-                  fontSize: 13, fontWeight: 700, color: C.carbon,
-                  marginBottom: 4, lineHeight: 1.3,
-                }}>
+                <div className="text-[13px] font-bold text-[#141413] mb-1 leading-[1.3]">
                   {p.name}
                 </div>
-                <div style={{ fontSize: 11, color: C.slate, marginBottom: 8 }}>
-                  by {p.seller} • <Star size={11} style={{ display: 'inline', verticalAlign: 'middle', color: '#D97757', fill: '#D97757' }} /> {p.rating} • {p.sold} sold
+                <div className="text-[11px] text-[#8C8A82] mb-2">
+                  by {p.seller} • <Star size={11} className="inline align-middle text-brand-orange fill-brand-orange" /> {p.rating} • {p.sold} sold
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontWeight: 700, fontSize: 15, color: C.carbon }}>{p.price}</span>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[15px] text-[#141413]">{p.price}</span>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -233,21 +184,20 @@ export function EducationMarketplace() {
         </div>
 
         {/* AI Worksheet Builder CTA */}
-        <div style={{
-          background: 'linear-gradient(120deg, #FBECE4, #FFF)',
-          borderRadius: 16, padding: 20,
-          display: 'flex', alignItems: 'center', gap: 20,
-        }}>
-          <Sparkles size={48} style={{ color: '#D97757', flexShrink: 0 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: C.carbon, marginBottom: 4 }}>
+        <div
+          className="rounded-2xl p-5 flex items-center gap-5"
+          style={{ background: 'linear-gradient(120deg, #FBECE4, #FFF)' }}
+        >
+          <Sparkles size={48} className="text-brand-orange flex-shrink-0" />
+          <div className="flex-1">
+            <div className="text-[16px] font-bold text-[#141413] mb-1">
               AI Worksheet Builder — Try Free
             </div>
-            <p style={{ fontSize: 13, color: C.slate }}>
+            <p className="text-[13px] text-[#8C8A82]">
               Generate custom worksheets, quizzes, and lesson activities in seconds with AI. Save hours of prep time.
             </p>
           </div>
-          <Button variant="primary" size="md" onClick={() => {}}>Try AI Builder <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></Button>
+          <Button variant="primary" size="md" onClick={() => {}}>Try AI Builder <ArrowRight size={14} className="inline align-middle ml-1" /></Button>
         </div>
       </div>
     </div>

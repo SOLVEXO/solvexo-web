@@ -2,16 +2,17 @@ import { type ReactNode, useState, useRef, useEffect } from 'react';
 import { ActiveStoreProvider, useActiveStore } from '@/contexts/ActiveStoreContext';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, CornerUpLeft,
   Store, Monitor, BarChart2, Search, Sparkles, Users, Star, RefreshCw,
   Megaphone, Wallet, ClipboardList, Truck, MessageSquare, Plug, Activity,
-  Settings, FolderOpen, Bell, ChevronDown, List,
+  Settings, FolderOpen, Bell, ChevronDown, List, Plus,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/ui/SolvexoLogo';
 
-// ── Nav sections with Lucide icons ───────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────────
 interface NavItem {
   id:    string;
   Icon:  LucideIcon;
@@ -41,7 +42,7 @@ const NAV_SECTIONS: NavSection[] = [
         id: 'my-store', Icon: Store, label: 'My Store',
         children: [
           { id: 'store-list',    Icon: List,   label: 'Store List',    path: '/seller/stores' },
-          { id: 'store-builder', Icon: Store,  label: 'Store Builder', path: '/seller/store'   },
+          { id: 'store-builder', Icon: Store,  label: 'Store Builder', path: '/seller/store'  },
         ],
       },
       { id: 'pos',         Icon: Monitor,          label: 'POS Register',    path: '/seller/pos'              },
@@ -67,20 +68,20 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Operations',
     items: [
-      { id: 'finance',      Icon: Wallet,       label: 'Finance',       path: '/seller/finance'       },
-      { id: 'inventory',    Icon: ClipboardList,label: 'Inventory',     path: '/seller/inventory'     },
-      { id: 'shipping',     Icon: Truck,        label: 'Shipping',      path: '/seller/shipping'      },
-      { id: 'messages',     Icon: MessageSquare,label: 'Messages',      path: '/seller/messages'      },
-      { id: 'reviews',      Icon: Star,         label: 'Reviews',    path: '/seller/reviews'       },
-      { id: 'integrations', Icon: Plug,         label: 'Integrations',  path: '/seller/integrations'  },
-      { id: 'activity',     Icon: Activity,     label: 'Activity Log',  path: '/seller/activity'      },
-      { id: 'settings',     Icon: Settings,     label: 'Settings',      path: '/seller/settings'      },
-      { id: 'categories',   Icon: FolderOpen,   label: 'Categories',    path: '/seller/categories'    },
+      { id: 'finance',      Icon: Wallet,        label: 'Finance',       path: '/seller/finance'       },
+      { id: 'inventory',    Icon: ClipboardList, label: 'Inventory',     path: '/seller/inventory'     },
+      { id: 'shipping',     Icon: Truck,         label: 'Shipping',      path: '/seller/shipping'      },
+      { id: 'messages',     Icon: MessageSquare, label: 'Messages',      path: '/seller/messages'      },
+      { id: 'reviews',      Icon: Star,          label: 'Reviews',       path: '/seller/reviews'       },
+      { id: 'integrations', Icon: Plug,          label: 'Integrations',  path: '/seller/integrations'  },
+      { id: 'activity',     Icon: Activity,      label: 'Activity Log',  path: '/seller/activity'      },
+      { id: 'settings',     Icon: Settings,      label: 'Settings',      path: '/seller/settings'      },
+      { id: 'categories',   Icon: FolderOpen,    label: 'Categories',    path: '/seller/categories'    },
     ],
   },
 ];
 
-// ── Sidebar Store Switcher ────────────────────────────────────────────────────
+// ── Store Switcher ────────────────────────────────────────────────────────────
 function SidebarStoreSwitcher() {
   const navigate = useNavigate();
   const { stores, loading } = useActiveStore();
@@ -100,58 +101,36 @@ function SidebarStoreSwitcher() {
   const displaySub  = loading ? '' : `${stores.length} store${stores.length !== 1 ? 's' : ''}`;
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      {/* Trigger */}
+    <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(p => !p)}
-        style={{
-          width: '100%', background: open ? '#2C2A28' : '#1E1C1A',
-          borderRadius: 8, padding: '8px 10px',
-          display: 'flex', alignItems: 'center', gap: 8,
-          cursor: 'pointer', border: 'none', transition: 'background 0.15s',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#2C2A28')}
-        onMouseLeave={e => (e.currentTarget.style.background = open ? '#2C2A28' : '#1E1C1A')}
+        className={clsx(
+          'w-full rounded-md py-2 px-[10px] flex items-center gap-2',
+          'cursor-pointer border-0 transition-colors duration-150',
+          open ? 'bg-charcoal' : 'bg-dark-active hover:bg-charcoal',
+        )}
       >
-        {/* Store icon */}
-        <div style={{
-          width: 24, height: 24, borderRadius: 6, background: '#D97757',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          <Store size={13} style={{ color: '#fff' }} />
+        <div className="size-6 rounded-sm bg-brand-orange flex items-center justify-center shrink-0">
+          <Store size={13} className="text-white" />
         </div>
-
-        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: '#fff', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {displayName}
-          </p>
+        <div className="flex-1 min-w-0 text-left">
+          <p className="text-[11px] font-semibold text-white leading-[1.3] truncate">{displayName}</p>
           {displaySub && (
-            <p style={{ fontSize: 10, color: '#8C8A82', lineHeight: 1.3 }}>{displaySub}</p>
+            <p className="text-[10px] text-slate leading-[1.3]">{displaySub}</p>
           )}
         </div>
         <ChevronDown
           size={13}
-          style={{
-            color: '#8C8A82', flexShrink: 0,
-            transform: open ? 'rotate(180deg)' : 'none',
-            transition: 'transform 0.2s',
-          }}
+          className={clsx('text-slate shrink-0 transition-transform duration-200', open && 'rotate-180')}
         />
       </button>
 
-      {/* Dropdown — opens downward */}
       {open && (
-        <div style={{
-          position: 'absolute', left: 0, right: 0, top: 'calc(100% + 4px)', zIndex: 200,
-          background: '#1A1917', border: '1px solid #2C2A28', borderRadius: 10,
-          boxShadow: '0 8px 28px rgba(0,0,0,0.35)', padding: 6,
-        }}>
-          <p style={{ fontSize: 10, fontWeight: 600, color: '#4A4845', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '4px 10px 8px', fontFamily: "'Poppins', sans-serif" }}>
+        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-[#1A1917] border border-charcoal rounded-[10px] shadow-[0_8px_28px_rgba(0,0,0,0.35)] p-[6px]">
+          <p className="text-[10px] font-semibold text-dark-label uppercase tracking-[0.08em] px-[10px] pt-1 pb-2">
             Switch Store
           </p>
-
-          <div style={{ maxHeight: 205, overflowY: 'auto' }}>
+          <div className="max-h-[205px] overflow-y-auto">
             {stores.map(store => (
               <SidebarStoreItem
                 key={store._id}
@@ -161,25 +140,14 @@ function SidebarStoreSwitcher() {
                 onClick={() => { navigate(`/seller/store/${store._id}/dashboard`); setOpen(false); }}
               />
             ))}
-
             {stores.length === 0 && !loading && (
-              <p style={{ fontSize: 11, color: '#4A4845', padding: '6px 10px' }}>No stores yet</p>
+              <p className="text-[11px] text-dark-label px-[10px] py-[6px]">No stores yet</p>
             )}
           </div>
-
-          <div style={{ height: 1, background: '#2C2A28', margin: '4px 6px' }} />
-
+          <div className="h-px bg-charcoal mx-[6px] my-1" />
           <button
             onClick={() => { setOpen(false); navigate('/onboarding'); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              width: '100%', padding: '8px 10px', borderRadius: 7,
-              background: 'transparent', border: 'none', cursor: 'pointer',
-              fontSize: 11, fontWeight: 600, color: '#D97757',
-              fontFamily: "'Poppins', sans-serif",
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#2C2A28')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            className="flex items-center gap-[7px] w-full py-2 px-[10px] rounded-[7px] bg-transparent border-0 cursor-pointer text-[11px] font-semibold text-brand-orange hover:bg-charcoal transition-colors duration-150"
           >
             <Plus size={12} /> New Store
           </button>
@@ -199,37 +167,22 @@ function SidebarStoreItem({ label, sub, logo, onClick }: {
   return (
     <button
       onClick={onClick}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 9,
-        width: '100%', padding: '7px 10px', borderRadius: 8,
-        background: 'transparent', border: 'none', cursor: 'pointer',
-        textAlign: 'left', transition: 'background 0.12s',
-        fontFamily: "'Poppins', sans-serif",
-      }}
-      onMouseEnter={e => { e.currentTarget.style.background = '#242220'; }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+      className="flex items-center gap-[9px] w-full py-[7px] px-[10px] rounded-md bg-transparent border-0 cursor-pointer text-left transition-colors duration-[120ms] hover:bg-dark-hover"
     >
-      <div style={{
-        width: 26, height: 26, borderRadius: 7, flexShrink: 0,
-        background: '#2C2A28', overflow: 'hidden',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 9, fontWeight: 700, color: '#8C8A82',
-      }}>
+      <div className="size-[26px] rounded-[7px] shrink-0 bg-charcoal overflow-hidden flex items-center justify-center text-[9px] font-bold text-slate">
         {logo
-          ? <img src={logo} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ? <img src={logo} alt={label} className="w-full h-full object-cover" />
           : initials}
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: 12, fontWeight: 500, color: '#C0BDB5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {label}
-        </p>
-        <p style={{ fontSize: 10, color: '#4A4845' }}>{sub}</p>
+      <div className="flex-1 min-w-0">
+        <p className="text-[12px] font-medium text-dark-text truncate">{label}</p>
+        <p className="text-[10px] text-dark-label">{sub}</p>
       </div>
     </button>
   );
 }
 
-// ── Sidebar ──────────────────────────────────────────────────────────────────
+// ── Sidebar ───────────────────────────────────────────────────────────────────
 function isDropdown(item: NavEntry): item is NavDropdown {
   return 'children' in item;
 }
@@ -240,47 +193,31 @@ function SellerSidebar() {
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   const { profile, loading: profileLoading } = useGetProfile();
 
-  const isActive = (path: string) => {
-    // Exact match or path prefix with "/" separator (avoids /seller/store matching /seller/stores)
-    return pathname === path || pathname.startsWith(path + '/');
-  };
+  const isActive = (path: string) =>
+    pathname === path || pathname.startsWith(path + '/');
 
-  const toggleDropdown = (id: string) => {
+  const toggleDropdown = (id: string) =>
     setOpenDropdowns(prev => ({ ...prev, [id]: !prev[id] }));
-  };
 
   return (
-    <aside
-      style={{
-        width: 220, background: '#141413',
-        display: 'flex', flexDirection: 'column', flexShrink: 0,
-        position: 'sticky', top: 0, height: '100vh',
-        fontFamily: "'Poppins', sans-serif",
-      }}
-    >
+    <aside className="w-[220px] bg-carbon flex flex-col shrink-0 sticky top-0 h-screen">
       {/* Logo + Store selector */}
-      <div style={{ padding: '20px 20px 16px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 16 }}>
+      <div className="px-5 pt-5 pb-4 shrink-0">
+        <div className="flex items-center gap-[9px] mb-4">
           <SolvexoIcon size={32} />
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ fontSize: 17, fontWeight: 700, color: '#fff', letterSpacing: '-0.3px' }}>Solvex</span>
-            <span style={{ fontSize: 17, fontWeight: 700, color: '#D97757', letterSpacing: '-0.3px' }}>o</span>
+          <div className="flex items-center">
+            <span className="text-[17px] font-bold text-white tracking-[-0.3px]">Solvex</span>
+            <span className="text-[17px] font-bold text-brand-orange tracking-[-0.3px]">o</span>
           </div>
         </div>
-
-        {/* Store selector */}
         <SidebarStoreSwitcher />
       </div>
 
       {/* Nav sections */}
-      <nav style={{ flex: 1, padding: '4px 12px', overflowY: 'auto' }}>
+      <nav className="flex-1 px-3 pt-1 overflow-y-auto">
         {NAV_SECTIONS.map(section => (
-          <div key={section.label} style={{ marginBottom: 4 }}>
-            <p style={{
-              fontSize: 10, fontWeight: 600, color: '#4A4845',
-              display: 'block', padding: '4px 8px',
-              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4,
-            }}>
+          <div key={section.label} className="mb-1">
+            <p className="text-[10px] font-semibold text-dark-label block px-2 py-1 uppercase tracking-[0.08em] mb-1">
               {section.label}
             </p>
 
@@ -289,78 +226,57 @@ function SellerSidebar() {
                 const isOpen = openDropdowns[item.id] ?? false;
                 const anyChildActive = item.children.some(c => isActive(c.path));
                 return (
-                  <div key={item.id} style={{ marginBottom: 2 }}>
+                  <div key={item.id} className="mb-0.5">
                     <div
                       onClick={() => toggleDropdown(item.id)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '9px 10px', borderRadius: 8,
-                        cursor: 'pointer', transition: 'background 0.15s',
-                      }}
+                      className="flex items-center gap-[10px] py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 hover:bg-dark-active"
                     >
                       <item.Icon
                         size={15}
-                        style={{
-                          opacity: anyChildActive ? 1 : 0.45,
-                          color: anyChildActive ? '#D97757' : '#8C8A82',
-                          flexShrink: 0,
-                        }}
+                        className={clsx(
+                          'shrink-0',
+                          anyChildActive ? 'text-brand-orange opacity-100' : 'text-slate opacity-45',
+                        )}
                       />
-                      <span style={{
-                        fontSize: 13,
-                        fontWeight: anyChildActive ? 600 : 400,
-                        color: anyChildActive ? '#FFFFFF' : '#8C8A82',
-                        flex: 1,
-                      }}>
+                      <span className={clsx(
+                        'text-[13px] flex-1',
+                        anyChildActive ? 'font-semibold text-white' : 'font-normal text-slate',
+                      )}>
                         {item.label}
                       </span>
                       <ChevronDown
                         size={14}
-                        style={{
-                          color: '#8C8A82',
-                          transition: 'transform 0.2s',
-                          transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                        }}
+                        className={clsx('text-slate transition-transform duration-200', isOpen && 'rotate-180')}
                       />
                     </div>
                     {isOpen && (
-                      <div style={{ paddingLeft: 18 }}>
+                      <div className="pl-[18px]">
                         {item.children.map(child => {
                           const active = isActive(child.path);
                           return (
                             <div
                               key={child.id}
                               onClick={() => navigate(child.path)}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 10,
-                                padding: '8px 10px', borderRadius: 8, marginBottom: 2,
-                                cursor: 'pointer',
-                                background: active ? '#1E1C1A' : 'transparent',
-                                transition: 'background 0.15s',
-                              }}
+                              className={clsx(
+                                'flex items-center gap-[10px] py-2 px-[10px] rounded-md mb-0.5',
+                                'cursor-pointer transition-colors duration-150',
+                                active ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
+                              )}
                             >
                               <child.Icon
                                 size={13}
-                                style={{
-                                  opacity: active ? 1 : 0.45,
-                                  color: active ? '#D97757' : '#8C8A82',
-                                  flexShrink: 0,
-                                }}
+                                className={clsx(
+                                  'shrink-0',
+                                  active ? 'text-brand-orange opacity-100' : 'text-slate opacity-45',
+                                )}
                               />
-                              <span style={{
-                                fontSize: 12,
-                                fontWeight: active ? 600 : 400,
-                                color: active ? '#FFFFFF' : '#8C8A82',
-                                flex: 1,
-                              }}>
+                              <span className={clsx(
+                                'text-[12px] flex-1',
+                                active ? 'font-semibold text-white' : 'font-normal text-slate',
+                              )}>
                                 {child.label}
                               </span>
-                              {active && (
-                                <div style={{
-                                  width: 3, height: 14, borderRadius: 2,
-                                  background: '#D97757', flexShrink: 0,
-                                }} />
-                              )}
+                              {active && <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
                             </div>
                           );
                         })}
@@ -375,37 +291,26 @@ function SellerSidebar() {
                 <div
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '9px 10px', borderRadius: 8, marginBottom: 2,
-                    cursor: 'pointer',
-                    background: active ? '#1E1C1A' : 'transparent',
-                    transition: 'background 0.15s',
-                  }}
+                  className={clsx(
+                    'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5',
+                    'cursor-pointer transition-colors duration-150',
+                    active ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
+                  )}
                 >
-                  {/* Lucide icon */}
                   <item.Icon
                     size={15}
-                    style={{
-                      opacity: active ? 1 : 0.45,
-                      color: active ? '#D97757' : '#8C8A82',
-                      flexShrink: 0,
-                    }}
+                    className={clsx(
+                      'shrink-0',
+                      active ? 'text-brand-orange opacity-100' : 'text-slate opacity-45',
+                    )}
                   />
-                  <span style={{
-                    fontSize: 13,
-                    fontWeight: active ? 600 : 400,
-                    color: active ? '#FFFFFF' : '#8C8A82',
-                    flex: 1,
-                  }}>
+                  <span className={clsx(
+                    'text-[13px] flex-1',
+                    active ? 'font-semibold text-white' : 'font-normal text-slate',
+                  )}>
                     {item.label}
                   </span>
-                  {active && (
-                    <div style={{
-                      width: 3, height: 14, borderRadius: 2,
-                      background: '#D97757', flexShrink: 0,
-                    }} />
-                  )}
+                  {active && <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
                 </div>
               );
             })}
@@ -413,44 +318,27 @@ function SellerSidebar() {
         ))}
       </nav>
 
-      {/* AI Credits + User */}
-      <div style={{ padding: '12px 16px', borderTop: '1px solid #1E1C1A', flexShrink: 0 }}>
-        {/* <div style={{ background: '#1E1C1A', borderRadius: 8, padding: '10px 12px', marginBottom: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Sparkles size={11} style={{ color: '#D97757' }} />
-              <span style={{ fontSize: 11, color: '#8C8A82' }}>AI Credits</span>
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#D97757' }}>750/1000</span>
-          </div>
-          <div style={{ height: 4, background: '#2C2A28', borderRadius: 2 }}>
-            <div style={{ width: '75%', height: '100%', background: '#D97757', borderRadius: 2 }} />
-          </div>
-        </div> */}
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-            background: '#2C2A28', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', overflow: 'hidden',
-          }}>
+      {/* User footer */}
+      <div className="px-4 py-3 border-t border-dark-active shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="size-7 rounded-full shrink-0 bg-charcoal flex items-center justify-center overflow-hidden">
             {profileLoading
-              ? <div className="animate-pulse" style={{ width: '100%', height: '100%', background: '#3C3A38' }} />
+              ? <div className="animate-pulse w-full h-full bg-[#3C3A38]" />
               : profile?.profileImage
-                ? <img src={profile.profileImage} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <span style={{ fontSize: 10, fontWeight: 700, color: '#D97757' }}>{profile?.name?.slice(0, 2).toUpperCase() ?? '--'}</span>
+                ? <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                : <span className="text-[10px] font-bold text-brand-orange">{profile?.name?.slice(0, 2).toUpperCase() ?? '--'}</span>
             }
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="flex-1 min-w-0">
             {profileLoading ? (
               <>
-                <div className="animate-pulse" style={{ width: 80, height: 11, borderRadius: 3, background: '#2C2A28', marginBottom: 4 }} />
-                <div className="animate-pulse" style={{ width: 110, height: 9, borderRadius: 3, background: '#2C2A28' }} />
+                <div className="animate-pulse w-20 h-[11px] rounded-[3px] bg-charcoal mb-1" />
+                <div className="animate-pulse w-[110px] h-[9px] rounded-[3px] bg-charcoal" />
               </>
             ) : (
               <>
-                <p style={{ fontSize: 12, fontWeight: 500, color: '#fff', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile?.name ?? '—'}</p>
-                <p style={{ fontSize: 10, color: '#8C8A82', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile?.email ?? '—'}</p>
+                <p className="text-[12px] font-medium text-white leading-[1.3] truncate">{profile?.name ?? '—'}</p>
+                <p className="text-[10px] text-slate leading-[1.3] truncate">{profile?.email ?? '—'}</p>
               </>
             )}
           </div>
@@ -460,7 +348,7 @@ function SellerSidebar() {
   );
 }
 
-// ── Page Header ───────────────────────────────────────────────────────────────
+// ── Page Header (shared between Seller pages) ─────────────────────────────────
 export interface SellerPageHeaderProps {
   title:     string;
   subtitle?: string;
@@ -469,25 +357,15 @@ export interface SellerPageHeaderProps {
 
 export function SellerPageHeader({ title, subtitle, actions }: SellerPageHeaderProps) {
   return (
-    <div style={{
-      background: '#FFFFFF', borderBottom: '1px solid #E8E6DC',
-      padding: '14px 28px', display: 'flex', alignItems: 'center',
-      justifyContent: 'space-between', position: 'sticky', top: 0,
-      zIndex: 10, flexShrink: 0, fontFamily: "'Poppins', sans-serif",
-    }}>
+    <div className="bg-white border-b border-bone px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
       <div>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#141413', lineHeight: 1.3 }}>{title}</h1>
-        {subtitle && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 2 }}>{subtitle}</p>}
+        <h1 className="text-[18px] font-bold text-carbon leading-[1.3]">{title}</h1>
+        {subtitle && <p className="text-[12px] text-slate mt-0.5">{subtitle}</p>}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div className="flex items-center gap-[10px]">
         {actions}
-        {/* Lucide Bell icon instead of 🔔 emoji */}
-        <div style={{
-          width: 34, height: 34, borderRadius: 8, background: '#FBECE4',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', flexShrink: 0,
-        }}>
-          <Bell size={16} style={{ color: '#D97757' }} />
+        <div className="size-[34px] rounded-md bg-brand-pale-orange flex items-center justify-center cursor-pointer shrink-0">
+          <Bell size={16} className="text-brand-orange" />
         </div>
       </div>
     </div>
@@ -498,10 +376,10 @@ export function SellerPageHeader({ title, subtitle, actions }: SellerPageHeaderP
 export function SellerLayout() {
   return (
     <ActiveStoreProvider>
-      <div style={{ display: 'flex', height: '100vh', background: '#FAF9F5', overflow: 'hidden' }}>
+      <div className="flex h-screen bg-cream overflow-hidden">
         <SellerSidebar />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
             <Outlet />
           </div>
         </div>

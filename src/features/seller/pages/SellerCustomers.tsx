@@ -53,10 +53,6 @@ const metrics = [
   { label: 'At Risk',            value: '38',    trend: null,                   sub: 'No purchase in 90 days',trendUp: false },
 ] as const;
 
-const poppins = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
-const inputStyle: React.CSSProperties = { padding: '8px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, outline: 'none', fontFamily: poppins, color: '#2C2A28', background: '#fff', boxSizing: 'border-box' as const };
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerCustomers() {
   usePageTitle('Customers');
@@ -81,32 +77,32 @@ export function SellerCustomers() {
         subtitle="Manage buyer relationships, segments and loyalty."
         actions={
           <>
-            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
               Export CSV
             </button>
-            <button style={{ padding: '7px 16px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+            <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
               + Add Customer
             </button>
           </>
         }
       />
 
-      <div style={{ padding: '20px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* ── Metrics ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="grid grid-cols-4 gap-3">
           {metrics.map(m => (
-            <div key={m.label} style={{ ...cardStyle, padding: '16px 20px' }}>
-              <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</p>
-              <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{m.value}</p>
-              {m.trend && <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {m.trend}</p>}
-              {m.sub   && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>}
+            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+              {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
+              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
 
         {/* ── Segment pills ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div className="flex items-center gap-2 flex-wrap">
           {SEGMENT_PILLS.map(pill => {
             const active = filterPill === pill.label;
             const st = pill.label === 'All' ? { bg: '#F0EEE6', color: '#5A5852' } : segmentStyle[pill.label as Segment] ?? { bg: '#F0EEE6', color: '#5A5852' };
@@ -114,18 +110,21 @@ export function SellerCustomers() {
               <button
                 key={pill.label}
                 onClick={() => setFilterPill(pill.label)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-[20px] cursor-pointer text-xs font-medium transition-all duration-[120ms]"
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
                   border: `1px solid ${active ? '#D97757' : '#E8E6DC'}`,
                   background: active ? '#FBECE4' : '#fff',
                   color: active ? '#B95A3A' : '#2C2A28',
-                  fontSize: 12, fontWeight: 500, fontFamily: poppins,
-                  transition: 'all 0.12s',
                 }}
               >
                 {pill.label}
-                <span style={{ padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: active ? '#fff' : st.bg, color: active ? '#B95A3A' : st.color }}>
+                <span
+                  className="px-[7px] py-[1px] rounded text-[11px] font-semibold"
+                  style={{
+                    background: active ? '#fff' : st.bg,
+                    color: active ? '#B95A3A' : st.color,
+                  }}
+                >
                   {pill.count.toLocaleString()}
                 </span>
               </button>
@@ -134,32 +133,34 @@ export function SellerCustomers() {
         </div>
 
         {/* ── Table + Detail ── */}
-        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        <div className="flex gap-4 items-start">
 
           {/* Table */}
-          <div style={{ ...cardStyle, flex: 1, minWidth: 0, overflow: 'hidden' }}>
+          <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex-1 min-w-0 overflow-hidden">
             {/* Filters */}
-            <div style={{ display: 'flex', gap: 10, padding: '14px 20px', borderBottom: '1px solid #E8E6DC', flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #E8E6DC', borderRadius: 8, padding: '0 12px', background: '#fff', flex: 1, maxWidth: 260 }}>
+            <div className="flex gap-2.5 px-5 py-3.5 border-b border-[#E8E6DC] flex-wrap items-center">
+              <div className="flex items-center gap-1.5 border border-[#E8E6DC] rounded-lg px-3 bg-white flex-1 max-w-[260px]">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input placeholder="Search customers…" value={search} onChange={e => setSearch(e.target.value)}
-                  style={{ border: 'none', outline: 'none', fontSize: 13, padding: '8px 0', width: '100%', fontFamily: poppins, color: '#2C2A28', background: 'transparent' }} />
+                  className="border-none outline-none text-[13px] py-2 w-full text-[#2C2A28] bg-transparent" />
               </div>
-              <select value={seg} onChange={e => setSeg(e.target.value)} style={{ ...inputStyle, width: 150, cursor: 'pointer' }}>
+              <select value={seg} onChange={e => setSeg(e.target.value)}
+                className="w-[150px] px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white cursor-pointer box-border">
                 {['All Segments','VIP','Loyal','Returning','New','At Risk'].map(o => <option key={o}>{o}</option>)}
               </select>
-              <select value={sort} onChange={e => setSort(e.target.value)} style={{ ...inputStyle, width: 160, cursor: 'pointer' }}>
+              <select value={sort} onChange={e => setSort(e.target.value)}
+                className="w-[160px] px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white cursor-pointer box-border">
                 {['Sort: Default','Highest LTV','Most Orders','Recently Active','Newest'].map(o => <option key={o}>{o}</option>)}
               </select>
             </div>
 
             {/* Table */}
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
                 <thead>
                   <tr>
                     {['Customer','Orders','Lifetime Value','Last Order','Segment','Joined',''].map(h => (
-                      <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontSize: 11, fontWeight: 600, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #E8E6DC', background: '#FAF9F5', whiteSpace: 'nowrap', fontFamily: poppins }}>
+                      <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold text-[#8C8A82] uppercase tracking-[0.05em] border-b border-[#E8E6DC] bg-[#FAF9F5] whitespace-nowrap">
                         {h}
                       </th>
                     ))}
@@ -171,29 +172,39 @@ export function SellerCustomers() {
                     const sg = segmentStyle[c.segment];
                     return (
                       <tr key={c.id} onClick={() => setSel(sel?.id === c.id ? null : c)}
-                        style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none', background: sel?.id === c.id ? '#FBECE4' : 'transparent', cursor: 'pointer', transition: 'background 0.12s' }}
+                        className="cursor-pointer transition-colors duration-[120ms]"
+                        style={{
+                          borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none',
+                          background: sel?.id === c.id ? '#FBECE4' : 'transparent',
+                        }}
                         onMouseEnter={e => { if (sel?.id !== c.id) e.currentTarget.style.background = '#FAF9F5'; }}
                         onMouseLeave={e => { if (sel?.id !== c.id) e.currentTarget.style.background = 'transparent'; }}
                       >
-                        <td style={{ padding: '12px 16px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ width: 30, height: 30, borderRadius: '50%', background: av.bg, color: av.color, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{c.initials}</div>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className="w-[30px] h-[30px] rounded-full text-[10px] font-bold flex items-center justify-center shrink-0"
+                              style={{ background: av.bg, color: av.color }}
+                            >{c.initials}</div>
                             <div>
-                              <p style={{ fontSize: 13, fontWeight: 600, color: '#2C2A28', lineHeight: 1.3 }}>{c.name}</p>
-                              <p style={{ fontSize: 11, color: '#8C8A82' }}>{c.email}</p>
+                              <p className="text-[13px] font-semibold text-[#2C2A28] leading-[1.3]">{c.name}</p>
+                              <p className="text-[11px] text-[#8C8A82]">{c.email}</p>
                             </div>
                           </div>
                         </td>
-                        <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: '#2C2A28' }}>{c.orders}</td>
-                        <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: '#2C2A28' }}>{c.ltv}</td>
-                        <td style={{ padding: '12px 16px', fontSize: 13, color: '#8C8A82' }}>{c.lastOrder}</td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span style={{ padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: sg.bg, color: sg.color, fontFamily: poppins }}>{c.segment}</span>
+                        <td className="px-4 py-3 text-[13px] font-semibold text-[#2C2A28]">{c.orders}</td>
+                        <td className="px-4 py-3 text-[13px] font-semibold text-[#2C2A28]">{c.ltv}</td>
+                        <td className="px-4 py-3 text-[13px] text-[#8C8A82]">{c.lastOrder}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold"
+                            style={{ background: sg.bg, color: sg.color }}
+                          >{c.segment}</span>
                         </td>
-                        <td style={{ padding: '12px 16px', fontSize: 13, color: '#8C8A82' }}>{c.joined}</td>
-                        <td style={{ padding: '12px 16px' }}>
+                        <td className="px-4 py-3 text-[13px] text-[#8C8A82]">{c.joined}</td>
+                        <td className="px-4 py-3">
                           <button onClick={e => { e.stopPropagation(); setSel(sel?.id === c.id ? null : c); }}
-                            style={{ fontSize: 12, fontWeight: 500, color: '#D97757', background: 'none', border: 'none', cursor: 'pointer', fontFamily: poppins }}>
+                            className="text-xs font-medium text-brand-orange bg-transparent border-none cursor-pointer">
                             View
                           </button>
                         </td>
@@ -207,63 +218,72 @@ export function SellerCustomers() {
 
           {/* Detail panel */}
           {sel && (
-            <div style={{ width: 300, flexShrink: 0 }}>
-              <div style={{ ...cardStyle, padding: '20px 18px', position: 'sticky', top: 70 }}>
+            <div className="w-[300px] shrink-0">
+              <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-5 sticky top-[70px]">
                 {/* Avatar + name */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', paddingBottom: 16, borderBottom: '1px solid #F0EEE6', marginBottom: 14 }}>
-                  <div style={{ width: 52, height: 52, borderRadius: '50%', background: avatarColors[sel.initials]?.bg ?? '#F0EEE6', color: avatarColors[sel.initials]?.color ?? '#5A5852', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                <div className="flex flex-col items-center text-center pb-4 border-b border-[#F0EEE6] mb-3.5">
+                  <div
+                    className="w-[52px] h-[52px] rounded-full text-base font-bold flex items-center justify-center mb-2.5"
+                    style={{ background: avatarColors[sel.initials]?.bg ?? '#F0EEE6', color: avatarColors[sel.initials]?.color ?? '#5A5852' }}
+                  >
                     {sel.initials}
                   </div>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#141413', marginBottom: 3 }}>{sel.name}</p>
-                  <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 8 }}>{sel.email}</p>
-                  <span style={{ padding: '3px 12px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: segmentStyle[sel.segment].bg, color: segmentStyle[sel.segment].color }}>
+                  <p className="text-[15px] font-bold text-[#141413] mb-[3px]">{sel.name}</p>
+                  <p className="text-xs text-[#8C8A82] mb-2">{sel.email}</p>
+                  <span
+                    className="px-3 py-[3px] rounded-[20px] text-[11px] font-semibold"
+                    style={{ background: segmentStyle[sel.segment].bg, color: segmentStyle[sel.segment].color }}
+                  >
                     {sel.segment}
                   </span>
                 </div>
 
                 {/* Stats table */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginBottom: 14 }}>
+                <table className="w-full border-collapse text-xs mb-3.5">
                   <tbody>
                     {[['Customer ID', sel.id],['Member Since', sel.joined],['Total Orders', String(sel.orders)],['Lifetime Value', sel.ltv],['Last Purchase', sel.lastOrder]].map(([label, value]) => (
-                      <tr key={label} style={{ borderBottom: '1px solid #F0EEE6' }}>
-                        <td style={{ padding: '7px 0', color: '#8C8A82', fontFamily: poppins }}>{label}</td>
-                        <td style={{ padding: '7px 0', fontWeight: 600, color: '#141413', textAlign: 'right', fontFamily: poppins }}>{value}</td>
+                      <tr key={label} className="border-b border-[#F0EEE6]">
+                        <td className="py-[7px] text-[#8C8A82]">{label}</td>
+                        <td className="py-[7px] font-semibold text-[#141413] text-right">{value}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
                 {/* Recent orders */}
-                <p style={{ fontSize: 11, fontWeight: 600, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Recent Orders</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+                <p className="text-[11px] font-semibold text-[#8C8A82] uppercase tracking-[0.07em] mb-2">Recent Orders</p>
+                <div className="flex flex-col gap-1.5 mb-4">
                   {sel.orders > 0 ? (
                     [{ id: '#8821', product: 'Grade 5 Math Bundle', amount: '$49.00', status: 'Paid' },
                      { id: '#8820', product: 'Fractions Kit', amount: '$18.00', status: 'Fulfilled' }]
                     .slice(0, Math.min(sel.orders, 2)).map(o => (
-                      <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FAF9F5', borderRadius: 8, padding: '9px 12px' }}>
+                      <div key={o.id} className="flex justify-between items-center bg-[#FAF9F5] rounded-lg px-3 py-[9px]">
                         <div>
-                          <p style={{ fontSize: 11, fontWeight: 600, color: '#141413', fontFamily: poppins }}>{o.id}</p>
-                          <p style={{ fontSize: 11, color: '#8C8A82', fontFamily: poppins }}>{o.product}</p>
+                          <p className="text-[11px] font-semibold text-[#141413]">{o.id}</p>
+                          <p className="text-[11px] text-[#8C8A82]">{o.product}</p>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <p style={{ fontSize: 12, fontWeight: 700, color: '#141413', fontFamily: poppins, marginBottom: 3 }}>{o.amount}</p>
-                          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, background: o.status === 'Paid' ? '#E3F4EA' : '#EAF0FB', color: o.status === 'Paid' ? '#1E7A3C' : '#2156A8', fontFamily: poppins }}>
+                        <div className="text-right">
+                          <p className="text-xs font-bold text-[#141413] mb-[3px]">{o.amount}</p>
+                          <span
+                            className="text-[10px] font-semibold px-[7px] py-[2px] rounded"
+                            style={{ background: o.status === 'Paid' ? '#E3F4EA' : '#EAF0FB', color: o.status === 'Paid' ? '#1E7A3C' : '#2156A8' }}
+                          >
                             {o.status}
                           </span>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <p style={{ fontSize: 12, color: '#8C8A82', fontStyle: 'italic', fontFamily: poppins }}>No orders yet</p>
+                    <p className="text-xs text-[#8C8A82] italic">No orders yet</p>
                   )}
                 </div>
 
                 {/* Action buttons */}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button style={{ flex: 1, padding: '8px 0', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                <div className="flex gap-2">
+                  <button className="flex-1 py-2 bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer flex items-center justify-center gap-[5px]">
                     <Mail size={13} /> Email
                   </button>
-                  <button style={{ flex: 1, padding: '8px 0', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                  <button className="flex-1 py-2 bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer flex items-center justify-center gap-[5px]">
                     <Gift size={13} /> Loyalty Gift
                   </button>
                 </div>

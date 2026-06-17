@@ -16,17 +16,14 @@ const DEFAULT_FLAGS: ToggleItem[] = [
   { id: 'bulk_import',    label: 'Bulk Product Import',  desc: 'Allow CSV import for product listings',          enabled: false },
 ];
 
-const poppins   = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '20px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
-const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, outline: 'none', fontFamily: poppins, color: '#2C2A28', background: '#fff', boxSizing: 'border-box' as const };
-const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 500, color: '#4A4945', marginBottom: 5, display: 'block', fontFamily: poppins };
-
 // ── Toggle switch ─────────────────────────────────────────────────────────────
 function ToggleSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
   return (
-    <button onClick={onToggle} style={{ position: 'relative', width: 40, height: 22, cursor: 'pointer', background: 'none', border: 'none', flexShrink: 0, padding: 0 }}>
-      <div style={{ width: '100%', height: '100%', borderRadius: 11, background: enabled ? '#D97757' : '#E8E6DC', transition: 'background 0.2s' }} />
-      <div style={{ position: 'absolute', top: 3, left: enabled ? 21 : 3, width: 16, height: 16, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s' }} />
+    <button onClick={onToggle} className="relative w-10 h-[22px] cursor-pointer bg-transparent border-none flex-shrink-0 p-0">
+      <div className="w-full h-full rounded-[11px] transition-colors duration-200"
+        style={{ background: enabled ? '#D97757' : '#E8E6DC' }} />
+      <div className="absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-[left] duration-200"
+        style={{ left: enabled ? 21 : 3 }} />
     </button>
   );
 }
@@ -46,30 +43,34 @@ export function AdminConfig() {
   const toggleFlag = (id: string) => setFlags(prev => prev.map(f => f.id === id ? { ...f, enabled: !f.enabled } : f));
 
   return (
-    <div style={{ padding: '24px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+    <div className="px-7 pt-6 pb-8 flex flex-col gap-5">
 
       {/* ── Header ── */}
       <div>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#141413', marginBottom: 3 }}>Platform Config</h1>
-        <p style={{ fontSize: 12, color: '#8C8A82' }}>Feature flags, AI settings, email config and system controls.</p>
+        <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Platform Config</h1>
+        <p className="text-[12px] text-slate">Feature flags, AI settings, email config and system controls.</p>
       </div>
 
       {/* ── Maintenance Mode ── */}
-      <div style={{ ...cardStyle, border: maintenance ? '2px solid #C13030' : '1px solid #E8E6DC' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+      <div
+        className="bg-white rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
+        style={{ border: maintenance ? '2px solid #C13030' : '1px solid #E8E6DC' }}
+      >
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+            <p className="text-[14px] font-bold text-charcoal flex items-center gap-[6px] mb-[3px]">
               <AlertCircle size={15} style={{ color: '#C13030' }} /> Maintenance Mode
             </p>
-            <p style={{ fontSize: 12, color: '#8C8A82' }}>When enabled, the platform shows a maintenance page to all users.</p>
+            <p className="text-[12px] text-slate">When enabled, the platform shows a maintenance page to all users.</p>
           </div>
           <ToggleSwitch enabled={maintenance} onToggle={() => setMaintenance(m => !m)} />
         </div>
         {maintenance && (
-          <div style={{ marginTop: 16 }}>
-            <label style={labelStyle}>Maintenance Message</label>
-            <input placeholder="We are back soon! Scheduled maintenance until 4:00 AM UTC." value={maintenanceMsg} onChange={e => setMaintenanceMsg(e.target.value)} style={inputStyle} />
-            <p style={{ fontSize: 11, marginTop: 8, fontWeight: 600, color: '#C13030', display: 'flex', alignItems: 'center', gap: 4, fontFamily: poppins }}>
+          <div className="mt-4">
+            <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Maintenance Message</label>
+            <input placeholder="We are back soon! Scheduled maintenance until 4:00 AM UTC." value={maintenanceMsg} onChange={e => setMaintenanceMsg(e.target.value)}
+              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+            <p className="text-[11px] mt-2 font-semibold text-[#C13030] flex items-center gap-1">
               <AlertTriangle size={11} /> Maintenance mode is ON — users cannot access the platform.
             </p>
           </div>
@@ -77,19 +78,19 @@ export function AdminConfig() {
       </div>
 
       {/* ── 2-col ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="grid grid-cols-2 gap-4">
 
         {/* Feature Flags */}
-        <div style={cardStyle}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 18 }}>Feature Flags</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <p className="text-[14px] font-bold text-charcoal mb-[18px]">Feature Flags</p>
+          <div className="flex flex-col gap-0">
             {flags.map((flag, i) => (
               <div key={flag.id}>
-                {i > 0 && <div style={{ height: 1, background: '#F0EEE6', margin: '10px 0' }} />}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 500, color: '#141413', fontFamily: poppins }}>{flag.label}</p>
-                    <p style={{ fontSize: 11, color: '#8C8A82', fontFamily: poppins }}>{flag.desc}</p>
+                {i > 0 && <div className="h-px bg-[#F0EEE6] my-[10px]" />}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-charcoal">{flag.label}</p>
+                    <p className="text-[11px] text-slate">{flag.desc}</p>
                   </div>
                   <ToggleSwitch enabled={flag.enabled} onToggle={() => toggleFlag(flag.id)} />
                 </div>
@@ -99,62 +100,67 @@ export function AdminConfig() {
         </div>
 
         {/* Right column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="flex flex-col gap-4">
 
           {/* AI Config */}
-          <div style={cardStyle}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 16 }}>AI Configuration</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <p className="text-[14px] font-bold text-charcoal mb-4">AI Configuration</p>
+            <div className="flex flex-col gap-[14px]">
               <div>
-                <label style={labelStyle}>Monthly Credit Limit (per seller)</label>
-                <input type="number" value={aiCredits} onChange={e => setAiCredits(e.target.value)} style={inputStyle} />
+                <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Monthly Credit Limit (per seller)</label>
+                <input type="number" value={aiCredits} onChange={e => setAiCredits(e.target.value)}
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
               </div>
               <div>
-                <label style={labelStyle}>AI Model</label>
-                <select value={aiModel} onChange={e => setAiModel(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">AI Model</label>
+                <select value={aiModel} onChange={e => setAiModel(e.target.value)}
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border cursor-pointer">
                   <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
                   <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
                   <option value="claude-opus-4">Claude Opus 4</option>
                 </select>
               </div>
-              <div style={{ background: '#FBECE4', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#B95A3A' }}>
-                <p style={{ fontWeight: 600, marginBottom: 3, fontFamily: poppins }}>Cost estimate</p>
-                <p style={{ color: '#8C6050', fontFamily: poppins }}>
+              <div className="bg-[#FBECE4] rounded-lg px-3 py-[10px] text-[12px] text-[#B95A3A]">
+                <p className="font-semibold mb-[3px]">Cost estimate</p>
+                <p className="text-[#8C6050]">
                   At {aiCredits} credits × 12,481 active sellers = ~{(parseInt(aiCredits || '0') * 12481).toLocaleString()} credits / month
                 </p>
               </div>
-              <button style={{ padding: '8px 18px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins, alignSelf: 'flex-start' }}>
+              <button className="px-[18px] py-2 bg-brand-orange border-none rounded-lg text-[12px] font-semibold text-white cursor-pointer self-start">
                 Save AI Config
               </button>
             </div>
           </div>
 
           {/* Email Config */}
-          <div style={cardStyle}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 16 }}>Email Configuration</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <p className="text-[14px] font-bold text-charcoal mb-4">Email Configuration</p>
+            <div className="flex flex-col gap-[14px]">
               <div>
-                <label style={labelStyle}>From Name</label>
-                <input value={fromName} onChange={e => setFromName(e.target.value)} style={inputStyle} />
+                <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">From Name</label>
+                <input value={fromName} onChange={e => setFromName(e.target.value)}
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
               </div>
               <div>
-                <label style={labelStyle}>From Email</label>
-                <input type="email" value={fromEmail} onChange={e => setFromEmail(e.target.value)} style={inputStyle} />
+                <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">From Email</label>
+                <input type="email" value={fromEmail} onChange={e => setFromEmail(e.target.value)}
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
               </div>
               <div>
-                <label style={labelStyle}>Reply-To Email</label>
-                <input type="email" value={replyTo} onChange={e => setReplyTo(e.target.value)} style={inputStyle} />
+                <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Reply-To Email</label>
+                <input type="email" value={replyTo} onChange={e => setReplyTo(e.target.value)}
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
               </div>
               <div>
-                <label style={labelStyle}>Email Provider</label>
-                <select style={{ ...inputStyle, cursor: 'pointer' }}>
+                <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Email Provider</label>
+                <select className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border cursor-pointer">
                   <option>SendGrid</option>
                   <option>Mailgun</option>
                   <option>AWS SES</option>
                   <option>Postmark</option>
                 </select>
               </div>
-              <button style={{ padding: '8px 18px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins, alignSelf: 'flex-start' }}>
+              <button className="px-[18px] py-2 bg-brand-orange border-none rounded-lg text-[12px] font-semibold text-white cursor-pointer self-start">
                 Save Email Config
               </button>
             </div>

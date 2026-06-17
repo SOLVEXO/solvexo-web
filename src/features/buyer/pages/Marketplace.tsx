@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductsByCategory } from '@/hooks/marketplace/useProductsByCategory';
 import { useCartContext } from '@/contexts/CartContext';
@@ -9,13 +10,9 @@ import { Card } from '@/components/ui/Card';
 import { ArrowRight, ShoppingCart, ShoppingBag, Star, Heart, ImageOff, Loader2 } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/commerce/marketplace';
 
-const C = {
-  orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
-  carbon: '#141413', charcoal: '#2C2A28', slate: '#8C8A82',
-  bone: '#E8E6DC', cream: '#FAF9F5', white: '#FFFFFF',
-  success: '#2D8A4E', successBg: '#EBF7EF',
-  digital: '#7C3AED', digitalBg: '#EDE9FE',
-};
+const DIGITAL_COLOR = '#7C3AED';
+const DIGITAL_BG    = '#EDE9FE';
+const DEEP_ORANGE   = '#B95A3A';
 
 function SolvexoIcon({ size = 32 }: { size?: number }) {
   return (
@@ -31,18 +28,18 @@ function SolvexoIcon({ size = 32 }: { size?: number }) {
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function ProductCardSkeleton() {
   return (
-    <div style={{ background: C.white, borderRadius: 12, border: `1px solid ${C.bone}`, overflow: 'hidden' }}>
-      <div className="animate-pulse" style={{ height: 180, background: '#E8E6DC' }} />
-      <div style={{ padding: 16 }}>
-        <div className="animate-pulse" style={{ height: 13, background: '#E8E6DC', borderRadius: 6, marginBottom: 8 }} />
-        <div className="animate-pulse" style={{ height: 11, background: '#E8E6DC', borderRadius: 6, width: '55%', marginBottom: 10 }} />
-        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-          <div className="animate-pulse" style={{ height: 20, width: 64, background: '#E8E6DC', borderRadius: 4 }} />
-          <div className="animate-pulse" style={{ height: 20, width: 72, background: '#E8E6DC', borderRadius: 4 }} />
+    <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
+      <div className="animate-pulse h-[180px] bg-bone" />
+      <div className="p-4">
+        <div className="animate-pulse h-[13px] bg-bone rounded-[6px] mb-2" />
+        <div className="animate-pulse h-[11px] bg-bone rounded-[6px] w-[55%] mb-[10px]" />
+        <div className="flex gap-[6px] mb-[10px]">
+          <div className="animate-pulse h-5 w-16 bg-bone rounded" />
+          <div className="animate-pulse h-5 w-[72px] bg-bone rounded" />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div className="animate-pulse" style={{ height: 20, width: 64, background: '#E8E6DC', borderRadius: 6 }} />
-          <div className="animate-pulse" style={{ height: 30, width: 86, background: '#E8E6DC', borderRadius: 8 }} />
+        <div className="flex justify-between items-center">
+          <div className="animate-pulse h-5 w-16 bg-bone rounded-[6px]" />
+          <div className="animate-pulse h-[30px] w-[86px] bg-bone rounded-lg" />
         </div>
       </div>
     </div>
@@ -56,13 +53,9 @@ function ProductImage({ images, name }: { images: string[]; name: string }) {
 
   if (!src || errored) {
     return (
-      <div style={{
-        height: 180, background: C.paleOrange, borderRadius: '12px 12px 0 0',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexDirection: 'column', gap: 6,
-      }}>
-        <ImageOff size={36} style={{ color: '#D97757', opacity: 0.45 }} />
-        <span style={{ fontSize: 10, color: C.slate, maxWidth: 120, textAlign: 'center', lineHeight: 1.4 }}>
+      <div className="h-[180px] bg-brand-pale-orange rounded-t-[12px] flex flex-col items-center justify-center gap-[6px]">
+        <ImageOff size={36} className="text-brand-orange opacity-[0.45]" />
+        <span className="text-[10px] text-[#8C8A82] max-w-[120px] text-center leading-[1.4]">
           {name.slice(0, 24)}{name.length > 24 ? '…' : ''}
         </span>
       </div>
@@ -74,7 +67,7 @@ function ProductImage({ images, name }: { images: string[]; name: string }) {
       src={src}
       alt={name}
       onError={() => setErrored(true)}
-      style={{ height: 180, width: '100%', objectFit: 'cover', borderRadius: '12px 12px 0 0', display: 'block' }}
+      className="h-[180px] w-full object-cover rounded-t-[12px] block"
     />
   );
 }
@@ -82,19 +75,19 @@ function ProductImage({ images, name }: { images: string[]; name: string }) {
 // ── Star Rating ───────────────────────────────────────────────────────────────
 function StarRating({ rating, count }: { rating: number; count?: number }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+    <div className="flex items-center gap-[3px]">
       {[1,2,3,4,5].map(i => (
         <Star
           key={i}
           size={11}
           style={{
-            color: i <= Math.round(rating) ? '#D97757' : C.bone,
-            fill:  i <= Math.round(rating) ? '#D97757' : C.bone,
+            color: i <= Math.round(rating) ? '#D97757' : '#E8E6DC',
+            fill:  i <= Math.round(rating) ? '#D97757' : '#E8E6DC',
           }}
         />
       ))}
       {count !== undefined && (
-        <span style={{ fontSize: 11, color: C.slate, marginLeft: 2 }}>({count})</span>
+        <span className="text-[11px] text-[#8C8A82] ml-[2px]">({count})</span>
       )}
     </div>
   );
@@ -123,29 +116,22 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
   return (
     <Card padding="none" hover onClick={onClick}>
       {/* Image + wishlist */}
-      <div style={{ position: 'relative' }}>
+      <div className="relative">
         <ProductImage images={product.images ?? []} name={product.name} />
 
         {/* Wishlist heart */}
         <button
           onClick={onToggleWishlist}
           disabled={isWishlisting}
-          style={{
-            position: 'absolute', top: 10, right: 10,
-            width: 32, height: 32, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.92)', border: 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: isWishlisting ? 'wait' : 'pointer',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
-            transition: 'transform 0.15s',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.15)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}
+          className={clsx(
+            'absolute top-[10px] right-[10px] w-8 h-8 rounded-full bg-[rgba(255,255,255,0.92)] border-none flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.12)] transition-transform duration-150 hover:scale-[1.15]',
+            isWishlisting ? 'cursor-wait' : 'cursor-pointer',
+          )}
         >
           <Heart
             size={15}
             style={{
-              color: isWishlisted ? '#E11D48' : C.slate,
+              color: isWishlisted ? '#E11D48' : '#8C8A82',
               fill:  isWishlisted ? '#E11D48' : 'none',
               transition: 'color 0.15s, fill 0.15s',
             }}
@@ -153,21 +139,21 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
         </button>
 
         {/* Type badge */}
-        <span style={{
-          position: 'absolute', top: 10, left: 10,
-          padding: '3px 8px', borderRadius: 5, fontSize: 10, fontWeight: 600,
-          background: isDigital ? C.digitalBg : C.paleOrange,
-          color:      isDigital ? C.digital   : C.deepOrange,
-          border:     `1px solid ${isDigital ? '#DDD6FE' : '#F5D0BC'}`,
-        }}>
+        <span
+          className="absolute top-[10px] left-[10px] px-2 py-[3px] rounded-[5px] text-[10px] font-semibold border"
+          style={{
+            background:  isDigital ? DIGITAL_BG  : '#FBECE4',
+            color:       isDigital ? DIGITAL_COLOR : DEEP_ORANGE,
+            borderColor: isDigital ? '#DDD6FE'   : '#F5D0BC',
+          }}
+        >
           {isDigital ? 'Digital' : 'Physical'}
         </span>
       </div>
 
       {/* Card body */}
-      <div style={{ padding: '12px 14px 14px' }}>
-        <div style={{ fontWeight: 700, fontSize: 13, color: C.carbon, marginBottom: 3, lineHeight: 1.35,
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div className="px-[14px] pt-3 pb-[14px]">
+        <div className="font-bold text-[13px] text-[#141413] mb-[3px] leading-[1.35] overflow-hidden text-ellipsis whitespace-nowrap">
           {product.name}
         </div>
 
@@ -175,12 +161,9 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
 
         {/* Tags */}
         {(product.tags?.length ?? 0) > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+          <div className="flex flex-wrap gap-1 mt-[6px]">
             {product.tags!.slice(0, 3).map(tag => (
-              <span key={tag} style={{
-                fontSize: 10, padding: '1px 6px', borderRadius: 4,
-                background: C.cream, color: C.slate, border: `1px solid ${C.bone}`,
-              }}>
+              <span key={tag} className="text-[10px] px-[6px] py-[1px] rounded bg-cream text-[#8C8A82] border border-bone">
                 {tag}
               </span>
             ))}
@@ -188,13 +171,13 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
         )}
 
         {/* Price row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-            <span style={{ fontWeight: 700, fontSize: 15, color: C.carbon }}>
+        <div className="flex items-center justify-between mt-[10px]">
+          <div className="flex items-baseline gap-[5px]">
+            <span className="font-bold text-[15px] text-[#141413]">
               {lowestPrice != null ? `$${lowestPrice.toLocaleString()}` : '—'}
             </span>
             {compareAt != null && compareAt > (lowestPrice ?? 0) && (
-              <span style={{ fontSize: 11, color: C.slate, textDecoration: 'line-through' }}>
+              <span className="text-[11px] text-[#8C8A82] line-through">
                 ${compareAt.toLocaleString()}
               </span>
             )}
@@ -202,10 +185,9 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
           <Button
             variant="secondary" size="sm"
             onClick={onAddToCart}
-            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
           >
             {isAdding
-              ? <Loader2 size={11} style={{ animation: 'spin 0.7s linear infinite' }} />
+              ? <Loader2 size={11} className="animate-spin" />
               : <ShoppingCart size={11} />
             }
             {isAdding ? 'Adding…' : 'Add to Cart'}
@@ -249,55 +231,34 @@ export function Marketplace() {
         : products;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: C.cream }}>
+    <div className="min-h-screen bg-cream">
       {/* Nav */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        backgroundColor: C.white, borderBottom: `1px solid ${C.bone}`,
-        height: 60, display: 'flex', alignItems: 'center',
-        gap: 16, paddingLeft: 40, paddingRight: 40,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center gap-4 px-10">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <SolvexoIcon size={28} />
-          <span style={{ fontWeight: 700, fontSize: 15, color: C.carbon }}>Solvex</span>
-          <span style={{ fontWeight: 700, fontSize: 15, color: C.orange }}>o</span>
-          <span style={{ color: C.bone, marginLeft: 4, marginRight: 4 }}>|</span>
-          <span style={{ fontSize: 13, color: C.slate }}>Marketplace</span>
+          <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
+          <span className="font-bold text-[15px] text-brand-orange">o</span>
+          <span className="text-bone mx-1">|</span>
+          <span className="text-[13px] text-[#8C8A82]">Marketplace</span>
         </div>
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+        <div className="flex-1 flex justify-center">
           <input
             placeholder="Search marketplace..."
-            style={{
-              width: '100%', maxWidth: 440,
-              padding: '8px 14px', borderRadius: 8,
-              border: `1px solid ${C.bone}`, backgroundColor: C.cream,
-              fontSize: 13, color: C.charcoal, outline: 'none',
-            }}
+            className="w-full max-w-[440px] px-[14px] py-2 rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none"
           />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button variant="ghost" size="sm" onClick={() => navigate('/')}>Home</Button>
           <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')}>Sell on Solvexo</Button>
 
           {/* Wishlist icon */}
           <div
             onClick={() => navigate('/account/profile?tab=wishlist')}
-            style={{
-              position: 'relative', width: 36, height: 36, borderRadius: '50%',
-              backgroundColor: '#FFF0F5', border: '1px solid #FECDD3',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-            }}
+            className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer"
           >
             <Heart size={16} style={{ color: '#E11D48', fill: wishlistCount > 0 ? '#E11D48' : 'none' }} />
             {wishlistCount > 0 && (
-              <span style={{
-                position: 'absolute', top: -4, right: -4,
-                minWidth: 18, height: 18, borderRadius: 9,
-                background: '#E11D48', color: '#fff',
-                fontSize: 10, fontWeight: 700, lineHeight: '18px',
-                textAlign: 'center', padding: '0 4px',
-                boxShadow: '0 0 0 2px #fff',
-              }}>
+              <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
                 {wishlistCount > 99 ? '99+' : wishlistCount}
               </span>
             )}
@@ -306,22 +267,11 @@ export function Marketplace() {
           {/* Cart icon */}
           <div
             onClick={() => navigate('/cart')}
-            style={{
-              position: 'relative', width: 36, height: 36, borderRadius: '50%',
-              backgroundColor: C.orange, display: 'flex',
-              alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-            }}
+            className="relative w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer"
           >
-            <ShoppingCart size={16} style={{ color: '#fff' }} />
+            <ShoppingCart size={16} className="text-white" />
             {cartCount > 0 && (
-              <span style={{
-                position: 'absolute', top: -4, right: -4,
-                minWidth: 18, height: 18, borderRadius: 9,
-                background: '#E11D48', color: '#fff',
-                fontSize: 10, fontWeight: 700, lineHeight: '18px',
-                textAlign: 'center', padding: '0 4px',
-                boxShadow: '0 0 0 2px #fff',
-              }}>
+              <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
                 {cartCount > 99 ? '99+' : cartCount}
               </span>
             )}
@@ -330,39 +280,37 @@ export function Marketplace() {
       </nav>
 
       {/* Hero */}
-      <div style={{
-        background: 'linear-gradient(120deg, #FBECE4, #FFF5EE)',
-        padding: '36px 40px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
+      <div
+        className="px-10 py-9 flex items-center justify-between"
+        style={{ background: 'linear-gradient(120deg, #FBECE4, #FFF5EE)' }}
+      >
         <div>
-          <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 28, fontWeight: 700, color: C.carbon, marginBottom: 8 }}>
+          <h1 className="text-[28px] font-bold text-[#141413] mb-2" style={{ fontFamily: 'Georgia, serif' }}>
             Discover Something Made with Love
           </h1>
-          <p style={{ fontSize: 14, color: C.slate, marginBottom: 20 }}>
+          <p className="text-[14px] text-[#8C8A82] mb-5">
             Shop unique products from independent sellers, creators, and educators.
           </p>
           <Button variant="primary" size="md">
-            Shop Now <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
+            Shop Now <ArrowRight size={14} className="inline align-middle ml-1" />
           </Button>
         </div>
-        <ShoppingBag size={80} style={{ color: '#D97757' }} />
+        <ShoppingBag size={80} className="text-brand-orange" />
       </div>
 
       {/* Category tabs */}
-      <div style={{ backgroundColor: C.white, borderBottom: `1px solid ${C.bone}` }}>
-        <div style={{ display: 'flex', paddingLeft: 40, paddingRight: 40 }}>
+      <div className="bg-white border-b border-bone">
+        <div className="flex px-10">
           {TABS.map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
+              className="px-4 py-2 text-[13px] cursor-pointer outline-none"
               style={{
-                padding: '8px 16px',
                 borderBottom: `2px solid ${activeTab === tab ? C.orange : 'transparent'}`,
                 backgroundColor: activeTab === tab ? C.paleOrange : 'transparent',
                 color: activeTab === tab ? C.deepOrange : C.slate,
                 fontWeight: activeTab === tab ? 700 : 400,
-                fontSize: 13, cursor: 'pointer', outline: 'none',
               }}
             >
               {tab}
@@ -372,23 +320,23 @@ export function Marketplace() {
       </div>
 
       {/* Main */}
-      <div style={{ display: 'flex', gap: 24, padding: '24px 40px' }}>
+      <div className="flex gap-6 px-10 py-6">
         {/* Filters */}
-        <aside style={{ width: 200, flexShrink: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: C.carbon, marginBottom: 14 }}>Filters</div>
+        <aside className="w-[200px] flex-shrink-0">
+          <div className="text-[14px] font-bold text-[#141413] mb-[14px]">Filters</div>
           {[
             { title: 'Price Range',   items: PRICE_FILTERS  },
             { title: 'Product Type',  items: TYPE_FILTERS   },
             { title: 'Rating',        items: RATING_FILTERS },
           ].map(group => (
-            <div key={group.title} style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, color: C.slate, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+            <div key={group.title} className="mb-5">
+              <div className="text-[12px] text-[#8C8A82] uppercase tracking-[0.05em] mb-2">
                 {group.title}
               </div>
               {group.items.map(label => (
-                <label key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, cursor: 'pointer' }}>
-                  <input type="checkbox" style={{ width: 14, height: 14, borderRadius: 2, border: `1px solid ${C.bone}`, accentColor: C.orange }} />
-                  <span style={{ fontSize: 12, color: C.charcoal }}>{label}</span>
+                <label key={label} className="flex items-center gap-2 mb-[6px] cursor-pointer">
+                  <input type="checkbox" className="w-[14px] h-[14px] rounded-[2px] border border-bone accent-brand-orange" />
+                  <span className="text-[12px] text-charcoal">{label}</span>
                 </label>
               ))}
             </div>
@@ -396,16 +344,12 @@ export function Marketplace() {
         </aside>
 
         {/* Products */}
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <span style={{ fontSize: 13, color: C.slate }}>
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[13px] text-[#8C8A82]">
               {!loading && (error ? 'Error loading products' : `Showing ${filtered.length} of ${total} products`)}
             </span>
-            <select style={{
-              padding: '6px 10px', borderRadius: 8,
-              border: `1px solid ${C.bone}`, backgroundColor: C.white,
-              fontSize: 13, color: C.charcoal, outline: 'none', cursor: 'pointer',
-            }}>
+            <select className="px-[10px] py-[6px] rounded-lg border border-bone bg-white text-[13px] text-charcoal outline-none cursor-pointer">
               <option>Newest</option>
               <option>Price: Low–High</option>
               <option>Price: High–Low</option>
@@ -414,15 +358,12 @@ export function Marketplace() {
           </div>
 
           {error && !loading && (
-            <div style={{
-              padding: 24, textAlign: 'center', background: '#FFF3F0',
-              borderRadius: 12, border: '1px solid #FECACA', color: '#C13030', fontSize: 13,
-            }}>
+            <div className="p-6 text-center bg-[#FFF3F0] rounded-[12px] border border-[#FECACA] text-[#C13030] text-[13px]">
               {error}
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
+          <div className="grid grid-cols-3 gap-[18px]">
             {loading
               ? Array.from({ length: 9 }).map((_, i) => <ProductCardSkeleton key={i} />)
               : filtered.map(p => {
@@ -452,27 +393,19 @@ export function Marketplace() {
 
           {/* Empty state */}
           {!loading && !error && filtered.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '60px 0', color: C.slate, fontSize: 14 }}>
+            <div className="text-center py-[60px] text-[#8C8A82] text-[14px]">
               No products found in this category yet.
             </div>
           )}
 
           {/* Pagination */}
           {!loading && !error && totalPages > 1 && (
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 6, marginTop: 32, paddingBottom: 8,
-            }}>
+            <div className="flex items-center justify-center gap-[6px] mt-8 pb-2">
               {/* Prev */}
               <button
                 onClick={() => goToPage(page - 1)}
                 disabled={page === 1}
-                style={{
-                  height: 36, padding: '0 14px', borderRadius: 8, fontSize: 13,
-                  border: `1px solid ${C.bone}`, background: C.white, cursor: page === 1 ? 'not-allowed' : 'pointer',
-                  color: page === 1 ? C.bone : C.charcoal, fontWeight: 500,
-                  display: 'flex', alignItems: 'center', gap: 4,
-                }}
+                className={clsx('h-9 px-[14px] rounded-lg text-[13px] border border-bone bg-white flex items-center gap-1 font-medium', page === 1 ? 'cursor-not-allowed text-bone' : 'cursor-pointer text-charcoal')}
               >
                 ← Prev
               </button>
@@ -480,17 +413,16 @@ export function Marketplace() {
               {/* Page numbers */}
               {buildPageNumbers(page, totalPages).map((item, i) =>
                 item === '...' ? (
-                  <span key={`ellipsis-${i}`} style={{ width: 36, textAlign: 'center', color: C.slate, fontSize: 13 }}>…</span>
+                  <span key={`ellipsis-${i}`} className="w-9 text-center text-[#8C8A82] text-[13px]">…</span>
                 ) : (
                   <button
                     key={item}
                     onClick={() => goToPage(item as number)}
+                    className="w-9 h-9 rounded-lg text-[13px] font-semibold cursor-pointer"
                     style={{
-                      width: 36, height: 36, borderRadius: 8, fontSize: 13, fontWeight: 600,
                       border: `1px solid ${page === item ? C.orange : C.bone}`,
                       background: page === item ? C.orange : C.white,
                       color: page === item ? '#fff' : C.charcoal,
-                      cursor: 'pointer',
                     }}
                   >
                     {item}
@@ -502,12 +434,7 @@ export function Marketplace() {
               <button
                 onClick={() => goToPage(page + 1)}
                 disabled={page === totalPages}
-                style={{
-                  height: 36, padding: '0 14px', borderRadius: 8, fontSize: 13,
-                  border: `1px solid ${C.bone}`, background: C.white, cursor: page === totalPages ? 'not-allowed' : 'pointer',
-                  color: page === totalPages ? C.bone : C.charcoal, fontWeight: 500,
-                  display: 'flex', alignItems: 'center', gap: 4,
-                }}
+                className={clsx('h-9 px-[14px] rounded-lg text-[13px] border border-bone bg-white flex items-center gap-1 font-medium', page === totalPages ? 'cursor-not-allowed text-bone' : 'cursor-pointer text-charcoal')}
               >
                 Next →
               </button>
@@ -516,13 +443,12 @@ export function Marketplace() {
 
           {/* Page info */}
           {!loading && !error && totalPages > 1 && (
-            <div style={{ textAlign: 'center', marginTop: 8, marginBottom: 24, fontSize: 12, color: C.slate }}>
+            <div className="text-center mt-2 mb-6 text-[12px] text-[#8C8A82]">
               Page {page} of {totalPages} · {total} products total
             </div>
           )}
         </div>
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }

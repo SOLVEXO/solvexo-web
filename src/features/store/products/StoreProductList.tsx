@@ -5,15 +5,12 @@ import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLa
 import { getCachedProducts, type ProductEntry } from './_cache';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const FONT = "'Poppins', sans-serif";
-
 function Pill({ label, color, bg }: { label: string; color: string; bg: string }) {
   return (
-    <span style={{
-      display: 'inline-block', fontSize: 11, fontWeight: 600,
-      padding: '3px 10px', borderRadius: 5, color, background: bg,
-      fontFamily: FONT,
-    }}>
+    <span
+      className="inline-block text-[11px] font-semibold px-[10px] py-[3px] rounded-[5px]"
+      style={{ color, background: bg }}
+    >
       {label}
     </span>
   );
@@ -32,24 +29,17 @@ function typePill(t: string) {
 // ── Empty state ───────────────────────────────────────────────────────────────
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div style={{ padding: '72px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-      <div style={{
-        width: 72, height: 72, borderRadius: 20, background: '#FAF9F5',
-        border: '1px solid #E8E6DC', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18,
-      }}>
-        <ShoppingBag size={30} style={{ color: '#D97757', opacity: 0.55 }} />
+    <div className="py-[72px] px-5 flex flex-col items-center text-center">
+      <div className="w-[72px] h-[72px] rounded-[20px] bg-bone border border-bone flex items-center justify-center mb-[18px]">
+        <ShoppingBag size={30} className="text-brand-orange opacity-[0.55]" />
       </div>
-      <p style={{ fontSize: 17, fontWeight: 700, color: '#141413', marginBottom: 8, fontFamily: FONT }}>
+      <p className="text-[17px] font-bold text-charcoal mb-2">
         No products yet
       </p>
-      <p style={{ fontSize: 13, color: '#8C8A82', maxWidth: 330, fontFamily: FONT, marginBottom: 22, lineHeight: 1.6 }}>
+      <p className="text-[13px] text-slate max-w-[330px] mb-[22px] leading-[1.6]">
         Add physical items, digital downloads, or services to start selling.
       </p>
-      <button onClick={onAdd} style={{
-        display: 'flex', alignItems: 'center', gap: 6, padding: '10px 22px',
-        background: '#D97757', color: '#fff', border: 'none', borderRadius: 9,
-        fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT,
-      }}>
+      <button onClick={onAdd} className="flex items-center gap-1.5 px-[22px] py-[10px] bg-brand-orange text-white border-none rounded-[9px] text-[13px] font-semibold cursor-pointer">
         <Plus size={15} /> Add Your First Product
       </button>
     </div>
@@ -74,48 +64,36 @@ export default function StoreProductList() {
     navigate(`/seller/store/${storeId}/products/detail/${entry.product._id}`, { state: { entry } });
 
   return (
-    <div style={{ fontFamily: FONT, background: '#FAF9F5', minHeight: '100vh' }}>
+    <div className="bg-bone min-h-screen">
       <StorePageHeader
         title="Products"
         subtitle={`${products.length} product${products.length !== 1 ? 's' : ''}`}
         actions={
-          <button onClick={goAdd} style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: '#D97757', color: '#fff', border: 'none',
-            borderRadius: 9, padding: '9px 16px',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT,
-          }}>
+          <button onClick={goAdd} className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-4 py-[9px] text-[13px] font-semibold cursor-pointer">
             <Plus size={15} /> Add Product
           </button>
         }
       />
 
-      <div style={{ padding: '20px 28px' }}>
+      <div className="px-7 py-5">
         {products.length === 0 ? (
           <EmptyState onAdd={goAdd} />
         ) : (
-          <div style={{
-            background: '#FFFFFF', border: '1px solid #E8E6DC',
-            borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden',
-          }}>
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
             {/* Table header */}
-            <div style={{ padding: '16px 20px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', fontFamily: FONT }}>All Products</p>
-              <span style={{ fontSize: 12, color: '#8C8A82', fontFamily: FONT }}>
+            <div className="px-5 pt-4 pb-2.5 flex items-center justify-between">
+              <p className="text-[14px] font-bold text-charcoal">All Products</p>
+              <span className="text-[12px] text-slate">
                 {products.length} item{products.length !== 1 ? 's' : ''}
               </span>
             </div>
 
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, fontFamily: FONT }}>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-[13px]">
                 <thead>
-                  <tr style={{ borderTop: '1px solid #E8E6DC', borderBottom: '1px solid #E8E6DC' }}>
+                  <tr className="border-t border-b border-bone">
                     {['#', 'Product', 'Type', 'Price', 'Stock / Format', 'Status', 'Actions'].map(h => (
-                      <th key={h} style={{
-                        textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#8C8A82',
-                        textTransform: 'uppercase', letterSpacing: '0.05em',
-                        padding: '10px 18px', fontFamily: FONT,
-                      }}>
+                      <th key={h} className="text-left text-[11px] font-semibold text-slate uppercase tracking-[0.05em] px-[18px] py-[10px]">
                         {h}
                       </th>
                     ))}
@@ -125,60 +103,56 @@ export default function StoreProductList() {
                   {products.map((entry, i) => (
                     <tr
                       key={entry.product._id}
+                      className="transition-colors duration-[120ms]"
                       style={{
                         borderBottom: i < products.length - 1 ? '1px solid #F5F4EF' : 'none',
-                        transition: 'background 0.12s',
                       }}
                       onMouseEnter={e  => (e.currentTarget.style.background = '#FAF9F5')}
                       onMouseLeave={e  => (e.currentTarget.style.background = 'transparent')}
                     >
                       {/* S.No */}
-                      <td style={{ padding: '11px 18px', color: '#8C8A82', fontWeight: 500, fontSize: 12 }}>
+                      <td className="px-[18px] py-[11px] text-slate font-medium text-[12px]">
                         {i + 1}
                       </td>
 
                       {/* Product name + thumb + SKU */}
-                      <td style={{ padding: '11px 18px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{
-                            width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-                            background: '#FBECE4', border: '1px solid #EDEBE2',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                          }}>
+                      <td className="px-[18px] py-[11px]">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-lg shrink-0 bg-brand-pale-orange border border-[#EDEBE2] flex items-center justify-center overflow-hidden">
                             {entry.product.images[0]
-                              ? <img src={entry.product.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ? <img src={entry.product.images[0]} alt="" className="w-full h-full object-cover" />
                               : entry.product.productType === 'digital'
-                                ? <Download size={14} style={{ color: '#D97757' }} />
-                                : <Package  size={14} style={{ color: '#D97757' }} />}
+                                ? <Download size={14} className="text-brand-orange" />
+                                : <Package  size={14} className="text-brand-orange" />}
                           </div>
                           <div>
-                            <p style={{ fontSize: 13, fontWeight: 500, color: '#141413', marginBottom: 1 }}>
+                            <p className="text-[13px] font-medium text-charcoal mb-[1px]">
                               {entry.product.name}
                             </p>
-                            <p style={{ fontSize: 11, color: '#8C8A82' }}>SKU: {entry.variant.sku}</p>
+                            <p className="text-[11px] text-slate">SKU: {entry.variant.sku}</p>
                           </div>
                         </div>
                       </td>
 
                       {/* Type */}
-                      <td style={{ padding: '11px 18px' }}>
+                      <td className="px-[18px] py-[11px]">
                         {typePill(entry.product.productType)}
                       </td>
 
                       {/* Price */}
-                      <td style={{ padding: '11px 18px' }}>
-                        <span style={{ fontWeight: 600, color: '#141413' }}>
+                      <td className="px-[18px] py-[11px]">
+                        <span className="font-semibold text-charcoal">
                           Rs {entry.variant.price.toLocaleString()}
                         </span>
                         {entry.variant.compareAtPrice != null && (
-                          <span style={{ fontSize: 11, color: '#8C8A82', textDecoration: 'line-through', marginLeft: 5 }}>
+                          <span className="text-[11px] text-slate line-through ml-[5px]">
                             Rs {entry.variant.compareAtPrice.toLocaleString()}
                           </span>
                         )}
                       </td>
 
                       {/* Stock / Format */}
-                      <td style={{ padding: '11px 18px', color: '#4A4945' }}>
+                      <td className="px-[18px] py-[11px] text-[#4A4945]">
                         {entry.product.productType === 'physical'
                           ? `${entry.variant.stock} units`
                           : entry.product.digital?.downloadLimit === 'unlimited'
@@ -187,27 +161,23 @@ export default function StoreProductList() {
                       </td>
 
                       {/* Status */}
-                      <td style={{ padding: '11px 18px' }}>
+                      <td className="px-[18px] py-[11px]">
                         {statusPill(entry.product.status)}
                       </td>
 
                       {/* Actions */}
-                      <td style={{ padding: '11px 18px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <td className="px-[18px] py-[11px]">
+                        <div className="flex items-center gap-3">
                           <button
                             onClick={() => goDetail(entry)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#2156A8', fontWeight: 600, fontFamily: FONT }}
-                            onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
-                            onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
+                            className="bg-transparent border-none cursor-pointer text-[12px] text-[#2156A8] font-semibold hover:underline"
                           >
                             Detail
                           </button>
-                          <span style={{ color: '#E8E6DC' }}>|</span>
+                          <span className="text-bone">|</span>
                           <button
                             onClick={() => goEdit(entry)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#D97757', fontWeight: 600, fontFamily: FONT }}
-                            onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
-                            onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
+                            className="bg-transparent border-none cursor-pointer text-[12px] text-brand-orange font-semibold hover:underline"
                           >
                             Edit
                           </button>

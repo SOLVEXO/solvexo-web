@@ -29,8 +29,6 @@ const PRODUCTS: Product[] = [
 ];
 
 // ── Style helpers ─────────────────────────────────────────────────────────────
-const poppins = "'Poppins', sans-serif";
-
 const typeStyle: Record<string, { bg: string; color: string }> = {
   Digital:  { bg: '#EAF0FB', color: '#2156A8' },
   Physical: { bg: '#FBECE4', color: '#C96847' },
@@ -72,56 +70,56 @@ export function SellerInventory() {
         subtitle="Monitor stock levels and product availability."
         actions={
           <>
-            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
               Import CSV
             </button>
-            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
               Export
             </button>
-            <button onClick={() => navigate('/seller/products/add')} style={{ padding: '7px 16px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+            <button onClick={() => navigate('/seller/products/add')} className="px-4 py-[7px] bg-brand-orange border-0 rounded-lg text-xs font-semibold text-white cursor-pointer">
               + Add Product
             </button>
           </>
         }
       />
 
-      <div style={{ padding: '20px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* ── Metrics row ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="grid grid-cols-4 gap-3">
           {/* Total Products */}
-          <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-            <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Total Products</p>
-            <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{PRODUCTS.length}</p>
-            <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>All product types</p>
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Total Products</p>
+            <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{PRODUCTS.length}</p>
+            <p className="text-xs text-slate mt-1">All product types</p>
           </div>
           {/* In Stock */}
-          <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-            <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>In Stock</p>
-            <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{inStock}</p>
-            <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {digital} digital, {physical} physical</p>
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">In Stock</p>
+            <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{inStock}</p>
+            <p className="text-xs text-[#2D8A4E] mt-1">▲ {digital} digital, {physical} physical</p>
           </div>
           {/* Low Stock */}
-          <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-            <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Low Stock</p>
-            <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{lowStock}</p>
-            <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>Below threshold</p>
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Low Stock</p>
+            <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{lowStock}</p>
+            <p className="text-xs text-slate mt-1">Below threshold</p>
           </div>
           {/* Out of Stock */}
-          <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-            <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Out of Stock</p>
-            <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{outStock}</p>
-            <p style={{ fontSize: 12, color: '#C0392B', marginTop: 4 }}>▼ Needs restocking</p>
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Out of Stock</p>
+            <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{outStock}</p>
+            <p className="text-xs text-[#C0392B] mt-1">▼ Needs restocking</p>
           </div>
         </div>
 
         {/* ── Table card ── */}
-        <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
 
           {/* Filters */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px', borderBottom: '1px solid #E8E6DC', flexWrap: 'wrap' }}>
+          <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
             {/* Search */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #E8E6DC', borderRadius: 8, padding: '0 12px', background: '#fff' }}>
+            <div className="flex items-center gap-[6px] border border-bone rounded-lg px-3 bg-white">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
@@ -129,7 +127,7 @@ export function SellerInventory() {
                 placeholder="Search products..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{ border: 'none', outline: 'none', fontSize: 13, padding: '8px 0', width: 200, fontFamily: poppins, color: '#2C2A28' }}
+                className="border-0 outline-none text-[13px] py-2 w-[200px] text-[#2C2A28] bg-transparent"
               />
             </div>
 
@@ -137,7 +135,7 @@ export function SellerInventory() {
             <select
               value={typeF || 'All Types'}
               onChange={e => setTypeF(e.target.value === 'All Types' ? '' : e.target.value)}
-              style={{ fontSize: 13, padding: '8px 12px', borderRadius: 8, border: '1px solid #E8E6DC', background: '#fff', color: '#2C2A28', outline: 'none', cursor: 'pointer', fontFamily: poppins }}
+              className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white text-[#2C2A28] outline-none cursor-pointer"
             >
               {['All Types','Digital','Physical'].map(o => <option key={o}>{o}</option>)}
             </select>
@@ -146,7 +144,7 @@ export function SellerInventory() {
             <select
               value={statusF || 'All Status'}
               onChange={e => setStatusF(e.target.value === 'All Status' ? '' : e.target.value)}
-              style={{ fontSize: 13, padding: '8px 12px', borderRadius: 8, border: '1px solid #E8E6DC', background: '#fff', color: '#2C2A28', outline: 'none', cursor: 'pointer', fontFamily: poppins }}
+              className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white text-[#2C2A28] outline-none cursor-pointer"
             >
               {['All Status','Active','Low Stock','Out of Stock','Draft'].map(o => <option key={o}>{o}</option>)}
             </select>
@@ -154,26 +152,19 @@ export function SellerInventory() {
             {/* Reset */}
             <button
               onClick={() => { setSearch(''); setTypeF(''); setStatusF(''); }}
-              style={{ padding: '8px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, color: '#8C8A82', cursor: 'pointer', fontFamily: poppins }}
+              className="px-[14px] py-2 bg-white border border-bone rounded-lg text-xs text-slate cursor-pointer"
             >
               Reset Filters
             </button>
           </div>
 
           {/* Table */}
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
                   {['SKU','Product','Type','Stock','Status','Price','All-Time Sales','Actions'].map(h => (
-                    <th key={h} style={{
-                      textAlign: 'left', padding: '10px 16px',
-                      fontSize: 11, fontWeight: 600, color: '#8C8A82',
-                      textTransform: 'uppercase', letterSpacing: '0.05em',
-                      borderBottom: '1px solid #E8E6DC',
-                      background: '#FAF9F5', whiteSpace: 'nowrap',
-                      fontFamily: poppins,
-                    }}>
+                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-[#FAF9F5] whitespace-nowrap">
                       {h}
                     </th>
                   ))}
@@ -189,77 +180,77 @@ export function SellerInventory() {
                   return (
                     <tr
                       key={p.sku}
+                      className="transition-[background] duration-[0.12s]"
                       style={{
                         borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none',
                         background: isOos ? '#FFF9F9' : 'transparent',
-                        transition: 'background 0.12s',
                       }}
                       onMouseEnter={e => (e.currentTarget.style.background = isOos ? '#FFF5F5' : '#FAF9F5')}
                       onMouseLeave={e => (e.currentTarget.style.background = isOos ? '#FFF9F9' : 'transparent')}
                     >
                       {/* SKU */}
-                      <td style={{ padding: '13px 16px' }}>
-                        <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#8C8A82' }}>{p.sku}</span>
+                      <td className="px-4 py-[13px]">
+                        <span className="text-[11px] font-mono text-slate">{p.sku}</span>
                       </td>
 
                       {/* Product */}
-                      <td style={{ padding: '13px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <p.Icon size={20} style={{ color: '#D97757', flexShrink: 0 }} />
-                          <span style={{ fontSize: 13, fontWeight: 500, color: '#141413', fontFamily: poppins }}>{p.name}</span>
+                      <td className="px-4 py-[13px]">
+                        <div className="flex items-center gap-[10px]">
+                          <p.Icon size={20} className="text-brand-orange shrink-0" />
+                          <span className="text-[13px] font-medium text-charcoal">{p.name}</span>
                         </div>
                       </td>
 
                       {/* Type */}
-                      <td style={{ padding: '13px 16px' }}>
-                        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: ty.bg, color: ty.color, fontFamily: poppins }}>
+                      <td className="px-4 py-[13px]">
+                        <span className="inline-block px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: ty.bg, color: ty.color }}>
                           {p.type}
                         </span>
                       </td>
 
                       {/* Stock */}
-                      <td style={{ padding: '13px 16px' }}>
+                      <td className="px-4 py-[13px]">
                         {p.stock === null ? (
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#2D8A4E', fontFamily: poppins }}>∞ Unlimited</span>
+                          <span className="text-[13px] font-semibold text-[#2D8A4E]">∞ Unlimited</span>
                         ) : p.stock === 0 ? (
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#C0392B', fontFamily: poppins }}>0 units</span>
+                          <span className="text-[13px] font-semibold text-[#C0392B]">0 units</span>
                         ) : isLowStock ? (
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#B36200', fontFamily: poppins }}>{p.stock} units</span>
+                          <span className="text-[13px] font-semibold text-[#B36200]">{p.stock} units</span>
                         ) : (
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#141413', fontFamily: poppins }}>{p.stock} units</span>
+                          <span className="text-[13px] font-semibold text-charcoal">{p.stock} units</span>
                         )}
                       </td>
 
                       {/* Status */}
-                      <td style={{ padding: '13px 16px' }}>
-                        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: st.bg, color: st.color, fontFamily: poppins }}>
+                      <td className="px-4 py-[13px]">
+                        <span className="inline-block px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: st.bg, color: st.color }}>
                           {p.status}
                         </span>
                       </td>
 
                       {/* Price */}
-                      <td style={{ padding: '13px 16px', fontSize: 13, fontWeight: 600, color: '#141413', fontFamily: poppins }}>
+                      <td className="px-4 py-[13px] text-[13px] font-semibold text-charcoal">
                         ${p.price}.00
                       </td>
 
                       {/* All-time Sales */}
-                      <td style={{ padding: '13px 16px', fontSize: 13, color: '#4A4845', fontFamily: poppins }}>
+                      <td className="px-4 py-[13px] text-[13px] text-[#4A4845]">
                         {p.sales.toLocaleString()}
                       </td>
 
                       {/* Actions */}
-                      <td style={{ padding: '13px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <td className="px-4 py-[13px]">
+                        <div className="flex items-center gap-[6px]">
                           <button
                             onClick={() => navigate('/seller/products/add')}
-                            style={{ padding: '4px 12px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 6, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}
+                            className="px-3 py-1 bg-white border border-bone rounded-md text-xs text-[#4A4945] cursor-pointer"
                             onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
                             onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
                           >
                             Edit
                           </button>
                           {(isOos || isLowStock) && (
-                            <button style={{ padding: '4px 12px', background: '#FBECE4', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, color: '#C96847', cursor: 'pointer', fontFamily: poppins }}>
+                            <button className="px-3 py-1 bg-brand-pale-orange border-0 rounded-md text-xs font-semibold text-[#C96847] cursor-pointer">
                               Restock
                             </button>
                           )}
@@ -270,7 +261,7 @@ export function SellerInventory() {
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={8} style={{ padding: '40px 16px', textAlign: 'center', fontSize: 13, color: '#8C8A82', fontFamily: poppins }}>
+                    <td colSpan={8} className="px-4 py-10 text-center text-[13px] text-slate">
                       No products match your filters.
                     </td>
                   </tr>
@@ -280,8 +271,8 @@ export function SellerInventory() {
           </div>
 
           {/* Footer */}
-          <div style={{ padding: '12px 20px', borderTop: '1px solid #E8E6DC' }}>
-            <span style={{ fontSize: 12, color: '#8C8A82', fontFamily: poppins }}>
+          <div className="px-5 py-3 border-t border-bone">
+            <span className="text-xs text-slate">
               Showing {filtered.length} of {PRODUCTS.length} products
             </span>
           </div>

@@ -41,9 +41,6 @@ const metrics = [
   { label: 'Avg Review Time', value: '4.2 min', sub: null,                 trend: '-0.8 min',      trendUp: true  },
 ] as const;
 
-const poppins   = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function AdminModeration() {
   const navigate = useNavigate();
@@ -61,28 +58,24 @@ export function AdminModeration() {
   });
 
   return (
-    <div style={{ fontFamily: poppins }}>
+    <div>
 
       {/* ── Header ── */}
-      <div style={{
-        background: '#fff', borderBottom: '1px solid #E8E6DC',
-        padding: '14px 28px', display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10,
-      }}>
+      <div className="bg-white border-b border-bone px-7 py-[14px] flex items-center justify-between sticky top-0 z-10">
         <div>
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: '#141413', lineHeight: 1.3 }}>Content Moderation</h1>
-          <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 2 }}>Review flagged listings, sellers, and reports</p>
+          <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Content Moderation</h1>
+          <p className="text-[12px] text-slate mt-[2px]">Review flagged listings, sellers, and reports</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#FDECEA', color: '#C0392B' }}>
+        <div className="flex items-center gap-[10px]">
+          <span className="inline-flex items-center gap-1 px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#FDECEA] text-[#C0392B]">
             <AlertCircle size={11} /> 14 Urgent
           </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#FFF4DC', color: '#B36200' }}>
+          <span className="inline-flex items-center gap-1 px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#FFF4DC] text-[#B36200]">
             <AlertTriangle size={11} /> 38 Pending
           </span>
           <button
             onClick={() => navigate('/seller/dashboard')}
-            style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#8C8A82', background: 'transparent', border: '1px solid #E8E6DC', cursor: 'pointer', fontFamily: poppins, display: 'flex', alignItems: 'center', gap: 5 }}
+            className="px-3 py-[6px] rounded-lg text-[12px] font-medium text-slate bg-transparent border border-bone cursor-pointer flex items-center gap-[5px]"
           >
             <ArrowLeft size={13} /> Back to Demo
           </button>
@@ -90,50 +83,50 @@ export function AdminModeration() {
       </div>
 
       {/* ── Content ── */}
-      <div style={{ padding: '20px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* Metrics */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="grid grid-cols-4 gap-3">
           {metrics.map(m => (
-            <div key={m.label} style={{ ...cardStyle, padding: '16px 20px' }}>
-              <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</p>
-              <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{m.value}</p>
-              {m.trend && <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {m.trend}</p>}
-              {m.sub   && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>}
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{m.value}</p>
+              {m.trend && <p className="text-[12px] text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
+              {m.sub   && <p className="text-[12px] text-slate mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
 
         {/* Table card */}
-        <div style={{ ...cardStyle, overflow: 'hidden' }}>
+        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
 
           {/* Filters */}
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid #E8E6DC', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #E8E6DC', borderRadius: 8, padding: '0 12px', background: '#fff', flex: 1, maxWidth: 280 }}>
+          <div className="px-5 py-[14px] border-b border-bone flex gap-[10px] items-center flex-wrap">
+            <div className="flex items-center gap-[6px] border border-bone rounded-lg px-3 bg-white flex-1 max-w-[280px]">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
               <input placeholder="Search flagged items..." value={search} onChange={e => setSearch(e.target.value)}
-                style={{ border: 'none', outline: 'none', fontSize: 13, padding: '8px 0', width: '100%', fontFamily: poppins, color: '#2C2A28', background: 'transparent' }} />
+                className="border-none outline-none text-[13px] py-2 w-full text-[#2C2A28] bg-transparent" />
             </div>
             {[
               { value: typeF, set: setTypeF, opts: ['All Types','Listing','Seller','Review'] },
               { value: riskF, set: setRiskF, opts: ['All Priority','high','medium','low']    },
             ].map((s, i) => (
               <select key={i} value={s.value} onChange={e => s.set(e.target.value)}
-                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #E8E6DC', fontSize: 13, fontFamily: poppins, background: '#fff', color: '#2C2A28', outline: 'none', cursor: 'pointer' }}>
+                className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white text-[#2C2A28] outline-none cursor-pointer">
                 {s.opts.map(o => <option key={o} value={o.startsWith('All') ? '' : o}>{o}</option>)}
               </select>
             ))}
           </div>
 
           {/* Table */}
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
                   {['#','Type','Item','Seller','Reason','Risk','Reported','Actions'].map(h => (
-                    <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontSize: 11, fontWeight: 600, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #E8E6DC', background: '#FAF9F5', whiteSpace: 'nowrap', fontFamily: poppins }}>
+                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-[#FAF9F5] whitespace-nowrap">
                       {h}
                     </th>
                   ))}
@@ -145,38 +138,42 @@ export function AdminModeration() {
                   const ts   = typeStyle[item.type];
                   return (
                     <tr key={item.id}
-                      style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none', background: item.risk === 'high' ? '#FFFAF9' : '#fff', transition: 'background 0.12s' }}
+                      className="transition-colors duration-[120ms]"
+                      style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none', background: item.risk === 'high' ? '#FFFAF9' : '#fff' }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
                       onMouseLeave={e => (e.currentTarget.style.background = item.risk === 'high' ? '#FFFAF9' : '#fff')}
                     >
                       {/* ID */}
-                      <td style={{ padding: '12px 16px', fontWeight: 700, color: '#B95A3A', whiteSpace: 'nowrap', fontFamily: poppins, fontSize: 13 }}>{item.id}</td>
+                      <td className="px-4 py-3 font-bold text-[#B95A3A] whitespace-nowrap text-[13px]">{item.id}</td>
                       {/* Type */}
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{ padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: ts.bg, color: ts.color, fontFamily: poppins }}>{item.type}</span>
+                      <td className="px-4 py-3">
+                        <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
+                          style={{ background: ts.bg, color: ts.color }}>{item.type}</span>
                       </td>
                       {/* Item */}
-                      <td style={{ padding: '12px 16px', maxWidth: 180 }}>
-                        <p style={{ fontSize: 13, fontWeight: 500, color: '#141413', margin: 0, fontFamily: poppins }}>{item.item}</p>
+                      <td className="px-4 py-3 max-w-[180px]">
+                        <p className="text-[13px] font-medium text-charcoal m-0">{item.item}</p>
                       </td>
                       {/* Seller */}
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#4A4945', whiteSpace: 'nowrap', fontFamily: poppins }}>{item.seller}</td>
+                      <td className="px-4 py-3 text-[13px] text-[#4A4945] whitespace-nowrap">{item.seller}</td>
                       {/* Reason */}
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#4A4945', maxWidth: 200, fontFamily: poppins }}>{item.reason}</td>
+                      <td className="px-4 py-3 text-[13px] text-[#4A4945] max-w-[200px]">{item.reason}</td>
                       {/* Risk */}
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: risk.bg, color: risk.color, fontFamily: poppins }}>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1 px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
+                          style={{ background: risk.bg, color: risk.color }}>
                           <risk.Icon size={10} /> {risk.label}
                         </span>
                       </td>
                       {/* Reported */}
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#8C8A82', whiteSpace: 'nowrap', fontFamily: poppins }}>{item.reported}</td>
+                      <td className="px-4 py-3 text-[13px] text-slate whitespace-nowrap">{item.reported}</td>
                       {/* Actions */}
-                      <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          {[['Review','#1A72C2'],['Approve','#2D8A4E'],['Remove','#C13030']].map(([label, bg]) => (
-                            <button key={label} style={{ padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 500, color: '#fff', background: bg, border: 'none', cursor: 'pointer', fontFamily: poppins, whiteSpace: 'nowrap' }}>
-                              {label}
+                      <td className="px-4 py-3">
+                        <div className="flex gap-[6px]">
+                          {[['Review','#1A72C2'],['Approve','#2D8A4E'],['Remove','#C13030']].map(([lbl, bg]) => (
+                            <button key={lbl} className="px-[10px] py-1 rounded-[6px] text-[11px] font-medium text-white border-none cursor-pointer whitespace-nowrap"
+                              style={{ background: bg }}>
+                              {lbl}
                             </button>
                           ))}
                         </div>

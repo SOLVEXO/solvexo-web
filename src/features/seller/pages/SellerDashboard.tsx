@@ -67,25 +67,18 @@ const statusColors: Record<string, { bg: string; color: string }> = {
 
 function MyStoreCardSkeleton() {
   return (
-    <div style={{
-      background: '#FFFFFF', border: '1px solid #E8E6DC', borderRadius: 10,
-      boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden',
-    }}>
-      <div style={{ padding: '16px 18px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div className="animate-pulse" style={{ width: 72, height: 14, borderRadius: 4, background: '#EDEBE2' }} />
-        <div className="animate-pulse" style={{ width: 44, height: 11, borderRadius: 3, background: '#EDEBE2' }} />
+    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+      <div className="px-[18px] pt-4 pb-[10px] flex items-center justify-between">
+        <div className="animate-pulse w-[72px] h-[14px] rounded bg-[#EDEBE2]" />
+        <div className="animate-pulse w-[44px] h-[11px] rounded-[3px] bg-[#EDEBE2]" />
       </div>
-      <div style={{ padding: '0 8px 8px' }}>
+      <div className="px-2 pb-2">
         {[0, 1, 2].map(i => (
-          <div key={i} style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: '11px 10px',
-            borderBottom: i < 2 ? '1px solid #F5F4EF' : 'none',
-          }}>
-            <div className="animate-pulse" style={{ width: 32, height: 32, borderRadius: 8, background: '#EDEBE2', flexShrink: 0 }} />
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div className="animate-pulse" style={{ width: 100, height: 12, borderRadius: 4, background: '#EDEBE2' }} />
-              <div className="animate-pulse" style={{ width: 64, height: 10, borderRadius: 4, background: '#EDEBE2' }} />
+          <div key={i} className={`flex items-center gap-3 px-[10px] py-[11px]${i < 2 ? ' border-b border-[#F5F4EF]' : ''}`}>
+            <div className="animate-pulse w-8 h-8 rounded-lg bg-[#EDEBE2] shrink-0" />
+            <div className="flex-1 flex flex-col gap-[6px]">
+              <div className="animate-pulse w-[100px] h-3 rounded bg-[#EDEBE2]" />
+              <div className="animate-pulse w-16 h-[10px] rounded bg-[#EDEBE2]" />
             </div>
           </div>
         ))}
@@ -102,52 +95,16 @@ function MyStoreCard() {
 
   if (error || stores.length === 0) {
     return (
-      <div
-        style={{
-          background: '#FFFFFF',
-          border: '1px solid #E8E6DC',
-          borderRadius: 10,
-          padding: '32px 20px',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-          textAlign: 'center',
-        }}
-      >
-        <div
-          style={{
-            width: 52,
-            height: 52,
-            borderRadius: 12,
-            background: '#FBECE4',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 14px',
-          }}
-        >
-          <Store size={24} style={{ color: '#D97757' }} />
+      <div className="bg-white border border-bone rounded-[10px] px-5 py-8 shadow-[0_1px_4px_rgba(0,0,0,0.04)] text-center">
+        <div className="w-[52px] h-[52px] rounded-xl bg-brand-pale-orange flex items-center justify-center mx-auto mb-[14px]">
+          <Store size={24} className="text-brand-orange" />
         </div>
 
-        <h3
-          style={{
-            fontSize: 15,
-            fontWeight: 700,
-            color: '#141413',
-            marginBottom: 6,
-            fontFamily: "'Poppins', sans-serif",
-          }}
-        >
+        <h3 className="text-[15px] font-bold text-charcoal mb-[6px]">
           No stores yet
         </h3>
 
-        <p
-          style={{
-            fontSize: 12,
-            color: '#8C8A82',
-            lineHeight: 1.5,
-            marginBottom: 16,
-            fontFamily: "'Poppins', sans-serif",
-          }}
-        >
+        <p className="text-xs text-slate leading-[1.5] mb-4">
           Create your first store and start selling your products.
         </p>
 
@@ -163,65 +120,49 @@ function MyStoreCard() {
   }
 
   return (
-    <div style={{
-      background: '#FFFFFF', border: '1px solid #E8E6DC', borderRadius: 10,
-      boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden',
-    }}>
-      <div style={{ padding: '16px 18px 8px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', fontFamily: "'Poppins', sans-serif" }}>My Store</p>
-        <div style={{ textAlign: 'right' }}>
-          <span style={{ fontSize: 11, color: '#8C8A82', fontFamily: "'Poppins', sans-serif" }}>
+    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+      <div className="px-[18px] pt-4 pb-2 flex items-start justify-between">
+        <p className="text-sm font-bold text-charcoal">My Store</p>
+        <div className="text-right">
+          <span className="text-[11px] text-slate">
             Total Stores ({stores.length})
           </span>
           <br />
           <button
             onClick={() => navigate('/seller/stores')}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-              fontSize: 11, color: '#D97757', fontWeight: 600, marginTop: 2,
-              fontFamily: "'Poppins', sans-serif", textDecoration: 'underline',
-            }}
+            className="bg-transparent border-0 cursor-pointer p-0 text-[11px] text-brand-orange font-semibold mt-0.5 underline"
           >
             View All
           </button>
         </div>
       </div>
-      <div style={{ padding: '0 8px 8px', maxHeight: 252, overflowY: 'auto' }} className="scrollbar-hide">
+      <div className="px-2 pb-2 max-h-[252px] overflow-y-auto scrollbar-hide">
         {stores.map((store, i) => {
           const st = statusColors[store.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
           return (
             <button
               key={store._id}
               onClick={() => navigate(`/seller/store/${store._id}/dashboard`)}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                padding: '11px 10px', background: 'transparent', border: 'none',
-                borderBottom: i < stores.length - 1 ? '1px solid #F5F4EF' : 'none',
-                cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s',
-                fontFamily: "'Poppins', sans-serif", borderRadius: 6,
-              }}
+              className="w-full flex items-center gap-3 px-[10px] py-[11px] bg-transparent border-0 cursor-pointer text-left transition-[background] duration-150 rounded-md"
+              style={{ borderBottom: i < stores.length - 1 ? '1px solid #F5F4EF' : 'none' }}
               onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
-              <div style={{
-                width: 32, height: 32, borderRadius: 8, background: '#FBECE4',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                overflow: 'hidden', border: '1px solid #EDEBE2',
-              }}>
+              <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0 overflow-hidden border border-[#EDEBE2]">
                 {store.logo
-                  ? <img src={store.logo} alt={store.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <Store size={15} style={{ color: '#D97757' }} />}
+                  ? <img src={store.logo} alt={store.name} className="w-full h-full object-cover" />
+                  : <Store size={15} className="text-brand-orange" />}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 500, color: '#141413', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store.name}</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 20, background: st.bg, color: st.color }}>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-medium text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">{store.name}</p>
+                <div className="flex items-center gap-[6px] mt-0.5">
+                  <span className="text-[10px] font-semibold px-[6px] py-px rounded-[20px]" style={{ background: st.bg, color: st.color }}>
                     {store.status}
                   </span>
-                  <span style={{ fontSize: 10, color: '#8C8A82' }}>/{store.slug}</span>
+                  <span className="text-[10px] text-slate">/{store.slug}</span>
                 </div>
               </div>
-              <span style={{ fontSize: 16, color: '#C0BDB5' }}>›</span>
+              <span className="text-base text-[#C0BDB5]">›</span>
             </button>
           );
         })}
@@ -234,17 +175,9 @@ function MyStoreCard() {
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{
-      background: '#fff',
-      border: '1px solid #E8E6DC',
-      borderRadius: 8,
-      padding: '6px 12px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-      fontSize: 12,
-      fontFamily: "'Poppins', sans-serif",
-    }}>
-      <p style={{ color: '#8C8A82', marginBottom: 2 }}>{label}</p>
-      <p style={{ fontWeight: 700, color: '#141413' }}>${payload[0].value.toLocaleString()}</p>
+    <div className="bg-white border border-bone rounded-lg px-3 py-[6px] shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-xs">
+      <p className="text-slate mb-0.5">{label}</p>
+      <p className="font-bold text-charcoal">${payload[0].value.toLocaleString()}</p>
     </div>
   );
 }
@@ -271,45 +204,26 @@ export function SellerDashboard() {
         }
       />
 
-      <div style={{ padding: '16px 20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="px-5 pt-4 pb-6 flex flex-col gap-4">
 
         {/* ── Row 1: Metric Cards ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="grid grid-cols-4 gap-3">
           {metrics.map((m) => (
             <div
               key={m.label}
-              style={{
-                background: '#FFFFFF',
-                border: '1px solid #E8E6DC',
-                borderRadius: 10,
-                padding: '16px 20px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-              }}
+              className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
             >
-              <p style={{
-                fontSize: 11, fontWeight: 500, color: '#8C8A82',
-                textTransform: 'uppercase', letterSpacing: '0.06em',
-                marginBottom: 6, fontFamily: "'Poppins', sans-serif",
-              }}>
+              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-[6px]">
                 {m.label}
               </p>
-              <p style={{
-                fontSize: 28, fontWeight: 700, color: '#141413',
-                lineHeight: 1.15, fontFamily: "'Poppins', sans-serif",
-              }}>
+              <p className="text-[28px] font-bold text-charcoal leading-[1.15]">
                 {m.value}
               </p>
-              <p style={{
-                fontSize: 12, color: '#2D8A4E',
-                marginTop: 5, fontFamily: "'Poppins', sans-serif",
-              }}>
+              <p className="text-xs text-[#2D8A4E] mt-[5px]">
                 ▲ {m.trend}
               </p>
               {m.sub && (
-                <p style={{
-                  fontSize: 11, color: '#8C8A82',
-                  marginTop: 2, fontFamily: "'Poppins', sans-serif",
-                }}>
+                <p className="text-[11px] text-slate mt-0.5">
                   {m.sub}
                 </p>
               )}
@@ -318,16 +232,13 @@ export function SellerDashboard() {
         </div>
 
         {/* ── Row 2: Revenue Chart + My Store (col-8 + col-4) ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
+        <div className="grid gap-4" style={{ gridTemplateColumns: '2fr 1fr' }}>
 
           {/* Revenue Chart */}
-          <div style={{
-            background: '#FFFFFF', border: '1px solid #E8E6DC', borderRadius: 10,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-          }}>
-            <div style={{ padding: '16px 20px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', fontFamily: "'Poppins', sans-serif" }}>Revenue — Last 7 Days</p>
-              <span style={{ background: '#FBECE4', color: '#C96847', fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 6, fontFamily: "'Poppins', sans-serif" }}>$13,434 total</span>
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <div className="px-5 pt-4 pb-2 flex items-center justify-between">
+              <p className="text-sm font-bold text-charcoal">Revenue — Last 7 Days</p>
+              <span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">$13,434 total</span>
             </div>
             <ResponsiveContainer width="100%" height={240}>
               <AreaChart data={revenueData} margin={{ top: 8, right: 20, left: 0, bottom: 4 }}>
@@ -351,58 +262,47 @@ export function SellerDashboard() {
         </div>
 
         {/* ── Row 3: Quick Actions + Recent Orders (side by side) ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 16 }}>
+        <div className="grid gap-4" style={{ gridTemplateColumns: '320px 1fr' }}>
 
           {/* Quick Actions */}
-          <div style={{
-            background: '#FFFFFF', border: '1px solid #E8E6DC', borderRadius: 10,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden',
-          }}>
-            <div style={{ padding: '16px 18px 8px' }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', fontFamily: "'Poppins', sans-serif" }}>Quick Actions</p>
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+            <div className="px-[18px] pt-4 pb-2">
+              <p className="text-sm font-bold text-charcoal">Quick Actions</p>
             </div>
-            <div style={{ padding: '0 8px 8px' }}>
+            <div className="px-2 pb-2">
               {quickActions.map((a, i) => (
                 <button
                   key={a.label}
                   onClick={() => navigate(a.path)}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '11px 10px', background: 'transparent', border: 'none',
-                    borderBottom: i < quickActions.length - 1 ? '1px solid #F5F4EF' : 'none',
-                    cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s',
-                    fontFamily: "'Poppins', sans-serif", borderRadius: 6,
-                  }}
+                  className="w-full flex items-center gap-3 px-[10px] py-[11px] bg-transparent border-0 cursor-pointer text-left transition-[background] duration-150 rounded-md"
+                  style={{ borderBottom: i < quickActions.length - 1 ? '1px solid #F5F4EF' : 'none' }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = '#FAF9F5')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: '#FBECE4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <a.Icon size={15} style={{ color: '#D97757' }} />
+                  <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
+                    <a.Icon size={15} className="text-brand-orange" />
                   </div>
-                  <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#141413' }}>{a.label}</span>
-                  <span style={{ fontSize: 16, color: '#C0BDB5' }}>›</span>
+                  <span className="flex-1 text-[13px] font-medium text-charcoal">{a.label}</span>
+                  <span className="text-base text-[#C0BDB5]">›</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Recent Orders */}
-          <div style={{
-            background: '#FFFFFF', border: '1px solid #E8E6DC', borderRadius: 10,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-          }}>
-            <div style={{ padding: '16px 20px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', fontFamily: "'Poppins', sans-serif" }}>Recent Orders</p>
-              <button onClick={() => navigate('/seller/orders')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#8C8A82', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Poppins', sans-serif" }}>
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <div className="px-5 pt-4 pb-[10px] flex items-center justify-between">
+              <p className="text-sm font-bold text-charcoal">Recent Orders</p>
+              <button onClick={() => navigate('/seller/orders')} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1">
                 View All <ArrowRight size={14} />
               </button>
             </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, fontFamily: "'Poppins', sans-serif" }}>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-[13px]">
                 <thead>
-                  <tr style={{ borderTop: '1px solid #E8E6DC', borderBottom: '1px solid #E8E6DC' }}>
+                  <tr className="border-t border-b border-bone">
                     {['Order', 'Customer', 'Product', 'Amount', 'Status', 'Actions'].map((h) => (
-                      <th key={h} style={{ textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 18px', fontFamily: "'Poppins', sans-serif" }}>
+                      <th key={h} className="text-left text-[11px] font-semibold text-slate uppercase tracking-[0.05em] px-[18px] py-[10px]">
                         {h}
                       </th>
                     ))}
@@ -413,18 +313,32 @@ export function SellerDashboard() {
                     const av = avatarColors[order.initials] ?? { bg: '#F0EEE6', color: '#5A5852' };
                     const st = statusStyles[order.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
                     return (
-                      <tr key={order.id} style={{ borderBottom: i < recentOrders.length - 1 ? '1px solid #F5F4EF' : 'none', transition: 'background 0.12s' }} onMouseEnter={(e) => (e.currentTarget.style.background = '#FAF9F5')} onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
-                        <td style={{ padding: '11px 18px', fontWeight: 600, color: '#D97757' }}>{order.id}</td>
-                        <td style={{ padding: '11px 18px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 26, height: 26, borderRadius: '50%', background: av.bg, color: av.color, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{order.initials}</div>
-                            <span style={{ color: '#4A4945' }}>{order.customer}</span>
+                      <tr
+                        key={order.id}
+                        className="transition-[background] duration-[0.12s]"
+                        style={{ borderBottom: i < recentOrders.length - 1 ? '1px solid #F5F4EF' : 'none' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = '#FAF9F5')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <td className="px-[18px] py-[11px] font-semibold text-brand-orange">{order.id}</td>
+                        <td className="px-[18px] py-[11px]">
+                          <div className="flex items-center gap-2">
+                            <div className="w-[26px] h-[26px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0" style={{ background: av.bg, color: av.color }}>{order.initials}</div>
+                            <span className="text-[#4A4945]">{order.customer}</span>
                           </div>
                         </td>
-                        <td style={{ padding: '11px 18px', color: '#4A4945' }}>{order.product}</td>
-                        <td style={{ padding: '11px 18px', fontWeight: 600, color: '#141413' }}>{order.amount}</td>
-                        <td style={{ padding: '11px 18px' }}><span style={{ display: 'inline-block', background: st.bg, color: st.color, fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 5 }}>{order.status}</span></td>
-                        <td style={{ padding: '11px 18px' }}><button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#D97757', fontWeight: 600, fontFamily: "'Poppins', sans-serif" }} onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')} onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}>View</button></td>
+                        <td className="px-[18px] py-[11px] text-[#4A4945]">{order.product}</td>
+                        <td className="px-[18px] py-[11px] font-semibold text-charcoal">{order.amount}</td>
+                        <td className="px-[18px] py-[11px]"><span className="inline-block text-[11px] font-semibold px-[10px] py-[3px] rounded-[5px]" style={{ background: st.bg, color: st.color }}>{order.status}</span></td>
+                        <td className="px-[18px] py-[11px]">
+                          <button
+                            className="bg-transparent border-0 cursor-pointer text-xs text-brand-orange font-semibold"
+                            onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                            onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                          >
+                            View
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}

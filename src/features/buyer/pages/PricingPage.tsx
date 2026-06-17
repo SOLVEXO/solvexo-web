@@ -1,17 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { clsx } from 'clsx';
 import { ArrowRight, Sparkles, User, Lock, Star, Receipt, MessageSquare, Check, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
-// ── Design tokens (exact reference C object) ──────────────────────────────────
-const C = {
-  orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
-  carbon: '#141413', charcoal: '#2C2A28', slate: '#8C8A82',
-  bone: '#E8E6DC', cream: '#FAF9F5', white: '#FFFFFF',
-  success: '#2D8A4E', successBg: '#EBF7EF',
-};
-const FONT  = "'Poppins', sans-serif";
 const SERIF = "'Lora', Georgia, serif";
 
 // ── Exact plan data from reference source ─────────────────────────────────────
@@ -147,53 +140,40 @@ export function PricingPage() {
   };
 
   return (
-    <div style={{ background: C.cream, minHeight: '100%', fontFamily: FONT }}>
+    <div className="bg-cream min-h-full">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <div style={{ textAlign: 'center', padding: '64px 48px 48px', maxWidth: 720, margin: '0 auto' }}>
+      <div className="text-center px-12 pt-16 pb-12 max-w-[720px] mx-auto">
         {/* Top pill badge */}
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: C.paleOrange, border: `1px solid rgba(217,119,87,0.3)`,
-          borderRadius: 20, padding: '5px 14px', marginBottom: 20,
-        }}>
-          <span style={{ fontSize: 12, color: C.deepOrange, fontWeight: 500 }}>
+        <div className="inline-flex items-center gap-2 bg-brand-pale-orange border border-[rgba(217,119,87,0.3)] rounded-[20px] px-[14px] py-[5px] mb-5">
+          <span className="text-[12px] text-[#B95A3A] font-medium">
             No credit card required • Cancel anytime
           </span>
         </div>
 
-        <h1 style={{ fontFamily: SERIF, fontSize: 42, fontWeight: 700, color: C.carbon, lineHeight: 1.2, display: 'block', marginBottom: 14 }}>
+        <h1 className="block text-[42px] font-bold text-[#141413] leading-[1.2] mb-[14px]" style={{ fontFamily: SERIF }}>
           Simple, transparent pricing
         </h1>
-        <p style={{ fontSize: 16, color: C.slate, lineHeight: 1.6, display: 'block', marginBottom: 32 }}>
+        <p className="block text-[16px] text-[#8C8A82] leading-[1.6] mb-8">
           Start free. Scale as you grow. Every plan includes marketplace access, digital delivery, and AI-powered tools.
         </p>
 
         {/* Billing toggle — pill selector style (exact reference) */}
-        <div style={{
-          display: 'inline-flex', background: C.bone,
-          borderRadius: 10, padding: 4, marginBottom: 48,
-        }}>
+        <div className="inline-flex bg-bone rounded-[10px] p-1 mb-12">
           {(['monthly', 'annual'] as const).map(b => (
             <div
               key={b}
               onClick={() => setBilling(b)}
-              style={{
-                padding: '8px 24px', borderRadius: 8, cursor: 'pointer',
-                background: billing === b ? C.white : 'transparent',
-                boxShadow: billing === b ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
-                transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 6,
-              }}
+              className={clsx(
+                'px-6 py-2 rounded-lg cursor-pointer flex items-center gap-[6px] transition-all duration-200',
+                billing === b ? 'bg-white shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent',
+              )}
             >
-              <span style={{
-                fontSize: 13, fontFamily: FONT, textTransform: 'capitalize',
-                fontWeight: billing === b ? 600 : 400,
-                color: billing === b ? C.carbon : C.slate,
-              }}>
+              <span className={clsx('text-[13px] capitalize', billing === b ? 'font-semibold text-carbon' : 'font-normal text-slate')}>
                 {b}
               </span>
               {b === 'annual' && (
-                <span style={{ fontSize: 10, fontWeight: 600, color: C.success }}>Save 20%</span>
+                <span className="text-[10px] font-semibold text-success">Save 20%</span>
               )}
             </div>
           ))}
@@ -201,60 +181,55 @@ export function PricingPage() {
       </div>
 
       {/* ── Plan Cards ────────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, padding: '0 48px 64px', maxWidth: 1200, margin: '0 auto' }}>
+      <div className="grid grid-cols-4 gap-4 px-12 pb-16 max-w-[1200px] mx-auto">
         {PLANS.map(plan => {
           const isPro = plan.name === 'Professional';
           return (
             <div
               key={plan.name}
-              style={{
-                background: isPro ? C.carbon : C.white,
-                borderRadius: 20, padding: 28,
-                border: `2px solid ${isPro ? C.orange : C.bone}`,
-                position: 'relative',
-                boxShadow: isPro
-                  ? '0 8px 40px rgba(217,119,87,0.25)'
-                  : '0 2px 12px rgba(0,0,0,0.06)',
-              }}
+              className="rounded-[20px] p-7 relative"
+              className={clsx(
+                'rounded-[20px] p-7 relative border-2',
+                isPro
+                  ? 'bg-carbon border-brand-orange shadow-[0_8px_40px_rgba(217,119,87,0.25)]'
+                  : 'bg-white border-bone shadow-[0_2px_12px_rgba(0,0,0,0.06)]',
+              )}
             >
               {/* Badge */}
               {plan.badge && (
-                <div style={{
-                  position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
-                  background: C.orange, color: C.white, borderRadius: 20,
-                  padding: '4px 14px', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap',
-                  fontFamily: FONT,
-                }}>
+                <div
+                  className="absolute top-[-12px] left-1/2 -translate-x-1/2 bg-brand-orange text-white rounded-[20px] px-[14px] py-1 text-[11px] font-bold whitespace-nowrap"
+                >
                   {plan.badge}
                 </div>
               )}
 
               {/* Plan name */}
-              <p style={{ fontSize: 15, fontWeight: 700, color: isPro ? C.white : C.carbon, fontFamily: FONT, marginBottom: 8 }}>
+              <p className={clsx('text-[15px] font-bold mb-2', isPro ? 'text-white' : 'text-carbon')}>
                 {plan.name}
               </p>
-              <p style={{ fontSize: 11, color: isPro ? '#B0AEA8' : C.slate, fontFamily: FONT, marginBottom: 20, lineHeight: 1.5 }}>
+              <p className={clsx('text-[11px] mb-5 leading-[1.5]', isPro ? 'text-[#B0AEA8]' : 'text-slate')}>
                 {plan.desc}
               </p>
 
               {/* Price */}
-              <div style={{ marginBottom: 24 }}>
+              <div className="mb-6">
                 {plan.monthly === null ? (
-                  <p style={{ fontSize: 28, fontWeight: 700, color: isPro ? C.white : C.carbon, fontFamily: FONT }}>Custom</p>
+                  <p className={clsx('text-[28px] font-bold', isPro ? 'text-white' : 'text-carbon')}>Custom</p>
                 ) : plan.monthly === 0 ? (
-                  <p style={{ fontSize: 36, fontWeight: 700, color: isPro ? C.white : C.carbon, fontFamily: FONT }}>Free</p>
+                  <p className={clsx('text-[36px] font-bold', isPro ? 'text-white' : 'text-carbon')}>Free</p>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                    <span style={{ fontSize: 36, fontWeight: 700, color: isPro ? C.orange : C.carbon, fontFamily: FONT }}>
+                  <div className="flex items-baseline gap-1">
+                    <span className={clsx('text-[36px] font-bold', isPro ? 'text-brand-orange' : 'text-carbon')}>
                       {getPrice(plan)}
                     </span>
-                    <span style={{ fontSize: 13, color: isPro ? '#B0AEA8' : C.slate, fontFamily: FONT }}>
+                    <span className={clsx('text-[13px]', isPro ? 'text-[#B0AEA8]' : 'text-slate')}>
                       /month
                     </span>
                   </div>
                 )}
                 {billing === 'annual' && plan.monthly !== null && plan.monthly > 0 && (
-                  <p style={{ fontSize: 11, color: isPro ? C.orange : C.success, marginTop: 4, fontFamily: FONT }}>
+                  <p className={clsx('text-[11px] mt-1', isPro ? 'text-brand-orange' : 'text-success')}>
                     Billed ${(billing === 'annual' ? plan.annual! : plan.monthly) * 12}/year
                   </p>
                 )}
@@ -263,36 +238,31 @@ export function PricingPage() {
               {/* CTA Button */}
               <button
                 onClick={() => navigate('/onboarding')}
-                style={{
-                  width: '100%', padding: '10px', borderRadius: 8, fontSize: 13,
-                  fontWeight: 600, fontFamily: FONT, cursor: 'pointer',
-                  marginBottom: 24, border: `1px solid ${isPro ? C.orange : C.bone}`,
-                  background: isPro ? C.orange : 'transparent',
-                  color: isPro ? C.white : C.charcoal,
-                  transition: 'all 0.18s',
-                  justifyContent: 'center', display: 'flex',
-                }}
+                className={clsx(
+                  'w-full py-[10px] rounded-lg text-[13px] font-semibold cursor-pointer mb-6 flex justify-center transition-all duration-[180ms] border',
+                  isPro ? 'border-brand-orange bg-brand-orange text-white' : 'border-bone bg-transparent text-charcoal',
+                )}
               >
                 {plan.cta}
               </button>
 
               {/* Divider */}
-              <div style={{ height: 1, background: isPro ? 'rgba(255,255,255,0.1)' : C.bone, marginBottom: 20 }} />
+              <div className={clsx('h-px mb-5', isPro ? 'bg-[rgba(255,255,255,0.1)]' : 'bg-bone')} />
 
               {/* Features */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="flex flex-col gap-[10px]">
                 {plan.features.map(f => (
-                  <div key={f} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <Check size={13} style={{ color: C.success, flexShrink: 0, marginTop: 1 }} />
-                    <span style={{ fontSize: 12, color: isPro ? '#D0CEC8' : C.charcoal, lineHeight: 1.5, fontFamily: FONT }}>
+                  <div key={f} className="flex gap-2 items-start">
+                    <Check size={13} className="text-success flex-shrink-0 mt-[1px]" />
+                    <span className={clsx('text-[12px] leading-[1.5]', isPro ? 'text-[#D0CEC8]' : 'text-charcoal')}>
                       {f}
                     </span>
                   </div>
                 ))}
                 {plan.missing.map(f => (
-                  <div key={f} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', opacity: 0.4 }}>
-                    <X size={13} style={{ color: C.slate, flexShrink: 0, marginTop: 1 }} />
-                    <span style={{ fontSize: 12, color: C.slate, lineHeight: 1.5, fontFamily: FONT }}>
+                  <div key={f} className="flex gap-2 items-start opacity-40">
+                    <X size={13} className="text-[#8C8A82] flex-shrink-0 mt-[1px]" />
+                    <span className="text-[12px] text-[#8C8A82] leading-[1.5]">
                       {f}
                     </span>
                   </div>
@@ -304,28 +274,25 @@ export function PricingPage() {
       </div>
 
       {/* ── Add-ons ───────────────────────────────────────────────────────── */}
-      <div style={{ padding: '0 48px 64px', maxWidth: 1200, margin: '0 auto' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: C.carbon, fontFamily: FONT, marginBottom: 8 }}>
+      <div className="px-12 pb-16 max-w-[1200px] mx-auto">
+        <h2 className="text-[24px] font-bold text-[#141413] mb-2">
           Add-ons &amp; extras
         </h2>
-        <p style={{ fontSize: 14, color: C.slate, fontFamily: FONT, marginBottom: 28 }}>
+        <p className="text-[14px] text-[#8C8A82] mb-7">
           Extend your plan with exactly what you need.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+        <div className="grid grid-cols-3 gap-[14px]">
           {ADDONS.map(a => (
             <div
               key={a.name}
-              style={{
-                background: C.white, borderRadius: 12, padding: '18px 20px',
-                border: `1px solid ${C.bone}`, display: 'flex', gap: 14, alignItems: 'center',
-              }}
+              className="bg-white rounded-[12px] px-5 py-[18px] border border-bone flex gap-[14px] items-center"
             >
-              <a.Icon size={28} style={{ color: '#D97757', flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: C.carbon, fontFamily: FONT, marginBottom: 2 }}>{a.name}</p>
-                <p style={{ fontSize: 11, color: C.slate, fontFamily: FONT }}>{a.unit}</p>
+              <a.Icon size={28} className="text-brand-orange flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-[13px] font-semibold text-[#141413] mb-[2px]">{a.name}</p>
+                <p className="text-[11px] text-[#8C8A82]">{a.unit}</p>
               </div>
-              <span style={{ fontSize: 14, fontWeight: 700, color: C.orange, fontFamily: FONT, flexShrink: 0 }}>
+              <span className="text-[14px] font-bold text-brand-orange flex-shrink-0">
                 {a.price}
               </span>
             </div>
@@ -334,21 +301,21 @@ export function PricingPage() {
       </div>
 
       {/* ── FAQ ───────────────────────────────────────────────────────────── */}
-      <div style={{ background: C.white, padding: '64px 48px', borderTop: `1px solid ${C.bone}` }}>
-        <div style={{ maxWidth: 720, margin: '0 auto' }}>
-          <h2 style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 700, color: C.carbon, textAlign: 'center', marginBottom: 40 }}>
+      <div className="bg-white px-12 py-16 border-t border-bone">
+        <div className="max-w-[720px] mx-auto">
+          <h2 className="text-[28px] font-bold text-[#141413] text-center mb-10" style={{ fontFamily: SERIF }}>
             Frequently asked questions
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div className="flex flex-col gap-0">
             {FAQS.map((faq, i) => (
               <div
                 key={faq.q}
-                style={{ padding: '20px 0', borderBottom: i < FAQS.length - 1 ? `1px solid ${C.bone}` : 'none' }}
+                className={clsx('py-5', i < FAQS.length - 1 && 'border-b border-bone')}
               >
-                <p style={{ fontSize: 14, fontWeight: 600, color: C.carbon, fontFamily: FONT, marginBottom: 8 }}>
+                <p className="text-[14px] font-semibold text-[#141413] mb-2">
                   {faq.q}
                 </p>
-                <p style={{ fontSize: 13, color: C.slate, fontFamily: FONT, lineHeight: 1.7 }}>
+                <p className="text-[13px] text-[#8C8A82] leading-[1.7]">
                   {faq.a}
                 </p>
               </div>
@@ -358,32 +325,23 @@ export function PricingPage() {
       </div>
 
       {/* ── Bottom CTA ────────────────────────────────────────────────────── */}
-      <div style={{ background: C.carbon, padding: '64px 48px', textAlign: 'center' }}>
-        <h2 style={{ fontFamily: SERIF, fontSize: 32, fontWeight: 700, color: C.white, display: 'block', marginBottom: 14 }}>
+      <div className="bg-carbon px-12 py-16 text-center">
+        <h2 className="block text-[32px] font-bold text-white mb-[14px]" style={{ fontFamily: SERIF }}>
           Start selling today — it's free
         </h2>
-        <p style={{ fontSize: 15, color: '#8C8A82', display: 'block', marginBottom: 32 }}>
+        <p className="block text-[15px] text-[#8C8A82] mb-8">
           No credit card required. Cancel or upgrade anytime.
         </p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+        <div className="flex gap-3 justify-center">
           <button
             onClick={() => navigate('/onboarding')}
-            style={{
-              padding: '13px 24px', borderRadius: 8, fontSize: 15, fontWeight: 500,
-              fontFamily: FONT, cursor: 'pointer', background: C.orange,
-              color: C.white, border: 'none', transition: 'all 0.18s',
-            }}
+            className="px-6 py-[13px] rounded-lg text-[15px] font-medium cursor-pointer bg-brand-orange text-white border-none transition-all duration-[180ms]"
           >
-            Create Free Account <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
+            Create Free Account <ArrowRight size={14} className="inline align-middle ml-1" />
           </button>
           <button
             onClick={() => navigate('/marketplace')}
-            style={{
-              padding: '13px 24px', borderRadius: 8, fontSize: 15, fontWeight: 500,
-              fontFamily: FONT, cursor: 'pointer', background: 'transparent',
-              color: C.white, border: '1px solid rgba(255,255,255,0.2)',
-              transition: 'all 0.18s',
-            }}
+            className="px-6 py-[13px] rounded-lg text-[15px] font-medium cursor-pointer bg-transparent text-white border border-[rgba(255,255,255,0.2)] transition-all duration-[180ms]"
           >
             Browse Marketplace
           </button>

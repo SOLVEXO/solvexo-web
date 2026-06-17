@@ -41,11 +41,6 @@ const statusStyle: Record<string, { bg: string; color: string }> = {
   Paused: { bg: '#FFF4DC', color: '#B36200' },
 };
 
-const poppins   = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '20px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
-const inputStyle: React.CSSProperties = { width: '100%', padding: '8px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, outline: 'none', fontFamily: poppins, color: '#2C2A28', background: '#fff', boxSizing: 'border-box' as const };
-const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 500, color: '#4A4945', marginBottom: 5, display: 'block', fontFamily: poppins };
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerMarketing() {
   usePageTitle('Marketing');
@@ -63,38 +58,36 @@ export function SellerMarketing() {
         title="Marketing"
         subtitle="Drive traffic, recover sales, and reward customers."
         actions={
-          <button style={{ padding: '7px 16px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+          <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
             + Create Campaign
           </button>
         }
       />
 
-      <div style={{ padding: '20px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* ── Metrics ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="grid grid-cols-4 gap-3">
           {metrics.map(m => (
-            <div key={m.label} style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-              <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</p>
-              <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{m.value}</p>
-              {m.trend && <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {m.trend}</p>}
-              {m.sub   && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>}
+            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+              {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
+              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
 
         {/* ── Tab bar ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #E8E6DC' }}>
+        <div className="flex items-center gap-0.5 border-b border-[#E8E6DC]">
           {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '10px 16px', fontSize: 13, fontWeight: 500,
-              cursor: 'pointer', border: 'none', fontFamily: poppins,
-              background: 'transparent', transition: 'all 0.12s',
-              borderBottom: `2px solid ${tab === t.id ? '#D97757' : 'transparent'}`,
-              color: tab === t.id ? '#D97757' : '#8C8A82',
-              marginBottom: -1,
-            }}>
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium cursor-pointer border-none bg-transparent transition-all duration-[120ms] -mb-px"
+              style={{
+                borderBottom: `2px solid ${tab === t.id ? '#D97757' : 'transparent'}`,
+                color: tab === t.id ? '#D97757' : '#8C8A82',
+              }}
+            >
               <t.Icon size={14} /> {t.label}
             </button>
           ))}
@@ -102,65 +95,70 @@ export function SellerMarketing() {
 
         {/* ── Coupons Tab ── */}
         {tab === 'coupons' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#141413' }}>Active Coupons</p>
-              <button style={{ padding: '7px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+          <div className="flex flex-col gap-5">
+            <div className="flex items-center justify-between">
+              <p className="text-[15px] font-bold text-[#141413]">Active Coupons</p>
+              <button className="px-3.5 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
                 + New Coupon
               </button>
             </div>
 
             {/* Coupon cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            <div className="grid grid-cols-3 gap-4">
               {COUPONS.map(coupon => (
-                <div key={coupon.code} style={cardStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <div style={{ padding: '5px 12px', borderRadius: 8, border: '2px dashed #D97757', fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#B95A3A', background: '#FBECE4' }}>
+                <div key={coupon.code} className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="px-3 py-[5px] rounded-lg border-2 border-dashed border-brand-orange font-mono text-[13px] font-bold text-[#B95A3A] bg-[#FBECE4]">
                       {coupon.code}
                     </div>
-                    <span style={{ padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#E3F4EA', color: '#1E7A3C' }}>
+                    <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C]">
                       {coupon.status}
                     </span>
                   </div>
 
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#141413', marginBottom: 12 }}>{coupon.type}</p>
+                  <p className="text-[13px] font-semibold text-[#141413] mb-3">{coupon.type}</p>
 
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginBottom: 12 }}>
+                  <table className="w-full border-collapse text-xs mb-3">
                     <tbody>
                       {[['Uses', `${coupon.uses} / ${coupon.limit ?? 'Unlimited'}`],['Expires', coupon.expires],['Revenue', coupon.revenue]].map(([label, val], i, arr) => (
                         <tr key={label} style={{ borderBottom: i < arr.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
-                          <td style={{ padding: '6px 0', color: '#8C8A82', fontFamily: poppins }}>{label}</td>
-                          <td style={{ padding: '6px 0', fontWeight: 600, color: '#141413', textAlign: 'right', fontFamily: poppins }}>{val}</td>
+                          <td className="py-1.5 text-[#8C8A82]">{label}</td>
+                          <td className="py-1.5 font-semibold text-[#141413] text-right">{val}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
 
                   {coupon.limit && (
-                    <div style={{ height: 5, background: '#E8E6DC', borderRadius: 3, marginBottom: 14, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', borderRadius: 3, width: `${(coupon.uses / coupon.limit) * 100}%`, background: '#D97757' }} />
+                    <div className="h-[5px] bg-[#E8E6DC] rounded-[3px] mb-3.5 overflow-hidden">
+                      <div
+                        className="h-full rounded-[3px] bg-brand-orange"
+                        style={{ width: `${(coupon.uses / coupon.limit) * 100}%` }}
+                      />
                     </div>
                   )}
 
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button style={{ flex: 1, padding: '7px 0', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>Edit</button>
-                    <button style={{ flex: 1, padding: '7px 0', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>Pause</button>
+                  <div className="flex gap-2">
+                    <button className="flex-1 py-[7px] bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Edit</button>
+                    <button className="flex-1 py-[7px] bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Pause</button>
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Create coupon form */}
-            <div style={cardStyle}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 16 }}>Create New Coupon</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 16 }}>
+            <div className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-sm font-bold text-[#141413] mb-4">Create New Coupon</p>
+              <div className="grid grid-cols-3 gap-3.5 mb-4">
                 <div>
-                  <label style={labelStyle}>Coupon Code</label>
-                  <input placeholder="e.g. SAVE20" value={couponCode} onChange={e => setCouponCode(e.target.value.toUpperCase())} style={inputStyle} />
+                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Coupon Code</label>
+                  <input placeholder="e.g. SAVE20" value={couponCode} onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                 </div>
                 <div>
-                  <label style={labelStyle}>Discount Type</label>
-                  <select value={discountType} onChange={e => setDiscountType(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Discount Type</label>
+                  <select value={discountType} onChange={e => setDiscountType(e.target.value)}
+                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white cursor-pointer box-border">
                     <option value="">Select type…</option>
                     <option>Percentage Off</option>
                     <option>Fixed Amount Off</option>
@@ -168,23 +166,27 @@ export function SellerMarketing() {
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>Value</label>
-                  <input placeholder="e.g. 20 or 10.00" value={value} onChange={e => setValue(e.target.value)} style={inputStyle} />
+                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Value</label>
+                  <input placeholder="e.g. 20 or 10.00" value={value} onChange={e => setValue(e.target.value)}
+                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                 </div>
                 <div>
-                  <label style={labelStyle}>Minimum Order ($)</label>
-                  <input placeholder="0.00" value={minOrder} onChange={e => setMinOrder(e.target.value)} style={inputStyle} />
+                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Minimum Order ($)</label>
+                  <input placeholder="0.00" value={minOrder} onChange={e => setMinOrder(e.target.value)}
+                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                 </div>
                 <div>
-                  <label style={labelStyle}>Usage Limit</label>
-                  <input placeholder="Leave blank for unlimited" value={usageLimit} onChange={e => setUsageLimit(e.target.value)} style={inputStyle} />
+                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Usage Limit</label>
+                  <input placeholder="Leave blank for unlimited" value={usageLimit} onChange={e => setUsageLimit(e.target.value)}
+                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                 </div>
                 <div>
-                  <label style={labelStyle}>Expiry Date</label>
-                  <input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} style={inputStyle} />
+                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Expiry Date</label>
+                  <input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)}
+                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
                 </div>
               </div>
-              <button style={{ padding: '10px 24px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+              <button className="px-6 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer">
                 Create Coupon
               </button>
             </div>
@@ -193,41 +195,44 @@ export function SellerMarketing() {
 
         {/* ── Email Tab ── */}
         {tab === 'email' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#141413' }}>Email Campaigns</p>
-              <button style={{ padding: '7px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+          <div className="flex flex-col gap-5">
+            <div className="flex items-center justify-between">
+              <p className="text-[15px] font-bold text-[#141413]">Email Campaigns</p>
+              <button className="px-3.5 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
                 + New Campaign
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="grid grid-cols-2 gap-4">
               {CAMPAIGNS.map(campaign => {
                 const st = statusStyle[campaign.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
                 return (
-                  <div key={campaign.name} style={cardStyle}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: '#141413' }}>{campaign.name}</p>
-                      <span style={{ padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: st.bg, color: st.color, flexShrink: 0, marginLeft: 8 }}>
+                  <div key={campaign.name} className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-sm font-semibold text-[#141413]">{campaign.name}</p>
+                      <span
+                        className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold shrink-0 ml-2"
+                        style={{ background: st.bg, color: st.color }}
+                      >
                         {campaign.status}
                       </span>
                     </div>
-                    <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 14 }}>{campaign.info}</p>
+                    <p className="text-xs text-[#8C8A82] mb-3.5">{campaign.info}</p>
 
                     {campaign.sent > 0 && (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
+                      <div className="grid grid-cols-4 gap-2 mb-3.5">
                         {[['Sent', campaign.sent.toLocaleString()],['Opened', campaign.opened.toLocaleString()],['Clicked', campaign.clicked.toLocaleString()],['Revenue', campaign.revenue]].map(([label, val]) => (
-                          <div key={label} style={{ textAlign: 'center', background: '#FAF9F5', borderRadius: 8, padding: '8px 4px' }}>
-                            <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', fontFamily: poppins }}>{val}</p>
-                            <p style={{ fontSize: 10, color: '#8C8A82', fontFamily: poppins }}>{label}</p>
+                          <div key={label} className="text-center bg-[#FAF9F5] rounded-lg py-2 px-1">
+                            <p className="text-sm font-bold text-[#141413]">{val}</p>
+                            <p className="text-[10px] text-[#8C8A82]">{label}</p>
                           </div>
                         ))}
                       </div>
                     )}
 
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button style={{ padding: '6px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>Edit</button>
-                      <button style={{ padding: '6px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>View</button>
+                    <div className="flex gap-2">
+                      <button className="px-3.5 py-1.5 bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Edit</button>
+                      <button className="px-3.5 py-1.5 bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">View</button>
                     </div>
                   </div>
                 );
@@ -238,14 +243,14 @@ export function SellerMarketing() {
 
         {/* ── Coming Soon Tabs ── */}
         {(tab === 'cart' || tab === 'affiliate' || tab === 'giftcards') && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0', textAlign: 'center' }}>
-            <div style={{ color: '#D97757', marginBottom: 16 }}>
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="text-brand-orange mb-4">
               {(() => { const found = TABS.find(t => t.id === tab); return found ? <found.Icon size={48} /> : null; })()}
             </div>
-            <p style={{ fontSize: 16, fontWeight: 600, color: '#141413', marginBottom: 6, fontFamily: poppins }}>
+            <p className="text-base font-semibold text-[#141413] mb-1.5">
               {TABS.find(t => t.id === tab)?.label} — Coming Soon
             </p>
-            <p style={{ fontSize: 13, color: '#8C8A82', fontFamily: poppins }}>
+            <p className="text-[13px] text-[#8C8A82]">
               This feature is being built. Stay tuned for updates!
             </p>
           </div>

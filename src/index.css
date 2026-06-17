@@ -35,6 +35,12 @@
   --color-admin-bg:     #0F0E0D;
   --color-admin-surface:#1A1918;
 
+  /* ── Dark Nav (Seller / Admin Sidebar) ── */
+  --color-dark-active:  #1E1C1A;
+  --color-dark-label:   #4A4845;
+  --color-dark-text:    #C0BDB5;
+  --color-dark-hover:   #242220;
+
   /* ── Fonts ── */
   --font-sans:  'Poppins', system-ui, sans-serif;
   --font-serif: 'Lora', Georgia, serif;

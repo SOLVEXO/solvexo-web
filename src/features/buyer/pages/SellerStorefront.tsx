@@ -7,12 +7,6 @@ import { Card } from '@/components/ui/Card';
 import { ShoppingCart, BookOpen, Star, Divide, BookMarked, Microscope, Map, Pencil, FileText, Ruler, Check } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-const C = {
-  orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
-  carbon: '#141413', charcoal: '#2C2A28', slate: '#8C8A82',
-  bone: '#E8E6DC', cream: '#FAF9F5', white: '#FFFFFF',
-  success: '#2D8A4E', successBg: '#EBF7EF',
-};
 
 function SolvexoIcon({ size = 32 }: { size?: number }) {
   return (
@@ -44,80 +38,55 @@ export function SellerStorefront() {
   const [activeTab, setActiveTab] = useState('All Products');
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: C.cream }}>
+    <div className="min-h-screen bg-cream">
       {/* Nav */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        backgroundColor: C.white, borderBottom: `1px solid ${C.bone}`,
-        height: 60, display: 'flex', alignItems: 'center',
-        gap: 16, paddingLeft: 40, paddingRight: 40,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center gap-4 px-10">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <SolvexoIcon size={28} />
-          <span style={{ fontWeight: 700, fontSize: 15, color: C.carbon }}>Solvex</span>
-          <span style={{ fontWeight: 700, fontSize: 15, color: C.orange }}>o</span>
-          <span style={{ color: C.bone, marginLeft: 4, marginRight: 4 }}>|</span>
-          <span style={{ fontSize: 13, color: C.slate }}>Marketplace</span>
+          <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
+          <span className="font-bold text-[15px] text-brand-orange">o</span>
+          <span className="text-bone mx-1">|</span>
+          <span className="text-[13px] text-[#8C8A82]">Marketplace</span>
         </div>
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+        <div className="flex-1 flex justify-center">
           <input
             placeholder="Search marketplace..."
-            style={{
-              width: '100%', maxWidth: 440,
-              padding: '8px 14px', borderRadius: 8,
-              border: `1px solid ${C.bone}`, backgroundColor: C.cream,
-              fontSize: 13, color: C.charcoal, outline: 'none',
-            }}
+            className="w-full max-w-[440px] px-[14px] py-2 rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none"
           />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')}>← Marketplace</Button>
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%',
-            backgroundColor: C.orange, display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer',
-          }}>
-            <ShoppingCart size={16} style={{ color: '#fff' }} />
+          <div className="w-8 h-8 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer">
+            <ShoppingCart size={16} className="text-white" />
           </div>
         </div>
       </nav>
 
       {/* Store banner */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1A4A2C, #2D7A4E)',
-        padding: '36px 40px',
-        display: 'flex', alignItems: 'center', gap: 24,
-      }}>
+      <div
+        className="px-10 py-9 flex items-center gap-6"
+        style={{ background: 'linear-gradient(135deg, #1A4A2C, #2D7A4E)' }}
+      >
         {/* Store avatar */}
-        <div style={{
-          width: 80, height: 80, borderRadius: 20,
-          backgroundColor: C.white,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          <BookOpen size={40} style={{ color: '#D97757' }} />
+        <div className="w-20 h-20 rounded-[20px] bg-white flex items-center justify-center flex-shrink-0">
+          <BookOpen size={40} className="text-brand-orange" />
         </div>
 
         {/* Store info */}
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 26, fontWeight: 700, color: C.white, marginBottom: 6 }}>TeachersPro</div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 10 }}>
-            Veteran educator • 2,140 sales • <Star size={12} style={{ display: 'inline', verticalAlign: 'middle', color: '#D97757', fill: '#D97757' }} /> 5.0 • Member since 2021
+        <div className="flex-1">
+          <div className="text-[26px] font-bold text-white mb-[6px]">TeachersPro</div>
+          <div className="text-[13px] text-[rgba(255,255,255,0.75)] mb-[10px]">
+            Veteran educator • 2,140 sales • <Star size={12} className="inline align-middle text-brand-orange fill-brand-orange" /> 5.0 • Member since 2021
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Badge color="green"><Check size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />Top Seller</Badge>
+          <div className="flex gap-2">
+            <Badge color="green"><Check size={10} className="inline align-middle mr-[3px]" />Top Seller</Badge>
             <Badge color="blue">Education Specialist</Badge>
           </div>
         </div>
 
         {/* Actions */}
-        <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
-          <button style={{
-            padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 500,
-            backgroundColor: 'transparent', color: C.white,
-            border: `1px solid ${C.white}`, cursor: 'pointer',
-          }}>
+        <div className="ml-auto flex flex-col gap-2 items-end">
+          <button className="px-[14px] py-[6px] rounded-lg text-[12px] font-medium bg-transparent text-white border border-white cursor-pointer">
             Follow Store
           </button>
           <Button variant="primary" size="sm">Message Seller</Button>
@@ -125,18 +94,17 @@ export function SellerStorefront() {
       </div>
 
       {/* Store tabs */}
-      <div style={{ backgroundColor: C.white, borderBottom: `1px solid ${C.bone}` }}>
-        <div style={{ display: 'flex', paddingLeft: 40, paddingRight: 40 }}>
+      <div className="bg-white border-b border-bone">
+        <div className="flex px-10">
           {STORE_TABS.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
+              className="px-4 py-2 text-[13px] cursor-pointer border-none outline-none"
               style={{
-                padding: '8px 16px', fontSize: 13, cursor: 'pointer',
-                border: 'none', outline: 'none',
-                borderBottom: `2px solid ${activeTab === tab ? C.orange : 'transparent'}`,
-                backgroundColor: activeTab === tab ? C.paleOrange : 'transparent',
-                color: activeTab === tab ? C.deepOrange : C.slate,
+                borderBottom: `2px solid ${activeTab === tab ? '#D97757' : 'transparent'}`,
+                backgroundColor: activeTab === tab ? '#FBECE4' : 'transparent',
+                color: activeTab === tab ? '#B95A3A' : '#8C8A82',
                 fontWeight: activeTab === tab ? 700 : 400,
               }}
             >
@@ -147,15 +115,11 @@ export function SellerStorefront() {
       </div>
 
       {/* Content */}
-      <div style={{ padding: '24px 40px' }}>
+      <div className="px-10 py-6">
         {/* Top row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: C.carbon }}>47 Products</span>
-          <select style={{
-            padding: '6px 10px', borderRadius: 8,
-            border: `1px solid ${C.bone}`, backgroundColor: C.white,
-            fontSize: 13, color: C.charcoal, outline: 'none', cursor: 'pointer',
-          }}>
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-[15px] font-bold text-[#141413]">47 Products</span>
+          <select className="px-[10px] py-[6px] rounded-lg border border-bone bg-white text-[13px] text-charcoal outline-none cursor-pointer">
             <option>Best Selling</option>
             <option>Newest</option>
             <option>Price: Low–High</option>
@@ -164,30 +128,23 @@ export function SellerStorefront() {
         </div>
 
         {/* 4-col grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+        <div className="grid grid-cols-4 gap-4">
           {PRODUCTS.map((p) => (
             <Card key={p.name} padding="none" hover onClick={() => navigate('/marketplace/1')}>
               {/* Image area */}
-              <div style={{
-                height: 130, backgroundColor: C.successBg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: '12px 12px 0 0',
-              }}>
-                <p.Img size={48} style={{ color: '#2D8A4E' }} />
+              <div className="h-[130px] bg-success-bg flex items-center justify-center rounded-t-[12px]">
+                <p.Img size={48} className="text-success" />
               </div>
               {/* Content */}
-              <div style={{ padding: 14 }}>
-                <div style={{
-                  fontSize: 12, fontWeight: 700, color: C.carbon,
-                  lineHeight: 1.4, marginBottom: 4,
-                }}>
+              <div className="p-[14px]">
+                <div className="text-[12px] font-bold text-[#141413] leading-[1.4] mb-1">
                   {p.name}
                 </div>
-                <div style={{ fontSize: 11, color: C.slate, marginBottom: 8 }}>
-                  <Star size={11} style={{ display: 'inline', verticalAlign: 'middle', color: '#D97757', fill: '#D97757' }} /> {p.rating} • {p.sold}
+                <div className="text-[11px] text-[#8C8A82] mb-2">
+                  <Star size={11} className="inline align-middle text-brand-orange fill-brand-orange" /> {p.rating} • {p.sold}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontWeight: 700, fontSize: 14, color: C.carbon }}>{p.price}</span>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[14px] text-[#141413]">{p.price}</span>
                   <Button
                     variant="secondary"
                     size="sm"

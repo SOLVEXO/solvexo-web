@@ -45,9 +45,9 @@ const poppins = "'Poppins', sans-serif";
 function RevenueTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, padding: '6px 12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontSize: 12, fontFamily: poppins }}>
-      <p style={{ color: '#8C8A82', marginBottom: 2 }}>{label}</p>
-      <p style={{ fontWeight: 700, color: '#141413' }}>${payload[0].value.toLocaleString()}</p>
+    <div className="bg-white border border-bone rounded-lg px-3 py-[6px] shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-xs">
+      <p className="text-slate mb-0.5">{label}</p>
+      <p className="font-bold text-charcoal">${payload[0].value.toLocaleString()}</p>
     </div>
   );
 }
@@ -55,17 +55,12 @@ function RevenueTooltip({ active, payload, label }: any) {
 function OrdersTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, padding: '6px 12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontSize: 12, fontFamily: poppins }}>
-      <p style={{ color: '#8C8A82', marginBottom: 2 }}>{label}</p>
-      <p style={{ fontWeight: 700, color: '#141413' }}>{payload[0].value} orders</p>
+    <div className="bg-white border border-bone rounded-lg px-3 py-[6px] shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-xs">
+      <p className="text-slate mb-0.5">{label}</p>
+      <p className="font-bold text-charcoal">{payload[0].value} orders</p>
     </div>
   );
 }
-
-const cardStyle: React.CSSProperties = {
-  background: '#fff', border: '1px solid #E8E6DC',
-  borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-};
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerAnalytics() {
@@ -82,56 +77,48 @@ export function SellerAnalytics() {
             <select
               value={period}
               onChange={e => setPeriod(e.target.value)}
-              style={{
-                padding: '7px 12px', fontSize: 13, border: '1px solid #E8E6DC',
-                borderRadius: 8, background: '#fff', color: '#2C2A28',
-                outline: 'none', cursor: 'pointer', fontFamily: poppins, width: 160,
-              }}
+              className="px-3 py-[7px] text-[13px] border border-bone rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer w-[160px]"
             >
               <option>Last 6 months</option>
               <option>Last 30 days</option>
               <option>Last year</option>
             </select>
-            <button style={{
-              padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC',
-              borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945',
-              cursor: 'pointer', fontFamily: poppins,
-            }}>
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
               Export PDF
             </button>
           </>
         }
       />
 
-      <div style={{ padding: '20px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* ── Metrics row ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="grid grid-cols-4 gap-3">
           {metrics.map((m) => (
-            <div key={m.label} style={{ ...cardStyle, padding: '16px 20px' }}>
-              <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">
                 {m.label}
               </p>
-              <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>
+              <p className="text-[28px] font-bold text-charcoal leading-[1.15]">
                 {m.value}
               </p>
               {m.trend && (
-                <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {m.trend}</p>
+                <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>
               )}
               {m.sub && (
-                <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 2 }}>{m.sub}</p>
+                <p className="text-xs text-slate mt-0.5">{m.sub}</p>
               )}
             </div>
           ))}
         </div>
 
         {/* ── Charts row ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="grid grid-cols-2 gap-4">
 
           {/* Revenue Over Time */}
-          <div style={cardStyle}>
-            <div style={{ padding: '16px 20px 8px' }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#141413' }}>Revenue Over Time</p>
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <div className="px-5 pt-4 pb-2">
+              <p className="text-sm font-bold text-charcoal">Revenue Over Time</p>
             </div>
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={monthlyData} margin={{ top: 4, right: 20, left: 0, bottom: 0 }}>
@@ -151,9 +138,9 @@ export function SellerAnalytics() {
           </div>
 
           {/* Orders per Month */}
-          <div style={cardStyle}>
-            <div style={{ padding: '16px 20px 8px' }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#141413' }}>Orders per Month</p>
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <div className="px-5 pt-4 pb-2">
+              <p className="text-sm font-bold text-charcoal">Orders per Month</p>
             </div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={monthlyData} margin={{ top: 4, right: 20, left: 0, bottom: 0 }}>
@@ -168,20 +155,20 @@ export function SellerAnalytics() {
         </div>
 
         {/* ── Bottom row ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="grid grid-cols-2 gap-4">
 
           {/* Traffic Sources */}
-          <div style={{ ...cardStyle, padding: '20px 22px' }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 20 }}>Traffic Sources</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5">
+            <p className="text-sm font-bold text-charcoal mb-5">Traffic Sources</p>
+            <div className="flex flex-col gap-[14px]">
               {trafficSources.map(src => (
                 <div key={src.label}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 500, color: '#4A4945', fontFamily: poppins }}>{src.label}</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#141413', fontFamily: poppins }}>{src.pct}%</span>
+                  <div className="flex justify-between items-center mb-[6px]">
+                    <span className="text-xs font-medium text-[#4A4945]">{src.label}</span>
+                    <span className="text-xs font-bold text-charcoal">{src.pct}%</span>
                   </div>
-                  <div style={{ height: 6, background: '#E8E6DC', borderRadius: 3, overflow: 'hidden' }}>
-                    <div style={{ width: `${src.pct}%`, background: '#D97757', height: '100%', borderRadius: 3 }} />
+                  <div className="h-[6px] bg-bone rounded-[3px] overflow-hidden">
+                    <div className="bg-brand-orange h-full rounded-[3px]" style={{ width: `${src.pct}%` }} />
                   </div>
                 </div>
               ))}
@@ -189,28 +176,23 @@ export function SellerAnalytics() {
           </div>
 
           {/* Top Products by Revenue */}
-          <div style={{ ...cardStyle, padding: '20px 22px' }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 20 }}>Top Products by Revenue</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5">
+            <p className="text-sm font-bold text-charcoal mb-5">Top Products by Revenue</p>
+            <div className="flex flex-col gap-[14px]">
               {topProducts.map((p, i) => (
-                <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{
-                    width: 26, height: 26, background: '#FBECE4', color: '#B95A3A',
-                    borderRadius: 7, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: 11, fontWeight: 700,
-                    flexShrink: 0, fontFamily: poppins,
-                  }}>
+                <div key={p.name} className="flex items-center gap-3">
+                  <div className="w-[26px] h-[26px] bg-brand-pale-orange text-[#B95A3A] rounded-[7px] flex items-center justify-center text-[11px] font-bold shrink-0">
                     {i + 1}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 500, color: '#141413', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: poppins }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">
                       {p.name}
                     </p>
-                    <p style={{ fontSize: 11, color: '#8C8A82', marginTop: 1, fontFamily: poppins }}>
+                    <p className="text-[11px] text-slate mt-px">
                       {p.orders} orders
                     </p>
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#141413', flexShrink: 0, fontFamily: poppins }}>
+                  <span className="text-[13px] font-bold text-charcoal shrink-0">
                     {p.revenue}
                   </span>
                 </div>

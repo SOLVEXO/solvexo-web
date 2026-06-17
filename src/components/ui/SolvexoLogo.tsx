@@ -1,14 +1,21 @@
 import { clsx } from 'clsx';
 
 interface LogoProps {
-  size?: number;
-  showWordmark?: boolean;
-  className?: string;
+  size?:          number;
+  showWordmark?:  boolean;
+  className?:     string;
 }
 
 export function SolvexoIcon({ size = 32 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="shrink-0"
+    >
       <rect width="32" height="32" rx="8" fill="#D97757"/>
       <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
       <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7"/>

@@ -49,9 +49,6 @@ const metrics = [
   { label: 'On-Time Delivery',  value: '96%',   trend: 'Excellent',          sub: null,                       trendUp: true  },
 ] as const;
 
-const poppins   = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerShipping() {
   usePageTitle('Shipping');
@@ -63,38 +60,36 @@ export function SellerShipping() {
         title="Shipping"
         subtitle="Configure zones, carriers, labels, and delivery options."
         actions={
-          <button style={{ padding: '7px 16px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+          <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
             + Add Shipping Zone
           </button>
         }
       />
 
-      <div style={{ padding: '20px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* ── Metrics ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="grid grid-cols-4 gap-3">
           {metrics.map(m => (
-            <div key={m.label} style={{ ...cardStyle, padding: '16px 20px' }}>
-              <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</p>
-              <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{m.value}</p>
-              {m.trend && <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {m.trend}</p>}
-              {m.sub   && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>}
+            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+              {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
+              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
 
         {/* ── Tab bar ── */}
-        <div style={{ borderBottom: '1px solid #E8E6DC' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+        <div className="border-b border-[#E8E6DC]">
+          <div className="flex items-center gap-0">
             {TABS.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] cursor-pointer border-none bg-transparent transition-all duration-[120ms] -mb-px"
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '10px 16px', fontSize: 13, fontWeight: activeTab === tab.id ? 600 : 500,
-                  cursor: 'pointer', border: 'none', fontFamily: poppins,
-                  background: 'transparent', transition: 'all 0.12s', marginBottom: -1,
+                  fontWeight: activeTab === tab.id ? 600 : 500,
                   borderBottom: `2px solid ${activeTab === tab.id ? '#D97757' : 'transparent'}`,
                   color: activeTab === tab.id ? '#B95A3A' : '#8C8A82',
                 }}
@@ -108,39 +103,35 @@ export function SellerShipping() {
 
         {/* ── Zones Tab ── */}
         {activeTab === 'zones' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="flex flex-col gap-3.5">
             {ZONES.map(zone => (
-              <div key={zone.name} style={{ ...cardStyle, padding: '18px 22px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
+              <div key={zone.name} className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-[18px]">
+                <div className="flex items-start justify-between gap-4 mb-4">
                   <div>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: '#141413', marginBottom: 3 }}>{zone.name}</p>
-                    <p style={{ fontSize: 12, color: '#8C8A82' }}>{zone.coverage}</p>
+                    <p className="text-sm font-semibold text-[#141413] mb-[3px]">{zone.name}</p>
+                    <p className="text-xs text-[#8C8A82]">{zone.coverage}</p>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                    <button style={{ padding: '5px 12px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button className="px-3 py-[5px] bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">
                       Edit
                     </button>
-                    <span style={{ padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#E3F4EA', color: '#1E7A3C', fontFamily: poppins }}>
+                    <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C]">
                       Active
                     </span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                <div className="flex flex-wrap gap-2.5">
                   {zone.services.map(svc => (
                     <div
                       key={svc.name}
-                      style={{
-                        display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start',
-                        padding: '10px 14px', border: '1px solid #E8E6DC', borderRadius: 9,
-                        background: '#FAF9F5', cursor: 'pointer', transition: 'border-color 0.12s',
-                      }}
+                      className="inline-flex flex-col items-start px-3.5 py-2.5 border border-[#E8E6DC] rounded-[9px] bg-[#FAF9F5] cursor-pointer transition-[border-color] duration-[120ms]"
                       onMouseEnter={e => (e.currentTarget.style.borderColor = '#D97757')}
                       onMouseLeave={e => (e.currentTarget.style.borderColor = '#E8E6DC')}
                     >
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#4A4945', lineHeight: 1.3, fontFamily: poppins }}>{svc.name}</span>
-                      <span style={{ fontSize: 11, color: '#8C8A82', marginBottom: 5, fontFamily: poppins }}>{svc.days}</span>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#D97757', fontFamily: poppins }}>{svc.price}</span>
+                      <span className="text-xs font-semibold text-[#4A4945] leading-[1.3]">{svc.name}</span>
+                      <span className="text-[11px] text-[#8C8A82] mb-[5px]">{svc.days}</span>
+                      <span className="text-sm font-bold text-brand-orange">{svc.price}</span>
                     </div>
                   ))}
                 </div>
@@ -151,8 +142,8 @@ export function SellerShipping() {
 
         {/* ── Placeholder Tabs ── */}
         {activeTab !== 'zones' && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 180, ...cardStyle }}>
-            <p style={{ fontSize: 13, color: '#8C8A82', fontFamily: poppins }}>
+          <div className="flex items-center justify-center h-[180px] bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <p className="text-[13px] text-[#8C8A82]">
               {TABS.find(t => t.id === activeTab)?.label} — coming soon
             </p>
           </div>

@@ -60,11 +60,6 @@ const SETTINGS_NAV: { group: string; isDanger?: boolean; items: { id: SettingSec
   },
 ];
 
-const poppins   = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '24px 26px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
-const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, outline: 'none', fontFamily: poppins, color: '#2C2A28', background: '#fff', boxSizing: 'border-box' as const };
-const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 500, color: '#4A4945', marginBottom: 5, display: 'block', fontFamily: poppins };
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerSettings() {
   usePageTitle('Settings');
@@ -95,80 +90,91 @@ export function SellerSettings() {
         subtitle="Manage your account and store preferences."
       />
 
-      <div style={{ padding: '20px 28px 32px', fontFamily: poppins }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: 20 }}>
+      <div className="px-7 pt-5 pb-8">
+        <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 260px' }}>
 
           {/* ── LEFT: Content ── */}
           <div>
 
             {/* Profile section */}
             {active === 'profile' && (
-              <div style={cardStyle}>
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#141413', marginBottom: 22 }}>Profile</p>
+              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                <p className="text-base font-bold text-[#141413] mb-[22px]">Profile</p>
 
                 {profileLoading ? (
                   <div>
                     {/* Avatar skeleton */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 22 }}>
-                      <div className="animate-pulse" style={{ width: 76, height: 76, borderRadius: '50%', background: '#E8E6DC', flexShrink: 0 }} />
+                    <div className="flex items-center gap-4 mb-[22px]">
+                      <div className="animate-pulse w-[76px] h-[76px] rounded-full bg-bone shrink-0" />
                       <div>
-                        <div className="animate-pulse" style={{ width: 110, height: 13, borderRadius: 4, background: '#E8E6DC', marginBottom: 8 }} />
-                        <div className="animate-pulse" style={{ width: 80, height: 11, borderRadius: 4, background: '#E8E6DC' }} />
+                        <div className="animate-pulse w-[110px] h-[13px] rounded bg-bone mb-2" />
+                        <div className="animate-pulse w-20 h-[11px] rounded bg-bone" />
                       </div>
                     </div>
-                    <div style={{ height: 1, background: '#F0EEE6', margin: '0 0 20px' }} />
+                    <div className="h-px bg-[#F0EEE6] mb-5" />
                     {[1,2,3,4].map(i => (
-                      <div key={i} style={{ marginBottom: 16 }}>
-                        <div className="animate-pulse" style={{ width: 80, height: 11, borderRadius: 4, background: '#E8E6DC', marginBottom: 6 }} />
-                        <div className="animate-pulse" style={{ width: '100%', height: 38, borderRadius: 8, background: '#E8E6DC' }} />
+                      <div key={i} className="mb-4">
+                        <div className="animate-pulse w-20 h-[11px] rounded bg-bone mb-[6px]" />
+                        <div className="animate-pulse w-full h-[38px] rounded-lg bg-bone" />
                       </div>
                     ))}
                   </div>
                 ) : (
                   <>
                     {/* Photo */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 22 }}>
-                      <div style={{ position: 'relative', flexShrink: 0 }}>
-                        <div style={{ width: 76, height: 76, borderRadius: '50%', background: '#FBECE4', color: '#B95A3A', fontSize: 26, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    <div className="flex items-center gap-4 mb-[22px]">
+                      <div className="relative shrink-0">
+                        <div className="w-[76px] h-[76px] rounded-full bg-brand-pale-orange text-brand-deep-orange text-[26px] font-bold flex items-center justify-center overflow-hidden">
                           {profile?.profileImage
-                            ? <img src={profile.profileImage} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ? <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
                             : (profile?.name?.slice(0, 2).toUpperCase() ?? 'ME')}
                         </div>
-                        <button style={{ position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: '50%', background: '#D97757', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                          <Camera size={12} style={{ color: '#fff' }} />
+                        <button className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-brand-orange border-none flex items-center justify-center cursor-pointer">
+                          <Camera size={12} className="text-white" />
                         </button>
                       </div>
                       <div>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: '#141413', marginBottom: 3 }}>Profile Photo</p>
-                        <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 8 }}>JPG, PNG — max 2 MB</p>
-                        <button style={{ padding: '5px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+                        <p className="text-[13px] font-semibold text-[#141413] mb-[3px]">Profile Photo</p>
+                        <p className="text-xs text-[#8C8A82] mb-2">JPG, PNG — max 2 MB</p>
+                        <button className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-xs text-slate cursor-pointer">
                           Upload Photo
                         </button>
                       </div>
                     </div>
 
-                    <div style={{ height: 1, background: '#F0EEE6', margin: '0 0 20px' }} />
+                    <div className="h-px bg-[#F0EEE6] mb-5" />
 
                     {/* Name */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+                    <div className="grid grid-cols-2 gap-[14px] mb-4">
                       <div>
-                        <label style={labelStyle}>First Name</label>
-                        <input value={firstName} onChange={e => setFirstName(e.target.value)} style={inputStyle} />
+                        <label className="text-[12px] font-medium text-slate mb-[5px] block">First Name</label>
+                        <input
+                          value={firstName}
+                          onChange={e => setFirstName(e.target.value)}
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border"
+                        />
                       </div>
                       <div>
-                        <label style={labelStyle}>Last Name</label>
-                        <input value={lastName} onChange={e => setLastName(e.target.value)} style={inputStyle} />
+                        <label className="text-[12px] font-medium text-slate mb-[5px] block">Last Name</label>
+                        <input
+                          value={lastName}
+                          onChange={e => setLastName(e.target.value)}
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border"
+                        />
                       </div>
                     </div>
 
                     {/* Email */}
-                    <div style={{ marginBottom: 16 }}>
-                      <label style={labelStyle}>Email</label>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <input readOnly value={profile?.email ?? ''}
-                          style={{ ...inputStyle, flex: 1, background: '#FAF9F5', color: '#8C8A82' }} />
+                    <div className="mb-4">
+                      <label className="text-[12px] font-medium text-slate mb-[5px] block">Email</label>
+                      <div className="flex items-center gap-[10px]">
+                        <input
+                          readOnly
+                          value={profile?.email ?? ''}
+                          className="flex-1 px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#8C8A82] bg-[#FAF9F5] box-border"
+                        />
                         {profile?.isVerified && (
-                          <span style={{ padding: '4px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#E3F4EA', color: '#1E7A3C', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                          <span className="px-[10px] py-1 rounded-[5px] text-[11px] font-semibold bg-success-bg text-success flex items-center gap-1 shrink-0">
                             <Check size={10} /> Verified
                           </span>
                         )}
@@ -176,30 +182,49 @@ export function SellerSettings() {
                     </div>
 
                     {/* Phone */}
-                    <div style={{ marginBottom: 16 }}>
-                      <label style={labelStyle}>Phone Number</label>
-                      <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. +92 300 0000000" style={inputStyle} />
+                    <div className="mb-4">
+                      <label className="text-[12px] font-medium text-slate mb-[5px] block">Phone Number</label>
+                      <input
+                        value={phone}
+                        onChange={e => setPhone(e.target.value)}
+                        placeholder="e.g. +92 300 0000000"
+                        className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border"
+                      />
                     </div>
 
                     {/* Address */}
-                    <div style={{ marginBottom: 16 }}>
-                      <label style={labelStyle}>Address</label>
-                      <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address" style={inputStyle} />
+                    <div className="mb-4">
+                      <label className="text-[12px] font-medium text-slate mb-[5px] block">Address</label>
+                      <input
+                        value={address}
+                        onChange={e => setAddress(e.target.value)}
+                        placeholder="Your address"
+                        className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border"
+                      />
                     </div>
 
                     {/* Role + Status — read only */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 22 }}>
+                    <div className="grid grid-cols-2 gap-[14px] mb-[22px]">
                       <div>
-                        <label style={labelStyle}>Role</label>
-                        <input readOnly value={profile?.role ?? ''} style={{ ...inputStyle, background: '#FAF9F5', color: '#8C8A82', textTransform: 'capitalize' }} />
+                        <label className="text-[12px] font-medium text-slate mb-[5px] block">Role</label>
+                        <input
+                          readOnly
+                          value={profile?.role ?? ''}
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#8C8A82] bg-[#FAF9F5] capitalize box-border"
+                        />
                       </div>
                       <div>
-                        <label style={labelStyle}>Account Status</label>
-                        <input readOnly value={profile?.status ?? ''} style={{ ...inputStyle, background: '#FAF9F5', color: profile?.status === 'active' ? '#1E7A3C' : '#8C8A82', textTransform: 'capitalize' }} />
+                        <label className="text-[12px] font-medium text-slate mb-[5px] block">Account Status</label>
+                        <input
+                          readOnly
+                          value={profile?.status ?? ''}
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none bg-[#FAF9F5] capitalize box-border"
+                          style={{ color: profile?.status === 'active' ? '#1E7A3C' : '#8C8A82' }}
+                        />
                       </div>
                     </div>
 
-                    <button style={{ padding: '10px 24px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+                    <button className="px-6 py-[10px] bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer">
                       Save Changes
                     </button>
                   </>
@@ -209,21 +234,21 @@ export function SellerSettings() {
 
             {/* Other sections */}
             {active !== 'profile' && (
-              <div style={cardStyle}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', textAlign: 'center' }}>
-                  <div style={{ color: '#8C8A82', marginBottom: 14 }}>
+              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                <div className="flex flex-col items-center justify-center py-[60px] text-center">
+                  <div className="text-[#8C8A82] mb-[14px]">
                     {activeItem ? <activeItem.Icon size={40} /> : <Settings size={40} />}
                   </div>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: '#141413', marginBottom: 6, fontFamily: poppins }}>
+                  <p className="text-[15px] font-semibold text-[#141413] mb-[6px]">
                     {activeItem?.label ?? 'Settings'}
                   </p>
-                  <p style={{ fontSize: 13, color: '#8C8A82', fontFamily: poppins }}>
+                  <p className="text-[13px] text-[#8C8A82]">
                     {active === 'delete-account'
                       ? 'Permanently delete your account and all data.'
                       : 'Settings for this section are coming soon.'}
                   </p>
                   {active === 'delete-account' && (
-                    <button style={{ marginTop: 16, padding: '8px 18px', background: '#FDECEA', border: '1px solid #F5C6C2', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#C0392B', cursor: 'pointer', fontFamily: poppins }}>
+                    <button className="mt-4 px-[18px] py-2 bg-[#FDECEA] border border-[#F5C6C2] rounded-lg text-[13px] font-semibold text-[#C0392B] cursor-pointer">
                       Delete My Account
                     </button>
                   )}
@@ -234,12 +259,12 @@ export function SellerSettings() {
 
           {/* ── RIGHT: Nav sidebar ── */}
           <div>
-            <div style={{ ...cardStyle, padding: 0, position: 'sticky', top: 70 }}>
+            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] p-0 sticky top-[70px]">
               {SETTINGS_NAV.map((group, gi) => (
                 <div key={group.group}>
-                  {gi > 0 && <div style={{ height: 1, background: '#F0EEE6' }} />}
-                  <div style={{ padding: '10px 16px 4px' }}>
-                    <p style={{ fontSize: 10, fontWeight: 600, color: group.isDanger ? '#C0392B' : '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: poppins }}>
+                  {gi > 0 && <div className="h-px bg-[#F0EEE6]" />}
+                  <div className="px-4 pt-[10px] pb-1">
+                    <p className={`text-[10px] font-semibold uppercase tracking-[0.08em] ${group.isDanger ? 'text-[#C0392B]' : 'text-[#8C8A82]'}`}>
                       {group.group}
                     </p>
                   </div>
@@ -250,19 +275,17 @@ export function SellerSettings() {
                       <button
                         key={item.id}
                         onClick={() => setActive(item.id)}
+                        className="w-full flex items-center gap-[10px] px-4 py-[9px] cursor-pointer border-none text-left transition-[background] duration-[120ms]"
                         style={{
-                          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                          padding: '9px 16px', cursor: 'pointer', border: 'none',
                           borderLeft: `3px solid ${isActive ? (isDanger ? '#C0392B' : '#D97757') : 'transparent'}`,
                           background: isActive ? (isDanger ? '#FDECEA' : '#FBECE4') : 'transparent',
                           color: isActive ? (isDanger ? '#C0392B' : '#B95A3A') : (isDanger ? '#C0392B' : '#4A4945'),
-                          textAlign: 'left', fontFamily: poppins, transition: 'background 0.12s',
                         }}
                         onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#FAF9F5'; }}
                         onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
                       >
-                        <item.Icon size={14} style={{ flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
+                        <item.Icon size={14} className="shrink-0" />
+                        <span className={`text-[13px] ${isActive ? 'font-semibold' : 'font-normal'}`}>{item.label}</span>
                       </button>
                     );
                   })}

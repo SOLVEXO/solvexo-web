@@ -40,54 +40,41 @@ const ADMIN_ACTIONS = [
   { time: 'Yesterday', action: 'Updated AI credit limit to 1,000 / month',             admin: 'admin@solvexo.com' },
 ];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const poppins: React.CSSProperties = { fontFamily: "'Poppins', sans-serif" };
-
-const card: React.CSSProperties = {
-  background: '#FFFFFF',
-  border: '1px solid #E8E6DC',
-  borderRadius: 10,
-  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-};
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function AdminOverview() {
   return (
-    <div style={{ padding: '24px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, ...poppins }}>
+    <div className="px-7 pt-6 pb-8 flex flex-col gap-5">
 
       {/* ── Header ── */}
       <div>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#141413', marginBottom: 3 }}>
+        <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">
           Platform Overview
         </h1>
-        <p style={{ fontSize: 12, color: '#8C8A82' }}>
+        <p className="text-[12px] text-slate">
           Real-time snapshot of the Solvexo platform.
         </p>
       </div>
 
       {/* ── Metrics Row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+      <div className="grid grid-cols-4 gap-3">
         {METRICS.map((m) => (
           <div
             key={m.label}
-            style={{
-              ...card,
-              padding: '18px 20px',
-            }}
+            className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-[18px]"
           >
-            <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">
               {m.label}
             </p>
-            <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>
+            <p className="text-[28px] font-bold text-charcoal leading-[1.15]">
               {m.value}
             </p>
             {m.trend && (
-              <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>
+              <p className="text-[12px] text-[#2D8A4E] mt-1">
                 ▲ {m.trend}
               </p>
             )}
             {m.sub && (
-              <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>
+              <p className="text-[12px] text-slate mt-1">
                 {m.sub}
               </p>
             )}
@@ -96,48 +83,32 @@ export function AdminOverview() {
       </div>
 
       {/* ── Row 2: Recent Signups + Platform Health ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="grid grid-cols-2 gap-4">
 
         {/* Recent Signups */}
-        <div style={card}>
-          <div style={{ padding: '16px 20px 10px' }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#141413' }}>Recent Signups</p>
+        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <div className="px-5 pt-4 pb-[10px]">
+            <p className="text-[14px] font-bold text-charcoal">Recent Signups</p>
           </div>
           <div>
             {RECENT_SIGNUPS.map((u, i) => (
               <div
                 key={u.name}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '10px 20px',
-                  borderBottom: i < RECENT_SIGNUPS.length - 1 ? '1px solid #F0EEE6' : 'none',
-                }}
+                className={`flex items-center gap-3 px-5 py-[10px]${i < RECENT_SIGNUPS.length - 1 ? ' border-b border-[#F0EEE6]' : ''}`}
               >
                 {/* Initial circle */}
-                <div style={{
-                  width: 30, height: 30, borderRadius: '50%',
-                  background: '#E8E6DC', color: '#5A5852',
-                  fontSize: 11, fontWeight: 700,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
+                <div className="w-[30px] h-[30px] rounded-full bg-bone text-[#5A5852] text-[11px] font-bold flex items-center justify-center flex-shrink-0">
                   {u.initial}
                 </div>
                 {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 12, fontWeight: 500, color: '#141413', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-medium text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">
                     {u.name}
                   </p>
-                  <p style={{ fontSize: 11, color: '#8C8A82', marginTop: 1 }}>{u.date}</p>
+                  <p className="text-[11px] text-slate mt-[1px]">{u.date}</p>
                 </div>
                 {/* Role badge */}
-                <span style={{
-                  fontSize: 11, fontWeight: 600,
-                  padding: '2px 9px', borderRadius: 5,
-                  background: u.role === 'Seller' ? '#FBECE4' : '#EAF0FB',
-                  color:      u.role === 'Seller' ? '#C96847'  : '#2156A8',
-                  flexShrink: 0,
-                }}>
+                <span className={`text-[11px] font-semibold px-[9px] py-[2px] rounded-[5px] flex-shrink-0 ${u.role === 'Seller' ? 'bg-[#FBECE4] text-[#C96847]' : 'bg-[#EAF0FB] text-[#2156A8]'}`}>
                   {u.role}
                 </span>
               </div>
@@ -146,37 +117,29 @@ export function AdminOverview() {
         </div>
 
         {/* Platform Health */}
-        <div style={{ ...card, padding: '16px 20px' }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 14 }}>Platform Health</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+          <p className="text-[14px] font-bold text-charcoal mb-[14px]">Platform Health</p>
+          <div className="flex flex-col gap-[10px]">
             {PLATFORM_HEALTH.map((item) => {
               const healthy  = item.status === 'healthy';
               const degraded = item.status === 'degraded';
               const iconColor = healthy ? '#2D8A4E' : degraded ? '#C08B1E' : '#C0392B';
-              const badgeStyle: React.CSSProperties = healthy
-                ? { background: '#E3F4EA', color: '#1E7A3C' }
+              const badgeCls = healthy
+                ? 'bg-[#E3F4EA] text-[#1E7A3C]'
                 : degraded
-                ? { background: '#FFF4DC', color: '#B36200' }
-                : { background: '#FDECEA', color: '#C0392B' };
+                ? 'bg-[#FFF4DC] text-[#B36200]'
+                : 'bg-[#FDECEA] text-[#C0392B]';
 
               return (
                 <div
                   key={item.label}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '10px 14px', borderRadius: 8,
-                    background: '#FAF9F5',
-                  }}
+                  className="flex items-center gap-3 px-[14px] py-[10px] rounded-lg bg-[#FAF9F5]"
                 >
-                  <item.Icon size={18} style={{ color: iconColor, flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, fontWeight: 500, color: '#141413', flex: 1 }}>
+                  <item.Icon size={18} style={{ color: iconColor }} className="flex-shrink-0" />
+                  <span className="text-[13px] font-medium text-charcoal flex-1">
                     {item.label}
                   </span>
-                  <span style={{
-                    fontSize: 11, fontWeight: 600,
-                    padding: '2px 9px', borderRadius: 5,
-                    ...badgeStyle,
-                  }}>
+                  <span className={`text-[11px] font-semibold px-[9px] py-[2px] rounded-[5px] ${badgeCls}`}>
                     {healthy ? 'Healthy' : degraded ? 'Degraded' : 'Down'}
                   </span>
                 </div>
@@ -187,26 +150,25 @@ export function AdminOverview() {
       </div>
 
       {/* ── Row 3: Top Categories + Admin Action Log ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="grid grid-cols-2 gap-4">
 
         {/* Top Categories */}
-        <div style={{ ...card, padding: '16px 20px' }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 16 }}>
+        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+          <p className="text-[14px] font-bold text-charcoal mb-4">
             Top Categories by GMV
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="flex flex-col gap-[14px]">
             {TOP_CATEGORIES.map((cat) => (
               <div key={cat.name}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                  <span style={{ fontSize: 12, color: '#4A4945' }}>{cat.name}</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#141413' }}>{cat.gmv}</span>
+                <div className="flex justify-between items-center mb-[5px]">
+                  <span className="text-[12px] text-[#4A4945]">{cat.name}</span>
+                  <span className="text-[12px] font-semibold text-charcoal">{cat.gmv}</span>
                 </div>
-                <div style={{ height: 8, borderRadius: 4, background: '#E8E6DC' }}>
-                  <div style={{
-                    height: '100%', borderRadius: 4,
-                    width: `${cat.pct}%`,
-                    background: '#D97757',
-                  }} />
+                <div className="h-2 rounded-[4px] bg-bone">
+                  <div
+                    className="h-full rounded-[4px] bg-brand-orange"
+                    style={{ width: `${cat.pct}%` }}
+                  />
                 </div>
               </div>
             ))}
@@ -214,27 +176,20 @@ export function AdminOverview() {
         </div>
 
         {/* Recent Admin Actions */}
-        <div style={card}>
-          <div style={{ padding: '16px 20px 10px' }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#141413' }}>Recent Admin Actions</p>
+        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <div className="px-5 pt-4 pb-[10px]">
+            <p className="text-[14px] font-bold text-charcoal">Recent Admin Actions</p>
           </div>
           <div>
             {ADMIN_ACTIONS.map((a, i) => (
               <div
                 key={i}
-                style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 12,
-                  padding: '10px 20px',
-                  borderBottom: i < ADMIN_ACTIONS.length - 1 ? '1px solid #F0EEE6' : 'none',
-                }}
+                className={`flex items-start gap-3 px-5 py-[10px]${i < ADMIN_ACTIONS.length - 1 ? ' border-b border-[#F0EEE6]' : ''}`}
               >
-                <div style={{
-                  width: 8, height: 8, borderRadius: '50%',
-                  background: '#D97757', flexShrink: 0, marginTop: 4,
-                }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 12, color: '#4A4945', lineHeight: 1.4 }}>{a.action}</p>
-                  <p style={{ fontSize: 11, color: '#8C8A82', marginTop: 3 }}>
+                <div className="w-2 h-2 rounded-full bg-brand-orange flex-shrink-0 mt-1" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] text-[#4A4945] leading-[1.4]">{a.action}</p>
+                  <p className="text-[11px] text-slate mt-[3px]">
                     {a.admin} · {a.time}
                   </p>
                 </div>

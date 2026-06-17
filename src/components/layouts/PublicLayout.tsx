@@ -1,42 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { clsx } from 'clsx';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { TokenStorage } from '@/api/commerce/auth';
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
-const C = {
-  orange: '#D97757', deepOrange: '#B95A3A',
-  carbon: '#141413', charcoal: '#2C2A28', slate: '#8C8A82',
-  bone: '#E8E6DC', cream: '#FAF9F5', white: '#FFFFFF',
-};
-const FONT = "'Poppins', sans-serif";
-
-// ── Solvexo Logo Icon (exact SVG from reference) ─────────────────────────────
-function SolvexoNavLogo() {
-  return (
-    <div
-      style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-    >
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <rect width="32" height="32" rx="8" fill="#D97757"/>
-        <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-        <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7"/>
-        <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <span style={{ fontFamily: FONT, fontSize: 18, fontWeight: 700, color: C.carbon, letterSpacing: '-0.3px' }}>
-          Solvex
-        </span>
-        <span style={{ fontFamily: FONT, fontSize: 18, fontWeight: 700, color: C.orange, letterSpacing: '-0.3px' }}>
-          o
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// ── Nav items — exact from reference source ───────────────────────────────────
-// "Sellers" and "Pricing" are ALWAYS orange (reference hardcodes this)
+// ── Nav items — "Sellers" and "Pricing" are ALWAYS orange (reference exact) ───
 const NAV_ITEMS = [
   { label: 'Marketplace', path: '/marketplace', orange: false },
   { label: 'Sellers',     path: '/sellers',     orange: true  },
@@ -44,28 +12,45 @@ const NAV_ITEMS = [
   { label: 'Learn',       path: '/education',   orange: false },
 ];
 
-// ── Button components matching reference exactly ──────────────────────────────
+// ── Logo ──────────────────────────────────────────────────────────────────────
+function SolvexoNavLogo() {
+  return (
+    <div className="flex items-center gap-2 cursor-pointer">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="8" fill="#D97757"/>
+        <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
+        <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7"/>
+        <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      <div className="flex items-center">
+        <span className="text-[18px] font-bold text-carbon tracking-[-0.3px]">Solvex</span>
+        <span className="text-[18px] font-bold text-brand-orange tracking-[-0.3px]">o</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Nav button (matches exact padding from reference) ─────────────────────────
 function NavBtn({
   children, onClick, variant = 'primary',
 }: { children: string; onClick: () => void; variant?: 'primary' | 'ghost' }) {
-  const base: React.CSSProperties = {
-    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500,
-    fontFamily: FONT, cursor: 'pointer', transition: 'all 0.18s ease',
-    whiteSpace: 'nowrap',
-  };
-  const styles: Record<string, React.CSSProperties> = {
-    primary: { background: C.orange, color: C.white, border: 'none' },
-    ghost:   { background: 'transparent', color: C.slate, border: `1px solid ${C.bone}` },
-  };
   return (
-    <button style={{ ...base, ...styles[variant] }} onClick={onClick}>
+    <button
+      onClick={onClick}
+      className={clsx(
+        'inline-flex items-center justify-center py-[6px] px-[14px] rounded-md',
+        'text-[13px] font-medium cursor-pointer transition-all duration-[180ms] whitespace-nowrap border-0',
+        variant === 'primary'
+          ? 'bg-brand-orange text-white hover:opacity-[0.88]'
+          : 'bg-transparent text-slate border border-bone hover:bg-cream',
+      )}
+    >
       {children}
     </button>
   );
 }
 
-// ── Profile Avatar (shown when logged in) ─────────────────────────────────────
+// ── Profile Avatar ────────────────────────────────────────────────────────────
 function ProfileAvatar() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -95,73 +80,49 @@ function ProfileAvatar() {
   };
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
+    <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(p => !p)}
-        style={{
-          width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-          background: '#FBECE4', border: `2px solid ${open ? C.orange : C.bone}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', overflow: 'hidden', transition: 'border-color 0.15s',
-        }}
+        className={clsx(
+          'size-9 rounded-full shrink-0 bg-brand-pale-orange',
+          'flex items-center justify-center cursor-pointer overflow-hidden',
+          'transition-colors duration-150 border-2',
+          open ? 'border-brand-orange' : 'border-bone',
+        )}
       >
         {loading ? (
-          <div style={{ width: '100%', height: '100%', background: '#E8E6DC' }} />
+          <div className="w-full h-full bg-bone" />
         ) : profile?.profileImage ? (
-          <img src={profile.profileImage} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
         ) : (
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#B95A3A', fontFamily: FONT }}>{initials}</span>
+          <span className="text-[11px] font-bold text-brand-deep-orange">{initials}</span>
         )}
       </button>
 
       {open && (
-        <div style={{
-          position: 'absolute', right: 0, top: 'calc(100% + 8px)', zIndex: 100,
-          background: C.white, border: `1px solid ${C.bone}`, borderRadius: 12,
-          boxShadow: '0 8px 28px rgba(0,0,0,0.12)', minWidth: 220, padding: 6,
-          fontFamily: FONT,
-        }}>
+        <div className="absolute right-0 top-[calc(100%+8px)] z-[100] bg-white border border-bone rounded-lg shadow-[0_8px_28px_rgba(0,0,0,0.12)] min-w-[220px] p-[6px]">
           {/* User info */}
-          <div style={{ padding: '10px 12px 12px', borderBottom: `1px solid ${C.bone}`, marginBottom: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: '50%', background: '#FBECE4',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                overflow: 'hidden', flexShrink: 0,
-              }}>
+          <div className="px-3 pt-[10px] pb-3 border-b border-bone mb-1">
+            <div className="flex items-center gap-[10px] mb-2">
+              <div className="size-9 rounded-full bg-brand-pale-orange flex items-center justify-center overflow-hidden shrink-0">
                 {profile?.profileImage
-                  ? <img src={profile.profileImage} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <span style={{ fontSize: 12, fontWeight: 700, color: '#B95A3A' }}>{initials}</span>}
+                  ? <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                  : <span className="text-[12px] font-bold text-brand-deep-orange">{initials}</span>}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: C.carbon, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {profile?.name ?? '—'}
-                </p>
-                <p style={{ fontSize: 11, color: C.slate, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {profile?.email ?? '—'}
-                </p>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-bold text-carbon truncate">{profile?.name ?? '—'}</p>
+                <p className="text-[11px] text-slate truncate">{profile?.email ?? '—'}</p>
               </div>
             </div>
-            <span style={{
-              display: 'inline-block', padding: '2px 10px', borderRadius: 4,
-              background: '#FBECE4', color: '#B95A3A',
-              fontSize: 10, fontWeight: 600, textTransform: 'capitalize',
-            }}>
+            <span className="inline-block py-[2px] px-[10px] rounded-[4px] bg-brand-pale-orange text-brand-deep-orange text-[10px] font-semibold capitalize">
               {profile?.role ?? ''}
             </span>
           </div>
 
-          {/* My Profile — always visible */}
+          {/* My Profile */}
           <button
             onClick={() => { navigate('/account/profile'); setOpen(false); }}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-              padding: '9px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
-              background: 'transparent', fontSize: 13, color: C.charcoal,
-              fontFamily: FONT, textAlign: 'left', transition: 'background 0.12s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            className="w-full flex items-center gap-2 py-[9px] px-3 rounded-md border-0 cursor-pointer bg-transparent text-[13px] text-charcoal text-left transition-colors duration-[120ms] hover:bg-cream"
           >
             My Profile
           </button>
@@ -170,32 +131,18 @@ function ProfileAvatar() {
           {profile?.role !== 'user' && (
             <button
               onClick={() => { navigate(dashboardPath); setOpen(false); }}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-                padding: '9px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                background: 'transparent', fontSize: 13, color: C.charcoal,
-                fontFamily: FONT, textAlign: 'left', transition: 'background 0.12s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              className="w-full flex items-center gap-2 py-[9px] px-3 rounded-md border-0 cursor-pointer bg-transparent text-[13px] text-charcoal text-left transition-colors duration-[120ms] hover:bg-cream"
             >
               Go to Dashboard
             </button>
           )}
 
-          <div style={{ height: 1, background: C.bone, margin: '4px 6px' }} />
+          <div className="h-px bg-bone mx-[6px] my-1" />
 
           {/* Logout */}
           <button
             onClick={handleLogout}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-              padding: '9px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
-              background: 'transparent', fontSize: 13, color: '#C0392B',
-              fontFamily: FONT, textAlign: 'left', transition: 'background 0.12s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#FDECEA')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            className="w-full flex items-center gap-2 py-[9px] px-3 rounded-md border-0 cursor-pointer bg-transparent text-[13px] text-[#C0392B] text-left transition-colors duration-[120ms] hover:bg-[#FDECEA]"
           >
             Logout
           </button>
@@ -211,42 +158,33 @@ export function PublicLayout() {
   const { pathname } = useLocation();
 
   return (
-    <div style={{ minHeight: '100vh', background: C.white }}>
+    <div className="min-h-screen bg-white">
       {/* ── Navbar ── */}
-      <header style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        background: C.white, borderBottom: `1px solid ${C.bone}`,
-        height: 64, display: 'flex', alignItems: 'center',
-      }}>
-        <nav style={{
-          width: '100%', display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', padding: '0 48px',
-        }}>
+      <header className="sticky top-0 z-50 bg-white border-b border-bone h-16 flex items-center">
+        <nav className="w-full flex items-center justify-between px-12">
 
           {/* Logo */}
           <div onClick={() => navigate('/')}>
             <SolvexoNavLogo />
           </div>
 
-          {/* Nav links — "Sellers" and "Pricing" always orange (reference exact) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+          {/* Nav links */}
+          <div className="flex items-center gap-7">
             {NAV_ITEMS.map(item => {
               const isCurrentPage = pathname === item.path ||
                 (item.path !== '/' && pathname.startsWith(item.path));
-              const color = item.orange || isCurrentPage ? C.orange : C.charcoal;
+              const isHighlighted = item.orange || isCurrentPage;
               return (
                 <button
                   key={item.label}
                   onClick={() => navigate(item.path)}
-                  style={{
-                    fontFamily: FONT, fontSize: 13, fontWeight: 500,
-                    color: color, background: 'none', border: 'none',
-                    cursor: 'pointer', transition: 'color 0.15s',
-                    borderBottom: item.orange || isCurrentPage
-                      ? `2px solid ${C.orange}`
-                      : '2px solid transparent',
-                    paddingBottom: 2,
-                  }}
+                  className={clsx(
+                    'text-[13px] font-medium bg-none border-none cursor-pointer',
+                    'transition-colors duration-150 pb-[2px] border-b-2',
+                    isHighlighted
+                      ? 'text-brand-orange border-brand-orange'
+                      : 'text-charcoal border-transparent',
+                  )}
                 >
                   {item.label}
                 </button>
@@ -255,17 +193,13 @@ export function PublicLayout() {
           </div>
 
           {/* Buttons / Profile */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="flex items-center gap-[10px]">
             {TokenStorage.isLoggedIn() ? (
               <ProfileAvatar />
             ) : (
               <>
-                <NavBtn variant="ghost" onClick={() => navigate('/login')}>
-                  Sign In
-                </NavBtn>
-                <NavBtn variant="primary" onClick={() => navigate('/onboarding')}>
-                  Start Selling
-                </NavBtn>
+                <NavBtn variant="ghost" onClick={() => navigate('/login')}>Sign In</NavBtn>
+                <NavBtn variant="primary" onClick={() => navigate('/onboarding')}>Start Selling</NavBtn>
               </>
             )}
           </div>

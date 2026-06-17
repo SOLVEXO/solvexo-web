@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { clsx } from 'clsx';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   User, ShoppingBag, Heart, MapPin, Phone, Mail,
@@ -15,23 +16,8 @@ import {
   type Address, type AddressPayload,
 } from '@/api/commerce/address';
 
-// ── Styles ────────────────────────────────────────────────────────────────────
-const FONT = "'Poppins', sans-serif";
-const card: React.CSSProperties = {
-  background: '#fff', border: '1px solid #E8E6DC',
-  borderRadius: 12, padding: '24px 26px',
-  boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
-};
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 13px', fontSize: 13,
-  border: '1px solid #E8E6DC', borderRadius: 9, outline: 'none',
-  fontFamily: FONT, color: '#2C2A28', background: '#fff',
-  boxSizing: 'border-box' as const,
-};
-const labelStyle: React.CSSProperties = {
-  fontSize: 12, fontWeight: 500, color: '#4A4945',
-  marginBottom: 6, display: 'block', fontFamily: FONT,
-};
+const INPUT_CLS = 'w-full py-[10px] px-[13px] text-[13px] border border-bone rounded-[9px] outline-none text-charcoal bg-white box-border';
+const LABEL_CLS = 'text-[12px] font-medium text-[#4A4945] mb-[6px] block';
 
 // ── Tab nav ───────────────────────────────────────────────────────────────────
 type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses';
@@ -55,12 +41,12 @@ function Skeleton({ w, h, radius = 6 }: { w: number | string; h: number; radius?
 // ── Placeholder tab ───────────────────────────────────────────────────────────
 function PlaceholderTab({ Icon, label, desc }: { Icon: LucideIcon; label: string; desc: string }) {
   return (
-    <div style={{ ...card, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '64px 20px', textAlign: 'center' }}>
-      <div style={{ width: 64, height: 64, borderRadius: 16, background: '#FAF9F5', border: '1px solid #E8E6DC', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-        <Icon size={28} style={{ color: '#D97757', opacity: 0.6 }} />
+    <div className="bg-white border border-[#E8E6DC] rounded-[12px] px-[26px] py-[24px] shadow-[0_1px_6px_rgba(0,0,0,0.05)] flex flex-col items-center px-5 py-16 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-cream border border-[#E8E6DC] flex items-center justify-center mb-4">
+        <Icon size={28} className="text-brand-orange opacity-60" />
       </div>
-      <p style={{ fontSize: 16, fontWeight: 700, color: '#141413', marginBottom: 6, fontFamily: FONT }}>{label}</p>
-      <p style={{ fontSize: 13, color: '#8C8A82', maxWidth: 320, fontFamily: FONT }}>{desc}</p>
+      <p className="text-[16px] font-bold text-[#141413] mb-[6px]">{label}</p>
+      <p className="text-[13px] text-[#8C8A82] max-w-[320px]">{desc}</p>
     </div>
   );
 }
@@ -71,14 +57,14 @@ function WishlistImg({ images, name }: { images?: string[]; name: string }) {
   const src = images?.[0];
   if (!src || err) {
     return (
-      <div style={{ width: 80, height: 80, borderRadius: 10, background: '#FBECE4', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <ImageOff size={20} style={{ color: '#D97757', opacity: 0.45 }} />
+      <div className="w-20 h-20 rounded-[10px] bg-brand-pale-orange flex-shrink-0 flex items-center justify-center">
+        <ImageOff size={20} className="text-brand-orange opacity-[0.45]" />
       </div>
     );
   }
   return (
     <img src={src} alt={name} onError={() => setErr(true)}
-      style={{ width: 80, height: 80, borderRadius: 10, objectFit: 'cover', flexShrink: 0, display: 'block' }} />
+      className="w-20 h-20 rounded-[10px] object-cover flex-shrink-0 block" />
   );
 }
 
@@ -105,25 +91,24 @@ function WishlistTab() {
 
   if (wLoading) {
     return (
-      <div style={card}>
-        <p style={{ fontSize: 15, fontWeight: 700, color: '#141413', marginBottom: 18, fontFamily: FONT }}>Saved Items</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="bg-white border border-[#E8E6DC] rounded-[12px] px-[26px] py-6 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
+        <p className="text-[15px] font-bold text-[#141413] mb-[18px]">Saved Items</p>
+        <div className="flex flex-col gap-3">
           {[1, 2, 3].map(i => (
-            <div key={i} style={{ display: 'flex', gap: 14, padding: '16px 0', borderBottom: '1px solid #F0EEE6' }}>
-              <div className="animate-pulse" style={{ width: 80, height: 80, borderRadius: 10, background: '#E8E6DC', flexShrink: 0 }} />
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div className="animate-pulse" style={{ height: 13, borderRadius: 6, background: '#E8E6DC', width: '50%' }} />
-                <div className="animate-pulse" style={{ height: 11, borderRadius: 4, background: '#E8E6DC', width: '25%' }} />
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <div className="animate-pulse" style={{ height: 30, width: 96, borderRadius: 8, background: '#E8E6DC' }} />
-                  <div className="animate-pulse" style={{ height: 30, width: 76, borderRadius: 8, background: '#E8E6DC' }} />
+            <div key={i} className="flex gap-[14px] py-4 border-b border-[#F0EEE6]">
+              <div className="animate-pulse w-20 h-20 rounded-[10px] bg-bone flex-shrink-0" />
+              <div className="flex-1 flex flex-col gap-[10px]">
+                <div className="animate-pulse h-[13px] rounded-[6px] bg-bone w-1/2" />
+                <div className="animate-pulse h-[11px] rounded bg-bone w-1/4" />
+                <div className="flex gap-2">
+                  <div className="animate-pulse h-[30px] w-24 rounded-lg bg-bone" />
+                  <div className="animate-pulse h-[30px] w-[76px] rounded-lg bg-bone" />
                 </div>
               </div>
             </div>
           ))}
         </div>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      </div>
+              </div>
     );
   }
 
@@ -138,11 +123,11 @@ function WishlistTab() {
   }
 
   return (
-    <div style={card}>
-      <p style={{ fontSize: 15, fontWeight: 700, color: '#141413', marginBottom: 4, fontFamily: FONT }}>Saved Items</p>
-      <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 20, fontFamily: FONT }}>{wishlistCount} item{wishlistCount !== 1 ? 's' : ''}</p>
+    <div className="bg-white border border-[#E8E6DC] rounded-[12px] px-[26px] py-6 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
+      <p className="text-[15px] font-bold text-[#141413] mb-1">Saved Items</p>
+      <p className="text-[12px] text-[#8C8A82] mb-5">{wishlistCount} item{wishlistCount !== 1 ? 's' : ''}</p>
 
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="flex flex-col">
         {wishlistItems.map((item, idx) => {
           const p = item.product;
           const variant = item.variants[0];
@@ -153,24 +138,20 @@ function WishlistTab() {
           return (
             <div
               key={p._id}
-              style={{
-                display: 'flex', gap: 14, padding: '16px 0',
-                borderBottom: isLast ? 'none' : '1px solid #F0EEE6',
-                opacity: isRemoving ? 0.4 : 1, transition: 'opacity 0.2s',
-              }}
+              className={clsx('flex gap-[14px] py-4 transition-opacity duration-200', !isLast && 'border-b border-[#F0EEE6]', isRemoving && 'opacity-40')}
             >
               <WishlistImg images={p.images ?? []} name={p.name} />
 
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="flex-1 min-w-0">
                 <p
                   onClick={() => navigate(`/marketplace/${p._id}`)}
-                  style={{ fontWeight: 600, fontSize: 14, color: '#141413', marginBottom: 3, cursor: 'pointer', fontFamily: FONT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  className="font-semibold text-[14px] text-[#141413] mb-[3px] cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap"
                 >
                   {p.name}
                 </p>
 
                 {/* Stars */}
-                <div style={{ display: 'flex', gap: 2, marginBottom: 6 }}>
+                <div className="flex gap-[2px] mb-[6px]">
                   {[1, 2, 3, 4, 5].map(i => (
                     <Star key={i} size={10} style={{
                       color: i <= Math.round(p.averageRating) ? '#D97757' : '#E8E6DC',
@@ -180,35 +161,29 @@ function WishlistTab() {
                 </div>
 
                 {variant && (
-                  <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 10, fontFamily: FONT }}>
+                  <p className="text-[12px] text-[#8C8A82] mb-[10px]">
                     {variant.color && <span>{variant.color}</span>}
                     {variant.color && variant.size && <span> · </span>}
                     {variant.size && <span>{variant.size}</span>}
-                    {(variant.color || variant.size) && <span style={{ margin: '0 6px', color: '#E8E6DC' }}>|</span>}
-                    <span style={{ fontWeight: 600, color: '#141413' }}>${variant.price.toLocaleString()}</span>
+                    {(variant.color || variant.size) && <span className="mx-[6px] text-bone">|</span>}
+                    <span className="font-semibold text-[#141413]">${variant.price.toLocaleString()}</span>
                     {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
-                      <span style={{ marginLeft: 6, textDecoration: 'line-through', color: '#8C8A82' }}>
+                      <span className="ml-[6px] line-through text-[#8C8A82]">
                         ${variant.compareAtPrice.toLocaleString()}
                       </span>
                     )}
                   </p>
                 )}
 
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <div className="flex gap-2 flex-wrap">
                   {variant && (
                     <button
                       onClick={() => handleAddToCart(p._id, variant._id)}
                       disabled={isAdding}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 5,
-                        padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                        background: '#D97757', color: '#fff', border: 'none',
-                        cursor: isAdding ? 'not-allowed' : 'pointer', opacity: isAdding ? 0.7 : 1,
-                        fontFamily: FONT,
-                      }}
+                      className={clsx('flex items-center gap-[5px] px-[14px] py-[6px] rounded-lg text-[12px] font-semibold bg-brand-orange text-white border-none', isAdding ? 'cursor-not-allowed opacity-70' : 'cursor-pointer')}
                     >
                       {isAdding
-                        ? <Loader2 size={11} style={{ animation: 'spin 0.7s linear infinite' }} />
+                        ? <Loader2 size={11} className="animate-spin" />
                         : <ShoppingCart size={11} />
                       }
                       {isAdding ? 'Adding…' : 'Add to Cart'}
@@ -217,18 +192,11 @@ function WishlistTab() {
                   <button
                     onClick={() => variant && handleRemove(p._id, variant._id)}
                     disabled={isRemoving}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 5,
-                      padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 500,
-                      background: '#FFF0F5', color: '#E11D48',
-                      border: '1px solid #FECDD3',
-                      cursor: isRemoving ? 'not-allowed' : 'pointer',
-                      fontFamily: FONT,
-                    }}
+                    className={clsx('flex items-center gap-[5px] px-3 py-[6px] rounded-lg text-[12px] font-medium bg-[#FFF0F5] text-[#E11D48] border border-[#FECDD3]', isRemoving ? 'cursor-not-allowed' : 'cursor-pointer')}
                   >
                     {isRemoving
-                      ? <Loader2 size={11} style={{ animation: 'spin 0.7s linear infinite' }} />
-                      : <Heart size={11} style={{ fill: '#E11D48' }} />
+                      ? <Loader2 size={11} className="animate-spin" />
+                      : <Heart size={11} className="fill-[#E11D48]" />
                     }
                     Remove
                   </button>
@@ -238,8 +206,7 @@ function WishlistTab() {
           );
         })}
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
+          </div>
   );
 }
 
@@ -261,13 +228,13 @@ function AddrField({
   half?: boolean;
 }) {
   return (
-    <div style={{ gridColumn: half ? 'auto' : 'span 2' }}>
-      <label style={labelStyle}>{label}</label>
+    <div className={half ? '' : 'col-span-2'}>
+      <label className={LABEL_CLS}>{label}</label>
       <input
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        style={inputStyle}
+        className={INPUT_CLS}
       />
     </div>
   );
@@ -286,26 +253,22 @@ function AddressForm({
     setForm(prev => ({ ...prev, [k]: v }));
 
   return (
-    <div style={{
-      border: '1.5px solid #D97757', borderRadius: 12,
-      padding: '20px 18px', background: '#FFFAF7',
-    }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+    <div className="border-[1.5px] border-brand-orange rounded-[12px] px-[18px] py-5 bg-[#FFFAF7]">
+      <div className="grid grid-cols-2 gap-3">
         {/* Label select */}
-        <div style={{ gridColumn: 'span 2' }}>
-          <label style={labelStyle}>Label</label>
-          <div style={{ display: 'flex', gap: 8 }}>
+        <div className="col-span-2">
+          <label className={LABEL_CLS}>Label</label>
+          <div className="flex gap-2">
             {['Home', 'Work', 'Other'].map(l => (
               <button
                 key={l}
                 type="button"
                 onClick={() => set('label', l)}
+                className="px-4 py-[6px] rounded-lg text-[12px] font-semibold cursor-pointer"
                 style={{
-                  padding: '6px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600,
                   border: `1.5px solid ${form.label === l ? '#D97757' : '#E8E6DC'}`,
                   background: form.label === l ? '#FBECE4' : '#fff',
                   color: form.label === l ? '#B95A3A' : '#8C8A82',
-                  cursor: 'pointer', fontFamily: FONT,
                 }}
               >
                 {l}
@@ -323,47 +286,37 @@ function AddressForm({
         <AddrField label="Zip Code" value={form.zipCode} onChange={v => set('zipCode', v)} placeholder="e.g. 75300" half />
 
         {/* Default checkbox */}
-        <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="col-span-2 flex items-center gap-2">
           <input
             type="checkbox"
             id="addr-isDefault"
             checked={form.isDefault ?? false}
             onChange={e => set('isDefault', e.target.checked)}
-            style={{ width: 15, height: 15, accentColor: '#D97757', cursor: 'pointer' }}
+            className="w-[15px] h-[15px] cursor-pointer accent-brand-orange"
           />
-          <label htmlFor="addr-isDefault" style={{ fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: FONT }}>
+          <label htmlFor="addr-isDefault" className="text-[12px] text-[#4A4945] cursor-pointer">
             Set as default address
           </label>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+      <div className="flex gap-[10px] mt-[18px]">
         <button
           onClick={() => onSave(form)}
           disabled={saving}
-          style={{
-            padding: '9px 24px', borderRadius: 9, fontSize: 13, fontWeight: 600,
-            background: '#D97757', color: '#fff', border: 'none',
-            cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1,
-            display: 'flex', alignItems: 'center', gap: 6, fontFamily: FONT,
-          }}
+          className={clsx('px-6 py-[9px] rounded-[9px] text-[13px] font-semibold bg-brand-orange text-white border-none flex items-center gap-[6px]', saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer')}
         >
-          {saving && <Loader2 size={13} style={{ animation: 'spin 0.7s linear infinite' }} />}
+          {saving && <Loader2 size={13} className="animate-spin" />}
           {saving ? 'Saving…' : 'Save Address'}
         </button>
         <button
           onClick={onCancel}
-          style={{
-            padding: '9px 18px', borderRadius: 9, fontSize: 13,
-            border: '1px solid #E8E6DC', background: '#fff',
-            color: '#8C8A82', cursor: 'pointer', fontFamily: FONT,
-          }}
+          className="px-[18px] py-[9px] rounded-[9px] text-[13px] border border-[#E8E6DC] bg-white text-[#8C8A82] cursor-pointer"
         >
           Discard
         </button>
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
+          </div>
   );
 }
 
@@ -417,16 +370,16 @@ function AddressTab() {
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div style={card}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="bg-white border border-[#E8E6DC] rounded-[12px] px-[26px] py-6 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
+        <div className="flex flex-col gap-3">
           {[1, 2].map(i => (
-            <div key={i} style={{ border: '1px solid #E8E6DC', borderRadius: 12, padding: 18 }}>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <div className="animate-pulse" style={{ width: 36, height: 36, borderRadius: 10, background: '#E8E6DC', flexShrink: 0 }} />
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div className="animate-pulse" style={{ height: 13, width: '30%', borderRadius: 6, background: '#E8E6DC' }} />
-                  <div className="animate-pulse" style={{ height: 11, width: '50%', borderRadius: 4, background: '#E8E6DC' }} />
-                  <div className="animate-pulse" style={{ height: 11, width: '70%', borderRadius: 4, background: '#E8E6DC' }} />
+            <div key={i} className="border border-[#E8E6DC] rounded-[12px] p-[18px]">
+              <div className="flex gap-3">
+                <div className="animate-pulse w-9 h-9 rounded-[10px] bg-bone flex-shrink-0" />
+                <div className="flex-1 flex flex-col gap-2">
+                  <div className="animate-pulse h-[13px] w-[30%] rounded-[6px] bg-bone" />
+                  <div className="animate-pulse h-[11px] w-1/2 rounded bg-bone" />
+                  <div className="animate-pulse h-[11px] w-[70%] rounded bg-bone" />
                 </div>
               </div>
             </div>
@@ -439,21 +392,16 @@ function AddressTab() {
   // ── Form view (Add or Edit) ───────────────────────────────────────────────
   if (view === 'add' || view === 'edit') {
     return (
-      <div style={card}>
+      <div className="bg-white border border-[#E8E6DC] rounded-[12px] px-[26px] py-6 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
         {/* Back header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22, paddingBottom: 16, borderBottom: '1px solid #F0EEE6' }}>
+        <div className="flex items-center gap-[10px] mb-[22px] pb-4 border-b border-[#F0EEE6]">
           <button
             onClick={goList}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '6px 12px', borderRadius: 8, fontSize: 12,
-              border: '1px solid #E8E6DC', background: '#FAF9F5',
-              color: '#4A4945', cursor: 'pointer', fontFamily: FONT,
-            }}
+            className="flex items-center gap-[6px] px-3 py-[6px] rounded-lg text-[12px] border border-[#E8E6DC] bg-cream text-[#4A4945] cursor-pointer"
           >
             <ArrowLeft size={15} /> Back
           </button>
-          <p style={{ fontSize: 15, fontWeight: 700, color: '#141413', fontFamily: FONT }}>
+          <p className="text-[15px] font-bold text-[#141413]">
             {view === 'edit' ? 'Edit Address' : 'Add New Address'}
           </p>
         </div>
@@ -473,46 +421,33 @@ function AddressTab() {
 
   // ── List view (table style — matches seller dashboard Recent Orders) ─────────
   return (
-    <div style={{
-      background: '#FFFFFF', border: '1px solid #E8E6DC',
-      borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-    }}>
+    <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
       {/* Header */}
-      <div style={{ padding: '16px 20px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', fontFamily: FONT }}>Saved Addresses</p>
+      <div className="px-5 pt-4 pb-[10px] flex items-center justify-between">
+        <p className="text-[14px] font-bold text-[#141413]">Saved Addresses</p>
         <button
           onClick={() => setView('add')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-            background: '#D97757', color: '#fff', border: 'none',
-            cursor: 'pointer', fontFamily: FONT,
-          }}
+          className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-semibold bg-brand-orange text-white border-none cursor-pointer"
         >
           <Plus size={18} /> Add Address
         </button>
       </div>
 
       {addresses.length === 0 ? (
-        <div style={{ padding: '48px 20px', textAlign: 'center', borderTop: '1px solid #E8E6DC' }}>
-          <div style={{ width: 52, height: 52, borderRadius: 12, background: '#FAF9F5', border: '1px solid #E8E6DC', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-            <MapPin size={22} style={{ color: '#D97757', opacity: 0.6 }} />
+        <div className="px-5 py-12 text-center border-t border-[#E8E6DC]">
+          <div className="w-[52px] h-[52px] rounded-[12px] bg-cream border border-[#E8E6DC] flex items-center justify-center mx-auto mb-3">
+            <MapPin size={22} className="text-brand-orange opacity-60" />
           </div>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 4, fontFamily: FONT }}>No addresses saved</p>
-          <p style={{ fontSize: 12, color: '#8C8A82', fontFamily: FONT }}>Add a shipping address to speed up checkout.</p>
+          <p className="text-[14px] font-bold text-[#141413] mb-1">No addresses saved</p>
+          <p className="text-[12px] text-[#8C8A82]">Add a shipping address to speed up checkout.</p>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, fontFamily: FONT }}>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-[13px]">
             <thead>
-              <tr style={{ borderTop: '1px solid #E8E6DC', borderBottom: '1px solid #E8E6DC' }}>
+              <tr className="border-t border-b border-[#E8E6DC]">
                 {['#', 'Label', 'Recipient', 'Phone', 'Address', 'Status', 'Actions'].map(h => (
-                  <th key={h} style={{
-                    textAlign: 'left', fontSize: 11, fontWeight: 600,
-                    color: '#8C8A82', textTransform: 'uppercase',
-                    letterSpacing: '0.05em', padding: '10px 18px',
-                    fontFamily: FONT,
-                  }}>
+                  <th key={h} className="text-left text-[11px] font-semibold text-[#8C8A82] uppercase tracking-[0.05em] px-[18px] py-[10px]">
                     {h}
                   </th>
                 ))}
@@ -522,21 +457,17 @@ function AddressTab() {
               {addresses.map((addr, i) => (
                 <tr
                   key={addr._id}
-                  style={{ borderBottom: i < addresses.length - 1 ? '1px solid #F5F4EF' : 'none', transition: 'background 0.12s' }}
+                  className="transition-colors duration-[120ms]"
+                  style={{ borderBottom: i < addresses.length - 1 ? '1px solid #F5F4EF' : 'none' }}
                   onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
                   {/* S.No */}
-                  <td style={{ padding: '11px 18px', color: '#8C8A82', fontSize: 12 }}>{i + 1}</td>
+                  <td className="px-[18px] py-[11px] text-[#8C8A82] text-[12px]">{i + 1}</td>
 
                   {/* Label */}
-                  <td style={{ padding: '11px 18px' }}>
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 5,
-                      background: '#FBECE4', color: '#B95A3A',
-                      fontSize: 11, fontWeight: 600,
-                      padding: '3px 10px', borderRadius: 5,
-                    }}>
+                  <td className="px-[18px] py-[11px]">
+                    <span className="inline-flex items-center gap-[5px] bg-brand-pale-orange text-[#B95A3A] text-[11px] font-semibold px-[10px] py-[3px] rounded-[5px]">
                       {addr.label === 'Home' && <Home size={10} />}
                       {addr.label === 'Work' && <Briefcase size={10} />}
                       {addr.label === 'Other' && <StarIcon size={10} />}
@@ -545,53 +476,43 @@ function AddressTab() {
                   </td>
 
                   {/* Recipient */}
-                  <td style={{ padding: '11px 18px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{
-                        width: 26, height: 26, borderRadius: '50%',
-                        background: '#EAF3FB', color: '#2156A8',
-                        fontSize: 9, fontWeight: 700,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      }}>
+                  <td className="px-[18px] py-[11px]">
+                    <div className="flex items-center gap-2">
+                      <div className="w-[26px] h-[26px] rounded-full bg-[#EAF3FB] text-[#2156A8] text-[9px] font-bold flex items-center justify-center flex-shrink-0">
                         {addr.recipientName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                       </div>
-                      <span style={{ color: '#4A4945' }}>{addr.recipientName}</span>
+                      <span className="text-[#4A4945]">{addr.recipientName}</span>
                     </div>
                   </td>
 
                   {/* Phone */}
-                  <td style={{ padding: '11px 18px', color: '#4A4945' }}>{addr.phoneNumber}</td>
+                  <td className="px-[18px] py-[11px] text-[#4A4945]">{addr.phoneNumber}</td>
 
                   {/* Address */}
-                  <td style={{ padding: '11px 18px', color: '#4A4945', maxWidth: 240 }}>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                  <td className="px-[18px] py-[11px] text-[#4A4945] max-w-[240px]">
+                    <span className="overflow-hidden text-ellipsis whitespace-nowrap block">
                       {addr.addressLine1}{addr.addressLine2 ? `, ${addr.addressLine2}` : ''}, {addr.city}, {addr.state}
                     </span>
                   </td>
 
                   {/* Status */}
-                  <td style={{ padding: '11px 18px' }}>
-                    <span style={{
-                      display: 'inline-block',
-                      background: addr.isDefault ? '#E3F4EA' : '#F0EEE6',
-                      color: addr.isDefault ? '#1E7A3C' : '#8C8A82',
-                      fontSize: 11, fontWeight: 600,
-                      padding: '3px 10px', borderRadius: 5,
-                    }}>
+                  <td className="px-[18px] py-[11px]">
+                    <span
+                      className="inline-block text-[11px] font-semibold px-[10px] py-[3px] rounded-[5px]"
+                      style={{
+                        background: addr.isDefault ? '#E3F4EA' : '#F0EEE6',
+                        color: addr.isDefault ? '#1E7A3C' : '#8C8A82',
+                      }}
+                    >
                       {addr.isDefault ? 'Default' : 'Saved'}
                     </span>
                   </td>
 
                   {/* Actions */}
-                  <td style={{ padding: '11px 18px' }}>
+                  <td className="px-[18px] py-[11px]">
                     <button
                       onClick={() => { setEditTarget(addr); setView('edit'); }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 4,
-                        padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 500,
-                        border: '1px solid #E8E6DC', background: '#FAF9F5',
-                        color: '#4A4945', cursor: 'pointer', fontFamily: FONT,
-                      }}
+                      className="flex items-center gap-1 px-3 py-1 rounded-[6px] text-[12px] font-medium border border-[#E8E6DC] bg-cream text-[#4A4945] cursor-pointer"
                     >
                       <Pencil size={12} /> Edit
 
@@ -638,67 +559,58 @@ export function UserProfile() {
   const initials = profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? '..';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAF9F5', fontFamily: FONT }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px 60px' }}>
+    <div className="min-h-screen bg-cream">
+      <div className="max-w-[900px] mx-auto px-5 pt-8 pb-[60px]">
 
         {/* ── Hero card ── */}
-        <div style={{
-          background: '#fff', border: '1px solid #E8E6DC', borderRadius: 14,
-          padding: '28px 28px 24px', marginBottom: 20,
-          boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+        <div className="bg-white border border-[#E8E6DC] rounded-[14px] px-7 pt-7 pb-6 mb-5 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center gap-5 flex-wrap">
 
             {/* Avatar */}
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <div style={{
-                width: 80, height: 80, borderRadius: '50%',
-                background: '#FBECE4', overflow: 'hidden',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 28, fontWeight: 700, color: '#B95A3A',
-                border: '3px solid #FBECE4',
-              }}>
+            <div className="relative flex-shrink-0">
+              <div className="w-20 h-20 rounded-full bg-brand-pale-orange overflow-hidden flex items-center justify-center text-[28px] font-bold text-[#B95A3A] border-[3px] border-brand-pale-orange">
                 {loading
                   ? <Skeleton w={80} h={80} radius={40} />
                   : profile?.profileImage
-                    ? <img src={profile.profileImage} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ? <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
                     : initials}
               </div>
-              <button style={{
-                position: 'absolute', bottom: 2, right: 2,
-                width: 24, height: 24, borderRadius: '50%',
-                background: '#D97757', border: '2px solid #fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-              }}>
-                <Camera size={11} style={{ color: '#fff' }} />
+              <button className="absolute bottom-[2px] right-[2px] w-6 h-6 rounded-full bg-brand-orange border-2 border-white flex items-center justify-center cursor-pointer">
+                <Camera size={11} className="text-white" />
               </button>
             </div>
 
             {/* Info */}
-            <div style={{ flex: 1, minWidth: 180 }}>
+            <div className="flex-1 min-w-[180px]">
               {loading ? (
                 <>
-                  <Skeleton w={160} h={18} /><div style={{ height: 8 }} />
-                  <Skeleton w={200} h={12} /><div style={{ height: 8 }} />
+                  <Skeleton w={160} h={18} /><div className="h-2" />
+                  <Skeleton w={200} h={12} /><div className="h-2" />
                   <Skeleton w={60} h={20} radius={10} />
                 </>
               ) : (
                 <>
-                  <h1 style={{ fontSize: 20, fontWeight: 700, color: '#141413', margin: 0 }}>{profile?.name ?? '—'}</h1>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5, flexWrap: 'wrap' }}>
-                    <Mail size={12} style={{ color: '#8C8A82' }} />
-                    <span style={{ fontSize: 12, color: '#8C8A82' }}>{profile?.email ?? '—'}</span>
+                  <h1 className="text-[20px] font-bold text-[#141413] m-0">{profile?.name ?? '—'}</h1>
+                  <div className="flex items-center gap-[6px] mt-[5px] flex-wrap">
+                    <Mail size={12} className="text-[#8C8A82]" />
+                    <span className="text-[12px] text-[#8C8A82]">{profile?.email ?? '—'}</span>
                     {profile?.isVerified && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '1px 8px', borderRadius: 10, background: '#E3F4EA', color: '#1E7A3C', fontSize: 10, fontWeight: 600 }}>
+                      <span className="flex items-center gap-[3px] px-2 py-[1px] rounded-[10px] bg-[#E3F4EA] text-[#1E7A3C] text-[10px] font-semibold">
                         <Check size={9} /> Verified
                       </span>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                    <span style={{ padding: '3px 12px', borderRadius: 20, background: '#FBECE4', color: '#B95A3A', fontSize: 11, fontWeight: 600, textTransform: 'capitalize' }}>
+                  <div className="flex gap-2 mt-[10px] flex-wrap">
+                    <span className="px-3 py-[3px] rounded-[20px] bg-brand-pale-orange text-[#B95A3A] text-[11px] font-semibold capitalize">
                       {profile?.role ?? ''}
                     </span>
-                    <span style={{ padding: '3px 12px', borderRadius: 20, background: profile?.status === 'active' ? '#E3F4EA' : '#F0EEE6', color: profile?.status === 'active' ? '#1E7A3C' : '#8C8A82', fontSize: 11, fontWeight: 600, textTransform: 'capitalize' }}>
+                    <span
+                      className="px-3 py-[3px] rounded-[20px] text-[11px] font-semibold capitalize"
+                      style={{
+                        background: profile?.status === 'active' ? '#E3F4EA' : '#F0EEE6',
+                        color: profile?.status === 'active' ? '#1E7A3C' : '#8C8A82',
+                      }}
+                    >
                       {profile?.status ?? ''}
                     </span>
                   </div>
@@ -709,15 +621,7 @@ export function UserProfile() {
             {/* Logout */}
             <button
               onClick={handleLogout}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 7,
-                padding: '8px 16px', borderRadius: 9,
-                border: '1px solid #E8E6DC', background: '#fff',
-                fontSize: 13, color: '#8C8A82', cursor: 'pointer',
-                fontFamily: FONT, transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#C0392B'; e.currentTarget.style.color = '#C0392B'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#E8E6DC'; e.currentTarget.style.color = '#8C8A82'; }}
+              className="flex items-center gap-[7px] px-4 py-2 rounded-[9px] border border-bone bg-white text-[13px] text-slate cursor-pointer transition-all duration-150 hover:border-[#C0392B] hover:text-[#C0392B]"
             >
               <LogOut size={14} /> Logout
             </button>
@@ -725,17 +629,17 @@ export function UserProfile() {
 
           {/* Quick info row */}
           {!loading && (
-            <div style={{ display: 'flex', gap: 20, marginTop: 20, paddingTop: 18, borderTop: '1px solid #F0EEE6', flexWrap: 'wrap' }}>
+            <div className="flex gap-5 mt-5 pt-[18px] border-t border-[#F0EEE6] flex-wrap">
               {[
                 { Icon: Phone, value: profile?.phone || '—', label: 'Phone' },
                 { Icon: MapPin, value: profile?.address || '—', label: 'Address' },
                 { Icon: Shield, value: 'Secure Account', label: 'Security' },
               ].map(item => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <item.Icon size={13} style={{ color: '#D97757', flexShrink: 0 }} />
+                <div key={item.label} className="flex items-center gap-[7px]">
+                  <item.Icon size={13} className="text-brand-orange flex-shrink-0" />
                   <div>
-                    <p style={{ fontSize: 10, color: '#8C8A82', margin: 0 }}>{item.label}</p>
-                    <p style={{ fontSize: 12, fontWeight: 500, color: '#2C2A28', margin: 0, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.value}</p>
+                    <p className="text-[10px] text-[#8C8A82] m-0">{item.label}</p>
+                    <p className="text-[12px] font-medium text-charcoal m-0 max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap">{item.value}</p>
                   </div>
                 </div>
               ))}
@@ -744,21 +648,18 @@ export function UserProfile() {
         </div>
 
         {/* ── Tabs ── */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#fff', borderRadius: 10, padding: 5, border: '1px solid #E8E6DC', width: 'fit-content' }}>
+        <div className="flex gap-1 mb-5 bg-white rounded-[10px] p-[5px] border border-[#E8E6DC] w-fit">
           {TABS.map(t => {
             const active = tab === t.id;
             return (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
+                className="flex items-center gap-[7px] px-[18px] py-2 rounded-[7px] border-none text-[13px] cursor-pointer transition-all duration-150"
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 7,
-                  padding: '8px 18px', borderRadius: 7, border: 'none',
                   background: active ? '#D97757' : 'transparent',
                   color: active ? '#fff' : '#8C8A82',
-                  fontSize: 13, fontWeight: active ? 600 : 400,
-                  cursor: 'pointer', fontFamily: FONT,
-                  transition: 'all 0.15s',
+                  fontWeight: active ? 600 : 400,
                 }}
               >
                 <t.Icon size={14} />
@@ -772,58 +673,58 @@ export function UserProfile() {
 
         {/* Profile form */}
         {tab === 'profile' && (
-          <div style={card}>
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#141413', marginBottom: 22 }}>Edit Profile</p>
+          <div className="bg-white border border-[#E8E6DC] rounded-[12px] px-[26px] py-6 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
+            <p className="text-[15px] font-bold text-[#141413] mb-[22px]">Edit Profile</p>
 
             {loading ? (
               <div>
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} style={{ marginBottom: 18 }}>
-                    <Skeleton w={90} h={11} /><div style={{ height: 6 }} />
+                  <div key={i} className="mb-[18px]">
+                    <Skeleton w={90} h={11} /><div className="h-[6px]" />
                     <Skeleton w="100%" h={40} />
                   </div>
                 ))}
               </div>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label style={labelStyle}>First Name</label>
-                    <input value={firstName} onChange={e => setFirstName(e.target.value)} style={inputStyle} />
+                    <label className={LABEL_CLS}>First Name</label>
+                    <input value={firstName} onChange={e => setFirstName(e.target.value)} className={INPUT_CLS} />
                   </div>
                   <div>
-                    <label style={labelStyle}>Last Name</label>
-                    <input value={lastName} onChange={e => setLastName(e.target.value)} style={inputStyle} />
+                    <label className={LABEL_CLS}>Last Name</label>
+                    <input value={lastName} onChange={e => setLastName(e.target.value)} className={INPUT_CLS} />
                   </div>
                 </div>
 
-                <div style={{ marginBottom: 16 }}>
-                  <label style={labelStyle}>Email Address</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <input readOnly value={profile?.email ?? ''} style={{ ...inputStyle, flex: 1, background: '#FAF9F5', color: '#8C8A82' }} />
+                <div className="mb-4">
+                  <label className={LABEL_CLS}>Email Address</label>
+                  <div className="flex items-center gap-[10px]">
+                    <input readOnly value={profile?.email ?? ''} className={INPUT_CLS + ' flex-1 !bg-cream !text-slate'} />
                     {profile?.isVerified && (
-                      <span style={{ padding: '5px 12px', borderRadius: 7, fontSize: 11, fontWeight: 600, background: '#E3F4EA', color: '#1E7A3C', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                      <span className="px-3 py-[5px] rounded-[7px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C] flex items-center gap-1 flex-shrink-0">
                         <Check size={10} /> Verified
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div style={{ marginBottom: 16 }}>
-                  <label style={labelStyle}>Phone Number</label>
-                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. +92 300 0000000" style={inputStyle} />
+                <div className="mb-4">
+                  <label className={LABEL_CLS}>Phone Number</label>
+                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. +92 300 0000000" className={INPUT_CLS} />
                 </div>
 
-                <div style={{ marginBottom: 24 }}>
-                  <label style={labelStyle}>Address</label>
-                  <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address" style={inputStyle} />
+                <div className="mb-6">
+                  <label className={LABEL_CLS}>Address</label>
+                  <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address" className={INPUT_CLS} />
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button style={{ padding: '10px 28px', background: '#D97757', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: FONT }}>
+                <div className="flex items-center gap-3">
+                  <button className="px-7 py-[10px] bg-brand-orange border-none rounded-[9px] text-[13px] font-semibold text-white cursor-pointer">
                     Save Changes
                   </button>
-                  <p style={{ fontSize: 11, color: '#8C8A82' }}>Member since {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : '—'}</p>
+                  <p className="text-[11px] text-[#8C8A82]">Member since {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : '—'}</p>
                 </div>
               </>
             )}

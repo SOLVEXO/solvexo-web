@@ -26,8 +26,6 @@ const metrics = [
   { label: 'Avg Resolution', value: '1.4 days',trend: '↑ Fast',         sub: null            },
 ] as const;
 
-const poppins = "'Poppins', sans-serif";
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerReturns() {
   usePageTitle('Returns');
@@ -48,87 +46,56 @@ export function SellerReturns() {
         title="Returns & Refunds"
         subtitle="Process return requests, issue refunds, and send replacements."
         actions={
-          <button style={{
-            padding: '7px 16px', background: '#fff',
-            border: '1px solid #E8E6DC', borderRadius: 8,
-            fontSize: 12, fontWeight: 500, color: '#4A4945',
-            cursor: 'pointer', fontFamily: poppins,
-          }}>
+          <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
             Export Report
           </button>
         }
       />
 
-      <div style={{ padding: '20px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+      <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
         {/* ── Metrics row ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {metrics.map((m) => (
-            <div key={m.label} style={{
-              background: '#fff', border: '1px solid #E8E6DC',
-              borderRadius: 10, padding: '16px 20px',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-            }}>
-              <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">
                 {m.label}
               </p>
-              <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>
+              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">
                 {m.value}
               </p>
               {m.trend && (
-                <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {m.trend}</p>
+                <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>
               )}
               {m.sub && (
-                <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>
+                <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>
               )}
             </div>
           ))}
         </div>
 
         {/* ── Return Policy Summary ── */}
-        <div style={{
-          background: '#fff', border: '1px solid #E8E6DC',
-          borderRadius: 10, padding: '18px 22px',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16,
-        }}>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 14, fontWeight: 600, color: '#141413', marginBottom: 6 }}>
+        <div className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-[18px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <p className="text-[14px] font-semibold text-[#141413] mb-1.5">
               Return Policy Summary
             </p>
-            <p style={{ fontSize: 13, color: '#8C8A82', lineHeight: 1.6 }}>
+            <p className="text-[13px] text-[#8C8A82] leading-[1.6]">
               Physical: 30-day returns in original condition. Digital: Non-refundable unless defective. Damaged items: replacement or full refund.
             </p>
           </div>
-          <button style={{
-            padding: '7px 14px', background: '#fff',
-            border: '1px solid #E8E6DC', borderRadius: 8,
-            fontSize: 12, color: '#4A4945', cursor: 'pointer',
-            flexShrink: 0, fontFamily: poppins,
-          }}>
+          <button className="px-[14px] py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs text-[#4A4945] cursor-pointer shrink-0">
             Edit Policy
           </button>
         </div>
 
         {/* ── Table card ── */}
-        <div style={{
-          background: '#fff', border: '1px solid #E8E6DC',
-          borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-          overflow: 'hidden',
-        }}>
+        <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
 
           {/* Filters */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '14px 20px', borderBottom: '1px solid #E8E6DC',
-            flexWrap: 'wrap',
-          }}>
+          <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-[#E8E6DC] flex-wrap">
             {/* Search */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              border: '1px solid #E8E6DC', borderRadius: 8,
-              padding: '0 12px', background: '#fff',
-            }}>
+            <div className="flex items-center gap-1.5 border border-[#E8E6DC] rounded-lg px-3 bg-white">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
@@ -136,10 +103,7 @@ export function SellerReturns() {
                 placeholder="Search RMA ID or order..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{
-                  border: 'none', outline: 'none', fontSize: 13,
-                  padding: '8px 0', width: 220, fontFamily: poppins, color: '#2C2A28',
-                }}
+                className="border-none outline-none text-[13px] py-2 w-[220px] text-[#2C2A28]"
               />
             </div>
 
@@ -147,11 +111,7 @@ export function SellerReturns() {
             <select
               value={status || 'All Status'}
               onChange={e => setStatus(e.target.value === 'All Status' ? '' : e.target.value)}
-              style={{
-                fontSize: 13, padding: '8px 12px', borderRadius: 8,
-                border: '1px solid #E8E6DC', background: '#fff',
-                color: '#2C2A28', outline: 'none', cursor: 'pointer', fontFamily: poppins,
-              }}
+              className="text-[13px] px-3 py-2 rounded-lg border border-[#E8E6DC] bg-white text-[#2C2A28] outline-none cursor-pointer"
             >
               {['All Status','Approved','Replacement Sent','Under Review','Refunded','Declined'].map(o => (
                 <option key={o}>{o}</option>
@@ -162,11 +122,7 @@ export function SellerReturns() {
             <select
               value={type || 'All Types'}
               onChange={e => setType(e.target.value === 'All Types' ? '' : e.target.value)}
-              style={{
-                fontSize: 13, padding: '8px 12px', borderRadius: 8,
-                border: '1px solid #E8E6DC', background: '#fff',
-                color: '#2C2A28', outline: 'none', cursor: 'pointer', fontFamily: poppins,
-              }}
+              className="text-[13px] px-3 py-2 rounded-lg border border-[#E8E6DC] bg-white text-[#2C2A28] outline-none cursor-pointer"
             >
               {['All Types','Physical','Digital'].map(o => (
                 <option key={o}>{o}</option>
@@ -175,19 +131,12 @@ export function SellerReturns() {
           </div>
 
           {/* Table */}
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
                   {['RMA','Order','Customer','Product','Reason','Amount','Status','Date','Actions'].map(h => (
-                    <th key={h} style={{
-                      textAlign: 'left', padding: '10px 16px',
-                      fontSize: 11, fontWeight: 600, color: '#8C8A82',
-                      textTransform: 'uppercase', letterSpacing: '0.05em',
-                      borderBottom: '1px solid #E8E6DC',
-                      background: '#FAF9F5', whiteSpace: 'nowrap',
-                      fontFamily: poppins,
-                    }}>
+                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-[#8C8A82] uppercase tracking-[0.05em] border-b border-[#E8E6DC] bg-[#FAF9F5] whitespace-nowrap">
                       {h}
                     </th>
                   ))}
@@ -199,69 +148,64 @@ export function SellerReturns() {
                   return (
                     <tr
                       key={r.rma}
-                      style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none', transition: 'background 0.12s' }}
+                      className="transition-[background] duration-[120ms]"
+                      style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none' }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
                       {/* RMA */}
-                      <td style={{ padding: '13px 16px', whiteSpace: 'nowrap' }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#B95A3A', fontFamily: poppins }}>{r.rma}</span>
+                      <td className="px-4 py-[13px] whitespace-nowrap">
+                        <span className="text-[13px] font-bold text-[#B95A3A]">{r.rma}</span>
                       </td>
 
                       {/* Order */}
-                      <td style={{ padding: '13px 16px', whiteSpace: 'nowrap' }}>
-                        <span style={{ fontSize: 13, fontWeight: 500, color: '#141413', fontFamily: poppins }}>{r.order}</span>
+                      <td className="px-4 py-[13px] whitespace-nowrap">
+                        <span className="text-[13px] font-medium text-[#141413]">{r.order}</span>
                       </td>
 
                       {/* Customer */}
-                      <td style={{ padding: '13px 16px', fontSize: 13, color: '#4A4945', whiteSpace: 'nowrap', fontFamily: poppins }}>
+                      <td className="px-4 py-[13px] text-[13px] text-[#4A4945] whitespace-nowrap">
                         {r.customer}
                       </td>
 
                       {/* Product */}
-                      <td style={{ padding: '13px 16px', fontSize: 13, color: '#4A4945', maxWidth: 180, fontFamily: poppins }}>
-                        <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <td className="px-4 py-[13px] text-[13px] text-[#4A4945] max-w-[180px]">
+                        <span className="block overflow-hidden text-ellipsis whitespace-nowrap">
                           {r.product}
                         </span>
                       </td>
 
                       {/* Reason */}
-                      <td style={{ padding: '13px 16px', fontSize: 13, color: '#8C8A82', maxWidth: 180, fontFamily: poppins }}>
-                        <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <td className="px-4 py-[13px] text-[13px] text-[#8C8A82] max-w-[180px]">
+                        <span className="block overflow-hidden text-ellipsis whitespace-nowrap">
                           {r.reason}
                         </span>
                       </td>
 
                       {/* Amount */}
-                      <td style={{ padding: '13px 16px', fontSize: 13, fontWeight: 600, color: '#141413', whiteSpace: 'nowrap', fontFamily: poppins }}>
+                      <td className="px-4 py-[13px] text-[13px] font-semibold text-[#141413] whitespace-nowrap">
                         {r.amount}
                       </td>
 
                       {/* Status */}
-                      <td style={{ padding: '13px 16px' }}>
-                        <span style={{
-                          display: 'inline-block', padding: '3px 10px',
-                          borderRadius: 5, fontSize: 11, fontWeight: 600,
-                          background: st.bg, color: st.color, fontFamily: poppins,
-                          whiteSpace: 'nowrap',
-                        }}>
+                      <td className="px-4 py-[13px]">
+                        <span
+                          className="inline-block px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold whitespace-nowrap"
+                          style={{ background: st.bg, color: st.color }}
+                        >
                           {r.status}
                         </span>
                       </td>
 
                       {/* Date */}
-                      <td style={{ padding: '13px 16px', fontSize: 12, color: '#8C8A82', whiteSpace: 'nowrap', fontFamily: poppins }}>
+                      <td className="px-4 py-[13px] text-xs text-[#8C8A82] whitespace-nowrap">
                         {r.date}
                       </td>
 
                       {/* Actions */}
-                      <td style={{ padding: '13px 16px' }}>
-                        <button style={{
-                          padding: '4px 14px', background: '#fff',
-                          border: '1px solid #E8E6DC', borderRadius: 6,
-                          fontSize: 12, color: '#4A4945', cursor: 'pointer',
-                          fontFamily: poppins, whiteSpace: 'nowrap',
-                        }}
+                      <td className="px-4 py-[13px]">
+                        <button
+                          className="px-[14px] py-1 bg-white border border-[#E8E6DC] rounded-[6px] text-xs text-[#4A4945] cursor-pointer whitespace-nowrap"
                           onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
                           onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
                         >
@@ -273,7 +217,7 @@ export function SellerReturns() {
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={9} style={{ padding: '40px 16px', textAlign: 'center', fontSize: 13, color: '#8C8A82', fontFamily: poppins }}>
+                    <td colSpan={9} className="px-4 py-[40px] text-center text-[13px] text-[#8C8A82]">
                       No return requests match your filters.
                     </td>
                   </tr>
@@ -283,8 +227,8 @@ export function SellerReturns() {
           </div>
 
           {/* Footer */}
-          <div style={{ padding: '12px 20px', borderTop: '1px solid #E8E6DC' }}>
-            <span style={{ fontSize: 12, color: '#8C8A82', fontFamily: poppins }}>
+          <div className="px-5 py-3 border-t border-[#E8E6DC]">
+            <span className="text-xs text-[#8C8A82]">
               Showing {filtered.length} of {RETURNS.length} return requests
             </span>
           </div>

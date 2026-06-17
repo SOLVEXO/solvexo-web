@@ -39,8 +39,6 @@ const PREVIEW_PRODUCTS: { Icon: LucideIcon; name: string; price: string }[] = [
   { Icon: Microscope, name: 'Product Name 3', price: '$36.00' },
 ];
 
-const poppins = "'Poppins', sans-serif";
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function StoreBuilder() {
   usePageTitle('Store Builder');
@@ -55,85 +53,74 @@ export function StoreBuilder() {
         subtitle="Customize your storefront — changes save automatically."
         actions={
           <>
-            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-[12px] font-medium text-slate cursor-pointer">
               Preview
             </button>
-            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-[12px] font-medium text-slate cursor-pointer">
               Undo
             </button>
-            <button style={{ padding: '7px 16px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+            <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-[12px] font-semibold text-white cursor-pointer">
               Publish Changes
             </button>
           </>
         }
       />
 
-      <div style={{ padding: '20px 28px 32px', fontFamily: poppins }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '220px 1fr',
-          gap: 16,
-          height: 'calc(100vh - 160px)',
-        }}>
+      <div className="px-7 pt-5 pb-8">
+        <div
+          className="grid gap-4"
+          style={{ gridTemplateColumns: '220px 1fr', height: 'calc(100vh - 160px)' }}
+        >
 
           {/* ── LEFT: section list + panel ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
+          <div className="flex flex-col gap-3 overflow-y-auto">
 
             {/* Section nav */}
-            <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div className="bg-white border border-bone rounded-[10px] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
               {SECTIONS.map((sec, i) => (
                 <button
                   key={sec.id}
                   onClick={() => setActiveSection(sec.id)}
+                  className="w-full flex items-center gap-[10px] px-[14px] py-[11px] text-left cursor-pointer border-none transition-[background] duration-[120ms]"
                   style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '11px 14px', textAlign: 'left', cursor: 'pointer',
                     background: activeSection === sec.id ? '#FBECE4' : 'transparent',
-                    border: 'none',
                     borderBottom: i < SECTIONS.length - 1 ? '1px solid #F0EEE6' : 'none',
-                    fontFamily: poppins, transition: 'background 0.12s',
                   }}
                 >
-                  <sec.Icon size={15} style={{ color: activeSection === sec.id ? '#B95A3A' : '#8C8A82', flexShrink: 0 }} />
-                  <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: activeSection === sec.id ? '#B95A3A' : '#141413' }}>
+                  <sec.Icon size={15} className="shrink-0" style={{ color: activeSection === sec.id ? '#B95A3A' : '#8C8A82' }} />
+                  <span className="flex-1 text-[13px] font-medium" style={{ color: activeSection === sec.id ? '#B95A3A' : '#141413' }}>
                     {sec.label}
                   </span>
-                  <span style={{ fontSize: 14, color: '#C0BDB5' }}>›</span>
+                  <span className="text-[14px] text-[#C0BDB5]">›</span>
                 </button>
               ))}
             </div>
 
             {/* Theme panel */}
             {activeSection === 'theme' && (
-              <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '16px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#141413', marginBottom: 14 }}>Theme Colors</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                <p className="text-[13px] font-bold text-[#141413] mb-[14px]">Theme Colors</p>
+                <div className="flex flex-col gap-3">
                   {THEME_COLORS.map(tc => (
-                    <div key={tc.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 12, color: '#4A4945' }}>{tc.label}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{
-                          width: 22, height: 22, borderRadius: 5,
-                          background: tc.value,
-                          border: '1px solid #E8E6DC', cursor: 'pointer', flexShrink: 0,
-                        }} />
-                        <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#8C8A82' }}>{tc.value}</span>
+                    <div key={tc.label} className="flex items-center justify-between">
+                      <span className="text-[12px] text-slate">{tc.label}</span>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-[22px] h-[22px] rounded-[5px] border border-bone cursor-pointer shrink-0"
+                          style={{ background: tc.value }}
+                        />
+                        <span className="text-[11px] font-mono text-[#8C8A82]">{tc.value}</span>
                       </div>
                     </div>
                   ))}
                 </div>
                 {/* Font */}
-                <div style={{ marginTop: 16 }}>
-                  <p style={{ fontSize: 12, fontWeight: 500, color: '#4A4945', marginBottom: 6 }}>Font</p>
+                <div className="mt-4">
+                  <p className="text-[12px] font-medium text-slate mb-[6px]">Font</p>
                   <select
                     value={font}
                     onChange={e => setFont(e.target.value)}
-                    style={{
-                      width: '100%', padding: '8px 12px', fontSize: 13,
-                      border: '1px solid #E8E6DC', borderRadius: 8,
-                      background: '#fff', color: '#2C2A28', outline: 'none',
-                      cursor: 'pointer', fontFamily: poppins,
-                    }}
+                    className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
                   >
                     {['Poppins (Current)','Inter','DM Sans','Lato','Playfair Display','Merriweather'].map(f => (
                       <option key={f}>{f}</option>
@@ -145,24 +132,23 @@ export function StoreBuilder() {
 
             {/* Layout panel */}
             {activeSection === 'layout' && (
-              <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '16px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#141413', marginBottom: 12 }}>Layout Style</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                <p className="text-[13px] font-bold text-[#141413] mb-3">Layout Style</p>
+                <div className="flex flex-col gap-2">
                   {LAYOUT_OPTIONS.map(opt => (
                     <button
                       key={opt.id}
                       onClick={() => setLayoutStyle(opt.id)}
+                      className="w-full text-left px-3 py-[10px] rounded-lg cursor-pointer transition-all duration-[120ms]"
                       style={{
-                        width: '100%', textAlign: 'left', padding: '10px 12px',
-                        borderRadius: 8, cursor: 'pointer', border: `2px solid ${layoutStyle === opt.id ? '#D97757' : '#E8E6DC'}`,
+                        border: `2px solid ${layoutStyle === opt.id ? '#D97757' : '#E8E6DC'}`,
                         background: layoutStyle === opt.id ? '#FBECE4' : '#fff',
-                        fontFamily: poppins, transition: 'all 0.12s',
                       }}
                     >
-                      <p style={{ fontSize: 13, fontWeight: 600, color: layoutStyle === opt.id ? '#B95A3A' : '#141413', marginBottom: 2 }}>
+                      <p className="text-[13px] font-semibold mb-[2px]" style={{ color: layoutStyle === opt.id ? '#B95A3A' : '#141413' }}>
                         {opt.id}
                       </p>
-                      <p style={{ fontSize: 11, color: layoutStyle === opt.id ? '#B95A3A' : '#8C8A82' }}>
+                      <p className="text-[11px]" style={{ color: layoutStyle === opt.id ? '#B95A3A' : '#8C8A82' }}>
                         {opt.desc}
                       </p>
                     </button>
@@ -173,11 +159,11 @@ export function StoreBuilder() {
 
             {/* Generic panel */}
             {(activeSection === 'header' || activeSection === 'products' || activeSection === 'footer' || activeSection === 'seo') && (
-              <div style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '16px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#141413', marginBottom: 6 }}>
+              <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                <p className="text-[13px] font-bold text-[#141413] mb-[6px]">
                   {SECTIONS.find(s => s.id === activeSection)?.label} Settings
                 </p>
-                <p style={{ fontSize: 12, color: '#8C8A82' }}>
+                <p className="text-[12px] text-[#8C8A82]">
                   Advanced settings for this section are coming soon.
                 </p>
               </div>
@@ -185,119 +171,82 @@ export function StoreBuilder() {
           </div>
 
           {/* ── RIGHT: Store preview ── */}
-          <div style={{
-            display: 'flex', flexDirection: 'column',
-            border: '1px solid #E8E6DC', borderRadius: 12,
-            background: '#fff', overflow: 'hidden',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-          }}>
+          <div className="flex flex-col border border-bone rounded-xl bg-white overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
 
             {/* Browser chrome */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: '10px 16px', borderBottom: '1px solid #E8E6DC',
-              background: '#F5F4F0', flexShrink: 0,
-            }}>
+            <div className="flex items-center gap-3 px-4 py-[10px] border-b border-bone bg-[#F5F4F0] shrink-0">
               {/* Traffic lights */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
-                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#E05252' }} />
-                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#E0BE52' }} />
-                <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#52C45A' }} />
+              <div className="flex items-center gap-[5px] shrink-0">
+                <div className="w-[11px] h-[11px] rounded-full bg-[#E05252]" />
+                <div className="w-[11px] h-[11px] rounded-full bg-[#E0BE52]" />
+                <div className="w-[11px] h-[11px] rounded-full bg-[#52C45A]" />
               </div>
 
               {/* URL bar */}
-              <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-                <div style={{
-                  background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8,
-                  padding: '4px 14px', fontSize: 12, color: '#8C8A82',
-                  minWidth: 220, textAlign: 'center', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center', gap: 4,
-                }}>
+              <div className="flex-1 flex justify-center">
+                <div className="bg-white border border-bone rounded-lg px-[14px] py-1 text-[12px] text-[#8C8A82] min-w-[220px] text-center flex items-center justify-center gap-1">
                   <Lock size={10} /> myshop.solvexo.store
                 </div>
               </div>
 
               {/* Device toggle */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                <button style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FBECE4', border: 'none', cursor: 'pointer' }}>
-                  <Monitor size={14} style={{ color: '#B95A3A' }} />
+              <div className="flex items-center gap-1 shrink-0">
+                <button className="w-7 h-7 rounded-[6px] flex items-center justify-center bg-brand-pale-orange border-none cursor-pointer">
+                  <Monitor size={14} className="text-brand-deep-orange" />
                 </button>
-                <button style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0EEE6', border: 'none', cursor: 'pointer' }}>
-                  <Smartphone size={14} style={{ color: '#8C8A82' }} />
+                <button className="w-7 h-7 rounded-[6px] flex items-center justify-center bg-[#F0EEE6] border-none cursor-pointer">
+                  <Smartphone size={14} className="text-[#8C8A82]" />
                 </button>
               </div>
             </div>
 
             {/* Preview content */}
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div className="flex-1 overflow-y-auto">
 
               {/* Store header */}
-              <header style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '14px 32px', background: '#2C2A28', borderBottom: '1px solid #3A3836',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: 7, background: '#D97757',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, fontWeight: 700, color: '#fff',
-                  }}>M</div>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>My Shop</span>
+              <header className="flex items-center justify-between px-8 py-[14px] bg-charcoal border-b border-[#3A3836]">
+                <div className="flex items-center gap-[10px]">
+                  <div className="w-7 h-7 rounded-[7px] bg-brand-orange flex items-center justify-center text-[12px] font-bold text-white">M</div>
+                  <span className="text-[15px] font-bold text-white">My Shop</span>
                 </div>
-                <nav style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+                <nav className="flex items-center gap-6">
                   {['Shop', 'About', 'Contact'].map(link => (
-                    <a key={link} href="#" style={{ fontSize: 13, color: '#B0AEA8', textDecoration: 'none' }}>{link}</a>
+                    <a key={link} href="#" className="text-[13px] text-[#B0AEA8] no-underline">{link}</a>
                   ))}
                 </nav>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <span style={{ fontSize: 13, color: '#B0AEA8', cursor: 'pointer' }}>Search</span>
-                  <span style={{ fontSize: 13, color: '#B0AEA8', cursor: 'pointer' }}>Cart (0)</span>
+                <div className="flex items-center gap-4">
+                  <span className="text-[13px] text-[#B0AEA8] cursor-pointer">Search</span>
+                  <span className="text-[13px] text-[#B0AEA8] cursor-pointer">Cart (0)</span>
                 </div>
               </header>
 
               {/* Hero */}
-              <section style={{
-                padding: '60px 32px', textAlign: 'center',
-                background: '#FBECE4',
-              }}>
-                <h2 style={{
-                  fontSize: 32, fontWeight: 700, color: '#141413',
-                  fontFamily: 'Georgia, serif', marginBottom: 10, lineHeight: 1.2,
-                }}>
+              <section className="px-8 py-[60px] text-center bg-brand-pale-orange">
+                <h2 className="text-[32px] font-bold text-[#141413] mb-[10px] leading-[1.2]" style={{ fontFamily: 'Georgia, serif' }}>
                   Welcome to My Shop
                 </h2>
-                <p style={{ fontSize: 14, color: '#8C8A82', marginBottom: 24 }}>
+                <p className="text-[14px] text-[#8C8A82] mb-6">
                   Handcrafted educational resources for modern classrooms.
                 </p>
-                <button style={{
-                  padding: '11px 28px', background: '#D97757', border: 'none',
-                  borderRadius: 8, fontSize: 14, fontWeight: 600, color: '#fff',
-                  cursor: 'pointer', fontFamily: poppins,
-                }}>
+                <button className="px-7 py-[11px] bg-brand-orange border-none rounded-lg text-[14px] font-semibold text-white cursor-pointer">
                   Shop Now
                 </button>
               </section>
 
               {/* Featured Products */}
-              <section style={{ padding: '32px 32px' }}>
-                <h3 style={{ fontSize: 17, fontWeight: 700, color: '#141413', marginBottom: 20 }}>
+              <section className="p-8">
+                <h3 className="text-[17px] font-bold text-[#141413] mb-5">
                   Featured Products
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                <div className="grid grid-cols-3 gap-4">
                   {PREVIEW_PRODUCTS.map(p => (
-                    <div key={p.name} style={{
-                      border: '1px solid #E8E6DC', borderRadius: 10,
-                      background: '#fff', overflow: 'hidden',
-                    }}>
-                      <div style={{
-                        height: 120, background: '#EAF4EE',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <p.Icon size={38} style={{ color: '#5A8A6A' }} />
+                    <div key={p.name} className="border border-bone rounded-[10px] bg-white overflow-hidden">
+                      <div className="h-[120px] bg-[#EAF4EE] flex items-center justify-center">
+                        <p.Icon size={38} className="text-[#5A8A6A]" />
                       </div>
-                      <div style={{ padding: '12px 14px' }}>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: '#141413', marginBottom: 4 }}>{p.name}</p>
-                        <p style={{ fontSize: 14, fontWeight: 700, color: '#D97757' }}>{p.price}</p>
+                      <div className="px-[14px] py-3">
+                        <p className="text-[13px] font-semibold text-[#141413] mb-1">{p.name}</p>
+                        <p className="text-[14px] font-bold text-brand-orange">{p.price}</p>
                       </div>
                     </div>
                   ))}

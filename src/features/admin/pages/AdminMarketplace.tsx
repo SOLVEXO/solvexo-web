@@ -31,9 +31,6 @@ const metrics = [
   { label: 'GMV This Month', value: '$8.4M',  trend: '+18.2%',         sub: null,                  trendUp: true  },
 ] as const;
 
-const poppins   = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function AdminMarketplace() {
   usePageTitle('Marketplace');
@@ -50,55 +47,55 @@ export function AdminMarketplace() {
   });
 
   return (
-    <div style={{ padding: '24px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+    <div className="px-7 pt-6 pb-8 flex flex-col gap-5">
 
       {/* ── Header ── */}
       <div>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: '#141413', marginBottom: 3 }}>Marketplace Management</h1>
-        <p style={{ fontSize: 12, color: '#8C8A82' }}>Review, feature and manage all marketplace listings.</p>
+        <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Marketplace Management</h1>
+        <p className="text-[12px] text-slate">Review, feature and manage all marketplace listings.</p>
       </div>
 
       {/* ── Metrics ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+      <div className="grid grid-cols-4 gap-3">
         {metrics.map(m => (
-          <div key={m.label} style={{ ...cardStyle, padding: '16px 20px' }}>
-            <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</p>
-            <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{m.value}</p>
-            {m.trend && <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {m.trend}</p>}
-            {m.sub   && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>}
+          <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
+            <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{m.value}</p>
+            {m.trend && <p className="text-[12px] text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
+            {m.sub   && <p className="text-[12px] text-slate mt-1">{m.sub}</p>}
           </div>
         ))}
       </div>
 
       {/* ── Table card ── */}
-      <div style={{ ...cardStyle, overflow: 'hidden' }}>
+      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
 
         {/* Filters */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px', borderBottom: '1px solid #E8E6DC', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #E8E6DC', borderRadius: 8, padding: '0 12px', background: '#fff', flex: 1, maxWidth: 300 }}>
+        <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
+          <div className="flex items-center gap-[6px] border border-bone rounded-lg px-3 bg-white flex-1 max-w-[300px]">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input placeholder="Search listings or sellers…" value={search} onChange={e => setSearch(e.target.value)}
-              style={{ border: 'none', outline: 'none', fontSize: 13, padding: '8px 0', width: '100%', fontFamily: poppins, color: '#2C2A28', background: 'transparent' }} />
+              className="border-none outline-none text-[13px] py-2 w-full text-[#2C2A28] bg-transparent" />
           </div>
           <select value={catFilter} onChange={e => setCat(e.target.value)}
-            style={{ padding: '8px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, background: '#fff', color: '#2C2A28', outline: 'none', cursor: 'pointer', fontFamily: poppins }}>
+            className="px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer">
             {['All Categories','Educational','Digital','Handmade','Business Tools'].map(o => <option key={o}>{o}</option>)}
           </select>
           <select value={statFilter} onChange={e => setStat(e.target.value)}
-            style={{ padding: '8px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, background: '#fff', color: '#2C2A28', outline: 'none', cursor: 'pointer', fontFamily: poppins }}>
+            className="px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer">
             {['All Statuses','Active','Flagged','Removed'].map(o => <option key={o}>{o}</option>)}
           </select>
         </div>
 
         {/* Table */}
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
             <thead>
               <tr>
                 {['ID','Title','Seller','Category','Price','Sales','Status','Featured','Actions'].map(h => (
-                  <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontSize: 11, fontWeight: 600, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #E8E6DC', background: '#FAF9F5', whiteSpace: 'nowrap', fontFamily: poppins }}>
+                  <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-[#FAF9F5] whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -109,45 +106,48 @@ export function AdminMarketplace() {
                 const ss = statusStyle[p.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
                 return (
                   <tr key={p.id}
-                    style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none', background: p.status === 'Flagged' ? '#FFFAF9' : 'transparent', transition: 'background 0.12s' }}
+                    className="transition-colors duration-[120ms]"
+                    style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none', background: p.status === 'Flagged' ? '#FFFAF9' : 'transparent' }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
                     onMouseLeave={e => (e.currentTarget.style.background = p.status === 'Flagged' ? '#FFFAF9' : 'transparent')}
                   >
                     {/* ID */}
-                    <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: '#141413', whiteSpace: 'nowrap', fontFamily: poppins }}>{p.id}</td>
+                    <td className="px-4 py-3 text-[13px] font-semibold text-charcoal whitespace-nowrap">{p.id}</td>
                     {/* Title */}
-                    <td style={{ padding: '12px 16px', maxWidth: 200 }}>
-                      <p style={{ fontSize: 13, fontWeight: 500, color: '#4A4945', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0, fontFamily: poppins }}>{p.title}</p>
+                    <td className="px-4 py-3 max-w-[200px]">
+                      <p className="text-[13px] font-medium text-[#4A4945] overflow-hidden text-ellipsis whitespace-nowrap m-0">{p.title}</p>
                     </td>
                     {/* Seller */}
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#4A4945', whiteSpace: 'nowrap', fontFamily: poppins }}>{p.seller}</td>
+                    <td className="px-4 py-3 text-[13px] text-[#4A4945] whitespace-nowrap">{p.seller}</td>
                     {/* Category */}
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#F0EEE6', color: '#5A5852', fontFamily: poppins }}>{p.category}</span>
+                    <td className="px-4 py-3">
+                      <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#F0EEE6] text-[#5A5852]">{p.category}</span>
                     </td>
                     {/* Price */}
-                    <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: '#141413', fontFamily: poppins }}>{p.price}</td>
+                    <td className="px-4 py-3 text-[13px] font-semibold text-charcoal">{p.price}</td>
                     {/* Sales */}
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#141413', fontFamily: poppins }}>{p.sales.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-[13px] text-charcoal">{p.sales.toLocaleString()}</td>
                     {/* Status */}
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: ss.bg, color: ss.color, fontFamily: poppins }}>{p.status}</span>
+                    <td className="px-4 py-3">
+                      <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
+                        style={{ background: ss.bg, color: ss.color }}>{p.status}</span>
                     </td>
                     {/* Featured */}
-                    <td style={{ padding: '12px 16px' }}>
+                    <td className="px-4 py-3">
                       {p.featured
                         ? <Star size={14} style={{ color: '#D97757', fill: '#D97757' }} />
-                        : <span style={{ fontSize: 13, color: '#C0BDB5' }}>—</span>
+                        : <span className="text-[13px] text-[#C0BDB5]">—</span>
                       }
                     </td>
                     {/* Actions */}
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <button style={{ fontSize: 11, fontWeight: 500, color: p.featured ? '#8C8A82' : '#D97757', background: 'none', border: 'none', cursor: 'pointer', fontFamily: poppins }}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button className="text-[11px] font-medium bg-transparent border-none cursor-pointer"
+                          style={{ color: p.featured ? '#8C8A82' : '#D97757' }}>
                           {p.featured ? 'Unfeature' : 'Feature'}
                         </button>
-                        <span style={{ color: '#E8E6DC', fontSize: 13 }}>|</span>
-                        <button style={{ fontSize: 11, fontWeight: 500, color: '#C13030', background: 'none', border: 'none', cursor: 'pointer', fontFamily: poppins }}>
+                        <span className="text-[#E8E6DC] text-[13px]">|</span>
+                        <button className="text-[11px] font-medium text-[#C13030] bg-transparent border-none cursor-pointer">
                           Remove
                         </button>
                       </div>

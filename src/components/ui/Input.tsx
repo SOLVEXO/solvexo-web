@@ -12,56 +12,40 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   error?: string;
 }
 
-// Reference exact: padding "9px 12px", borderRadius 8, border bone, bg white, fontFamily Poppins, fontSize 13
-const baseStyle: React.CSSProperties = {
-  fontFamily: "'Poppins', sans-serif",
-  fontSize: 13,
-  padding: '9px 12px',
-  borderRadius: 8,
-  border: '1px solid #E8E6DC',
-  background: '#FFFFFF',
-  color: '#2C2A28',
-  outline: 'none',
-  width: '100%',
-  boxSizing: 'border-box',
-  transition: 'border-color 0.15s',
-};
+// Reference exact values: py-[9px] px-3, rounded-md (8px), border-bone, bg-white, text-[13px], text-charcoal
+const BASE =
+  'w-full py-[9px] px-3 rounded-md border border-bone bg-white text-[13px] text-charcoal ' +
+  'outline-none transition-colors duration-150 ' +
+  'placeholder:text-slate focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 ' +
+  'disabled:opacity-50 disabled:bg-cream';
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, leftAddon, className, style, ...props }, ref) => (
     <div className="w-full">
       {label && (
-        <label
-          className="block text-[12px] font-medium text-charcoal mb-1.5"
-          style={{ fontFamily: "'Poppins', sans-serif" }}
-        >
+        <label className="block text-[12px] font-medium text-charcoal mb-1.5">
           {label}
         </label>
       )}
       <div className="relative">
         {leftAddon && (
-          <span
-            className="absolute left-3 top-1/2 -translate-y-1/2 select-none"
-            style={{ fontSize: 13, color: '#8C8A82' }}
-          >
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 select-none text-[13px] text-slate">
             {leftAddon}
           </span>
         )}
         <input
           ref={ref}
           className={clsx(
-            'placeholder:text-slate',
-            'focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10',
-            'disabled:opacity-50 disabled:bg-cream',
+            BASE,
             leftAddon && 'pl-6',
             error && '!border-error',
             className,
           )}
-          style={{ ...baseStyle, ...(leftAddon ? { paddingLeft: 24 } : {}), ...style }}
+          style={style}
           {...props}
         />
       </div>
-      {error && <p className="mt-1 text-[11px] text-error" style={{ fontFamily: "'Poppins', sans-serif" }}>{error}</p>}
+      {error && <p className="mt-1 text-[11px] text-error">{error}</p>}
     </div>
   ),
 );
@@ -71,15 +55,20 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ label, error, className, rows = 4, style, ...props }, ref) => (
     <div className="w-full">
       {label && (
-        <label className="block text-[12px] font-medium text-charcoal mb-1.5" style={{ fontFamily: "'Poppins', sans-serif" }}>
+        <label className="block text-[12px] font-medium text-charcoal mb-1.5">
           {label}
         </label>
       )}
       <textarea
         ref={ref}
         rows={rows}
-        className={clsx('resize-vertical placeholder:text-slate focus:border-brand-orange', error && '!border-error', className)}
-        style={{ ...baseStyle, resize: 'vertical', ...style }}
+        className={clsx(
+          BASE,
+          'resize-vertical focus:border-brand-orange',
+          error && '!border-error',
+          className,
+        )}
+        style={style}
         {...props}
       />
       {error && <p className="mt-1 text-[11px] text-error">{error}</p>}
@@ -94,14 +83,14 @@ export const Select = forwardRef<
 >(({ label, error, className, children, style, ...props }, ref) => (
   <div className="w-full">
     {label && (
-      <label className="block text-[12px] font-medium text-charcoal mb-1.5" style={{ fontFamily: "'Poppins', sans-serif" }}>
+      <label className="block text-[12px] font-medium text-charcoal mb-1.5">
         {label}
       </label>
     )}
     <select
       ref={ref}
-      className={clsx('appearance-none cursor-pointer', error && '!border-error', className)}
-      style={{ ...baseStyle, ...style }}
+      className={clsx(BASE, 'appearance-none cursor-pointer', error && '!border-error', className)}
+      style={style}
       {...props}
     >
       {children}

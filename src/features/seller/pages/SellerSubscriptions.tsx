@@ -55,8 +55,6 @@ const metrics = [
 ] as const;
 
 const SUB_TABS = ['Active', 'Paused', 'Canceled'];
-const poppins   = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerSubscriptions() {
@@ -70,49 +68,49 @@ export function SellerSubscriptions() {
         subtitle="Manage recurring billing plans, subscribers, and subscription revenue."
         actions={
           <>
-            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
               Export Subscribers
             </button>
-            <button style={{ padding: '7px 16px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+            <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
               + Create Plan
             </button>
           </>
         }
       />
 
-      <div style={{ padding: '20px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+      <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
         {/* ── Metrics ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {metrics.map(m => (
-            <div key={m.label} style={{ ...cardStyle, padding: '16px 20px' }}>
-              <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</p>
-              <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{m.value}</p>
-              {m.trend && <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {m.trend}</p>}
-              {m.sub   && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>}
+            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+              {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
+              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
 
         {/* ── Plan Cards ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
           {PLANS.map(plan => (
-            <div key={plan.name} style={{ ...cardStyle, padding: '20px 22px', display: 'flex', flexDirection: 'column' }}>
+            <div key={plan.name} className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5 flex flex-col">
               {/* Name + Price */}
-              <div style={{ marginBottom: 10 }}>
-                <p style={{ fontSize: 15, fontWeight: 700, color: '#141413', marginBottom: 4 }}>{plan.name}</p>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: '#D97757' }}>{plan.price}</span>
-                  <span style={{ fontSize: 12, color: '#8C8A82' }}>{plan.annual}</span>
+              <div className="mb-[10px]">
+                <p className="text-[15px] font-bold text-[#141413] mb-1">{plan.name}</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[18px] font-bold text-brand-orange">{plan.price}</span>
+                  <span className="text-xs text-[#8C8A82]">{plan.annual}</span>
                 </div>
               </div>
 
-              <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 16, lineHeight: 1.6 }}>{plan.desc}</p>
+              <p className="text-xs text-[#8C8A82] mb-4 leading-[1.6]">{plan.desc}</p>
 
               {/* Features */}
-              <ul style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20, padding: 0, listStyle: 'none' }}>
+              <ul className="flex flex-col gap-2 mb-5 p-0 list-none">
                 {plan.features.map(feat => (
-                  <li key={feat} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#4A4945' }}>
+                  <li key={feat} className="flex items-center gap-2 text-[13px] text-[#4A4945]">
                     <Check size={13} style={{ color: '#2D8A4E', flexShrink: 0 }} />
                     {feat}
                   </li>
@@ -120,13 +118,13 @@ export function SellerSubscriptions() {
               </ul>
 
               {/* Stats */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderTop: '1px solid #F0EEE6', marginBottom: 14 }}>
-                <span style={{ fontSize: 12, color: '#8C8A82' }}>{plan.subscribers} subscribers</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#2D8A4E' }}>{plan.mrr}/mo</span>
+              <div className="flex items-center justify-between py-3 border-t border-[#F0EEE6] mb-[14px]">
+                <span className="text-xs text-[#8C8A82]">{plan.subscribers} subscribers</span>
+                <span className="text-xs font-bold text-[#2D8A4E]">{plan.mrr}/mo</span>
               </div>
 
               {/* Edit button */}
-              <button style={{ width: '100%', padding: '8px 0', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+              <button className="w-full py-2 bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
                 Edit Plan
               </button>
             </div>
@@ -134,18 +132,17 @@ export function SellerSubscriptions() {
         </div>
 
         {/* ── Subscribers Table ── */}
-        <div style={{ ...cardStyle, overflow: 'hidden' }}>
+        <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
           {/* Table header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #E8E6DC' }}>
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#141413' }}>Subscribers</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: '#F5F4EF', borderRadius: 8, padding: 3 }}>
+          <div className="flex items-center justify-between px-5 py-[14px] border-b border-[#E8E6DC]">
+            <p className="text-[15px] font-bold text-[#141413]">Subscribers</p>
+            <div className="flex items-center gap-0.5 bg-[#F5F4EF] rounded-lg p-[3px]">
               {SUB_TABS.map(tab => (
                 <button
                   key={tab}
                   onClick={() => setSubTab(tab)}
+                  className="px-[14px] py-[5px] rounded-[6px] text-xs font-medium cursor-pointer border-none transition-all duration-[120ms]"
                   style={{
-                    padding: '5px 14px', borderRadius: 6, fontSize: 12, fontWeight: 500,
-                    cursor: 'pointer', border: 'none', fontFamily: poppins, transition: 'all 0.12s',
                     background: subTab === tab ? '#141413' : 'transparent',
                     color:      subTab === tab ? '#fff'    : '#8C8A82',
                   }}
@@ -157,12 +154,12 @@ export function SellerSubscriptions() {
           </div>
 
           {/* Table */}
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
                   {['SUB ID','CUSTOMER','PLAN','AMOUNT','STATUS','STARTED','NEXT BILLING','TOTAL PAID',''].map(h => (
-                    <th key={h} style={{ textAlign: 'left', padding: '10px 16px', fontSize: 11, fontWeight: 600, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #E8E6DC', background: '#FAF9F5', whiteSpace: 'nowrap', fontFamily: poppins }}>
+                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-[#8C8A82] uppercase tracking-[0.05em] border-b border-[#E8E6DC] bg-[#FAF9F5] whitespace-nowrap">
                       {h}
                     </th>
                   ))}
@@ -172,32 +169,37 @@ export function SellerSubscriptions() {
                 {SUBSCRIBERS.map((sub, i) => {
                   const av = avatarColors[sub.initials] ?? { bg: '#F0EEE6', color: '#5A5852' };
                   return (
-                    <tr key={sub.id}
-                      style={{ borderBottom: i < SUBSCRIBERS.length - 1 ? '1px solid #F0EEE6' : 'none', transition: 'background 0.12s' }}
+                    <tr
+                      key={sub.id}
+                      className="transition-[background] duration-[120ms]"
+                      style={{ borderBottom: i < SUBSCRIBERS.length - 1 ? '1px solid #F0EEE6' : 'none' }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#B95A3A', fontFamily: poppins }}>{sub.id}</span>
+                      <td className="px-4 py-3">
+                        <span className="text-xs font-bold text-[#B95A3A]">{sub.id}</span>
                       </td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 30, height: 30, borderRadius: '50%', background: av.bg, color: av.color, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-[10px]">
+                          <div
+                            className="w-[30px] h-[30px] rounded-full text-[10px] font-bold flex items-center justify-center shrink-0"
+                            style={{ background: av.bg, color: av.color }}
+                          >
                             {sub.initials}
                           </div>
-                          <span style={{ fontSize: 13, fontWeight: 500, color: '#141413', whiteSpace: 'nowrap', fontFamily: poppins }}>{sub.name}</span>
+                          <span className="text-[13px] font-medium text-[#141413] whitespace-nowrap">{sub.name}</span>
                         </div>
                       </td>
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#4A4945', whiteSpace: 'nowrap', fontFamily: poppins }}>{sub.plan}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: '#141413', whiteSpace: 'nowrap', fontFamily: poppins }}>{sub.amount}</td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{ padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#E3F4EA', color: '#1E7A3C', fontFamily: poppins }}>{sub.status}</span>
+                      <td className="px-4 py-3 text-[13px] text-[#4A4945] whitespace-nowrap">{sub.plan}</td>
+                      <td className="px-4 py-3 text-[13px] font-semibold text-[#141413] whitespace-nowrap">{sub.amount}</td>
+                      <td className="px-4 py-3">
+                        <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C]">{sub.status}</span>
                       </td>
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#8C8A82', whiteSpace: 'nowrap', fontFamily: poppins }}>{sub.started}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#8C8A82', whiteSpace: 'nowrap', fontFamily: poppins }}>{sub.nextBilling}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: '#141413', fontFamily: poppins }}>{sub.totalPaid}</td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <button style={{ padding: '4px 12px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 6, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+                      <td className="px-4 py-3 text-[13px] text-[#8C8A82] whitespace-nowrap">{sub.started}</td>
+                      <td className="px-4 py-3 text-[13px] text-[#8C8A82] whitespace-nowrap">{sub.nextBilling}</td>
+                      <td className="px-4 py-3 text-[13px] font-semibold text-[#141413]">{sub.totalPaid}</td>
+                      <td className="px-4 py-3">
+                        <button className="px-3 py-1 bg-white border border-[#E8E6DC] rounded-[6px] text-xs text-[#4A4945] cursor-pointer">
                           Manage
                         </button>
                       </td>

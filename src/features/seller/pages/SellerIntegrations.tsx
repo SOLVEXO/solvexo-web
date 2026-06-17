@@ -31,9 +31,6 @@ const metrics = [
   { label: 'Available Apps',  value: '50+', sub: 'In app marketplace'   },
 ] as const;
 
-const poppins   = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerIntegrations() {
   usePageTitle('Integrations');
@@ -53,7 +50,7 @@ export function SellerIntegrations() {
         title="Apps & Integrations"
         subtitle="Connect your favorite tools and extend Solvexo's power."
         actions={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #E8E6DC', borderRadius: 8, padding: '0 12px', background: '#fff' }}>
+          <div className="flex items-center gap-1.5 border border-[#E8E6DC] rounded-lg px-3 bg-white">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
@@ -61,33 +58,31 @@ export function SellerIntegrations() {
               placeholder="Search apps..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              style={{ border: 'none', outline: 'none', fontSize: 13, padding: '8px 0', width: 200, fontFamily: poppins, color: '#2C2A28', background: 'transparent' }}
+              className="border-none outline-none text-[13px] py-2 w-[200px] text-[#2C2A28] bg-transparent"
             />
           </div>
         }
       />
 
-      <div style={{ padding: '20px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+      <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
         {/* ── Metrics ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
           {metrics.map(m => (
-            <div key={m.label} style={{ ...cardStyle, padding: '16px 20px' }}>
-              <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</p>
-              <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{m.value}</p>
-              <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>
+            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+              <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>
             </div>
           ))}
         </div>
 
         {/* ── Tab Pills ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab('connected')}
+            className="px-4 py-[7px] rounded-[20px] text-[13px] font-medium cursor-pointer border-none transition-all duration-[120ms] flex items-center gap-[5px]"
             style={{
-              padding: '7px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500,
-              cursor: 'pointer', border: 'none', fontFamily: poppins, transition: 'all 0.12s',
-              display: 'flex', alignItems: 'center', gap: 5,
               background: activeTab === 'connected' ? '#141413' : '#fff',
               color:      activeTab === 'connected' ? '#fff'    : '#4A4945',
               boxShadow:  activeTab !== 'connected' ? '0 0 0 1px #E8E6DC' : 'none',
@@ -97,9 +92,8 @@ export function SellerIntegrations() {
           </button>
           <button
             onClick={() => setActiveTab('available')}
+            className="px-4 py-[7px] rounded-[20px] text-[13px] font-medium cursor-pointer border-none transition-all duration-[120ms]"
             style={{
-              padding: '7px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500,
-              cursor: 'pointer', border: 'none', fontFamily: poppins, transition: 'all 0.12s',
               background: activeTab === 'available' ? '#141413' : '#fff',
               color:      activeTab === 'available' ? '#fff'    : '#4A4945',
               boxShadow:  activeTab !== 'available' ? '0 0 0 1px #E8E6DC' : 'none',
@@ -111,29 +105,32 @@ export function SellerIntegrations() {
 
         {/* ── Connected Apps Grid ── */}
         {activeTab === 'connected' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
             {filteredApps.map(app => (
-              <div key={app.id} style={{ ...cardStyle, padding: '20px 22px', position: 'relative' }}>
+              <div key={app.id} className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5 relative">
                 {/* Connected badge */}
-                <div style={{ position: 'absolute', top: 16, right: 16 }}>
-                  <span style={{ padding: '3px 9px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: '#E3F4EA', color: '#1E7A3C', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div className="absolute top-4 right-4">
+                  <span className="px-[9px] py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C] flex items-center gap-1">
                     <Check size={10} /> Connected
                   </span>
                 </div>
 
                 {/* Icon */}
-                <div style={{ width: 46, height: 46, borderRadius: 10, background: app.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12, flexShrink: 0 }}>
+                <div
+                  className="w-[46px] h-[46px] rounded-[10px] flex items-center justify-center mb-3 shrink-0"
+                  style={{ background: app.iconBg }}
+                >
                   <app.Icon size={22} style={{ color: '#6B7280' }} />
                 </div>
 
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#141413', marginBottom: 4, paddingRight: 80 }}>{app.name}</p>
-                <p style={{ fontSize: 13, color: '#8C8A82', marginBottom: 16, lineHeight: 1.5 }}>{app.desc}</p>
+                <p className="text-[16px] font-bold text-[#141413] mb-1 pr-[80px]">{app.name}</p>
+                <p className="text-[13px] text-[#8C8A82] mb-4 leading-[1.5]">{app.desc}</p>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <button style={{ padding: '5px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+                <div className="flex items-center gap-2">
+                  <button className="px-[14px] py-[5px] bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">
                     Configure
                   </button>
-                  <button style={{ padding: '5px 14px', background: '#FDECEA', border: '1px solid #F5C6C2', borderRadius: 7, fontSize: 12, fontWeight: 500, color: '#C0392B', cursor: 'pointer', fontFamily: poppins }}>
+                  <button className="px-[14px] py-[5px] bg-[#FDECEA] border border-[#F5C6C2] rounded-[7px] text-xs font-medium text-[#C0392B] cursor-pointer">
                     Disconnect
                   </button>
                 </div>
@@ -143,45 +140,41 @@ export function SellerIntegrations() {
         )}
 
         {activeTab === 'available' && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', color: '#8C8A82', fontSize: 14, fontFamily: poppins }}>
+          <div className="flex items-center justify-center py-[60px] text-[#8C8A82] text-[14px]">
             Browse 50+ available apps in the marketplace.
           </div>
         )}
 
         {/* ── Developer Tools ── */}
-        <div style={{ ...cardStyle, padding: '20px 22px', marginTop: 4 }}>
-          <p style={{ fontSize: 15, fontWeight: 700, color: '#141413', marginBottom: 20 }}>Developer Tools — API &amp; Webhooks</p>
+        <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5 mt-1">
+          <p className="text-[15px] font-bold text-[#141413] mb-5">Developer Tools — API &amp; Webhooks</p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+          <div className="grid gap-5 mb-5" style={{ gridTemplateColumns: '1fr 1fr' }}>
             {/* API Key */}
             <div>
-              <p style={{ fontSize: 12, fontWeight: 500, color: '#4A4945', marginBottom: 6, fontFamily: poppins }}>API Key</p>
+              <p className="text-xs font-medium text-[#4A4945] mb-1.5">API Key</p>
               <input
                 readOnly
                 value={apiKey}
-                style={{
-                  width: '100%', fontFamily: 'monospace', fontSize: 12, color: '#4A4945',
-                  padding: '9px 12px', borderRadius: 8, border: '1px solid #E8E6DC',
-                  background: '#FAF9F5', outline: 'none', boxSizing: 'border-box',
-                }}
+                className="w-full font-mono text-xs text-[#4A4945] px-3 py-[9px] rounded-lg border border-[#E8E6DC] bg-[#FAF9F5] outline-none box-border"
               />
-              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <button style={{ padding: '5px 14px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>Copy</button>
-                <button style={{ padding: '5px 14px', background: '#FDECEA', border: '1px solid #F5C6C2', borderRadius: 7, fontSize: 12, fontWeight: 500, color: '#C0392B', cursor: 'pointer', fontFamily: poppins }}>Regenerate</button>
+              <div className="flex gap-2 mt-2">
+                <button className="px-[14px] py-[5px] bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Copy</button>
+                <button className="px-[14px] py-[5px] bg-[#FDECEA] border border-[#F5C6C2] rounded-[7px] text-xs font-medium text-[#C0392B] cursor-pointer">Regenerate</button>
               </div>
             </div>
 
             {/* Webhook URL */}
             <div>
-              <p style={{ fontSize: 12, fontWeight: 500, color: '#4A4945', marginBottom: 6, fontFamily: poppins }}>Webhook URL</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <p className="text-xs font-medium text-[#4A4945] mb-1.5">Webhook URL</p>
+              <div className="flex items-center gap-2">
                 <input
                   placeholder="https://your-app.com/webhooks/solvexo"
                   value={webhookUrl}
                   onChange={e => setWebhookUrl(e.target.value)}
-                  style={{ flex: 1, padding: '9px 12px', fontSize: 13, border: '1px solid #E8E6DC', borderRadius: 8, background: '#fff', color: '#2C2A28', outline: 'none', fontFamily: poppins }}
+                  className="flex-1 px-3 py-[9px] text-[13px] border border-[#E8E6DC] rounded-lg bg-white text-[#2C2A28] outline-none"
                 />
-                <button style={{ padding: '9px 16px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins, flexShrink: 0 }}>
+                <button className="px-4 py-[9px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer shrink-0">
                   Save
                 </button>
               </div>
@@ -190,15 +183,11 @@ export function SellerIntegrations() {
 
           {/* Webhook Events */}
           <div>
-            <p style={{ fontSize: 12, fontWeight: 500, color: '#4A4945', marginBottom: 10, fontFamily: poppins }}>Active Webhook Events</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <p className="text-xs font-medium text-[#4A4945] mb-[10px]">Active Webhook Events</p>
+            <div className="flex flex-wrap gap-2">
               {WEBHOOK_EVENTS.map(event => (
-                <span key={event} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '4px 12px', background: '#E3F4EA', borderRadius: 20,
-                  fontSize: 11, fontWeight: 500, color: '#1E7A3C', fontFamily: poppins,
-                }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2D8A4E', flexShrink: 0 }} />
+                <span key={event} className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E3F4EA] rounded-[20px] text-[11px] font-medium text-[#1E7A3C]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#2D8A4E] shrink-0" />
                   {event}
                 </span>
               ))}

@@ -1,24 +1,11 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { type CSSProperties, type ReactNode } from 'react';
+import { clsx } from 'clsx';
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
-const C = {
-  orange:     '#D97757',
-  deepOrange: '#B95A3A',
-  paleOrange: '#FBECE4',
-  carbon:     '#141413',
-  charcoal:   '#2C2A28',
-  slate:      '#8C8A82',
-  bone:       '#E8E6DC',
-  white:      '#FFFFFF',
-};
-const FONT = "'Poppins', sans-serif";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
 export interface RadioOption {
-  value:       string;
-  label:       string;
+  value:        string;
+  label:        string;
   description?: string;
-  icon?:       ReactNode;        // Lucide icon component or any ReactNode
+  icon?:        ReactNode;
 }
 
 interface RadioButtonProps {
@@ -26,11 +13,10 @@ interface RadioButtonProps {
   value:     string;
   onChange:  (value: string) => void;
   name:      string;
-  layout?:   'row' | 'col';     // row = side by side, col = stacked
-  style?:    CSSProperties;     // outer wrapper override
+  layout?:   'row' | 'col';
+  style?:    CSSProperties;
 }
 
-// ── Single radio card ─────────────────────────────────────────────────────────
 function RadioCard({
   option,
   selected,
@@ -47,82 +33,42 @@ function RadioCard({
       tabIndex={0}
       onClick={onClick}
       onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onClick()}
-      style={{
-        flex:          1,
-        display:       'flex',
-        alignItems:    'center',
-        gap:           12,
-        padding:       '14px 16px',
-        borderRadius:  10,
-        border:        `2px solid ${selected ? C.orange : C.bone}`,
-        background:    selected ? C.paleOrange : C.white,
-        cursor:        'pointer',
-        transition:    'all 0.18s ease',
-        boxShadow:     selected ? `0 0 0 3px rgba(217,119,87,0.15)` : 'none',
-        userSelect:    'none',
-        outline:       'none',
-      }}
+      className={clsx(
+        'flex-1 flex items-center gap-3 py-[14px] px-4 rounded-[10px] border-2 cursor-pointer',
+        'transition-all duration-[180ms] select-none outline-none',
+        selected
+          ? 'border-brand-orange bg-brand-pale-orange shadow-[0_0_0_3px_rgba(217,119,87,0.15)]'
+          : 'border-bone bg-white',
+      )}
     >
       {/* Radio circle */}
       <div
-        style={{
-          width:          18,
-          height:         18,
-          borderRadius:   '50%',
-          border:         `2px solid ${selected ? C.orange : C.bone}`,
-          background:     C.white,
-          display:        'flex',
-          alignItems:     'center',
-          justifyContent: 'center',
-          flexShrink:     0,
-          transition:     'all 0.18s ease',
-        }}
+        className={clsx(
+          'size-[18px] rounded-full border-2 bg-white flex items-center justify-center shrink-0',
+          'transition-all duration-[180ms]',
+          selected ? 'border-brand-orange' : 'border-bone',
+        )}
       >
         {selected && (
-          <div
-            style={{
-              width:        9,
-              height:       9,
-              borderRadius: '50%',
-              background:   C.orange,
-              transition:   'all 0.18s ease',
-            }}
-          />
+          <div className="size-[9px] rounded-full bg-brand-orange transition-all duration-[180ms]" />
         )}
       </div>
 
-      {/* Icon (optional) */}
       {option.icon && (
-        <span style={{ fontSize: 20, flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-          {option.icon}
-        </span>
+        <span className="text-[20px] shrink-0 flex items-center">{option.icon}</span>
       )}
 
-      {/* Text */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="flex-1 min-w-0">
         <p
-          style={{
-            fontFamily:  FONT,
-            fontSize:    14,
-            fontWeight:  selected ? 600 : 500,
-            color:       selected ? C.deepOrange : C.carbon,
-            lineHeight:  1.3,
-            margin:      0,
-            transition:  'all 0.18s ease',
-          }}
+          className={clsx(
+            'text-[14px] leading-[1.3] m-0 transition-all duration-[180ms]',
+            selected ? 'font-semibold text-brand-deep-orange' : 'font-medium text-carbon',
+          )}
         >
           {option.label}
         </p>
         {option.description && (
-          <p
-            style={{
-              fontFamily:  FONT,
-              fontSize:    12,
-              color:       C.slate,
-              marginTop:   2,
-              lineHeight:  1.4,
-            }}
-          >
+          <p className="text-[12px] text-slate mt-0.5 leading-[1.4]">
             {option.description}
           </p>
         )}
@@ -131,7 +77,6 @@ function RadioCard({
   );
 }
 
-// ── Main RadioButton component ─────────────────────────────────────────────────
 export function RadioButton({
   options,
   value,
@@ -142,12 +87,8 @@ export function RadioButton({
 }: RadioButtonProps) {
   return (
     <div
-      style={{
-        display:       'flex',
-        flexDirection: layout === 'col' ? 'column' : 'row',
-        gap:           10,
-        ...style,
-      }}
+      className={clsx('flex gap-[10px]', layout === 'col' ? 'flex-col' : 'flex-row')}
+      style={style}
     >
       {options.map(opt => (
         <RadioCard

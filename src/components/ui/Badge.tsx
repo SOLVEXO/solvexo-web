@@ -8,8 +8,7 @@ interface BadgeProps {
   className?: string;
 }
 
-// Reference exact values:
-// padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 600
+// Reference exact values: py-[3px] px-[9px], rounded-full, text-[11px], font-semibold
 const colorClasses: Record<BadgeColor, string> = {
   gray:   'bg-[#F1EFE8] text-slate',
   orange: 'bg-brand-pale-orange text-brand-deep-orange',
@@ -24,11 +23,10 @@ export function Badge({ children, color = 'gray', className }: BadgeProps) {
     <span
       className={clsx(
         'inline-flex items-center rounded-full whitespace-nowrap',
-        'text-[11px] font-semibold',
+        'text-[11px] font-semibold py-[3px] px-[9px]',
         colorClasses[color],
         className,
       )}
-      style={{ padding: '3px 9px', fontFamily: "'Poppins', sans-serif" }}
     >
       {children}
     </span>

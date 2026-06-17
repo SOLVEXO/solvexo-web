@@ -25,8 +25,6 @@ const avatarColors: Record<string, { bg: string; color: string }> = {
 
 const AI_REPLY = "Hi Sarah! Yes, the Google Slides version is fully compatible with Google Classroom. You can assign individual slides as assignments. For the school license, you can upgrade directly from your Orders page. Let me know if you need any help!";
 
-const poppins = "'Poppins', sans-serif";
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerMessages() {
   usePageTitle('Messages');
@@ -42,33 +40,29 @@ export function SellerMessages() {
         title="Messages"
         subtitle="Respond to buyer questions and support requests."
         actions={
-          <span style={{ padding: '4px 12px', background: '#FDECEA', borderRadius: 6, fontSize: 12, fontWeight: 600, color: '#C0392B', fontFamily: poppins }}>
+          <span className="px-3 py-1 bg-[#FDECEA] rounded-[6px] text-xs font-semibold text-[#C0392B]">
             4 Unread
           </span>
         }
       />
 
       {/* 2-col layout */}
-      <div style={{ display: 'flex', flex: 1, height: 'calc(100vh - 108px)', overflow: 'hidden', fontFamily: poppins }}>
+      <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 108px)' }}>
 
         {/* ── LEFT: Conversation list ── */}
-        <div style={{ width: 300, flexShrink: 0, borderRight: '1px solid #E8E6DC', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+        <div className="w-[300px] shrink-0 border-r border-[#E8E6DC] flex flex-col bg-white">
 
           {/* Search */}
-          <div style={{ padding: '12px 14px', borderBottom: '1px solid #E8E6DC' }}>
+          <div className="px-[14px] py-3 border-b border-[#E8E6DC]">
             <input
               type="text"
               placeholder="Search..."
-              style={{
-                width: '100%', fontSize: 13, color: '#4A4945', padding: '8px 12px',
-                borderRadius: 8, border: '1px solid #E8E6DC', background: '#fff',
-                outline: 'none', fontFamily: poppins, boxSizing: 'border-box',
-              }}
+              className="w-full text-[13px] text-[#4A4945] px-3 py-2 rounded-lg border border-[#E8E6DC] bg-white outline-none box-border"
             />
           </div>
 
           {/* List */}
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div className="flex-1 overflow-y-auto">
             {CONVERSATIONS.map(convo => {
               const cav = avatarColors[convo.initials] ?? { bg: '#F0EEE6', color: '#5A5852' };
               const isActive = convo.id === activeId;
@@ -76,35 +70,34 @@ export function SellerMessages() {
                 <div
                   key={convo.id}
                   onClick={() => setActiveId(convo.id)}
-                  style={{
-                    position: 'relative', padding: '14px 16px',
-                    borderBottom: '1px solid #F0EEE6', cursor: 'pointer',
-                    background: isActive ? '#FBECE4' : 'transparent',
-                    transition: 'background 0.12s',
-                  }}
+                  className="relative px-4 py-[14px] border-b border-[#F0EEE6] cursor-pointer transition-[background] duration-[120ms]"
+                  style={{ background: isActive ? '#FBECE4' : 'transparent' }}
                   onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#FAF9F5'; }}
                   onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
                 >
                   {/* Active left bar */}
                   {isActive && (
-                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: '#D97757', borderRadius: '0 3px 3px 0' }} />
+                    <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-brand-orange rounded-r-[3px]" />
                   )}
 
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <div className="flex items-start gap-[10px]">
                     {/* Avatar */}
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: cav.bg, color: cav.color, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div
+                      className="w-9 h-9 rounded-full text-[11px] font-bold flex items-center justify-center shrink-0"
+                      style={{ background: cav.bg, color: cav.color }}
+                    >
                       {convo.initials}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#141413', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{convo.name}</span>
-                        <span style={{ fontSize: 11, color: '#8C8A82', flexShrink: 0, marginLeft: 8 }}>{convo.time}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[13px] font-bold text-[#141413] overflow-hidden text-ellipsis whitespace-nowrap">{convo.name}</span>
+                        <span className="text-[11px] text-[#8C8A82] shrink-0 ml-2">{convo.time}</span>
                       </div>
-                      <p style={{ fontSize: 12, color: '#8C8A82', marginBottom: 2 }}>{convo.subject}</p>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <p style={{ fontSize: 12, color: '#4A4945', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{convo.preview}</p>
+                      <p className="text-xs text-[#8C8A82] mb-0.5">{convo.subject}</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs text-[#4A4945] overflow-hidden text-ellipsis whitespace-nowrap flex-1">{convo.preview}</p>
                         {convo.unread && (
-                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#D97757', flexShrink: 0 }} />
+                          <div className="w-2 h-2 rounded-full bg-brand-orange shrink-0" />
                         )}
                       </div>
                     </div>
@@ -116,38 +109,41 @@ export function SellerMessages() {
         </div>
 
         {/* ── RIGHT: Chat panel ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#FAF9F5', minWidth: 0 }}>
+        <div className="flex-1 flex flex-col bg-[#FAF9F5] min-w-0">
 
           {/* Top bar */}
-          <div style={{ background: '#fff', borderBottom: '1px solid #E8E6DC', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: av.bg, color: av.color, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div className="bg-white border-b border-[#E8E6DC] px-5 py-3 flex items-center gap-3 shrink-0">
+            <div
+              className="w-[38px] h-[38px] rounded-full text-xs font-bold flex items-center justify-center shrink-0"
+              style={{ background: av.bg, color: av.color }}
+            >
               {activeConvo.initials}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', lineHeight: 1.3 }}>{activeConvo.name}</p>
-              <p style={{ fontSize: 12, color: '#8C8A82' }}>{activeConvo.subject}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-[14px] font-bold text-[#141413] leading-[1.3]">{activeConvo.name}</p>
+              <p className="text-xs text-[#8C8A82]">{activeConvo.subject}</p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button style={{ padding: '5px 12px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>Order History</button>
-              <button style={{ padding: '5px 12px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 7, fontSize: 12, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>Block</button>
+            <div className="flex items-center gap-2">
+              <button className="px-3 py-[5px] bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Order History</button>
+              <button className="px-3 py-[5px] bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Block</button>
             </div>
           </div>
 
           {/* Message area */}
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div className="flex-1 overflow-y-auto flex flex-col">
 
             {/* AI Suggested Reply */}
-            <div style={{ background: '#FBECE4', borderRadius: 12, margin: '16px 20px 12px', padding: '14px 16px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#B95A3A', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div className="bg-[#FBECE4] rounded-xl mx-5 mt-4 mb-3 px-4 py-[14px]">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <p className="text-[13px] font-semibold text-[#B95A3A] mb-2 flex items-center gap-[5px]">
                     <Sparkles size={12} /> AI Suggested Reply
                   </p>
-                  <p style={{ fontSize: 13, color: '#4A4945', lineHeight: 1.6 }}>{AI_REPLY}</p>
+                  <p className="text-[13px] text-[#4A4945] leading-[1.6]">{AI_REPLY}</p>
                 </div>
                 <button
                   onClick={() => setReply(AI_REPLY)}
-                  style={{ fontSize: 13, fontWeight: 500, color: '#D97757', cursor: 'pointer', background: 'none', border: 'none', whiteSpace: 'nowrap', flexShrink: 0, fontFamily: poppins }}
+                  className="text-[13px] font-medium text-brand-orange cursor-pointer bg-transparent border-none whitespace-nowrap shrink-0"
                 >
                   Use Reply
                 </button>
@@ -155,46 +151,41 @@ export function SellerMessages() {
             </div>
 
             {/* Messages */}
-            <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="px-5 pb-4 flex flex-col gap-[14px]">
 
               {/* Buyer message (left) */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: 480 }}>
-                <div style={{ background: '#FBECE4', borderRadius: 12, padding: '12px 16px' }}>
-                  <p style={{ fontSize: 13, color: '#4A4945', lineHeight: 1.6 }}>
+              <div className="flex flex-col items-start max-w-[480px]">
+                <div className="bg-[#FBECE4] rounded-xl px-4 py-3">
+                  <p className="text-[13px] text-[#4A4945] leading-[1.6]">
                     Hi! I just purchased the Grade 5 Math Bundle. Can I use this for multiple classrooms at my school?
                   </p>
                 </div>
-                <span style={{ fontSize: 11, color: '#8C8A82', marginTop: 4, marginLeft: 4 }}>2:14 PM</span>
+                <span className="text-[11px] text-[#8C8A82] mt-1 ml-1">2:14 PM</span>
               </div>
 
               {/* Seller message (right) */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: 'auto', maxWidth: 480 }}>
-                <div style={{ background: '#141413', borderRadius: 12, padding: '12px 16px' }}>
-                  <p style={{ fontSize: 13, color: '#fff', lineHeight: 1.6 }}>
+              <div className="flex flex-col items-end ml-auto max-w-[480px]">
+                <div className="bg-[#141413] rounded-xl px-4 py-3">
+                  <p className="text-[13px] text-white leading-[1.6]">
                     Hi Sarah! Great question. The standard license covers a single classroom. For multiple classrooms, I'd recommend the School License which gives access for up to 30 teachers — it's $149. Would that work for you?
                   </p>
                 </div>
-                <span style={{ fontSize: 11, color: '#8C8A82', marginTop: 4, marginRight: 4 }}>2:16 PM</span>
+                <span className="text-[11px] text-[#8C8A82] mt-1 mr-1">2:16 PM</span>
               </div>
             </div>
           </div>
 
           {/* Reply input */}
-          <div style={{ borderTop: '1px solid #E8E6DC', padding: '14px 20px', display: 'flex', gap: 12, background: '#fff', flexShrink: 0 }}>
+          <div className="border-t border-[#E8E6DC] px-5 py-[14px] flex gap-3 bg-white shrink-0">
             <textarea
               placeholder="Type your reply..."
               rows={3}
               value={reply}
               onChange={e => setReply(e.target.value)}
-              style={{
-                flex: 1, border: '1px solid #E8E6DC', borderRadius: 10,
-                padding: '10px 14px', fontSize: 13, color: '#4A4945',
-                resize: 'none', outline: 'none', fontFamily: poppins,
-                background: '#fff', lineHeight: 1.5,
-              }}
+              className="flex-1 border border-[#E8E6DC] rounded-[10px] px-[14px] py-[10px] text-[13px] text-[#4A4945] resize-none outline-none bg-white leading-[1.5]"
             />
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-              <button style={{ padding: '9px 20px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+            <div className="flex flex-col justify-end">
+              <button className="px-5 py-[9px] bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer">
                 Send
               </button>
             </div>

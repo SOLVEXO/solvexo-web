@@ -4,29 +4,6 @@ import { useForgotPassword } from '@/hooks/auth/useForgotPassword';
 import { Button } from '@/components/ui/Button';
 import { useForm } from '@/hooks/useForm';
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/utils/validation/schemas';
-import type { CSSProperties } from 'react';
-
-const C = {
-  orange: '#D97757', carbon: '#141413', charcoal: '#2C2A28',
-  slate: '#8C8A82', bone: '#E8E6DC', cream: '#FAF9F5', white: '#FFFFFF',
-  error: '#C13030',
-};
-const FONT = "'Poppins', sans-serif";
-
-const inputStyle: CSSProperties = {
-  width: '100%', padding: '10px 12px', borderRadius: 8,
-  border: `1px solid ${C.bone}`, fontSize: 13, fontFamily: FONT,
-  color: C.charcoal, outline: 'none', boxSizing: 'border-box', background: C.white,
-};
-const labelStyle: CSSProperties = {
-  display: 'block', fontSize: 12, fontWeight: 500,
-  color: C.charcoal, marginBottom: 6, fontFamily: FONT,
-};
-const cardStyle: CSSProperties = {
-  background: C.white, borderRadius: 20,
-  padding: '36px 40px', width: '100%', maxWidth: 440,
-  border: `1px solid ${C.bone}`,
-};
 
 export function ForgotPasswordPage() {
   const navigate       = useNavigate();
@@ -44,29 +21,27 @@ export function ForgotPasswordPage() {
   );
 
   return (
-    <div style={{
-      minHeight: '100vh', background: C.cream,
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      padding: '48px 16px', fontFamily: FONT,
-    }}>
-      <div style={cardStyle}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: C.carbon, textAlign: 'center', marginBottom: 8 }}>
+    <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
+      <div className="bg-white rounded-[20px] px-10 py-9 w-full max-w-[440px] border border-bone">
+        <h1 className="text-[22px] font-bold text-carbon text-center mb-2">
           Forgot your password?
         </h1>
-        <p style={{ fontSize: 13, color: C.slate, textAlign: 'center', marginBottom: 28, lineHeight: 1.6 }}>
+        <p className="text-[13px] text-slate text-center mb-7 leading-[1.6]">
           Enter your email and we'll send you a reset code.
         </p>
 
-        <div style={{ marginBottom: 20 }}>
-          <label style={labelStyle}>Email Address</label>
+        <div className="mb-5">
+          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Email Address</label>
           <input
             type="email" placeholder="Enter your email"
             value={values.email} onChange={set('email')} onBlur={blur('email')}
             onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-            style={{ ...inputStyle, borderColor: errors.email ? C.error : C.bone }}
+            className={[
+              'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white',
+              errors.email ? 'border-error' : 'border-bone',
+            ].join(' ')}
           />
-          {errors.email && <p style={{ fontSize: 11, color: C.error, marginTop: 5, fontFamily: FONT }}>{errors.email}</p>}
+          {errors.email && <p className="text-[11px] text-error mt-[5px]">{errors.email}</p>}
         </div>
 
         <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={forgotPassword.loading}>
@@ -74,14 +49,14 @@ export function ForgotPasswordPage() {
         </Button>
 
         {forgotPassword.error && (
-          <p style={{ fontSize: 13, color: C.error, textAlign: 'center', marginTop: 10, fontFamily: FONT }}>
+          <p className="text-[13px] text-error text-center mt-[10px]">
             {forgotPassword.error}
           </p>
         )}
 
-        <div style={{ textAlign: 'center', marginTop: 20 }}>
+        <div className="text-center mt-5">
           <button onClick={() => navigate('/login')}
-            style={{ fontSize: 12, color: C.slate, background: 'none', border: 'none', cursor: 'pointer', fontFamily: FONT }}>
+            className="text-[12px] text-slate bg-transparent border-none cursor-pointer">
             ← Back to Sign In
           </button>
         </div>

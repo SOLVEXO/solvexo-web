@@ -6,30 +6,6 @@ import { Eye, EyeOff, Globe, Smartphone, Share2 } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import { apiLogin, TokenStorage } from '@/api/commerce/auth';
-import type { CSSProperties } from 'react';
-
-// ── Design tokens (same as LoginPage) ──────────────────────────────────────────
-const C = {
-  orange: '#D97757', deepOrange: '#B95A3A', paleOrange: '#FBECE4',
-  carbon: '#141413', charcoal: '#2C2A28', slate: '#8C8A82',
-  bone: '#E8E6DC', cream: '#FAF9F5', white: '#FFFFFF',
-  error: '#C13030',
-};
-const FONT = "'Poppins', sans-serif";
-
-const inputStyle: CSSProperties = {
-  width: '100%', padding: '10px 12px', borderRadius: 8,
-  border: `1px solid ${C.bone}`, fontSize: 13, fontFamily: FONT,
-  color: C.charcoal, outline: 'none', boxSizing: 'border-box',
-  background: C.white,
-};
-const labelStyle: CSSProperties = {
-  display: 'block', fontSize: 12, fontWeight: 500,
-  color: C.charcoal, marginBottom: 6, fontFamily: FONT,
-};
-const errorStyle: CSSProperties = {
-  fontSize: 11, color: C.error, marginTop: 5, fontFamily: FONT,
-};
 
 const SOCIAL = [
   { Icon: Globe,      label: 'Google',   color: '#4285F4' },
@@ -73,44 +49,38 @@ export function AdminLoginPage() {
   );
 
   return (
-    <div style={{
-      minHeight: '100vh', background: C.cream,
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      padding: '48px 16px', fontFamily: FONT,
-    }}>
-      <div style={{
-        background: C.white, borderRadius: 20,
-        padding: '36px 40px', width: '100%', maxWidth: 460,
-        border: `1px solid ${C.bone}`,
-      }}>
+    <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
+      <div className="bg-white rounded-[20px] px-10 py-9 w-full max-w-[460px] border border-bone">
 
         {/* Heading */}
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: C.carbon, marginBottom: 4, textAlign: 'center' }}>
+        <h1 className="text-2xl font-bold text-carbon mb-1 text-center">
           Admin Sign In
         </h1>
-        <p style={{ fontSize: 13, color: C.slate, marginBottom: 28, textAlign: 'center' }}>
+        <p className="text-[13px] text-slate mb-7 text-center">
           Access the Solvexo admin panel
         </p>
 
-        {/* ── Email ───────────────────────────────────────────────────────── */}
-        <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>Email Address</label>
+        {/* Email */}
+        <div className="mb-4">
+          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Email Address</label>
           <input
             type="email"
             placeholder="Enter Your Email"
             value={values.email}
             onChange={set('email')}
             onBlur={blur('email')}
-            style={{ ...inputStyle, borderColor: errors.email ? C.error : C.bone }}
+            className={[
+              'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white',
+              errors.email ? 'border-error' : 'border-bone',
+            ].join(' ')}
           />
-          {errors.email && <p style={errorStyle}>{errors.email}</p>}
+          {errors.email && <p className="text-[11px] text-error mt-[5px]">{errors.email}</p>}
         </div>
 
-        {/* ── Password ────────────────────────────────────────────────────── */}
-        <div style={{ marginBottom: 8 }}>
-          <label style={labelStyle}>Password</label>
-          <div style={{ position: 'relative' }}>
+        {/* Password */}
+        <div className="mb-2">
+          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Password</label>
+          <div className="relative">
             <input
               type={showPass ? 'text' : 'password'}
               placeholder="Enter Your password"
@@ -118,71 +88,57 @@ export function AdminLoginPage() {
               onChange={set('password')}
               onBlur={blur('password')}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              style={{ ...inputStyle, paddingRight: 42, borderColor: errors.password ? C.error : C.bone }}
+              className={[
+                'w-full px-3 pr-[42px] py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white',
+                errors.password ? 'border-error' : 'border-bone',
+              ].join(' ')}
             />
             <button
               type="button"
               onClick={() => setShowPass(s => !s)}
-              style={{
-                position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: C.slate, padding: 0, display: 'flex',
-              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate p-0 flex"
             >
               {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-          {errors.password && <p style={errorStyle}>{errors.password}</p>}
+          {errors.password && <p className="text-[11px] text-error mt-[5px]">{errors.password}</p>}
         </div>
 
-        {/* ── Forgot password ──────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
+        {/* Forgot password */}
+        <div className="flex justify-end mb-6">
           <button
             onClick={() => navigate('/forgot-password')}
-            style={{
-              fontSize: 12, color: C.orange, fontWeight: 500,
-              background: 'none', border: 'none', cursor: 'pointer', fontFamily: FONT,
-            }}
+            className="text-[12px] text-brand-orange font-medium bg-transparent border-none cursor-pointer"
           >
             Forgot password?
           </button>
         </div>
 
-        {/* ── Sign In button ───────────────────────────────────────────────── */}
+        {/* Sign In button */}
         <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={loading}>
           {loading ? 'Signing in...' : 'Sign In'}
         </Button>
 
         {/* API error */}
         {apiError && (
-          <div style={{
-            background: '#FDEAEA', borderRadius: 8, padding: '10px 14px',
-            marginTop: 12, fontSize: 13, color: C.error,
-            fontFamily: FONT, textAlign: 'center',
-          }}>
+          <div className="bg-[#FDEAEA] rounded-lg px-[14px] py-[10px] mt-3 text-[13px] text-error text-center">
             {apiError}
           </div>
         )}
 
-        {/* ── OR divider ───────────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
-          <div style={{ flex: 1, height: 1, background: C.bone }} />
-          <span style={{ fontSize: 12, color: C.slate }}>or continue with</span>
-          <div style={{ flex: 1, height: 1, background: C.bone }} />
+        {/* OR divider */}
+        <div className="flex items-center gap-3 my-5">
+          <div className="flex-1 h-px bg-bone" />
+          <span className="text-[12px] text-slate">or continue with</span>
+          <div className="flex-1 h-px bg-bone" />
         </div>
 
-        {/* ── Social buttons ───────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+        {/* Social buttons */}
+        <div className="flex gap-[10px] mb-6">
           {SOCIAL.map(({ Icon, label, color }) => (
             <button
               key={label}
-              style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                gap: 8, padding: '10px 8px', borderRadius: 8, fontSize: 13,
-                fontWeight: 500, fontFamily: FONT, cursor: 'pointer',
-                background: C.white, border: `1px solid ${C.bone}`,
-                color: C.charcoal, transition: 'background 0.15s',
-              }}
+              className="flex-1 flex items-center justify-center gap-2 px-2 py-[10px] rounded-lg text-[13px] font-medium cursor-pointer bg-white border border-bone text-charcoal transition-[background] duration-150"
             >
               <Icon size={16} style={{ color }} />
               {label}

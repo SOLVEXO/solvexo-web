@@ -7,25 +7,6 @@ import { RadioButton } from '@/components/ui/RadioButton';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useForm }     from '@/hooks/useForm';
 import { registerSchema, type RegisterFormData } from '@/utils/validation/schemas';
-import type { CSSProperties } from 'react';
-
-const C = {
-  orange: '#D97757', carbon: '#141413', charcoal: '#2C2A28',
-  slate: '#8C8A82', bone: '#E8E6DC', cream: '#FAF9F5', white: '#FFFFFF',
-  error: '#C13030',
-};
-const FONT = "'Poppins', sans-serif";
-
-const inputStyle: CSSProperties = {
-  width: '100%', padding: '10px 12px', borderRadius: 8,
-  border: `1px solid ${C.bone}`, fontSize: 13, fontFamily: FONT,
-  color: C.charcoal, outline: 'none', boxSizing: 'border-box',
-  background: C.white, transition: 'border-color 0.15s',
-};
-const labelStyle: CSSProperties = {
-  display: 'block', fontSize: 12, fontWeight: 500,
-  color: C.charcoal, marginBottom: 6, fontFamily: FONT,
-};
 
 const ROLE_OPTIONS = [
   { value: 'user',   label: 'Buyer',  description: 'Browse and purchase from the marketplace' },
@@ -34,10 +15,10 @@ const ROLE_OPTIONS = [
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <label style={labelStyle}>{label}</label>
+    <div className="mb-4">
+      <label className="block text-[12px] font-medium text-charcoal mb-[6px]">{label}</label>
       {children}
-      {error && <p style={{ fontSize: 11, color: C.error, marginTop: 5, fontFamily: FONT }}>{error}</p>}
+      {error && <p className="text-[11px] text-error mt-[5px]">{error}</p>}
     </div>
   );
 }
@@ -66,26 +47,18 @@ export function RegisterPage() {
   );
 
   return (
-    <div style={{
-      minHeight: '100vh', background: C.cream,
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      padding: '48px 16px', fontFamily: FONT,
-    }}>
-      <div style={{
-        background: C.white, borderRadius: 20, padding: '36px 40px',
-        width: '100%', maxWidth: 500, border: `1px solid ${C.bone}`,
-      }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: C.carbon, marginBottom: 4, textAlign: 'center' }}>
+    <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
+      <div className="bg-white rounded-[20px] px-10 py-9 w-full max-w-[500px] border border-bone">
+        <h1 className="text-2xl font-bold text-carbon mb-1 text-center">
           Create your account
         </h1>
-        <p style={{ fontSize: 13, color: C.slate, marginBottom: 28, textAlign: 'center' }}>
+        <p className="text-[13px] text-slate mb-7 text-center">
           Join Solvexo — Commerce. Solved.
         </p>
 
         {/* Role */}
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ ...labelStyle, fontSize: 13, fontWeight: 600, color: C.carbon, marginBottom: 10 }}>
+        <div className="mb-5">
+          <label className="block text-[13px] font-semibold text-carbon mb-[10px]">
             I want to
           </label>
           <RadioButton
@@ -94,65 +67,80 @@ export function RegisterPage() {
           />
         </div>
 
-        <div style={{ height: 1, background: C.bone, marginBottom: 20 }} />
+        <div className="h-px bg-bone mb-5" />
 
         <Field label="Full Name" error={errors.name}>
           <input type="text" placeholder="Enter Your Name"
             value={values.name} onChange={set('name')} onBlur={blur('name')}
-            style={{ ...inputStyle, borderColor: errors.name ? C.error : C.bone }} />
+            className={[
+              'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white transition-[border-color] duration-150',
+              errors.name ? 'border-error' : 'border-bone',
+            ].join(' ')} />
         </Field>
 
         <Field label="Email Address" error={errors.email}>
           <input type="email" placeholder="Enter Your Email"
             value={values.email} onChange={set('email')} onBlur={blur('email')}
-            style={{ ...inputStyle, borderColor: errors.email ? C.error : C.bone }} />
+            className={[
+              'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white transition-[border-color] duration-150',
+              errors.email ? 'border-error' : 'border-bone',
+            ].join(' ')} />
         </Field>
 
         <Field label="Phone Number" error={errors.phone}>
           <input type="tel" placeholder="Enter Your Phone Number"
             value={values.phone} onChange={set('phone')} onBlur={blur('phone')}
-            style={{ ...inputStyle, borderColor: errors.phone ? C.error : C.bone }} />
+            className={[
+              'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white transition-[border-color] duration-150',
+              errors.phone ? 'border-error' : 'border-bone',
+            ].join(' ')} />
         </Field>
 
         <Field label="Address" error={errors.address}>
           <input type="text" placeholder="Enter Your Address"
             value={values.address} onChange={set('address')} onBlur={blur('address')}
-            style={{ ...inputStyle, borderColor: errors.address ? C.error : C.bone }} />
+            className={[
+              'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white transition-[border-color] duration-150',
+              errors.address ? 'border-error' : 'border-bone',
+            ].join(' ')} />
         </Field>
 
         <Field label="Password" error={errors.password}>
-          <div style={{ position: 'relative' }}>
+          <div className="relative">
             <input
               type={showPass ? 'text' : 'password'} placeholder="Create Your Password"
               value={values.password} onChange={set('password')} onBlur={blur('password')}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              style={{ ...inputStyle, paddingRight: 42, borderColor: errors.password ? C.error : C.bone }}
+              className={[
+                'w-full px-3 pr-[42px] py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white transition-[border-color] duration-150',
+                errors.password ? 'border-error' : 'border-bone',
+              ].join(' ')}
             />
             <button type="button" onClick={() => setShowPass(s => !s)}
-              style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: C.slate, padding: 0, display: 'flex' }}>
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate p-0 flex">
               {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
         </Field>
 
-        <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={register.loading} style={{ marginTop: 4 }}>
+        <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={register.loading} className="mt-1">
           {register.loading
             ? 'Creating account...'
             : values.role === 'seller'
-              ? <span>Create Seller Account <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></span>
-              : <span>Create Buyer Account <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} /></span>}
+              ? <span>Create Seller Account <ArrowRight size={14} className="inline align-middle ml-1" /></span>
+              : <span>Create Buyer Account <ArrowRight size={14} className="inline align-middle ml-1" /></span>}
         </Button>
 
         {register.error && (
-          <p style={{ fontSize: 13, color: C.error, textAlign: 'center', marginTop: 10, fontFamily: FONT }}>
+          <p className="text-[13px] text-error text-center mt-[10px]">
             {register.error}
           </p>
         )}
 
-        <p style={{ textAlign: 'center', fontSize: 12, color: C.slate, marginTop: 20 }}>
+        <p className="text-center text-[12px] text-slate mt-5">
           Already have an account?{' '}
           <button onClick={() => navigate('/login')}
-            style={{ color: C.orange, fontWeight: 600, fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: FONT }}>
+            className="text-brand-orange font-semibold text-[12px] bg-transparent border-none cursor-pointer">
             Sign In
           </button>
         </p>

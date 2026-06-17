@@ -36,9 +36,6 @@ const metrics = [
   { label: 'Revenue from Loyal Customers',  value: '$8,200',  trend: '+31% vs non-members',   sub: null,                  trendUp: true  },
 ] as const;
 
-const poppins   = "'Poppins', sans-serif";
-const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '20px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' };
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerLoyalty() {
   usePageTitle('Loyalty');
@@ -51,41 +48,38 @@ export function SellerLoyalty() {
         subtitle="Build lasting customer relationships with a points-based loyalty program."
         actions={
           <>
-            <button style={{ padding: '7px 16px', background: '#fff', border: '1px solid #E8E6DC', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#4A4945', cursor: 'pointer', fontFamily: poppins }}>
+            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
               Program Settings
             </button>
-            <button style={{ padding: '7px 16px', background: '#D97757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: poppins }}>
+            <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
               + Create Reward
             </button>
           </>
         }
       />
 
-      <div style={{ padding: '20px 28px 32px', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: poppins }}>
+      <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
         {/* ── Metrics ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {metrics.map(m => (
-            <div key={m.label} style={{ background: '#fff', border: '1px solid #E8E6DC', borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-              <p style={{ fontSize: 11, fontWeight: 500, color: '#8C8A82', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</p>
-              <p style={{ fontSize: 28, fontWeight: 700, color: '#141413', lineHeight: 1.15 }}>{m.value}</p>
-              {m.trend && <p style={{ fontSize: 12, color: '#2D8A4E', marginTop: 4 }}>▲ {m.trend}</p>}
-              {m.sub   && <p style={{ fontSize: 12, color: '#8C8A82', marginTop: 4 }}>{m.sub}</p>}
+            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+              {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
+              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
 
         {/* ── Tab bar ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #E8E6DC' }}>
+        <div className="flex items-center gap-0.5 border-b border-[#E8E6DC]">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
+              className="px-4 py-[10px] text-[13px] font-medium cursor-pointer border-none rounded-tl-lg rounded-tr-lg transition-all duration-[120ms] flex items-center gap-1.5"
               style={{
-                padding: '10px 16px', fontSize: 13, fontWeight: 500,
-                cursor: 'pointer', border: 'none', fontFamily: poppins,
-                borderRadius: '8px 8px 0 0', transition: 'all 0.12s',
-                display: 'flex', alignItems: 'center', gap: 6,
                 background: activeTab === tab.id ? '#fff' : 'transparent',
                 color: activeTab === tab.id ? '#141413' : '#8C8A82',
                 borderBottom: activeTab === tab.id ? '2px solid #D97757' : '2px solid transparent',
@@ -99,38 +93,42 @@ export function SellerLoyalty() {
 
         {/* ── Overview Tab ── */}
         {activeTab === 'overview' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="grid gap-4" style={{ gridTemplateColumns: '1fr 1fr' }}>
 
             {/* Member Distribution */}
-            <div style={cardStyle}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 18 }}>Member Distribution</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[14px] font-bold text-[#141413] mb-[18px]">Member Distribution</p>
+              <div className="flex flex-col gap-4">
                 {TIERS.map(tier => (
                   <div key={tier.name}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2">
                         <tier.Icon size={18} style={{ color: tier.iconColor }} />
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#4A4945', fontFamily: poppins }}>{tier.name}</span>
+                        <span className="text-[13px] font-semibold text-[#4A4945]">{tier.name}</span>
                       </div>
-                      <span style={{ fontSize: 12, color: '#8C8A82', fontFamily: poppins }}>{tier.members.toLocaleString()} members</span>
+                      <span className="text-xs text-[#8C8A82]">{tier.members.toLocaleString()} members</span>
                     </div>
-                    <div style={{ height: 8, borderRadius: 4, background: '#E8E6DC', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', borderRadius: 4, width: `${tier.pct}%`, background: tier.barColor }} />
+                    <div className="h-2 rounded-[4px] bg-[#E8E6DC] overflow-hidden">
+                      <div className="h-full rounded-[4px]" style={{ width: `${tier.pct}%`, background: tier.barColor }} />
                     </div>
-                    <p style={{ fontSize: 11, color: '#8C8A82', marginTop: 3, textAlign: 'right', fontFamily: poppins }}>{tier.pct}%</p>
+                    <p className="text-[11px] text-[#8C8A82] mt-[3px] text-right">{tier.pct}%</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Points Activity */}
-            <div style={cardStyle}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 18 }}>Points Activity (Last 30 Days)</p>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[14px] font-bold text-[#141413] mb-[18px]">Points Activity (Last 30 Days)</p>
+              <div className="flex flex-col">
                 {POINTS_ACTIVITY.map((item, i) => (
-                  <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < POINTS_ACTIVITY.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
-                    <span style={{ fontSize: 13, color: '#4A4945', fontFamily: poppins }}>{item.label}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: item.positive ? '#2D8A4E' : '#C13030', fontFamily: poppins }}>{item.value}</span>
+                  <div
+                    key={item.label}
+                    className="flex items-center justify-between py-[10px]"
+                    style={{ borderBottom: i < POINTS_ACTIVITY.length - 1 ? '1px solid #F0EEE6' : 'none' }}
+                  >
+                    <span className="text-[13px] text-[#4A4945]">{item.label}</span>
+                    <span className="text-[13px] font-bold" style={{ color: item.positive ? '#2D8A4E' : '#C13030' }}>{item.value}</span>
                   </div>
                 ))}
               </div>
@@ -140,11 +138,11 @@ export function SellerLoyalty() {
 
         {/* ── Other Tabs ── */}
         {activeTab !== 'overview' && (
-          <div style={cardStyle}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#141413', marginBottom: 8 }}>
+          <div className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <p className="text-[14px] font-bold text-[#141413] mb-2">
               {TABS.find(t => t.id === activeTab)?.label}
             </p>
-            <p style={{ fontSize: 13, color: '#8C8A82', fontFamily: poppins }}>
+            <p className="text-[13px] text-[#8C8A82]">
               {activeTab === 'tiers'         && 'Configure tier thresholds, benefits, and upgrade criteria.'}
               {activeTab === 'rewards'       && 'Create and manage redeemable rewards for your loyalty members.'}
               {activeTab === 'members'       && 'View individual member points balances, activity, and tier status.'}
