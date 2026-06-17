@@ -1,9 +1,19 @@
 import { type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
-import type { ButtonVariant, ButtonSize } from '@/types';
 
-export type { ButtonVariant, ButtonSize };
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'ghost'
+  | 'link'
+  | 'dark'
+  | 'danger';
+
+export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?:   ButtonVariant;
@@ -16,12 +26,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children?:  ReactNode;   // optional — allows icon-only buttons
 }
 
+// ─── Style Maps ───────────────────────────────────────────────────────────────
+
 const BASE =
   'inline-flex items-center justify-center gap-[6px] font-medium cursor-pointer ' +
   'transition-all duration-[180ms] whitespace-nowrap outline-none select-none shrink-0 ' +
   'no-underline leading-[1.4]';
 
-// Size includes font-size, padding, and border-radius
 const SIZES: Record<ButtonSize, string> = {
   xs: 'text-[11px] py-[5px]  px-3        rounded-md',
   sm: 'text-[12px] py-[7px]  px-[14px]   rounded-md',
@@ -31,19 +42,26 @@ const SIZES: Record<ButtonSize, string> = {
 
 const VARIANTS: Record<ButtonVariant, string> = {
   // Orange filled — primary CTA
-  primary:   'bg-brand-orange   text-white              border-0                          hover:opacity-[0.88]',
+  primary:
+    'bg-brand-orange text-white border-0 hover:opacity-[0.88]',
   // Soft orange fill — secondary CTA on light bg
-  secondary: 'bg-brand-pale-orange text-brand-deep-orange border-0                        hover:opacity-[0.88]',
-  // White with border — most common "ghost" action button (Export, Edit, Clear…)
-  outline:   'bg-white          text-carbon             border border-bone                hover:bg-cream',
+  secondary:
+    'bg-brand-pale-orange text-brand-deep-orange border-0 hover:opacity-[0.88]',
+  // White with border — common "ghost" action button (Export, Edit, Clear…)
+  outline:
+    'bg-white text-carbon border border-bone hover:bg-cream',
   // No bg, no border — subtle inline action
-  ghost:     'bg-transparent    text-slate              border-0                          hover:bg-cream',
+  ghost:
+    'bg-transparent text-slate border-0 hover:bg-cream',
   // Inline link style — no padding, orange text (Forgot password, View All…)
-  link:      'bg-transparent    text-brand-orange       border-0  !p-0                    hover:opacity-80',
+  link:
+    'bg-transparent text-brand-orange border-0 !p-0 hover:opacity-80',
   // Dark fill — dark-theme CTAs
-  dark:      'bg-charcoal       text-white              border-0                          hover:opacity-[0.88]',
+  dark:
+    'bg-charcoal text-white border-0 hover:opacity-[0.88]',
   // Soft red — destructive actions (Flag, Delete, Cancel…)
-  danger:    'bg-error-bg       text-error              border border-[#FECACA]           hover:opacity-[0.88]',
+  danger:
+    'bg-error-bg text-error border border-[#FECACA] hover:opacity-[0.88]',
 };
 
 const ICON_SIZE: Record<ButtonSize, number> = {
@@ -52,6 +70,8 @@ const ICON_SIZE: Record<ButtonSize, number> = {
   md: 14,
   lg: 16,
 };
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function Button({
   variant   = 'primary',
@@ -75,8 +95,8 @@ export function Button({
         BASE,
         SIZES[size],
         VARIANTS[variant],
-        fullWidth && 'w-full',
-        pill      && '!rounded-full',
+        fullWidth  && 'w-full',
+        pill       && '!rounded-full',
         isDisabled && 'opacity-50 cursor-not-allowed pointer-events-none',
         className,
       )}

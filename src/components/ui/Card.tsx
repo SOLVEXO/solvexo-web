@@ -1,24 +1,37 @@
 import { clsx } from 'clsx';
 import { type ReactNode } from 'react';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type CardPadding = 'none' | 'sm' | 'md' | 'lg';
+
 interface CardProps {
   children:   ReactNode;
   className?: string;
-  padding?:   'none' | 'sm' | 'md' | 'lg';
+  padding?:   CardPadding;
   shadow?:    boolean;
   hover?:     boolean;
   onClick?:   () => void;
 }
 
-const PADDING = {
+// ─── Style Maps ───────────────────────────────────────────────────────────────
+
+const PADDING: Record<CardPadding, string> = {
   none: '',
   sm:   'p-3',
   md:   'p-5',
   lg:   'p-7',
 };
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export function Card({
-  children, className, padding = 'md', shadow = true, hover = false, onClick,
+  children,
+  className,
+  padding  = 'md',
+  shadow   = true,
+  hover    = false,
+  onClick,
 }: CardProps) {
   return (
     <div
@@ -27,8 +40,8 @@ export function Card({
         'bg-white rounded-[10px] border border-bone',
         shadow && 'shadow-[0_1px_4px_rgba(0,0,0,0.04)]',
         PADDING[padding],
-        hover && 'transition-shadow duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]',
-        (hover || onClick) && 'cursor-pointer',
+        hover  && 'transition-shadow duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]',
+        (hover || !!onClick) && 'cursor-pointer',
         className,
       )}
     >

@@ -57,29 +57,31 @@
   --shadow-lg:   0 8px 40px rgba(0,0,0,0.12);
 }
 
-/* ── Base Reset ── */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* ── Base Reset — inside @layer base so Tailwind utilities can override ── */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
-html {
-  font-size: 16px;
-}
+  html {
+    font-size: 16px;
+  }
 
-body {
-  font-family: 'Poppins', system-ui, sans-serif;
-  background: #FAF9F5;
-  color: #2C2A28;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-size: 13px;
-  line-height: 1.5;
-}
+  body {
+    font-family: 'Poppins', system-ui, sans-serif;
+    background: #FAF9F5;
+    color: #2C2A28;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 13px;
+    line-height: 1.5;
+  }
 
-#root {
-  min-height: 100vh;
+  #root {
+    min-height: 100vh;
+  }
 }
 
 /* ── Scrollbar ── */
