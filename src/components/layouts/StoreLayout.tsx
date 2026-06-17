@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, Bell, ChevronLeft,
+  Settings, Sparkles, Bell, ChevronLeft, Monitor, Store,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/commerce/store';
@@ -33,10 +33,13 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: 'Store',
     items: [
-      { id: 'dashboard',  Icon: LayoutDashboard, label: 'Dashboard',  path: 'dashboard'  },
-      { id: 'orders',     Icon: Package,         label: 'Orders',     path: 'orders'     },
-      { id: 'products',   Icon: ShoppingBag,     label: 'Products',   path: 'products'   },
-      { id: 'customers',  Icon: Users,           label: 'Customers',  path: 'customers'  },
+      { id: 'dashboard',      Icon: LayoutDashboard, label: 'Dashboard',     path: 'dashboard'  },
+      { id: 'orders',         Icon: Package,         label: 'Orders',        path: 'orders'     },
+      { id: 'products',       Icon: ShoppingBag,     label: 'Products',      path: 'products'   },
+      { id: 'customers',      Icon: Users,           label: 'Customers',     path: 'customers'  },
+      { id: 'pos',            Icon: Monitor,         label: 'POS Register',  path: '/seller/store/pos'  },
+      { id: 'store-builder',  Icon: Store,           label: 'Store Builder', path: 'store-builder'  },
+
     ],
   },
   {
@@ -60,7 +63,9 @@ function StoreSidebar() {
   const { store, storeId, loading } = useStoreWorkspace();
 
   const isActive = (seg: string) =>
-    pathname === `/seller/store/${storeId}/${seg}`;
+    seg.startsWith('/')
+      ? pathname === seg || pathname.startsWith(seg + '/')
+      : pathname === `/seller/store/${storeId}/${seg}`;
 
   const initials    = store?.name?.slice(0, 2).toUpperCase() ?? '..';
   const credits     = store?.aiCredits ?? 0;
@@ -124,7 +129,7 @@ function StoreSidebar() {
               return (
                 <div
                   key={item.id}
-                  onClick={() => navigate(`/seller/store/${storeId}/${item.path}`)}
+                  onClick={() => navigate(item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`)}
                   className={clsx(
                     'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5',
                     'cursor-pointer transition-colors duration-150',
@@ -213,12 +218,21 @@ function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!storeId) return;
     let cancelled = false;
-    setLoading(true);
-    setError('');
-    apiGetStoreById(storeId)
-      .then(res => { if (!cancelled) setStore(res.data); })
-      .catch((err: unknown) => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store.'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+
+    async function load() {
+      setLoading(true);
+      setError('');
+      try {
+        const res = await apiGetStoreById(storeId);
+        if (!cancelled) setStore(res.data);
+      } catch (err: unknown) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
     return () => { cancelled = true; };
   }, [storeId, tick]);
 

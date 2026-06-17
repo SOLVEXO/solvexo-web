@@ -29,40 +29,40 @@ import { VerifyOTPPage }        from '@/features/auth/pages/VerifyOTPPage';
 import { NewPasswordPage }      from '@/features/auth/pages/NewPasswordPage';
 
 // ── Seller Pages ──────────────────────────────────────────────────────────────
-import { SellerDashboard }    from '@/features/seller/pages/SellerDashboard';
-import { SellerOrders }       from '@/features/seller/pages/SellerOrders';
-import { SellerInventory }    from '@/features/seller/pages/SellerInventory';
-import { SellerAnalytics }    from '@/features/seller/pages/SellerAnalytics';
-import { SellerAIStudio }     from '@/features/seller/pages/SellerAIStudio';
-import { SellerCustomers }    from '@/features/seller/pages/SellerCustomers';
-import { SellerMarketing }    from '@/features/seller/pages/SellerMarketing';
-import { SellerCategories }   from '@/features/seller/pages/SellerCategories';
-import { StoreBuilder }       from '@/features/seller/pages/storemodule/StoreBuilder';
-import { SellerSettings }     from '@/features/seller/pages/settings/SellerSettings';
-import { POSRegister }        from '@/features/seller/pos/POSRegister';
-import { SellerReturns }      from '@/features/seller/pages/SellerReturns';
-import { SellerSEO }          from '@/features/seller/pages/SellerSEO';
-import { SellerFinance }      from '@/features/seller/pages/SellerFinance';
-import { SellerShipping }     from '@/features/seller/pages/SellerShipping';
-import { SellerMessages }     from '@/features/seller/pages/SellerMessages';
-import { SellerReviews }      from '@/features/seller/pages/SellerReviews';
-import { SellerLoyalty }      from '@/features/seller/pages/SellerLoyalty';
-import { SellerSubscriptions } from '@/features/seller/pages/SellerSubscriptions';
-import { SellerIntegrations } from '@/features/seller/pages/SellerIntegrations';
-import { SellerActivity }     from '@/features/seller/pages/SellerActivity';
-import { SellerStoreList } from '@/features/seller/pages/storemodule/SellerStoreList';
+import { SellerDashboard }    from '@/features/seller/dashboard/SellerDashboard';
+import { SellerOrders }       from '@/features/seller/dashboard/SellerOrders';
+import { SellerInventory }    from '@/features/seller/dashboard/SellerInventory';
+import { SellerAnalytics }    from '@/features/seller/dashboard/SellerAnalytics';
+import { SellerAIStudio }     from '@/features/seller/dashboard/SellerAIStudio';
+import { SellerCustomers }    from '@/features/seller/dashboard/SellerCustomers';
+import { SellerMarketing }    from '@/features/seller/dashboard/SellerMarketing';
+import { SellerCategories }   from '@/features/seller/dashboard/SellerCategories';
+import { StoreBuilder }       from '@/features/seller/dashboard/storemodule/StoreBuilder';
+import { SellerSettings }     from '@/features/seller/dashboard/settings/SellerSettings';
+import { POSRegister }        from '@/features/seller/store/pos/POSRegister';
+import { SellerReturns }      from '@/features/seller/dashboard/SellerReturns';
+import { SellerSEO }          from '@/features/seller/dashboard/SellerSEO';
+import { SellerFinance }      from '@/features/seller/dashboard/SellerFinance';
+import { SellerShipping }     from '@/features/seller/dashboard/SellerShipping';
+import { SellerMessages }     from '@/features/seller/dashboard/SellerMessages';
+import { SellerReviews }      from '@/features/seller/dashboard/SellerReviews';
+import { SellerLoyalty }      from '@/features/seller/dashboard/SellerLoyalty';
+import { SellerSubscriptions } from '@/features/seller/dashboard/SellerSubscriptions';
+import { SellerIntegrations } from '@/features/seller/dashboard/SellerIntegrations';
+import { SellerActivity }     from '@/features/seller/dashboard/SellerActivity';
+import { SellerStoreList } from '@/features/seller/dashboard/storemodule/SellerStoreList';
 
 // ── Store Workspace (own layout, own sidebar) ─────────────────────────────────
 import { StoreLayout }    from '@/components/layouts/StoreLayout';
-import StoreDashboard     from '@/features/store/StoreDashboard';
-import StoreOrders        from '@/features/store/StoreOrders';
-import StoreProductList   from '@/features/store/products/StoreProductList';
-import StoreAddProduct    from '@/features/store/products/StoreAddProduct';
-import StoreEditProduct   from '@/features/store/products/StoreEditProduct';
-import StoreProductDetail from '@/features/store/products/StoreProductDetail';
-import StoreCustomers     from '@/features/store/StoreCustomers';
-import StoreAnalytics     from '@/features/store/StoreAnalytics';
-import StoreSettings      from '@/features/store/StoreSettings';
+import StoreDashboard     from '@/features/seller/store/StoreDashboard';
+import StoreOrders        from '@/features/seller/store/StoreOrders';
+import StoreProductList   from '@/features/seller/store/products/StoreProductList';
+import StoreAddProduct    from '@/features/seller/store/products/StoreAddProduct';
+import StoreEditProduct   from '@/features/seller/store/products/StoreEditProduct';
+import StoreProductDetail from '@/features/seller/store/products/StoreProductDetail';
+import StoreCustomers     from '@/features/seller/store/StoreCustomers';
+import StoreAnalytics     from '@/features/seller/store/StoreAnalytics';
+import StoreSettings      from '@/features/seller/store/StoreSettings';
 
 // ── Admin Pages ───────────────────────────────────────────────────────────────
 import { AdminOverview }      from '@/features/admin/pages/AdminOverview';
@@ -109,7 +109,7 @@ export const router = createBrowserRouter([
       { path: '/new-password',    element: <NewPasswordPage /> },
 
       // ── POS — standalone (no seller sidebar) ──────────────────────────
-      { path: '/seller/pos',      element: <POSRegister /> },
+      { path: '/seller/store/pos',      element: <POSRegister /> },
 
       // ── Seller pages with dark sidebar ────────────────────────────────
       {
@@ -156,6 +156,7 @@ export const router = createBrowserRouter([
           { path: 'customers',      element: <StoreCustomers /> },
           { path: 'analytics',      element: <StoreAnalytics /> },
           { path: 'settings',       element: <StoreSettings /> },
+          { path: 'store-builder',  element: <StoreBuilder /> },
         ],
       },
 

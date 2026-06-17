@@ -6,7 +6,7 @@ import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, CornerUpLeft,
-  Store, Monitor, BarChart2, Search, Sparkles, Users, Star, RefreshCw,
+  Store, BarChart2, Search, Sparkles, Users, Star, RefreshCw,
   Megaphone, Wallet, ClipboardList, Truck, MessageSquare, Plug, Activity,
   Settings, FolderOpen, Bell, ChevronDown, List, Plus,
 } from 'lucide-react';
@@ -45,7 +45,6 @@ const NAV_SECTIONS: NavSection[] = [
           { id: 'store-builder', Icon: Store,  label: 'Store Builder', path: '/seller/store'  },
         ],
       },
-      { id: 'pos',         Icon: Monitor,          label: 'POS Register',    path: '/seller/pos'              },
     ],
   },
   {
@@ -60,7 +59,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'Customers',
     items: [
       { id: 'customers',     Icon: Users,      label: 'Customers',    path: '/seller/customers'     },
-      { id: 'loyalty',       Icon: Star,       label: '★ Loyalty',    path: '/seller/loyalty'       },
+      { id: 'loyalty',       Icon: Star,       label: 'Loyalty',    path: '/seller/loyalty'       },
       { id: 'subscriptions', Icon: RefreshCw,  label: 'Subscriptions',path: '/seller/subscriptions' },
       { id: 'marketing',     Icon: Megaphone,  label: 'Marketing',    path: '/seller/marketing'     },
     ],
