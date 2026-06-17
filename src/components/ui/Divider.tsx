@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react';
 import { clsx } from 'clsx';
 
 export function Divider({ className, my = 4 }: { className?: string; my?: number }) {
@@ -9,10 +10,29 @@ export function Divider({ className, my = 4 }: { className?: string; my?: number
   );
 }
 
-export function Tag({ children }: { children: React.ReactNode }) {
+interface TagProps {
+  children:   ReactNode;
+  onRemove?:  () => void;
+  className?: string;
+}
+
+export function Tag({ children, onRemove, className }: TagProps) {
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-brand-pale-orange text-brand-deep-orange text-[11px] font-medium border border-bone">
+    <span className={clsx(
+      'inline-flex items-center gap-1 px-2 py-0.5 rounded-md',
+      'bg-brand-pale-orange text-brand-deep-orange text-[11px] font-medium border border-bone',
+      className,
+    )}>
       {children}
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="text-brand-deep-orange opacity-60 hover:opacity-100 text-[13px] leading-none border-0 bg-transparent cursor-pointer p-0 ml-[1px]"
+        >
+          ×
+        </button>
+      )}
     </span>
   );
 }

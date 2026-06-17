@@ -269,8 +269,8 @@ export interface ModerationItem {
 
 // ── UI Utility Types ──────────────────────────────────────────────────────────
 export type BadgeColor = 'gray' | 'orange' | 'green' | 'red' | 'yellow' | 'blue';
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'dark' | 'danger';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'dark' | 'danger';
+export type ButtonSize    = 'xs' | 'sm' | 'md' | 'lg';
 
 export interface SelectOption {
   value: string;

@@ -4,9 +4,10 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
+import { TabBar, FilterDropdown } from '@/components/ui';
+import type { Tab } from '@/components/ui';
 import { ShoppingCart, BookOpen, Star, Divide, BookMarked, Microscope, Map, Pencil, FileText, Ruler, Check } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-
 
 function SolvexoIcon({ size = 32 }: { size?: number }) {
   return (
@@ -19,7 +20,15 @@ function SolvexoIcon({ size = 32 }: { size?: number }) {
   );
 }
 
-const STORE_TABS = ['All Products', 'Math', 'Reading', 'Science', 'Social Studies', 'Bundles'];
+const STORE_TABS: Tab[] = ['All Products', 'Math', 'Reading', 'Science', 'Social Studies', 'Bundles']
+  .map(t => ({ id: t, label: t }));
+
+const SORT_OPTIONS = [
+  { value: 'best-selling', label: 'Best Selling'   },
+  { value: 'newest',       label: 'Newest'          },
+  { value: 'price-asc',    label: 'Price: Low–High' },
+  { value: 'best-rated',   label: 'Best Rated'      },
+];
 
 const PRODUCTS: { name: string; price: string; Img: LucideIcon; rating: string; sold: string }[] = [
   { name: 'Grade 5 Math Bundle',        price: '$49', Img: BookOpen,   rating: '5.0', sold: '847sold' },
@@ -33,20 +42,22 @@ const PRODUCTS: { name: string; price: string; Img: LucideIcon; rating: string; 
 ];
 
 export function SellerStorefront() {
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
   usePageTitle('Storefront');
   const [activeTab, setActiveTab] = useState('All Products');
+  const [sortBy,    setSortBy]    = useState('best-selling');
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Nav */}
+
+      {/* ── Nav ────────────────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center gap-4 px-10">
         <div className="flex items-center gap-2 flex-shrink-0">
           <SolvexoIcon size={28} />
           <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
           <span className="font-bold text-[15px] text-brand-orange">o</span>
           <span className="text-bone mx-1">|</span>
-          <span className="text-[13px] text-[#8C8A82]">Marketplace</span>
+          <span className="text-[13px] text-slate">Marketplace</span>
         </div>
         <div className="flex-1 flex justify-center">
           <input
@@ -62,93 +73,67 @@ export function SellerStorefront() {
         </div>
       </nav>
 
-      {/* Store banner */}
-      <div
-        className="px-10 py-9 flex items-center gap-6"
-        style={{ background: 'linear-gradient(135deg, #1A4A2C, #2D7A4E)' }}
-      >
-        {/* Store avatar */}
+      {/* ── Store Banner ───────────────────────────────────────────────────── */}
+      <div className="px-10 py-9 flex items-center gap-6 bg-gradient-to-br from-[#1A4A2C] to-[#2D7A4E]">
         <div className="w-20 h-20 rounded-[20px] bg-white flex items-center justify-center flex-shrink-0">
           <BookOpen size={40} className="text-brand-orange" />
         </div>
 
-        {/* Store info */}
         <div className="flex-1">
           <div className="text-[26px] font-bold text-white mb-[6px]">TeachersPro</div>
           <div className="text-[13px] text-[rgba(255,255,255,0.75)] mb-[10px]">
-            Veteran educator • 2,140 sales • <Star size={12} className="inline align-middle text-brand-orange fill-brand-orange" /> 5.0 • Member since 2021
+            Veteran educator • 2,140 sales •{' '}
+            <Star size={12} className="inline align-middle text-brand-orange fill-brand-orange" />{' '}
+            5.0 • Member since 2021
           </div>
           <div className="flex gap-2">
-            <Badge color="green"><Check size={10} className="inline align-middle mr-[3px]" />Top Seller</Badge>
+            <Badge color="green">
+              <Check size={10} className="inline align-middle mr-[3px]" />Top Seller
+            </Badge>
             <Badge color="blue">Education Specialist</Badge>
           </div>
         </div>
 
-        {/* Actions */}
         <div className="ml-auto flex flex-col gap-2 items-end">
-          <button className="px-[14px] py-[6px] rounded-lg text-[12px] font-medium bg-transparent text-white border border-white cursor-pointer">
+          <button className="px-[14px] py-[6px] rounded-lg text-[12px] font-medium bg-transparent text-white border border-white cursor-pointer hover:bg-[rgba(255,255,255,0.1)] transition-colors">
             Follow Store
           </button>
           <Button variant="primary" size="sm">Message Seller</Button>
         </div>
       </div>
 
-      {/* Store tabs */}
-      <div className="bg-white border-b border-bone">
-        <div className="flex px-10">
-          {STORE_TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className="px-4 py-2 text-[13px] cursor-pointer border-none outline-none"
-              style={{
-                borderBottom: `2px solid ${activeTab === tab ? '#D97757' : 'transparent'}`,
-                backgroundColor: activeTab === tab ? '#FBECE4' : 'transparent',
-                color: activeTab === tab ? '#B95A3A' : '#8C8A82',
-                fontWeight: activeTab === tab ? 700 : 400,
-              }}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+      {/* ── Store Tabs ─────────────────────────────────────────────────────── */}
+      <div className="bg-white">
+        <TabBar tabs={STORE_TABS} active={activeTab} onChange={setActiveTab} className="px-10" />
       </div>
 
-      {/* Content */}
+      {/* ── Content ────────────────────────────────────────────────────────── */}
       <div className="px-10 py-6">
-        {/* Top row */}
         <div className="flex items-center justify-between mb-4">
           <span className="text-[15px] font-bold text-[#141413]">47 Products</span>
-          <select className="px-[10px] py-[6px] rounded-lg border border-bone bg-white text-[13px] text-charcoal outline-none cursor-pointer">
-            <option>Best Selling</option>
-            <option>Newest</option>
-            <option>Price: Low–High</option>
-            <option>Best Rated</option>
-          </select>
+          <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
         </div>
 
-        {/* 4-col grid */}
         <div className="grid grid-cols-4 gap-4">
-          {PRODUCTS.map((p) => (
+          {PRODUCTS.map(p => (
             <Card key={p.name} padding="none" hover onClick={() => navigate('/marketplace/1')}>
-              {/* Image area */}
-              <div className="h-[130px] bg-success-bg flex items-center justify-center rounded-t-[12px]">
+              <div className="h-[130px] bg-success-bg flex items-center justify-center rounded-t-[10px]">
                 <p.Img size={48} className="text-success" />
               </div>
-              {/* Content */}
               <div className="p-[14px]">
                 <div className="text-[12px] font-bold text-[#141413] leading-[1.4] mb-1">
                   {p.name}
                 </div>
-                <div className="text-[11px] text-[#8C8A82] mb-2">
-                  <Star size={11} className="inline align-middle text-brand-orange fill-brand-orange" /> {p.rating} • {p.sold}
+                <div className="flex items-center gap-[3px] text-[11px] text-slate mb-2">
+                  <Star size={11} className="text-brand-orange fill-brand-orange" />
+                  {p.rating} • {p.sold}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-[14px] text-[#141413]">{p.price}</span>
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={(e) => { e.stopPropagation(); }}
+                    onClick={e => e.stopPropagation()}
                   >
                     Add
                   </Button>
@@ -158,6 +143,7 @@ export function SellerStorefront() {
           ))}
         </div>
       </div>
+
     </div>
   );
 }

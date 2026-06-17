@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { clsx } from 'clsx';
 
 export interface RadioOption {
@@ -9,12 +9,12 @@ export interface RadioOption {
 }
 
 interface RadioButtonProps {
-  options:   RadioOption[];
-  value:     string;
-  onChange:  (value: string) => void;
-  name:      string;
-  layout?:   'row' | 'col';
-  style?:    CSSProperties;
+  options:    RadioOption[];
+  value:      string;
+  onChange:   (value: string) => void;
+  name:       string;
+  layout?:    'row' | 'col';
+  className?: string;
 }
 
 function RadioCard({
@@ -83,13 +83,10 @@ export function RadioButton({
   onChange,
   name: _name,
   layout = 'row',
-  style,
+  className,
 }: RadioButtonProps) {
   return (
-    <div
-      className={clsx('flex gap-[10px]', layout === 'col' ? 'flex-col' : 'flex-row')}
-      style={style}
-    >
+    <div className={clsx('flex gap-[10px]', layout === 'col' ? 'flex-col' : 'flex-row', className)}>
       {options.map(opt => (
         <RadioCard
           key={opt.value}

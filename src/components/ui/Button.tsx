@@ -1,4 +1,5 @@
 import { type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { ButtonVariant, ButtonSize } from '@/types';
 
@@ -7,41 +8,67 @@ export type { ButtonVariant, ButtonSize };
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?:   ButtonVariant;
   size?:      ButtonSize;
-  icon?:      ReactNode;
+  icon?:      ReactNode;   // left icon
+  iconRight?: ReactNode;   // right icon (e.g. ChevronDown)
   fullWidth?: boolean;
-  children:   ReactNode;
+  loading?:   boolean;
+  pill?:      boolean;     // rounded-full shape
+  children?:  ReactNode;   // optional — allows icon-only buttons
 }
 
 const BASE =
-  'inline-flex items-center justify-center gap-[6px] rounded-md font-medium cursor-pointer ' +
+  'inline-flex items-center justify-center gap-[6px] font-medium cursor-pointer ' +
   'transition-all duration-[180ms] whitespace-nowrap outline-none select-none shrink-0 ' +
   'no-underline leading-[1.4]';
 
+// Size includes font-size, padding, and border-radius
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'py-[6px] px-3 text-[12px]',
-  md: 'py-[10px] px-[18px] text-[13px]',
-  lg: 'py-[13px] px-6 text-[15px]',
+  xs: 'text-[11px] py-[5px]  px-3        rounded-md',
+  sm: 'text-[12px] py-[7px]  px-[14px]   rounded-md',
+  md: 'text-[13px] py-[10px] px-[18px]   rounded-lg',
+  lg: 'text-[15px] py-[13px] px-6        rounded-lg',
 };
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary:   'bg-brand-orange text-white border-0 hover:opacity-[0.88]',
-  secondary: 'bg-brand-pale-orange text-brand-deep-orange border-0 hover:opacity-[0.88]',
-  ghost:     'bg-transparent text-slate border border-bone hover:bg-cream',
-  dark:      'bg-charcoal text-white border-0 hover:opacity-[0.88]',
-  danger:    'bg-error-bg text-error border-0 hover:opacity-[0.88]',
+  // Orange filled — primary CTA
+  primary:   'bg-brand-orange   text-white              border-0                          hover:opacity-[0.88]',
+  // Soft orange fill — secondary CTA on light bg
+  secondary: 'bg-brand-pale-orange text-brand-deep-orange border-0                        hover:opacity-[0.88]',
+  // White with border — most common "ghost" action button (Export, Edit, Clear…)
+  outline:   'bg-white          text-carbon             border border-bone                hover:bg-cream',
+  // No bg, no border — subtle inline action
+  ghost:     'bg-transparent    text-slate              border-0                          hover:bg-cream',
+  // Inline link style — no padding, orange text (Forgot password, View All…)
+  link:      'bg-transparent    text-brand-orange       border-0  !p-0                    hover:opacity-80',
+  // Dark fill — dark-theme CTAs
+  dark:      'bg-charcoal       text-white              border-0                          hover:opacity-[0.88]',
+  // Soft red — destructive actions (Flag, Delete, Cancel…)
+  danger:    'bg-error-bg       text-error              border border-[#FECACA]           hover:opacity-[0.88]',
+};
+
+const ICON_SIZE: Record<ButtonSize, number> = {
+  xs: 11,
+  sm: 12,
+  md: 14,
+  lg: 16,
 };
 
 export function Button({
   variant   = 'primary',
   size      = 'md',
   icon,
+  iconRight,
   fullWidth = false,
+  loading   = false,
+  pill      = false,
   style,
   className,
   disabled,
   children,
   ...props
 }: ButtonProps) {
+  const isDisabled = disabled || loading;
+
   return (
     <button
       className={clsx(
@@ -49,19 +76,25 @@ export function Button({
         SIZES[size],
         VARIANTS[variant],
         fullWidth && 'w-full',
-        disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
+        pill      && '!rounded-full',
+        isDisabled && 'opacity-50 cursor-not-allowed pointer-events-none',
         className,
       )}
       style={style}
-      disabled={disabled}
+      disabled={isDisabled}
       {...props}
     >
-      {icon && (
-        <span className={clsx('leading-none shrink-0', size === 'sm' ? 'text-[12px]' : 'text-[14px]')}>
-          {icon}
-        </span>
-      )}
+      {loading ? (
+        <Loader2 size={ICON_SIZE[size]} className="animate-spin shrink-0" />
+      ) : icon ? (
+        <span className="leading-none shrink-0">{icon}</span>
+      ) : null}
+
       {children}
+
+      {!loading && iconRight && (
+        <span className="leading-none shrink-0">{iconRight}</span>
+      )}
     </button>
   );
 }
