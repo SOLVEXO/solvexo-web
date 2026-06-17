@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
+import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import {
   Home, ShoppingCart, Store, DollarSign, Users, BookOpen,
   LogIn, Rocket,
@@ -29,14 +30,14 @@ const AUTH_PAGES: NavPage[] = [
 
 const SELLER_PAGES: NavPage[] = [
   { label: 'Dashboard',      path: '/seller/dashboard',        Icon: LayoutDashboard },
-  { label: 'Products',       path: '/seller/products',         Icon: ShoppingBag     },
-  { label: 'Add Product',  path: '/seller/products/add',     Icon: Plus            },
+  // { label: 'Products',       path: '/seller/products',         Icon: ShoppingBag     },
+  // { label: 'Add Product',  path: '/seller/products/add',     Icon: Plus            },
   { label: 'Digital Upload', path: '/seller/products/digital', Icon: Upload          },
   { label: 'Store Builder',  path: '/seller/store',            Icon: Store           },
   { label: 'POS Register',   path: '/seller/pos',              Icon: Monitor         },
-  { label: 'Orders',         path: '/seller/orders',           Icon: Package         },
-  { label: 'Returns',        path: '/seller/returns',          Icon: CornerUpLeft    },
-  { label: 'Inventory',      path: '/seller/inventory',        Icon: ClipboardList   },
+  // { label: 'Orders',         path: '/seller/orders',           Icon: Package         },
+  // { label: 'Returns',        path: '/seller/returns',          Icon: CornerUpLeft    },
+  // { label: 'Inventory',      path: '/seller/inventory',        Icon: ClipboardList   },
   { label: 'AI Studio',      path: '/seller/ai',               Icon: Sparkles        },
   { label: 'Analytics',      path: '/seller/analytics',        Icon: BarChart2       },
   { label: 'SEO',            path: '/seller/seo',              Icon: Search          },
@@ -51,26 +52,29 @@ const SELLER_PAGES: NavPage[] = [
   { label: 'Integrations',   path: '/seller/integrations',     Icon: Plug            },
   { label: 'Activity Log',   path: '/seller/activity',         Icon: Activity        },
   { label: 'Settings',       path: '/seller/settings',         Icon: Settings        },
-  { label: 'Categories',     path: '/seller/categories',       Icon: FolderOpen      },
+  // { label: 'Categories',     path: '/seller/categories',       Icon: FolderOpen      },
 ];
 
 const ADMIN_PAGES: NavPage[] = [
-  { label: 'Admin Panel', path: '/admin/moderation', Icon: Shield },
+  { label: 'Admin Panel', path: '/admin', Icon: Shield },
 ];
 
 // ── NavChip with Lucide icon ──────────────────────────────────────────────────
-function NavChip({ label, path, Icon, active }: NavPage & { active: boolean }) {
+function NavChip({ label, path, Icon, active, disabled }: NavPage & { active: boolean; disabled?: boolean }) {
   const navigate = useNavigate();
   return (
     <button
-      onClick={() => navigate(path)}
+      onClick={() => { if (!disabled) navigate(path); }}
+      title={disabled ? 'Not available for your role' : undefined}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 5,
         padding: '5px 10px', borderRadius: 7, fontSize: 12,
         fontWeight: active ? 600 : 400, fontFamily: "'Poppins', sans-serif",
-        cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', flexShrink: 0,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        border: 'none', whiteSpace: 'nowrap', flexShrink: 0,
         background: active ? '#D97757' : 'transparent',
         color: active ? '#fff' : '#8C8A82',
+        opacity: disabled ? 0.35 : 1,
         transition: 'all 0.15s',
       }}
     >
@@ -105,6 +109,11 @@ function Pipe() {
 // ── Main Component ────────────────────────────────────────────────────────────
 export function ReferenceNav() {
   const { pathname } = useLocation();
+  const { profile } = useGetProfile();
+
+  const role = profile?.role;
+  const isSeller = role === 'seller' || role === 'admin';
+  const isAdmin  = role === 'admin';
 
   const isActive = (path: string) => {
     if (path === '/') return pathname === '/';
@@ -146,12 +155,12 @@ export function ReferenceNav() {
       <Pipe />
 
       <SectionLabel>Seller</SectionLabel>
-      {SELLER_PAGES.map(p => <NavChip key={p.path} {...p} active={isActive(p.path)} />)}
+      {SELLER_PAGES.map(p => <NavChip key={p.path} {...p} active={isActive(p.path)} disabled={!isSeller} />)}
 
       <Pipe />
 
       <SectionLabel>Admin</SectionLabel>
-      {ADMIN_PAGES.map(p => <NavChip key={p.path} {...p} active={isActive(p.path)} />)}
+      {ADMIN_PAGES.map(p => <NavChip key={p.path} {...p} active={isActive(p.path)} disabled={!isAdmin} />)}
     </div>
   );
 }

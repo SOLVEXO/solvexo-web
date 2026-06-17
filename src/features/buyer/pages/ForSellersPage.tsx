@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Button } from '@/components/ui/Button';
-import { Avatar } from '@/components/ui/Avatar';
+import { Button } from '@/components/comman/ui/Button';
+import { Avatar } from '@/components/comman/ui/Avatar';
 import { ArrowRight, GraduationCap, Palette, Store, Gem, Briefcase, Building2, ShoppingBag, Hammer, Download, Sparkles, BarChart2, Monitor, CreditCard, Lock } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 

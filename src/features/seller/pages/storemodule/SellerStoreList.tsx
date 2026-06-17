@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Store, Plus, MoreVertical, Eye, Pencil } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/comman/ui/Button';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useMyStores } from '@/hooks/store/useMyStores';
 import { usePageTitle } from '@/hooks/usePageTitle';

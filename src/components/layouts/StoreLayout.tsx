@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, Sparkles, Bell, ChevronLeft,
 } from 'lucide-react';
-import { SolvexoIcon } from '@/components/ui/SolvexoLogo';
+import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/commerce/store';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────

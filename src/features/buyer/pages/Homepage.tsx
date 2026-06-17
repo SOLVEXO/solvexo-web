@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Avatar } from '@/components/ui/Avatar';
+import { Button } from '@/components/comman/ui/Button';
+import { Card } from '@/components/comman/ui/Card';
+import { Avatar } from '@/components/comman/ui/Avatar';
 import { ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 

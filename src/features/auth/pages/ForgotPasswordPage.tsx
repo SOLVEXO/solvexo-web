@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useForgotPassword } from '@/hooks/auth/useForgotPassword';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/comman/ui/Button';
 import { useForm } from '@/hooks/useForm';
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/utils/validation/schemas';
 

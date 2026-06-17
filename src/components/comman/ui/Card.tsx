@@ -40,7 +40,6 @@ export function Card({
         'bg-white rounded-[10px] border border-bone',
         shadow && 'shadow-[0_1px_4px_rgba(0,0,0,0.04)]',
         PADDING[padding],
-        hover  && 'transition-shadow duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]',
         (hover || !!onClick) && 'cursor-pointer',
         className,
       )}

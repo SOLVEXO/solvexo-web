@@ -5,10 +5,10 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductsByCategory } from '@/hooks/marketplace/useProductsByCategory';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { TabBar, Pagination, FilterDropdown } from '@/components/ui';
-import type { Tab } from '@/components/ui';
+import { Button } from '@/components/comman/ui/Button';
+import { Card } from '@/components/comman/ui/Card';
+import { TabBar, Pagination, FilterDropdown } from '@/components/comman/ui';
+import type { Tab } from '@/components/comman/ui';
 import { ShoppingCart, ShoppingBag, Star, Heart, ImageOff, Loader2 } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/commerce/marketplace';
 

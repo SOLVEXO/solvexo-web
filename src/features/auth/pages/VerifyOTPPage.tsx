@@ -1,7 +1,7 @@
 import { useState, useRef, type KeyboardEvent } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useVerifyOtp } from '@/hooks/auth/useVerifyOtp';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/comman/ui/Button';
 import { AlertTriangle, ArrowRight, Check } from 'lucide-react';
 import { runSchema, otpSchema } from '@/utils/validation/schemas';
 import { AuthContext } from '@/api/commerce/auth';

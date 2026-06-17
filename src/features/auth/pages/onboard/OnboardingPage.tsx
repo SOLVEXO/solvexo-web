@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCreateStore } from '@/hooks/store/useCreateStore';
-import { Button } from '@/components/ui/Button';
-import { SolvexoLogo } from '@/components/ui/SolvexoLogo';
+import { Button } from '@/components/comman/ui/Button';
+import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import {
   Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
   Package, Download, Calendar, Repeat, MonitorSmartphone,

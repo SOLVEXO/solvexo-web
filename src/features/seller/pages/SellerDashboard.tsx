@@ -6,7 +6,7 @@ import {
   Package, Monitor, Sparkles, BarChart2, ClipboardList, ArrowRight, Store,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/comman/ui/Button';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useMyStores } from '@/hooks/store/useMyStores';
 

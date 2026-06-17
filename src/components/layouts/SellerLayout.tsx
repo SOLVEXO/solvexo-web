@@ -10,7 +10,7 @@ import {
   Megaphone, Wallet, ClipboardList, Truck, MessageSquare, Plug, Activity,
   Settings, FolderOpen, Bell, ChevronDown, List, Plus,
 } from 'lucide-react';
-import { SolvexoIcon } from '@/components/ui/SolvexoLogo';
+import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface NavItem {

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/comman/ui/Button';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ImageOff, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { clsx } from 'clsx';

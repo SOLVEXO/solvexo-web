@@ -4,9 +4,9 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/comman/ui/Button';
+import { Badge } from '@/components/comman/ui/Badge';
+import { Card } from '@/components/comman/ui/Card';
 import {
   ArrowRight, ArrowLeft, Package, Download, ClipboardList, CheckCircle,
   Search, ShoppingCart, Star, Link2, Mail, Smartphone, ImageOff, Loader2, Heart,

@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Avatar } from '@/components/ui/Avatar';
-import { Badge } from '@/components/ui/Badge';
-import { SolvexoIcon } from '@/components/ui/SolvexoLogo';
+import { Avatar } from '@/components/comman/ui/Avatar';
+import { Badge } from '@/components/comman/ui/Badge';
+import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import {
   ArrowRight, ShoppingCart, ClipboardList, Package, BarChart2,
   Camera, CreditCard, Banknote, Smartphone, Zap, CheckCircle,
