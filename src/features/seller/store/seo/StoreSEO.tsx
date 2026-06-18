@@ -48,7 +48,7 @@ function ScoreCircle({ score }: { score: number }) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function SellerSEO() {
+export function StoreSEO() {
   usePageTitle('SEO');
   const [selectedId, setSelectedId] = useState('grade5');
   const selected = PRODUCTS.find(p => p.id === selectedId) ?? PRODUCTS[0];

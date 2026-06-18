@@ -36,8 +36,6 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'Workspace',
     items: [
       { id: 'dashboard',   Icon: LayoutDashboard, label: 'Dashboard',      path: '/seller/dashboard'        },
-      { id: 'orders',      Icon: Package,          label: 'Orders',          path: '/seller/orders'           },
-      { id: 'returns',     Icon: CornerUpLeft,     label: 'Returns',         path: '/seller/returns'          },
       {
         id: 'my-store', Icon: Store, label: 'My Store',
         children: [
@@ -48,17 +46,8 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'Analytics',
-    items: [
-      { id: 'analytics', Icon: BarChart2, label: 'Analytics',  path: '/seller/analytics' },
-      { id: 'seo',        Icon: Search,   label: 'SEO',         path: '/seller/seo'       },
-      { id: 'ai',         Icon: Sparkles, label: 'AI Studio',   path: '/seller/ai'        },
-    ],
-  },
-  {
     label: 'Customers',
     items: [
-      { id: 'customers',     Icon: Users,      label: 'Customers',    path: '/seller/customers'     },
       { id: 'loyalty',       Icon: Star,       label: 'Loyalty',    path: '/seller/loyalty'       },
       { id: 'subscriptions', Icon: RefreshCw,  label: 'Subscriptions',path: '/seller/subscriptions' },
       { id: 'marketing',     Icon: Megaphone,  label: 'Marketing',    path: '/seller/marketing'     },
@@ -67,11 +56,9 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Operations',
     items: [
-      { id: 'finance',      Icon: Wallet,        label: 'Finance',       path: '/seller/finance'       },
       { id: 'inventory',    Icon: ClipboardList, label: 'Inventory',     path: '/seller/inventory'     },
       { id: 'shipping',     Icon: Truck,         label: 'Shipping',      path: '/seller/shipping'      },
       { id: 'messages',     Icon: MessageSquare, label: 'Messages',      path: '/seller/messages'      },
-      { id: 'reviews',      Icon: Star,          label: 'Reviews',       path: '/seller/reviews'       },
       { id: 'integrations', Icon: Plug,          label: 'Integrations',  path: '/seller/integrations'  },
       { id: 'activity',     Icon: Activity,      label: 'Activity Log',  path: '/seller/activity'      },
       { id: 'settings',     Icon: Settings,      label: 'Settings',      path: '/seller/settings'      },

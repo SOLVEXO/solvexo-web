@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, Bell, ChevronLeft, Monitor, Store,
+  Settings, Sparkles, Bell, ChevronLeft, Monitor, Store, Search, Star, Wallet,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/commerce/store';
@@ -36,16 +36,24 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { id: 'dashboard',      Icon: LayoutDashboard, label: 'Dashboard',     path: 'dashboard'  },
       { id: 'orders',         Icon: Package,         label: 'Orders',        path: 'orders'     },
       { id: 'products',       Icon: ShoppingBag,     label: 'Products',      path: 'products'   },
-      { id: 'customers',      Icon: Users,           label: 'Customers',     path: 'customer/list'  },
+      { id: 'customers',      Icon: Users,           label: 'Customers',     path: 'returns'  },
       { id: 'pos',            Icon: Monitor,         label: 'POS Register',  path: 'pos'  },
       { id: 'store-builder',  Icon: Store,           label: 'Store Builder', path: 'storebuilder'  },
-
     ],
   },
   {
     group: 'Analytics',
     items: [
-      { id: 'analytics',  Icon: BarChart2,        label: 'Analytics',  path: 'analytics'  },
+      { id: 'analytics', Icon: BarChart2, label: 'Analytics',  path: 'analytics' },
+      { id: 'seo',        Icon: Search,   label: 'SEO',         path: 'seo'       },
+      { id: 'ai',         Icon: Sparkles, label: 'AI Studio',   path: 'ai/studio'        },
+    ],
+  },
+  {
+    group: 'Operations',
+    items: [
+      { id: 'reviews',      Icon: Star,          label: 'Reviews',       path: 'reviews'       },
+      { id: 'finance',      Icon: Wallet,      label: 'Finance',       path: 'finance'       },
     ],
   },
   {

@@ -27,7 +27,7 @@ const metrics = [
 ] as const;
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function SellerReturns() {
+export function StoreReturnList() {
   usePageTitle('Returns');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');

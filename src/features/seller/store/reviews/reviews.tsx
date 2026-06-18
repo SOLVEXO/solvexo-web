@@ -43,7 +43,7 @@ function Stars({ count, large }: { count: number; large?: boolean }) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function SellerReviews() {
+export function StoreReviews() {
   usePageTitle('Reviews');
   const [ratingFilter, setRatingFilter] = useState('');
   const [sortFilter,   setSortFilter]   = useState('');

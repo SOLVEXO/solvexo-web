@@ -23,7 +23,7 @@ const inputCls = 'w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg
 const labelCls = 'text-xs font-medium text-[#4A4945] mb-[6px] block';
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function SellerAIStudio() {
+export function StoreAIStudio() {
   usePageTitle('AI Studio');
   const [activeAI,  setActiveAI]  = useState<AITool>('listing');
   const [tone,      setTone]      = useState<'Professional' | 'Friendly' | 'Academic'>('Professional');

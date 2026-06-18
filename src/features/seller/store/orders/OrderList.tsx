@@ -48,7 +48,7 @@ const metrics = [
 ] as const;
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function SellerOrders() {
+export function StoreOrderList() {
   usePageTitle('Orders');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');

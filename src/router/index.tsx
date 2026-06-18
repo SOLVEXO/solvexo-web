@@ -30,21 +30,16 @@ import { NewPasswordPage }      from '@/features/auth/pages/NewPasswordPage';
 
 // ── Seller Pages ──────────────────────────────────────────────────────────────
 import { SellerDashboard }    from '@/features/seller/dashboard/SellerDashboard';
-import { SellerOrders }       from '@/features/seller/dashboard/SellerOrders';
 import { SellerInventory }    from '@/features/seller/dashboard/SellerInventory';
-import { SellerAnalytics }    from '@/features/seller/dashboard/SellerAnalytics';
-import { SellerAIStudio }     from '@/features/seller/dashboard/SellerAIStudio';
 import { SellerMarketing }    from '@/features/seller/dashboard/SellerMarketing';
 import { SellerCategories }   from '@/features/seller/dashboard/SellerCategories';
 import { StoreBuilder }       from '@/features/seller/dashboard/storemodule/StoreBuilder';
 import { SellerSettings }     from '@/features/seller/dashboard/settings/SellerSettings';
 import { POSRegister }        from '@/features/seller/store/pos/POSRegister';
-import { SellerReturns }      from '@/features/seller/dashboard/SellerReturns';
-import { SellerSEO }          from '@/features/seller/dashboard/SellerSEO';
-import { SellerFinance }      from '@/features/seller/dashboard/SellerFinance';
+import { StoreSEO }          from '@/features/seller/store/seo/StoreSEO';
 import { SellerShipping }     from '@/features/seller/dashboard/SellerShipping';
 import { SellerMessages }     from '@/features/seller/dashboard/SellerMessages';
-import { SellerReviews }      from '@/features/seller/dashboard/SellerReviews';
+import { StoreReviews }      from '@/features/seller/store/reviews/reviews';
 import { SellerLoyalty }      from '@/features/seller/dashboard/SellerLoyalty';
 import { SellerSubscriptions } from '@/features/seller/dashboard/SellerSubscriptions';
 import { SellerIntegrations } from '@/features/seller/dashboard/SellerIntegrations';
@@ -54,14 +49,17 @@ import { SellerStoreList } from '@/features/seller/dashboard/storemodule/SellerS
 // ── Store Workspace (own layout, own sidebar) ─────────────────────────────────
 import { StoreLayout }    from '@/components/layouts/StoreLayout';
 import StoreDashboard     from '@/features/seller/store/StoreDashboard';
-import StoreOrders        from '@/features/seller/store/StoreOrders';
 import StoreProductList   from '@/features/seller/store/products/StoreProductList';
 import StoreAddProduct    from '@/features/seller/store/products/StoreAddProduct';
 import StoreEditProduct   from '@/features/seller/store/products/StoreEditProduct';
 import StoreProductDetail from '@/features/seller/store/products/StoreProductDetail';
 import StoreCustomerList     from '@/features/seller/store/customer/CustomerList';
-import StoreAnalytics     from '@/features/seller/store/StoreAnalytics';
 import StoreSettings      from '@/features/seller/store/StoreSettings';
+import { StoreOrderList }     from '@/features/seller/store/orders/OrderList';
+import { StoreReturnList }      from '@/features/seller/store/returns/ReturnList';
+import { StoreAnalytics }    from '@/features/seller/store/analytics/Analytics';
+import { StoreAIStudio }     from '@/features/seller/store/ai/AiStudio';
+import { StoreFinance }      from '@/features/seller/store/finance/Finance';
 
 // ── Admin Pages ───────────────────────────────────────────────────────────────
 import { AdminOverview }      from '@/features/admin/pages/AdminOverview';
@@ -117,19 +115,12 @@ export const router = createBrowserRouter([
         children: [
           { index: true,              element: <Navigate to="/seller/dashboard" replace /> },
           { path: 'dashboard',        element: <SellerDashboard /> },
-          { path: 'orders',           element: <SellerOrders /> },
-          { path: 'returns',          element: <SellerReturns /> },
           { path: 'inventory',        element: <SellerInventory /> },
-          { path: 'analytics',        element: <SellerAnalytics /> },
-          { path: 'seo',              element: <SellerSEO /> },
-          { path: 'ai',               element: <SellerAIStudio /> },
           { path: 'loyalty',          element: <SellerLoyalty /> },
           { path: 'subscriptions',    element: <SellerSubscriptions /> },
           { path: 'marketing',        element: <SellerMarketing /> },
-          { path: 'finance',          element: <SellerFinance /> },
           { path: 'shipping',         element: <SellerShipping /> },
           { path: 'messages',         element: <SellerMessages /> },
-          { path: 'reviews',          element: <SellerReviews /> },
           { path: 'integrations',     element: <SellerIntegrations /> },
           { path: 'activity',         element: <SellerActivity /> },
           { path: 'stores',             element: <SellerStoreList /> },
@@ -146,7 +137,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true,            element: <Navigate to="dashboard" replace /> },
           { path: 'dashboard',      element: <StoreDashboard /> },
-          { path: 'orders',         element: <StoreOrders /> },
+          { path: 'orders',         element: <StoreOrderList /> },
           { path: 'products',                    element: <StoreProductList /> },
           { path: 'products/add',              element: <StoreAddProduct /> },
           { path: 'products/edit/:productId',   element: <StoreEditProduct /> },
@@ -155,6 +146,13 @@ export const router = createBrowserRouter([
           { path: 'analytics',      element: <StoreAnalytics /> },
           { path: 'settings',       element: <StoreSettings /> },
           { path: 'storebuilder',  element: <StoreBuilder /> },
+          { path: 'returns',          element: <StoreReturnList /> },
+          { path: 'analytics',        element: <StoreAnalytics /> },
+          { path: 'seo',              element: <StoreSEO /> },
+          { path: 'ai/studio',               element: <StoreAIStudio /> },
+          { path: 'reviews',          element: <StoreReviews /> },
+          { path: 'finance',          element: <StoreFinance /> },
+
         ],
       },
 
