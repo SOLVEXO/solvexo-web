@@ -1,79 +1,87 @@
+import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 
-// Root wrapper (reference nav + outlet)
-import { RootLayout }       from '@/components/layouts/RootLayout';
+// Root wrapper (reference nav + outlet + global Suspense)
+import { RootLayout }   from '@/components/layouts/RootLayout';
 
-// Layouts
-import { PublicLayout }     from '@/components/layouts/PublicLayout';
-import { SellerLayout }     from '@/components/layouts/SellerLayout';
-import { AdminLayout }      from '@/components/layouts/AdminLayout';
+// Layouts — eagerly imported (needed as wrappers immediately)
+import { PublicLayout } from '@/components/layouts/PublicLayout';
+import { SellerLayout } from '@/components/layouts/SellerLayout';
+import { AdminLayout }  from '@/components/layouts/AdminLayout';
+import { StoreLayout }  from '@/components/layouts/StoreLayout';
 
-// ── Public / Buyer Pages ──────────────────────────────────────────────────────
-import { Homepage }             from '@/features/buyer/pages/Homepage';
-import { UserProfile }          from '@/features/buyer/pages/settings/UserProfile';
-import { Marketplace }          from '@/features/buyer/pages/Marketplace';
-import { ProductDetail }        from '@/features/buyer/pages/ProductDetail';
-import { CartPage }             from '@/features/buyer/pages/CartPage';
-import { SellerStorefront }     from '@/features/buyer/pages/SellerStorefront';
-import { EducationMarketplace } from '@/features/buyer/pages/EducationMarketplace';
-import { PricingPage }          from '@/features/buyer/pages/PricingPage';
-import { ForSellersPage }       from '@/features/buyer/pages/ForSellersPage';
+// ── Lazy helpers ──────────────────────────────────────────────────────────────
+const named = <T extends Record<string, unknown>>(
+  p: Promise<T>,
+  key: keyof T,
+): Promise<{ default: T[keyof T] }> =>
+  p.then(m => ({ default: m[key] }));
+
+// ── Public / Buyer ────────────────────────────────────────────────────────────
+const Homepage             = lazy(() => named(import('@/features/buyer/pages/Homepage'),                         'Homepage'));
+const UserProfile          = lazy(() => named(import('@/features/buyer/pages/settings/UserProfile'),            'UserProfile'));
+const Marketplace          = lazy(() => named(import('@/features/buyer/pages/Marketplace'),                     'Marketplace'));
+const ProductDetail        = lazy(() => named(import('@/features/buyer/pages/ProductDetail'),                   'ProductDetail'));
+const CartPage             = lazy(() => named(import('@/features/buyer/pages/CartPage'),                        'CartPage'));
+const SellerStorefront     = lazy(() => named(import('@/features/buyer/pages/SellerStorefront'),                'SellerStorefront'));
+const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/EducationMarketplace'),            'EducationMarketplace'));
+const PricingPage          = lazy(() => named(import('@/features/buyer/pages/PricingPage'),                     'PricingPage'));
+const ForSellersPage       = lazy(() => named(import('@/features/buyer/pages/ForSellersPage'),                  'ForSellersPage'));
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
-import { LoginPage }            from '@/features/auth/pages/LoginPage';
-import { AdminLoginPage }       from '@/features/auth/pages/admin/AdminLoginPage';
-import { RegisterPage }         from '@/features/auth/pages/RegisterPage';
-import { OnboardingPage }       from '@/features/auth/pages/onboard/OnboardingPage';
-import { ForgotPasswordPage }   from '@/features/auth/pages/ForgotPasswordPage';
-import { VerifyOTPPage }        from '@/features/auth/pages/VerifyOTPPage';
-import { NewPasswordPage }      from '@/features/auth/pages/NewPasswordPage';
+const LoginPage            = lazy(() => named(import('@/features/auth/pages/LoginPage'),                        'LoginPage'));
+const AdminLoginPage       = lazy(() => named(import('@/features/auth/pages/admin/AdminLoginPage'),             'AdminLoginPage'));
+const RegisterPage         = lazy(() => named(import('@/features/auth/pages/RegisterPage'),                     'RegisterPage'));
+const OnboardingPage       = lazy(() => named(import('@/features/auth/pages/onboard/OnboardingPage'),          'OnboardingPage'));
+const ForgotPasswordPage   = lazy(() => named(import('@/features/auth/pages/ForgotPasswordPage'),              'ForgotPasswordPage'));
+const VerifyOTPPage        = lazy(() => named(import('@/features/auth/pages/VerifyOTPPage'),                    'VerifyOTPPage'));
+const NewPasswordPage      = lazy(() => named(import('@/features/auth/pages/NewPasswordPage'),                  'NewPasswordPage'));
 
-// ── Seller Pages ──────────────────────────────────────────────────────────────
-import { SellerDashboard }    from '@/features/seller/dashboard/SellerDashboard';
-import { SellerCategories }   from '@/features/seller/dashboard/SellerCategories';
-import { StoreBuilder }       from '@/features/seller/dashboard/storemodule/StoreBuilder';
-import { SellerSettings }     from '@/features/seller/dashboard/settings/SellerSettings';
-import { SellerShipping }     from '@/features/seller/dashboard/SellerShipping';
-import { SellerMessages }     from '@/features/seller/dashboard/SellerMessages';
-import { SellerSubscriptions } from '@/features/seller/dashboard/SellerSubscriptions';
-import { SellerStoreList }    from '@/features/seller/dashboard/storemodule/SellerStoreList';
-import { POSRegister }        from '@/features/seller/store/pos/POSRegister';
+// ── Seller ────────────────────────────────────────────────────────────────────
+const SellerDashboard      = lazy(() => named(import('@/features/seller/dashboard/SellerDashboard'),            'SellerDashboard'));
+const SellerCategories     = lazy(() => named(import('@/features/seller/dashboard/SellerCategories'),           'SellerCategories'));
+const StoreBuilder         = lazy(() => named(import('@/features/seller/dashboard/storemodule/StoreBuilder'),   'StoreBuilder'));
+const SellerSettings       = lazy(() => named(import('@/features/seller/dashboard/settings/SellerSettings'),   'SellerSettings'));
+const SellerShipping       = lazy(() => named(import('@/features/seller/dashboard/SellerShipping'),             'SellerShipping'));
+const SellerMessages       = lazy(() => named(import('@/features/seller/dashboard/SellerMessages'),             'SellerMessages'));
+const SellerSubscriptions  = lazy(() => named(import('@/features/seller/dashboard/SellerSubscriptions'),       'SellerSubscriptions'));
+const SellerStoreList      = lazy(() => named(import('@/features/seller/dashboard/storemodule/SellerStoreList'),'SellerStoreList'));
+const POSRegister          = lazy(() => named(import('@/features/seller/store/pos/POSRegister'),                'POSRegister'));
 
-// ── Store Workspace (own layout, own sidebar) ─────────────────────────────────
-import { StoreLayout }        from '@/components/layouts/StoreLayout';
-import StoreDashboard         from '@/features/seller/store/Dashboard/StoreDashboard';
-import StoreProductList       from '@/features/seller/store/Dashboard/StoreSection/products/StoreProductList';
-import StoreAddProduct        from '@/features/seller/store/Dashboard/StoreSection/products/StoreAddProduct';
-import StoreEditProduct       from '@/features/seller/store/Dashboard/StoreSection/products/StoreEditProduct';
-import StoreProductDetail     from '@/features/seller/store/Dashboard/StoreSection/products/StoreProductDetail';
-import StoreCustomerList      from '@/features/seller/store/Dashboard/StoreSection/customer/CustomerList';
-import StoreSettings          from '@/features/seller/store/Dashboard/Manage/StoreSettings';
-import { StoreOrderList }     from '@/features/seller/store/Dashboard/StoreSection/orders/OrderList';
-import { StoreReturnList }    from '@/features/seller/store/Dashboard/StoreSection/returns/ReturnList';
-import { StoreAnalytics }     from '@/features/seller/store/Dashboard/Analytic/analytics/Analytics';
-import { StoreAIStudio }      from '@/features/seller/store/Dashboard/Analytic/ai/AiStudio';
-import { StoreSEO }           from '@/features/seller/store/Dashboard/Analytic/seo/StoreSEO';
-import { StoreFinance }       from '@/features/seller/store/Dashboard/Operations/finance/Finance';
-import { StoreReviews }       from '@/features/seller/store/Dashboard/Operations/reviews/reviews';
-import { StoreInventory }     from '@/features/seller/store/Dashboard/Operations/inventory/Inventory';
-import { StoreMarketing }     from '@/features/seller/store/Dashboard/Operations/marketing/Marketing';
-import { StoreLoyalty }       from '@/features/seller/store/Dashboard/Operations/loyalty/Loyalty';
-import { StoreIntegrations }  from '@/features/seller/store/Dashboard/Operations/integrations/Integrations';
-import { StoreActivity }      from '@/features/seller/store/Dashboard/Operations/activity/Activity';
+// ── Store Workspace ───────────────────────────────────────────────────────────
+const StoreDashboard     = lazy(() => import('@/features/seller/store/Dashboard/StoreDashboard'));
+const StoreProductList   = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreProductList'));
+const StoreAddProduct    = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreAddProduct'));
+const StoreEditProduct   = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreEditProduct'));
+const StoreProductDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreProductDetail'));
+const StoreCustomerList  = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomerList'));
+const StoreSettings      = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreSettings'));
+const StoreOrderList     = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList'),        'StoreOrderList'));
+const StoreReturnList    = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/returns/ReturnList'),      'StoreReturnList'));
+const StoreAnalytics     = lazy(() => named(import('@/features/seller/store/Dashboard/Analytic/analytics/Analytics'),        'StoreAnalytics'));
+const StoreAIStudio      = lazy(() => named(import('@/features/seller/store/Dashboard/Analytic/ai/AiStudio'),                'StoreAIStudio'));
+const StoreSEO           = lazy(() => named(import('@/features/seller/store/Dashboard/Analytic/seo/StoreSEO'),               'StoreSEO'));
+const StoreFinance       = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/finance/Finance'),          'StoreFinance'));
+const StoreReviews       = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/reviews/reviews'),          'StoreReviews'));
+const StoreInventory     = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/inventory/Inventory'),      'StoreInventory'));
+const StoreMarketing     = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/marketing/Marketing'),      'StoreMarketing'));
+const StoreLoyalty       = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/loyalty/Loyalty'),          'StoreLoyalty'));
+const StoreIntegrations  = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/integrations/Integrations'),'StoreIntegrations'));
+const StoreActivity      = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/activity/Activity'),        'StoreActivity'));
 
-// ── Admin Pages ───────────────────────────────────────────────────────────────
-import { AdminOverview }      from '@/features/admin/pages/AdminOverview';
-import { AdminUsers }         from '@/features/admin/pages/AdminUsers';
-import { AdminModeration }    from '@/features/admin/pages/AdminModeration';
-import { AdminMarketplace }   from '@/features/admin/pages/AdminMarketplace';
-import { AdminFinance }       from '@/features/admin/pages/AdminFinance';
-import { AdminAnnouncements } from '@/features/admin/pages/AdminAnnouncements';
-import { AdminConfig }        from '@/features/admin/pages/AdminConfig';
-import { AdminSettings }      from '@/features/admin/pages/settings/AdminSettings';
+// ── Admin ─────────────────────────────────────────────────────────────────────
+const AdminOverview      = lazy(() => named(import('@/features/admin/pages/AdminOverview'),                     'AdminOverview'));
+const AdminUsers         = lazy(() => named(import('@/features/admin/pages/AdminUsers'),                        'AdminUsers'));
+const AdminModeration    = lazy(() => named(import('@/features/admin/pages/AdminModeration'),                   'AdminModeration'));
+const AdminMarketplace   = lazy(() => named(import('@/features/admin/pages/AdminMarketplace'),                  'AdminMarketplace'));
+const AdminFinance       = lazy(() => named(import('@/features/admin/pages/AdminFinance'),                      'AdminFinance'));
+const AdminAnnouncements = lazy(() => named(import('@/features/admin/pages/AdminAnnouncements'),                'AdminAnnouncements'));
+const AdminConfig        = lazy(() => named(import('@/features/admin/pages/AdminConfig'),                       'AdminConfig'));
+const AdminSettings      = lazy(() => named(import('@/features/admin/pages/settings/AdminSettings'),           'AdminSettings'));
 
+// ── Router ────────────────────────────────────────────────────────────────────
 export const router = createBrowserRouter([
   {
-    // RootLayout wraps EVERYTHING — adds the reference nav bar at top
     element: <RootLayout />,
     children: [
 
@@ -82,9 +90,9 @@ export const router = createBrowserRouter([
         path: '/',
         element: <PublicLayout />,
         children: [
-          { index: true,          element: <Homepage /> },
-          { path: 'pricing',      element: <PricingPage /> },
-          { path: 'sellers',      element: <ForSellersPage /> },
+          { index: true,             element: <Homepage /> },
+          { path: 'pricing',         element: <PricingPage /> },
+          { path: 'sellers',         element: <ForSellersPage /> },
           { path: 'account/profile', element: <UserProfile /> },
         ],
       },
@@ -106,22 +114,22 @@ export const router = createBrowserRouter([
       { path: '/new-password',    element: <NewPasswordPage /> },
 
       // ── POS — standalone (no seller sidebar) ──────────────────────────
-      { path: '/seller/store/:storeId/pos',      element: <POSRegister /> },
+      { path: '/seller/store/:storeId/pos', element: <POSRegister /> },
 
       // ── Seller pages with dark sidebar ────────────────────────────────
       {
         path: '/seller',
         element: <SellerLayout />,
         children: [
-          { index: true,              element: <Navigate to="/seller/dashboard" replace /> },
-          { path: 'dashboard',        element: <SellerDashboard /> },
-          { path: 'subscriptions',    element: <SellerSubscriptions /> },
-          { path: 'shipping',         element: <SellerShipping /> },
-          { path: 'messages',         element: <SellerMessages /> },
-          { path: 'stores',             element: <SellerStoreList /> },
-          { path: 'store',            element: <StoreBuilder /> },
-          { path: 'settings',         element: <SellerSettings /> },
-          { path: 'categories',       element: <SellerCategories /> },
+          { index: true,           element: <Navigate to="/seller/dashboard" replace /> },
+          { path: 'dashboard',     element: <SellerDashboard /> },
+          { path: 'subscriptions', element: <SellerSubscriptions /> },
+          { path: 'shipping',      element: <SellerShipping /> },
+          { path: 'messages',      element: <SellerMessages /> },
+          { path: 'stores',        element: <SellerStoreList /> },
+          { path: 'store',         element: <StoreBuilder /> },
+          { path: 'settings',      element: <SellerSettings /> },
+          { path: 'categories',    element: <SellerCategories /> },
         ],
       },
 
@@ -130,27 +138,27 @@ export const router = createBrowserRouter([
         path: '/seller/store/:storeId',
         element: <StoreLayout />,
         children: [
-          { index: true,            element: <Navigate to="dashboard" replace /> },
-          { path: 'dashboard',      element: <StoreDashboard /> },
-          { path: 'orders',         element: <StoreOrderList /> },
-          { path: 'products',                    element: <StoreProductList /> },
-          { path: 'products/add',              element: <StoreAddProduct /> },
-          { path: 'products/edit/:productId',   element: <StoreEditProduct /> },
-          { path: 'products/detail/:productId', element: <StoreProductDetail /> },
-          { path: 'customer/list',      element: <StoreCustomerList /> },
-          { path: 'analytics',      element: <StoreAnalytics /> },
-          { path: 'settings',       element: <StoreSettings /> },
-          { path: 'storebuilder',   element: <StoreBuilder /> },
-          { path: 'returns',        element: <StoreReturnList /> },
-          { path: 'seo',              element: <StoreSEO /> },
-          { path: 'ai/studio',               element: <StoreAIStudio /> },
-          { path: 'reviews',          element: <StoreReviews /> },
-          { path: 'finance',          element: <StoreFinance /> },
-          { path: 'inventory',        element: <StoreInventory /> },
-          { path: 'marketing',        element: <StoreMarketing /> },
-          { path: 'loyalty',          element: <StoreLoyalty /> },
-          { path: 'integrations',     element: <StoreIntegrations /> },
-          { path: 'activity',         element: <StoreActivity /> },
+          { index: true,                              element: <Navigate to="dashboard" replace /> },
+          { path: 'dashboard',                        element: <StoreDashboard /> },
+          { path: 'orders',                           element: <StoreOrderList /> },
+          { path: 'products',                         element: <StoreProductList /> },
+          { path: 'products/add',                     element: <StoreAddProduct /> },
+          { path: 'products/edit/:productId',         element: <StoreEditProduct /> },
+          { path: 'products/detail/:productId',       element: <StoreProductDetail /> },
+          { path: 'customer/list',                    element: <StoreCustomerList /> },
+          { path: 'analytics',                        element: <StoreAnalytics /> },
+          { path: 'settings',                         element: <StoreSettings /> },
+          { path: 'storebuilder',                     element: <StoreBuilder /> },
+          { path: 'returns',                          element: <StoreReturnList /> },
+          { path: 'seo',                              element: <StoreSEO /> },
+          { path: 'ai/studio',                        element: <StoreAIStudio /> },
+          { path: 'reviews',                          element: <StoreReviews /> },
+          { path: 'finance',                          element: <StoreFinance /> },
+          { path: 'inventory',                        element: <StoreInventory /> },
+          { path: 'marketing',                        element: <StoreMarketing /> },
+          { path: 'loyalty',                          element: <StoreLoyalty /> },
+          { path: 'integrations',                     element: <StoreIntegrations /> },
+          { path: 'activity',                         element: <StoreActivity /> },
         ],
       },
 
@@ -159,14 +167,14 @@ export const router = createBrowserRouter([
         path: '/admin',
         element: <AdminLayout />,
         children: [
-          { index: true,           element: <AdminOverview /> },
-          { path: 'users',         element: <AdminUsers /> },
-          { path: 'moderation',    element: <AdminModeration /> },
-          { path: 'marketplace',   element: <AdminMarketplace /> },
-          { path: 'finance',       element: <AdminFinance /> },
-          { path: 'announcements', element: <AdminAnnouncements /> },
-          { path: 'config',        element: <AdminConfig /> },
-          { path: 'settings',      element: <AdminSettings /> },
+          { index: true,          element: <AdminOverview /> },
+          { path: 'users',        element: <AdminUsers /> },
+          { path: 'moderation',   element: <AdminModeration /> },
+          { path: 'marketplace',  element: <AdminMarketplace /> },
+          { path: 'finance',      element: <AdminFinance /> },
+          { path: 'announcements',element: <AdminAnnouncements /> },
+          { path: 'config',       element: <AdminConfig /> },
+          { path: 'settings',     element: <AdminSettings /> },
         ],
       },
 

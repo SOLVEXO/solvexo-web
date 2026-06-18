@@ -4,9 +4,9 @@ import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import {
   Home, ShoppingCart, Store, DollarSign, Users, BookOpen,
   LogIn, Rocket,
-  LayoutDashboard, Package, Plus, Upload, Monitor, ClipboardList, CornerUpLeft,
+  LayoutDashboard, Upload, Monitor,
   BarChart2, Search, Sparkles, Star, RefreshCw, Megaphone, Wallet,
-  Truck, MessageSquare, Plug, Activity, Settings, FolderOpen, ShoppingBag,
+  Truck, MessageSquare, Plug, Activity, Settings,
   Shield,
 } from 'lucide-react';
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Edit2, Package, Download, Tag, Globe,
-  ShoppingBag, Loader2, Calendar, Hash, CheckCircle, XCircle,
+  ShoppingBag, Loader2, Calendar, CheckCircle, XCircle,
 } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { apiGetMyProductById } from '@/api/commerce/product';

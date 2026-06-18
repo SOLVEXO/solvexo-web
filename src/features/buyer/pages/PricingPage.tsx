@@ -187,7 +187,6 @@ export function PricingPage() {
           return (
             <div
               key={plan.name}
-              className="rounded-[20px] p-7 relative"
               className={clsx(
                 'rounded-[20px] p-7 relative border-2',
                 isPro
