@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Star, Trophy, Gift, Users, Settings, Award, Gem } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-// ── Data ──────────────────────────────────────────────────────────────────────
 const TABS: { id: string; Icon: LucideIcon; label: string }[] = [
   { id: 'overview',      Icon: Star,     label: 'Overview'        },
   { id: 'tiers',         Icon: Trophy,   label: 'Tiers'           },
@@ -30,25 +29,24 @@ const POINTS_ACTIVITY = [
 ];
 
 const metrics = [
-  { label: 'Program Members',               value: '1,326',   trend: '+84 this month',        sub: null,                  trendUp: true  },
-  { label: 'Points Issued',                 value: '248,400', trend: 'Last 30 days',          sub: null,                  trendUp: true  },
-  { label: 'Points Redeemed',               value: '84,200',  trend: null,                    sub: '34% redemption rate', trendUp: false },
-  { label: 'Revenue from Loyal Customers',  value: '$8,200',  trend: '+31% vs non-members',   sub: null,                  trendUp: true  },
+  { label: 'Program Members',              value: '1,326',   trend: '+84 this month',       sub: null,                  trendUp: true  },
+  { label: 'Points Issued',                value: '248,400', trend: 'Last 30 days',         sub: null,                  trendUp: true  },
+  { label: 'Points Redeemed',              value: '84,200',  trend: null,                   sub: '34% redemption rate', trendUp: false },
+  { label: 'Revenue from Loyal Customers', value: '$8,200',  trend: '+31% vs non-members',  sub: null,                  trendUp: true  },
 ] as const;
 
-// ── Component ─────────────────────────────────────────────────────────────────
-export function SellerLoyalty() {
+export function StoreLoyalty() {
   usePageTitle('Loyalty');
   const [activeTab, setActiveTab] = useState('overview');
 
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="Loyalty & Rewards"
         subtitle="Build lasting customer relationships with a points-based loyalty program."
         actions={
           <>
-            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
               Program Settings
             </button>
             <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
@@ -60,20 +58,20 @@ export function SellerLoyalty() {
 
       <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
-        {/* ── Metrics ── */}
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        {/* Metrics */}
+        <div className="grid grid-cols-4 gap-3">
           {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
-              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
               {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
-              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
+              {m.sub   && <p className="text-xs text-slate mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
 
-        {/* ── Tab bar ── */}
-        <div className="flex items-center gap-0.5 border-b border-[#E8E6DC]">
+        {/* Tab bar */}
+        <div className="flex items-center gap-0.5 border-b border-bone">
           {TABS.map(tab => (
             <button
               key={tab.id}
@@ -91,13 +89,13 @@ export function SellerLoyalty() {
           ))}
         </div>
 
-        {/* ── Overview Tab ── */}
+        {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="grid gap-4" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <div className="grid grid-cols-2 gap-4">
 
             {/* Member Distribution */}
-            <div className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-              <p className="text-[14px] font-bold text-[#141413] mb-[18px]">Member Distribution</p>
+            <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[14px] font-bold text-carbon mb-[18px]">Member Distribution</p>
               <div className="flex flex-col gap-4">
                 {TIERS.map(tier => (
                   <div key={tier.name}>
@@ -106,20 +104,20 @@ export function SellerLoyalty() {
                         <tier.Icon size={18} style={{ color: tier.iconColor }} />
                         <span className="text-[13px] font-semibold text-[#4A4945]">{tier.name}</span>
                       </div>
-                      <span className="text-xs text-[#8C8A82]">{tier.members.toLocaleString()} members</span>
+                      <span className="text-xs text-slate">{tier.members.toLocaleString()} members</span>
                     </div>
-                    <div className="h-2 rounded-[4px] bg-[#E8E6DC] overflow-hidden">
+                    <div className="h-2 rounded-[4px] bg-bone overflow-hidden">
                       <div className="h-full rounded-[4px]" style={{ width: `${tier.pct}%`, background: tier.barColor }} />
                     </div>
-                    <p className="text-[11px] text-[#8C8A82] mt-[3px] text-right">{tier.pct}%</p>
+                    <p className="text-[11px] text-slate mt-[3px] text-right">{tier.pct}%</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Points Activity */}
-            <div className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-              <p className="text-[14px] font-bold text-[#141413] mb-[18px]">Points Activity (Last 30 Days)</p>
+            <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[14px] font-bold text-carbon mb-[18px]">Points Activity (Last 30 Days)</p>
               <div className="flex flex-col">
                 {POINTS_ACTIVITY.map((item, i) => (
                   <div
@@ -136,13 +134,13 @@ export function SellerLoyalty() {
           </div>
         )}
 
-        {/* ── Other Tabs ── */}
+        {/* Other Tabs */}
         {activeTab !== 'overview' && (
-          <div className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-            <p className="text-[14px] font-bold text-[#141413] mb-2">
+          <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <p className="text-[14px] font-bold text-carbon mb-2">
               {TABS.find(t => t.id === activeTab)?.label}
             </p>
-            <p className="text-[13px] text-[#8C8A82]">
+            <p className="text-[13px] text-slate">
               {activeTab === 'tiers'         && 'Configure tier thresholds, benefits, and upgrade criteria.'}
               {activeTab === 'rewards'       && 'Create and manage redeemable rewards for your loyalty members.'}
               {activeTab === 'members'       && 'View individual member points balances, activity, and tier status.'}

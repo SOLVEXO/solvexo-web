@@ -5,10 +5,9 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
-  LayoutDashboard, Package, CornerUpLeft,
-  Store, BarChart2, Search, Sparkles, Users, Star, RefreshCw,
-  Megaphone, Wallet, ClipboardList, Truck, MessageSquare, Plug, Activity,
-  Settings, FolderOpen, Bell, ChevronDown, List, Plus,
+  LayoutDashboard, Store, RefreshCw,
+  Truck, MessageSquare, Settings, FolderOpen,
+  Bell, ChevronDown, List, Plus,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 
@@ -48,21 +47,16 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Customers',
     items: [
-      { id: 'loyalty',       Icon: Star,       label: 'Loyalty',    path: '/seller/loyalty'       },
-      { id: 'subscriptions', Icon: RefreshCw,  label: 'Subscriptions',path: '/seller/subscriptions' },
-      { id: 'marketing',     Icon: Megaphone,  label: 'Marketing',    path: '/seller/marketing'     },
+      { id: 'subscriptions', Icon: RefreshCw, label: 'Subscriptions', path: '/seller/subscriptions' },
     ],
   },
   {
     label: 'Operations',
     items: [
-      { id: 'inventory',    Icon: ClipboardList, label: 'Inventory',     path: '/seller/inventory'     },
-      { id: 'shipping',     Icon: Truck,         label: 'Shipping',      path: '/seller/shipping'      },
-      { id: 'messages',     Icon: MessageSquare, label: 'Messages',      path: '/seller/messages'      },
-      { id: 'integrations', Icon: Plug,          label: 'Integrations',  path: '/seller/integrations'  },
-      { id: 'activity',     Icon: Activity,      label: 'Activity Log',  path: '/seller/activity'      },
-      { id: 'settings',     Icon: Settings,      label: 'Settings',      path: '/seller/settings'      },
-      { id: 'categories',   Icon: FolderOpen,    label: 'Categories',    path: '/seller/categories'    },
+      { id: 'shipping',   Icon: Truck,         label: 'Shipping',   path: '/seller/shipping'   },
+      { id: 'messages',   Icon: MessageSquare, label: 'Messages',   path: '/seller/messages'   },
+      { id: 'settings',   Icon: Settings,      label: 'Settings',   path: '/seller/settings'   },
+      { id: 'categories', Icon: FolderOpen,    label: 'Categories', path: '/seller/categories' },
     ],
   },
 ];

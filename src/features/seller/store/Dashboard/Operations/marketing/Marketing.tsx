@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Gift, type LucideIcon } from 'lucide-react';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { StorePageHeader } from '@/components/layouts/StoreLayout';
 
-// ── Data ──────────────────────────────────────────────────────────────────────
 type Tab = 'coupons' | 'email' | 'cart' | 'affiliate' | 'giftcards';
 
 const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
@@ -21,17 +20,17 @@ const COUPONS = [
 ];
 
 const CAMPAIGNS = [
-  { name: 'Back to School Sale',      status: 'Sent',   info: 'Sent May 15, 2025',       sent: 2840, opened: 1136, clicked: 284, revenue: '$1,480' },
-  { name: 'Welcome New Buyers',       status: 'Active', info: 'Automated — ongoing',      sent: 362,  opened: 181,  clicked: 54,  revenue: '$620'   },
-  { name: 'Summer Discount Blast',    status: 'Draft',  info: 'Scheduled Jun 1, 2025',   sent: 0,    opened: 0,    clicked: 0,   revenue: '—'      },
-  { name: 'Re-engage At-Risk Buyers', status: 'Paused', info: 'Paused Apr 30, 2025',     sent: 38,   opened: 12,   clicked: 4,   revenue: '$180'   },
+  { name: 'Back to School Sale',      status: 'Sent',   info: 'Sent May 15, 2025',     sent: 2840, opened: 1136, clicked: 284, revenue: '$1,480' },
+  { name: 'Welcome New Buyers',       status: 'Active', info: 'Automated — ongoing',    sent: 362,  opened: 181,  clicked: 54,  revenue: '$620'   },
+  { name: 'Summer Discount Blast',    status: 'Draft',  info: 'Scheduled Jun 1, 2025', sent: 0,    opened: 0,    clicked: 0,   revenue: '—'      },
+  { name: 'Re-engage At-Risk Buyers', status: 'Paused', info: 'Paused Apr 30, 2025',   sent: 38,   opened: 12,   clicked: 4,   revenue: '$180'   },
 ];
 
 const metrics = [
-  { label: 'Marketing Revenue',  value: '$4,280', trend: '+22%',                sub: null,                trendUp: true  },
-  { label: 'Active Campaigns',   value: '3',      trend: null,                  sub: '2 email · 1 coupon',trendUp: false },
-  { label: 'Coupon Redemptions', value: '184',    trend: 'Last 30 days',        sub: null,                trendUp: true  },
-  { label: 'Cart Recovery',      value: '$640',   trend: '12 carts recovered',  sub: null,                trendUp: true  },
+  { label: 'Marketing Revenue',  value: '$4,280', trend: '+22%',               sub: null,                 trendUp: true  },
+  { label: 'Active Campaigns',   value: '3',      trend: null,                 sub: '2 email · 1 coupon', trendUp: false },
+  { label: 'Coupon Redemptions', value: '184',    trend: 'Last 30 days',       sub: null,                 trendUp: true  },
+  { label: 'Cart Recovery',      value: '$640',   trend: '12 carts recovered', sub: null,                 trendUp: true  },
 ] as const;
 
 const statusStyle: Record<string, { bg: string; color: string }> = {
@@ -41,8 +40,7 @@ const statusStyle: Record<string, { bg: string; color: string }> = {
   Paused: { bg: '#FFF4DC', color: '#B36200' },
 };
 
-// ── Component ─────────────────────────────────────────────────────────────────
-export function SellerMarketing() {
+export function StoreMarketing() {
   usePageTitle('Marketing');
   const [tab,          setTab]          = useState<Tab>('coupons');
   const [couponCode,   setCouponCode]   = useState('');
@@ -54,7 +52,7 @@ export function SellerMarketing() {
 
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="Marketing"
         subtitle="Drive traffic, recover sales, and reward customers."
         actions={
@@ -66,20 +64,20 @@ export function SellerMarketing() {
 
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
-        {/* ── Metrics ── */}
+        {/* Metrics */}
         <div className="grid grid-cols-4 gap-3">
           {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
-              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
               {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
-              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
+              {m.sub   && <p className="text-xs text-slate mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
 
-        {/* ── Tab bar ── */}
-        <div className="flex items-center gap-0.5 border-b border-[#E8E6DC]">
+        {/* Tab bar */}
+        <div className="flex items-center gap-0.5 border-b border-bone">
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium cursor-pointer border-none bg-transparent transition-all duration-[120ms] -mb-px"
@@ -93,72 +91,67 @@ export function SellerMarketing() {
           ))}
         </div>
 
-        {/* ── Coupons Tab ── */}
+        {/* Coupons Tab */}
         {tab === 'coupons' && (
           <div className="flex flex-col gap-5">
             <div className="flex items-center justify-between">
-              <p className="text-[15px] font-bold text-[#141413]">Active Coupons</p>
-              <button className="px-3.5 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
+              <p className="text-[15px] font-bold text-carbon">Active Coupons</p>
+              <button className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
                 + New Coupon
               </button>
             </div>
 
-            {/* Coupon cards */}
             <div className="grid grid-cols-3 gap-4">
               {COUPONS.map(coupon => (
-                <div key={coupon.code} className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                <div key={coupon.code} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="px-3 py-[5px] rounded-lg border-2 border-dashed border-brand-orange font-mono text-[13px] font-bold text-[#B95A3A] bg-[#FBECE4]">
+                    <div className="px-3 py-[5px] rounded-lg border-2 border-dashed border-brand-orange font-mono text-[13px] font-bold text-[#B95A3A] bg-brand-pale-orange">
                       {coupon.code}
                     </div>
                     <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C]">
                       {coupon.status}
                     </span>
                   </div>
-
-                  <p className="text-[13px] font-semibold text-[#141413] mb-3">{coupon.type}</p>
-
+                  <p className="text-[13px] font-semibold text-carbon mb-3">{coupon.type}</p>
                   <table className="w-full border-collapse text-xs mb-3">
                     <tbody>
                       {[['Uses', `${coupon.uses} / ${coupon.limit ?? 'Unlimited'}`],['Expires', coupon.expires],['Revenue', coupon.revenue]].map(([label, val], i, arr) => (
                         <tr key={label} style={{ borderBottom: i < arr.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
-                          <td className="py-1.5 text-[#8C8A82]">{label}</td>
-                          <td className="py-1.5 font-semibold text-[#141413] text-right">{val}</td>
+                          <td className="py-1.5 text-slate">{label}</td>
+                          <td className="py-1.5 font-semibold text-carbon text-right">{val}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-
                   {coupon.limit && (
-                    <div className="h-[5px] bg-[#E8E6DC] rounded-[3px] mb-3.5 overflow-hidden">
+                    <div className="h-[5px] bg-bone rounded-[3px] mb-3.5 overflow-hidden">
                       <div
                         className="h-full rounded-[3px] bg-brand-orange"
                         style={{ width: `${(coupon.uses / coupon.limit) * 100}%` }}
                       />
                     </div>
                   )}
-
                   <div className="flex gap-2">
-                    <button className="flex-1 py-[7px] bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Edit</button>
-                    <button className="flex-1 py-[7px] bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Pause</button>
+                    <button className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Edit</button>
+                    <button className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Pause</button>
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Create coupon form */}
-            <div className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-              <p className="text-sm font-bold text-[#141413] mb-4">Create New Coupon</p>
+            <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-sm font-bold text-carbon mb-4">Create New Coupon</p>
               <div className="grid grid-cols-3 gap-3.5 mb-4">
                 <div>
                   <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Coupon Code</label>
                   <input placeholder="e.g. SAVE20" value={couponCode} onChange={e => setCouponCode(e.target.value.toUpperCase())}
-                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                    className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Discount Type</label>
                   <select value={discountType} onChange={e => setDiscountType(e.target.value)}
-                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white cursor-pointer box-border">
+                    className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white cursor-pointer box-border">
                     <option value="">Select type…</option>
                     <option>Percentage Off</option>
                     <option>Fixed Amount Off</option>
@@ -168,22 +161,22 @@ export function SellerMarketing() {
                 <div>
                   <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Value</label>
                   <input placeholder="e.g. 20 or 10.00" value={value} onChange={e => setValue(e.target.value)}
-                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                    className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Minimum Order ($)</label>
                   <input placeholder="0.00" value={minOrder} onChange={e => setMinOrder(e.target.value)}
-                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                    className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Usage Limit</label>
                   <input placeholder="Leave blank for unlimited" value={usageLimit} onChange={e => setUsageLimit(e.target.value)}
-                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                    className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Expiry Date</label>
                   <input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)}
-                    className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                    className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
               </div>
               <button className="px-6 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer">
@@ -193,46 +186,40 @@ export function SellerMarketing() {
           </div>
         )}
 
-        {/* ── Email Tab ── */}
+        {/* Email Tab */}
         {tab === 'email' && (
           <div className="flex flex-col gap-5">
             <div className="flex items-center justify-between">
-              <p className="text-[15px] font-bold text-[#141413]">Email Campaigns</p>
-              <button className="px-3.5 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
+              <p className="text-[15px] font-bold text-carbon">Email Campaigns</p>
+              <button className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
                 + New Campaign
               </button>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               {CAMPAIGNS.map(campaign => {
                 const st = statusStyle[campaign.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
                 return (
-                  <div key={campaign.name} className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                  <div key={campaign.name} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
                     <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-sm font-semibold text-[#141413]">{campaign.name}</p>
-                      <span
-                        className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold shrink-0 ml-2"
-                        style={{ background: st.bg, color: st.color }}
-                      >
+                      <p className="text-sm font-semibold text-carbon">{campaign.name}</p>
+                      <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold shrink-0 ml-2" style={{ background: st.bg, color: st.color }}>
                         {campaign.status}
                       </span>
                     </div>
-                    <p className="text-xs text-[#8C8A82] mb-3.5">{campaign.info}</p>
-
+                    <p className="text-xs text-slate mb-3.5">{campaign.info}</p>
                     {campaign.sent > 0 && (
                       <div className="grid grid-cols-4 gap-2 mb-3.5">
                         {[['Sent', campaign.sent.toLocaleString()],['Opened', campaign.opened.toLocaleString()],['Clicked', campaign.clicked.toLocaleString()],['Revenue', campaign.revenue]].map(([label, val]) => (
-                          <div key={label} className="text-center bg-[#FAF9F5] rounded-lg py-2 px-1">
-                            <p className="text-sm font-bold text-[#141413]">{val}</p>
-                            <p className="text-[10px] text-[#8C8A82]">{label}</p>
+                          <div key={label} className="text-center bg-cream rounded-lg py-2 px-1">
+                            <p className="text-sm font-bold text-carbon">{val}</p>
+                            <p className="text-[10px] text-slate">{label}</p>
                           </div>
                         ))}
                       </div>
                     )}
-
                     <div className="flex gap-2">
-                      <button className="px-3.5 py-1.5 bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Edit</button>
-                      <button className="px-3.5 py-1.5 bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">View</button>
+                      <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Edit</button>
+                      <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-[#4A4945] cursor-pointer">View</button>
                     </div>
                   </div>
                 );
@@ -241,16 +228,16 @@ export function SellerMarketing() {
           </div>
         )}
 
-        {/* ── Coming Soon Tabs ── */}
+        {/* Coming Soon Tabs */}
         {(tab === 'cart' || tab === 'affiliate' || tab === 'giftcards') && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="text-brand-orange mb-4">
               {(() => { const found = TABS.find(t => t.id === tab); return found ? <found.Icon size={48} /> : null; })()}
             </div>
-            <p className="text-base font-semibold text-[#141413] mb-1.5">
+            <p className="text-base font-semibold text-carbon mb-1.5">
               {TABS.find(t => t.id === tab)?.label} — Coming Soon
             </p>
-            <p className="text-[13px] text-[#8C8A82]">
+            <p className="text-[13px] text-slate">
               This feature is being built. Stay tuned for updates!
             </p>
           </div>

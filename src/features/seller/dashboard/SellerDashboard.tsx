@@ -1,7 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-} from 'recharts';
+import { AreaChart } from '@/components/comman/charts';
 import {
   Package, Monitor, Sparkles, BarChart2, ClipboardList, ArrowRight, Store,
 } from 'lucide-react';
@@ -171,17 +169,6 @@ function MyStoreCard() {
   );
 }
 
-// ── Chart Tooltip ─────────────────────────────────────────────────────────────
-function ChartTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white border border-bone rounded-lg px-3 py-[6px] shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-xs">
-      <p className="text-slate mb-0.5">{label}</p>
-      <p className="font-bold text-charcoal">${payload[0].value.toLocaleString()}</p>
-    </div>
-  );
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerDashboard() {
   const navigate = useNavigate();
@@ -232,37 +219,22 @@ export function SellerDashboard() {
         </div>
 
         {/* ── Row 2: Revenue Chart + My Store (col-8 + col-4) ── */}
-        <div className="grid gap-4" style={{ gridTemplateColumns: '2fr 1fr' }}>
-
-          {/* Revenue Chart */}
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-            <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-              <p className="text-sm font-bold text-charcoal">Revenue — Last 7 Days</p>
-              <span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">$13,434 total</span>
-            </div>
-            <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={revenueData} margin={{ top: 8, right: 20, left: 0, bottom: 4 }}>
-                <defs>
-                  <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#D97757" stopOpacity={0.22} />
-                    <stop offset="95%" stopColor="#D97757" stopOpacity={0.01} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="#E8E6DC" strokeDasharray="4 4" vertical={false} />
-                <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#8C8A82', fontFamily: 'Poppins, sans-serif' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#8C8A82', fontFamily: 'Poppins, sans-serif' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toLocaleString()}`} width={64} />
-                <Tooltip content={<ChartTooltip />} />
-                <Area type="monotone" dataKey="sales" stroke="#D97757" strokeWidth={2.5} fill="url(#salesGradient)" dot={false} activeDot={{ r: 4, fill: '#D97757', strokeWidth: 0 }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* My Store */}
+        <div className="grid grid-cols-[2fr_1fr] gap-4">
+          <AreaChart
+            data={revenueData}
+            dataKey="sales"
+            xKey="day"
+            title="Revenue — Last 7 Days"
+            action={<span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">$13,434 total</span>}
+            height={240}
+            valuePrefix="$"
+            yTickFormatter={v => `$${v.toLocaleString()}`}
+          />
           <MyStoreCard />
         </div>
 
         {/* ── Row 3: Quick Actions + Recent Orders (side by side) ── */}
-        <div className="grid gap-4" style={{ gridTemplateColumns: '320px 1fr' }}>
+        <div className="grid grid-cols-[320px_1fr] gap-4">
 
           {/* Quick Actions */}
           <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">

@@ -4,7 +4,8 @@ import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, Bell, ChevronLeft, Monitor, Store, Search, Star, Wallet,
+  Settings, Sparkles, Bell, ChevronLeft, Monitor, Store,
+  ClipboardList, Megaphone, Star, Plug, Activity, Search, Wallet,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/commerce/store';
@@ -53,7 +54,12 @@ const NAV: { group: string; items: NavItem[] }[] = [
     group: 'Operations',
     items: [
       { id: 'reviews',      Icon: Star,          label: 'Reviews',       path: 'reviews'       },
-      { id: 'finance',      Icon: Wallet,      label: 'Finance',       path: 'finance'       },
+      { id: 'finance',      Icon: Wallet,        label: 'Finance',       path: 'finance'       },
+      { id: 'inventory',    Icon: ClipboardList, label: 'Inventory',     path: 'inventory'     },
+      { id: 'marketing',    Icon: Megaphone,     label: 'Marketing',     path: 'marketing'     },
+      { id: 'loyalty',      Icon: Star,          label: 'Loyalty',       path: 'loyalty'       },
+      { id: 'integrations', Icon: Plug,          label: 'Integrations',  path: 'integrations'  },
+      { id: 'activity',     Icon: Activity,      label: 'Activity Log',  path: 'activity'      },
     ],
   },
   {

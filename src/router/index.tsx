@@ -30,36 +30,36 @@ import { NewPasswordPage }      from '@/features/auth/pages/NewPasswordPage';
 
 // ── Seller Pages ──────────────────────────────────────────────────────────────
 import { SellerDashboard }    from '@/features/seller/dashboard/SellerDashboard';
-import { SellerInventory }    from '@/features/seller/dashboard/SellerInventory';
-import { SellerMarketing }    from '@/features/seller/dashboard/SellerMarketing';
 import { SellerCategories }   from '@/features/seller/dashboard/SellerCategories';
 import { StoreBuilder }       from '@/features/seller/dashboard/storemodule/StoreBuilder';
 import { SellerSettings }     from '@/features/seller/dashboard/settings/SellerSettings';
-import { POSRegister }        from '@/features/seller/store/pos/POSRegister';
-import { StoreSEO }          from '@/features/seller/store/seo/StoreSEO';
 import { SellerShipping }     from '@/features/seller/dashboard/SellerShipping';
 import { SellerMessages }     from '@/features/seller/dashboard/SellerMessages';
-import { StoreReviews }      from '@/features/seller/store/reviews/reviews';
-import { SellerLoyalty }      from '@/features/seller/dashboard/SellerLoyalty';
 import { SellerSubscriptions } from '@/features/seller/dashboard/SellerSubscriptions';
-import { SellerIntegrations } from '@/features/seller/dashboard/SellerIntegrations';
-import { SellerActivity }     from '@/features/seller/dashboard/SellerActivity';
-import { SellerStoreList } from '@/features/seller/dashboard/storemodule/SellerStoreList';
+import { SellerStoreList }    from '@/features/seller/dashboard/storemodule/SellerStoreList';
+import { POSRegister }        from '@/features/seller/store/pos/POSRegister';
 
 // ── Store Workspace (own layout, own sidebar) ─────────────────────────────────
-import { StoreLayout }    from '@/components/layouts/StoreLayout';
-import StoreDashboard     from '@/features/seller/store/StoreDashboard';
-import StoreProductList   from '@/features/seller/store/products/StoreProductList';
-import StoreAddProduct    from '@/features/seller/store/products/StoreAddProduct';
-import StoreEditProduct   from '@/features/seller/store/products/StoreEditProduct';
-import StoreProductDetail from '@/features/seller/store/products/StoreProductDetail';
-import StoreCustomerList     from '@/features/seller/store/customer/CustomerList';
-import StoreSettings      from '@/features/seller/store/StoreSettings';
-import { StoreOrderList }     from '@/features/seller/store/orders/OrderList';
-import { StoreReturnList }      from '@/features/seller/store/returns/ReturnList';
-import { StoreAnalytics }    from '@/features/seller/store/analytics/Analytics';
-import { StoreAIStudio }     from '@/features/seller/store/ai/AiStudio';
-import { StoreFinance }      from '@/features/seller/store/finance/Finance';
+import { StoreLayout }        from '@/components/layouts/StoreLayout';
+import StoreDashboard         from '@/features/seller/store/Dashboard/StoreDashboard';
+import StoreProductList       from '@/features/seller/store/Dashboard/StoreSection/products/StoreProductList';
+import StoreAddProduct        from '@/features/seller/store/Dashboard/StoreSection/products/StoreAddProduct';
+import StoreEditProduct       from '@/features/seller/store/Dashboard/StoreSection/products/StoreEditProduct';
+import StoreProductDetail     from '@/features/seller/store/Dashboard/StoreSection/products/StoreProductDetail';
+import StoreCustomerList      from '@/features/seller/store/Dashboard/StoreSection/customer/CustomerList';
+import StoreSettings          from '@/features/seller/store/Dashboard/Manage/StoreSettings';
+import { StoreOrderList }     from '@/features/seller/store/Dashboard/StoreSection/orders/OrderList';
+import { StoreReturnList }    from '@/features/seller/store/Dashboard/StoreSection/returns/ReturnList';
+import { StoreAnalytics }     from '@/features/seller/store/Dashboard/Analytic/analytics/Analytics';
+import { StoreAIStudio }      from '@/features/seller/store/Dashboard/Analytic/ai/AiStudio';
+import { StoreSEO }           from '@/features/seller/store/Dashboard/Analytic/seo/StoreSEO';
+import { StoreFinance }       from '@/features/seller/store/Dashboard/Operations/finance/Finance';
+import { StoreReviews }       from '@/features/seller/store/Dashboard/Operations/reviews/reviews';
+import { StoreInventory }     from '@/features/seller/store/Dashboard/Operations/inventory/Inventory';
+import { StoreMarketing }     from '@/features/seller/store/Dashboard/Operations/marketing/Marketing';
+import { StoreLoyalty }       from '@/features/seller/store/Dashboard/Operations/loyalty/Loyalty';
+import { StoreIntegrations }  from '@/features/seller/store/Dashboard/Operations/integrations/Integrations';
+import { StoreActivity }      from '@/features/seller/store/Dashboard/Operations/activity/Activity';
 
 // ── Admin Pages ───────────────────────────────────────────────────────────────
 import { AdminOverview }      from '@/features/admin/pages/AdminOverview';
@@ -115,14 +115,9 @@ export const router = createBrowserRouter([
         children: [
           { index: true,              element: <Navigate to="/seller/dashboard" replace /> },
           { path: 'dashboard',        element: <SellerDashboard /> },
-          { path: 'inventory',        element: <SellerInventory /> },
-          { path: 'loyalty',          element: <SellerLoyalty /> },
           { path: 'subscriptions',    element: <SellerSubscriptions /> },
-          { path: 'marketing',        element: <SellerMarketing /> },
           { path: 'shipping',         element: <SellerShipping /> },
           { path: 'messages',         element: <SellerMessages /> },
-          { path: 'integrations',     element: <SellerIntegrations /> },
-          { path: 'activity',         element: <SellerActivity /> },
           { path: 'stores',             element: <SellerStoreList /> },
           { path: 'store',            element: <StoreBuilder /> },
           { path: 'settings',         element: <SellerSettings /> },
@@ -145,14 +140,17 @@ export const router = createBrowserRouter([
           { path: 'customer/list',      element: <StoreCustomerList /> },
           { path: 'analytics',      element: <StoreAnalytics /> },
           { path: 'settings',       element: <StoreSettings /> },
-          { path: 'storebuilder',  element: <StoreBuilder /> },
-          { path: 'returns',          element: <StoreReturnList /> },
-          { path: 'analytics',        element: <StoreAnalytics /> },
+          { path: 'storebuilder',   element: <StoreBuilder /> },
+          { path: 'returns',        element: <StoreReturnList /> },
           { path: 'seo',              element: <StoreSEO /> },
           { path: 'ai/studio',               element: <StoreAIStudio /> },
           { path: 'reviews',          element: <StoreReviews /> },
           { path: 'finance',          element: <StoreFinance /> },
-
+          { path: 'inventory',        element: <StoreInventory /> },
+          { path: 'marketing',        element: <StoreMarketing /> },
+          { path: 'loyalty',          element: <StoreLoyalty /> },
+          { path: 'integrations',     element: <StoreIntegrations /> },
+          { path: 'activity',         element: <StoreActivity /> },
         ],
       },
 

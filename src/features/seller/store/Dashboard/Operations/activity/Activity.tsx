@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { StorePageHeader } from '@/components/layouts/StoreLayout';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-// ── Types & Data ──────────────────────────────────────────────────────────────
 type FilterCategory = 'all' | 'products' | 'orders' | 'finance' | 'marketing' | 'customers' | 'settings' | 'security';
 type TeamMember     = 'all' | 'alex' | 'jordan' | 'sam';
 
@@ -56,25 +55,24 @@ const roleStyle: Record<string, { bg: string; color: string }> = {
 };
 
 const categoryStyle: Record<string, { bg: string; color: string }> = {
-  Product:  { bg: '#EEF2FF', color: '#4F46E5' },
-  Order:    { bg: '#EAF0FB', color: '#2156A8' },
-  Marketing:{ bg: '#FFF4DC', color: '#B36200' },
-  POS:      { bg: '#F3E8FF', color: '#7C3AED' },
-  Customer: { bg: '#E3F4EA', color: '#1E7A3C' },
-  Finance:  { bg: '#FFF3E0', color: '#D97706' },
-  Settings: { bg: '#F0EEE6', color: '#5A5852' },
-  Security: { bg: '#FDECEA', color: '#C0392B' },
+  Product:   { bg: '#EEF2FF', color: '#4F46E5' },
+  Order:     { bg: '#EAF0FB', color: '#2156A8' },
+  Marketing: { bg: '#FFF4DC', color: '#B36200' },
+  POS:       { bg: '#F3E8FF', color: '#7C3AED' },
+  Customer:  { bg: '#E3F4EA', color: '#1E7A3C' },
+  Finance:   { bg: '#FFF3E0', color: '#D97706' },
+  Settings:  { bg: '#F0EEE6', color: '#5A5852' },
+  Security:  { bg: '#FDECEA', color: '#C0392B' },
 };
 
 const metrics = [
-  { label: 'Total Events',        value: '2,841',    sub: 'Last 90 days',          trend: null,        trendUp: false },
-  { label: 'Staff Actions Today', value: '14',       sub: '3 team members active', trend: null,        trendUp: false },
-  { label: 'Security Alerts',     value: '0',        sub: null,                    trend: 'No threats',trendUp: true  },
-  { label: 'Last Login',          value: '2 min ago',sub: 'Alex Chen — Chrome',    trend: null,        trendUp: false },
+  { label: 'Total Events',        value: '2,841',     sub: 'Last 90 days',          trend: null,         trendUp: false },
+  { label: 'Staff Actions Today', value: '14',        sub: '3 team members active', trend: null,         trendUp: false },
+  { label: 'Security Alerts',     value: '0',         sub: null,                    trend: 'No threats', trendUp: true  },
+  { label: 'Last Login',          value: '2 min ago', sub: 'Alex Chen — Chrome',    trend: null,         trendUp: false },
 ] as const;
 
-// ── Component ─────────────────────────────────────────────────────────────────
-export function SellerActivity() {
+export function StoreActivity() {
   usePageTitle('Activity');
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('all');
   const [activeMember,   setActiveMember]   = useState<TeamMember>('all');
@@ -85,38 +83,38 @@ export function SellerActivity() {
 
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="Activity Log"
         subtitle="Full audit trail of all staff actions, changes, and security events."
         actions={
           <>
-            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">Export Log</button>
-            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">Security Settings</button>
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">Export Log</button>
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">Security Settings</button>
           </>
         }
       />
 
       <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
-        {/* ── Metrics ── */}
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        {/* Metrics */}
+        <div className="grid grid-cols-4 gap-3">
           {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
-              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
               {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
-              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
+              {m.sub   && <p className="text-xs text-slate mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
 
-        {/* ── 2-col layout ── */}
-        <div className="grid gap-4" style={{ gridTemplateColumns: '240px 1fr' }}>
+        {/* 2-col layout */}
+        <div className="grid grid-cols-[240px_1fr] gap-4">
 
           {/* LEFT: Sidebar filters */}
-          <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#E8E6DC]">
-              <p className="text-[13px] font-semibold text-[#141413]">Filter by Type</p>
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+            <div className="px-4 py-3 border-b border-bone">
+              <p className="text-[13px] font-semibold text-carbon">Filter by Type</p>
             </div>
             {FILTER_CATEGORIES.map(cat => {
               const isActive = activeCategory === cat.id;
@@ -132,12 +130,11 @@ export function SellerActivity() {
                   onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#FAF9F5'; }}
                   onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
                 >
-                  <span
-                    className="text-[13px]"
-                    style={{ fontWeight: isActive ? 600 : 400, color: isActive ? '#B95A3A' : '#4A4945' }}
-                  >{cat.label}</span>
+                  <span className="text-[13px]" style={{ fontWeight: isActive ? 600 : 400, color: isActive ? '#B95A3A' : '#4A4945' }}>
+                    {cat.label}
+                  </span>
                   {cat.count != null && (
-                    <span className="w-5 h-5 rounded-full bg-[#F0EEE6] text-[11px] font-semibold text-[#8C8A82] flex items-center justify-center">
+                    <span className="w-5 h-5 rounded-full bg-[#F0EEE6] text-[11px] font-semibold text-slate flex items-center justify-center">
                       {cat.count}
                     </span>
                   )}
@@ -146,7 +143,7 @@ export function SellerActivity() {
             })}
 
             {/* Team Member filter */}
-            <div className="px-4 py-[14px] border-b border-[#E8E6DC]">
+            <div className="px-4 py-[14px] border-b border-bone">
               <p className="text-xs font-semibold text-[#4A4945] mb-[10px]">Filter by Team Member</p>
               {TEAM_MEMBERS.map(m => (
                 <label key={m.id} className="flex items-center gap-2 mb-2 cursor-pointer">
@@ -163,7 +160,7 @@ export function SellerActivity() {
                   </button>
                   <span className="text-[13px] text-[#4A4945]">
                     {m.label}
-                    {m.sub && <span className="text-[11px] text-[#8C8A82] ml-1">({m.sub})</span>}
+                    {m.sub && <span className="text-[11px] text-slate ml-1">({m.sub})</span>}
                   </span>
                 </label>
               ))}
@@ -175,36 +172,35 @@ export function SellerActivity() {
               <select
                 value={dateRange}
                 onChange={e => setDateRange(e.target.value)}
-                className="w-full px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer mb-[10px]"
+                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer mb-[10px]"
               >
                 <option value="last7">Last 7 days</option>
                 <option value="last30">Last 30 days</option>
                 <option value="last90">Last 90 days</option>
                 <option value="custom">Custom range</option>
               </select>
-              <button className="w-full py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs text-[#4A4945] cursor-pointer">
+              <button className="w-full py-[7px] bg-white border border-bone rounded-lg text-xs text-[#4A4945] cursor-pointer">
                 Apply Filter
               </button>
             </div>
           </div>
 
           {/* RIGHT: Activity feed */}
-          <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
-            {/* Filter row */}
-            <div className="flex items-center gap-[10px] px-4 py-3 border-b border-[#E8E6DC]">
-              <div className="flex-1 flex items-center gap-1.5 border border-[#E8E6DC] rounded-lg px-3 bg-white">
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+            <div className="flex items-center gap-[10px] px-4 py-3 border-b border-bone">
+              <div className="flex-1 flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input
                   placeholder="Search activity..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="border-none outline-none text-[13px] py-2 w-full text-[#2C2A28] bg-transparent"
+                  className="border-none outline-none text-[13px] py-2 w-full text-charcoal bg-transparent"
                 />
               </div>
               <select
                 value={actionFilter}
                 onChange={e => setActionFilter(e.target.value)}
-                className="w-[150px] px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer"
+                className="w-[150px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
               >
                 <option value="all">All Actions</option>
                 <option value="products">Products</option>
@@ -218,7 +214,6 @@ export function SellerActivity() {
               </div>
             </div>
 
-            {/* Activity items */}
             {ACTIVITY_LOG.map((item, i) => {
               const av  = avatarColors[item.initials] ?? { bg: '#F0EEE6', color: '#5A5852' };
               const rs  = roleStyle[item.role]        ?? { bg: '#F0EEE6', color: '#5A5852' };
@@ -227,27 +222,24 @@ export function SellerActivity() {
               return (
                 <div key={item.id} className="px-4 py-[14px]" style={{ borderBottom: i < ACTIVITY_LOG.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
                   <div className="flex items-center gap-2 mb-1.5">
-                    <div
-                      className="w-[30px] h-[30px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0"
-                      style={{ background: av.bg, color: av.color }}
-                    >
+                    <div className="w-[30px] h-[30px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0" style={{ background: av.bg, color: av.color }}>
                       {item.initials}
                     </div>
-                    <span className="text-[13px] font-semibold text-[#141413]">{item.user}</span>
+                    <span className="text-[13px] font-semibold text-carbon">{item.user}</span>
                     <span className="px-[7px] py-[2px] rounded-[20px] text-[10px] font-semibold" style={{ background: rs.bg, color: rs.color }}>{item.role}</span>
                     <span className="px-[7px] py-[2px] rounded-[20px] text-[10px] font-semibold" style={{ background: cs.bg, color: cs.color }}>{catLabel}</span>
-                    <span className="ml-auto text-[11px] text-[#8C8A82] shrink-0">{item.timestamp}</span>
+                    <span className="ml-auto text-[11px] text-slate shrink-0">{item.timestamp}</span>
                   </div>
-                  <p className="text-[13px] font-semibold text-[#141413] pl-[38px] mb-0.5">{item.title}</p>
-                  <p className="text-xs text-[#8C8A82] pl-[38px] mb-0.5">{item.detail}</p>
+                  <p className="text-[13px] font-semibold text-carbon pl-[38px] mb-0.5">{item.title}</p>
+                  <p className="text-xs text-slate pl-[38px] mb-0.5">{item.detail}</p>
                   <p className="text-[11px] text-[#C0BDB5] pl-[38px]">IP: {item.ip}</p>
                 </div>
               );
             })}
 
             {/* Pagination */}
-            <div className="px-4 py-3 flex items-center justify-between border-t border-[#E8E6DC]">
-              <span className="text-xs text-[#8C8A82]">Showing 10 of 2,841 events</span>
+            <div className="px-4 py-3 flex items-center justify-between border-t border-bone">
+              <span className="text-xs text-slate">Showing 10 of 2,841 events</span>
               <div className="flex items-center gap-1">
                 {[<ChevronLeft size={14} />, 1, 2, 3, '…', 284, <ChevronRight size={14} />].map((p, i) => (
                   <button

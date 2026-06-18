@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { StorePageHeader } from '@/components/layouts/StoreLayout';
 import { AreaChart, BarChart, DonutChart } from '@/components/comman/charts';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -37,13 +37,13 @@ const metrics = [
 ] as const;
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function SellerAnalytics() {
+export function StoreAnalytics() {
   usePageTitle('Analytics');
   const [period, setPeriod] = useState('Last 6 months');
 
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="Analytics"
         subtitle="Understand your store performance and growth trends."
         actions={
