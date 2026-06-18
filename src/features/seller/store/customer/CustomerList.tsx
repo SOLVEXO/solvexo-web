@@ -54,7 +54,7 @@ const metrics = [
 ] as const;
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function SellerCustomers() {
+export default function StoreCustomerList() {
   usePageTitle('Customers');
   const [search,     setSearch]     = useState('');
   const [seg,        setSeg]        = useState('');

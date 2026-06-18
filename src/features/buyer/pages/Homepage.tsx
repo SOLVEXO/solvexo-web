@@ -7,24 +7,24 @@ import { ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles }
 import type { LucideIcon } from 'lucide-react';
 
 const FEATURES: { Icon: LucideIcon; title: string; bg: string; desc: string; path: string }[] = [
-  { Icon: ShoppingBag, title: 'Marketplace',           bg: '#FBECE4', desc: 'Join thousands of buyers discovering your products in the Solvexo marketplace.',     path: '/marketplace' },
-  { Icon: BookOpen,    title: 'Educational Resources',  bg: '#EBF7EF', desc: 'Sell lesson plans, courses, worksheets and digital curricula to educators worldwide.', path: '/education'   },
-  { Icon: Download,    title: 'Digital Downloads',       bg: '#E6F1FB', desc: 'Sell ebooks, music, software, templates and files with instant delivery.',             path: '/marketplace' },
-  { Icon: Store,       title: 'Your Own Store',          bg: '#FEF7E5', desc: 'Launch a branded store with a custom domain, no coding required.',                     path: '/sellers'     },
-  { Icon: Monitor,     title: 'Point of Sale',           bg: '#FBECE4', desc: 'Accept payments in-person with the Solvexo POS app, fully synced to your dashboard.',  path: '/sellers'     },
-  { Icon: Sparkles,    title: 'AI Commerce Tools',       bg: '#F5F0FB', desc: 'Write listings, optimize pricing, auto-generate descriptions with built-in AI.',        path: '/sellers'     },
+  { Icon: ShoppingBag, title: 'Marketplace', bg: '#FBECE4', desc: 'Join thousands of buyers discovering your products in the Solvexo marketplace.', path: '/marketplace' },
+  { Icon: BookOpen, title: 'Educational Resources', bg: '#EBF7EF', desc: 'Sell lesson plans, courses, worksheets and digital curricula to educators worldwide.', path: '/education' },
+  { Icon: Download, title: 'Digital Downloads', bg: '#E6F1FB', desc: 'Sell ebooks, music, software, templates and files with instant delivery.', path: '/marketplace' },
+  { Icon: Store, title: 'Your Own Store', bg: '#FEF7E5', desc: 'Launch a branded store with a custom domain, no coding required.', path: '/sellers' },
+  { Icon: Monitor, title: 'Point of Sale', bg: '#FBECE4', desc: 'Accept payments in-person with the Solvexo POS app, fully synced to your dashboard.', path: '/sellers' },
+  { Icon: Sparkles, title: 'AI Commerce Tools', bg: '#F5F0FB', desc: 'Write listings, optimize pricing, auto-generate descriptions with built-in AI.', path: '/sellers' },
 ];
 
 const TESTIMONIALS = [
-  { name: 'Maria Santos',   role: 'Educator & Seller',     text: 'I went from zero to $8,000/month selling lesson plans. The AI tools are incredible.' },
+  { name: 'Maria Santos', role: 'Educator & Seller', text: 'I went from zero to $8,000/month selling lesson plans. The AI tools are incredible.' },
   { name: 'James Kowalski', role: 'Physical Goods Seller', text: 'The POS + online store combo is exactly what my boutique needed. Setup took an afternoon.' },
-  { name: 'Priya Nair',     role: 'Digital Creator',       text: 'Solvexo handles everything — my store, downloads, taxes. I just focus on creating.' },
+  { name: 'Priya Nair', role: 'Digital Creator', text: 'Solvexo handles everything — my store, downloads, taxes. I just focus on creating.' },
 ];
 
 const STATS = [
-  { value: '50K+',   label: 'Active Sellers' },
-  { value: '$180M+', label: 'GMV Processed'  },
-  { value: '4.9★',   label: 'Seller Rating'  },
+  { value: '50K+', label: 'Active Sellers' },
+  { value: '$180M+', label: 'GMV Processed' },
+  { value: '4.9★', label: 'Seller Rating' },
 ];
 
 export function Homepage() {
@@ -109,9 +109,9 @@ export function Homepage() {
                 </div>
                 <p className="text-[15px] font-bold text-carbon mb-1">{f.title}</p>
                 <p className="text-[12px] text-slate leading-[1.6] mb-3">{f.desc}</p>
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-orange cursor-pointer">
-                  Learn more <ArrowRight size={11} />
-                </span>
+                <Button variant="secondary" size="sm" onClick={() => navigate('/education')}>
+                  Learn More <ArrowRight size={14} className="inline align-middle ml-1" />
+                </Button>
               </div>
             </Card>
           ))}

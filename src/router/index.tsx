@@ -34,7 +34,6 @@ import { SellerOrders }       from '@/features/seller/dashboard/SellerOrders';
 import { SellerInventory }    from '@/features/seller/dashboard/SellerInventory';
 import { SellerAnalytics }    from '@/features/seller/dashboard/SellerAnalytics';
 import { SellerAIStudio }     from '@/features/seller/dashboard/SellerAIStudio';
-import { SellerCustomers }    from '@/features/seller/dashboard/SellerCustomers';
 import { SellerMarketing }    from '@/features/seller/dashboard/SellerMarketing';
 import { SellerCategories }   from '@/features/seller/dashboard/SellerCategories';
 import { StoreBuilder }       from '@/features/seller/dashboard/storemodule/StoreBuilder';
@@ -60,7 +59,7 @@ import StoreProductList   from '@/features/seller/store/products/StoreProductLis
 import StoreAddProduct    from '@/features/seller/store/products/StoreAddProduct';
 import StoreEditProduct   from '@/features/seller/store/products/StoreEditProduct';
 import StoreProductDetail from '@/features/seller/store/products/StoreProductDetail';
-import StoreCustomers     from '@/features/seller/store/StoreCustomers';
+import StoreCustomerList     from '@/features/seller/store/customer/CustomerList';
 import StoreAnalytics     from '@/features/seller/store/StoreAnalytics';
 import StoreSettings      from '@/features/seller/store/StoreSettings';
 
@@ -109,7 +108,7 @@ export const router = createBrowserRouter([
       { path: '/new-password',    element: <NewPasswordPage /> },
 
       // ── POS — standalone (no seller sidebar) ──────────────────────────
-      { path: '/seller/store/pos',      element: <POSRegister /> },
+      { path: '/seller/store/:storeId/pos',      element: <POSRegister /> },
 
       // ── Seller pages with dark sidebar ────────────────────────────────
       {
@@ -124,7 +123,6 @@ export const router = createBrowserRouter([
           { path: 'analytics',        element: <SellerAnalytics /> },
           { path: 'seo',              element: <SellerSEO /> },
           { path: 'ai',               element: <SellerAIStudio /> },
-          { path: 'customers',        element: <SellerCustomers /> },
           { path: 'loyalty',          element: <SellerLoyalty /> },
           { path: 'subscriptions',    element: <SellerSubscriptions /> },
           { path: 'marketing',        element: <SellerMarketing /> },
@@ -153,10 +151,10 @@ export const router = createBrowserRouter([
           { path: 'products/add',              element: <StoreAddProduct /> },
           { path: 'products/edit/:productId',   element: <StoreEditProduct /> },
           { path: 'products/detail/:productId', element: <StoreProductDetail /> },
-          { path: 'customers',      element: <StoreCustomers /> },
+          { path: 'customer/list',      element: <StoreCustomerList /> },
           { path: 'analytics',      element: <StoreAnalytics /> },
           { path: 'settings',       element: <StoreSettings /> },
-          { path: 'store-builder',  element: <StoreBuilder /> },
+          { path: 'storebuilder',  element: <StoreBuilder /> },
         ],
       },
 

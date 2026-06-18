@@ -36,9 +36,9 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { id: 'dashboard',      Icon: LayoutDashboard, label: 'Dashboard',     path: 'dashboard'  },
       { id: 'orders',         Icon: Package,         label: 'Orders',        path: 'orders'     },
       { id: 'products',       Icon: ShoppingBag,     label: 'Products',      path: 'products'   },
-      { id: 'customers',      Icon: Users,           label: 'Customers',     path: 'customers'  },
-      { id: 'pos',            Icon: Monitor,         label: 'POS Register',  path: '/seller/store/pos'  },
-      { id: 'store-builder',  Icon: Store,           label: 'Store Builder', path: 'store-builder'  },
+      { id: 'customers',      Icon: Users,           label: 'Customers',     path: 'customer/list'  },
+      { id: 'pos',            Icon: Monitor,         label: 'POS Register',  path: 'pos'  },
+      { id: 'store-builder',  Icon: Store,           label: 'Store Builder', path: 'storebuilder'  },
 
     ],
   },
