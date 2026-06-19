@@ -8,6 +8,7 @@ import {
   type StoreProduct, type ProductVariant,
 } from '@/api/commerce/product';
 import { getCachedProducts, updateCachedProduct, type ProductEntry } from './_cache';
+import { ImageUpload, FileUpload, type PrivateUploadData } from '@/components/comman/ui';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 type ProductStatus = 'draft' | 'active';
@@ -86,12 +87,14 @@ const blankPhys = {
   stock: '', size: '', color: '', shippingWeight: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   tagInput: '', tags: [] as string[],
+  images: [] as string[],
 };
 const blankDig = {
   name: '', description: '', price: '', compareAtPrice: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   tagInput: '', tags: [] as string[],
-  fileUrl: '', fileName: '', fileSize: '', fileMime: '',
+  images: [] as string[],
+  fileData: null as PrivateUploadData | null,
   downloadLimit: 'unlimited',
   linkExpiryDays: '', pdfStampingEnabled: false,
   licenseType: 'personal' as 'personal' | 'commercial',
@@ -110,20 +113,26 @@ function physFormFromEntry(p: StoreProduct, v: ProductVariant): PhysForm {
     shippingWeight: v.shippingWeight ?? '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
     tags: [...p.tags], tagInput: '',
+    images: [...p.images],
   };
 }
 function digFormFromEntry(p: StoreProduct, v: ProductVariant): DigForm {
-  const d = p.digital;
+  const d  = p.digital;
+  const f0 = d?.files[0];
   return {
     name: p.name, description: p.description,
     price: String(v.price),
     compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
     tags: [...p.tags], tagInput: '',
-    fileUrl:  d?.files[0]?.url      ?? '',
-    fileName: d?.files[0]?.name     ?? '',
-    fileSize: d?.files[0]?.size != null ? String(d.files[0].size) : '',
-    fileMime: d?.files[0]?.mimeType ?? '',
+    images: [...p.images],
+    fileData: f0 ? {
+      publicId:     f0.url,
+      resourceType: 'raw',
+      fileName:     f0.name,
+      fileSize:     f0.size,
+      mimeType:     f0.mimeType,
+    } : null,
     downloadLimit:        d?.downloadLimit        ?? 'unlimited',
     linkExpiryDays:       d?.linkExpiryDays != null ? String(d.linkExpiryDays) : '',
     pdfStampingEnabled:   d?.pdfStampingEnabled   ?? false,
@@ -199,7 +208,7 @@ export default function StoreEditProduct() {
       if (pType === 'physical') {
         const res = await apiEditPhysicalProduct(productId, {
           productId, name: phys.name, description: phys.description,
-          subCategoryId: null, images: [], tags: phys.tags,
+          subCategoryId: null, images: phys.images, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: phys.status,
           price: Number(phys.price),
           compareAtPrice: phys.compareAtPrice ? Number(phys.compareAtPrice) : null,
@@ -208,11 +217,11 @@ export default function StoreEditProduct() {
         });
         updateCachedProduct(storeId, productId, { product: res.data.product, variant: res.data.variant });
       } else {
-        const files = dig.fileUrl ? [{
-          url: dig.fileUrl,
-          name: dig.fileName || dig.fileUrl.split('/').pop() || 'file',
-          size: dig.fileSize ? Number(dig.fileSize) : 0,
-          mimeType: dig.fileMime || 'application/octet-stream',
+        const files = dig.fileData ? [{
+          url:      dig.fileData.publicId,
+          name:     dig.fileData.fileName,
+          size:     dig.fileData.fileSize,
+          mimeType: dig.fileData.mimeType,
         }] : [];
         const res = await apiEditDigitalProduct(productId, {
           productId, variantId,
@@ -299,6 +308,17 @@ export default function StoreEditProduct() {
 
         {/* ── Left column ── */}
         <div>
+          {/* Images */}
+          <div className={cardCls}>
+            <SectionTitle title="Product Images" />
+            <ImageUpload
+              value={pType === 'physical' ? phys.images : dig.images}
+              onChange={urls => pType === 'physical' ? sp('images', urls) : sd('images', urls)}
+              maxFiles={5}
+            />
+            <p className="text-[11px] text-slate mt-2">PNG, JPG or WebP. Up to 5 images.</p>
+          </div>
+
           {/* Basic info */}
           <div className={cardCls}>
             <SectionTitle title="Basic Information" />
@@ -362,17 +382,11 @@ export default function StoreEditProduct() {
             <>
               <div className={cardCls}>
                 <SectionTitle title="Digital File" />
-                <Field label="File URL">
-                  <input value={dig.fileUrl} onChange={e => sd('fileUrl', e.target.value)} placeholder="https://res.cloudinary.com/…" className={inputCls} />
-                </Field>
-                <div className="grid grid-cols-2 gap-[14px]">
-                  <Field label="File Name">
-                    <input value={dig.fileName} onChange={e => sd('fileName', e.target.value)} placeholder="course.pdf" className={inputCls} />
-                  </Field>
-                  <Field label="MIME Type">
-                    <input value={dig.fileMime} onChange={e => sd('fileMime', e.target.value)} placeholder="application/pdf" className={inputCls} />
-                  </Field>
-                </div>
+                <FileUpload
+                  value={dig.fileData}
+                  onChange={v => sd('fileData', v)}
+                  label="Click to upload your digital file"
+                />
               </div>
               <div className={cardCls}>
                 <SectionTitle title="Delivery Settings" />

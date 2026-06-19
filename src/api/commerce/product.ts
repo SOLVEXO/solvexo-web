@@ -142,6 +142,39 @@ export interface GetProductData {
   product: StoreProduct;
 }
 
+export interface InventoryProduct {
+  productId:    string;
+  sku:          string;
+  name:         string;
+  image:        string | null;
+  type:         'physical' | 'digital';
+  stock:        number | string;
+  stockStatus:  string;
+  status:       'active' | 'draft' | 'archived';
+  price:        number;
+  allTimeSales: number;
+}
+
+export interface InventoryStats {
+  totalProducts: number;
+  inStock:       number;
+  lowStock:      number;
+  outOfStock:    number;
+}
+
+export interface InventoryPagination {
+  page:          number;
+  limit:         number;
+  totalPages:    number;
+  totalProducts: number;
+}
+
+export interface GetInventoryData {
+  stats:      InventoryStats;
+  pagination: InventoryPagination;
+  products:   InventoryProduct[];
+}
+
 // ── API functions ─────────────────────────────────────────────────────────────
 
 export function apiCreatePhysicalProduct(payload: CreatePhysicalPayload) {
@@ -171,6 +204,12 @@ export function apiEditDigitalProduct(id: string, payload: EditDigitalPayload) {
 export function apiGetMyProductById(id: string) {
   return client.get<never, ApiResponse<GetProductData>>(
     ENDPOINTS.PRODUCT.GET_MY_PRODUCT_BY_ID(id),
+  );
+}
+
+export function apiGetStoreInventory(storeId: string, page = 1, limit = 10) {
+  return client.get<never, ApiResponse<GetInventoryData>>(
+    `${ENDPOINTS.PRODUCT.GET_MY_ALL_PRODUCT(storeId)}?page=${page}&limit=${limit}`,
   );
 }
 

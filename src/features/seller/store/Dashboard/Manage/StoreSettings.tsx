@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Save, Store, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { apiUpdateStore, type ProductType } from '@/api/commerce/store';
+import { ImageUpload } from '@/components/comman/ui';
 
 const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   physical_products: 'Physical Products',
@@ -53,6 +54,7 @@ export default function StoreSettings() {
   const [name,         setName]         = useState('');
   const [description,  setDescription]  = useState('');
   const [productTypes, setProductTypes] = useState<ProductType[]>([]);
+  const [logo,         setLogo]         = useState('');
   const [saving,       setSaving]       = useState(false);
   const [saveMsg,      setSaveMsg]      = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -62,6 +64,7 @@ export default function StoreSettings() {
     setName(store.name);
     setDescription(store.description ?? '');
     setProductTypes(store.productTypes ?? []);
+    setLogo(store.logo ?? '');
   }, [store]);
 
   const toggleType = (t: ProductType) =>
@@ -72,7 +75,7 @@ export default function StoreSettings() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, productTypes });
+      await apiUpdateStore({ storeId, name, description, productTypes, logo });
       refetch();
       setSaveMsg({ ok: true, text: 'Store updated successfully.' });
     } catch (err) {
@@ -86,6 +89,7 @@ export default function StoreSettings() {
     !!store &&
     (name !== store.name ||
       description !== (store.description ?? '') ||
+      logo !== (store.logo ?? '') ||
       JSON.stringify(productTypes.slice().sort()) !==
         JSON.stringify((store.productTypes ?? []).slice().sort()));
 
@@ -141,6 +145,20 @@ export default function StoreSettings() {
                 </div>
                 <p className="text-[14px] font-semibold text-charcoal">Basic Information</p>
               </div>
+
+              <Field label="Store Logo">
+                <div className="flex items-center gap-4">
+                  <ImageUpload
+                    value={logo ? [logo] : []}
+                    onChange={urls => setLogo(urls[0] ?? '')}
+                    maxFiles={1}
+                  />
+                  <div>
+                    <p className="text-[12px] text-charcoal font-medium">Upload a logo</p>
+                    <p className="text-[11px] text-slate mt-0.5">PNG, JPG or WebP</p>
+                  </div>
+                </div>
+              </Field>
 
               <Field label="Store Name *">
                 <input

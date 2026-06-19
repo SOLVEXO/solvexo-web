@@ -9,8 +9,9 @@ import {
   Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
   Package, Download, Calendar, Repeat, MonitorSmartphone,
   Sparkles, User, CreditCard, Plus, Wrench, ShoppingCart,
-  ArrowRight, ArrowLeft, Check, AlertTriangle, Loader,
+  ArrowRight, ArrowLeft, Check, AlertTriangle, Loader, Loader2,
 } from 'lucide-react';
+import { useUpload } from '@/hooks/upload/useUpload';
 import type { SellerType, ProductType, StoreData } from '@/api/commerce/store';
 
 const STEPS = ['Store Info', 'Seller Type', 'What You Sell', 'Go Live'];
@@ -108,13 +109,16 @@ function PageHeader({ onSignIn }: { onSignIn: () => void }) {
 function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void }) {
   const [preview, setPreview] = useState('');
   const canProceed = form.storeName.trim().length > 0 && form.categoryId.length > 0;
+  const { upload: uploadLogo, uploading: logoUploading } = useUpload('public');
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    setForm({ ...form, logo: url });
+    const blobUrl = URL.createObjectURL(file);
+    setPreview(blobUrl);
+    uploadLogo(file)
+      .then(data => setForm({ ...form, logo: data.url }))
+      .catch(() => setPreview(''));
   };
 
   return (
@@ -125,16 +129,22 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
       </div>
       <div className="bg-white rounded-2xl p-8 border border-bone w-full">
         <div className="flex gap-5 items-center p-4 bg-cream rounded-xl mb-6">
-          <label className="size-[72px] rounded-2xl bg-brand-pale-orange border-2 border-dashed border-brand-orange flex items-center justify-center shrink-0 cursor-pointer overflow-hidden">
-            {preview
-              ? <img src={preview} alt="logo" className="w-full h-full object-cover" />
-              : <Camera size={28} className="text-brand-orange" />}
-            <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleFile} />
+          <label className={clsx(
+            'size-[72px] rounded-2xl bg-brand-pale-orange border-2 border-dashed border-brand-orange flex items-center justify-center shrink-0 overflow-hidden',
+            logoUploading ? 'cursor-wait opacity-60' : 'cursor-pointer',
+          )}>
+            {logoUploading
+              ? <Loader2 size={28} className="text-brand-orange animate-spin" />
+              : preview
+                ? <img src={preview} alt="logo" className="w-full h-full object-cover" />
+                : <Camera size={28} className="text-brand-orange" />}
+            <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleFile} disabled={logoUploading} />
           </label>
           <div>
             <p className="text-[13px] font-semibold text-carbon mb-1">Store Logo</p>
             <p className="text-[12px] text-slate">PNG, JPG or WebP. Click to upload.</p>
-            {preview && <p className="text-[11px] text-success mt-1">✓ Logo selected</p>}
+            {logoUploading && <p className="text-[11px] text-brand-orange mt-1">Uploading…</p>}
+            {!logoUploading && form.logo && <p className="text-[11px] text-success mt-1">✓ Logo uploaded</p>}
           </div>
         </div>
 

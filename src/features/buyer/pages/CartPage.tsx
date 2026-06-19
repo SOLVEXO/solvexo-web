@@ -1,13 +1,12 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ImageOff, Loader2 } from 'lucide-react';
-import { useState } from 'react';
 import { clsx } from 'clsx';
 
-
-function SolvexoIcon({ size = 32 }: { size?: number }) {
+function SolvexoIcon({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
       <rect width="32" height="32" rx="8" fill="#D97757"/>
@@ -23,15 +22,15 @@ function CartItemImage({ images, name }: { images?: string[]; name: string }) {
   const src = images?.[0];
   if (!src || errored) {
     return (
-      <div className="w-20 h-20 rounded-[10px] bg-brand-pale-orange flex items-center justify-center flex-shrink-0">
-        <ImageOff size={22} className="text-brand-orange opacity-50" />
+      <div className="w-[72px] h-[72px] rounded-[10px] bg-brand-pale-orange flex items-center justify-center shrink-0">
+        <ImageOff size={20} className="text-brand-orange opacity-50" />
       </div>
     );
   }
   return (
     <img
       src={src} alt={name} onError={() => setErrored(true)}
-      className="w-20 h-20 rounded-[10px] object-cover flex-shrink-0 block"
+      className="w-[72px] h-[72px] rounded-[10px] object-cover shrink-0 block"
     />
   );
 }
@@ -41,35 +40,31 @@ export function CartPage() {
   usePageTitle('Cart');
 
   const { cart, loading, cartCount, updateQty, removeItem, clearCart } = useCartContext();
-  const [clearing, setClearing] = useState(false);
+  const [clearing,   setClearing]   = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const handleUpdateQty = async (
-    productId: string, variantId: string, action: 'increase' | 'decrease',
-  ) => {
+  const handleUpdateQty = (productId: string, variantId: string, action: 'increase' | 'decrease') => {
     setUpdatingId(variantId);
-    try { await updateQty(productId, variantId, action); }
-    finally { setUpdatingId(null); }
+    updateQty(productId, variantId, action).finally(() => setUpdatingId(null));
   };
 
-  const handleRemove = async (productId: string, variantId: string) => {
+  const handleRemove = (productId: string, variantId: string) => {
     setRemovingId(variantId);
-    try { await removeItem(productId, variantId); }
-    finally { setRemovingId(null); }
+    removeItem(productId, variantId).finally(() => setRemovingId(null));
   };
 
-  const handleClear = async () => {
+  const handleClear = () => {
     setClearing(true);
-    try { await clearCart(); }
-    finally { setClearing(false); }
+    clearCart().finally(() => setClearing(false));
   };
 
-  const isEmpty = !loading && (!cart?.items.length);
+  const isEmpty = !loading && !cart?.items.length;
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Nav */}
+
+      {/* ── Nav ── */}
       <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-10 gap-4">
         <div className="flex-1 flex items-center gap-2">
           <SolvexoIcon size={28} />
@@ -82,65 +77,82 @@ export function CartPage() {
         </Button>
       </nav>
 
-      <div className="max-w-[900px] mx-auto px-6 py-8">
-        <h1 className="text-[22px] font-bold text-[#141413] mb-1">
-          Shopping Cart
-        </h1>
-        <p className="text-[13px] text-[#8C8A82] mb-7">
-          {loading ? 'Loading…' : `${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart`}
-        </p>
+      <div className="max-w-[960px] mx-auto px-6 py-8">
 
-        {/* Loading skeleton */}
-        {loading && (
-          <div className="flex flex-col gap-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="bg-white rounded-[12px] border border-bone p-5 flex gap-4">
-                <div className="animate-pulse w-20 h-20 rounded-[10px] bg-bone flex-shrink-0" />
-                <div className="flex-1 flex flex-col gap-[10px]">
-                  <div className="animate-pulse h-[14px] rounded-[6px] bg-bone w-[60%]" />
-                  <div className="animate-pulse h-[11px] rounded bg-bone w-[30%]" />
-                  <div className="animate-pulse h-8 rounded-lg bg-bone w-[110px]" />
-                </div>
-                <div className="animate-pulse w-[70px] h-6 rounded-[6px] bg-bone" />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Empty */}
+        {/* ── Empty ── */}
         {isEmpty && (
-          <div className="text-center py-20">
-            <ShoppingBag size={64} className="text-bone mx-auto mb-4" />
+          <div className="bg-white rounded-[12px] border border-bone p-10 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-bone flex items-center justify-center mx-auto mb-4">
+              <ShoppingBag size={30} className="text-slate opacity-60" />
+            </div>
             <p className="text-[16px] font-semibold text-[#141413] mb-2">Your cart is empty</p>
-            <p className="text-[13px] text-[#8C8A82] mb-6">
-              Browse the marketplace and add products to get started.
-            </p>
+            <p className="text-[13px] text-[#8C8A82] mb-6">Browse the marketplace and add products to get started.</p>
             <Button variant="primary" onClick={() => navigate('/marketplace')}>Browse Marketplace</Button>
           </div>
         )}
 
-        {/* Cart items + summary */}
-        {!loading && (cart?.items.length ?? 0) > 0 && (
-          <div className="grid gap-6 items-start" style={{ gridTemplateColumns: '1fr 320px' }}>
-            {/* Items list */}
-            <div className="flex flex-col gap-3">
-              {cart!.items.map(item => {
-                const key = item.productVariantId;
-                const imgs = item.image ?? item.images;
-                const price = item.unitPrice ?? item.price ?? 0;
-                const total = item.itemTotal ?? price * item.quantity;
+        {/* ── Cart + Summary ── */}
+        {(loading || (cart?.items.length ?? 0) > 0) && (
+          <div className="grid gap-6 items-start" style={{ gridTemplateColumns: '1fr 300px' }}>
+
+            {/* ── Left: Cart card ── */}
+            <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
+
+              {/* Card header */}
+              <div className="px-6 pt-5 pb-4 border-b border-bone flex items-center justify-between">
+                <div>
+                  <h1 className="text-[20px] font-bold text-[#141413] leading-tight">Shopping Cart</h1>
+                  <p className="text-[12px] text-[#8C8A82] mt-[2px]">
+                    {loading ? 'Loading…' : `${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart`}
+                  </p>
+                </div>
+                {!loading && cartCount > 0 && (
+                  <span className="text-[11px] font-semibold px-3 py-[5px] rounded-full bg-brand-pale-orange text-brand-orange">
+                    {cartCount} {cartCount === 1 ? 'item' : 'items'}
+                  </span>
+                )}
+              </div>
+
+              {/* Loading skeleton */}
+              {loading && (
+                <div className="divide-y divide-bone">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="flex gap-4 items-center px-5 py-4">
+                      <div className="animate-pulse w-[72px] h-[72px] rounded-[10px] bg-bone shrink-0" />
+                      <div className="flex-1 flex flex-col gap-[10px]">
+                        <div className="animate-pulse h-[13px] rounded bg-bone w-[55%]" />
+                        <div className="animate-pulse h-[11px] rounded bg-bone w-[25%]" />
+                        <div className="animate-pulse h-8 rounded-lg bg-bone w-[100px]" />
+                      </div>
+                      <div className="animate-pulse w-[55px] h-5 rounded bg-bone" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Items */}
+              {!loading && cart?.items.map((item, idx) => {
+                const key        = item.productVariantId;
+                const imgs       = item.image ?? item.images;
+                const price      = item.unitPrice ?? item.price ?? 0;
+                const lineTotal  = item.itemTotal ?? price * item.quantity;
                 const isRemoving = removingId === key;
                 const isUpdating = updatingId === key;
+                const isLast     = idx === (cart.items.length - 1);
 
                 return (
                   <div
                     key={key}
-                    className={clsx('bg-white rounded-[12px] border border-bone p-5 flex gap-4 items-start transition-opacity duration-200', isRemoving && 'opacity-50')}
+                    className={clsx(
+                      'flex gap-4 items-start px-5 py-4 transition-opacity duration-200',
+                      !isLast && 'border-b border-bone',
+                      isRemoving && 'opacity-50',
+                    )}
                   >
                     <CartItemImage images={imgs} name={item.name} />
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-[14px] text-[#141413] mb-1 leading-[1.35]">
+                      <p className="font-semibold text-[14px] text-[#141413] mb-[3px] leading-[1.35]">
                         {item.name}
                       </p>
                       <p className="text-[12px] text-[#8C8A82] mb-3">
@@ -152,19 +164,29 @@ export function CartPage() {
                         <button
                           onClick={() => handleUpdateQty(item.productId, key, 'decrease')}
                           disabled={item.quantity <= 1 || isUpdating}
-                          className={clsx('w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal', item.quantity <= 1 || isUpdating ? 'cursor-not-allowed' : 'cursor-pointer', item.quantity <= 1 && 'opacity-40')}
+                          className={clsx(
+                            'w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors',
+                            item.quantity <= 1 || isUpdating
+                              ? 'cursor-not-allowed opacity-40'
+                              : 'cursor-pointer hover:bg-bone',
+                          )}
                         >
                           <Minus size={12} />
                         </button>
 
-                        <span className="min-w-9 text-center text-[14px] font-bold text-[#141413]">
-                          {isUpdating ? <Loader2 size={13} className="animate-spin" /> : item.quantity}
+                        <span className="min-w-[36px] text-center text-[14px] font-bold text-[#141413]">
+                          {isUpdating
+                            ? <Loader2 size={13} className="animate-spin mx-auto block" />
+                            : item.quantity}
                         </span>
 
                         <button
                           onClick={() => handleUpdateQty(item.productId, key, 'increase')}
                           disabled={isUpdating}
-                          className={clsx('w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal', isUpdating ? 'cursor-not-allowed' : 'cursor-pointer')}
+                          className={clsx(
+                            'w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors',
+                            isUpdating ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-bone',
+                          )}
                         >
                           <Plus size={12} />
                         </button>
@@ -172,41 +194,66 @@ export function CartPage() {
                         <button
                           onClick={() => handleRemove(item.productId, key)}
                           disabled={isRemoving}
-                          className="ml-2 px-2 py-1 rounded-[6px] border border-[#FECACA] bg-[#FFF0F0] cursor-pointer flex items-center gap-1 text-[11px] text-[#C13030] font-medium"
+                          className="ml-2 px-[10px] py-[5px] rounded-[6px] border border-[#FECACA] bg-[#FFF0F0] cursor-pointer flex items-center gap-1 text-[11px] text-[#C13030] font-medium"
                         >
                           {isRemoving
                             ? <Loader2 size={11} className="animate-spin" />
-                            : <Trash2 size={11} />
-                          }
+                            : <Trash2 size={11} />}
                           Remove
                         </button>
                       </div>
                     </div>
 
                     {/* Line total */}
-                    <div className="font-bold text-[15px] text-[#141413] flex-shrink-0">
-                      ${total.toLocaleString()}
-                    </div>
+                    <p className="font-bold text-[15px] text-[#141413] shrink-0">
+                      ${lineTotal.toLocaleString()}
+                    </p>
                   </div>
                 );
               })}
 
-              {/* Clear cart */}
-              <div className="flex justify-end pt-1">
-                <button
-                  onClick={handleClear}
-                  disabled={clearing}
-                  className={clsx('px-[14px] py-[6px] rounded-lg text-[12px] border border-bone bg-white text-[#8C8A82] flex items-center gap-[6px]', clearing ? 'cursor-not-allowed' : 'cursor-pointer')}
-                >
-                  {clearing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                  Clear Cart
-                </button>
-              </div>
+              {/* Footer: clear cart */}
+              {!loading && (cart?.items.length ?? 0) > 0 && (
+                <div className="px-5 py-3 border-t border-bone flex justify-end">
+                  <button
+                    onClick={handleClear}
+                    disabled={clearing}
+                    className={clsx(
+                      'flex items-center gap-[6px] px-[14px] py-[6px] rounded-lg text-[12px] border border-bone bg-cream text-slate transition-colors',
+                      clearing ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-[#c5c4bc]',
+                    )}
+                  >
+                    {clearing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                    Clear Cart
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Order summary */}
+            {/* ── Right: Order Summary ── */}
             <div className="bg-white rounded-[12px] border border-bone p-6 sticky top-20">
               <p className="text-[15px] font-bold text-[#141413] mb-[18px]">Order Summary</p>
+
+              {/* Item list */}
+              {!loading && (
+                <div className="flex flex-col gap-2 mb-4">
+                  {cart?.items.map(item => {
+                    const price = item.unitPrice ?? item.price ?? 0;
+                    const ttl   = item.itemTotal ?? price * item.quantity;
+                    return (
+                      <div key={item.productVariantId} className="flex justify-between text-[12px]">
+                        <span className="text-[#141413] truncate max-w-[150px]">
+                          {item.name}
+                          <span className="text-[#8C8A82] ml-1">×{item.quantity}</span>
+                        </span>
+                        <span className="font-medium text-[#141413] shrink-0">${ttl.toLocaleString()}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="h-px bg-bone mb-4" />
 
               <div className="flex flex-col gap-3 mb-5">
                 <div className="flex justify-between text-[13px]">
@@ -226,18 +273,23 @@ export function CartPage() {
                 <span className="text-[#141413]">${(cart?.totalPrice ?? 0).toLocaleString()}</span>
               </div>
 
-              <Button variant="primary" size="lg" fullWidth className="justify-center">
+              <Button
+                variant="primary" size="lg" fullWidth className="justify-center"
+                onClick={() => navigate('/checkout')}
+              >
                 Proceed to Checkout
               </Button>
-              <Button variant="ghost" size="sm" fullWidth className="justify-center mt-[10px]"
-                onClick={() => navigate('/marketplace')}>
+              <Button
+                variant="ghost" size="sm" fullWidth className="justify-center mt-[10px]"
+                onClick={() => navigate('/marketplace')}
+              >
                 Continue Shopping
               </Button>
             </div>
+
           </div>
         )}
       </div>
-
     </div>
   );
 }

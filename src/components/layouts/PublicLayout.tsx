@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
+import { User, LayoutDashboard, LogOut } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { TokenStorage } from '@/api/commerce/auth';
+import { Badge } from '@/components/comman/ui';
 
 // ── Nav items — "Sellers" and "Pricing" are ALWAYS orange (reference exact) ───
 const NAV_ITEMS = [
@@ -100,52 +102,59 @@ function ProfileAvatar() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] z-[100] bg-white border border-bone rounded-lg shadow-[0_8px_28px_rgba(0,0,0,0.12)] min-w-[220px] p-[6px]">
-          {/* User info */}
-          <div className="px-3 pt-[10px] pb-3 border-b border-bone mb-1">
-            <div className="flex items-center gap-[10px] mb-2">
-              <div className="size-9 rounded-full bg-brand-pale-orange flex items-center justify-center overflow-hidden shrink-0">
+        <div className="absolute right-0 top-[calc(100%+8px)] z-[100] bg-white border border-bone rounded-[14px] shadow-[0_12px_32px_rgba(0,0,0,0.12)] min-w-[240px] overflow-hidden">
+
+          {/* User info header */}
+          <div className="px-4 pt-4 pb-3 border-b border-bone relative">
+            <Badge color="orange" size="sm" dot className="absolute top-3 right-3 capitalize">
+              {profile?.role ?? ''}
+            </Badge>
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-full bg-brand-pale-orange flex items-center justify-center overflow-hidden shrink-0 border border-[#EDEBE2]">
                 {profile?.profileImage
                   ? <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
-                  : <span className="text-[12px] font-bold text-brand-deep-orange">{initials}</span>}
+                  : <span className="text-[13px] font-bold text-brand-deep-orange">{initials}</span>}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-bold text-carbon truncate">{profile?.name ?? '—'}</p>
-                <p className="text-[11px] text-slate truncate">{profile?.email ?? '—'}</p>
+              <div className="flex-1 min-w-0 pr-[70px]">
+                <p className="text-[13px] font-bold text-[#141413] truncate leading-tight">{profile?.name ?? '—'}</p>
+                <p className="text-[11px] text-[#8C8A82] truncate mt-[1px]">{profile?.email ?? '—'}</p>
               </div>
             </div>
-            <span className="inline-block py-[2px] px-[10px] rounded-[4px] bg-brand-pale-orange text-brand-deep-orange text-[10px] font-semibold capitalize">
-              {profile?.role ?? ''}
-            </span>
           </div>
 
-          {/* My Profile */}
-          <button
-            onClick={() => { navigate('/account/profile'); setOpen(false); }}
-            className="w-full flex items-center gap-2 py-[9px] px-3 rounded-md border-0 cursor-pointer bg-transparent text-[13px] text-charcoal text-left transition-colors duration-[120ms] hover:bg-cream"
-          >
-            My Profile
-          </button>
-
-          {/* Dashboard — only for seller/admin */}
-          {profile?.role !== 'user' && (
+          {/* Menu items */}
+          <div className="p-[6px]">
             <button
-              onClick={() => { navigate(dashboardPath); setOpen(false); }}
-              className="w-full flex items-center gap-2 py-[9px] px-3 rounded-md border-0 cursor-pointer bg-transparent text-[13px] text-charcoal text-left transition-colors duration-[120ms] hover:bg-cream"
+              onClick={() => { navigate('/account/profile'); setOpen(false); }}
+              className="w-full flex items-center gap-[10px] py-[8px] px-3 rounded-[8px] border-0 cursor-pointer bg-transparent text-[13px] text-charcoal text-left transition-colors hover:bg-cream"
             >
-              Go to Dashboard
+              <User size={14} className="text-slate shrink-0" />
+              My Profile
             </button>
-          )}
 
-          <div className="h-px bg-bone mx-[6px] my-1" />
+            {profile?.role !== 'user' && (
+              <button
+                onClick={() => { navigate(dashboardPath); setOpen(false); }}
+                className="w-full flex items-center gap-[10px] py-[8px] px-3 rounded-[8px] border-0 cursor-pointer bg-transparent text-[13px] text-charcoal text-left transition-colors hover:bg-cream"
+              >
+                <LayoutDashboard size={14} className="text-slate shrink-0" />
+                Go to Dashboard
+              </button>
+            )}
+          </div>
+
+          <div className="h-px bg-bone mx-3" />
 
           {/* Logout */}
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 py-[9px] px-3 rounded-md border-0 cursor-pointer bg-transparent text-[13px] text-[#C0392B] text-left transition-colors duration-[120ms] hover:bg-[#FDECEA]"
-          >
-            Logout
-          </button>
+          <div className="p-[6px]">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-[10px] py-[8px] px-3 rounded-[8px] border-0 cursor-pointer bg-transparent text-[13px] text-[#C0392B] text-left transition-colors hover:bg-[#FFF0F0]"
+            >
+              <LogOut size={14} className="shrink-0" />
+              Logout
+            </button>
+          </div>
         </div>
       )}
     </div>

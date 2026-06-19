@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  User, ShoppingBag, Heart, MapPin, Phone, Mail,
-  Camera, Check, Shield, LogOut, ShoppingCart, ImageOff, Loader2, Star,
+  User, ShoppingBag, Heart, MapPin, Phone, Mail, Camera,
+  Check, Shield, LogOut, ShoppingCart, ImageOff, Loader2, Star,
   Plus, Pencil, ArrowLeft, Home, Briefcase, Star as StarIcon,
-  type LucideIcon,
+  ChevronRight, type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { TokenStorage } from '@/api/commerce/auth';
@@ -15,531 +15,648 @@ import {
   apiGetMyAddresses, apiAddAddress, apiUpdateAddress,
   type Address, type AddressPayload,
 } from '@/api/commerce/address';
+import {
+  Table,     type TableColumn,
+  ActionMenu,
+  Badge,
+  Card,
+  EmptyState,
+  SkeletonBox,
+} from '@/components/comman/ui';
 
-const INPUT_CLS = 'w-full py-[10px] px-[13px] text-[13px] border border-bone rounded-[9px] outline-none text-charcoal bg-white box-border';
-const LABEL_CLS = 'text-[12px] font-medium text-[#4A4945] mb-[6px] block';
-
-// ── Tab nav ───────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses';
-const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
-  { id: 'profile', label: 'My Profile', Icon: User },
-  { id: 'orders', label: 'My Orders', Icon: ShoppingBag },
-  { id: 'wishlist', label: 'Wishlist', Icon: Heart },
-  { id: 'addresses', label: 'Addresses', Icon: MapPin },
+
+const NAV_ITEMS: { id: Tab; label: string; Icon: LucideIcon }[] = [
+  { id: 'profile',   label: 'My Profile', Icon: User       },
+  { id: 'orders',    label: 'My Orders',  Icon: ShoppingBag },
+  { id: 'wishlist',  label: 'Wishlist',   Icon: Heart       },
+  { id: 'addresses', label: 'Addresses',  Icon: MapPin      },
 ];
 
-// ── Skeleton ──────────────────────────────────────────────────────────────────
-function Skeleton({ w, h, radius = 6 }: { w: number | string; h: number; radius?: number }) {
-  return (
-    <div
-      className="animate-pulse"
-      style={{ width: w, height: h, borderRadius: radius, background: '#E8E6DC' }}
-    />
-  );
-}
-
-// ── Placeholder tab ───────────────────────────────────────────────────────────
-function PlaceholderTab({ Icon, label, desc }: { Icon: LucideIcon; label: string; desc: string }) {
-  return (
-    <div className="bg-white border border-[#E8E6DC] rounded-[12px] px-[26px] py-[24px] shadow-[0_1px_6px_rgba(0,0,0,0.05)] flex flex-col items-center px-5 py-16 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-cream border border-[#E8E6DC] flex items-center justify-center mb-4">
-        <Icon size={28} className="text-brand-orange opacity-60" />
-      </div>
-      <p className="text-[16px] font-bold text-[#141413] mb-[6px]">{label}</p>
-      <p className="text-[13px] text-[#8C8A82] max-w-[320px]">{desc}</p>
-    </div>
-  );
-}
-
-// ── Wishlist item image ───────────────────────────────────────────────────────
-function WishlistImg({ images, name }: { images?: string[]; name: string }) {
-  const [err, setErr] = useState(false);
-  const src = images?.[0];
-  if (!src || err) {
-    return (
-      <div className="w-20 h-20 rounded-[10px] bg-brand-pale-orange flex-shrink-0 flex items-center justify-center">
-        <ImageOff size={20} className="text-brand-orange opacity-[0.45]" />
-      </div>
-    );
-  }
-  return (
-    <img src={src} alt={name} onError={() => setErr(true)}
-      className="w-20 h-20 rounded-[10px] object-cover flex-shrink-0 block" />
-  );
-}
-
-// ── Wishlist tab content ──────────────────────────────────────────────────────
-function WishlistTab() {
-  const navigate = useNavigate();
-  const { wishlistItems, wishlistCount, loading: wLoading, wishlisting, removeFromWishlist } = useWishlistContext();
-  const { addToCart, adding } = useCartContext();
-
-  const [removingId, setRemovingId] = useState<string | null>(null);
-  const [addingId, setAddingId] = useState<string | null>(null);
-
-  const handleRemove = async (productId: string, variantId: string) => {
-    setRemovingId(variantId);
-    try { await removeFromWishlist(productId, variantId); }
-    finally { setRemovingId(null); }
-  };
-
-  const handleAddToCart = async (productId: string, variantId: string) => {
-    setAddingId(variantId);
-    try { await addToCart(productId, variantId); }
-    finally { setAddingId(null); }
-  };
-
-  if (wLoading) {
-    return (
-      <div className="bg-white border border-[#E8E6DC] rounded-[12px] px-[26px] py-6 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
-        <p className="text-[15px] font-bold text-[#141413] mb-[18px]">Saved Items</p>
-        <div className="flex flex-col gap-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="flex gap-[14px] py-4 border-b border-[#F0EEE6]">
-              <div className="animate-pulse w-20 h-20 rounded-[10px] bg-bone flex-shrink-0" />
-              <div className="flex-1 flex flex-col gap-[10px]">
-                <div className="animate-pulse h-[13px] rounded-[6px] bg-bone w-1/2" />
-                <div className="animate-pulse h-[11px] rounded bg-bone w-1/4" />
-                <div className="flex gap-2">
-                  <div className="animate-pulse h-[30px] w-24 rounded-lg bg-bone" />
-                  <div className="animate-pulse h-[30px] w-[76px] rounded-lg bg-bone" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-              </div>
-    );
-  }
-
-  if (wishlistCount === 0) {
-    return (
-      <PlaceholderTab
-        Icon={Heart}
-        label="Wishlist is empty"
-        desc="Save products you love to your wishlist and find them here anytime."
-      />
-    );
-  }
-
-  return (
-    <div className="bg-white border border-[#E8E6DC] rounded-[12px] px-[26px] py-6 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
-      <p className="text-[15px] font-bold text-[#141413] mb-1">Saved Items</p>
-      <p className="text-[12px] text-[#8C8A82] mb-5">{wishlistCount} item{wishlistCount !== 1 ? 's' : ''}</p>
-
-      <div className="flex flex-col">
-        {wishlistItems.map((item, idx) => {
-          const p = item.product;
-          const variant = item.variants[0];
-          const isRemoving = removingId === variant?._id || wishlisting === variant?._id;
-          const isAdding = addingId === variant?._id || adding === variant?._id;
-          const isLast = idx === wishlistItems.length - 1;
-
-          return (
-            <div
-              key={p._id}
-              className={clsx('flex gap-[14px] py-4 transition-opacity duration-200', !isLast && 'border-b border-[#F0EEE6]', isRemoving && 'opacity-40')}
-            >
-              <WishlistImg images={p.images ?? []} name={p.name} />
-
-              <div className="flex-1 min-w-0">
-                <p
-                  onClick={() => navigate(`/marketplace/${p._id}`)}
-                  className="font-semibold text-[14px] text-[#141413] mb-[3px] cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap"
-                >
-                  {p.name}
-                </p>
-
-                {/* Stars */}
-                <div className="flex gap-[2px] mb-[6px]">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <Star key={i} size={10} style={{
-                      color: i <= Math.round(p.averageRating) ? '#D97757' : '#E8E6DC',
-                      fill: i <= Math.round(p.averageRating) ? '#D97757' : '#E8E6DC',
-                    }} />
-                  ))}
-                </div>
-
-                {variant && (
-                  <p className="text-[12px] text-[#8C8A82] mb-[10px]">
-                    {variant.color && <span>{variant.color}</span>}
-                    {variant.color && variant.size && <span> · </span>}
-                    {variant.size && <span>{variant.size}</span>}
-                    {(variant.color || variant.size) && <span className="mx-[6px] text-bone">|</span>}
-                    <span className="font-semibold text-[#141413]">${variant.price.toLocaleString()}</span>
-                    {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
-                      <span className="ml-[6px] line-through text-[#8C8A82]">
-                        ${variant.compareAtPrice.toLocaleString()}
-                      </span>
-                    )}
-                  </p>
-                )}
-
-                <div className="flex gap-2 flex-wrap">
-                  {variant && (
-                    <button
-                      onClick={() => handleAddToCart(p._id, variant._id)}
-                      disabled={isAdding}
-                      className={clsx('flex items-center gap-[5px] px-[14px] py-[6px] rounded-lg text-[12px] font-semibold bg-brand-orange text-white border-none', isAdding ? 'cursor-not-allowed opacity-70' : 'cursor-pointer')}
-                    >
-                      {isAdding
-                        ? <Loader2 size={11} className="animate-spin" />
-                        : <ShoppingCart size={11} />
-                      }
-                      {isAdding ? 'Adding…' : 'Add to Cart'}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => variant && handleRemove(p._id, variant._id)}
-                    disabled={isRemoving}
-                    className={clsx('flex items-center gap-[5px] px-3 py-[6px] rounded-lg text-[12px] font-medium bg-[#FFF0F5] text-[#E11D48] border border-[#FECDD3]', isRemoving ? 'cursor-not-allowed' : 'cursor-pointer')}
-                  >
-                    {isRemoving
-                      ? <Loader2 size={11} className="animate-spin" />
-                      : <Heart size={11} className="fill-[#E11D48]" />
-                    }
-                    Remove
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-          </div>
-  );
-}
-
-// ── Address helpers ───────────────────────────────────────────────────────────
+const INPUT_CLS  = 'w-full py-[10px] px-[13px] text-[13px] border border-bone rounded-[9px] outline-none text-charcoal bg-white box-border';
+const LABEL_CLS  = 'text-[12px] font-medium text-[#4A4945] mb-[6px] block';
 const EMPTY_FORM: AddressPayload = {
   label: 'Home', recipientName: '', phoneNumber: '',
   addressLine1: '', addressLine2: '', state: '', city: '', zipCode: '',
   isDefault: false,
 };
 
-// ── Defined at module scope so the reference stays stable across re-renders ───
-function AddrField({
-  label, value, onChange, placeholder, half,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  half?: boolean;
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+interface SidebarProps {
+  profile:        ReturnType<typeof useGetProfile>['profile'];
+  loading:        boolean;
+  tab:            Tab;
+  setTab:         (t: Tab) => void;
+  onLogout:       () => void;
+  wishlistCount:  number;
+}
+
+function ProfileSidebar({ profile, loading, tab, setTab, onLogout, wishlistCount }: SidebarProps) {
+  const initials = profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? '..';
+
+  return (
+    <aside className="w-[260px] shrink-0 bg-white border-r border-bone sticky top-[60px] h-[calc(100vh-60px)] flex flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* ── Avatar + info ── */}
+      <div className="px-5 pt-7 pb-5 border-b border-bone">
+        {/* Avatar */}
+        <div className="flex flex-col items-center text-center mb-4">
+          <div className="relative mb-3">
+            <div className="w-[80px] h-[80px] rounded-full bg-brand-pale-orange overflow-hidden flex items-center justify-center text-[28px] font-bold text-brand-deep-orange border-[3px] border-bone">
+              {loading
+                ? <SkeletonBox width={80} height={80} rounded="50%" />
+                : profile?.profileImage
+                  ? <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                  : initials}
+            </div>
+            <button className="absolute bottom-0 right-0 w-[26px] h-[26px] rounded-full bg-brand-orange border-2 border-white flex items-center justify-center cursor-pointer">
+              <Camera size={11} className="text-white" />
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="flex flex-col items-center gap-2">
+              <SkeletonBox width={130} height={16} />
+              <SkeletonBox width={160} height={12} />
+            </div>
+          ) : (
+            <>
+              <p className="text-[15px] font-bold text-charcoal leading-tight mb-[5px]">
+                {profile?.name ?? '—'}
+              </p>
+              <div className="flex items-center gap-[5px] mb-3">
+                <Mail size={11} className="text-slate shrink-0" />
+                <span className="text-[11px] text-slate truncate max-w-[170px]">{profile?.email ?? '—'}</span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap justify-center">
+                <Badge color="orange" size="sm" className="capitalize">{profile?.role ?? ''}</Badge>
+                <Badge
+                  color={profile?.status === 'active' ? 'green' : 'gray'}
+                  size="sm"
+                  dot
+                  className="capitalize"
+                >
+                  {profile?.status ?? ''}
+                </Badge>
+                {profile?.isVerified && (
+                  <Badge color="green" size="sm">
+                    <Check size={9} className="mr-[2px]" /> Verified
+                  </Badge>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Quick stats */}
+        <div className="grid grid-cols-2 gap-2 mt-1">
+          <div className="bg-bone rounded-[9px] px-3 py-2.5 text-center">
+            <p className="text-[18px] font-bold text-charcoal leading-none mb-[3px]">{wishlistCount}</p>
+            <p className="text-[10px] text-slate">Wishlist</p>
+          </div>
+          <div className="bg-bone rounded-[9px] px-3 py-2.5 text-center">
+            <p className="text-[18px] font-bold text-charcoal leading-none mb-[3px]">—</p>
+            <p className="text-[10px] text-slate">Orders</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Navigation ── */}
+      <nav className="flex-1 px-3 py-4">
+        <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.08em] px-2 mb-2">Account</p>
+        {NAV_ITEMS.map(item => {
+          const active = tab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setTab(item.id)}
+              className={clsx(
+                'w-full flex items-center justify-between px-3 py-[9px] rounded-[8px] text-[13px] mb-[2px] transition-all duration-150 border-none cursor-pointer',
+                active
+                  ? 'bg-brand-pale-orange text-brand-orange font-semibold'
+                  : 'bg-transparent text-slate hover:bg-bone hover:text-charcoal font-normal',
+              )}
+            >
+              <span className="flex items-center gap-[9px]">
+                <item.Icon size={14} />
+                {item.label}
+                {item.id === 'wishlist' && wishlistCount > 0 && (
+                  <span className={clsx(
+                    'text-[10px] font-bold px-[6px] py-[1px] rounded-full',
+                    active ? 'bg-brand-orange text-white' : 'bg-bone text-slate',
+                  )}>
+                    {wishlistCount}
+                  </span>
+                )}
+              </span>
+              <ChevronRight size={13} className={active ? 'text-brand-orange' : 'text-bone'} />
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* ── Quick info + Logout ── */}
+      <div className="px-5 pb-5 border-t border-bone pt-4">
+        {!loading && (
+          <div className="flex flex-col gap-2 mb-4">
+            {[
+              { Icon: Phone,  value: profile?.phone   || 'Not set' },
+              { Icon: Shield, value: 'Secure Account' },
+            ].map((r, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <r.Icon size={12} className="text-brand-orange shrink-0" />
+                <span className="text-[11px] text-slate truncate">{r.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center justify-center gap-2 px-4 py-[9px] rounded-[9px] border border-bone bg-white text-[13px] text-slate cursor-pointer hover:border-error hover:text-error transition-colors"
+        >
+          <LogOut size={13} /> Logout
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+// ── Wishlist helpers ──────────────────────────────────────────────────────────
+function WishlistImg({ images, name }: { images?: string[]; name: string }) {
+  const [err, setErr] = useState(false);
+  const src = images?.[0];
+  if (!src || err) {
+    return (
+      <div className="w-[84px] h-[84px] rounded-[12px] bg-brand-pale-orange shrink-0 flex items-center justify-center border border-[#EDEBE2]">
+        <ImageOff size={20} className="text-brand-orange opacity-40" />
+      </div>
+    );
+  }
+  return (
+    <img src={src} alt={name} onError={() => setErr(true)}
+      className="w-[84px] h-[84px] rounded-[12px] object-cover shrink-0 border border-[#EDEBE2]" />
+  );
+}
+
+// ── Wishlist tab ──────────────────────────────────────────────────────────────
+function WishlistTab() {
+  const navigate = useNavigate();
+  const { wishlistItems, wishlistCount, loading: wLoading, wishlisting, removeFromWishlist } = useWishlistContext();
+  const { addToCart, adding } = useCartContext();
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [addingId,   setAddingId]   = useState<string | null>(null);
+
+  const handleRemove = (productId: string, variantId: string) => {
+    setRemovingId(variantId);
+    removeFromWishlist(productId, variantId).finally(() => setRemovingId(null));
+  };
+  const handleAddToCart = (productId: string, variantId: string) => {
+    setAddingId(variantId);
+    addToCart(productId, variantId).finally(() => setAddingId(null));
+  };
+
+  if (wLoading) {
+    return (
+      <Card padding="none">
+        <div className="px-5 pt-5 pb-4 border-b border-bone flex items-end justify-between">
+          <div className="flex flex-col gap-[6px]">
+            <SkeletonBox width={100} height={10} />
+            <SkeletonBox width={120} height={22} />
+          </div>
+          <div className="flex flex-col gap-[5px] items-end pb-[2px]">
+            <SkeletonBox width={80} height={13} />
+            <SkeletonBox width={50} height={10} />
+          </div>
+        </div>
+        <div className="divide-y divide-[#F5F4EF]">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="flex gap-4 items-center px-5 py-[18px]">
+              <SkeletonBox width={84} height={84} rounded="12px" />
+              <div className="flex-1 flex flex-col gap-[10px]">
+                <SkeletonBox width="50%" height={14} />
+                <SkeletonBox width="20%" height={10} />
+                <div className="flex gap-2">
+                  <SkeletonBox width={48} height={22} rounded="6px" />
+                  <SkeletonBox width={36} height={22} rounded="6px" />
+                </div>
+                <SkeletonBox width="35%" height={16} />
+              </div>
+              <div className="flex flex-col gap-[8px] items-end shrink-0">
+                <SkeletonBox width={110} height={36} rounded="10px" />
+                <SkeletonBox width={80}  height={30} rounded="8px" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
+  if (wishlistCount === 0) {
+    return (
+      <Card padding="none">
+        <div className="px-5 pt-5 pb-4 border-b border-bone">
+          <p className="text-[11px] text-slate mb-[3px]">Account / Wishlist</p>
+          <h1 className="text-[22px] font-bold text-charcoal">Wishlist</h1>
+        </div>
+        <EmptyState
+          icon={<Heart size={28} className="text-brand-orange opacity-55" />}
+          title="Wishlist is empty"
+          description="Save products you love and find them here anytime."
+          className="py-12"
+        />
+      </Card>
+    );
+  }
+
+  return (
+    <Card padding="none">
+      {/* Header: title left, Saved Items right — single row */}
+      <div className="px-5 pt-5 pb-4 border-b border-bone flex items-end justify-between">
+        <div>
+          <p className="text-[11px] text-slate mb-[3px]">Account / Wishlist</p>
+          <h1 className="text-[22px] font-bold text-charcoal leading-none">Wishlist</h1>
+        </div>
+        <div className="text-right pb-[2px]">
+          <p className="text-[13px] font-semibold text-charcoal leading-tight">Saved Items</p>
+          <p className="text-[11px] text-slate mt-[2px]">{wishlistCount} item{wishlistCount !== 1 ? 's' : ''}</p>
+        </div>
+      </div>
+      <div className="divide-y divide-[#F5F4EF]">
+        {wishlistItems.map((item, idx) => {
+          const isLast = idx === wishlistItems.length - 1;
+          const p       = item.product;
+          const variant = item.variants[0];
+          const isRemoving = removingId === variant?._id || wishlisting === variant?._id;
+          const isAdding   = addingId   === variant?._id || adding       === variant?._id;
+
+          const discount = variant?.compareAtPrice && variant.compareAtPrice > variant.price
+            ? Math.round((1 - variant.price / variant.compareAtPrice) * 100)
+            : null;
+
+          return (
+            <div
+              key={p._id}
+              className={clsx(
+                'group flex gap-4 items-center px-5 py-[18px] transition-all',
+                !isLast && 'border-b border-[#F0EDE5]',
+                isRemoving && 'opacity-40',
+                'hover:bg-[#FAFAF8]',
+              )}
+            >
+              <WishlistImg images={p.images ?? []} name={p.name} />
+
+              {/* Info */}
+              <div className="flex-1 min-w-0 flex flex-col gap-[7px]">
+                <p
+                  onClick={() => navigate(`/marketplace/${p._id}`)}
+                  className="font-bold text-[14px] text-[#141413] cursor-pointer leading-snug hover:text-brand-orange transition-colors line-clamp-1"
+                >
+                  {p.name}
+                </p>
+
+                {/* Stars + rating */}
+                <div className="flex items-center gap-[4px]">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <Star key={i} size={11} className={clsx(
+                      i <= Math.round(p.averageRating) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone',
+                    )} />
+                  ))}
+                  {p.averageRating > 0 && (
+                    <span className="text-[11px] text-slate ml-[2px]">({p.averageRating.toFixed(1)})</span>
+                  )}
+                </div>
+
+                {/* Variant pills */}
+                {variant && (variant.color || variant.size) && (
+                  <div className="flex items-center gap-[5px]">
+                    {variant.color && (
+                      <span className="text-[11px] px-[8px] py-[2px] rounded-[6px] bg-[#F2F0EA] text-slate font-medium">
+                        {variant.color}
+                      </span>
+                    )}
+                    {variant.size && (
+                      <span className="text-[11px] px-[8px] py-[2px] rounded-[6px] bg-[#F2F0EA] text-slate font-medium">
+                        {variant.size}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Price row */}
+                {variant && (
+                  <div className="flex items-center gap-[8px]">
+                    <span className="font-bold text-[16px] text-[#141413]">
+                      ${variant.price.toLocaleString()}
+                    </span>
+                    {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
+                      <span className="text-[12px] line-through text-[#B0AEAA]">
+                        ${variant.compareAtPrice.toLocaleString()}
+                      </span>
+                    )}
+                    {discount && (
+                      <span className="text-[10px] font-bold px-[7px] py-[2px] rounded-[5px] bg-[#DCFCE7] text-[#15803D]">
+                        Save {discount}%
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-[8px] justify-center shrink-0">
+                {variant && (
+                  <button
+                    onClick={() => handleAddToCart(p._id, variant._id)}
+                    disabled={isAdding}
+                    className={clsx(
+                      'flex items-center gap-[6px] px-[16px] py-[9px] rounded-[10px] text-[12px] font-bold bg-brand-orange text-white border-none whitespace-nowrap',
+                      isAdding ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:opacity-90',
+                    )}
+                  >
+                    {isAdding ? <Loader2 size={12} className="animate-spin" /> : <ShoppingCart size={12} />}
+                    {isAdding ? 'Adding…' : 'Add to Cart'}
+                  </button>
+                )}
+                <button
+                  onClick={() => variant && handleRemove(p._id, variant._id)}
+                  disabled={isRemoving}
+                  className={clsx(
+                    'flex items-center justify-center gap-[5px] px-3 py-[6px] rounded-[8px] text-[11px] font-medium border border-bone bg-white text-slate whitespace-nowrap transition-colors',
+                    isRemoving ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-[#FECDD3] hover:text-[#E11D48] hover:bg-[#FFF5F7]',
+                  )}
+                >
+                  {isRemoving ? <Loader2 size={11} className="animate-spin" /> : <Heart size={11} />}
+                  Remove
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+// ── Address helpers ───────────────────────────────────────────────────────────
+function AddrField({ label, value, onChange, placeholder, half }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; half?: boolean;
 }) {
   return (
     <div className={half ? '' : 'col-span-2'}>
       <label className={LABEL_CLS}>{label}</label>
-      <input
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={INPUT_CLS}
-      />
+      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={INPUT_CLS} />
     </div>
   );
 }
 
-function AddressForm({
-  initial, onSave, onCancel, saving,
-}: {
-  initial: AddressPayload;
-  onSave: (data: AddressPayload) => void;
-  onCancel: () => void;
-  saving: boolean;
+function AddressForm({ initial, onSave, onCancel, saving }: {
+  initial: AddressPayload; onSave: (d: AddressPayload) => void; onCancel: () => void; saving: boolean;
 }) {
   const [form, setForm] = useState<AddressPayload>(initial);
-  const set = (k: keyof AddressPayload, v: string | boolean) =>
-    setForm(prev => ({ ...prev, [k]: v }));
+  const set = (k: keyof AddressPayload, v: string | boolean) => setForm(p => ({ ...p, [k]: v }));
 
   return (
-    <div className="border-[1.5px] border-brand-orange rounded-[12px] px-[18px] py-5 bg-[#FFFAF7]">
+    <div className="border-[1.5px] border-brand-orange rounded-[12px] px-5 py-5 bg-[#FFFAF7]">
       <div className="grid grid-cols-2 gap-3">
-        {/* Label select */}
         <div className="col-span-2">
           <label className={LABEL_CLS}>Label</label>
           <div className="flex gap-2">
-            {['Home', 'Work', 'Other'].map(l => (
+            {(['Home', 'Work', 'Other'] as const).map(l => (
               <button
-                key={l}
-                type="button"
-                onClick={() => set('label', l)}
-                className="px-4 py-[6px] rounded-lg text-[12px] font-semibold cursor-pointer"
-                style={{
-                  border: `1.5px solid ${form.label === l ? '#D97757' : '#E8E6DC'}`,
-                  background: form.label === l ? '#FBECE4' : '#fff',
-                  color: form.label === l ? '#B95A3A' : '#8C8A82',
-                }}
-              >
-                {l}
-              </button>
+                key={l} type="button" onClick={() => set('label', l)}
+                className={clsx(
+                  'px-4 py-[6px] rounded-lg text-[12px] font-semibold cursor-pointer border',
+                  form.label === l
+                    ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange'
+                    : 'border-bone bg-white text-slate',
+                )}
+              >{l}</button>
             ))}
           </div>
         </div>
-
-        <AddrField label="Recipient Name" value={form.recipientName} onChange={v => set('recipientName', v)} placeholder="Full name" half />
-        <AddrField label="Phone Number" value={form.phoneNumber} onChange={v => set('phoneNumber', v)} placeholder="e.g. 03001234567" half />
-        <AddrField label="Address Line 1" value={form.addressLine1} onChange={v => set('addressLine1', v)} placeholder="House no, Street" />
-        <AddrField label="Address Line 2 (Optional)" value={form.addressLine2 ?? ''} onChange={v => set('addressLine2', v)} placeholder="Landmark, Area" />
-        <AddrField label="City" value={form.city} onChange={v => set('city', v)} placeholder="e.g. Karachi" half />
-        <AddrField label="State" value={form.state} onChange={v => set('state', v)} placeholder="e.g. Sindh" half />
-        <AddrField label="Zip Code" value={form.zipCode} onChange={v => set('zipCode', v)} placeholder="e.g. 75300" half />
-
-        {/* Default checkbox */}
+        <AddrField label="Recipient Name"            value={form.recipientName}      onChange={v => set('recipientName', v)}  placeholder="Full name"        half />
+        <AddrField label="Phone Number"              value={form.phoneNumber}        onChange={v => set('phoneNumber', v)}    placeholder="e.g. 03001234567" half />
+        <AddrField label="Address Line 1"            value={form.addressLine1}       onChange={v => set('addressLine1', v)}   placeholder="House no, Street" />
+        <AddrField label="Address Line 2 (Optional)" value={form.addressLine2 ?? ''} onChange={v => set('addressLine2', v)}   placeholder="Landmark, Area"   />
+        <AddrField label="City"                      value={form.city}               onChange={v => set('city', v)}           placeholder="e.g. Karachi"     half />
+        <AddrField label="State"                     value={form.state}              onChange={v => set('state', v)}          placeholder="e.g. Sindh"       half />
+        <AddrField label="Zip Code"                  value={form.zipCode}            onChange={v => set('zipCode', v)}        placeholder="e.g. 75300"       half />
         <div className="col-span-2 flex items-center gap-2">
           <input
-            type="checkbox"
-            id="addr-isDefault"
+            type="checkbox" id="addr-default"
             checked={form.isDefault ?? false}
             onChange={e => set('isDefault', e.target.checked)}
             className="w-[15px] h-[15px] cursor-pointer accent-brand-orange"
           />
-          <label htmlFor="addr-isDefault" className="text-[12px] text-[#4A4945] cursor-pointer">
+          <label htmlFor="addr-default" className="text-[12px] text-[#4A4945] cursor-pointer">
             Set as default address
           </label>
         </div>
       </div>
-
       <div className="flex gap-[10px] mt-[18px]">
         <button
-          onClick={() => onSave(form)}
-          disabled={saving}
-          className={clsx('px-6 py-[9px] rounded-[9px] text-[13px] font-semibold bg-brand-orange text-white border-none flex items-center gap-[6px]', saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer')}
+          onClick={() => onSave(form)} disabled={saving}
+          className={clsx(
+            'px-6 py-[9px] rounded-[9px] text-[13px] font-semibold bg-brand-orange text-white border-none flex items-center gap-[6px]',
+            saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
+          )}
         >
           {saving && <Loader2 size={13} className="animate-spin" />}
           {saving ? 'Saving…' : 'Save Address'}
         </button>
-        <button
-          onClick={onCancel}
-          className="px-[18px] py-[9px] rounded-[9px] text-[13px] border border-[#E8E6DC] bg-white text-[#8C8A82] cursor-pointer"
-        >
+        <button onClick={onCancel} className="px-[18px] py-[9px] rounded-[9px] text-[13px] border border-bone bg-white text-slate cursor-pointer">
           Discard
         </button>
       </div>
-          </div>
+    </div>
   );
 }
 
 // ── Address tab ───────────────────────────────────────────────────────────────
 type AddrView = 'list' | 'add' | 'edit';
 
+const LABEL_ICON: Record<string, LucideIcon> = { Home, Work: Briefcase, Other: StarIcon };
+
 function AddressTab() {
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [view, setView] = useState<AddrView>('list');
+  const [addresses,  setAddresses]  = useState<Address[]>([]);
+  const [addrLoading, setAddrLoading] = useState(true);
+  const [saving,     setSaving]     = useState(false);
+  const [view,       setView]       = useState<AddrView>('list');
   const [editTarget, setEditTarget] = useState<Address | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     apiGetMyAddresses()
       .then(res => { if (!cancelled) setAddresses(res.data ?? []); })
-      .catch(() => { })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setAddrLoading(false); });
     return () => { cancelled = true; };
   }, []);
 
   const goList = () => { setView('list'); setEditTarget(null); };
 
+  const refreshAddresses = () =>
+    apiGetMyAddresses()
+      .then(res => setAddresses(res.data ?? []))
+      .catch(() => {});
+
   const handleSave = async (data: AddressPayload) => {
     setSaving(true);
     try {
-      if (view === 'add') {
-        const res = await apiAddAddress(data);
-        setAddresses(prev =>
-          data.isDefault
-            ? [...prev.map(a => ({ ...a, isDefault: false })), res.data]
-            : [...prev, res.data],
-        );
-      } else if (view === 'edit' && editTarget) {
-        const res = await apiUpdateAddress(editTarget._id, data);
-        setAddresses(prev =>
-          data.isDefault
-            ? prev.map(a => a._id === editTarget._id ? res.data : { ...a, isDefault: false })
-            : prev.map(a => a._id === editTarget._id ? res.data : a),
-        );
-      }
+      if (view === 'add') await apiAddAddress(data);
+      else if (view === 'edit' && editTarget) await apiUpdateAddress(editTarget._id, data);
+      await refreshAddresses();
       goList();
-    } catch {
-      // keep form open
-    } finally {
-      setSaving(false);
-    }
+    } catch { /* keep form open */ }
+    finally { setSaving(false); }
   };
 
-  // ── Loading skeleton ──────────────────────────────────────────────────────
-  if (loading) {
+  const columns: TableColumn<Address>[] = [
+    {
+      key: 'no', header: '#', width: '48px',
+      render: (_, i) => <span className="text-[12px] text-slate">{i + 1}</span>,
+    },
+    {
+      key: 'label', header: 'Label',
+      render: a => {
+        const LIcon = LABEL_ICON[a.label] ?? MapPin;
+        return (
+          <Badge color="orange" size="sm">
+            <LIcon size={10} className="mr-[3px]" />{a.label}
+          </Badge>
+        );
+      },
+    },
+    {
+      key: 'recipientName', header: 'Recipient',
+      render: a => (
+        <div className="flex items-center gap-2">
+          <div className="w-[26px] h-[26px] rounded-full bg-[#EAF3FB] text-[11px] font-bold flex items-center justify-center shrink-0 text-[#2156A8]">
+            {a.recipientName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+          </div>
+          <span className="text-charcoal">{a.recipientName}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'phoneNumber', header: 'Phone',
+      render: a => <span className="text-slate">{a.phoneNumber}</span>,
+    },
+    {
+      key: 'address', header: 'Address',
+      render: a => (
+        <span className="text-slate text-[12px] block max-w-[220px] truncate">
+          {a.addressLine1}{a.addressLine2 ? `, ${a.addressLine2}` : ''}, {a.city}, {a.state}
+        </span>
+      ),
+    },
+    {
+      key: 'isDefault', header: 'Status',
+      render: a => (
+        <Badge color={a.isDefault ? 'green' : 'gray'} dot>
+          {a.isDefault ? 'Default' : 'Saved'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'actions', header: '', align: 'center', width: '60px',
+      render: a => (
+        <ActionMenu
+          align="right"
+          items={[{ label: 'Edit', onClick: () => { setEditTarget(a); setView('edit'); }, icon: <Pencil size={13} /> }]}
+        />
+      ),
+    },
+  ];
+
+  if (view !== 'list') {
     return (
-      <div className="bg-white border border-[#E8E6DC] rounded-[12px] px-[26px] py-6 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
-        <div className="flex flex-col gap-3">
-          {[1, 2].map(i => (
-            <div key={i} className="border border-[#E8E6DC] rounded-[12px] p-[18px]">
-              <div className="flex gap-3">
-                <div className="animate-pulse w-9 h-9 rounded-[10px] bg-bone flex-shrink-0" />
-                <div className="flex-1 flex flex-col gap-2">
-                  <div className="animate-pulse h-[13px] w-[30%] rounded-[6px] bg-bone" />
-                  <div className="animate-pulse h-[11px] w-1/2 rounded bg-bone" />
-                  <div className="animate-pulse h-[11px] w-[70%] rounded bg-bone" />
-                </div>
-              </div>
+      <Card padding="none">
+        <div className="px-5 pt-5 pb-4 mb-5 border-b border-bone flex items-end justify-between">
+          <div>
+            <p className="text-[11px] text-slate mb-[3px]">Account / Addresses</p>
+            <h1 className="text-[22px] font-bold text-charcoal leading-none">Addresses</h1>
+          </div>
+          <div className="flex items-center gap-[10px] pb-[2px]">
+            <button onClick={goList} className="flex items-center gap-[6px] px-3 py-[6px] rounded-lg text-[12px] border border-bone bg-cream text-charcoal cursor-pointer">
+              <ArrowLeft size={14} /> Back
+            </button>
+            <p className="text-[14px] font-semibold text-charcoal">
+              {view === 'edit' ? 'Edit Address' : 'Add New Address'}
+            </p>
+          </div>
+        </div>
+        <div className="px-5 pb-5">
+          <AddressForm
+            initial={editTarget
+              ? { label: editTarget.label, recipientName: editTarget.recipientName, phoneNumber: editTarget.phoneNumber, addressLine1: editTarget.addressLine1, addressLine2: editTarget.addressLine2, state: editTarget.state, city: editTarget.city, zipCode: editTarget.zipCode, isDefault: editTarget.isDefault }
+              : EMPTY_FORM}
+            onSave={handleSave}
+            onCancel={goList}
+            saving={saving}
+          />
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card padding="none">
+      <div className="px-5 pt-5 pb-4 flex items-end justify-between border-b border-bone">
+        <div>
+          <p className="text-[11px] text-slate mb-[3px]">Account / Addresses</p>
+          <h1 className="text-[22px] font-bold text-charcoal leading-none">Addresses</h1>
+        </div>
+        <div className="flex items-end gap-4 pb-[2px]">
+          <div className="text-right">
+            <p className="text-[13px] font-semibold text-charcoal leading-tight">Saved Addresses</p>
+            <p className="text-[11px] text-slate mt-[1px]">{addresses.length} address{addresses.length !== 1 ? 'es' : ''}</p>
+          </div>
+          <button
+            onClick={() => setView('add')}
+            className="flex items-center gap-[6px] px-[14px] py-[8px] rounded-lg text-[13px] font-semibold bg-brand-orange text-white border-none cursor-pointer"
+          >
+            <Plus size={15} /> Add Address
+          </button>
+        </div>
+      </div>
+
+      {addrLoading ? (
+        <div className="px-5 py-4 flex flex-col gap-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="flex items-center gap-4">
+              <SkeletonBox width={20}  height={13} />
+              <SkeletonBox width={60}  height={22} rounded="999px" />
+              <SkeletonBox width="20%" height={13} />
+              <SkeletonBox width="15%" height={13} />
+              <SkeletonBox width="30%" height={13} />
+              <SkeletonBox width={60}  height={22} rounded="999px" />
+              <SkeletonBox width={30}  height={30} rounded="7px" />
             </div>
           ))}
         </div>
-      </div>
-    );
-  }
-
-  // ── Form view (Add or Edit) ───────────────────────────────────────────────
-  if (view === 'add' || view === 'edit') {
-    return (
-      <div className="bg-white border border-[#E8E6DC] rounded-[12px] px-[26px] py-6 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
-        {/* Back header */}
-        <div className="flex items-center gap-[10px] mb-[22px] pb-4 border-b border-[#F0EEE6]">
-          <button
-            onClick={goList}
-            className="flex items-center gap-[6px] px-3 py-[6px] rounded-lg text-[12px] border border-[#E8E6DC] bg-cream text-[#4A4945] cursor-pointer"
-          >
-            <ArrowLeft size={15} /> Back
-          </button>
-          <p className="text-[15px] font-bold text-[#141413]">
-            {view === 'edit' ? 'Edit Address' : 'Add New Address'}
-          </p>
-        </div>
-
-        <AddressForm
-          initial={editTarget
-            ? { label: editTarget.label, recipientName: editTarget.recipientName, phoneNumber: editTarget.phoneNumber, addressLine1: editTarget.addressLine1, addressLine2: editTarget.addressLine2, state: editTarget.state, city: editTarget.city, zipCode: editTarget.zipCode, isDefault: editTarget.isDefault }
-            : EMPTY_FORM
-          }
-          onSave={handleSave}
-          onCancel={goList}
-          saving={saving}
+      ) : addresses.length === 0 ? (
+        <EmptyState
+          icon={<MapPin size={28} className="text-brand-orange opacity-55" />}
+          title="No addresses saved"
+          description="Add a shipping address to speed up checkout."
+          action={{ label: 'Add Address', onClick: () => setView('add'), icon: <Plus size={14} /> }}
         />
-      </div>
-    );
-  }
-
-  // ── List view (table style — matches seller dashboard Recent Orders) ─────────
-  return (
-    <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-      {/* Header */}
-      <div className="px-5 pt-4 pb-[10px] flex items-center justify-between">
-        <p className="text-[14px] font-bold text-[#141413]">Saved Addresses</p>
-        <button
-          onClick={() => setView('add')}
-          className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-semibold bg-brand-orange text-white border-none cursor-pointer"
-        >
-          <Plus size={18} /> Add Address
-        </button>
-      </div>
-
-      {addresses.length === 0 ? (
-        <div className="px-5 py-12 text-center border-t border-[#E8E6DC]">
-          <div className="w-[52px] h-[52px] rounded-[12px] bg-cream border border-[#E8E6DC] flex items-center justify-center mx-auto mb-3">
-            <MapPin size={22} className="text-brand-orange opacity-60" />
-          </div>
-          <p className="text-[14px] font-bold text-[#141413] mb-1">No addresses saved</p>
-          <p className="text-[12px] text-[#8C8A82]">Add a shipping address to speed up checkout.</p>
-        </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-[13px]">
-            <thead>
-              <tr className="border-t border-b border-[#E8E6DC]">
-                {['#', 'Label', 'Recipient', 'Phone', 'Address', 'Status', 'Actions'].map(h => (
-                  <th key={h} className="text-left text-[11px] font-semibold text-[#8C8A82] uppercase tracking-[0.05em] px-[18px] py-[10px]">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {addresses.map((addr, i) => (
-                <tr
-                  key={addr._id}
-                  className="transition-colors duration-[120ms]"
-                  style={{ borderBottom: i < addresses.length - 1 ? '1px solid #F5F4EF' : 'none' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  {/* S.No */}
-                  <td className="px-[18px] py-[11px] text-[#8C8A82] text-[12px]">{i + 1}</td>
-
-                  {/* Label */}
-                  <td className="px-[18px] py-[11px]">
-                    <span className="inline-flex items-center gap-[5px] bg-brand-pale-orange text-[#B95A3A] text-[11px] font-semibold px-[10px] py-[3px] rounded-[5px]">
-                      {addr.label === 'Home' && <Home size={10} />}
-                      {addr.label === 'Work' && <Briefcase size={10} />}
-                      {addr.label === 'Other' && <StarIcon size={10} />}
-                      {addr.label}
-                    </span>
-                  </td>
-
-                  {/* Recipient */}
-                  <td className="px-[18px] py-[11px]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-[26px] h-[26px] rounded-full bg-[#EAF3FB] text-[#2156A8] text-[9px] font-bold flex items-center justify-center flex-shrink-0">
-                        {addr.recipientName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                      </div>
-                      <span className="text-[#4A4945]">{addr.recipientName}</span>
-                    </div>
-                  </td>
-
-                  {/* Phone */}
-                  <td className="px-[18px] py-[11px] text-[#4A4945]">{addr.phoneNumber}</td>
-
-                  {/* Address */}
-                  <td className="px-[18px] py-[11px] text-[#4A4945] max-w-[240px]">
-                    <span className="overflow-hidden text-ellipsis whitespace-nowrap block">
-                      {addr.addressLine1}{addr.addressLine2 ? `, ${addr.addressLine2}` : ''}, {addr.city}, {addr.state}
-                    </span>
-                  </td>
-
-                  {/* Status */}
-                  <td className="px-[18px] py-[11px]">
-                    <span
-                      className="inline-block text-[11px] font-semibold px-[10px] py-[3px] rounded-[5px]"
-                      style={{
-                        background: addr.isDefault ? '#E3F4EA' : '#F0EEE6',
-                        color: addr.isDefault ? '#1E7A3C' : '#8C8A82',
-                      }}
-                    >
-                      {addr.isDefault ? 'Default' : 'Saved'}
-                    </span>
-                  </td>
-
-                  {/* Actions */}
-                  <td className="px-[18px] py-[11px]">
-                    <button
-                      onClick={() => { setEditTarget(addr); setView('edit'); }}
-                      className="flex items-center gap-1 px-3 py-1 rounded-[6px] text-[12px] font-medium border border-[#E8E6DC] bg-cream text-[#4A4945] cursor-pointer"
-                    >
-                      <Pencil size={12} /> Edit
-
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table columns={columns} data={addresses} keyExtractor={a => a._id} />
       )}
-    </div>
+    </Card>
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
-export function UserProfile() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const initialTab = (searchParams.get('tab') as Tab | null) ?? 'profile';
-  const [tab, setTab] = useState<Tab>(initialTab);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-
+// ── Profile edit tab ──────────────────────────────────────────────────────────
+function ProfileTab() {
   const { profile, loading } = useGetProfile();
+  const [firstName, setFirstName] = useState('');
+  const [lastName,  setLastName]  = useState('');
+  const [phone,     setPhone]     = useState('');
+  const [address,   setAddress]   = useState('');
 
   useEffect(() => {
     if (!profile) return;
@@ -550,199 +667,158 @@ export function UserProfile() {
     setAddress(profile.address ?? '');
   }, [profile]);
 
+  const memberSince = profile?.createdAt
+    ? new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+    : '—';
+
+  return (
+    <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 300px' }}>
+      {/* Edit form */}
+      <Card padding="none">
+        <div className="px-5 pt-5 pb-4 border-b border-bone flex items-end justify-between">
+          <div>
+            <p className="text-[11px] text-slate mb-[3px]">Account / My Profile</p>
+            <h1 className="text-[22px] font-bold text-charcoal leading-none">My Profile</h1>
+          </div>
+        </div>
+        <div className="p-5">
+
+        {loading ? (
+          <div className="flex flex-col gap-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i}>
+                <SkeletonBox width={90} height={11} className="mb-[6px]" />
+                <SkeletonBox width="100%" height={40} rounded="9px" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className={LABEL_CLS}>First Name</label>
+                <input value={firstName} onChange={e => setFirstName(e.target.value)} className={INPUT_CLS} />
+              </div>
+              <div>
+                <label className={LABEL_CLS}>Last Name</label>
+                <input value={lastName} onChange={e => setLastName(e.target.value)} className={INPUT_CLS} />
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className={LABEL_CLS}>Email Address</label>
+              <div className="flex items-center gap-[10px]">
+                <input readOnly value={profile?.email ?? ''} className={clsx(INPUT_CLS, 'flex-1 bg-cream text-slate cursor-default')} />
+                {profile?.isVerified && (
+                  <span className="px-3 py-[5px] rounded-[7px] text-[11px] font-semibold bg-success-bg text-success flex items-center gap-1 shrink-0">
+                    <Check size={10} /> Verified
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className={LABEL_CLS}>Phone Number</label>
+              <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. +92 300 0000000" className={INPUT_CLS} />
+            </div>
+
+            <div className="mb-6">
+              <label className={LABEL_CLS}>Address</label>
+              <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address" className={INPUT_CLS} />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button className="px-7 py-[10px] bg-brand-orange border-none rounded-[9px] text-[13px] font-semibold text-white cursor-pointer">
+                Save Changes
+              </button>
+              <span className="text-[11px] text-slate">Member since {memberSince}</span>
+            </div>
+          </>
+        )}
+        </div>
+      </Card>
+
+      {/* Account info sidebar */}
+      <div className="flex flex-col gap-4">
+        <Card>
+          <p className="text-[12px] font-semibold text-charcoal mb-4">Account Summary</p>
+          {[
+            { label: 'Member Since', value: memberSince },
+            { label: 'Account Role', value: profile?.role ?? '—' },
+            { label: 'Status',       value: profile?.status ?? '—' },
+          ].map(r => (
+            <div key={r.label} className="flex justify-between py-[9px] border-b border-[#F5F4EF] last:border-0">
+              <span className="text-[12px] text-slate">{r.label}</span>
+              <span className="text-[12px] font-semibold text-charcoal capitalize">{r.value}</span>
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <Shield size={14} className="text-brand-orange" />
+            <p className="text-[12px] font-semibold text-charcoal">Security</p>
+          </div>
+          <p className="text-[11px] text-slate leading-relaxed">
+            Your account is protected with email verification. Keep your credentials safe and never share your password.
+          </p>
+          {profile?.isVerified && (
+            <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-success-bg rounded-[8px]">
+              <Check size={12} className="text-success shrink-0" />
+              <span className="text-[11px] text-success font-medium">Email verified</span>
+            </div>
+          )}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+export function UserProfile() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<Tab>((searchParams.get('tab') as Tab | null) ?? 'profile');
+
+  const { profile, loading } = useGetProfile();
+  const { wishlistCount } = useWishlistContext();
+
   const handleLogout = () => {
     TokenStorage.clear();
     navigate('/');
     window.location.reload();
   };
 
-  const initials = profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? '..';
-
   return (
-    <div className="min-h-screen bg-cream">
-      <div className="max-w-[900px] mx-auto px-5 pt-8 pb-[60px]">
+    <div className="bg-cream flex h-[calc(100vh-60px)] overflow-hidden">
+      <ProfileSidebar
+        profile={profile}
+        loading={loading}
+        tab={tab}
+        setTab={setTab}
+        onLogout={handleLogout}
+        wishlistCount={wishlistCount}
+      />
 
-        {/* ── Hero card ── */}
-        <div className="bg-white border border-[#E8E6DC] rounded-[14px] px-7 pt-7 pb-6 mb-5 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
-          <div className="flex items-center gap-5 flex-wrap">
-
-            {/* Avatar */}
-            <div className="relative flex-shrink-0">
-              <div className="w-20 h-20 rounded-full bg-brand-pale-orange overflow-hidden flex items-center justify-center text-[28px] font-bold text-[#B95A3A] border-[3px] border-brand-pale-orange">
-                {loading
-                  ? <Skeleton w={80} h={80} radius={40} />
-                  : profile?.profileImage
-                    ? <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
-                    : initials}
-              </div>
-              <button className="absolute bottom-[2px] right-[2px] w-6 h-6 rounded-full bg-brand-orange border-2 border-white flex items-center justify-center cursor-pointer">
-                <Camera size={11} className="text-white" />
-              </button>
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-[180px]">
-              {loading ? (
-                <>
-                  <Skeleton w={160} h={18} /><div className="h-2" />
-                  <Skeleton w={200} h={12} /><div className="h-2" />
-                  <Skeleton w={60} h={20} radius={10} />
-                </>
-              ) : (
-                <>
-                  <h1 className="text-[20px] font-bold text-[#141413] m-0">{profile?.name ?? '—'}</h1>
-                  <div className="flex items-center gap-[6px] mt-[5px] flex-wrap">
-                    <Mail size={12} className="text-[#8C8A82]" />
-                    <span className="text-[12px] text-[#8C8A82]">{profile?.email ?? '—'}</span>
-                    {profile?.isVerified && (
-                      <span className="flex items-center gap-[3px] px-2 py-[1px] rounded-[10px] bg-[#E3F4EA] text-[#1E7A3C] text-[10px] font-semibold">
-                        <Check size={9} /> Verified
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2 mt-[10px] flex-wrap">
-                    <span className="px-3 py-[3px] rounded-[20px] bg-brand-pale-orange text-[#B95A3A] text-[11px] font-semibold capitalize">
-                      {profile?.role ?? ''}
-                    </span>
-                    <span
-                      className="px-3 py-[3px] rounded-[20px] text-[11px] font-semibold capitalize"
-                      style={{
-                        background: profile?.status === 'active' ? '#E3F4EA' : '#F0EEE6',
-                        color: profile?.status === 'active' ? '#1E7A3C' : '#8C8A82',
-                      }}
-                    >
-                      {profile?.status ?? ''}
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Logout */}
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-[7px] px-4 py-2 rounded-[9px] border border-bone bg-white text-[13px] text-slate cursor-pointer transition-all duration-150 hover:border-[#C0392B] hover:text-[#C0392B]"
-            >
-              <LogOut size={14} /> Logout
-            </button>
-          </div>
-
-          {/* Quick info row */}
-          {!loading && (
-            <div className="flex gap-5 mt-5 pt-[18px] border-t border-[#F0EEE6] flex-wrap">
-              {[
-                { Icon: Phone, value: profile?.phone || '—', label: 'Phone' },
-                { Icon: MapPin, value: profile?.address || '—', label: 'Address' },
-                { Icon: Shield, value: 'Secure Account', label: 'Security' },
-              ].map(item => (
-                <div key={item.label} className="flex items-center gap-[7px]">
-                  <item.Icon size={13} className="text-brand-orange flex-shrink-0" />
-                  <div>
-                    <p className="text-[10px] text-[#8C8A82] m-0">{item.label}</p>
-                    <p className="text-[12px] font-medium text-charcoal m-0 max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap">{item.value}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ── Tabs ── */}
-        <div className="flex gap-1 mb-5 bg-white rounded-[10px] p-[5px] border border-[#E8E6DC] w-fit">
-          {TABS.map(t => {
-            const active = tab === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className="flex items-center gap-[7px] px-[18px] py-2 rounded-[7px] border-none text-[13px] cursor-pointer transition-all duration-150"
-                style={{
-                  background: active ? '#D97757' : 'transparent',
-                  color: active ? '#fff' : '#8C8A82',
-                  fontWeight: active ? 600 : 400,
-                }}
-              >
-                <t.Icon size={14} />
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ── Tab content ── */}
-
-        {/* Profile form */}
-        {tab === 'profile' && (
-          <div className="bg-white border border-[#E8E6DC] rounded-[12px] px-[26px] py-6 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
-            <p className="text-[15px] font-bold text-[#141413] mb-[22px]">Edit Profile</p>
-
-            {loading ? (
-              <div>
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="mb-[18px]">
-                    <Skeleton w={90} h={11} /><div className="h-[6px]" />
-                    <Skeleton w="100%" h={40} />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className={LABEL_CLS}>First Name</label>
-                    <input value={firstName} onChange={e => setFirstName(e.target.value)} className={INPUT_CLS} />
-                  </div>
-                  <div>
-                    <label className={LABEL_CLS}>Last Name</label>
-                    <input value={lastName} onChange={e => setLastName(e.target.value)} className={INPUT_CLS} />
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <label className={LABEL_CLS}>Email Address</label>
-                  <div className="flex items-center gap-[10px]">
-                    <input readOnly value={profile?.email ?? ''} className={INPUT_CLS + ' flex-1 !bg-cream !text-slate'} />
-                    {profile?.isVerified && (
-                      <span className="px-3 py-[5px] rounded-[7px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C] flex items-center gap-1 flex-shrink-0">
-                        <Check size={10} /> Verified
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <label className={LABEL_CLS}>Phone Number</label>
-                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. +92 300 0000000" className={INPUT_CLS} />
-                </div>
-
-                <div className="mb-6">
-                  <label className={LABEL_CLS}>Address</label>
-                  <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address" className={INPUT_CLS} />
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button className="px-7 py-[10px] bg-brand-orange border-none rounded-[9px] text-[13px] font-semibold text-white cursor-pointer">
-                    Save Changes
-                  </button>
-                  <p className="text-[11px] text-[#8C8A82]">Member since {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : '—'}</p>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {tab === 'orders' && (
-          <PlaceholderTab
-            Icon={ShoppingBag}
-            label="No orders yet"
-            desc="Your order history will appear here once you make your first purchase on the marketplace."
-          />
-        )}
-
-        {tab === 'wishlist' && <WishlistTab />}
+      <main className="flex-1 min-w-0 px-7 py-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {tab === 'profile'   && <ProfileTab />}
+        {tab === 'wishlist'  && <WishlistTab />}
         {tab === 'addresses' && <AddressTab />}
-
-      </div>
+        {tab === 'orders'    && (
+          <Card padding="none">
+            <div className="px-5 pt-5 pb-4 border-b border-bone">
+              <p className="text-[11px] text-slate mb-[3px]">Account / My Orders</p>
+              <h1 className="text-[22px] font-bold text-charcoal leading-none">My Orders</h1>
+            </div>
+            <EmptyState
+              icon={<ShoppingBag size={28} className="text-brand-orange opacity-55" />}
+              title="No orders yet"
+              description="Your order history will appear here once you make your first purchase."
+              className="py-12"
+            />
+          </Card>
+        )}
+      </main>
     </div>
   );
 }

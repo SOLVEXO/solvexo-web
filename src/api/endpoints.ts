@@ -29,7 +29,7 @@ export const ENDPOINTS = {
     CREATE_DIGITAL:       '/api/product/add-digital-product',
     EDIT_PHYSICAL:        (id: string) => `/api/products/edit-product${id}`,
     EDIT_DIGITAL:         (id: string) => `/api/products/edit-product/${id}`,
-    // GET_MY_ALL_PRODUCT:   '/api/products/get-my-product',
+    GET_MY_ALL_PRODUCT:   (id: string) => `/api/inventory/getStoreInventory/${id}`,
     GET_MY_PRODUCT_BY_ID: (id: string) => `/api/products/get-my-product/${id}`,
   },
 
@@ -62,6 +62,19 @@ export const ENDPOINTS = {
     GET_ALL:         '/address/getMyAddresses',
     GET_DEFAULT:     '/address/getDefaultAddress',
     UPDATE:          '/address/update-address',
+  },
+
+  SHIPPING: {
+    GET_SHIPPING_ZONES: '/api/checkout/getShippingZones',
+  },
+
+  CHECKOUT: {
+    CREATE: '/api/checkout/create-checkout',
+  },
+
+  UPLOAD: {
+    PUBLIC_FILE:  '/api/upload/file',
+    PRIVATE_FILE: '/api/upload/private-file',
   },
 
 } as const;

@@ -45,3 +45,11 @@ export { TagInput }                          from './TagInput';
 export { SkeletonBox }                       from './SkeletonBox';
 
 export { Pagination }                        from './Pagination';
+
+export { ActionMenu }                        from './ActionMenu';
+export type { ActionMenuItem }               from './ActionMenu';
+
+export type { TablePagination }              from './Table';
+
+export { ImageUpload, FileUpload }           from './Upload';
+export type { PrivateUploadData }            from './Upload';

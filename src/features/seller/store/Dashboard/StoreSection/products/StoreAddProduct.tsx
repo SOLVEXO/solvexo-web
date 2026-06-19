@@ -8,6 +8,7 @@ import {
   apiCreatePhysicalProduct, apiCreateDigitalProduct,
 } from '@/api/commerce/product';
 import { addCachedProduct } from './_cache';
+import { ImageUpload, FileUpload, type PrivateUploadData } from '@/components/comman/ui';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 type ProductType   = 'physical' | 'digital';
@@ -105,12 +106,14 @@ const initPhys = {
   stock: '', size: '', color: '', shippingWeight: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   tagInput: '', tags: [] as string[],
+  images: [] as string[],
 };
 const initDig = {
   name: '', description: '', price: '', compareAtPrice: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   tagInput: '', tags: [] as string[],
-  fileUrl: '', fileName: '', fileSize: '', fileMime: '',
+  images: [] as string[],
+  fileData: null as PrivateUploadData | null,
   downloadLimit: 'unlimited',
   linkExpiryDays: '', pdfStampingEnabled: false,
   licenseType: 'personal' as 'personal' | 'commercial',
@@ -163,7 +166,7 @@ export default function StoreAddProduct() {
       if (pType === 'physical') {
         const res = await apiCreatePhysicalProduct({
           storeId, name: phys.name, description: phys.description,
-          subCategoryId: null, images: [], tags: phys.tags,
+          subCategoryId: null, images: phys.images, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: phys.status,
           price: Number(phys.price),
           compareAtPrice: phys.compareAtPrice ? Number(phys.compareAtPrice) : null,
@@ -172,15 +175,15 @@ export default function StoreAddProduct() {
         });
         addCachedProduct(storeId, { product: res.data.product, variant: res.data.defaultVariant });
       } else {
-        const files = dig.fileUrl ? [{
-          url: dig.fileUrl,
-          name: dig.fileName || dig.fileUrl.split('/').pop() || 'file',
-          size: dig.fileSize ? Number(dig.fileSize) : 0,
-          mimeType: dig.fileMime || 'application/octet-stream',
+        const files = dig.fileData ? [{
+          url:      dig.fileData.publicId,
+          name:     dig.fileData.fileName,
+          size:     dig.fileData.fileSize,
+          mimeType: dig.fileData.mimeType,
         }] : [];
         const res = await apiCreateDigitalProduct({
           storeId, name: dig.name, description: dig.description,
-          productType: 'digital', subCategoryId: null, images: [], tags: dig.tags,
+          productType: 'digital', subCategoryId: null, images: dig.images, tags: dig.tags,
           isListedOnSolvexo: dig.isListedOnSolvexo, status: dig.status,
           price: Number(dig.price),
           compareAtPrice: dig.compareAtPrice ? Number(dig.compareAtPrice) : null,
@@ -281,6 +284,17 @@ export default function StoreAddProduct() {
             </div>
           </div>
 
+          {/* Images */}
+          <div className={cardCls}>
+            <SectionTitle title="Product Images" />
+            <ImageUpload
+              value={pType === 'physical' ? phys.images : dig.images}
+              onChange={urls => pType === 'physical' ? sp('images', urls) : sd('images', urls)}
+              maxFiles={5}
+            />
+            <p className="text-[11px] text-slate mt-2">PNG, JPG or WebP. Up to 5 images.</p>
+          </div>
+
           {/* Basic info */}
           <div className={cardCls}>
             <SectionTitle title="Basic Information" />
@@ -347,20 +361,11 @@ export default function StoreAddProduct() {
             <>
               <div className={cardCls}>
                 <SectionTitle title="Digital File" />
-                <Field label="File URL">
-                  <input value={dig.fileUrl} onChange={e => sd('fileUrl', e.target.value)}
-                    placeholder="https://res.cloudinary.com/…" className={inputCls} />
-                </Field>
-                <div className="grid grid-cols-2 gap-[14px]">
-                  <Field label="File Name">
-                    <input value={dig.fileName} onChange={e => sd('fileName', e.target.value)}
-                      placeholder="course.pdf" className={inputCls} />
-                  </Field>
-                  <Field label="MIME Type">
-                    <input value={dig.fileMime} onChange={e => sd('fileMime', e.target.value)}
-                      placeholder="application/pdf" className={inputCls} />
-                  </Field>
-                </div>
+                <FileUpload
+                  value={dig.fileData}
+                  onChange={v => sd('fileData', v)}
+                  label="Click to upload your digital file"
+                />
               </div>
 
               <div className={cardCls}>

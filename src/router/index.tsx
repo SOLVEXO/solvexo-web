@@ -23,6 +23,7 @@ const UserProfile          = lazy(() => named(import('@/features/buyer/pages/set
 const Marketplace          = lazy(() => named(import('@/features/buyer/pages/Marketplace'),                     'Marketplace'));
 const ProductDetail        = lazy(() => named(import('@/features/buyer/pages/ProductDetail'),                   'ProductDetail'));
 const CartPage             = lazy(() => named(import('@/features/buyer/pages/CartPage'),                        'CartPage'));
+const CheckoutPage         = lazy(() => named(import('@/features/buyer/pages/CheckoutPage'),                    'CheckoutPage'));
 const SellerStorefront     = lazy(() => named(import('@/features/buyer/pages/SellerStorefront'),                'SellerStorefront'));
 const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/EducationMarketplace'),            'EducationMarketplace'));
 const PricingPage          = lazy(() => named(import('@/features/buyer/pages/PricingPage'),                     'PricingPage'));
@@ -100,6 +101,7 @@ export const router = createBrowserRouter([
       // ── Marketplace pages — own embedded nav ──────────────────────────
       { path: '/marketplace',     element: <Marketplace /> },
       { path: '/cart',            element: <CartPage /> },
+      { path: '/checkout',        element: <CheckoutPage /> },
       { path: '/marketplace/:id', element: <ProductDetail /> },
       { path: '/store/:slug',     element: <SellerStorefront /> },
       { path: '/education',       element: <EducationMarketplace /> },
