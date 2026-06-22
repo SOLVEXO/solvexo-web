@@ -163,7 +163,7 @@ export default function StoreProductList() {
   ];
 
   return (
-    <div className="bg-bone min-h-screen">
+    <>
       <StorePageHeader
         title="Products"
         subtitle={loading ? 'Loading…' : `${totalProducts} product${totalProducts !== 1 ? 's' : ''}`}
@@ -283,6 +283,6 @@ export default function StoreProductList() {
         )}
 
       </div>
-    </div>
+    </>
   );
 }

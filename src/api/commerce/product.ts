@@ -209,7 +209,53 @@ export function apiGetMyProductById(id: string) {
 
 export function apiGetStoreInventory(storeId: string, page = 1, limit = 10) {
   return client.get<never, ApiResponse<GetInventoryData>>(
-    `${ENDPOINTS.PRODUCT.GET_MY_ALL_PRODUCT(storeId)}?page=${page}&limit=${limit}`,
+    `${ENDPOINTS.INVENTORY.GET_STORE_INVENTORY(storeId)}?page=${page}&limit=${limit}`,
+  );
+}
+
+// ── Seller Orders types ───────────────────────────────────────────────────────
+
+export interface SellerOrderCustomer {
+  name:  string;
+  email: string;
+}
+
+export interface SellerOrder {
+  orderId:     string;
+  orderNumber: string;
+  customer:    SellerOrderCustomer;
+  product:     string;
+  type:        'physical' | 'digital';
+  date:        string;
+  amount:      number;
+  status:      string;
+  isPaid:      boolean;
+  paymentType: string;
+}
+
+export interface SellerOrderStats {
+  totalOrders: number;
+  revenue:     number;
+  pending:     number;
+  avgOrder:    number;
+}
+
+export interface SellerOrderPagination {
+  page:        number;
+  limit:       number;
+  totalPages:  number;
+  totalOrders: number;
+}
+
+export interface GetSellerOrdersData {
+  stats:      SellerOrderStats;
+  pagination: SellerOrderPagination;
+  orders:     SellerOrder[];
+}
+
+export function apiGetSellerOrders(storeId: string, page = 1, limit = 10) {
+  return client.get<never, ApiResponse<GetSellerOrdersData>>(
+    `${ENDPOINTS.SELLER_ACCOUNT.GET_SELLER_ORDERS(storeId)}?page=${page}&limit=${limit}`,
   );
 }
 

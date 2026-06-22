@@ -104,6 +104,8 @@ export const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'blue' | 'gray' 
   'out of stock':   'red',
   digital:          'blue',
   physical:         'orange',
+  completed:        'green',
+  Completed:        'green',
 };
 
 // ── Seller Sidebar Navigation ────────────────────────────────────────────────

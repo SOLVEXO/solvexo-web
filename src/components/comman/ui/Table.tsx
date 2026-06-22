@@ -29,7 +29,7 @@ interface TableProps<T = Record<string, unknown>> {
 
 const TH =
   'text-left text-[11px] font-semibold text-slate uppercase tracking-[0.05em] ' +
-  'px-[18px] py-[10px]';
+  'px-4 py-[10px] whitespace-nowrap';
 
 export function Table<T = Record<string, unknown>>({
   columns, data, keyExtractor, onRowClick, pagination, className,
@@ -61,7 +61,7 @@ export function Table<T = Record<string, unknown>>({
               <tr
                 key={keyExtractor(row, i)}
                 className={clsx(
-                  i < data.length - 1 && 'border-b border-[#F5F4EF]',
+                  i < data.length - 1 && 'border-b border-[#F0EEE6]',
                   onRowClick && 'cursor-pointer',
                   'transition-colors duration-100 hover:bg-cream',
                 )}
@@ -71,7 +71,7 @@ export function Table<T = Record<string, unknown>>({
                   <td
                     key={col.key}
                     className={clsx(
-                      'px-[18px] py-[11px] text-carbon',
+                      'px-4 py-[13px] text-carbon',
                       col.align === 'right'  && 'text-right',
                       col.align === 'center' && 'text-center',
                     )}
