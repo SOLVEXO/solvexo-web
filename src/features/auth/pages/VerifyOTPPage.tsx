@@ -41,7 +41,7 @@ function OTPInput({ values, onChange }: { values: string[]; onChange: (i: number
             onKeyDown={e => handleKeyDown(i, e)}
             onPaste={handlePaste}
             className={[
-              'w-[52px] h-14 text-center text-[22px] font-bold rounded-[10px] border-2 text-carbon outline-none transition-all duration-150 cursor-text',
+              'w-10 h-12 sm:w-[52px] sm:h-14 text-center text-[18px] sm:text-[22px] font-bold rounded-[10px] border-2 text-carbon outline-none transition-all duration-150 cursor-text',
               val ? 'border-brand-orange bg-brand-pale-orange' : 'border-bone bg-white',
             ].join(' ')}
           />
@@ -108,7 +108,7 @@ export function VerifyOTPPage() {
 
   return (
     <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-[20px] px-10 py-9 w-full max-w-[440px] border border-bone">
+      <div className="bg-white rounded-[20px] px-6 py-6 md:px-10 md:py-9 w-full max-w-[440px] border border-bone">
         <h1 className="text-[22px] font-bold text-carbon text-center mb-2">
           Verify your email
         </h1>

@@ -5,12 +5,49 @@ import {
 } from '@/api/commerce/cart';
 import { TokenStorage } from '@/api/commerce/auth';
 
+// ── localStorage: variantId → type map ────────────────────────────────────────
+const TYPES_KEY = 'solvexo_cart_types';
+
+function getStoredTypes(): Record<string, 'physical' | 'digital'> {
+  try { return JSON.parse(localStorage.getItem(TYPES_KEY) ?? '{}'); }
+  catch { return {}; }
+}
+
+function storeType(variantId: string, type: 'physical' | 'digital') {
+  const map = getStoredTypes();
+  map[variantId] = type;
+  localStorage.setItem(TYPES_KEY, JSON.stringify(map));
+}
+
+function removeType(variantId: string) {
+  const map = getStoredTypes();
+  delete map[variantId];
+  localStorage.setItem(TYPES_KEY, JSON.stringify(map));
+}
+
+function clearTypes() {
+  localStorage.removeItem(TYPES_KEY);
+}
+
+function mergeTypes(cart: Cart): Cart {
+  const stored = getStoredTypes();
+  return {
+    ...cart,
+    items: cart.items.map(item => ({
+      ...item,
+      type: item.type ?? stored[item.productVariantId],
+    })),
+  };
+}
+
+// ── Context ───────────────────────────────────────────────────────────────────
+
 interface CartContextValue {
   cart:          Cart | null;
   cartCount:     number;
   loading:       boolean;
   adding:        string | null;
-  addToCart:     (productId: string, productVariantId: string) => Promise<void>;
+  addToCart:     (productId: string, productVariantId: string, type?: 'physical' | 'digital') => Promise<void>;
   updateQty:     (productId: string, productVariantId: string, action: 'increase' | 'decrease') => Promise<void>;
   removeItem:    (productId: string, productVariantId: string) => Promise<void>;
   clearCart:     () => Promise<void>;
@@ -19,9 +56,8 @@ interface CartContextValue {
 
 const CartCtx = createContext<CartContextValue | null>(null);
 
-// Silent background sync — never touches `loading` state
 function syncCart(setCart: (c: Cart) => void) {
-  apiGetCart().then(res => setCart(res.data)).catch(() => {});
+  apiGetCart().then(res => setCart(mergeTypes(res.data))).catch(() => {});
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -29,12 +65,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [adding,  setAdding]  = useState<string | null>(null);
 
-  // Initial load only — shows skeleton on first open
   const fetchCart = useCallback(() => {
     if (!TokenStorage.isLoggedIn()) return;
     setLoading(true);
     apiGetCart()
-      .then(res => setCart(res.data))
+      .then(res => setCart(mergeTypes(res.data)))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -43,11 +78,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const cartCount = cart?.items.reduce((s, i) => s + i.quantity, 0) ?? 0;
 
-  const addToCart = useCallback(async (productId: string, productVariantId: string) => {
+  const addToCart = useCallback(async (
+    productId: string,
+    productVariantId: string,
+    type?: 'physical' | 'digital',
+  ) => {
     setAdding(productVariantId);
+    if (type) storeType(productVariantId, type);
     try {
       const res = await apiAddToCart(productId, productVariantId);
-      setCart(res.data);
+      setCart(mergeTypes(res.data));
     } finally {
       setAdding(null);
     }
@@ -56,12 +96,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const updateQty = useCallback(async (
     productId: string, productVariantId: string, action: 'increase' | 'decrease',
   ) => {
-    // Optimistic: update quantity & itemTotal in local state immediately
     setCart(prev => {
       if (!prev) return prev;
       const items = prev.items.map(item => {
         if (item.productVariantId !== productVariantId) return item;
-        const newQty   = action === 'increase' ? item.quantity + 1 : Math.max(1, item.quantity - 1);
+        const newQty    = action === 'increase' ? item.quantity + 1 : Math.max(1, item.quantity - 1);
         const unitPrice = item.unitPrice ?? item.price ?? 0;
         return { ...item, quantity: newQty, itemTotal: unitPrice * newQty };
       });
@@ -70,7 +109,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return { ...prev, items, totalItems, totalPrice };
     });
 
-    // Background API call + silent sync
     try {
       await apiUpdateCartQuantity(productId, productVariantId, action);
     } finally {
@@ -79,10 +117,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const removeItem = useCallback(async (productId: string, productVariantId: string) => {
-    // Optimistic: remove from list immediately
+    removeType(productVariantId);
     setCart(prev => {
       if (!prev) return prev;
-      const items = prev.items.filter(i => i.productVariantId !== productVariantId);
+      const items      = prev.items.filter(i => i.productVariantId !== productVariantId);
       const totalItems = items.reduce((s, i) => s + i.quantity, 0);
       const totalPrice = items.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
       return { ...prev, items, totalItems, totalPrice };
@@ -97,6 +135,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(async () => {
     if (!cart?._id) return;
+    clearTypes();
     setCart(null);
     try {
       await apiClearCart(cart._id);

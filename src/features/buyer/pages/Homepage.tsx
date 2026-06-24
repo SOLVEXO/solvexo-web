@@ -35,7 +35,7 @@ export function Homepage() {
     <div className="bg-white min-h-full">
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-carbon to-charcoal px-12 py-16">
+      <div className="relative overflow-hidden bg-gradient-to-br from-carbon to-charcoal px-4 md:px-8 lg:px-12 py-10 md:py-16">
 
         {/* Decorative circles */}
         <div className="absolute w-[380px] h-[380px] rounded-full bg-[#3A3633] -top-16 -right-16 pointer-events-none" />
@@ -53,12 +53,12 @@ export function Homepage() {
           </div>
 
           {/* Heading — responsive font so it proportions correctly at 1280px */}
-          <h1 className="font-serif text-[36px] leading-[1.18] font-semibold text-white mb-4">
+          <h1 className="font-serif text-2xl md:text-4xl lg:text-[36px] leading-[1.18] font-semibold text-white mb-4">
             The Commerce OS for Sellers, Creators &amp; Educators
           </h1>
 
           {/* Subtext */}
-          <p className="text-[14px] text-[#B0AEA8] leading-[1.7] mb-7 max-w-[440px]">
+          <p className="text-sm md:text-[14px] text-[#B0AEA8] leading-[1.7] mb-7 max-w-[440px]">
             Sell physical products, digital downloads, and educational resources — with
             AI-powered tools, a built-in marketplace, and point-of-sale. Everything
             commerce, in one place.
@@ -78,7 +78,7 @@ export function Homepage() {
           </div>
 
           {/* Stats */}
-          <div className="flex gap-7">
+          <div className="flex flex-col sm:flex-row gap-5 sm:gap-7">
             {STATS.map(({ value, label }) => (
               <div key={label}>
                 <p className="text-[18px] font-bold text-brand-orange">{value}</p>
@@ -90,14 +90,14 @@ export function Homepage() {
       </div>
 
       {/* ── Feature Categories ────────────────────────────────────────────────── */}
-      <div className="px-12 py-14">
+      <div className="px-4 md:px-6 lg:px-12 py-14">
         <p className="text-[11px] font-semibold text-brand-orange text-center uppercase tracking-[0.1em] mb-2">
           Built for every type of seller
         </p>
         <h2 className="font-serif text-[28px] font-bold text-carbon text-center mb-10">
           One platform. Infinite possibilities.
         </h2>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURES.map(f => (
             <Card key={f.title} hover padding="none" onClick={() => navigate(f.path)}>
               <div className="p-5">
@@ -119,11 +119,11 @@ export function Homepage() {
       </div>
 
       {/* ── Social Proof ──────────────────────────────────────────────────────── */}
-      <div className="bg-cream border-t border-bone px-12 py-10">
+      <div className="bg-cream border-t border-bone px-4 md:px-6 lg:px-12 py-10">
         <p className="text-[11px] font-semibold text-slate text-center uppercase tracking-[0.08em] mb-6">
           Trusted by creators worldwide
         </p>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {TESTIMONIALS.map(t => (
             <Card key={t.name} padding="none">
               <div className="p-5">
@@ -144,7 +144,7 @@ export function Homepage() {
       </div>
 
       {/* ── CTA ───────────────────────────────────────────────────────────────── */}
-      <div className="bg-brand-orange px-12 py-[52px] text-center">
+      <div className="bg-brand-orange px-4 md:px-6 lg:px-12 py-10 md:py-[52px] text-center">
         <h2 className="font-serif text-[28px] font-bold text-white mb-3">
           Ready to start selling?
         </h2>

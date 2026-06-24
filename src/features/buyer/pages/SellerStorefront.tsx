@@ -51,21 +51,21 @@ export function SellerStorefront() {
     <div className="min-h-screen bg-cream">
 
       {/* ── Nav ────────────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center gap-4 px-10">
+      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center gap-4 px-4 md:px-10">
         <div className="flex items-center gap-2 flex-shrink-0">
           <SolvexoIcon size={28} />
           <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
           <span className="font-bold text-[15px] text-brand-orange">o</span>
-          <span className="text-bone mx-1">|</span>
-          <span className="text-[13px] text-slate">Marketplace</span>
+          <span className="text-bone mx-1 hidden sm:inline">|</span>
+          <span className="text-[13px] text-slate hidden sm:inline">Marketplace</span>
         </div>
-        <div className="flex-1 flex justify-center">
+        <div className="flex-1 hidden sm:flex justify-center">
           <input
             placeholder="Search marketplace..."
             className="w-full max-w-[440px] px-[14px] py-2 rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none"
           />
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 ml-auto sm:ml-0">
           <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')}>← Marketplace</Button>
           <div className="w-8 h-8 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer">
             <ShoppingCart size={16} className="text-white" />
@@ -74,7 +74,7 @@ export function SellerStorefront() {
       </nav>
 
       {/* ── Store Banner ───────────────────────────────────────────────────── */}
-      <div className="px-10 py-9 flex items-center gap-6 bg-gradient-to-br from-[#1A4A2C] to-[#2D7A4E]">
+      <div className="px-4 md:px-10 py-6 md:py-9 flex flex-col sm:flex-row items-start sm:items-center gap-6 bg-gradient-to-br from-[#1A4A2C] to-[#2D7A4E]">
         <div className="w-20 h-20 rounded-[20px] bg-white flex items-center justify-center flex-shrink-0">
           <BookOpen size={40} className="text-brand-orange" />
         </div>
@@ -94,7 +94,7 @@ export function SellerStorefront() {
           </div>
         </div>
 
-        <div className="ml-auto flex flex-col gap-2 items-end">
+        <div className="sm:ml-auto flex flex-row sm:flex-col gap-2 items-start sm:items-end flex-wrap">
           <button className="px-[14px] py-[6px] rounded-lg text-[12px] font-medium bg-transparent text-white border border-white cursor-pointer hover:bg-[rgba(255,255,255,0.1)] transition-colors">
             Follow Store
           </button>
@@ -104,17 +104,17 @@ export function SellerStorefront() {
 
       {/* ── Store Tabs ─────────────────────────────────────────────────────── */}
       <div className="bg-white">
-        <TabBar tabs={STORE_TABS} active={activeTab} onChange={setActiveTab} className="px-10" />
+        <TabBar tabs={STORE_TABS} active={activeTab} onChange={setActiveTab} className="px-4 md:px-10" />
       </div>
 
       {/* ── Content ────────────────────────────────────────────────────────── */}
-      <div className="px-10 py-6">
+      <div className="px-4 md:px-10 py-6">
         <div className="flex items-center justify-between mb-4">
           <span className="text-[15px] font-bold text-[#141413]">47 Products</span>
           <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {PRODUCTS.map(p => (
             <Card key={p.name} padding="none" hover onClick={() => navigate('/marketplace/1')}>
               <div className="h-[130px] bg-success-bg flex items-center justify-center rounded-t-[10px]">

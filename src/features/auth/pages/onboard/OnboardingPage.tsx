@@ -95,10 +95,10 @@ function StepProgress({ current, maxReached, onStepClick }: { current: number; m
 
 function PageHeader({ onSignIn }: { onSignIn: () => void }) {
   return (
-    <div className="flex items-center justify-between px-10 h-16 border-b border-bone bg-white sticky top-11 z-10">
+    <div className="flex items-center justify-between px-4 md:px-10 h-16 border-b border-bone bg-white sticky top-11 z-10">
       <SolvexoLogo size={30} />
       <div className="flex items-center gap-[10px]">
-        <span className="text-[13px] text-slate">Already have an account?</span>
+        <span className="hidden sm:inline text-[13px] text-slate">Already have an account?</span>
         <Button variant="ghost" size="sm" onClick={onSignIn}>Sign In</Button>
       </div>
     </div>
@@ -127,7 +127,7 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
         <h1 className="text-[28px] font-bold text-carbon mb-2">Set up your store</h1>
         <p className="text-[14px] text-slate">You can always update these details later from Settings.</p>
       </div>
-      <div className="bg-white rounded-2xl p-8 border border-bone w-full">
+      <div className="bg-white rounded-2xl p-5 md:p-8 border border-bone w-full">
         <div className="flex gap-5 items-center p-4 bg-cream rounded-xl mb-6">
           <label className={clsx(
             'size-[72px] rounded-2xl bg-brand-pale-orange border-2 border-dashed border-brand-orange flex items-center justify-center shrink-0 overflow-hidden',
@@ -192,7 +192,7 @@ function Step2({ form, setForm, onNext, onBack }: { form: StoreForm; setForm: (f
         <h1 className="text-[28px] font-bold text-carbon mb-2">What kind of seller are you?</h1>
         <p className="text-[14px] text-slate">We'll personalise your dashboard and tools based on your answer.</p>
       </div>
-      <div className="grid grid-cols-3 gap-[14px] mb-7">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px] mb-7">
         {SELLER_TYPES.map((t, idx) => {
           const selKey = `${t.id}-${idx}`;
           const isSelected = form.sellerKey === selKey;
@@ -245,7 +245,7 @@ function Step3({ form, setForm, onNext, onBack, loading, error }: {
         <h1 className="text-[28px] font-bold text-carbon mb-2">What will you sell?</h1>
         <p className="text-[14px] text-slate">Select all that apply — we'll activate the right tools for you.</p>
       </div>
-      <div className="grid grid-cols-3 gap-[14px] mb-7">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px] mb-7">
         {PRODUCT_TYPES.map((t, idx) => {
           const on = form.productTypes.includes(t.id);
           return (
@@ -320,7 +320,7 @@ function Step4({ store }: { store: StoreData | null }) {
 
   return (
     <div className="max-w-[580px] w-full mx-auto">
-      <div className="bg-white rounded-2xl border border-bone w-full text-center px-10 py-12">
+      <div className="bg-white rounded-2xl border border-bone w-full text-center px-6 py-8 md:px-10 md:py-12">
         <h1 className="text-[30px] font-bold text-carbon mb-[10px]">Your store is ready!</h1>
         <p className="text-[14px] text-slate leading-[1.7] mb-8 max-w-[400px] mx-auto">
           Welcome to Solvexo. Your seller dashboard is set up and your tools are activated.
@@ -328,7 +328,7 @@ function Step4({ store }: { store: StoreData | null }) {
 
         <div className="bg-cream rounded-[14px] p-5 mb-7 text-left">
           <p className="text-[12px] font-semibold text-carbon mb-[14px]">Your Solvexo Setup</p>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-[10px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-[10px]">
             {[
               { Icon: Store,      label: 'Store',        value: store?.name ?? '—' },
               { Icon: Globe,      label: 'Store URL',    value: store?.slug ? `${store.slug}.solvexo.store` : '—' },
@@ -351,7 +351,7 @@ function Step4({ store }: { store: StoreData | null }) {
         </div>
 
         <p className="text-[13px] font-semibold text-carbon mb-[14px]">Recommended next steps</p>
-        <div className="grid grid-cols-3 gap-[10px] mb-7">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-[10px] mb-7">
           {[
             { Icon: Plus,         label: 'Add your first product', path: '/seller/products/add' },
             { Icon: Wrench,       label: 'Customise your store',   path: '/seller/store' },
@@ -409,7 +409,7 @@ export function OnboardingPage() {
     <div className="min-h-screen bg-cream flex flex-col">
       <PageHeader onSignIn={() => navigate('/login')} />
 
-      <div className="bg-white border-b border-bone px-10 py-3">
+      <div className="bg-white border-b border-bone px-4 md:px-10 py-3">
         <div className="max-w-[500px] mx-auto">
           <StepProgress current={step} maxReached={maxReached} onStepClick={jumpTo} />
         </div>

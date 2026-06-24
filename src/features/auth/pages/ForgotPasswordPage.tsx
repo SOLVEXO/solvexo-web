@@ -22,7 +22,7 @@ export function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-[20px] px-10 py-9 w-full max-w-[440px] border border-bone">
+      <div className="bg-white rounded-[20px] px-6 py-6 md:px-10 md:py-9 w-full max-w-[440px] border border-bone">
         <h1 className="text-[22px] font-bold text-carbon text-center mb-2">
           Forgot your password?
         </h1>

@@ -3,8 +3,6 @@
 // Base URL is loaded from VITE_API_URL in .env via the Axios client.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { SELLER_ACCOUNT_ITEMS } from "@/constants/tokens";
-
 export const ENDPOINTS = {
 
   // ── AUTH ───────────────────────────────────────────────────────────────────
@@ -28,7 +26,7 @@ export const ENDPOINTS = {
 
   PRODUCT: {
     CREATE_PHYSICAL: '/api/products/add-physical-product',
-    CREATE_DIGITAL: '/api/product/add-digital-product',
+    CREATE_DIGITAL: '/api/products/add-digital-product',
     EDIT_PHYSICAL: (id: string) => `/api/products/edit-product${id}`,
     EDIT_DIGITAL: (id: string) => `/api/products/edit-product/${id}`,
     GET_MY_ALL_PRODUCT: (id: string) => `/api/inventory/getStoreInventory/${id}`,
@@ -72,6 +70,8 @@ export const ENDPOINTS = {
 
   CHECKOUT: {
     CREATE: '/api/checkout/create-checkout',
+    ADD_SHIPPING_ZONE_IN_CHECKOUT: '/api/checkout/addShippingInCheckout',
+    DELETE_CHECKOUT: '/api/checkout/delete-checkout', 
   },
 
   UPLOAD: {
@@ -85,6 +85,17 @@ export const ENDPOINTS = {
 
   SELLER_ACCOUNT: {
     GET_SELLER_ORDERS: (id: string) => `/api/orders/seller-orders/${id}`,
-  }
-  
+  },
+
+  PAYMENT: {
+    COD:         '/api/payment/cod-payment',
+    PLACE_ORDER: '/api/payment/place-order',
+  },
+
+  ORDERS: {
+    MARK_PAID:     (id: string) => `/api/orders/mark-paid/${id}`,
+    UPDATE_STATUS: '/api/orders/update-status',
+    DOWNLOAD_URL:  '/api/orders/download-url',
+  },
+
 } as const;

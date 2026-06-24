@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
 import { Button } from '@/components/comman/ui/Button';
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ImageOff, Loader2 } from 'lucide-react';
+import {
+  Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ImageOff,
+  Loader2, Package, Download, ChevronRight,
+} from 'lucide-react';
 import { clsx } from 'clsx';
 
 function SolvexoIcon({ size = 28 }: { size?: number }) {
@@ -59,14 +62,23 @@ export function CartPage() {
     clearCart().finally(() => setClearing(false));
   };
 
-  const isEmpty = !loading && !cart?.items.length;
+  // ── Cart type detection ────────────────────────────────────────────────────
+  const items       = cart?.items ?? [];
+  const hasPhysical = items.some(i => i.type === 'physical');
+  const hasDigital  = items.some(i => i.type === 'digital');
+  const typeKnown   = hasPhysical || hasDigital;
+
+  const physicalCount = items.filter(i => i.type === 'physical').reduce((s, i) => s + i.quantity, 0);
+  const digitalCount  = items.filter(i => i.type === 'digital').reduce((s, i) => s + i.quantity, 0);
+
+  const isEmpty = !loading && !items.length;
 
   return (
     <div className="min-h-screen bg-cream">
 
       {/* ── Nav ── */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-10 gap-4">
-        <div className="flex-1 flex items-center gap-2">
+      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-4 md:px-10 gap-4">
+        <div className="flex-1 flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
           <SolvexoIcon size={28} />
           <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
           <span className="font-bold text-[15px] text-brand-orange">o</span>
@@ -77,7 +89,7 @@ export function CartPage() {
         </Button>
       </nav>
 
-      <div className="max-w-[960px] mx-auto px-6 py-8">
+      <div className="max-w-[960px] mx-auto px-4 md:px-6 py-6 md:py-8">
 
         {/* ── Empty ── */}
         {isEmpty && (
@@ -92,8 +104,8 @@ export function CartPage() {
         )}
 
         {/* ── Cart + Summary ── */}
-        {(loading || (cart?.items.length ?? 0) > 0) && (
-          <div className="grid gap-6 items-start" style={{ gridTemplateColumns: '1fr 300px' }}>
+        {(loading || items.length > 0) && (
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
 
             {/* ── Left: Cart card ── */}
             <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
@@ -131,20 +143,20 @@ export function CartPage() {
               )}
 
               {/* Items */}
-              {!loading && cart?.items.map((item, idx) => {
+              {!loading && items.map((item, idx) => {
                 const key        = item.productVariantId;
                 const imgs       = item.image ?? item.images;
                 const price      = item.unitPrice ?? item.price ?? 0;
                 const lineTotal  = item.itemTotal ?? price * item.quantity;
                 const isRemoving = removingId === key;
                 const isUpdating = updatingId === key;
-                const isLast     = idx === (cart.items.length - 1);
+                const isLast     = idx === (items.length - 1);
 
                 return (
                   <div
                     key={key}
                     className={clsx(
-                      'flex gap-4 items-start px-5 py-4 transition-opacity duration-200',
+                      'flex flex-wrap gap-4 items-start px-5 py-4 transition-opacity duration-200',
                       !isLast && 'border-b border-bone',
                       isRemoving && 'opacity-50',
                     )}
@@ -152,11 +164,23 @@ export function CartPage() {
                     <CartItemImage images={imgs} name={item.name} />
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-[14px] text-[#141413] mb-[3px] leading-[1.35]">
-                        {item.name}
-                      </p>
+                      <div className="flex items-start gap-2 mb-[3px] flex-wrap">
+                        <p className="font-semibold text-[14px] text-[#141413] leading-[1.35]">
+                          {item.name}
+                        </p>
+                        {item.type === 'physical' && (
+                          <span className="shrink-0 px-2 py-[2px] rounded-full text-[10px] font-semibold bg-[#FFF4DC] text-[#B36200]">
+                            Physical
+                          </span>
+                        )}
+                        {item.type === 'digital' && (
+                          <span className="shrink-0 flex items-center gap-[3px] px-2 py-[2px] rounded-full text-[10px] font-semibold bg-[#EEF0FF] text-[#3851D1]">
+                            <Download size={9} /> Digital
+                          </span>
+                        )}
+                      </div>
                       <p className="text-[12px] text-[#8C8A82] mb-3">
-                        ${price.toLocaleString()} each
+                        Rs {price.toLocaleString()} each
                       </p>
 
                       {/* Qty controls */}
@@ -206,14 +230,14 @@ export function CartPage() {
 
                     {/* Line total */}
                     <p className="font-bold text-[15px] text-[#141413] shrink-0">
-                      ${lineTotal.toLocaleString()}
+                      Rs {lineTotal.toLocaleString()}
                     </p>
                   </div>
                 );
               })}
 
               {/* Footer: clear cart */}
-              {!loading && (cart?.items.length ?? 0) > 0 && (
+              {!loading && items.length > 0 && (
                 <div className="px-5 py-3 border-t border-bone flex justify-end">
                   <button
                     onClick={handleClear}
@@ -231,56 +255,105 @@ export function CartPage() {
             </div>
 
             {/* ── Right: Order Summary ── */}
-            <div className="bg-white rounded-[12px] border border-bone p-6 sticky top-20">
-              <p className="text-[15px] font-bold text-[#141413] mb-[18px]">Order Summary</p>
+            <div className="bg-white rounded-[12px] border border-bone p-6 lg:sticky top-20 flex flex-col gap-5">
+              <p className="text-[15px] font-bold text-[#141413]">Order Summary</p>
 
               {/* Item list */}
               {!loading && (
-                <div className="flex flex-col gap-2 mb-4">
-                  {cart?.items.map(item => {
+                <div className="flex flex-col gap-2">
+                  {items.map(item => {
                     const price = item.unitPrice ?? item.price ?? 0;
                     const ttl   = item.itemTotal ?? price * item.quantity;
                     return (
-                      <div key={item.productVariantId} className="flex justify-between text-[12px]">
-                        <span className="text-[#141413] truncate max-w-[150px]">
+                      <div key={item.productVariantId} className="flex justify-between text-[12px] gap-2">
+                        <span className="text-[#141413] truncate">
                           {item.name}
                           <span className="text-[#8C8A82] ml-1">×{item.quantity}</span>
                         </span>
-                        <span className="font-medium text-[#141413] shrink-0">${ttl.toLocaleString()}</span>
+                        <span className="font-medium text-[#141413] shrink-0">Rs {ttl.toLocaleString()}</span>
                       </div>
                     );
                   })}
                 </div>
               )}
 
-              <div className="h-px bg-bone mb-4" />
+              <div className="h-px bg-bone" />
 
-              <div className="flex flex-col gap-3 mb-5">
+              <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-[13px]">
                   <span className="text-[#8C8A82]">Subtotal ({cartCount} items)</span>
-                  <span className="font-semibold text-[#141413]">${(cart?.totalPrice ?? 0).toLocaleString()}</span>
+                  <span className="font-semibold text-[#141413]">Rs {(cart?.totalPrice ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-[13px]">
                   <span className="text-[#8C8A82]">Shipping</span>
-                  <span className="text-success font-medium">Calculated at checkout</span>
+                  <span className="text-success font-medium text-[12px]">Calculated at checkout</span>
                 </div>
               </div>
 
-              <div className="h-px bg-bone mb-4" />
+              <div className="h-px bg-bone" />
 
-              <div className="flex justify-between text-[16px] font-bold mb-5">
+              <div className="flex justify-between text-[16px] font-bold">
                 <span className="text-[#141413]">Total</span>
-                <span className="text-[#141413]">${(cart?.totalPrice ?? 0).toLocaleString()}</span>
+                <span className="text-[#141413]">Rs {(cart?.totalPrice ?? 0).toLocaleString()}</span>
+              </div>
+
+              {/* ── Checkout Buttons ── */}
+              <div className="flex flex-col gap-2">
+
+                {/* Case 1: type not known from API → single general button */}
+                {!typeKnown && (
+                  <button
+                    onClick={() => navigate('/checkout', { state: { cartType: 'physical' } })}
+                    className="w-full flex items-center justify-center gap-2 bg-brand-orange text-white rounded-[10px] px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer"
+                  >
+                    <Package size={15} /> Proceed to Checkout
+                    <ChevronRight size={14} className="ml-auto" />
+                  </button>
+                )}
+
+                {/* Physical button */}
+                {hasPhysical && (
+                  <button
+                    onClick={() => navigate('/checkout', { state: { cartType: 'physical' } })}
+                    className="w-full flex items-center justify-between gap-2 bg-brand-orange text-white rounded-[10px] px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Package size={15} />
+                      Checkout Physical
+                    </span>
+                    <span className="flex items-center gap-1 opacity-80 text-[12px]">
+                      {physicalCount} item{physicalCount !== 1 ? 's' : ''}
+                      <ChevronRight size={13} />
+                    </span>
+                  </button>
+                )}
+
+                {/* Digital button */}
+                {hasDigital && (
+                  <button
+                    onClick={() => navigate('/checkout', { state: { cartType: 'digital' } })}
+                    className={clsx(
+                      'w-full flex items-center justify-between gap-2 rounded-[10px] px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer',
+                      hasPhysical
+                        ? 'bg-[#3851D1] text-white'
+                        : 'bg-brand-orange text-white',
+                    )}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Download size={15} />
+                      Get Digital Products
+                    </span>
+                    <span className="flex items-center gap-1 opacity-80 text-[12px]">
+                      {digitalCount} item{digitalCount !== 1 ? 's' : ''}
+                      <ChevronRight size={13} />
+                    </span>
+                  </button>
+                )}
+
               </div>
 
               <Button
-                variant="primary" size="lg" fullWidth className="justify-center"
-                onClick={() => navigate('/checkout')}
-              >
-                Proceed to Checkout
-              </Button>
-              <Button
-                variant="ghost" size="sm" fullWidth className="justify-center mt-[10px]"
+                variant="ghost" size="sm" fullWidth className="justify-center"
                 onClick={() => navigate('/marketplace')}
               >
                 Continue Shopping

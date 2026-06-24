@@ -9,7 +9,7 @@ import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { TabBar, Pagination, FilterDropdown } from '@/components/comman/ui';
 import type { Tab } from '@/components/comman/ui';
-import { ShoppingCart, ShoppingBag, Star, Heart, ImageOff, Loader2 } from 'lucide-react';
+import { ShoppingCart, ShoppingBag, Star, Heart, ImageOff, Loader2, SlidersHorizontal, X } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/commerce/marketplace';
 
 function SolvexoIcon({ size = 32 }: { size?: number }) {
@@ -27,14 +27,10 @@ function SolvexoIcon({ size = 32 }: { size?: number }) {
 function ProductCardSkeleton() {
   return (
     <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
-      <div className="animate-pulse h-[180px] bg-bone" />
-      <div className="p-4">
+      <div className="animate-pulse h-[200px] sm:h-[180px] bg-bone" />
+      <div className="p-3 sm:p-4">
         <div className="animate-pulse h-[13px] bg-bone rounded-[6px] mb-2" />
         <div className="animate-pulse h-[11px] bg-bone rounded-[6px] w-[55%] mb-[10px]" />
-        <div className="flex gap-[6px] mb-[10px]">
-          <div className="animate-pulse h-5 w-16 bg-bone rounded" />
-          <div className="animate-pulse h-5 w-[72px] bg-bone rounded" />
-        </div>
         <div className="flex justify-between items-center">
           <div className="animate-pulse h-5 w-16 bg-bone rounded-[6px]" />
           <div className="animate-pulse h-[30px] w-[86px] bg-bone rounded-lg" />
@@ -45,16 +41,16 @@ function ProductCardSkeleton() {
 }
 
 // ── Product Image ─────────────────────────────────────────────────────────────
-function ProductImage({ images, name }: { images: string[]; name: string }) {
+function ProductImage({ images, name, className }: { images: string[]; name: string; className?: string }) {
   const [errored, setErrored] = useState(false);
   const src = images[0];
 
   if (!src || errored) {
     return (
-      <div className="h-[180px] bg-brand-pale-orange rounded-t-[12px] flex flex-col items-center justify-center gap-[6px]">
-        <ImageOff size={36} className="text-brand-orange opacity-[0.45]" />
-        <span className="text-[10px] text-slate max-w-[120px] text-center leading-[1.4]">
-          {name.slice(0, 24)}{name.length > 24 ? '…' : ''}
+      <div className={clsx('bg-brand-pale-orange flex flex-col items-center justify-center gap-[6px]', className)}>
+        <ImageOff size={28} className="text-brand-orange opacity-[0.45]" />
+        <span className="text-[9px] text-slate max-w-[80px] text-center leading-[1.4]">
+          {name.slice(0, 20)}{name.length > 20 ? '…' : ''}
         </span>
       </div>
     );
@@ -65,7 +61,7 @@ function ProductImage({ images, name }: { images: string[]; name: string }) {
       src={src}
       alt={name}
       onError={() => setErrored(true)}
-      className="h-[180px] w-full object-cover rounded-t-[12px] block"
+      className={clsx('w-full object-cover block', className)}
     />
   );
 }
@@ -110,10 +106,13 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
 
   return (
     <Card padding="none" hover onClick={onClick}>
-      {/* Image + wishlist */}
+      {/* Image */}
       <div className="relative">
-        <ProductImage images={product.images ?? []} name={product.name} />
-
+        <ProductImage
+          images={product.images ?? []}
+          name={product.name}
+          className="h-[200px] sm:h-[180px] rounded-t-[12px]"
+        />
         <button
           onClick={onToggleWishlist}
           disabled={isWishlisting}
@@ -126,13 +125,9 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
         >
           <Heart
             size={15}
-            className={clsx(
-              'transition-[color,fill] duration-150',
-              isWishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none',
-            )}
+            className={clsx('transition-[color,fill] duration-150', isWishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')}
           />
         </button>
-
         <span className={clsx(
           'absolute top-[10px] left-[10px] px-2 py-[3px] rounded-[5px] text-[10px] font-semibold border',
           isDigital
@@ -143,16 +138,14 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
         </span>
       </div>
 
-      {/* Card body */}
-      <div className="px-[14px] pt-3 pb-[14px]">
-        <div className="font-bold text-[13px] text-[#141413] mb-[3px] leading-[1.35] overflow-hidden text-ellipsis whitespace-nowrap">
+      {/* Body */}
+      <div className="px-3 sm:px-[14px] pt-3 pb-3 sm:pb-[14px]">
+        <p className="font-bold text-[13px] text-carbon mb-[4px] leading-[1.4] line-clamp-2 sm:line-clamp-1">
           {product.name}
-        </div>
-
+        </p>
         <StarRating rating={product.averageRating} count={ratingCount} />
-
         {(product.tags?.length ?? 0) > 0 && (
-          <div className="flex flex-wrap gap-1 mt-[6px]">
+          <div className="hidden sm:flex flex-wrap gap-1 mt-[6px]">
             {product.tags!.slice(0, 3).map(tag => (
               <span key={tag} className="text-[10px] px-[6px] py-[1px] rounded bg-cream text-slate border border-bone">
                 {tag}
@@ -160,23 +153,17 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
             ))}
           </div>
         )}
-
         <div className="flex items-center justify-between mt-[10px]">
-          <div className="flex items-baseline gap-[5px]">
-            <span className="font-bold text-[15px] text-[#141413]">
+          <div className="flex items-baseline gap-[4px]">
+            <span className="font-bold text-[15px] text-carbon">
               {lowestPrice != null ? `$${lowestPrice.toLocaleString()}` : '—'}
             </span>
             {compareAt != null && compareAt > (lowestPrice ?? 0) && (
-              <span className="text-[11px] text-slate line-through">
-                ${compareAt.toLocaleString()}
-              </span>
+              <span className="text-[11px] text-slate line-through">${compareAt.toLocaleString()}</span>
             )}
           </div>
           <Button variant="secondary" size="sm" onClick={onAddToCart}>
-            {isAdding
-              ? <Loader2 size={11} className="animate-spin" />
-              : <ShoppingCart size={11} />
-            }
+            {isAdding ? <Loader2 size={11} className="animate-spin" /> : <ShoppingCart size={11} />}
             {isAdding ? 'Adding…' : 'Add to Cart'}
           </Button>
         </div>
@@ -185,40 +172,94 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
   );
 }
 
+// ── Filter data ───────────────────────────────────────────────────────────────
+const FILTER_GROUPS = [
+  { key: 'price',  title: 'Price Range',  items: ['Under $10', '$10–$50', '$50–$100', '$100+'] },
+  { key: 'type',   title: 'Product Type', items: ['Physical', 'Digital']                       },
+  { key: 'rating', title: 'Rating',       items: ['4★ & up', '3★ & up']                        },
+];
+
+// ── FilterPanel — shared by desktop sidebar + mobile sheet ────────────────────
+interface FilterState { price: string[]; type: string[]; rating: string[]; }
+
+function FilterPanel({
+  filters, onChange,
+}: {
+  filters:  FilterState;
+  onChange: (key: keyof FilterState, value: string) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      {FILTER_GROUPS.map((group, gi) => (
+        <div key={group.key}>
+          {gi > 0 && <div className="h-px bg-bone mb-5 -mt-[2px]" />}
+          <p className="text-[10px] font-bold text-slate uppercase tracking-[0.1em] mb-[10px]">
+            {group.title}
+          </p>
+          <div className="flex flex-wrap gap-[6px]">
+            {group.items.map(label => {
+              const active = (filters[group.key as keyof FilterState] as string[]).includes(label);
+              return (
+                <button
+                  key={label}
+                  onClick={() => onChange(group.key as keyof FilterState, label)}
+                  className={clsx(
+                    'px-[10px] py-[5px] rounded-full text-[11.5px] font-medium border transition-all duration-150 cursor-pointer leading-none',
+                    active
+                      ? 'bg-brand-orange text-white border-brand-orange'
+                      : 'bg-white text-charcoal border-[#DDD9D0] hover:border-brand-orange hover:text-brand-orange',
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Config ────────────────────────────────────────────────────────────────────
 const TABS: Tab[] = ['All', 'Physical', 'Digital', 'Education', 'Art & Design', 'Templates', 'Music']
   .map(t => ({ id: t, label: t }));
 
-const PRICE_FILTERS  = ['Under $10', '$10–$50', '$50–$100', '$100+'];
-const TYPE_FILTERS   = ['Physical', 'Digital'];
-const RATING_FILTERS = ['4★ & up', '3★ & up'];
-
 const SORT_OPTIONS = [
-  { value: 'newest',     label: 'Newest'          },
-  { value: 'price-asc',  label: 'Price: Low–High'  },
-  { value: 'price-desc', label: 'Price: High–Low'  },
-  { value: 'best-rated', label: 'Best Rated'       },
+  { value: 'newest',     label: 'Newest'         },
+  { value: 'price-asc',  label: 'Price: Low–High' },
+  { value: 'price-desc', label: 'Price: High–Low' },
+  { value: 'best-rated', label: 'Best Rated'      },
 ];
 
 export function Marketplace() {
   const navigate = useNavigate();
   usePageTitle('Marketplace');
 
-  const [activeTab, setActiveTab] = useState('All');
-  const [sortBy,    setSortBy]    = useState('newest');
-  const [page,      setPage]      = useState(1);
-  const LIMIT = 15;
+  const [activeTab,     setActiveTab]     = useState('All');
+  const [sortBy,        setSortBy]        = useState('newest');
+  const [page,          setPage]          = useState(1);
+  const [mobileFilters, setMobileFilters] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({ price: [], type: [], rating: [] });
 
+  const LIMIT = 15;
   const { products, total, loading, error } = useProductsByCategory(page, LIMIT);
-  const { cartCount, addToCart, adding }            = useCartContext();
+  const { cartCount, addToCart, adding }    = useCartContext();
   const { wishlistCount, isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
 
-  const totalPages = Math.ceil(total / LIMIT) || 1;
+  const totalPages       = Math.ceil(total / LIMIT) || 1;
+  const activeFilterCount = filters.price.length + filters.type.length + filters.rating.length;
 
-  const goToPage = (p: number) => {
-    setPage(p);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const toggleFilter = (key: keyof FilterState, value: string) => {
+    setFilters(prev => {
+      const arr = prev[key];
+      return { ...prev, [key]: arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value] };
+    });
   };
+
+  const clearFilters = () => setFilters({ price: [], type: [], rating: [] });
+
+  const goToPage = (p: number) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
   const filtered = activeTab === 'All'
     ? products
@@ -232,39 +273,34 @@ export function Marketplace() {
     <div className="min-h-screen bg-cream">
 
       {/* ── Nav ────────────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center gap-4 px-10">
+      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center gap-4 px-4 md:px-10">
         <div className="flex items-center gap-2 flex-shrink-0">
           <SolvexoIcon size={28} />
           <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
           <span className="font-bold text-[15px] text-brand-orange">o</span>
-          <span className="text-bone mx-1">|</span>
-          <span className="text-[13px] text-slate">Marketplace</span>
+          <span className="text-bone mx-1 hidden sm:inline">|</span>
+          <span className="text-[13px] text-slate hidden sm:inline">Marketplace</span>
         </div>
         <div className="flex-1 flex justify-center">
           <input
             placeholder="Search marketplace..."
-            className="w-full max-w-[440px] px-[14px] py-2 rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none"
+            className="w-full max-w-[200px] sm:max-w-[320px] md:max-w-[440px] px-[14px] py-2 rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none"
           />
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <Button variant="ghost" size="sm" onClick={() => navigate('/')}>Home</Button>
           <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')}>Sell on Solvexo</Button>
-
           <div
             onClick={() => navigate('/account/profile?tab=wishlist')}
             className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer"
           >
-            <Heart
-              size={16}
-              className={wishlistCount > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'}
-            />
+            <Heart size={16} className={wishlistCount > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'} />
             {wishlistCount > 0 && (
               <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
                 {wishlistCount > 99 ? '99+' : wishlistCount}
               </span>
             )}
           </div>
-
           <div
             onClick={() => navigate('/cart')}
             className="relative w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer"
@@ -280,108 +316,211 @@ export function Marketplace() {
       </nav>
 
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
-      <div className="px-10 py-9 flex items-center justify-between bg-gradient-to-r from-[#FBECE4] to-[#FFF5EE]">
+      <div className="px-4 md:px-10 py-6 md:py-9 flex items-center justify-between bg-gradient-to-r from-[#FBECE4] to-[#FFF5EE]">
         <div>
-          <h1 className="text-[28px] font-bold text-[#141413] mb-2 font-serif">
+          <h1 className="text-[22px] md:text-[28px] font-bold text-[#141413] mb-2 font-serif">
             Discover Something Made with Love
           </h1>
-          <p className="text-[14px] text-slate mb-5">
+          <p className="text-[13px] md:text-[14px] text-slate mb-5">
             Shop unique products from independent sellers, creators, and educators.
           </p>
-          <Button variant="primary" size="md">
-            Shop Now <span className="ml-1">→</span>
-          </Button>
+          <Button variant="primary" size="md">Shop Now <span className="ml-1">→</span></Button>
         </div>
-        <ShoppingBag size={80} className="text-brand-orange" />
+        <ShoppingBag size={80} className="text-brand-orange hidden sm:block" />
       </div>
 
       {/* ── Category Tabs ──────────────────────────────────────────────────── */}
-      <div className="bg-white">
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} className="px-10" />
+      <div className="bg-white overflow-x-auto">
+        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} className="px-4 md:px-10" />
       </div>
 
-      {/* ── Main ───────────────────────────────────────────────────────────── */}
-      <div className="flex gap-6 px-10 py-6">
+      {/* ── Main content ───────────────────────────────────────────────────── */}
+      <div className="px-4 md:px-6 lg:px-10 py-4 md:py-6">
 
-        {/* Sidebar Filters */}
-        <aside className="w-[200px] flex-shrink-0">
-          <div className="text-[14px] font-bold text-[#141413] mb-[14px]">Filters</div>
-          {[
-            { title: 'Price Range',  items: PRICE_FILTERS  },
-            { title: 'Product Type', items: TYPE_FILTERS   },
-            { title: 'Rating',       items: RATING_FILTERS },
-          ].map(group => (
-            <div key={group.title} className="mb-5">
-              <div className="text-[12px] text-slate uppercase tracking-[0.05em] mb-2">
-                {group.title}
+        {/* Mobile: filter + sort bar */}
+        <div className="lg:hidden flex items-center justify-between gap-3 mb-4">
+          <button
+            onClick={() => setMobileFilters(true)}
+            className={clsx(
+              'flex items-center gap-2 px-3 py-[9px] rounded-[10px] border text-[13px] font-medium transition-colors',
+              activeFilterCount > 0
+                ? 'bg-brand-pale-orange border-brand-orange text-brand-deep-orange'
+                : 'bg-white border-bone text-charcoal hover:bg-cream',
+            )}
+          >
+            <SlidersHorizontal size={14} strokeWidth={2} />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+          <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+        </div>
+
+        <div className="flex gap-6 items-start">
+
+          {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
+          <aside className="hidden lg:block w-[210px] flex-shrink-0 sticky top-[68px] self-start">
+            <div className="bg-white rounded-[16px] border border-bone overflow-hidden">
+              {/* Sidebar header */}
+              <div className="px-5 pt-[18px] pb-4 border-b border-bone flex items-center justify-between">
+                <div className="flex items-center gap-[7px]">
+                  <div className="size-7 rounded-[7px] bg-brand-pale-orange flex items-center justify-center shrink-0">
+                    <SlidersHorizontal size={13} className="text-brand-orange" strokeWidth={2.2} />
+                  </div>
+                  <span className="text-[14px] font-bold text-carbon">Filters</span>
+                  {activeFilterCount > 0 && (
+                    <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </div>
+                {activeFilterCount > 0 && (
+                  <button
+                    onClick={clearFilters}
+                    className="text-[11px] font-medium text-brand-orange hover:opacity-70 transition-opacity cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
-              {group.items.map(label => (
-                <label key={label} className="flex items-center gap-2 mb-[6px] cursor-pointer">
-                  <input type="checkbox" className="w-[14px] h-[14px] rounded-[2px] border border-bone accent-brand-orange" />
-                  <span className="text-[12px] text-charcoal">{label}</span>
-                </label>
-              ))}
+              {/* Filter groups */}
+              <div className="px-5 py-5">
+                <FilterPanel filters={filters} onChange={toggleFilter} />
+              </div>
             </div>
-          ))}
-        </aside>
+          </aside>
 
-        {/* Products */}
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[13px] text-slate">
-              {!loading && (error ? 'Error loading products' : `Showing ${filtered.length} of ${total} products`)}
-            </span>
-            <FilterDropdown
-              options={SORT_OPTIONS}
-              value={sortBy}
-              onChange={setSortBy}
-            />
+          {/* ── Products area ────────────────────────────────────────────────── */}
+          <div className="flex-1 min-w-0">
+            {/* Desktop: count + sort row */}
+            <div className="hidden lg:flex items-center justify-between mb-4">
+              <span className="text-[13px] text-slate">
+                {!loading && (error ? 'Error loading' : `Showing ${filtered.length} of ${total} products`)}
+              </span>
+              <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+            </div>
+
+            {/* Mobile: product count */}
+            <p className="lg:hidden text-[12px] text-slate mb-3">
+              {!loading && !error && `${filtered.length} of ${total} products`}
+            </p>
+
+            {error && !loading && (
+              <div className="p-6 text-center bg-[#FFF3F0] rounded-[12px] border border-[#FECACA] text-[#C13030] text-[13px]">
+                {error}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[10px] sm:gap-[14px] md:gap-[18px]">
+              {loading
+                ? Array.from({ length: 9 }).map((_, i) => <ProductCardSkeleton key={i} />)
+                : filtered.map(p => {
+                    const defVariant = p.variants.find(v => v.isDefault) ?? p.variants[0];
+                    const vId = defVariant?._id ?? '';
+                    return (
+                      <ProductCard
+                        key={p._id}
+                        product={p}
+                        onClick={() => navigate(`/marketplace/${p._id}`)}
+                        isAdding={adding === vId}
+                        onAddToCart={e => { e.stopPropagation(); if (defVariant) addToCart(p._id, vId, p.productType ?? p.type ?? 'physical'); }}
+                        isWishlisted={isWishlisted(p._id, vId)}
+                        isWishlisting={wishlisting === vId}
+                        onToggleWishlist={e => { e.stopPropagation(); if (defVariant) toggleWishlist(p._id, vId); }}
+                      />
+                    );
+                  })
+              }
+            </div>
+
+            {!loading && !error && filtered.length === 0 && (
+              <div className="text-center py-[60px] text-slate text-[14px]">No products found in this category yet.</div>
+            )}
+
+            {!loading && !error && totalPages > 1 && (
+              <div className="flex flex-col items-center gap-2 mt-8 pb-2">
+                <Pagination page={page} total={total} perPage={LIMIT} onChange={goToPage} />
+                <p className="text-[12px] text-slate text-center">
+                  Page {page} of {totalPages} · {total} products total
+                </p>
+              </div>
+            )}
           </div>
-
-          {error && !loading && (
-            <div className="p-6 text-center bg-[#FFF3F0] rounded-[12px] border border-[#FECACA] text-[#C13030] text-[13px]">
-              {error}
-            </div>
-          )}
-
-          <div className="grid grid-cols-3 gap-[18px]">
-            {loading
-              ? Array.from({ length: 9 }).map((_, i) => <ProductCardSkeleton key={i} />)
-              : filtered.map(p => {
-                  const defVariant = p.variants.find(v => v.isDefault) ?? p.variants[0];
-                  const vId = defVariant?._id ?? '';
-                  return (
-                    <ProductCard
-                      key={p._id}
-                      product={p}
-                      onClick={() => navigate(`/marketplace/${p._id}`)}
-                      isAdding={adding === vId}
-                      onAddToCart={e => { e.stopPropagation(); if (defVariant) addToCart(p._id, vId); }}
-                      isWishlisted={isWishlisted(p._id, vId)}
-                      isWishlisting={wishlisting === vId}
-                      onToggleWishlist={e => { e.stopPropagation(); if (defVariant) toggleWishlist(p._id, vId); }}
-                    />
-                  );
-                })
-            }
-          </div>
-
-          {!loading && !error && filtered.length === 0 && (
-            <div className="text-center py-[60px] text-slate text-[14px]">
-              No products found in this category yet.
-            </div>
-          )}
-
-          {!loading && !error && totalPages > 1 && (
-            <div className="flex flex-col items-center gap-2 mt-8 pb-2">
-              <Pagination page={page} total={total} perPage={LIMIT} onChange={goToPage} />
-              <p className="text-[12px] text-slate">
-                Page {page} of {totalPages} · {total} products total
-              </p>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* ── Mobile filter bottom sheet ──────────────────────────────────────── */}
+      {/* Backdrop */}
+      <div
+        className={clsx(
+          'fixed inset-0 bg-black/40 z-40 lg:hidden transition-opacity duration-300',
+          mobileFilters ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+        )}
+        onClick={() => setMobileFilters(false)}
+      />
+
+      {/* Sheet */}
+      <div
+        className={clsx(
+          'fixed bottom-0 left-0 right-0 z-50 bg-white lg:hidden',
+          'rounded-t-[20px]',
+          'transition-transform duration-300 ease-out',
+          mobileFilters ? 'translate-y-0' : 'translate-y-full',
+        )}
+      >
+        {/* Drag handle */}
+        <div className="flex justify-center pt-[10px] pb-[4px]">
+          <div className="w-9 h-[4px] bg-bone rounded-full" />
+        </div>
+
+        {/* Sheet header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-bone">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal size={15} className="text-charcoal" strokeWidth={2} />
+            <span className="text-[15px] font-bold text-carbon">Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
+                {activeFilterCount}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="text-[12px] font-medium text-slate hover:text-brand-orange transition-colors cursor-pointer"
+              >
+                Clear all
+              </button>
+            )}
+            <button
+              onClick={() => setMobileFilters(false)}
+              className="size-8 rounded-full bg-cream flex items-center justify-center cursor-pointer hover:bg-bone transition-colors"
+            >
+              <X size={15} className="text-charcoal" />
+            </button>
+          </div>
+        </div>
+
+        {/* Filter content */}
+        <div className="px-5 py-4 overflow-y-auto max-h-[55vh]">
+          <FilterPanel filters={filters} onChange={toggleFilter} />
+        </div>
+
+        {/* Apply button */}
+        <div className="px-5 pt-3 pb-6 border-t border-bone">
+          <button
+            onClick={() => setMobileFilters(false)}
+            className="w-full bg-brand-orange text-white py-[13px] rounded-[12px] text-[14px] font-semibold cursor-pointer hover:opacity-[0.9] transition-opacity"
+          >
+            {activeFilterCount > 0 ? `Apply ${activeFilterCount} Filter${activeFilterCount > 1 ? 's' : ''}` : 'Done'}
+          </button>
+        </div>
+      </div>
+
     </div>
   );
 }

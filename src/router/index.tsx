@@ -5,6 +5,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { RootLayout }   from '@/components/layouts/RootLayout';
 
 // Layouts — eagerly imported (needed as wrappers immediately)
+import { BuyerLayout }  from '@/components/layouts/BuyerLayout';
 import { PublicLayout } from '@/components/layouts/PublicLayout';
 import { SellerLayout } from '@/components/layouts/SellerLayout';
 import { AdminLayout }  from '@/components/layouts/AdminLayout';
@@ -24,6 +25,7 @@ const Marketplace          = lazy(() => named(import('@/features/buyer/pages/Mar
 const ProductDetail        = lazy(() => named(import('@/features/buyer/pages/ProductDetail'),                   'ProductDetail'));
 const CartPage             = lazy(() => named(import('@/features/buyer/pages/CartPage'),                        'CartPage'));
 const CheckoutPage         = lazy(() => named(import('@/features/buyer/pages/CheckoutPage'),                    'CheckoutPage'));
+const OrderSuccessPage     = lazy(() => named(import('@/features/buyer/pages/OrderSuccessPage'),                'OrderSuccessPage'));
 const SellerStorefront     = lazy(() => named(import('@/features/buyer/pages/SellerStorefront'),                'SellerStorefront'));
 const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/EducationMarketplace'),            'EducationMarketplace'));
 const PricingPage          = lazy(() => named(import('@/features/buyer/pages/PricingPage'),                     'PricingPage'));
@@ -86,25 +88,31 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
 
-      // ── Public pages with PublicLayout navbar ─────────────────────────
+      // ── All buyer-facing pages — BuyerLayout adds the mobile bottom nav ─
       {
-        path: '/',
-        element: <PublicLayout />,
+        element: <BuyerLayout />,
         children: [
-          { index: true,             element: <Homepage /> },
-          { path: 'pricing',         element: <PricingPage /> },
-          { path: 'sellers',         element: <ForSellersPage /> },
-          { path: 'account/profile', element: <UserProfile /> },
+          // Pages that also need the public marketing top navbar
+          {
+            path: '/',
+            element: <PublicLayout />,
+            children: [
+              { index: true,             element: <Homepage /> },
+              { path: 'pricing',         element: <PricingPage /> },
+              { path: 'sellers',         element: <ForSellersPage /> },
+              { path: 'account/profile', element: <UserProfile /> },
+            ],
+          },
+          // Pages with their own embedded navbar (no PublicLayout wrapper needed)
+          { path: 'marketplace',     element: <Marketplace /> },
+          { path: 'cart',            element: <CartPage /> },
+          { path: 'checkout',        element: <CheckoutPage /> },
+          { path: 'order-success',   element: <OrderSuccessPage /> },
+          { path: 'marketplace/:id', element: <ProductDetail /> },
+          { path: 'store/:slug',     element: <SellerStorefront /> },
+          { path: 'education',       element: <EducationMarketplace /> },
         ],
       },
-
-      // ── Marketplace pages — own embedded nav ──────────────────────────
-      { path: '/marketplace',     element: <Marketplace /> },
-      { path: '/cart',            element: <CartPage /> },
-      { path: '/checkout',        element: <CheckoutPage /> },
-      { path: '/marketplace/:id', element: <ProductDetail /> },
-      { path: '/store/:slug',     element: <SellerStorefront /> },
-      { path: '/education',       element: <EducationMarketplace /> },
 
       // ── Auth ──────────────────────────────────────────────────────────
       { path: '/login',           element: <LoginPage /> },

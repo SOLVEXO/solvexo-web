@@ -14,7 +14,7 @@ import {
 interface NavPage { label: string; path: string; Icon: LucideIcon }
 
 const PUBLIC_PAGES: NavPage[] = [
-  { label: 'Homepage',       path: '/',                   Icon: Home         },
+  { label: 'Home',       path: '/',                   Icon: Home         },
   { label: 'Marketplace',    path: '/marketplace',        Icon: ShoppingCart },
   // { label: 'Product Detail', path: '/marketplace/1',      Icon: FileText     },
   { label: 'Storefront',     path: '/store/teacherspro',  Icon: Store        },

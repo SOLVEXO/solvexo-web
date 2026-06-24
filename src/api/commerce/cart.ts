@@ -13,6 +13,7 @@ export interface CartItem {
   price?:           number;
   quantity:         number;
   itemTotal?:       number;
+  type?:            'physical' | 'digital';
 }
 
 export interface Cart {

@@ -48,7 +48,7 @@ export interface CheckoutSummary {
 }
 
 export interface CreateCheckoutPayload {
-  addressId:      string;
+  addressId?:      string;
   shippingZoneId?: string;
 }
 
@@ -62,8 +62,45 @@ interface CreateCheckoutResponse {
   };
 }
 
+export interface AddShippingPayload {
+  checkoutId:    string;
+  shippingZoneId: string;
+}
+
+export interface AddShippingData {
+  checkoutId:    string;
+  shippingZoneId: string;
+  shippingFee:   number;
+  subtotal:      number;
+  totalAmount:   number;
+}
+
+interface AddShippingResponse {
+  success: boolean;
+  message: string;
+  data:    AddShippingData;
+}
+
+interface DeleteCheckoutResponse {
+  success: boolean;
+  message: string;
+}
+
 // ── API ───────────────────────────────────────────────────────────────────────
 
 export function apiCreateCheckout(payload: CreateCheckoutPayload) {
   return client.post<never, CreateCheckoutResponse>(ENDPOINTS.CHECKOUT.CREATE, payload);
+}
+
+export function apiAddShippingToCheckout(payload: AddShippingPayload) {
+  return client.post<never, AddShippingResponse>(
+    ENDPOINTS.CHECKOUT.ADD_SHIPPING_ZONE_IN_CHECKOUT,
+    payload,
+  );
+}
+
+export function apiDeleteCheckout(checkoutId: string) {
+  return client.delete<never, DeleteCheckoutResponse>(
+    `${ENDPOINTS.CHECKOUT.DELETE_CHECKOUT}/${checkoutId}`,
+  );
 }

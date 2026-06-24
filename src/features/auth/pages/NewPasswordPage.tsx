@@ -108,7 +108,7 @@ export function NewPasswordPage() {
   if (resetPassword.success) {
     return (
       <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
-        <div className="bg-white rounded-[20px] px-10 py-9 w-full max-w-[440px] border border-bone">
+        <div className="bg-white rounded-[20px] px-6 py-6 md:px-10 md:py-9 w-full max-w-[440px] border border-bone">
           <h1 className="text-[22px] font-bold text-carbon text-center mb-2">Password updated!</h1>
           <p className="text-[13px] text-slate text-center leading-[1.6] mb-7">
             Your password has been changed. You can now sign in.
@@ -123,7 +123,7 @@ export function NewPasswordPage() {
 
   return (
     <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-[20px] px-10 py-9 w-full max-w-[440px] border border-bone">
+      <div className="bg-white rounded-[20px] px-6 py-6 md:px-10 md:py-9 w-full max-w-[440px] border border-bone">
         <h1 className="text-[22px] font-bold text-carbon text-center mb-2">Reset your password</h1>
         {userEmail && (
           <p className="text-[13px] text-slate text-center mb-5 leading-[1.6]">

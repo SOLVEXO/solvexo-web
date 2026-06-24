@@ -49,7 +49,7 @@ export function ForSellersPage() {
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <div
-        className="px-12 pt-20 pb-16 relative overflow-hidden"
+        className="px-4 md:px-8 lg:px-12 pt-12 md:pt-20 pb-10 md:pb-16 relative overflow-hidden"
         style={{ background: 'linear-gradient(135deg, #141413 0%, #2C2A28 100%)' }}
       >
         <div className="absolute rounded-full w-[400px] h-[400px] bg-brand-orange opacity-[0.08] -top-[80px] -right-[80px]" />
@@ -60,17 +60,17 @@ export function ForSellersPage() {
             <span className="text-[12px] text-brand-orange font-medium">Trusted by 50,000+ sellers worldwide</span>
           </div>
 
-          <h1 className="block text-[48px] font-bold text-white leading-[1.15] mb-5" style={{ fontFamily: SERIF }}>
+          <h1 className="block text-3xl md:text-5xl lg:text-[48px] font-bold text-white leading-[1.15] mb-5" style={{ fontFamily: SERIF }}>
             Sell more. Do less.<br />
             With Solvex<span className="text-brand-orange">o</span>.
           </h1>
 
-          <p className="text-[17px] text-[#B0AEA8] leading-[1.7] max-w-[580px] mx-auto mb-9">
+          <p className="text-sm md:text-[17px] text-[#B0AEA8] leading-[1.7] max-w-[580px] mx-auto mb-9">
             The all-in-one commerce platform for educators, creators, and independent sellers.
             Get your store live in minutes. Start selling today.
           </p>
 
-          <div className="flex gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" onClick={() => navigate('/onboarding')}>
               Start for Free <ArrowRight size={14} className="inline align-middle ml-1" />
             </Button>
@@ -86,13 +86,13 @@ export function ForSellersPage() {
       </div>
 
       {/* ── Seller Types ─────────────────────────────────────────────────── */}
-      <div className="px-12 py-[72px] bg-cream">
+      <div className="px-4 md:px-8 lg:px-12 py-12 md:py-[72px] bg-cream">
         <div className="max-w-[1100px] mx-auto">
           <p className="text-[13px] font-semibold text-brand-orange text-center uppercase tracking-[0.1em] mb-3">Built for you</p>
-          <h2 className="text-[32px] font-bold text-carbon text-center mb-12" style={{ fontFamily: SERIF }}>
+          <h2 className="text-2xl md:text-[32px] font-bold text-carbon text-center mb-12" style={{ fontFamily: SERIF }}>
             Whatever you sell, we've got you covered
           </h2>
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {SELLER_TYPES.map(s => (
               <div key={s.title} className="bg-white rounded-2xl p-7 border border-bone">
                 <s.Icon size={36} className="block mb-4 text-brand-orange" />
@@ -108,13 +108,13 @@ export function ForSellersPage() {
       </div>
 
       {/* ── Feature Highlights ───────────────────────────────────────────── */}
-      <div className="px-12 py-[72px] bg-white">
+      <div className="px-4 md:px-8 lg:px-12 py-12 md:py-[72px] bg-white">
         <div className="max-w-[1100px] mx-auto">
-          <h2 className="text-[32px] font-bold text-carbon text-center mb-[10px]" style={{ fontFamily: SERIF }}>
+          <h2 className="text-2xl md:text-[32px] font-bold text-carbon text-center mb-[10px]" style={{ fontFamily: SERIF }}>
             Everything you need to run your business
           </h2>
           <p className="text-[15px] text-slate text-center mb-12">One subscription. Every tool. Zero technical headaches.</p>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {FEATURES.map(f => (
               <div key={f.title} className="bg-cream rounded-[12px] px-[18px] py-5">
                 <f.Icon size={28} className="block mb-3 text-brand-orange" />
@@ -127,9 +127,9 @@ export function ForSellersPage() {
       </div>
 
       {/* ── Social Proof ─────────────────────────────────────────────────── */}
-      <div className="px-12 py-[72px] bg-cream border-t border-bone">
+      <div className="px-4 md:px-8 lg:px-12 py-12 md:py-[72px] bg-cream border-t border-bone">
         <div className="max-w-[1100px] mx-auto">
-          <div className="flex gap-8 justify-center mb-12">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 justify-items-center mb-12">
             {STATS.map(s => (
               <div key={s.label} className="text-center">
                 <p className="block text-[32px] font-bold text-brand-orange">{s.value}</p>
@@ -138,7 +138,7 @@ export function ForSellersPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {TESTIMONIALS.map(t => (
               <div key={t.name} className="bg-white rounded-2xl p-7 border border-bone">
                 <p className="block text-[22px] text-brand-orange mb-3">★★★★★</p>
@@ -157,14 +157,14 @@ export function ForSellersPage() {
       </div>
 
       {/* ── CTA ──────────────────────────────────────────────────────────── */}
-      <div className="bg-carbon px-12 py-[72px] text-center">
-        <h2 className="block text-[36px] font-bold text-white mb-[14px]" style={{ fontFamily: SERIF }}>
+      <div className="bg-carbon px-4 md:px-8 lg:px-12 py-12 md:py-[72px] text-center">
+        <h2 className="block text-2xl md:text-[36px] font-bold text-white mb-[14px]" style={{ fontFamily: SERIF }}>
           Start selling for free today
         </h2>
         <p className="block text-[15px] text-slate mb-9">
           No credit card required. Get your store live in minutes. Upgrade when you're ready.
         </p>
-        <div className="flex gap-3 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button size="lg" onClick={() => navigate('/onboarding')}>
             Create Free Account <ArrowRight size={14} className="inline align-middle ml-1" />
           </Button>

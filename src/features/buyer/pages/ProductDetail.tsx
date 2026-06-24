@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { clsx } from 'clsx';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductById } from '@/hooks/marketplace/useProductById';
@@ -31,14 +32,14 @@ function DetailSkeleton() {
     <div className="animate-pulse" style={{ width: w, height: h, borderRadius: r, background: '#E8E6DC' }} />
   );
   return (
-    <div className="px-10 py-7">
+    <div className="px-4 md:px-6 lg:px-10 py-6 md:py-7">
       {/* Breadcrumb */}
       <div className="flex gap-2 mb-6">
         {[80, 20, 60, 20, 120].map((w, i) => (
           <div key={i} className="animate-pulse h-[13px] rounded bg-bone" style={{ width: w }} />
         ))}
       </div>
-      <div className="grid gap-9 items-start" style={{ gridTemplateColumns: '1fr 380px' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-9 items-start min-w-0">
         {/* Left */}
         <div>
           <div className="animate-pulse h-[340px] rounded-2xl bg-bone mb-4" />
@@ -77,10 +78,7 @@ function ProductImage({ images, name, selected }: { images: string[]; name: stri
 
   if (!src || errored) {
     return (
-      <div
-        className="h-[340px] rounded-2xl flex flex-col items-center justify-center gap-2 mb-4"
-        style={{ background: 'linear-gradient(135deg, #FBECE4, #FFF5EE)' }}
-      >
+      <div className="h-[240px] md:h-[340px] lg:h-[400px] rounded-2xl flex flex-col items-center justify-center gap-2 mb-4 bg-gradient-to-br from-[#FBECE4] to-[#FFF5EE]">
         <ImageOff size={60} className="text-brand-orange opacity-50" />
         <span className="text-[12px] text-[#8C8A82]">{name}</span>
       </div>
@@ -92,7 +90,7 @@ function ProductImage({ images, name, selected }: { images: string[]; name: stri
       src={src}
       alt={name}
       onError={() => setErrored(true)}
-      className="h-[340px] w-full object-cover rounded-2xl block mb-4"
+      className="h-[240px] md:h-[340px] lg:h-[400px] w-full object-cover rounded-2xl block mb-4"
     />
   );
 }
@@ -116,13 +114,12 @@ function VariantSelector({ variants, selected, onSelect }: {
               <button
                 key={v._id}
                 onClick={() => onSelect(v)}
-                className="px-[10px] py-1 rounded-[6px] text-[12px] cursor-pointer"
-                style={{
-                  border: `1.5px solid ${selected?._id === v._id ? '#D97757' : '#E8E6DC'}`,
-                  background: selected?._id === v._id ? '#FBECE4' : '#FFFFFF',
-                  color: selected?._id === v._id ? '#B95A3A' : '#2C2A28',
-                  fontWeight: selected?._id === v._id ? 600 : 400,
-                }}
+                className={clsx(
+                  'px-[10px] py-1 rounded-[6px] text-[12px] cursor-pointer border-[1.5px]',
+                  selected?._id === v._id
+                    ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange font-semibold'
+                    : 'border-bone bg-white text-charcoal font-normal',
+                )}
               >
                 {v.color}
               </button>
@@ -140,13 +137,12 @@ function VariantSelector({ variants, selected, onSelect }: {
               <button
                 key={v._id}
                 onClick={() => onSelect(v)}
-                className="px-[10px] py-1 rounded-[6px] text-[12px] cursor-pointer"
-                style={{
-                  border: `1.5px solid ${selected?._id === v._id ? '#D97757' : '#E8E6DC'}`,
-                  background: selected?._id === v._id ? '#FBECE4' : '#FFFFFF',
-                  color: selected?._id === v._id ? '#B95A3A' : '#2C2A28',
-                  fontWeight: selected?._id === v._id ? 600 : 400,
-                }}
+                className={clsx(
+                  'px-[10px] py-1 rounded-[6px] text-[12px] cursor-pointer border-[1.5px]',
+                  selected?._id === v._id
+                    ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange font-semibold'
+                    : 'border-bone bg-white text-charcoal font-normal',
+                )}
               >
                 {v.size}
               </button>
@@ -186,13 +182,13 @@ export function ProductDetail() {
   return (
     <div className="min-h-screen bg-cream">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-10">
+      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-4 md:px-10">
         <div className="flex-1 flex items-center gap-2">
           <SolvexoIcon size={28} />
           <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
           <span className="font-bold text-[15px] text-brand-orange">o</span>
         </div>
-        <div className="w-[440px] relative flex-shrink-0">
+        <div className="w-[160px] sm:w-[280px] md:w-[440px] relative flex-shrink-0">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8C8A82] pointer-events-none flex">
             <Search size={14} />
           </span>
@@ -211,7 +207,7 @@ export function ProductDetail() {
             onClick={() => navigate('/account/profile?tab=wishlist')}
             className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer"
           >
-            <Heart size={16} style={{ color: '#E11D48', fill: wishlistCount > 0 ? '#E11D48' : 'none' }} />
+            <Heart size={16} className={wishlistCount > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'} />
             {wishlistCount > 0 && (
               <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
                 {wishlistCount > 99 ? '99+' : wishlistCount}
@@ -239,7 +235,7 @@ export function ProductDetail() {
 
       {/* Error */}
       {!loading && error && (
-        <div className="px-10 py-[60px] text-center">
+        <div className="px-4 md:px-10 py-[60px] text-center">
           <p className="text-[15px] text-[#C13030] mb-4">{error}</p>
           <Button variant="secondary" onClick={() => navigate('/marketplace')}>Back to Marketplace</Button>
         </div>
@@ -247,7 +243,7 @@ export function ProductDetail() {
 
       {/* Content */}
       {!loading && product && (
-        <div className="px-10 py-7">
+        <div className="px-4 md:px-6 lg:px-10 py-6 md:py-8">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 mb-6 text-[13px]">
             <span className="text-[#8C8A82] cursor-pointer" onClick={() => navigate('/marketplace')}>Marketplace</span>
@@ -257,7 +253,7 @@ export function ProductDetail() {
             </span>
           </div>
 
-          <div className="grid gap-9 items-start min-w-0" style={{ gridTemplateColumns: '1fr 380px' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-9 items-start min-w-0">
             {/* LEFT */}
             <div className="min-w-0">
               <ProductImage images={allImages} name={product.name} selected={selectedImgIdx} />
@@ -334,21 +330,18 @@ export function ProductDetail() {
             </div>
 
             {/* RIGHT: sticky purchase card */}
-            <div className="sticky top-20 min-w-0">
+            <div className="lg:sticky lg:top-20 min-w-0">
               <Card padding="none">
                 <div className="px-6 pt-6 pb-0">
                   <Badge color="orange">Physical</Badge>
-                  <h1
-                    className="text-[21px] font-bold text-[#141413] mt-3 mb-[6px] leading-[1.35] break-words"
-                    style={{ fontFamily: "'Lora', Georgia, serif" }}
-                  >
+                  <h1 className="text-[21px] font-bold text-[#141413] mt-3 mb-[6px] leading-[1.35] break-words font-serif">
                     {product.name}
                   </h1>
                   <p className="text-[12px] text-[#8C8A82] mb-4 flex items-center gap-1 flex-wrap">
                     {product.sellerName && <>by {product.sellerName}</>}
                     {product.averageRating > 0 && (
                       <span className="flex items-center gap-[3px]">
-                        • <Star size={11} className="text-brand-orange" style={{ fill: '#D97757' }} />
+                        • <Star size={11} className="text-brand-orange fill-brand-orange" />
                         {product.averageRating.toFixed(1)} ({product.totalRatings} reviews)
                       </span>
                     )}
@@ -377,7 +370,7 @@ export function ProductDetail() {
                       className="justify-center"
                       onClick={async () => {
                         if (!product || !activeVariant) return;
-                        await addToCart(product._id, activeVariant._id);
+                        await addToCart(product._id, activeVariant._id, product.productType ?? product.type ?? 'physical');
                         navigate('/cart');
                       }}
                     >
@@ -391,7 +384,7 @@ export function ProductDetail() {
                         className="justify-center flex-1"
                         onClick={async () => {
                           if (!product || !activeVariant) return;
-                          await addToCart(product._id, activeVariant._id);
+                          await addToCart(product._id, activeVariant._id, product.productType ?? product.type ?? 'physical');
                           setAddedFeedback(true);
                           setTimeout(() => setAddedFeedback(false), 2000);
                         }}
@@ -413,20 +406,18 @@ export function ProductDetail() {
                             onClick={() => toggleWishlist(product._id, activeVariant._id)}
                             disabled={busy}
                             title={wishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
-                            className="w-10 flex-shrink-0 rounded-[10px] flex items-center justify-center transition-all duration-150"
-                            style={{
-                              border: `1.5px solid ${wishlisted ? '#FECDD3' : '#E8E6DC'}`,
-                              background: wishlisted ? '#FFF0F5' : '#FFFFFF',
-                              cursor: busy ? 'wait' : 'pointer',
-                            }}
+                            className={clsx(
+                              'w-10 flex-shrink-0 rounded-[10px] flex items-center justify-center transition-all duration-150 border-[1.5px]',
+                              wishlisted ? 'border-[#FECDD3] bg-[#FFF0F5]' : 'border-bone bg-white',
+                              busy ? 'cursor-wait' : 'cursor-pointer',
+                            )}
                           >
                             <Heart
                               size={16}
-                              style={{
-                                color: wishlisted ? '#E11D48' : '#8C8A82',
-                                fill:  wishlisted ? '#E11D48' : 'none',
-                                transition: 'color 0.15s, fill 0.15s',
-                              }}
+                              className={clsx(
+                                'transition-[color,fill] duration-150',
+                                wishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#8C8A82] fill-none',
+                              )}
                             />
                           </button>
                         );
@@ -483,8 +474,10 @@ function ThumbImage({ src, active, onClick }: { src: string; active: boolean; on
   return (
     <div
       onClick={onClick}
-      className="w-[70px] h-[70px] rounded-[10px] overflow-hidden cursor-pointer bg-brand-pale-orange flex items-center justify-center"
-      style={{ border: `2px solid ${active ? '#D97757' : 'transparent'}` }}
+      className={clsx(
+        'w-[70px] h-[70px] rounded-[10px] overflow-hidden cursor-pointer bg-brand-pale-orange flex items-center justify-center border-2',
+        active ? 'border-brand-orange' : 'border-transparent',
+      )}
     >
       {!errored && src
         ? <img src={src} alt="" onError={() => setErrored(true)} className="w-full h-full object-cover" />

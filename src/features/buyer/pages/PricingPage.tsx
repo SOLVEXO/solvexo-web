@@ -143,7 +143,7 @@ export function PricingPage() {
     <div className="bg-cream min-h-full">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <div className="text-center px-12 pt-16 pb-12 max-w-[720px] mx-auto">
+      <div className="text-center px-4 md:px-8 lg:px-12 pt-10 md:pt-16 pb-12 max-w-[720px] mx-auto">
         {/* Top pill badge */}
         <div className="inline-flex items-center gap-2 bg-brand-pale-orange border border-[rgba(217,119,87,0.3)] rounded-[20px] px-[14px] py-[5px] mb-5">
           <span className="text-[12px] text-[#B95A3A] font-medium">
@@ -151,10 +151,10 @@ export function PricingPage() {
           </span>
         </div>
 
-        <h1 className="block text-[42px] font-bold text-[#141413] leading-[1.2] mb-[14px]" style={{ fontFamily: SERIF }}>
+        <h1 className="block text-2xl md:text-4xl lg:text-[42px] font-bold text-[#141413] leading-[1.2] mb-[14px]" style={{ fontFamily: SERIF }}>
           Simple, transparent pricing
         </h1>
-        <p className="block text-[16px] text-[#8C8A82] leading-[1.6] mb-8">
+        <p className="block text-sm md:text-[16px] text-[#8C8A82] leading-[1.6] mb-8">
           Start free. Scale as you grow. Every plan includes marketplace access, digital delivery, and AI-powered tools.
         </p>
 
@@ -181,7 +181,7 @@ export function PricingPage() {
       </div>
 
       {/* ── Plan Cards ────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-4 gap-4 px-12 pb-16 max-w-[1200px] mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 md:px-8 lg:px-12 pb-16 max-w-[1200px] mx-auto">
         {PLANS.map(plan => {
           const isPro = plan.name === 'Professional';
           return (
@@ -273,14 +273,14 @@ export function PricingPage() {
       </div>
 
       {/* ── Add-ons ───────────────────────────────────────────────────────── */}
-      <div className="px-12 pb-16 max-w-[1200px] mx-auto">
+      <div className="px-4 md:px-8 lg:px-12 pb-16 max-w-[1200px] mx-auto">
         <h2 className="text-[24px] font-bold text-[#141413] mb-2">
           Add-ons &amp; extras
         </h2>
         <p className="text-[14px] text-[#8C8A82] mb-7">
           Extend your plan with exactly what you need.
         </p>
-        <div className="grid grid-cols-3 gap-[14px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]">
           {ADDONS.map(a => (
             <div
               key={a.name}
@@ -300,7 +300,7 @@ export function PricingPage() {
       </div>
 
       {/* ── FAQ ───────────────────────────────────────────────────────────── */}
-      <div className="bg-white px-12 py-16 border-t border-bone">
+      <div className="bg-white px-4 md:px-8 lg:px-12 py-16 border-t border-bone">
         <div className="max-w-[720px] mx-auto">
           <h2 className="text-[28px] font-bold text-[#141413] text-center mb-10" style={{ fontFamily: SERIF }}>
             Frequently asked questions
@@ -324,14 +324,14 @@ export function PricingPage() {
       </div>
 
       {/* ── Bottom CTA ────────────────────────────────────────────────────── */}
-      <div className="bg-carbon px-12 py-16 text-center">
-        <h2 className="block text-[32px] font-bold text-white mb-[14px]" style={{ fontFamily: SERIF }}>
+      <div className="bg-carbon px-4 md:px-8 lg:px-12 py-16 text-center">
+        <h2 className="block text-2xl md:text-[32px] font-bold text-white mb-[14px]" style={{ fontFamily: SERIF }}>
           Start selling today — it's free
         </h2>
         <p className="block text-[15px] text-[#8C8A82] mb-8">
           No credit card required. Cancel or upgrade anytime.
         </p>
-        <div className="flex gap-3 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={() => navigate('/onboarding')}
             className="px-6 py-[13px] rounded-lg text-[15px] font-medium cursor-pointer bg-brand-orange text-white border-none transition-all duration-[180ms]"

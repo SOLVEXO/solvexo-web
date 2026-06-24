@@ -5,7 +5,7 @@ import {
   User, ShoppingBag, Heart, MapPin, Phone, Mail, Camera,
   Check, Shield, LogOut, ShoppingCart, ImageOff, Loader2, Star,
   Plus, Pencil, ArrowLeft, Home, Briefcase, Star as StarIcon,
-  ChevronRight, type LucideIcon,
+  ChevronRight, Menu, X, type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { TokenStorage } from '@/api/commerce/auth';
@@ -23,6 +23,7 @@ import {
   EmptyState,
   SkeletonBox,
 } from '@/components/comman/ui';
+import { OrdersTab } from '@/features/buyer/pages/MyOrdersPage';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses';
@@ -50,13 +51,15 @@ interface SidebarProps {
   setTab:         (t: Tab) => void;
   onLogout:       () => void;
   wishlistCount:  number;
+  mobileOpen:     boolean;
+  onMobileClose:  () => void;
 }
 
-function ProfileSidebar({ profile, loading, tab, setTab, onLogout, wishlistCount }: SidebarProps) {
+function ProfileSidebar({ profile, loading, tab, setTab, onLogout, wishlistCount, mobileOpen, onMobileClose }: SidebarProps) {
   const initials = profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? '..';
 
-  return (
-    <aside className="w-[260px] shrink-0 bg-white border-r border-bone sticky top-[60px] h-[calc(100vh-60px)] flex flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+  const inner = (
+    <>
       {/* ── Avatar + info ── */}
       <div className="px-5 pt-7 pb-5 border-b border-bone">
         {/* Avatar */}
@@ -177,7 +180,35 @@ function ProfileSidebar({ profile, loading, tab, setTab, onLogout, wishlistCount
           <LogOut size={13} /> Logout
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* ── Desktop sidebar ── */}
+      <aside className="hidden md:flex w-[260px] shrink-0 bg-white border-r border-bone sticky top-[60px] h-[calc(100vh-60px)] flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {inner}
+      </aside>
+
+      {/* ── Mobile drawer ── */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onMobileClose} />
+          <aside className="relative flex flex-col w-[280px] max-w-[85vw] h-full bg-white shadow-2xl overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-bone">
+              <span className="text-[11px] font-bold text-slate uppercase tracking-[0.08em]">Account</span>
+              <button
+                onClick={onMobileClose}
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-bone border-none cursor-pointer"
+              >
+                <X size={13} className="text-charcoal" />
+              </button>
+            </div>
+            {inner}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -210,9 +241,9 @@ function WishlistTab() {
     setRemovingId(variantId);
     removeFromWishlist(productId, variantId).finally(() => setRemovingId(null));
   };
-  const handleAddToCart = (productId: string, variantId: string) => {
+  const handleAddToCart = (productId: string, variantId: string, type?: 'physical' | 'digital') => {
     setAddingId(variantId);
-    addToCart(productId, variantId).finally(() => setAddingId(null));
+    addToCart(productId, variantId, type).finally(() => setAddingId(null));
   };
 
   if (wLoading) {
@@ -367,7 +398,7 @@ function WishlistTab() {
               <div className="flex flex-col gap-[8px] justify-center shrink-0">
                 {variant && (
                   <button
-                    onClick={() => handleAddToCart(p._id, variant._id)}
+                    onClick={() => handleAddToCart(p._id, variant._id, p.productType ?? p.type ?? 'physical')}
                     disabled={isAdding}
                     className={clsx(
                       'flex items-center gap-[6px] px-[16px] py-[9px] rounded-[10px] text-[12px] font-bold bg-brand-orange text-white border-none whitespace-nowrap',
@@ -774,14 +805,36 @@ function ProfileTab() {
   );
 }
 
+// ── Mobile top bar ────────────────────────────────────────────────────────────
+function MobileTopBar({ tab, onOpen }: { tab: Tab; onOpen: () => void }) {
+  const current = NAV_ITEMS.find(n => n.id === tab);
+  return (
+    <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-bone shrink-0">
+      <div className="flex items-center gap-2">
+        {current && <current.Icon size={15} className="text-brand-orange" />}
+        <span className="text-[14px] font-semibold text-charcoal">{current?.label ?? 'Account'}</span>
+      </div>
+      <button
+        onClick={onOpen}
+        className="w-9 h-9 flex items-center justify-center rounded-[8px] border border-bone bg-cream cursor-pointer"
+      >
+        <Menu size={16} className="text-charcoal" />
+      </button>
+    </div>
+  );
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function UserProfile() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [tab, setTab] = useState<Tab>((searchParams.get('tab') as Tab | null) ?? 'profile');
+  const [tab,         setTab]         = useState<Tab>((searchParams.get('tab') as Tab | null) ?? 'profile');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const { profile, loading } = useGetProfile();
   const { wishlistCount } = useWishlistContext();
+
+  const handleSetTab = (t: Tab) => { setTab(t); setSidebarOpen(false); };
 
   const handleLogout = () => {
     TokenStorage.clear();
@@ -790,35 +843,27 @@ export function UserProfile() {
   };
 
   return (
-    <div className="bg-cream flex h-[calc(100vh-60px)] overflow-hidden">
+    <div className="bg-cream flex flex-col md:flex-row md:h-[calc(100vh-60px)] md:overflow-hidden">
       <ProfileSidebar
         profile={profile}
         loading={loading}
         tab={tab}
-        setTab={setTab}
+        setTab={handleSetTab}
         onLogout={handleLogout}
         wishlistCount={wishlistCount}
+        mobileOpen={sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
       />
 
-      <main className="flex-1 min-w-0 px-7 py-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {tab === 'profile'   && <ProfileTab />}
-        {tab === 'wishlist'  && <WishlistTab />}
-        {tab === 'addresses' && <AddressTab />}
-        {tab === 'orders'    && (
-          <Card padding="none">
-            <div className="px-5 pt-5 pb-4 border-b border-bone">
-              <p className="text-[11px] text-slate mb-[3px]">Account / My Orders</p>
-              <h1 className="text-[22px] font-bold text-charcoal leading-none">My Orders</h1>
-            </div>
-            <EmptyState
-              icon={<ShoppingBag size={28} className="text-brand-orange opacity-55" />}
-              title="No orders yet"
-              description="Your order history will appear here once you make your first purchase."
-              className="py-12"
-            />
-          </Card>
-        )}
-      </main>
+      <div className="flex flex-col flex-1 min-w-0 min-h-0">
+        <MobileTopBar tab={tab} onOpen={() => setSidebarOpen(true)} />
+        <main className="flex-1 min-w-0 px-4 md:px-7 py-4 md:py-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {tab === 'profile'   && <ProfileTab />}
+          {tab === 'wishlist'  && <WishlistTab />}
+          {tab === 'addresses' && <AddressTab />}
+          {tab === 'orders'    && <OrdersTab />}
+        </main>
+      </div>
     </div>
   );
 }

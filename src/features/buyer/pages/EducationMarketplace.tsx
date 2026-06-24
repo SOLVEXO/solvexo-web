@@ -38,23 +38,26 @@ export function EducationMarketplace() {
   return (
     <div className="min-h-screen bg-cream">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center gap-4 px-10">
+      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center gap-4 px-4 md:px-10">
         <div className="flex items-center gap-2 flex-shrink-0">
           <SolvexoIcon size={28} />
           <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
           <span className="font-bold text-[15px] text-brand-orange">o</span>
-          <span className="text-bone mx-1">|</span>
-          <span className="text-[13px] text-[#8C8A82]">Education Marketplace</span>
+          <span className="text-bone mx-1 hidden sm:inline">|</span>
+          <span className="text-[13px] text-[#8C8A82] hidden sm:inline">Education Marketplace</span>
         </div>
-        <div className="flex-1 flex justify-center">
+        <div className="flex-1 hidden sm:flex justify-center">
           <input
             placeholder="Search marketplace..."
             className="w-full max-w-[440px] px-[14px] py-2 rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none"
           />
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 ml-auto sm:ml-0">
           <Button variant="ghost" size="sm" onClick={() => navigate('/')}>Home</Button>
-          <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')}>Sell on Solvexo</Button>
+          <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')}>
+            <span className="hidden md:inline">Sell on Solvexo</span>
+            <span className="md:hidden">Sell</span>
+          </Button>
           <div className="w-8 h-8 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer">
             <ShoppingCart size={16} className="text-white" />
           </div>
@@ -63,7 +66,7 @@ export function EducationMarketplace() {
 
       {/* Hero banner */}
       <div
-        className="px-10 py-9 flex items-center justify-between"
+        className="px-4 md:px-10 py-6 md:py-9 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
         style={{ background: 'linear-gradient(120deg, #1A4A2C, #2D7A4E)' }}
       >
         <div>
@@ -71,7 +74,7 @@ export function EducationMarketplace() {
             EDUCATION MARKETPLACE
           </div>
           <h1
-            className="text-[30px] font-bold text-white mb-[10px] leading-[1.25]"
+            className="text-2xl md:text-[30px] font-bold text-white mb-[10px] leading-[1.25]"
             style={{ fontFamily: 'Georgia, serif' }}
           >
             Resources Built by Educators,<br />for Educators
@@ -86,12 +89,12 @@ export function EducationMarketplace() {
             <Button variant="primary" size="md" onClick={() => navigate('/onboarding')}>Sell Your Resources</Button>
           </div>
         </div>
-        <div className="text-[rgba(255,255,255,0.6)]"><GraduationCap size={80} /></div>
+        <div className="text-[rgba(255,255,255,0.6)] hidden md:block"><GraduationCap size={60} /></div>
       </div>
 
       {/* Grade level + subject filter bar */}
       <div
-        className="px-10 py-4 border-b border-bone flex items-center gap-0 overflow-x-auto"
+        className="px-4 md:px-10 py-4 border-b border-bone flex items-center gap-0 overflow-x-auto"
         style={{ backgroundColor: '#F0F9F4' }} /* education-specific green tint */
       >
         {/* Grade Level label */}
@@ -138,7 +141,7 @@ export function EducationMarketplace() {
       </div>
 
       {/* Content */}
-      <div className="px-10 py-6">
+      <div className="px-4 md:px-10 py-6">
         {/* Section header */}
         <div className="text-[18px] font-bold text-[#141413] mb-1 flex items-center gap-[6px]">
           <Star size={18} className="text-brand-orange fill-brand-orange" /> Bestselling Resources
@@ -148,7 +151,7 @@ export function EducationMarketplace() {
         </p>
 
         {/* 4-col grid */}
-        <div className="grid grid-cols-4 gap-4 mb-7">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
           {PRODUCTS.map((p) => (
             <Card key={p.name} padding="none" hover onClick={() => navigate('/marketplace/1')}>
               {/* Image area */}
@@ -185,7 +188,7 @@ export function EducationMarketplace() {
 
         {/* AI Worksheet Builder CTA */}
         <div
-          className="rounded-2xl p-5 flex items-center gap-5"
+          className="rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-5"
           style={{ background: 'linear-gradient(120deg, #FBECE4, #FFF)' }}
         >
           <Sparkles size={48} className="text-brand-orange flex-shrink-0" />

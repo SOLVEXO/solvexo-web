@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
   ShoppingCart, AlertCircle, RefreshCw,
-  DollarSign, Clock, TrendingUp, Eye,
+  DollarSign, Clock, TrendingUp, Eye, CheckCheck, Truck,
 } from 'lucide-react';
+import { apiMarkOrderPaid, apiUpdateOrderStatus } from '@/api/commerce/orders';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   Table,      type TableColumn,
@@ -47,9 +48,11 @@ export function StoreOrderList() {
   const [search,      setSearch]      = useState('');
   const [statusF,     setStatusF]     = useState('');
   const [typeF,       setTypeF]       = useState('');
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState('');
-  const [refreshKey,  setRefreshKey]  = useState(0);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState('');
+  const [refreshKey,    setRefreshKey]    = useState(0);
+  const [markingPaidId,    setMarkingPaidId]    = useState<string | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
   const LIMIT = 10;
 
@@ -152,7 +155,13 @@ export function StoreOrderList() {
     {
       key: 'paymentType', header: 'Payment',
       render: o => (
-        <span className="text-[12px] text-slate capitalize">{o.paymentType}</span>
+        <div className="flex flex-col gap-[2px]">
+          <span className="text-[12px] text-slate capitalize">{o.paymentType.replace(/_/g, ' ')}</span>
+          {o.isPaid
+            ? <span className="text-[10px] font-semibold text-success">Paid</span>
+            : <span className="text-[10px] font-semibold text-[#B36200]">Unpaid</span>
+          }
+        </div>
       ),
     },
     {
@@ -161,14 +170,61 @@ export function StoreOrderList() {
     },
     {
       key: 'actions', header: '', align: 'center', width: '60px',
-      render: () => (
-        <ActionMenu
-          align="right"
-          items={[
-            { label: 'View Order', onClick: () => {}, icon: <Eye size={13} /> },
-          ]}
-        />
-      ),
+      render: o => {
+        const busy = markingPaidId === o.orderId || updatingStatusId === o.orderId;
+
+        const changeStatus = (status: 'processing' | 'shipped' | 'completed' | 'cancelled') => {
+          if (busy) return;
+          setUpdatingStatusId(o.orderId);
+          apiUpdateOrderStatus({ orderId: o.orderId, storeId, status })
+            .then(() => {
+              setOrders(prev =>
+                prev.map(x => x.orderId === o.orderId ? { ...x, status } : x)
+              );
+            })
+            .catch((err: unknown) => {
+              alert(err instanceof Error ? err.message : 'Failed to update status.');
+            })
+            .finally(() => setUpdatingStatusId(null));
+        };
+
+        return (
+          <ActionMenu
+            align="right"
+            items={[
+              { label: 'View Order', onClick: () => {}, icon: <Eye size={13} /> },
+              ...(!o.isPaid ? [{
+                label: markingPaidId === o.orderId ? 'Marking…' : 'Mark as Paid',
+                icon: <CheckCheck size={13} />,
+                onClick: () => {
+                  if (busy) return;
+                  setMarkingPaidId(o.orderId);
+                  apiMarkOrderPaid(o.orderId)
+                    .then(() => setOrders(prev =>
+                      prev.map(x => x.orderId === o.orderId ? { ...x, isPaid: true } : x)
+                    ))
+                    .catch((err: unknown) => alert(err instanceof Error ? err.message : 'Failed to mark as paid.'))
+                    .finally(() => setMarkingPaidId(null));
+                },
+              }] : []),
+              ...(o.status === 'pending' ? [{
+                label: updatingStatusId === o.orderId ? 'Updating…' : 'Mark Processing',
+                icon: <RefreshCw size={13} />,
+                onClick: () => changeStatus('processing'),
+              }] : []),
+              ...(o.status !== 'completed' && o.status !== 'cancelled' ? [{
+                label: updatingStatusId === o.orderId ? 'Updating…' : 'Mark Shipped',
+                icon: <Truck size={13} />,
+                onClick: () => changeStatus('shipped'),
+              }, {
+                label: updatingStatusId === o.orderId ? 'Updating…' : 'Mark Completed',
+                icon: <CheckCheck size={13} />,
+                onClick: () => changeStatus('completed'),
+              }] : []),
+            ]}
+          />
+        );
+      },
     },
   ];
 

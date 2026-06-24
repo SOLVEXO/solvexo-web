@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
 import { apiGetMyAddresses, type Address } from '@/api/commerce/address';
 import { apiCreateCheckout, type Checkout, type CheckoutSummary } from '@/api/commerce/checkout';
+import { apiPlaceCodOrder, apiPlaceOrder } from '@/api/commerce/payment';
 import { Button } from '@/components/comman/ui/Button';
 import {
   ArrowLeft, MapPin, Truck, CreditCard, CheckCircle2,
   ChevronRight, Loader2, AlertCircle, PackageCheck,
-  Banknote, ShieldCheck, ArrowDownCircle,
+  Banknote, ShieldCheck, ArrowDownCircle, Download,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -41,15 +42,19 @@ function StepBadge({ n, active, done }: { n: number; active: boolean; done: bool
 
 // ── Payment method labels ─────────────────────────────────────────────────────
 const PAYMENT_LABELS: Record<string, { label: string; desc: string; Icon: React.ElementType }> = {
-  stripe: { label: 'Credit / Debit Card', desc: 'Secure payment via Stripe', Icon: CreditCard },
-  cash_on_delivery: { label: 'Cash on Delivery', desc: 'Pay when your order arrives', Icon: Banknote },
+  stripe:           { label: 'Credit / Debit Card',  desc: 'Secure payment via Stripe',       Icon: CreditCard },
+  cash_on_delivery: { label: 'Cash on Delivery',     desc: 'Pay when your order arrives',     Icon: Banknote   },
 };
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function CheckoutPage() {
   usePageTitle('Checkout');
-  const navigate = useNavigate();
-  const { cart, loading: cartLoading, cartCount } = useCartContext();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const cartType  = (location.state as { cartType?: 'physical' | 'digital' } | null)?.cartType ?? 'physical';
+  const isDigital = cartType === 'digital';
+
+  const { cart, loading: cartLoading, cartCount, clearCart } = useCartContext();
 
   // Step: 1 = address, 2 = shipping, 3 = payment
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -76,10 +81,17 @@ export function CheckoutPage() {
 
   // Payment
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
-  const [placing, setPlacing] = useState(false);
+  const [placing,     setPlacing]     = useState(false);
+  const [placeError,  setPlaceError]  = useState('');
 
-  // Fetch addresses
+  // For digital carts: strip COD from allowed methods
+  const effectiveMethods = isDigital
+    ? allowedMethods.filter(m => m !== 'cash_on_delivery')
+    : allowedMethods;
+
+  // Fetch addresses (physical only)
   useEffect(() => {
+    if (isDigital) { setAddrLoading(false); return; }
     let cancelled = false;
     apiGetMyAddresses()
       .then(res => {
@@ -91,7 +103,29 @@ export function CheckoutPage() {
       .catch(() => { })
       .finally(() => { if (!cancelled) setAddrLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [isDigital]);
+
+  // Digital: auto-create checkout (no address/shipping needed) and jump to payment
+  useEffect(() => {
+    if (!isDigital || checkout) return;
+    let cancelled = false;
+    setCreatingCheckout(true);
+    setCheckoutError('');
+    apiCreateCheckout({})
+      .then(res => {
+        if (cancelled) return;
+        setCheckout(res.data.checkout);
+        setSummary(res.data.summary);
+        setAllowedMethods(res.data.allowedPaymentMethods.filter(m => m !== 'cash_on_delivery'));
+        setStep(3);
+      })
+      .catch(err => {
+        if (!cancelled) setCheckoutError(err instanceof Error ? err.message : 'Failed to initialize checkout.');
+      })
+      .finally(() => { if (!cancelled) setCreatingCheckout(false); });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDigital]);
 
 
   const matchingZones = selectedAddr
@@ -103,11 +137,22 @@ export function CheckoutPage() {
 
   const selectedZone = zones.find(z => z._id === selectedZoneId) ?? null;
 
-  // Totals: prefer backend summary once checkout created
-  const subtotal = summary?.subtotal ?? cart?.totalPrice ?? 0;
+  // Filter items to only what's being checked out (physical OR digital)
+  const filteredCheckoutItems = (checkout?.items ?? []).filter(i =>
+    cartType === 'digital' ? i.type === 'digital' : i.type === 'physical',
+  );
+  const filteredCartItems = (cart?.items ?? []).filter(i =>
+    cartType === 'digital' ? i.type === 'digital' : (i.type === 'physical' || !i.type),
+  );
+
+  // Subtotal from filtered items only
+  const filteredSubtotal = checkout
+    ? filteredCheckoutItems.reduce((s, i) => s + i.totalPrice, 0)
+    : filteredCartItems.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
+
   const shipping = summary?.shippingFee ?? selectedZone?.shippingPrice ?? 0;
-  const tax = summary?.taxAmount ?? 0;
-  const total = summary?.totalAmount ?? (subtotal + shipping + tax);
+  const tax      = summary?.taxAmount ?? 0;
+  const total    = filteredSubtotal + (isDigital ? 0 : shipping) + tax;
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const selectAddress = (addr: Address) => {
@@ -141,11 +186,23 @@ export function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!selectedMethod || !checkout) return;
+    if (!checkout) return;
+    if (!isDigital && !selectedMethod) return;
     setPlacing(true);
+    setPlaceError('');
     try {
-      // TODO: wire to payment/order-confirm API using checkout._id + selectedMethod
-      alert(`Order placed!\nCheckout ID: ${checkout._id}\nPayment: ${selectedMethod}`);
+      if (isDigital) {
+        const res = await apiPlaceOrder({ checkoutId: checkout._id });
+        await clearCart();
+        navigate('/order-success', { state: { orders: res.data.orders } });
+      } else if (selectedMethod === 'cash_on_delivery') {
+        const res = await apiPlaceCodOrder({ checkoutId: checkout._id });
+        await clearCart();
+        navigate('/order-success', { state: { orders: res.data.orders } });
+      }
+      // stripe: handle separately when Stripe integration is added
+    } catch (err) {
+      setPlaceError(err instanceof Error ? err.message : 'Failed to place order. Please try again.');
     } finally {
       setPlacing(false);
     }
@@ -154,7 +211,7 @@ export function CheckoutPage() {
   return (
     <div className="min-h-screen bg-cream">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-10 gap-4">
+      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-4 md:px-10 gap-4">
         <div className="flex-1 flex items-center gap-2">
           <SolvexoIcon size={28} />
           <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
@@ -166,12 +223,84 @@ export function CheckoutPage() {
         </Button>
       </nav>
 
-      <div className="max-w-[960px] mx-auto px-6 py-8">
+      <div className="max-w-[960px] mx-auto px-4 md:px-6 py-6 md:py-8">
 
-        <div className="grid gap-6 items-start" style={{ gridTemplateColumns: '1fr 300px' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
 
-          {/* ── Left: Steps ────────────────────────────────────────────── */}
-          <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
+          {/* ── Left panel ─────────────────────────────────────────────── */}
+          {isDigital ? (
+            /* ── Digital: single-step payment ──────────────────────────── */
+            <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
+
+              {/* Header */}
+              <div className="px-6 pt-5 pb-4 border-b border-bone flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-[2px]">
+                    <h1 className="text-[20px] font-bold text-[#141413] leading-tight">Checkout</h1>
+                    <span className="flex items-center gap-1 px-2 py-[3px] rounded-full text-[10px] font-semibold bg-[#EEF0FF] text-[#3851D1]">
+                      <Download size={9} /> Digital Delivery
+                    </span>
+                  </div>
+                  <p className="text-[12px] text-[#8C8A82] mt-[2px]">
+                    {cartLoading ? 'Loading…' : `${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart`}
+                  </p>
+                </div>
+                <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-[#EEF0FF] text-[#3851D1]">
+                  Instant Delivery
+                </span>
+              </div>
+
+              {/* Body */}
+              <div className="p-5">
+                {creatingCheckout ? (
+                  <div className="flex flex-col items-center gap-3 py-8">
+                    <Loader2 size={24} className="animate-spin text-brand-orange" />
+                    <p className="text-[13px] text-[#8C8A82]">Preparing your order…</p>
+                  </div>
+                ) : checkoutError ? (
+                  <div className="flex items-start gap-2 text-[12px] text-[#C13030] bg-[#FFF0F0] border border-[#FECACA] rounded-[8px] px-3 py-2">
+                    <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
+                    {checkoutError}
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 bg-[#EEF0FF] border border-[#C7CEFF] rounded-[8px] px-3 py-2 mb-5">
+                      <Download size={13} className="text-[#3851D1] shrink-0" />
+                      <p className="text-[12px] text-[#3851D1] font-medium">
+                        Digital products are delivered instantly after payment — no shipping required.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1 text-[11px] text-[#8C8A82] mb-5">
+                      <ShieldCheck size={12} className="text-success" />
+                      Your payment info is secure and encrypted
+                    </div>
+
+                    {placeError && (
+                      <div className="flex items-start gap-2 text-[12px] text-[#C13030] bg-[#FFF0F0] border border-[#FECACA] rounded-[8px] px-3 py-2 mb-4">
+                        <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
+                        {placeError}
+                      </div>
+                    )}
+
+                    <Button
+                      variant="primary" size="lg"
+                      disabled={!checkout || placing}
+                      onClick={handlePlaceOrder}
+                      className="gap-2 w-full justify-center"
+                    >
+                      {placing
+                        ? <><Loader2 size={15} className="animate-spin" /> Placing Order…</>
+                        : <><PackageCheck size={16} /> Place Order</>
+                      }
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* ── Physical: 3-step flow ──────────────────────────────────── */
+            <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
 
             {/* ── Card Header ───────────────────────────────────────────── */}
             <div className="px-6 pt-5 pb-4 border-b border-bone">
@@ -507,7 +636,7 @@ export function CheckoutPage() {
               {step === 3 && (
                 <div className="p-5">
                   <div className="flex flex-col gap-3 mb-4">
-                    {allowedMethods.map(method => {
+                    {effectiveMethods.map(method => {
                       const meta = PAYMENT_LABELS[method] ?? { label: method, desc: '', Icon: CreditCard };
                       const { label, desc, Icon } = meta;
                       return (
@@ -545,6 +674,13 @@ export function CheckoutPage() {
                     Your payment info is secure and encrypted
                   </div>
 
+                  {placeError && (
+                    <div className="flex items-start gap-2 text-[12px] text-[#C13030] bg-[#FFF0F0] border border-[#FECACA] rounded-[8px] px-3 py-2 mb-4">
+                      <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
+                      {placeError}
+                    </div>
+                  )}
+
                   <Button
                     variant="primary" size="lg"
                     disabled={!selectedMethod || placing}
@@ -561,15 +697,16 @@ export function CheckoutPage() {
             </div>
 
           </div>
+          )} {/* end isDigital ? ... : ... */}
 
           {/* ── Right: Order Summary ──────────────────────────────────── */}
-          <div className="bg-white rounded-[12px] border border-bone p-6 sticky top-20">
+          <div className="bg-white rounded-[12px] border border-bone p-6 lg:sticky top-20">
             <p className="text-[15px] font-bold text-[#141413] mb-[18px]">Order Summary</p>
 
-            {/* Items — prefer checkout items once created, else cart */}
+            {/* Items — filtered to current cartType only */}
             <div className="flex flex-col gap-2 mb-5">
               {checkout
-                ? checkout.items.map(item => (
+                ? filteredCheckoutItems.map(item => (
                   <div key={item.variantId} className="flex justify-between text-[12px]">
                     <span className="text-[#141413] truncate max-w-[150px]">
                       {item.name}
@@ -580,16 +717,18 @@ export function CheckoutPage() {
                     </span>
                   </div>
                 ))
-                : !cartLoading && cart?.items.map(item => {
+                : !cartLoading && filteredCartItems.map(item => {
                   const price = item.unitPrice ?? item.price ?? 0;
-                  const ttl = item.itemTotal ?? price * item.quantity;
+                  const ttl   = item.itemTotal ?? price * item.quantity;
                   return (
                     <div key={item.productVariantId} className="flex justify-between text-[12px]">
                       <span className="text-[#141413] truncate max-w-[150px]">
                         {item.name}
                         <span className="text-[#8C8A82] ml-1">×{item.quantity}</span>
                       </span>
-                      <span className="font-medium text-[#141413] flex-shrink-0">${ttl.toLocaleString()}</span>
+                      <span className="font-medium text-[#141413] flex-shrink-0">
+                        Rs. {ttl.toLocaleString()}
+                      </span>
                     </div>
                   );
                 })
@@ -601,15 +740,17 @@ export function CheckoutPage() {
             <div className="flex flex-col gap-3 mb-5">
               <div className="flex justify-between text-[13px]">
                 <span className="text-[#8C8A82]">Subtotal</span>
-                <span className="font-semibold text-[#141413]">Rs. {subtotal.toLocaleString()}</span>
+                <span className="font-semibold text-[#141413]">Rs. {filteredSubtotal.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-[13px]">
-                <span className="text-[#8C8A82]">Shipping</span>
-                {selectedZone || summary
-                  ? <span className="font-semibold text-[#141413]">Rs. {shipping.toLocaleString()}</span>
-                  : <span className="text-success font-medium">Select method</span>
-                }
-              </div>
+              {!isDigital && (
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-[#8C8A82]">Shipping</span>
+                  {selectedZone || summary
+                    ? <span className="font-semibold text-[#141413]">Rs. {shipping.toLocaleString()}</span>
+                    : <span className="text-success font-medium">Select method</span>
+                  }
+                </div>
+              )}
               {tax > 0 && (
                 <div className="flex justify-between text-[13px]">
                   <span className="text-[#8C8A82]">Tax</span>
