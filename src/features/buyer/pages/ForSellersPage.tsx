@@ -74,13 +74,12 @@ export function ForSellersPage() {
             <Button size="lg" onClick={() => navigate('/onboarding')}>
               Start for Free <ArrowRight size={14} className="inline align-middle ml-1" />
             </Button>
-            <Button
-              variant="ghost" size="lg"
-              className="text-white border-[rgba(255,255,255,0.2)] bg-transparent hover:bg-[rgba(255,255,255,0.1)]"
+            <button
               onClick={() => navigate('/pricing')}
+              className="inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] transition-colors cursor-pointer"
             >
               See Pricing
-            </Button>
+            </button>
           </div>
         </div>
       </div>
@@ -168,13 +167,12 @@ export function ForSellersPage() {
           <Button size="lg" onClick={() => navigate('/onboarding')}>
             Create Free Account <ArrowRight size={14} className="inline align-middle ml-1" />
           </Button>
-          <Button
-            variant="ghost" size="lg"
-            className="text-white border-[rgba(255,255,255,0.2)] bg-transparent hover:bg-[rgba(255,255,255,0.1)]"
+          <button
             onClick={() => navigate('/pricing')}
+            className="inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] transition-colors cursor-pointer"
           >
             See All Plans
-          </Button>
+          </button>
         </div>
       </div>
     </div>

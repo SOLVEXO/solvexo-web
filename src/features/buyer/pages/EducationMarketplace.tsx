@@ -7,7 +7,6 @@ import { Card } from '@/components/comman/ui/Card';
 import { ArrowRight, ShoppingCart, GraduationCap, Star, Sparkles, BookOpen, BookMarked, Microscope, Heart } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-
 function SolvexoIcon({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
@@ -20,165 +19,205 @@ function SolvexoIcon({ size = 32 }: { size?: number }) {
 }
 
 const GRADE_LEVELS = ['All Grades', 'PreK', 'K–2', '3–5', '6–8', '9–12', 'Higher Ed', 'Adult Ed'];
-const SUBJECTS = ['All', 'Math', 'ELA', 'Science', 'Social Studies', 'Art', 'SEL'];
+const SUBJECTS     = ['All', 'Math', 'ELA', 'Science', 'Social Studies', 'Art', 'SEL'];
 
-const PRODUCTS: { name: string; seller: string; price: string; grade: string; subject: string; Img: LucideIcon; rating: string; sold: number }[] = [
-  { name: 'Grade 5 Math Bundle – Full Year', seller: 'TeachersPro', price: '$49.00', grade: 'Grade 5', subject: 'Math', Img: BookOpen,   rating: '5.0', sold: 847 },
-  { name: 'Reading Comprehension Passages', seller: 'LiteracyLab', price: '$22.00', grade: 'Grade 3–5', subject: 'ELA', Img: BookMarked, rating: '4.9', sold: 623 },
-  { name: 'Science Inquiry Lab Pack', seller: 'ScienceFirst', price: '$31.00', grade: 'Grade 6–8', subject: 'Science', Img: Microscope,  rating: '4.9', sold: 501 },
-  { name: 'Social-Emotional Learning Kit', seller: 'HeartMinds', price: '$28.00', grade: 'K–5', subject: 'SEL', Img: Heart,       rating: '4.8', sold: 412 },
+const PRODUCTS: {
+  name: string; seller: string; price: string;
+  grade: string; subject: string; Img: LucideIcon; rating: string; sold: number;
+}[] = [
+  { name: 'Grade 5 Math Bundle – Full Year', seller: 'TeachersPro', price: '$49.00', grade: 'Grade 5',   subject: 'Math',    Img: BookOpen,   rating: '5.0', sold: 847 },
+  { name: 'Reading Comprehension Passages',  seller: 'LiteracyLab', price: '$22.00', grade: 'Grade 3–5', subject: 'ELA',     Img: BookMarked, rating: '4.9', sold: 623 },
+  { name: 'Science Inquiry Lab Pack',        seller: 'ScienceFirst', price: '$31.00', grade: 'Grade 6–8', subject: 'Science', Img: Microscope, rating: '4.9', sold: 501 },
+  { name: 'Social-Emotional Learning Kit',   seller: 'HeartMinds',   price: '$28.00', grade: 'K–5',       subject: 'SEL',     Img: Heart,      rating: '4.8', sold: 412 },
 ];
+
+// Reusable filter chip
+function FilterChip({
+  label, active, onClick,
+}: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="px-3 py-[5px] rounded-full text-[12px] font-medium cursor-pointer whitespace-nowrap outline-none transition-all duration-150 shrink-0"
+      style={{
+        border:          `1px solid ${active ? '#2D8A4E' : '#E8E6DC'}`,
+        backgroundColor: active ? '#2D8A4E' : '#FFFFFF',
+        color:           active ? '#FFFFFF' : '#2C2A28',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
 
 export function EducationMarketplace() {
   const navigate = useNavigate();
   usePageTitle('Education');
-  const [activeGrade, setActiveGrade] = useState('All Grades');
+  const [activeGrade,   setActiveGrade]   = useState('All Grades');
   const [activeSubject, setActiveSubject] = useState('All');
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center gap-4 px-4 md:px-10">
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <SolvexoIcon size={28} />
-          <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
-          <span className="font-bold text-[15px] text-brand-orange">o</span>
-          <span className="text-bone mx-1 hidden sm:inline">|</span>
-          <span className="text-[13px] text-[#8C8A82] hidden sm:inline">Education Marketplace</span>
-        </div>
-        <div className="flex-1 hidden sm:flex justify-center">
-          <input
-            placeholder="Search marketplace..."
-            className="w-full max-w-[440px] px-[14px] py-2 rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none"
-          />
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0 ml-auto sm:ml-0">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/')}>Home</Button>
-          <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')}>
-            <span className="hidden md:inline">Sell on Solvexo</span>
-            <span className="md:hidden">Sell</span>
-          </Button>
-          <div className="w-8 h-8 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer">
-            <ShoppingCart size={16} className="text-white" />
+
+      {/* ── Nav ──────────────────────────────────────────────────────────────── */}
+      <nav className="sticky top-0 z-50 bg-white border-b border-bone">
+        <div className="h-[60px] flex items-center gap-3 px-4 sm:px-6 lg:px-10">
+
+          {/* Logo */}
+          <div className="flex items-center gap-[6px] shrink-0">
+            <SolvexoIcon size={28} />
+            <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
+            <span className="font-bold text-[15px] text-brand-orange">o</span>
+            <span className="text-bone mx-1 hidden md:inline">|</span>
+            <span className="text-[13px] text-slate hidden md:inline">Education</span>
+          </div>
+
+          {/* Search */}
+          <div className="flex-1 flex justify-center px-2 sm:px-4">
+            <input
+              placeholder="Search resources..."
+              className="w-full max-w-[240px] sm:max-w-[360px] lg:max-w-[480px] px-[14px] py-[9px] rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none focus:border-[#2D8A4E] transition-colors"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Hidden on mobile — BottomNav handles navigation below md */}
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="hidden md:inline-flex">
+              Home
+            </Button>
+            <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')} className="hidden md:inline-flex">
+              Sell on Solvexo
+            </Button>
+
+            {/* Cart */}
+            <div
+              onClick={() => navigate('/cart')}
+              className="w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer shrink-0"
+            >
+              <ShoppingCart size={16} className="text-white" />
+            </div>
           </div>
         </div>
       </nav>
 
-      {/* Hero banner */}
-      <div
-        className="px-4 md:px-10 py-6 md:py-9 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-        style={{ background: 'linear-gradient(120deg, #1A4A2C, #2D7A4E)' }}
-      >
-        <div>
-          <div className="text-[11px] text-[rgba(255,255,255,0.6)] uppercase tracking-[0.1em] mb-2">
-            EDUCATION MARKETPLACE
+      {/* ── Hero Banner ──────────────────────────────────────────────────────── */}
+      <div style={{ background: 'linear-gradient(120deg, #1A4A2C, #2D7A4E)' }}>
+        <div className="px-4 sm:px-6 lg:px-10 py-8 sm:py-10 lg:py-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 md:gap-8">
+
+          {/* Text content */}
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] text-[rgba(255,255,255,0.55)] uppercase tracking-[0.1em] mb-2 font-medium">
+              Education Marketplace
+            </p>
+            <h1
+              className="text-[22px] sm:text-[28px] lg:text-[32px] font-bold text-white mb-[10px] leading-[1.2]"
+              style={{ fontFamily: "'Lora', Georgia, serif" }}
+            >
+              Resources Built by Educators,<br className="hidden sm:block" /> for Educators
+            </h1>
+            <p className="text-[13px] sm:text-[14px] text-[rgba(255,255,255,0.7)] mb-6 leading-[1.7] max-w-[500px]">
+              Discover curriculum, lesson plans, worksheets, and more from verified teachers.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => {}}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] transition-colors cursor-pointer"
+              >
+                Browse All Resources
+              </button>
+              <Button variant="primary" size="md" onClick={() => navigate('/onboarding')} className="w-full sm:w-auto">
+                Sell Your Resources
+              </Button>
+            </div>
           </div>
-          <h1
-            className="text-2xl md:text-[30px] font-bold text-white mb-[10px] leading-[1.25]"
-            style={{ fontFamily: 'Georgia, serif' }}
-          >
-            Resources Built by Educators,<br />for Educators
-          </h1>
-          <p className="text-[13px] text-[rgba(255,255,255,0.7)] mb-5 leading-[1.6]">
-            Discover curriculum, lesson plans, worksheets, and more from verified teachers.
-          </p>
-          <div className="flex gap-[10px]">
-            <button className="px-5 py-[10px] rounded-lg text-[13px] font-medium bg-transparent text-white border border-white cursor-pointer">
-              Browse All Resources
-            </button>
-            <Button variant="primary" size="md" onClick={() => navigate('/onboarding')}>Sell Your Resources</Button>
+
+          <div className="text-[rgba(255,255,255,0.6)] hidden md:block shrink-0">
+            <GraduationCap size={60} />
           </div>
         </div>
-        <div className="text-[rgba(255,255,255,0.6)] hidden md:block"><GraduationCap size={60} /></div>
       </div>
 
-      {/* Grade level + subject filter bar */}
-      <div
-        className="px-4 md:px-10 py-4 border-b border-bone flex items-center gap-0 overflow-x-auto"
-        style={{ backgroundColor: '#F0F9F4' }} /* education-specific green tint */
-      >
-        {/* Grade Level label */}
-        <span className="text-[12px] font-semibold text-[#8C8A82] mr-1 whitespace-nowrap">
-          Grade Level:
-        </span>
+      {/* ── Filter Bar ───────────────────────────────────────────────────────── */}
+      <div className="bg-[#F0F9F4] border-b border-bone">
+        <div className="px-4 sm:px-6 lg:px-10">
 
-        {/* Grade chips */}
-        {GRADE_LEVELS.map((g) => (
-          <button
-            key={g}
-            onClick={() => setActiveGrade(g)}
-            className="px-3 py-[5px] rounded-[20px] text-[12px] font-medium cursor-pointer mr-[6px] whitespace-nowrap outline-none"
-            style={{
-              border: `1px solid ${activeGrade === g ? '#2D8A4E' : '#E8E6DC'}`,
-              backgroundColor: activeGrade === g ? '#2D8A4E' : '#FFFFFF',
-              color: activeGrade === g ? '#FFFFFF' : '#2C2A28',
-            }}
-          >
-            {g}
-          </button>
-        ))}
+          {/* Grade Level row */}
+          <div className="flex items-center gap-2 py-3 overflow-x-auto scrollbar-hide">
+            <span className="text-[11px] font-semibold text-slate uppercase tracking-[0.06em] whitespace-nowrap shrink-0 mr-1">
+              Grade:
+            </span>
+            {GRADE_LEVELS.map(g => (
+              <FilterChip key={g} label={g} active={activeGrade === g} onClick={() => setActiveGrade(g)} />
+            ))}
+          </div>
 
-        {/* Subject label */}
-        <span className="text-[12px] font-semibold text-[#8C8A82] ml-3 mr-1 whitespace-nowrap">
-          Subject:
-        </span>
-
-        {/* Subject chips */}
-        {SUBJECTS.map((s) => (
-          <button
-            key={s}
-            onClick={() => setActiveSubject(s)}
-            className="px-3 py-[5px] rounded-[20px] text-[12px] font-medium cursor-pointer mr-[6px] whitespace-nowrap outline-none"
-            style={{
-              border: `1px solid ${activeSubject === s ? '#2D8A4E' : '#E8E6DC'}`,
-              backgroundColor: activeSubject === s ? '#2D8A4E' : '#FFFFFF',
-              color: activeSubject === s ? '#FFFFFF' : '#2C2A28',
-            }}
-          >
-            {s}
-          </button>
-        ))}
+          {/* Subject row — separated so each scrolls independently */}
+          <div className="flex items-center gap-2 pb-3 overflow-x-auto scrollbar-hide">
+            <span className="text-[11px] font-semibold text-slate uppercase tracking-[0.06em] whitespace-nowrap shrink-0 mr-1">
+              Subject:
+            </span>
+            {SUBJECTS.map(s => (
+              <FilterChip key={s} label={s} active={activeSubject === s} onClick={() => setActiveSubject(s)} />
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="px-4 md:px-10 py-6">
+      {/* ── Content ──────────────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-7">
+
         {/* Section header */}
-        <div className="text-[18px] font-bold text-[#141413] mb-1 flex items-center gap-[6px]">
-          <Star size={18} className="text-brand-orange fill-brand-orange" /> Bestselling Resources
+        <div className="flex items-center gap-[6px] mb-1">
+          <Star size={17} className="text-brand-orange fill-brand-orange shrink-0" />
+          <h2 className="text-[16px] sm:text-[18px] font-bold text-carbon">Bestselling Resources</h2>
         </div>
-        <p className="text-[13px] text-[#8C8A82] mb-5">
+        <p className="text-[12px] sm:text-[13px] text-slate mb-5">
           Top-rated resources trusted by thousands of educators.
         </p>
 
-        {/* 4-col grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
-          {PRODUCTS.map((p) => (
-            <Card key={p.name} padding="none" hover onClick={() => navigate('/marketplace/1')}>
-              {/* Image area */}
-              <div className="h-[140px] bg-success-bg flex items-center justify-center rounded-t-[12px]">
-                <p.Img size={56} className="text-success" />
+        {/* Grid: 2-col mobile → 2-col sm → 4-col lg */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-7">
+          {PRODUCTS.map(p => (
+            <Card key={p.name} padding="none" hover onClick={() => navigate('/marketplace/1')} className="overflow-hidden">
+
+              {/* Image */}
+              <div className="w-full h-[110px] sm:h-[130px] lg:h-[140px] bg-success-bg flex items-center justify-center">
+                <p.Img size={28} className="text-success" style={{ display: 'block', flexShrink: 0 }} />
               </div>
-              {/* Content */}
-              <div className="p-[14px]">
-                {/* Grade + Subject badges */}
-                <div className="flex gap-1 mb-[6px] flex-wrap">
+
+              {/* Body */}
+              <div className="px-2 pt-2 pb-2 sm:p-[14px]">
+                {/* Badges */}
+                <div className="flex gap-1 mb-[5px] flex-wrap">
                   <Badge color="green">{p.grade}</Badge>
                   <Badge color="blue">{p.subject}</Badge>
                 </div>
-                <div className="text-[13px] font-bold text-[#141413] mb-1 leading-[1.3]">
+
+                {/* Name */}
+                <p className="text-[11px] sm:text-[13px] font-bold text-carbon mb-1 leading-[1.35] line-clamp-2">
                   {p.name}
-                </div>
-                <div className="text-[11px] text-[#8C8A82] mb-2">
-                  by {p.seller} • <Star size={11} className="inline align-middle text-brand-orange fill-brand-orange" /> {p.rating} • {p.sold} sold
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[15px] text-[#141413]">{p.price}</span>
+                </p>
+
+                {/* Meta */}
+                <p className="text-[10px] sm:text-[11px] text-slate mb-2 line-clamp-1">
+                  <span className="hidden sm:inline">by {p.seller} · </span>
+                  <Star size={9} className="inline align-middle text-brand-orange fill-brand-orange" />
+                  <span className="ml-[2px]">{p.rating}</span>
+                  <span className="hidden sm:inline"> · {p.sold} sold</span>
+                </p>
+
+                {/* Price + CTA */}
+                <div className="flex items-center justify-between gap-1">
+                  <span className="font-bold text-[12px] sm:text-[15px] text-carbon shrink-0">{p.price}</span>
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={(e) => { e.stopPropagation(); }}
+                    onClick={e => e.stopPropagation()}
+                    className="inline-flex"
                   >
-                    Add to Cart
+                    <ShoppingCart size={11} />
+                    <span className="hidden lg:inline">Add to Cart</span>
                   </Button>
                 </div>
               </div>
@@ -186,23 +225,28 @@ export function EducationMarketplace() {
           ))}
         </div>
 
-        {/* AI Worksheet Builder CTA */}
+        {/* ── AI Builder CTA ─────────────────────────────────────────────────── */}
         <div
-          className="rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-5"
+          className="rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5"
           style={{ background: 'linear-gradient(120deg, #FBECE4, #FFF)' }}
         >
-          <Sparkles size={48} className="text-brand-orange flex-shrink-0" />
-          <div className="flex-1">
-            <div className="text-[16px] font-bold text-[#141413] mb-1">
+          <div className="w-12 h-12 rounded-xl bg-[rgba(217,119,87,0.12)] flex items-center justify-center shrink-0">
+            <Sparkles size={24} className="text-brand-orange" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] sm:text-[16px] font-bold text-carbon mb-1">
               AI Worksheet Builder — Try Free
-            </div>
-            <p className="text-[13px] text-[#8C8A82]">
+            </p>
+            <p className="text-[12px] sm:text-[13px] text-slate leading-[1.6]">
               Generate custom worksheets, quizzes, and lesson activities in seconds with AI. Save hours of prep time.
             </p>
           </div>
-          <Button variant="primary" size="md" onClick={() => {}}>Try AI Builder <ArrowRight size={14} className="inline align-middle ml-1" /></Button>
+          <Button variant="primary" size="md" onClick={() => {}} className="shrink-0 w-full sm:w-auto">
+            Try AI Builder <ArrowRight size={14} className="inline align-middle ml-1" />
+          </Button>
         </div>
       </div>
+
     </div>
   );
 }

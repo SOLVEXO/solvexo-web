@@ -9,7 +9,10 @@ import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { TabBar, Pagination, FilterDropdown } from '@/components/comman/ui';
 import type { Tab } from '@/components/comman/ui';
-import { ShoppingCart, ShoppingBag, Star, Heart, ImageOff, Loader2, SlidersHorizontal, X } from 'lucide-react';
+import {
+  ShoppingCart, ShoppingBag, Star, Heart, ImageOff,
+  Loader2, SlidersHorizontal, X,
+} from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/commerce/marketplace';
 
 function SolvexoIcon({ size = 32 }: { size?: number }) {
@@ -27,13 +30,13 @@ function SolvexoIcon({ size = 32 }: { size?: number }) {
 function ProductCardSkeleton() {
   return (
     <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
-      <div className="animate-pulse h-[200px] sm:h-[180px] bg-bone" />
-      <div className="p-3 sm:p-4">
-        <div className="animate-pulse h-[13px] bg-bone rounded-[6px] mb-2" />
-        <div className="animate-pulse h-[11px] bg-bone rounded-[6px] w-[55%] mb-[10px]" />
+      <div className="animate-pulse h-[130px] sm:h-[160px] lg:h-[180px] bg-bone" />
+      <div className="p-2 sm:p-4">
+        <div className="animate-pulse h-[12px] bg-bone rounded-[6px] mb-2" />
+        <div className="animate-pulse h-[10px] bg-bone rounded-[6px] w-[55%] mb-[10px]" />
         <div className="flex justify-between items-center">
-          <div className="animate-pulse h-5 w-16 bg-bone rounded-[6px]" />
-          <div className="animate-pulse h-[30px] w-[86px] bg-bone rounded-lg" />
+          <div className="animate-pulse h-5 w-14 bg-bone rounded-[6px]" />
+          <div className="animate-pulse h-[28px] w-8 sm:w-[86px] bg-bone rounded-lg" />
         </div>
       </div>
     </div>
@@ -48,8 +51,8 @@ function ProductImage({ images, name, className }: { images: string[]; name: str
   if (!src || errored) {
     return (
       <div className={clsx('bg-brand-pale-orange flex flex-col items-center justify-center gap-[6px]', className)}>
-        <ImageOff size={28} className="text-brand-orange opacity-[0.45]" />
-        <span className="text-[9px] text-slate max-w-[80px] text-center leading-[1.4]">
+        <ImageOff size={24} className="text-brand-orange opacity-[0.45]" style={{ display: 'block', flexShrink: 0 }} />
+        <span className="text-[9px] text-slate max-w-[80px] text-center leading-[1.4] overflow-hidden">
           {name.slice(0, 20)}{name.length > 20 ? '…' : ''}
         </span>
       </div>
@@ -73,12 +76,12 @@ function StarRating({ rating, count }: { rating: number; count?: number }) {
       {[1, 2, 3, 4, 5].map(i => (
         <Star
           key={i}
-          size={11}
+          size={10}
           className={i <= Math.round(rating) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone'}
         />
       ))}
       {count !== undefined && (
-        <span className="text-[11px] text-slate ml-[2px]">({count})</span>
+        <span className="text-[10px] text-slate ml-[2px] hidden sm:inline">({count})</span>
       )}
     </div>
   );
@@ -94,7 +97,7 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
   isWishlisting:    boolean;
   onToggleWishlist: (e: React.MouseEvent) => void;
 }) {
-  const pType    = product.productType ?? product.type ?? 'physical';
+  const pType     = product.productType ?? product.type ?? 'physical';
   const isDigital = pType === 'digital';
 
   const defaultVariant = product.variants.find(v => v.isDefault) ?? product.variants[0];
@@ -105,31 +108,31 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
   const ratingCount = product.totalRatings ?? 0;
 
   return (
-    <Card padding="none" hover onClick={onClick}>
+    <Card padding="none" hover onClick={onClick} className="overflow-hidden">
       {/* Image */}
       <div className="relative">
         <ProductImage
           images={product.images ?? []}
           name={product.name}
-          className="h-[200px] sm:h-[180px] rounded-t-[12px]"
+          className="h-[130px] sm:h-[160px] lg:h-[180px]"
         />
         <button
           onClick={onToggleWishlist}
           disabled={isWishlisting}
           className={clsx(
-            'absolute top-[10px] right-[10px] w-8 h-8 rounded-full',
+            'absolute top-[8px] right-[8px] w-7 h-7 sm:w-8 sm:h-8 rounded-full',
             'bg-[rgba(255,255,255,0.92)] border-none flex items-center justify-center',
             'shadow-[0_1px_4px_rgba(0,0,0,0.12)] transition-transform duration-150 hover:scale-[1.15]',
             isWishlisting ? 'cursor-wait' : 'cursor-pointer',
           )}
         >
           <Heart
-            size={15}
+            size={13}
             className={clsx('transition-[color,fill] duration-150', isWishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')}
           />
         </button>
         <span className={clsx(
-          'absolute top-[10px] left-[10px] px-2 py-[3px] rounded-[5px] text-[10px] font-semibold border',
+          'absolute top-[8px] left-[8px] px-[6px] py-[2px] rounded-[5px] text-[9px] sm:text-[10px] font-semibold border',
           isDigital
             ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
             : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
@@ -139,13 +142,13 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
       </div>
 
       {/* Body */}
-      <div className="px-3 sm:px-[14px] pt-3 pb-3 sm:pb-[14px]">
-        <p className="font-bold text-[13px] text-carbon mb-[4px] leading-[1.4] line-clamp-2 sm:line-clamp-1">
+      <div className="px-2 pt-2 pb-2 sm:px-[14px] sm:pt-3 sm:pb-[14px]">
+        <p className="font-bold text-[12px] sm:text-[13px] text-carbon mb-[3px] leading-[1.4] line-clamp-2">
           {product.name}
         </p>
         <StarRating rating={product.averageRating} count={ratingCount} />
         {(product.tags?.length ?? 0) > 0 && (
-          <div className="hidden sm:flex flex-wrap gap-1 mt-[6px]">
+          <div className="hidden lg:flex flex-wrap gap-1 mt-[6px]">
             {product.tags!.slice(0, 3).map(tag => (
               <span key={tag} className="text-[10px] px-[6px] py-[1px] rounded bg-cream text-slate border border-bone">
                 {tag}
@@ -153,18 +156,18 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
             ))}
           </div>
         )}
-        <div className="flex items-center justify-between mt-[10px]">
-          <div className="flex items-baseline gap-[4px]">
-            <span className="font-bold text-[15px] text-carbon">
+        <div className="flex items-center justify-between mt-[8px] sm:mt-[10px]">
+          <div className="flex items-baseline gap-[3px]">
+            <span className="font-bold text-[13px] sm:text-[15px] text-carbon">
               {lowestPrice != null ? `$${lowestPrice.toLocaleString()}` : '—'}
             </span>
             {compareAt != null && compareAt > (lowestPrice ?? 0) && (
-              <span className="text-[11px] text-slate line-through">${compareAt.toLocaleString()}</span>
+              <span className="hidden sm:inline text-[11px] text-slate line-through">${compareAt.toLocaleString()}</span>
             )}
           </div>
-          <Button variant="secondary" size="sm" onClick={onAddToCart}>
+          <Button variant="secondary" size="sm" onClick={onAddToCart} className="inline-flex shrink-0">
             {isAdding ? <Loader2 size={11} className="animate-spin" /> : <ShoppingCart size={11} />}
-            {isAdding ? 'Adding…' : 'Add to Cart'}
+            <span className="hidden lg:inline">{isAdding ? 'Adding…' : 'Add to Cart'}</span>
           </Button>
         </div>
       </div>
@@ -179,12 +182,9 @@ const FILTER_GROUPS = [
   { key: 'rating', title: 'Rating',       items: ['4★ & up', '3★ & up']                        },
 ];
 
-// ── FilterPanel — shared by desktop sidebar + mobile sheet ────────────────────
 interface FilterState { price: string[]; type: string[]; rating: string[]; }
 
-function FilterPanel({
-  filters, onChange,
-}: {
+function FilterPanel({ filters, onChange }: {
   filters:  FilterState;
   onChange: (key: keyof FilterState, value: string) => void;
 }) {
@@ -232,6 +232,7 @@ const SORT_OPTIONS = [
   { value: 'best-rated', label: 'Best Rated'      },
 ];
 
+
 export function Marketplace() {
   const navigate = useNavigate();
   usePageTitle('Marketplace');
@@ -247,7 +248,7 @@ export function Marketplace() {
   const { cartCount, addToCart, adding }    = useCartContext();
   const { wishlistCount, isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
 
-  const totalPages       = Math.ceil(total / LIMIT) || 1;
+  const totalPages        = Math.ceil(total / LIMIT) || 1;
   const activeFilterCount = filters.price.length + filters.type.length + filters.rating.length;
 
   const toggleFilter = (key: keyof FilterState, value: string) => {
@@ -272,70 +273,99 @@ export function Marketplace() {
   return (
     <div className="min-h-screen bg-cream">
 
-      {/* ── Nav ────────────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center gap-4 px-4 md:px-10">
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <SolvexoIcon size={28} />
-          <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
-          <span className="font-bold text-[15px] text-brand-orange">o</span>
-          <span className="text-bone mx-1 hidden sm:inline">|</span>
-          <span className="text-[13px] text-slate hidden sm:inline">Marketplace</span>
-        </div>
-        <div className="flex-1 flex justify-center">
-          <input
-            placeholder="Search marketplace..."
-            className="w-full max-w-[200px] sm:max-w-[320px] md:max-w-[440px] px-[14px] py-2 rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none"
-          />
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/')}>Home</Button>
-          <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')}>Sell on Solvexo</Button>
-          <div
-            onClick={() => navigate('/account/profile?tab=wishlist')}
-            className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer"
-          >
-            <Heart size={16} className={wishlistCount > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'} />
-            {wishlistCount > 0 && (
-              <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
-                {wishlistCount > 99 ? '99+' : wishlistCount}
-              </span>
-            )}
+      {/* ── Nav ──────────────────────────────────────────────────────────────── */}
+      <nav className="sticky top-0 z-50 bg-white border-b border-bone">
+        <div className="h-[60px] flex items-center gap-3 px-4 sm:px-6 lg:px-10">
+
+          {/* Logo */}
+          <div className="flex items-center gap-[6px] shrink-0">
+            <SolvexoIcon size={28} />
+            <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
+            <span className="font-bold text-[15px] text-brand-orange">o</span>
+            <span className="text-bone mx-1 hidden md:inline">|</span>
+            <span className="text-[13px] text-slate hidden md:inline">Marketplace</span>
           </div>
-          <div
-            onClick={() => navigate('/cart')}
-            className="relative w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer"
-          >
-            <ShoppingCart size={16} className="text-white" />
-            {cartCount > 0 && (
-              <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
-                {cartCount > 99 ? '99+' : cartCount}
-              </span>
-            )}
+
+          {/* Search */}
+          <div className="flex-1 flex justify-center px-2 sm:px-4">
+            <input
+              placeholder="Search marketplace..."
+              className="w-full max-w-[240px] sm:max-w-[360px] lg:max-w-[480px] px-[14px] py-[9px] rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none focus:border-brand-orange transition-colors"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Home + Sell — hidden on mobile; BottomNav handles navigation below md */}
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="hidden md:inline-flex">
+              Home
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate('/onboarding')}
+              className="hidden md:inline-flex"
+            >
+              Sell on Solvexo
+            </Button>
+
+            {/* Wishlist */}
+            <div
+              onClick={() => navigate('/account/profile?tab=wishlist')}
+              className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer shrink-0"
+            >
+              <Heart size={16} className={wishlistCount > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'} />
+              {wishlistCount > 0 && (
+                <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
+                  {wishlistCount > 99 ? '99+' : wishlistCount}
+                </span>
+              )}
+            </div>
+
+            {/* Cart */}
+            <div
+              onClick={() => navigate('/cart')}
+              className="relative w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer shrink-0"
+            >
+              <ShoppingCart size={16} className="text-white" />
+              {cartCount > 0 && (
+                <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero ───────────────────────────────────────────────────────────── */}
-      <div className="px-4 md:px-10 py-6 md:py-9 flex items-center justify-between bg-gradient-to-r from-[#FBECE4] to-[#FFF5EE]">
-        <div>
-          <h1 className="text-[22px] md:text-[28px] font-bold text-[#141413] mb-2 font-serif">
-            Discover Something Made with Love
-          </h1>
-          <p className="text-[13px] md:text-[14px] text-slate mb-5">
-            Shop unique products from independent sellers, creators, and educators.
-          </p>
-          <Button variant="primary" size="md">Shop Now <span className="ml-1">→</span></Button>
+      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
+      <div className="bg-gradient-to-r from-[#FBECE4] to-[#FFF5EE] border-b border-[#F5D5C2]">
+        <div className="px-4 sm:px-6 lg:px-10 py-7 sm:py-9 lg:py-10 flex items-center justify-between gap-6">
+
+          {/* Left text */}
+          <div className="min-w-0">
+            <h1 className="font-serif text-[20px] sm:text-[26px] lg:text-[30px] font-bold text-carbon mb-[6px] sm:mb-2 leading-[1.2]">
+              Discover Something<br className="hidden sm:block" /> Made with Love
+            </h1>
+            <p className="text-[12px] sm:text-[13px] text-slate mb-4 sm:mb-5 max-w-[380px]">
+              Shop unique products from independent sellers, creators, and educators.
+            </p>
+            <Button variant="primary" size="md">
+              Shop Now <span className="ml-1">→</span>
+            </Button>
+          </div>
+
+          <ShoppingBag size={80} className="text-brand-orange hidden sm:block shrink-0" />
         </div>
-        <ShoppingBag size={80} className="text-brand-orange hidden sm:block" />
       </div>
 
-      {/* ── Category Tabs ──────────────────────────────────────────────────── */}
-      <div className="bg-white overflow-x-auto">
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} className="px-4 md:px-10" />
+      {/* ── Category Tabs ────────────────────────────────────────────────────── */}
+      <div className="bg-white border-b border-bone overflow-x-auto scrollbar-hide">
+        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} className="px-4 sm:px-6 lg:px-10" />
       </div>
 
-      {/* ── Main content ───────────────────────────────────────────────────── */}
-      <div className="px-4 md:px-6 lg:px-10 py-4 md:py-6">
+      {/* ── Main content ─────────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-6 lg:px-10 py-4 sm:py-5 lg:py-6">
 
         {/* Mobile: filter + sort bar */}
         <div className="lg:hidden flex items-center justify-between gap-3 mb-4">
@@ -359,12 +389,11 @@ export function Marketplace() {
           <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
         </div>
 
-        <div className="flex gap-6 items-start">
+        <div className="flex gap-5 lg:gap-6 items-start">
 
-          {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
-          <aside className="hidden lg:block w-[210px] flex-shrink-0 sticky top-[68px] self-start">
+          {/* ── Desktop sidebar ───────────────────────────────────────────────── */}
+          <aside className="hidden lg:block w-[210px] xl:w-[230px] shrink-0 sticky top-[68px] self-start">
             <div className="bg-white rounded-[16px] border border-bone overflow-hidden">
-              {/* Sidebar header */}
               <div className="px-5 pt-[18px] pb-4 border-b border-bone flex items-center justify-between">
                 <div className="flex items-center gap-[7px]">
                   <div className="size-7 rounded-[7px] bg-brand-pale-orange flex items-center justify-center shrink-0">
@@ -386,15 +415,15 @@ export function Marketplace() {
                   </button>
                 )}
               </div>
-              {/* Filter groups */}
               <div className="px-5 py-5">
                 <FilterPanel filters={filters} onChange={toggleFilter} />
               </div>
             </div>
           </aside>
 
-          {/* ── Products area ────────────────────────────────────────────────── */}
+          {/* ── Products area ─────────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0">
+
             {/* Desktop: count + sort row */}
             <div className="hidden lg:flex items-center justify-between mb-4">
               <span className="text-[13px] text-slate">
@@ -414,9 +443,10 @@ export function Marketplace() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[10px] sm:gap-[14px] md:gap-[18px]">
+            {/* Grid: 2-col mobile → 2-col sm → 3-col md (no sidebar) → 3-col lg → 4-col xl */}
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px]">
               {loading
-                ? Array.from({ length: 9 }).map((_, i) => <ProductCardSkeleton key={i} />)
+                ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
                 : filtered.map(p => {
                     const defVariant = p.variants.find(v => v.isDefault) ?? p.variants[0];
                     const vId = defVariant?._id ?? '';
@@ -437,7 +467,9 @@ export function Marketplace() {
             </div>
 
             {!loading && !error && filtered.length === 0 && (
-              <div className="text-center py-[60px] text-slate text-[14px]">No products found in this category yet.</div>
+              <div className="text-center py-[60px] text-slate text-[14px]">
+                No products found in this category yet.
+              </div>
             )}
 
             {!loading && !error && totalPages > 1 && (
@@ -452,31 +484,27 @@ export function Marketplace() {
         </div>
       </div>
 
-      {/* ── Mobile filter bottom sheet ──────────────────────────────────────── */}
-      {/* Backdrop */}
+      {/* ── Mobile filter bottom sheet ────────────────────────────────────────── */}
       <div
         className={clsx(
-          'fixed inset-0 bg-black/40 z-40 lg:hidden transition-opacity duration-300',
+          'fixed inset-0 bg-black/40 z-[59] lg:hidden transition-opacity duration-300',
           mobileFilters ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
         )}
         onClick={() => setMobileFilters(false)}
       />
 
-      {/* Sheet */}
       <div
         className={clsx(
-          'fixed bottom-0 left-0 right-0 z-50 bg-white lg:hidden',
+          'fixed bottom-0 left-0 right-0 z-[60] bg-white lg:hidden',
           'rounded-t-[20px]',
           'transition-transform duration-300 ease-out',
           mobileFilters ? 'translate-y-0' : 'translate-y-full',
         )}
       >
-        {/* Drag handle */}
         <div className="flex justify-center pt-[10px] pb-[4px]">
           <div className="w-9 h-[4px] bg-bone rounded-full" />
         </div>
 
-        {/* Sheet header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-bone">
           <div className="flex items-center gap-2">
             <SlidersHorizontal size={15} className="text-charcoal" strokeWidth={2} />
@@ -505,12 +533,10 @@ export function Marketplace() {
           </div>
         </div>
 
-        {/* Filter content */}
         <div className="px-5 py-4 overflow-y-auto max-h-[55vh]">
           <FilterPanel filters={filters} onChange={toggleFilter} />
         </div>
 
-        {/* Apply button */}
         <div className="px-5 pt-3 pb-6 border-t border-bone">
           <button
             onClick={() => setMobileFilters(false)}
