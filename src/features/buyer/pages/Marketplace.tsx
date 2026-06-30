@@ -243,7 +243,7 @@ export function Marketplace() {
   const [mobileFilters, setMobileFilters] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ price: [], type: [], rating: [] });
 
-  const LIMIT = 15;
+  const LIMIT = 20;
   const { products, total, loading, error } = useProductsByCategory(page, LIMIT);
   const { cartCount, addToCart, adding }    = useCartContext();
   const { wishlistCount, isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();

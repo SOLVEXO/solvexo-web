@@ -53,3 +53,6 @@ export type { TablePagination }              from './Table';
 
 export { ImageUpload, FileUpload }           from './Upload';
 export type { PrivateUploadData }            from './Upload';
+
+export { DateTimePickerModal }               from './DateTimePickerModal';
+export type { DateTimePickerModalProps }     from './DateTimePickerModal';

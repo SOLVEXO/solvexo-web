@@ -231,12 +231,7 @@ export function SellerDashboard() {
         subtitle={subtitle}
         actions={
           <>
-            <Button variant="secondary" size="sm" onClick={() => navigate('/seller/products/add')}>
-              + Add Product
-            </Button>
-            <Button variant="primary" size="sm" onClick={() => navigate('/seller/pos')}>
-              Open POS
-            </Button>
+            
           </>
         }
       />

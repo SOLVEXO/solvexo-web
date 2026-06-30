@@ -353,8 +353,8 @@ function Step4({ store }: { store: StoreData | null }) {
         <p className="text-[13px] font-semibold text-carbon mb-[14px]">Recommended next steps</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-[10px] mb-7">
           {[
-            { Icon: Plus,         label: 'Add your first product', path: '/seller/products/add' },
-            { Icon: Wrench,       label: 'Customise your store',   path: '/seller/store' },
+            { Icon: Plus,         label: 'Add your first product', path: `/seller/store/${store?._id}/products/add` },
+            { Icon: Wrench,       label: 'Customise your store',   path: `/seller/store/${store?._id}/storebuilder` },
             { Icon: ShoppingCart, label: 'Browse the marketplace', path: '/marketplace' },
           ].map(({ Icon, label, path }) => (
             <div key={label} onClick={() => navigate(path, { replace: true })}
