@@ -6,7 +6,7 @@ import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Store, RefreshCw,
-  Truck, MessageSquare, Settings, FolderOpen,
+  Settings, FolderOpen,
   Bell, ChevronDown, List, Plus, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
@@ -56,10 +56,8 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Operations',
     items: [
-      { id: 'shipping',   Icon: Truck,         label: 'Shipping',   path: '/seller/shipping'   },
-      { id: 'messages',   Icon: MessageSquare, label: 'Messages',   path: '/seller/messages'   },
-      { id: 'settings',   Icon: Settings,      label: 'Settings',   path: '/seller/settings'   },
-      { id: 'categories', Icon: FolderOpen,    label: 'Categories', path: '/seller/categories' },
+      { id: 'settings',   Icon: Settings,   label: 'Settings',   path: '/seller/settings'   },
+      { id: 'categories', Icon: FolderOpen, label: 'Categories', path: '/seller/categories' },
     ],
   },
 ];
@@ -195,12 +193,12 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
       )}
 
       <aside className={clsx(
-        'bg-carbon flex flex-col h-screen',
+        'bg-carbon flex flex-col',
         'transition-all duration-300 ease-in-out',
-        // Mobile: fixed overlay, always 220px wide, slides in/out
-        'fixed inset-y-0 left-0 z-50 w-[220px]',
-        // Desktop: static inline, width toggles
-        'lg:static lg:z-auto lg:shrink-0',
+        // Mobile: fixed overlay, starts below ReferenceNav (44px)
+        'fixed top-[44px] bottom-0 left-0 z-50 w-[220px]',
+        // Desktop: static inline, full viewport height, width toggles
+        'lg:static lg:z-auto lg:shrink-0 lg:h-screen lg:top-auto lg:bottom-auto',
         open
           ? 'translate-x-0 lg:w-[220px]'
           : '-translate-x-full lg:translate-x-0 lg:w-[60px]',
@@ -415,10 +413,10 @@ export function SellerLayout() {
   return (
     <ActiveStoreProvider>
       <SellerSidebarCtx.Provider value={{ toggle }}>
-        <div className="flex h-screen bg-cream overflow-hidden">
+        <div className="flex h-screen bg-cream">
           <SellerSidebar open={sidebarOpen} onToggle={toggle} onClose={onClose} />
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden">
               <Outlet />
             </div>
           </div>

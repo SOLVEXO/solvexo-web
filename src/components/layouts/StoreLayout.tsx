@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, Sparkles, Bell, ChevronLeft, Monitor, Store,
   ClipboardList, Megaphone, Star, Plug, Activity, Search, Wallet,
+  Truck, MessageSquare,
   PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
@@ -62,8 +63,10 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { id: 'inventory',    Icon: ClipboardList, label: 'Inventory',    path: 'inventory'    },
       { id: 'marketing',    Icon: Megaphone,     label: 'Marketing',    path: 'marketing'    },
       { id: 'loyalty',      Icon: Star,          label: 'Loyalty',      path: 'loyalty'      },
-      { id: 'integrations', Icon: Plug,          label: 'Integrations', path: 'integrations' },
-      { id: 'activity',     Icon: Activity,      label: 'Activity Log', path: 'activity'     },
+      { id: 'integrations', Icon: Plug,           label: 'Integrations', path: 'integrations' },
+      { id: 'activity',     Icon: Activity,       label: 'Activity Log', path: 'activity'     },
+      { id: 'shipping',     Icon: Truck,          label: 'Shipping',     path: 'shipping'     },
+      { id: 'messages',     Icon: MessageSquare,  label: 'Messages',     path: 'messages'     },
     ],
   },
   {
@@ -113,12 +116,12 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
       )}
 
       <aside className={clsx(
-        'bg-carbon flex flex-col h-screen',
+        'bg-carbon flex flex-col',
         'transition-all duration-300 ease-in-out',
-        // Mobile: fixed overlay
-        'fixed inset-y-0 left-0 z-50 w-[220px]',
-        // Desktop: static inline with width toggle
-        'lg:static lg:z-auto lg:shrink-0',
+        // Mobile: fixed overlay, starts below ReferenceNav (44px)
+        'fixed top-[44px] bottom-0 left-0 z-50 w-[220px]',
+        // Desktop: static inline, full viewport height, width toggles
+        'lg:static lg:z-auto lg:shrink-0 lg:h-screen lg:top-auto lg:bottom-auto',
         open
           ? 'translate-x-0 lg:w-[220px]'
           : '-translate-x-full lg:translate-x-0 lg:w-[60px]',

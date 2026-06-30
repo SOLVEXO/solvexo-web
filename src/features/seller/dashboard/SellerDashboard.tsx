@@ -1,10 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { AreaChart } from '@/components/comman/charts';
-import {
-  Package, Monitor, Sparkles, BarChart2, ClipboardList, ArrowRight, Store,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { ArrowRight, Store } from 'lucide-react';
 import { Button } from '@/components/comman/ui/Button';
+import { Table } from '@/components/comman/ui/Table';
+import type { TableColumn } from '@/components/comman/ui/Table';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useMyStores } from '@/hooks/store/useMyStores';
 
@@ -19,12 +18,12 @@ const revenueData = [
   { day: 'Sun', sales: 2200 },
 ];
 
-const quickActions: { Icon: LucideIcon; label: string; path: string }[] = [
-  { Icon: Package, label: 'Add New Product', path: '/seller/products/add' },
-  { Icon: Monitor, label: 'Open POS Register', path: '/seller/pos' },
-  { Icon: Sparkles, label: 'AI Write Listing', path: '/seller/ai' },
-  { Icon: BarChart2, label: 'View Full Analytics', path: '/seller/analytics' },
-  { Icon: ClipboardList, label: 'Manage Inventory', path: '/seller/inventory' },
+const topProducts = [
+  { name: 'Grade 5 Math Bundle',        sales: 847, revenue: '$41,503', pct: 100 },
+  { name: 'Fractions Mastery Kit',      sales: 623, revenue: '$11,214', pct: 74  },
+  { name: 'Reading Comprehension Pack', sales: 501, revenue: '$11,022', pct: 59  },
+  { name: 'Science Lab Worksheets',     sales: 389, revenue: '$5,835',  pct: 46  },
+  { name: 'Creative Writing Prompts',   sales: 278, revenue: '$3,336',  pct: 33  },
 ];
 
 const recentOrders = [
@@ -55,6 +54,57 @@ const statusStyles: Record<string, { bg: string; color: string }> = {
   Fulfilled: { bg: '#EAF0FB', color: '#2156A8' },
   Pending: { bg: '#FFF0E0', color: '#B36200' },
 };
+
+// ── Order table columns ───────────────────────────────────────────────────────
+type OrderRow = { id: string; customer: string; initials: string; product: string; amount: string; status: string };
+
+const ORDER_COLUMNS: TableColumn<OrderRow>[] = [
+  {
+    key: 'id', header: 'Order',
+    render: row => <span className="font-semibold text-brand-orange">{row.id}</span>,
+  },
+  {
+    key: 'customer', header: 'Customer',
+    render: row => {
+      const av = avatarColors[row.initials] ?? { bg: '#F0EEE6', color: '#5A5852' };
+      return (
+        <div className="flex items-center gap-2">
+          <div className="w-[26px] h-[26px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0" style={{ background: av.bg, color: av.color }}>
+            {row.initials}
+          </div>
+          <span className="text-[#4A4945]">{row.customer}</span>
+        </div>
+      );
+    },
+  },
+  {
+    key: 'product', header: 'Product',
+    render: row => <span className="text-[#4A4945]">{row.product}</span>,
+  },
+  {
+    key: 'amount', header: 'Amount',
+    render: row => <span className="font-semibold text-charcoal">{row.amount}</span>,
+  },
+  {
+    key: 'status', header: 'Status',
+    render: row => {
+      const st = statusStyles[row.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
+      return (
+        <span className="inline-block text-[11px] font-semibold px-[10px] py-[3px] rounded-[5px]" style={{ background: st.bg, color: st.color }}>
+          {row.status}
+        </span>
+      );
+    },
+  },
+  {
+    key: 'actions', header: 'Actions',
+    render: () => (
+      <button className="bg-transparent border-0 cursor-pointer text-xs text-brand-orange font-semibold hover:underline">
+        View
+      </button>
+    ),
+  },
+];
 
 // ── My Store Card ────────────────────────────────────────────────────────────
 const statusColors: Record<string, { bg: string; color: string }> = {
@@ -233,90 +283,51 @@ export function SellerDashboard() {
           <MyStoreCard />
         </div>
 
-        {/* ── Row 3: Quick Actions + Recent Orders (side by side) ── */}
+        {/* ── Row 3: Top Products + Recent Orders ── */}
         <div className="grid grid-cols-[320px_1fr] gap-4">
 
-          {/* Quick Actions */}
+          {/* Top Products */}
           <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
-            <div className="px-[18px] pt-4 pb-2">
-              <p className="text-sm font-bold text-charcoal">Quick Actions</p>
+            <div className="px-[18px] pt-4 pb-3 flex items-center justify-between border-b border-bone">
+              <p className="text-sm font-bold text-charcoal">Top Products</p>
+              <button onClick={() => navigate('/seller/products')} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
+                View All <ArrowRight size={14} />
+              </button>
             </div>
-            <div className="px-2 pb-2">
-              {quickActions.map((a, i) => (
-                <button
-                  key={a.label}
-                  onClick={() => navigate(a.path)}
-                  className="w-full flex items-center gap-3 px-[10px] py-[11px] bg-transparent border-0 cursor-pointer text-left transition-[background] duration-150 rounded-md"
-                  style={{ borderBottom: i < quickActions.length - 1 ? '1px solid #F5F4EF' : 'none' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#FAF9F5')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
-                    <a.Icon size={15} className="text-brand-orange" />
+            <div className="px-[18px] py-3 space-y-[14px]">
+              {topProducts.map((p, i) => (
+                <div key={p.name}>
+                  <div className="flex items-center justify-between mb-[6px]">
+                    <div className="flex items-center gap-[7px] min-w-0">
+                      <span className="text-[10px] font-bold text-slate shrink-0 w-4">#{i + 1}</span>
+                      <span className="text-[12px] font-medium text-charcoal truncate">{p.name}</span>
+                    </div>
+                    <div className="shrink-0 ml-3 text-right">
+                      <span className="text-[12px] font-bold text-carbon">{p.revenue}</span>
+                      <span className="text-[10px] text-slate ml-1">{p.sales} sales</span>
+                    </div>
                   </div>
-                  <span className="flex-1 text-[13px] font-medium text-charcoal">{a.label}</span>
-                  <span className="text-base text-[#C0BDB5]">›</span>
-                </button>
+                  <div className="h-[3px] bg-cream rounded-full overflow-hidden">
+                    <div className="h-full bg-brand-orange rounded-full" style={{ width: `${p.pct}%` }} />
+                  </div>
+                </div>
               ))}
             </div>
           </div>
 
-          {/* Recent Orders */}
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          {/* Recent Orders — Table component */}
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
             <div className="px-5 pt-4 pb-[10px] flex items-center justify-between">
               <p className="text-sm font-bold text-charcoal">Recent Orders</p>
-              <button onClick={() => navigate('/seller/orders')} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1">
+              <button onClick={() => navigate('/seller/orders')} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
                 View All <ArrowRight size={14} />
               </button>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-[13px]">
-                <thead>
-                  <tr className="border-t border-b border-bone">
-                    {['Order', 'Customer', 'Product', 'Amount', 'Status', 'Actions'].map((h) => (
-                      <th key={h} className="text-left text-[11px] font-semibold text-slate uppercase tracking-[0.05em] px-[18px] py-[10px]">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentOrders.map((order, i) => {
-                    const av = avatarColors[order.initials] ?? { bg: '#F0EEE6', color: '#5A5852' };
-                    const st = statusStyles[order.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
-                    return (
-                      <tr
-                        key={order.id}
-                        className="transition-[background] duration-[0.12s]"
-                        style={{ borderBottom: i < recentOrders.length - 1 ? '1px solid #F5F4EF' : 'none' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = '#FAF9F5')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        <td className="px-[18px] py-[11px] font-semibold text-brand-orange">{order.id}</td>
-                        <td className="px-[18px] py-[11px]">
-                          <div className="flex items-center gap-2">
-                            <div className="w-[26px] h-[26px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0" style={{ background: av.bg, color: av.color }}>{order.initials}</div>
-                            <span className="text-[#4A4945]">{order.customer}</span>
-                          </div>
-                        </td>
-                        <td className="px-[18px] py-[11px] text-[#4A4945]">{order.product}</td>
-                        <td className="px-[18px] py-[11px] font-semibold text-charcoal">{order.amount}</td>
-                        <td className="px-[18px] py-[11px]"><span className="inline-block text-[11px] font-semibold px-[10px] py-[3px] rounded-[5px]" style={{ background: st.bg, color: st.color }}>{order.status}</span></td>
-                        <td className="px-[18px] py-[11px]">
-                          <button
-                            className="bg-transparent border-0 cursor-pointer text-xs text-brand-orange font-semibold"
-                            onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                            onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
-                          >
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <Table
+              columns={ORDER_COLUMNS}
+              data={recentOrders}
+              keyExtractor={row => row.id}
+            />
           </div>
         </div>
 

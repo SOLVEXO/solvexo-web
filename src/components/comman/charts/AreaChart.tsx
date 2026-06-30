@@ -70,8 +70,9 @@ export function AreaChart({
           {action}
         </div>
       )}
+      <div className="px-3 pb-4">
       <ResponsiveContainer width="100%" height={height}>
-        <RechartsArea data={data} margin={{ top: 4, right: 20, left: 0, bottom: 0 }}>
+        <RechartsArea data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%"  stopColor={color} stopOpacity={0.22} />
@@ -93,6 +94,7 @@ export function AreaChart({
           />
         </RechartsArea>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }

@@ -169,6 +169,8 @@ export const router = createBrowserRouter([
           { path: 'loyalty',                          element: <StoreLoyalty /> },
           { path: 'integrations',                     element: <StoreIntegrations /> },
           { path: 'activity',                         element: <StoreActivity /> },
+          { path: 'shipping',                         element: <SellerShipping /> },
+          { path: 'messages',                         element: <SellerMessages /> },
         ],
       },
 
