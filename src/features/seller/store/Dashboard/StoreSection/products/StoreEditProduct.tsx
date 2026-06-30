@@ -1,6 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, Package, Download, Loader2, CalendarClock } from 'lucide-react';
+import { Package, Download, Loader2, CalendarClock } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import {
   apiGetMyProductById, apiEditPhysicalProduct, apiEditDigitalProduct,

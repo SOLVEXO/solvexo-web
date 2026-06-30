@@ -398,7 +398,7 @@ function WishlistTab() {
               <div className="flex flex-col gap-[8px] justify-center shrink-0">
                 {variant && (
                   <button
-                    onClick={() => handleAddToCart(p._id, variant._id, p.productType ?? p.type ?? 'physical')}
+                    onClick={() => handleAddToCart(p._id, variant._id, 'physical')}
                     disabled={isAdding}
                     className={clsx(
                       'flex items-center gap-[6px] px-[16px] py-[9px] rounded-[10px] text-[12px] font-bold bg-brand-orange text-white border-none whitespace-nowrap',

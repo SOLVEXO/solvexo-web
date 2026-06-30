@@ -207,7 +207,7 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
         {/* Header: logo + toggle */}
         {open ? (
           <div className="px-5 pt-5 pb-4 shrink-0 flex items-center gap-[9px]">
-            <SolvexoIcon size={28} className="shrink-0" />
+            <div className="shrink-0"><SolvexoIcon size={28} /></div>
             <div className="flex items-center flex-1 min-w-0">
               <span className="text-[17px] font-bold text-white tracking-[-0.3px]">Solvex</span>
               <span className="text-[17px] font-bold text-brand-orange tracking-[-0.3px]">o</span>

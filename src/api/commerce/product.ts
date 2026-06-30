@@ -68,7 +68,7 @@ export interface CreatePhysicalPayload {
   images:            string[];
   tags:              string[];
   isListedOnSolvexo: boolean;
-  status:            'draft' | 'active';
+  status:            'draft' | 'active' | 'scheduled';
   price:             number;
   compareAtPrice:    number | null;
   size:              string;
@@ -86,7 +86,7 @@ export interface CreateDigitalPayload {
   images:            string[];
   tags:              string[];
   isListedOnSolvexo: boolean;
-  status:            'draft' | 'active';
+  status:            'draft' | 'active' | 'scheduled';
   price:             number;
   compareAtPrice:    number | null;
   digital:           DigitalMeta;
@@ -100,7 +100,7 @@ export interface EditPhysicalPayload {
   images:            string[];
   tags:              string[];
   isListedOnSolvexo: boolean;
-  status:            'draft' | 'active';
+  status:            'draft' | 'active' | 'scheduled';
   price:             number;
   compareAtPrice:    number | null;
   size:              string;
@@ -114,7 +114,7 @@ export interface EditDigitalPayload {
   variantId:      string | null;
   name:           string;
   description:    string;
-  status:         'draft' | 'active';
+  status:         'draft' | 'active' | 'scheduled';
   price:          number;
   compareAtPrice: number | null;
   digital:        DigitalMeta;

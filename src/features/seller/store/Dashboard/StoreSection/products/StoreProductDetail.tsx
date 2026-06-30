@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
-  ArrowLeft, Edit2, Package, Download, Tag, Globe,
+  Edit2, Package, Download, Tag, Globe,
   Loader2, Calendar, CheckCircle, XCircle, Hash,
 } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
