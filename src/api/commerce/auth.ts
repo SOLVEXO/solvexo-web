@@ -146,3 +146,14 @@ export function apiGetProfile() {
   return client.get<never, ApiResponse<ProfileData>>(ENDPOINTS.AUTH.GET_PROFILE);
 }
 
+/** POST /auth/edit-profile — updates the logged-in user's profile */
+export interface EditProfilePayload {
+  name:    string;
+  phone?:  string;
+  address?: string;
+}
+
+export function apiEditProfile(payload: EditProfilePayload) {
+  return client.post<never, ApiResponse<ProfileData>>(ENDPOINTS.AUTH.EDIT_PROFILE, payload);
+}
+

@@ -14,6 +14,7 @@ export const ENDPOINTS = {
     RESET_PASSWORD: '/api/auth/reset-password',
     REFRESH_TOKEN: '/api/auth/refresh',
     GET_PROFILE: '/api/auth/getprofile',
+    EDIT_PROFILE: '/api/auth/edit-profile',
   },
 
   // ── STORE ─────────────────────────────────────────────────────────────────
@@ -96,6 +97,42 @@ export const ENDPOINTS = {
     MARK_PAID:     (id: string) => `/api/orders/mark-paid/${id}`,
     UPDATE_STATUS: '/api/orders/update-status',
     DOWNLOAD_URL:  '/api/orders/download-url',
+  },
+
+  // ── MESSAGING ─────────────────────────────────────────────────────────────
+  MESSAGING: {
+    CONVERSATIONS: {
+      START:     '/api/messaging/conversations',
+      LIST:      '/api/messaging/conversations',
+      SEARCH:    '/api/messaging/conversations/search',
+      GET_BY_ID: (id: string) => `/api/messaging/conversations/${id}`,
+      ARCHIVE:   (id: string) => `/api/messaging/conversations/${id}/archive`,
+      RESTORE:   (id: string) => `/api/messaging/conversations/${id}/restore`,
+      PIN:       (id: string) => `/api/messaging/conversations/${id}/pin`,
+      MUTE:      (id: string) => `/api/messaging/conversations/${id}/mute`,
+      DELETE:    (id: string) => `/api/messaging/conversations/${id}`,
+    },
+    ATTACHMENTS: {
+      UPLOAD: (conversationId: string) => `/api/messaging/conversations/${conversationId}/attachments`,
+    },
+    MESSAGES: {
+      LIST:      (conversationId: string) => `/api/messaging/conversations/${conversationId}/messages`,
+      SEND:      (conversationId: string) => `/api/messaging/conversations/${conversationId}/messages`,
+      SEARCH:    (conversationId: string) => `/api/messaging/conversations/${conversationId}/messages/search`,
+      EDIT:      (messageId: string) => `/api/messaging/messages/${messageId}`,
+      DELETE:    (messageId: string) => `/api/messaging/messages/${messageId}`,
+      MARK_SEEN: (messageId: string) => `/api/messaging/messages/${messageId}/seen`,
+    },
+    MODERATION: {
+      BLOCK:   '/api/messaging/block',
+      UNBLOCK: (targetId: string) => `/api/messaging/block/${targetId}`,
+      REPORT:  '/api/messaging/report',
+    },
+    ADMIN: {
+      LIST_CONVERSATIONS:     '/api/messaging/admin/conversations',
+      GET_CONVERSATION_BY_ID: (id: string) => `/api/messaging/admin/conversations/${id}`,
+      GET_REPORTS:            '/api/messaging/admin/reports',
+    },
   },
 
 } as const;

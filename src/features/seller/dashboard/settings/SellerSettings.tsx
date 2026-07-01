@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
+import { useEditProfile } from '@/hooks/auth/useEditProfile';
 import {
   User, KeyRound, ShieldCheck, Bell, Store, Search, CreditCard,
   Package, Receipt, Users, Lock, DollarSign, ArrowDownToLine,
-  FileText, Trash2, Camera, Settings, Check, type LucideIcon,
+  FileText, Trash2, Camera, Settings, Check, Loader2, type LucideIcon,
 } from 'lucide-react';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 
@@ -70,6 +71,7 @@ export function SellerSettings() {
   const [address,   setAddress]   = useState('');
 
   const { profile, loading: profileLoading } = useGetProfile();
+  const { execute: editProfile, loading: saving, error: saveError, success: saved } = useEditProfile();
 
   useEffect(() => {
     if (!profile) return;
@@ -79,6 +81,11 @@ export function SellerSettings() {
     setPhone(profile.phone ?? '');
     setAddress(profile.address ?? '');
   }, [profile]);
+
+  const handleSave = () => {
+    const name = `${firstName} ${lastName}`.trim();
+    editProfile({ name, phone, address });
+  };
 
   const allItems = SETTINGS_NAV.flatMap(g => g.items);
   const activeItem = allItems.find(i => i.id === active);
@@ -224,9 +231,18 @@ export function SellerSettings() {
                       </div>
                     </div>
 
-                    <button className="px-6 py-[10px] bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer">
-                      Save Changes
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className={`px-6 py-[10px] bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white flex items-center gap-2 ${saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                      >
+                        {saving && <Loader2 size={13} className="animate-spin" />}
+                        {saving ? 'Saving…' : 'Save Changes'}
+                      </button>
+                      {saved && <span className="text-[11px] text-success font-medium">Profile updated</span>}
+                      {saveError && <span className="text-[11px] text-error font-medium">{saveError}</span>}
+                    </div>
                   </>
                 )}
               </div>

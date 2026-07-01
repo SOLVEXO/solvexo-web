@@ -5,9 +5,11 @@ import {
   User, ShoppingBag, Heart, MapPin, Phone, Mail, Camera,
   Check, Shield, LogOut, ShoppingCart, ImageOff, Loader2, Star,
   Plus, Pencil, ArrowLeft, Home, Briefcase, Star as StarIcon,
-  ChevronRight, Menu, X, type LucideIcon,
+  ChevronRight, Menu, X, MessageSquare, Ban, Flag, Trash2,
+  type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
+import { useEditProfile } from '@/hooks/auth/useEditProfile';
 import { TokenStorage } from '@/api/commerce/auth';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useCartContext } from '@/contexts/CartContext';
@@ -15,9 +17,15 @@ import {
   apiGetMyAddresses, apiAddAddress, apiUpdateAddress,
   type Address, type AddressPayload,
 } from '@/api/commerce/address';
+import { useConversations, useSearchConversations, useStartConversation } from '@/hooks/messaging/useConversations';
+import { useMessages } from '@/hooks/messaging/useMessages';
+import { useModeration } from '@/hooks/messaging/useModeration';
+import { apiUploadAttachment, apiDeleteConversation, type Conversation } from '@/api/commerce/messaging';
+import { ChatList, ChatWindow, NewChatModal, type ChatListEntry } from '@/components/comman/messaging';
 import {
   Table,     type TableColumn,
   ActionMenu,
+  type ActionMenuItem,
   Badge,
   Card,
   EmptyState,
@@ -26,13 +34,14 @@ import {
 import { OrdersTab } from '@/features/buyer/pages/MyOrdersPage';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses';
+type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses' | 'messages';
 
 const NAV_ITEMS: { id: Tab; label: string; Icon: LucideIcon }[] = [
-  { id: 'profile',   label: 'My Profile', Icon: User       },
-  { id: 'orders',    label: 'My Orders',  Icon: ShoppingBag },
-  { id: 'wishlist',  label: 'Wishlist',   Icon: Heart       },
-  { id: 'addresses', label: 'Addresses',  Icon: MapPin      },
+  { id: 'profile',   label: 'My Profile', Icon: User          },
+  { id: 'orders',    label: 'My Orders',  Icon: ShoppingBag    },
+  { id: 'wishlist',  label: 'Wishlist',   Icon: Heart          },
+  { id: 'addresses', label: 'Addresses',  Icon: MapPin         },
+  { id: 'messages',  label: 'Messages',   Icon: MessageSquare  },
 ];
 
 const INPUT_CLS  = 'w-full py-[10px] px-[13px] text-[13px] border border-bone rounded-[9px] outline-none text-charcoal bg-white box-border';
@@ -681,9 +690,158 @@ function AddressTab() {
   );
 }
 
+// ── Messages tab ──────────────────────────────────────────────────────────────
+// NOTE: buyer role has no archive/pin/mute — those messaging actions are
+// seller-only per the API. Buyer can start/search/delete conversations,
+// send/edit/delete messages, and block/report a seller.
+function toBuyerEntry(c: Conversation): ChatListEntry {
+  return {
+    id:      c._id,
+    name:    c.store?.name ?? `Seller #${c.sellerId?.slice(-6).toUpperCase() ?? '——'}`,
+    image:   c.store?.logo,
+    preview: c.lastMessage ? (c.lastMessage.type === 'text' ? c.lastMessage.text ?? '' : `📎 ${c.lastMessage.type}`) : 'No messages yet',
+    time:    c.lastMessage ? new Date(c.lastMessage.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+    unread:  c.buyerUnread,
+  };
+}
+
+function MessagesTab() {
+  const { profile } = useGetProfile();
+  const { conversations, loading: listLoading, error: listError, refetch: refetchList } = useConversations();
+  const { results: searchResults, search, loading: searching } = useSearchConversations();
+  const [query, setQuery] = useState('');
+
+  const isSearching = query.trim().length >= 2;
+  const list = isSearching ? searchResults : conversations;
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const active = list.find(c => c._id === activeId) ?? null;
+
+  const { messages, loading: msgLoading, sending, send, edit, remove, markSeen, hasMore, loadMore } = useMessages(activeId);
+  const { block, unblock, report } = useModeration();
+  const { execute: startConversation, loading: starting } = useStartConversation();
+
+  const [uploading, setUploading]             = useState(false);
+  const [showNewChat, setShowNewChat]         = useState(false);
+  const [blockedSellerId, setBlockedSellerId] = useState<string | null>(null);
+
+  // Mark the latest incoming message as seen once the thread is open.
+  useEffect(() => {
+    if (!activeId || messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    if (last.senderId !== profile?._id) void markSeen(last._id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId, messages.length]);
+
+  const handleSearch = (v: string) => {
+    setQuery(v);
+    if (v.trim().length >= 2) search(v.trim());
+  };
+
+  const handleStartConversation = async (storeId: string) => {
+    const convo = await startConversation({ storeId });
+    if (convo) {
+      setShowNewChat(false);
+      await refetchList();
+      setActiveId(convo._id);
+    }
+  };
+
+  const handleUpload = async (file: File) => {
+    if (!activeId) return;
+    setUploading(true);
+    try {
+      const attachment = await apiUploadAttachment(activeId, file);
+      const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'file';
+      await send({ type: kind, attachments: [attachment] });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleBlock = () => {
+    if (!active) return;
+    void block({ targetId: active.sellerId, targetRole: 'seller', reason: 'Blocked from buyer inbox' }).then(ok => {
+      if (ok) setBlockedSellerId(active.sellerId);
+    });
+  };
+  const handleUnblock = () => {
+    if (!blockedSellerId) return;
+    void unblock(blockedSellerId).then(ok => { if (ok) setBlockedSellerId(null); });
+  };
+  const handleReport = () => {
+    if (!active) return;
+    void report({ targetType: 'conversation', targetId: active._id, reason: 'inappropriate', details: 'Reported from buyer inbox' });
+  };
+  const handleDelete = async () => {
+    if (!active) return;
+    await apiDeleteConversation(active._id);
+    setActiveId(null);
+    refetchList();
+  };
+
+  const menuItems: ActionMenuItem[] = active ? [
+    blockedSellerId === active.sellerId
+      ? { label: 'Unblock seller', icon: <Ban size={14} />, onClick: handleUnblock }
+      : { label: 'Block seller',   icon: <Ban size={14} />, onClick: handleBlock },
+    { label: 'Report conversation', icon: <Flag size={14} />, onClick: handleReport },
+    { label: 'Delete chat', icon: <Trash2 size={14} />, onClick: () => void handleDelete(), danger: true },
+  ] : [];
+
+  return (
+    <Card padding="none">
+      <div className="flex overflow-hidden" style={{ height: '620px' }}>
+        <div className={clsx('md:flex', activeId ? 'hidden' : 'flex')}>
+          <ChatList
+            title="Messages"
+            entries={list.map(toBuyerEntry)}
+            activeId={activeId}
+            onSelect={setActiveId}
+            query={query}
+            onQueryChange={handleSearch}
+            loading={isSearching ? searching : listLoading}
+            error={listError}
+            onNew={() => setShowNewChat(true)}
+          />
+        </div>
+
+        <ChatWindow
+          open={!!active}
+          headerName={active ? (active.store?.name ?? `Seller #${active.sellerId.slice(-6).toUpperCase()}`) : ''}
+          headerImage={active?.store?.logo}
+          headerSubtitle={active ? 'Seller' : undefined}
+          menuItems={menuItems}
+          onBack={() => setActiveId(null)}
+          messages={messages}
+          msgLoading={msgLoading}
+          currentUserId={profile?._id}
+          otherPartyId={active?.sellerId ?? ''}
+          hasMore={hasMore}
+          onLoadMore={loadMore}
+          sending={sending}
+          uploading={uploading}
+          onSend={payload => void send(payload)}
+          onUpload={file => void handleUpload(file)}
+          onEditMessage={(id, text) => void edit(id, text)}
+          onDeleteMessage={id => void remove(id)}
+        />
+      </div>
+
+      {showNewChat && (
+        <NewChatModal
+          onClose={() => setShowNewChat(false)}
+          onStart={handleStartConversation}
+          starting={starting}
+        />
+      )}
+    </Card>
+  );
+}
+
 // ── Profile edit tab ──────────────────────────────────────────────────────────
 function ProfileTab() {
   const { profile, loading } = useGetProfile();
+  const { execute: editProfile, loading: saving, error: saveError, success: saved } = useEditProfile();
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
   const [phone,     setPhone]     = useState('');
@@ -697,6 +855,11 @@ function ProfileTab() {
     setPhone(profile.phone ?? '');
     setAddress(profile.address ?? '');
   }, [profile]);
+
+  const handleSave = () => {
+    const name = `${firstName} ${lastName}`.trim();
+    editProfile({ name, phone, address });
+  };
 
   const memberSince = profile?.createdAt
     ? new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
@@ -759,10 +922,20 @@ function ProfileTab() {
             </div>
 
             <div className="flex items-center gap-3">
-              <button className="px-7 py-[10px] bg-brand-orange border-none rounded-[9px] text-[13px] font-semibold text-white cursor-pointer">
-                Save Changes
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className={clsx(
+                  'px-7 py-[10px] bg-brand-orange border-none rounded-[9px] text-[13px] font-semibold text-white flex items-center gap-2',
+                  saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
+                )}
+              >
+                {saving && <Loader2 size={13} className="animate-spin" />}
+                {saving ? 'Saving…' : 'Save Changes'}
               </button>
               <span className="text-[11px] text-slate">Member since {memberSince}</span>
+              {saved && <span className="text-[11px] text-success font-medium">Profile updated</span>}
+              {saveError && <span className="text-[11px] text-error font-medium">{saveError}</span>}
             </div>
           </>
         )}
@@ -862,6 +1035,7 @@ export function UserProfile() {
           {tab === 'wishlist'  && <WishlistTab />}
           {tab === 'addresses' && <AddressTab />}
           {tab === 'orders'    && <OrdersTab />}
+          {tab === 'messages'  && <MessagesTab />}
         </main>
       </div>
     </div>

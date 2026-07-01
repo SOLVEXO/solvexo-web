@@ -76,6 +76,7 @@ const StoreActivity      = lazy(() => named(import('@/features/seller/store/Dash
 const AdminOverview      = lazy(() => named(import('@/features/admin/pages/AdminOverview'),                     'AdminOverview'));
 const AdminUsers         = lazy(() => named(import('@/features/admin/pages/AdminUsers'),                        'AdminUsers'));
 const AdminModeration    = lazy(() => named(import('@/features/admin/pages/AdminModeration'),                   'AdminModeration'));
+const AdminMessaging     = lazy(() => named(import('@/features/admin/pages/AdminMessaging'),                    'AdminMessaging'));
 const AdminMarketplace   = lazy(() => named(import('@/features/admin/pages/AdminMarketplace'),                  'AdminMarketplace'));
 const AdminFinance       = lazy(() => named(import('@/features/admin/pages/AdminFinance'),                      'AdminFinance'));
 const AdminAnnouncements = lazy(() => named(import('@/features/admin/pages/AdminAnnouncements'),                'AdminAnnouncements'));
@@ -182,6 +183,7 @@ export const router = createBrowserRouter([
           { index: true,          element: <AdminOverview /> },
           { path: 'users',        element: <AdminUsers /> },
           { path: 'moderation',   element: <AdminModeration /> },
+          { path: 'messages',     element: <AdminMessaging /> },
           { path: 'marketplace',  element: <AdminMarketplace /> },
           { path: 'finance',      element: <AdminFinance /> },
           { path: 'announcements',element: <AdminAnnouncements /> },
