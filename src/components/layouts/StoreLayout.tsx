@@ -121,7 +121,7 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
         // Mobile: fixed overlay, starts below ReferenceNav (44px)
         'fixed top-[44px] bottom-0 left-0 z-50 w-[220px]',
         // Desktop: static inline, full viewport height, width toggles
-        'lg:static lg:z-auto lg:shrink-0 lg:h-screen lg:top-auto lg:bottom-auto',
+        'lg:static lg:z-auto lg:shrink-0 lg:h-[calc(100vh-44px)] lg:top-auto lg:bottom-auto',
         open
           ? 'translate-x-0 lg:w-[220px]'
           : '-translate-x-full lg:translate-x-0 lg:w-[60px]',
@@ -362,7 +362,7 @@ export function StoreLayout() {
   return (
     <StoreWorkspaceProvider>
       <StoreSidebarCtx.Provider value={{ toggle }}>
-        <div className="flex h-screen bg-cream overflow-hidden">
+        <div className="flex h-[calc(100vh-44px)] bg-cream overflow-hidden">
           <StoreSidebar open={sidebarOpen} onToggle={toggle} onClose={onClose} />
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             <div className="flex-1 overflow-y-auto">

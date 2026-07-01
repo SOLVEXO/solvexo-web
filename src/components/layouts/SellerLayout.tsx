@@ -198,7 +198,7 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
         // Mobile: fixed overlay, starts below ReferenceNav (44px)
         'fixed top-[44px] bottom-0 left-0 z-50 w-[220px]',
         // Desktop: static inline, full viewport height, width toggles
-        'lg:static lg:z-auto lg:shrink-0 lg:h-screen lg:top-auto lg:bottom-auto',
+        'lg:static lg:z-auto lg:shrink-0 lg:h-[calc(100vh-44px)] lg:top-auto lg:bottom-auto',
         open
           ? 'translate-x-0 lg:w-[220px]'
           : '-translate-x-full lg:translate-x-0 lg:w-[60px]',
@@ -413,7 +413,7 @@ export function SellerLayout() {
   return (
     <ActiveStoreProvider>
       <SellerSidebarCtx.Provider value={{ toggle }}>
-        <div className="flex h-screen bg-cream">
+        <div className="flex h-[calc(100vh-44px)] bg-cream">
           <SellerSidebar open={sidebarOpen} onToggle={toggle} onClose={onClose} />
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             <div className="flex-1 overflow-y-auto overflow-x-hidden">
