@@ -1,98 +1,271 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
-import { Badge } from '@/components/comman/ui/Badge';
 import { Card } from '@/components/comman/ui/Card';
-import { TabBar, FilterDropdown } from '@/components/comman/ui';
-import type { Tab } from '@/components/comman/ui';
+import { FilterDropdown } from '@/components/comman/ui';
 import {
-  ShoppingCart, Star, Heart,
-  Check, ArrowLeft, BookOpen, Divide, BookMarked,
-  Microscope, Map, Pencil, FileText, Ruler,
+  ShoppingCart, Star, Heart, ArrowLeft, Users,
+  Store, Package, Loader2, MessageCircle, BadgeCheck, Award,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import {
+  apiGetPublicStore, apiGetPublicStoreProducts,
+  apiGetPublicStoreFilters,
+  apiFollowStore, apiGetFollowStatus,
+  type PublicStoreData,
+} from '@/api/commerce/store';
+import { apiStartConversation } from '@/api/commerce/messaging';
+
+// ── Builder config default (mirrors StoreBuilder DEFAULT) ─────────────────────
+const CFG_DEFAULT = {
+  primaryColor: '#D97757',
+  bgColor:      '#FAF9F5',
+  textColor:    '#2C2A28',
+  accentColor:  '#B95A3A',
+  font:         'Poppins',
+  layoutStyle:  'Grid' as 'Grid' | 'Magazine' | 'Minimal',
+  columns:      3 as 2 | 3 | 4,
+  showRatings:  true,
+  showPrice:    true,
+  showAddToCart:true,
+};
+
+function getCfg(raw: Record<string, unknown> | null) {
+  if (!raw) return CFG_DEFAULT;
+  return {
+    primaryColor:  (raw.primaryColor  as string) || CFG_DEFAULT.primaryColor,
+    bgColor:       (raw.bgColor       as string) || CFG_DEFAULT.bgColor,
+    textColor:     (raw.textColor     as string) || CFG_DEFAULT.textColor,
+    accentColor:   (raw.accentColor   as string) || CFG_DEFAULT.accentColor,
+    font:          (raw.font          as string) || CFG_DEFAULT.font,
+    layoutStyle:   (raw.layoutStyle   as 'Grid' | 'Magazine' | 'Minimal') || CFG_DEFAULT.layoutStyle,
+    columns:       (raw.columns       as 2 | 3 | 4) || CFG_DEFAULT.columns,
+    showRatings:   raw.showRatings  !== false,
+    showPrice:     raw.showPrice    !== false,
+    showAddToCart: raw.showAddToCart !== false,
+  };
+}
+
+// ── Badge config ──────────────────────────────────────────────────────────────
+const SELLER_TYPE_LABEL: Record<string, string> = {
+  educator:       'Education Specialist',
+  creator:        'Content Creator',
+  retailer:       'Retail Seller',
+  brand_business: 'Brand / Business',
+  freelancer:     'Freelancer',
+};
+
+function StoreBadges({ badges, sellerType }: { badges: string[]; sellerType: string | null }) {
+  const items: { label: string; icon: React.ReactNode; cls: string }[] = [];
+
+  if (badges.includes('top_seller'))
+    items.push({ label: 'Top Seller', icon: <Award size={10} />, cls: 'bg-amber-100 text-amber-700 border-amber-200' });
+  if (badges.includes('verified'))
+    items.push({ label: 'Verified', icon: <BadgeCheck size={10} />, cls: 'bg-blue-50 text-blue-600 border-blue-200' });
+  if (badges.includes('featured'))
+    items.push({ label: 'Featured', icon: <Star size={10} />, cls: 'bg-purple-50 text-purple-600 border-purple-200' });
+
+  const specialistLabel = sellerType ? SELLER_TYPE_LABEL[sellerType] : null;
+  if (specialistLabel)
+    items.push({ label: specialistLabel, icon: <BadgeCheck size={10} />, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' });
+
+  if (!items.length) return null;
+  return (
+    <div className="flex flex-wrap gap-[5px] mt-[8px]">
+      {items.map(b => (
+        <span key={b.label} className={clsx('inline-flex items-center gap-[3px] px-[7px] py-[3px] rounded-full text-[10px] font-semibold border', b.cls)}>
+          {b.icon}{b.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+const SORT_OPTIONS = [
+  { value: 'newest',     label: 'Newest'          },
+  { value: 'price_asc',  label: 'Price: Low–High' },
+  { value: 'price_desc', label: 'Price: High–Low' },
+  { value: 'best_rated', label: 'Best Rated'      },
+];
+
+function StarRating({ rating, color }: { rating: number; color: string }) {
+  return (
+    <div className="flex items-center gap-[3px]">
+      {[1, 2, 3, 4, 5].map(i => (
+        <Star key={i} size={10} style={i <= Math.round(rating) ? { color, fill: color } : { color: '#C8C6BE', fill: '#C8C6BE' }} />
+      ))}
+    </div>
+  );
+}
 
 function SolvexoIcon({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
       <rect width="32" height="32" rx="8" fill="#D97757"/>
       <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-      <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7"/>
-      <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
 
-const STORE_TABS: Tab[] = ['All Products', 'Math', 'Reading', 'Science', 'Social Studies', 'Bundles']
-  .map(t => ({ id: t, label: t }));
-
-const SORT_OPTIONS = [
-  { value: 'best-selling', label: 'Best Selling'   },
-  { value: 'newest',       label: 'Newest'          },
-  { value: 'price-asc',    label: 'Price: Low–High' },
-  { value: 'best-rated',   label: 'Best Rated'      },
-];
-
-const PRODUCTS: {
-  name: string; price: string; Img: LucideIcon; rating: string;
-  ratingCount: number; sold: string; type: 'digital' | 'physical';
-}[] = [
-  { name: 'Grade 5 Math Bundle',        price: '$49', Img: BookOpen,   rating: '5.0', ratingCount: 847, sold: '847 sold', type: 'digital'  },
-  { name: 'Fractions Mastery Kit',      price: '$18', Img: Divide,     rating: '4.9', ratingCount: 623, sold: '623 sold', type: 'digital'  },
-  { name: 'Reading Comprehension Pack', price: '$22', Img: BookMarked, rating: '4.9', ratingCount: 501, sold: '501 sold', type: 'digital'  },
-  { name: 'Science Lab Worksheets',     price: '$15', Img: Microscope, rating: '4.8', ratingCount: 389, sold: '389 sold', type: 'digital'  },
-  { name: 'State Capitals Flash Cards', price: '$9',  Img: Map,        rating: '4.7', ratingCount: 302, sold: '302 sold', type: 'physical' },
-  { name: 'Creative Writing Prompts',   price: '$12', Img: Pencil,     rating: '4.8', ratingCount: 278, sold: '278 sold', type: 'digital'  },
-  { name: 'Year-End Test Prep Bundle',  price: '$35', Img: FileText,   rating: '5.0', ratingCount: 244, sold: '244 sold', type: 'digital'  },
-  { name: 'Geometry Exploration Kit',   price: '$21', Img: Ruler,      rating: '4.9', ratingCount: 198, sold: '198 sold', type: 'digital'  },
-];
-
-// ── Star Rating ───────────────────────────────────────────────────────────────
-function StarRating({ rating, count }: { rating: string; count?: number }) {
-  const r = parseFloat(rating);
-  return (
-    <div className="flex items-center gap-[3px]">
-      {[1, 2, 3, 4, 5].map(i => (
-        <Star
-          key={i}
-          size={10}
-          className={i <= Math.round(r) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone'}
-        />
-      ))}
-      {count !== undefined && (
-        <span className="text-[10px] text-slate ml-[2px] hidden sm:inline">({count})</span>
-      )}
-    </div>
-  );
-}
-
-
+// ── Main component ────────────────────────────────────────────────────────────
 export function SellerStorefront() {
-  const navigate  = useNavigate();
-  usePageTitle('Storefront');
-  const [activeTab,  setActiveTab]  = useState('All Products');
-  const [sortBy,     setSortBy]     = useState('best-selling');
-  const [wishlisted, setWishlisted] = useState<Set<string>>(new Set());
+  const navigate     = useNavigate();
+  const { slug }     = useParams<{ slug: string }>();
+  usePageTitle('Store');
 
-  const toggleWishlist = (e: React.MouseEvent, name: string) => {
+  const [store,          setStore]         = useState<PublicStoreData | null>(null);
+  const [products,       setProducts]      = useState<any[]>([]);
+  const [total,          setTotal]         = useState(0);
+  const [page,           setPage]          = useState(1);
+  const [totalPages,     setTotalPages]    = useState(1);
+  const [sortBy,         setSortBy]        = useState('newest');
+  const [loadingStore,   setLoadingStore]  = useState(true);
+  const [loadingProds,   setLoadingProds]  = useState(false);
+  const [storeError,     setStoreError]    = useState('');
+  const [following,          setFollowing]         = useState(false);
+  const [followLoading,      setFollowLoading]     = useState(false);
+  const [followStatusLoaded, setFollowStatusLoaded] = useState(false);
+  const [msgLoading,         setMsgLoading]        = useState(false);
+  const [wishlisted,     setWishlisted]    = useState<Set<string>>(new Set());
+  const [tags,           setTags]          = useState<string[]>([]);
+  const [activeTag,      setActiveTag]     = useState<string>('all');
+
+  const isLoggedIn = !!localStorage.getItem('accessToken');
+
+  // Resolve config (real or default)
+  const cfg = useMemo(() => getCfg(store?.builderConfig ?? null), [store?.builderConfig]);
+
+  // CSS custom properties derived from builderConfig
+  const themeStyle = useMemo<React.CSSProperties>(() => ({
+    '--store-primary':  cfg.primaryColor,
+    '--store-accent':   cfg.accentColor,
+    '--store-bg':       cfg.bgColor,
+    '--store-text':     cfg.textColor,
+    '--store-font':     cfg.font,
+    fontFamily:         `${cfg.font}, sans-serif`,
+  } as React.CSSProperties), [cfg]);
+
+  // Product grid columns class
+  const colClass = useMemo(() => {
+    if (cfg.layoutStyle === 'Minimal') return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2';
+    const map: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-2 md:grid-cols-3', 4: 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4' };
+    return map[cfg.columns] ?? 'grid-cols-2 md:grid-cols-3';
+  }, [cfg]);
+
+  // ── Load store ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!slug) return;
+    setLoadingStore(true);
+    apiGetPublicStore(slug)
+      .then(res => {
+        setStore(res.data);
+        // Load filters after store is fetched
+        apiGetPublicStoreFilters(res.data.storeId)
+          .then(r => setTags(r.data.tags))
+          .catch(() => {});
+      })
+      .catch(() => setStoreError('Store not found'))
+      .finally(() => setLoadingStore(false));
+  }, [slug]);
+
+  // ── Follow status ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!store) { setFollowStatusLoaded(true); return; }
+    if (!isLoggedIn) { setFollowStatusLoaded(true); return; }
+    apiGetFollowStatus(store.storeId)
+      .then(res => setFollowing(res.data.following))
+      .catch(() => {})
+      .finally(() => setFollowStatusLoaded(true));
+  }, [store, isLoggedIn]);
+
+  // ── Products ────────────────────────────────────────────────────────────────
+  const loadProducts = useCallback(() => {
+    if (!store) return;
+    setLoadingProds(true);
+    apiGetPublicStoreProducts(store.storeId, {
+      page, limit: 12, sort: sortBy as any,
+      tag: activeTag !== 'all' ? activeTag : undefined,
+    })
+      .then(res => {
+        setProducts(res.data.products);
+        setTotal(res.data.pagination.total);
+        setTotalPages(res.data.pagination.totalPages);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingProds(false));
+  }, [store, page, sortBy, activeTag]);
+
+  useEffect(() => { loadProducts(); }, [loadProducts]);
+
+  // ── Follow toggle ───────────────────────────────────────────────────────────
+  const handleFollow = async () => {
+    if (!store || !isLoggedIn) { navigate('/login'); return; }
+    setFollowLoading(true);
+    try {
+      const res = await apiFollowStore(store.storeId);
+      setFollowing(res.data.following);
+      setStore(prev => prev ? {
+        ...prev,
+        followersCount: res.data.following
+          ? prev.followersCount + 1
+          : Math.max(0, prev.followersCount - 1),
+      } : prev);
+    } catch {}
+    finally { setFollowLoading(false); }
+  };
+
+  // ── Message seller ──────────────────────────────────────────────────────────
+  const handleMessage = async () => {
+    if (!store) return;
+    if (!isLoggedIn) { navigate('/login'); return; }
+    setMsgLoading(true);
+    try {
+      const conv = await apiStartConversation({ storeId: store.storeId });
+      navigate(`/account/profile?tab=messages&conversation=${conv._id}`);
+    } catch {
+      navigate(`/account/profile?tab=messages`);
+    } finally {
+      setMsgLoading(false);
+    }
+  };
+
+  const toggleWishlist = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     setWishlisted(prev => {
       const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
   };
 
-  return (
-    <div className="min-h-screen bg-cream">
+  // ── Loading / Error states ──────────────────────────────────────────────────
+  if (loadingStore) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: CFG_DEFAULT.bgColor }}>
+        <Loader2 size={32} className="animate-spin" style={{ color: CFG_DEFAULT.primaryColor }} />
+      </div>
+    );
+  }
 
-      {/* ── Nav ──────────────────────────────────────────────────────────────── */}
+  if (storeError || !store) {
+    return (
+      <div className="min-h-screen bg-cream flex flex-col items-center justify-center gap-4">
+        <Store size={48} className="text-bone" />
+        <p className="text-[15px] text-slate">Store not found</p>
+        <Button variant="secondary" size="sm" onClick={() => navigate('/marketplace')}>
+          <ArrowLeft size={13} className="mr-1" /> Back to Marketplace
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen" style={{ ...themeStyle, background: cfg.bgColor, color: cfg.textColor }}>
+
+      {/* ── Nav ─────────────────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 bg-white border-b border-bone">
         <div className="h-[60px] flex items-center gap-3 px-4 sm:px-6 lg:px-10">
-
-          {/* Logo */}
           <div className="flex items-center gap-[6px] shrink-0">
             <SolvexoIcon size={28} />
             <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
@@ -100,43 +273,20 @@ export function SellerStorefront() {
             <span className="text-bone mx-1 hidden md:inline">|</span>
             <span className="text-[13px] text-slate hidden md:inline">Marketplace</span>
           </div>
-
-          {/* Search */}
           <div className="flex-1 flex justify-center px-2 sm:px-4">
             <input
               placeholder="Search store..."
-              className="w-full max-w-[240px] sm:max-w-[360px] lg:max-w-[480px] px-[14px] py-[9px] rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none focus:border-brand-orange transition-colors"
+              className="w-full max-w-[360px] px-[14px] py-[9px] rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none focus:border-brand-orange transition-colors"
             />
           </div>
-
-          {/* Actions */}
           <div className="flex items-center gap-2 shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/marketplace')}
-              className="hidden md:inline-flex"
-            >
+            <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')} className="hidden md:inline-flex">
               <ArrowLeft size={13} className="mr-1" /> Marketplace
             </Button>
-
-            {/* Wishlist */}
-            <div
-              onClick={() => navigate('/account/profile?tab=wishlist')}
-              className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer shrink-0"
-            >
-              <Heart size={16} className={wishlisted.size > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'} />
-              {wishlisted.size > 0 && (
-                <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
-                  {wishlisted.size > 99 ? '99+' : wishlisted.size}
-                </span>
-              )}
-            </div>
-
-            {/* Cart */}
             <div
               onClick={() => navigate('/cart')}
-              className="w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer shrink-0"
+              className="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shrink-0"
+              style={{ background: cfg.primaryColor }}
             >
               <ShoppingCart size={16} className="text-white" />
             </div>
@@ -145,87 +295,144 @@ export function SellerStorefront() {
       </nav>
 
       {/* ── Store Banner ─────────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-[#1A4A2C] to-[#2D7A4E]">
-        <div className="px-4 sm:px-6 lg:px-10 py-7 sm:py-9 lg:py-10">
+      <div
+        className="relative"
+        style={store.coverImage
+          ? { backgroundImage: `url(${store.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#1A3A4A' }
+          : { background: `linear-gradient(135deg, ${cfg.primaryColor}CC, ${cfg.accentColor}CC)` }
+        }
+      >
+        {store.coverImage && <div className="absolute inset-0 bg-black/40" />}
+        <div className="relative px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
 
             {/* Store logo */}
-            <div className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-[18px] sm:rounded-[20px] bg-white flex items-center justify-center shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
-              <BookOpen size={36} className="text-brand-orange" />
+            <div className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-[18px] bg-white flex items-center justify-center shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
+              {store.logo
+                ? <img src={store.logo} alt={store.name} className="w-full h-full rounded-[18px] object-cover" />
+                : <Store size={36} style={{ color: cfg.primaryColor }} />
+              }
             </div>
 
             {/* Store info */}
             <div className="flex-1 min-w-0">
-              <h1 className="text-[22px] sm:text-[26px] font-bold text-white mb-[6px] leading-tight">
-                TeachersPro
+              <h1 className="text-[22px] sm:text-[26px] font-bold text-white mb-[4px] leading-tight">
+                {store.name}
               </h1>
-              <div className="text-[12px] sm:text-[13px] text-[rgba(255,255,255,0.75)] mb-[10px]">
-                Veteran educator &nbsp;·&nbsp; 2,140 sales &nbsp;·&nbsp;
-                <Star size={12} className="inline align-middle text-brand-orange fill-brand-orange mx-[3px]" />
-                5.0 &nbsp;·&nbsp; Member since 2021
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                <Badge color="green">
-                  <Check size={10} className="inline align-middle mr-[3px]" />Top Seller
-                </Badge>
-                <Badge color="blue">Education Specialist</Badge>
+              <StoreBadges badges={store.badges} sellerType={store.sellerType} />
+              {store.description && (
+                <p className="text-[12px] sm:text-[13px] text-[rgba(255,255,255,0.75)] mt-[8px] mb-[10px] line-clamp-2">
+                  {store.description}
+                </p>
+              )}
+              <div className="flex items-center gap-[5px] text-[12px] text-[rgba(255,255,255,0.7)] mt-[6px]">
+                <Users size={13} />
+                <span>{store.followersCount.toLocaleString()} followers</span>
+                <span className="mx-1">·</span>
+                <Package size={13} />
+                <span>{total} products</span>
               </div>
             </div>
 
-            {/* Action buttons */}
+            {/* Actions */}
             <div className="flex flex-row sm:flex-col gap-2 items-center sm:items-end shrink-0">
-              <button className="px-[14px] py-[7px] rounded-lg text-[12px] sm:text-[13px] font-medium bg-transparent text-white border border-[rgba(255,255,255,0.5)] cursor-pointer hover:bg-[rgba(255,255,255,0.1)] transition-colors whitespace-nowrap">
-                Follow Store
+              <button
+                onClick={handleFollow}
+                disabled={followLoading || !followStatusLoaded}
+                className={clsx(
+                  'px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors whitespace-nowrap border',
+                  following
+                    ? 'bg-white text-charcoal border-white'
+                    : 'bg-transparent text-white border-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]',
+                )}
+              >
+                {(followLoading || !followStatusLoaded)
+                  ? <Loader2 size={13} className="animate-spin inline" />
+                  : following ? 'Following ✓' : 'Follow Store'
+                }
               </button>
-              <Button variant="primary" size="sm">Message Seller</Button>
+
+              <button
+                onClick={handleMessage}
+                disabled={msgLoading}
+                className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap"
+              >
+                {msgLoading
+                  ? <Loader2 size={13} className="animate-spin" />
+                  : <MessageCircle size={13} />
+                }
+                Message
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Store Tabs ───────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-bone overflow-x-auto scrollbar-hide">
-        <TabBar tabs={STORE_TABS} active={activeTab} onChange={setActiveTab} className="px-4 sm:px-6 lg:px-10" />
-      </div>
+      {/* ── Category filter tabs ─────────────────────────────────────────────── */}
+      {tags.length > 0 && (
+        <div className="border-b border-bone bg-white">
+          <div className="px-4 sm:px-6 lg:px-10">
+            <div className="flex items-center gap-0 overflow-x-auto scrollbar-none">
+              {['all', ...tags].map(tag => {
+                const label = tag === 'all' ? 'All Products' : tag;
+                const active = activeTag === tag;
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => { setActiveTag(tag); setPage(1); }}
+                    className="shrink-0 px-4 py-[13px] text-[13px] font-medium cursor-pointer bg-transparent border-none relative whitespace-nowrap transition-colors"
+                    style={{
+                      color: active ? cfg.primaryColor : '#8C8A82',
+                      borderBottom: active ? `2px solid ${cfg.primaryColor}` : '2px solid transparent',
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* ── Main content ─────────────────────────────────────────────────────── */}
+      {/* ── Products ─────────────────────────────────────────────────────────── */}
       <div className="px-4 sm:px-6 lg:px-10 py-4 sm:py-5 lg:py-6">
 
-        {/* Count + sort row */}
         <div className="flex items-center justify-between mb-4">
-          <span className="text-[13px] text-slate">47 Products</span>
-          <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+          <span className="text-[13px]" style={{ color: cfg.textColor + '99' }}>{total} Products</span>
+          <FilterDropdown
+            options={SORT_OPTIONS}
+            value={sortBy}
+            onChange={v => { setSortBy(v); setPage(1); }}
+          />
         </div>
 
-        <div className="flex gap-5 lg:gap-6 items-start">
-
-          {/* ── Products area ────────────────────────────────────────────────── */}
-          <div className="flex-1 min-w-0">
-
-            {/* Grid: 2-col mobile → 3-col md → 4-col xl */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px]">
-              {PRODUCTS.map(p => (
-                <Card key={p.name} padding="none" hover onClick={() => navigate('/marketplace/1')} className="overflow-hidden">
-
+        {loadingProds ? (
+          <div className="flex justify-center py-16">
+            <Loader2 size={28} className="animate-spin" style={{ color: cfg.primaryColor }} />
+          </div>
+        ) : products.length === 0 ? (
+          <div className="flex flex-col items-center py-20 gap-3">
+            <Package size={40} className="text-bone" />
+            <p className="text-[14px] text-slate">No products yet</p>
+          </div>
+        ) : (
+          <>
+            <div className={clsx('grid gap-[10px] sm:gap-3 lg:gap-[14px]', colClass)}>
+              {products.map((p: any) => (
+                <Card key={p._id} padding="none" hover onClick={() => navigate(`/marketplace/${p._id}`)} className="overflow-hidden bg-white">
                   {/* Image */}
-                  <div className="relative w-full h-[110px] sm:h-[150px] lg:h-[170px] bg-success-bg flex items-center justify-center">
-                    <p.Img size={28} className="text-success" style={{ display: 'block', flexShrink: 0 }} />
-
-                    {/* Wishlist button */}
+                  <div className="relative w-full h-[110px] sm:h-[150px] lg:h-[170px] bg-[#EAF4EE] flex items-center justify-center">
+                    {p.images?.[0]
+                      ? <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                      : <Package size={28} className="text-[#5A8A6A]" />
+                    }
                     <button
-                      onClick={e => toggleWishlist(e, p.name)}
-                      className="absolute top-[6px] right-[6px] w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[rgba(255,255,255,0.92)] flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.12)] cursor-pointer border-none"
+                      onClick={e => toggleWishlist(e, p._id)}
+                      className="absolute top-[6px] right-[6px] w-6 h-6 rounded-full bg-[rgba(255,255,255,0.92)] flex items-center justify-center shadow-sm cursor-pointer border-none"
                     >
-                      <Heart
-                        size={11}
-                        className={clsx(
-                          'transition-[color,fill] duration-150',
-                          wishlisted.has(p.name) ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none',
-                        )}
-                      />
+                      <Heart size={11} className={clsx(wishlisted.has(p._id) ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')} />
                     </button>
-
-                    {/* Type badge */}
                     <span className={clsx(
                       'absolute top-[6px] left-[6px] px-[5px] py-[2px] rounded-[4px] text-[9px] font-semibold border leading-none',
                       p.type === 'digital'
@@ -238,31 +445,45 @@ export function SellerStorefront() {
 
                   {/* Body */}
                   <div className="px-2 pt-2 pb-2 sm:px-3 sm:pt-[10px] sm:pb-3">
-                    <p className="font-bold text-[11px] sm:text-[13px] text-carbon mb-[3px] leading-[1.4] line-clamp-2">
+                    <p className="font-bold text-[11px] sm:text-[13px] mb-[3px] leading-[1.4] line-clamp-2" style={{ color: cfg.textColor }}>
                       {p.name}
                     </p>
-                    <StarRating rating={p.rating} count={p.ratingCount} />
+                    {cfg.showRatings && p.averageRating > 0 && <StarRating rating={p.averageRating} color={cfg.primaryColor} />}
                     <div className="flex items-center justify-between gap-1 mt-[6px] sm:mt-[10px]">
-                      <span className="font-bold text-[12px] sm:text-[15px] text-carbon shrink-0">{p.price}</span>
-                      {/* icon only on sm/md, full text on lg+ */}
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={e => e.stopPropagation()}
-                        className="inline-flex"
-                      >
-                        <ShoppingCart size={11} />
-                        <span className="hidden lg:inline">Add to Cart</span>
-                      </Button>
+                      {cfg.showPrice && (
+                        <span className="font-bold text-[12px] sm:text-[15px] shrink-0" style={{ color: cfg.textColor }}>
+                          PKR {p.defaultVariantPrice ?? '—'}
+                        </span>
+                      )}
+                      {cfg.showAddToCart && (
+                        <Button variant="secondary" size="sm" onClick={e => e.stopPropagation()} className="inline-flex">
+                          <ShoppingCart size={11} />
+                          <span className="hidden lg:inline">Add to Cart</span>
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </Card>
               ))}
             </div>
-          </div>
-        </div>
-      </div>
 
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center gap-2 mt-6">
+                <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+                  Previous
+                </Button>
+                <span className="text-[13px] text-slate self-center">
+                  Page {page} of {totalPages}
+                </span>
+                <Button variant="secondary" size="sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

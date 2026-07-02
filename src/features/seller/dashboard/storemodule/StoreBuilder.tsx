@@ -12,6 +12,7 @@ import { useUpdateStore } from '@/hooks/store/useUpdateStore';
 import { useGetStore } from '@/hooks/store/useGetStore';
 import { StorePageHeader } from '@/components/layouts/StoreLayout';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { apiSaveBuilderConfig, apiGetBuilderConfig, apiGetMyStores, type MyStoreItem } from '@/api/commerce/store';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type Section     = 'theme' | 'layout' | 'header' | 'products' | 'footer' | 'seo';
@@ -619,41 +620,110 @@ function StorePreview({ cfg, device }: { cfg: Config; device: Device }) {
   );
 }
 
+// ── Store Selector Dropdown ────────────────────────────────────────────────────
+function StoreSelector({
+  stores, selectedId, onChange,
+}: {
+  stores: MyStoreItem[];
+  selectedId: string;
+  onChange: (id: string) => void;
+}) {
+  if (stores.length === 0) return null;
+  return (
+    <div className="bg-white border border-bone rounded-[10px] px-[14px] py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+      <p className="text-[10px] font-semibold text-slate uppercase tracking-wide mb-[6px]">Customize Store</p>
+      <select
+        value={selectedId}
+        onChange={e => onChange(e.target.value)}
+        className="w-full px-3 py-[7px] text-[12px] border border-bone rounded-lg bg-cream text-charcoal outline-none focus:border-brand-orange transition-colors cursor-pointer"
+      >
+        <option value="all">✦ Apply to All Stores</option>
+        {stores.map(s => (
+          <option key={s._id} value={s._id}>{s.name}</option>
+        ))}
+      </select>
+      {selectedId === 'all' && (
+        <p className="text-[10px] text-slate mt-[5px]">Theme will be published to every store.</p>
+      )}
+    </div>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 export function StoreBuilder() {
   usePageTitle('Store Builder');
 
-  const { storeId } = useParams<{ storeId: string }>();
-  const { store }   = useGetStore(storeId ?? '');
+  const { storeId: urlStoreId } = useParams<{ storeId: string }>();
+  const { store }   = useGetStore(urlStoreId ?? '');
   const { execute: updateStore, loading: saving, error: saveError } = useUpdateStore();
 
   const [activeSection, setActiveSection] = useState<Section>('theme');
   const [device,        setDevice]        = useState<Device>('desktop');
   const [saved,         setSaved]         = useState(false);
   const [history,       setHistory]       = useState<Config[]>([]);
+  const [cfg,           setCfg]           = useState<Config>(DEFAULT);
 
-  const [cfg, setCfg] = useState<Config>(() => {
-    if (!storeId) return DEFAULT;
-    try {
-      const raw = localStorage.getItem(`sb-${storeId}`);
-      return raw ? { ...DEFAULT, ...JSON.parse(raw) } : DEFAULT;
-    } catch { return DEFAULT; }
-  });
+  // ── Store selector state ─────────────────────────────────────────────────────
+  const [myStores,    setMyStores]    = useState<MyStoreItem[]>([]);
+  const [selectedId,  setSelectedId]  = useState<string>(urlStoreId ?? 'all');
 
-  // Sync store name / description once when store first loads
-  const synced = useRef(false);
+  // Active storeId for loading config (undefined when 'all')
+  const activeStoreId = selectedId !== 'all' ? selectedId : urlStoreId;
+
+  // Fetch seller's stores (only when used from seller dashboard, no urlStoreId)
   useEffect(() => {
-    if (store && !synced.current) {
-      synced.current = true;
-      setCfg(prev => ({
-        ...prev,
-        storeName: store.name        || prev.storeName,
-        tagline:   store.description || prev.tagline,
-        copyright: `© ${CUR_YEAR} ${store.name || prev.storeName}. All rights reserved.`,
-        metaTitle: store.name ? `${store.name} — Quality Products` : prev.metaTitle,
-      }));
-    }
-  }, [store]);
+    if (urlStoreId) return; // inside store workspace, no dropdown needed
+    apiGetMyStores()
+      .then(res => {
+        setMyStores(res.data ?? []);
+        if ((res.data ?? []).length === 1) setSelectedId(res.data[0]._id);
+      })
+      .catch(() => {});
+  }, [urlStoreId]);
+
+  // Load builderConfig whenever active store changes
+  const synced = useRef<string | null>(null);
+  useEffect(() => {
+    if (!activeStoreId) return;
+    if (synced.current === activeStoreId) return;
+    synced.current = activeStoreId;
+
+    apiGetBuilderConfig(activeStoreId)
+      .then(res => {
+        const remote = res.data.builderConfig as Partial<Config> | null;
+        const local  = (() => {
+          try { const r = localStorage.getItem(`sb-${activeStoreId}`); return r ? JSON.parse(r) : null; } catch { return null; }
+        })();
+        const merged: Config = { ...DEFAULT, ...(local ?? {}), ...(remote ?? {}) };
+        if (res.data.storeName) {
+          merged.storeName = res.data.storeName;
+          merged.tagline   = res.data.description || merged.tagline;
+          merged.copyright = `© ${CUR_YEAR} ${res.data.storeName}. All rights reserved.`;
+          merged.metaTitle = `${res.data.storeName} — Quality Products`;
+        }
+        setCfg(merged);
+        setHistory([]);
+      })
+      .catch(() => {
+        if (store) {
+          setCfg(prev => ({
+            ...prev,
+            storeName: store.name        || prev.storeName,
+            tagline:   store.description || prev.tagline,
+            copyright: `© ${CUR_YEAR} ${store.name || prev.storeName}. All rights reserved.`,
+            metaTitle: store.name ? `${store.name} — Quality Products` : prev.metaTitle,
+          }));
+        }
+      });
+  }, [activeStoreId, store]);
+
+  // When selector changes, reset synced ref so config reloads
+  const handleSelectStore = (id: string) => {
+    synced.current = null;
+    setSelectedId(id);
+    setCfg(DEFAULT);
+    setHistory([]);
+  };
 
   const set = useCallback((patch: Partial<Config>) => {
     setCfg(prev => {
@@ -672,17 +742,36 @@ export function StoreBuilder() {
   };
 
   const handleSave = async () => {
-    if (storeId) {
-      localStorage.setItem(`sb-${storeId}`, JSON.stringify(cfg));
-      await updateStore({ storeId, name: cfg.storeName, description: cfg.tagline });
+    const configPayload = cfg as unknown as Record<string, unknown>;
+
+    if (selectedId === 'all') {
+      if (myStores.length > 0) {
+        // Apply to all stores in parallel
+        await Promise.all(myStores.map(s =>
+          Promise.all([
+            apiSaveBuilderConfig({ storeId: s._id, builderConfig: configPayload }),
+            updateStore({ storeId: s._id, name: cfg.storeName, description: cfg.tagline }),
+          ]).then(() => localStorage.setItem(`sb-${s._id}`, JSON.stringify(cfg))),
+        ));
+      }
+      // If myStores hasn't loaded yet, do nothing — user can retry once list loads
     } else {
-      await new Promise(r => setTimeout(r, 600));
+      const sid = activeStoreId;
+      if (sid) {
+        localStorage.setItem(`sb-${sid}`, JSON.stringify(cfg));
+        await Promise.all([
+          apiSaveBuilderConfig({ storeId: sid, builderConfig: configPayload }),
+          updateStore({ storeId: sid, name: cfg.storeName, description: cfg.tagline }),
+        ]);
+      }
     }
+
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const PageHeader = storeId ? StorePageHeader : SellerPageHeader;
+  const storeId = activeStoreId; // for backward compat
+  const PageHeader = urlStoreId ? StorePageHeader : SellerPageHeader;
 
   const headerActions = (
     <>
@@ -727,6 +816,15 @@ export function StoreBuilder() {
       >
         {/* ── LEFT: sections nav + active panel ── */}
         <div className="flex flex-col gap-3 overflow-y-auto shrink-0 w-[240px] scrollbar-hide">
+
+          {/* Store selector (only shown from seller dashboard, not store workspace) */}
+          {!urlStoreId && (
+            <StoreSelector
+              stores={myStores}
+              selectedId={selectedId}
+              onChange={handleSelectStore}
+            />
+          )}
 
           {/* Section nav */}
           <div className="bg-white border border-bone rounded-[10px] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.04)] shrink-0">

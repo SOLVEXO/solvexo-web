@@ -23,13 +23,26 @@ export const ENDPOINTS = {
     UPDATE: '/api/store/update-store',
     GET_BY_ID: (id: string) => `/api/store/getStoreById/${id}`,
     MY_STORES: '/api/store/my-stores',
+
+    // Builder
+    SAVE_BUILDER_CONFIG: '/api/store/save-builder-config',
+    GET_BUILDER_CONFIG: (storeId: string) => `/api/store/builder-config/${storeId}`,
+
+    // Public storefront
+    PUBLIC_BY_SLUG: (slug: string) => `/api/store/public/${slug}`,
+    PUBLIC_PRODUCTS: (storeId: string) => `/api/store/public/${storeId}/products`,
+    PUBLIC_FILTERS:  (storeId: string) => `/api/store/public/${storeId}/filters`,
+
+    // Follow
+    FOLLOW: (storeId: string) => `/api/store/${storeId}/follow`,
+    FOLLOW_STATUS: (storeId: string) => `/api/store/${storeId}/follow-status`,
+    FOLLOWERS: (storeId: string) => `/api/store/${storeId}/followers`,
   },
 
   PRODUCT: {
     CREATE_PHYSICAL: '/api/products/add-physical-product',
     CREATE_DIGITAL: '/api/products/add-digital-product',
-    EDIT_PHYSICAL: (id: string) => `/api/products/edit-product${id}`,
-    EDIT_DIGITAL: (id: string) => `/api/products/edit-product/${id}`,
+    EDIT_PRODUCT: '/api/products/edit-product',
     GET_MY_ALL_PRODUCT: (id: string) => `/api/inventory/getStoreInventory/${id}`,
     GET_MY_PRODUCT_BY_ID: (id: string) => `/api/products/get-my-product/${id}`,
   },

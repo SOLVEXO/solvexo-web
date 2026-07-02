@@ -312,7 +312,12 @@ export function ProductDetail() {
                   <p className="text-[12px] text-[#8C8A82] leading-[1.6] mb-[10px]">
                     Independent seller on Solvexo marketplace.
                   </p>
-                  <Button variant="ghost" size="sm" onClick={() => navigate(`/store/${product.slug}`)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => product.storeSlug && navigate(`/store/${product.storeSlug}`)}
+                    disabled={!product.storeSlug}
+                  >
                     View Store <ArrowRight size={14} className="inline align-middle ml-1" />
                   </Button>
                 </div>

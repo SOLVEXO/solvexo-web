@@ -18,7 +18,7 @@ function toEntry(c: Conversation): ChatListEntry {
     id:      c._id,
     name:    c.buyer?.name ?? `Buyer #${c.buyerId.slice(-6).toUpperCase()}`,
     image:   c.buyer?.profileImage,
-    preview: c.lastMessage ? (c.lastMessage.type === 'text' ? c.lastMessage.text ?? '' : `📎 ${c.lastMessage.type}`) : 'No messages yet',
+    preview: c.lastMessage ? (c.lastMessage.type === 'text' ? c.lastMessage.text ?? '' : c.lastMessage.type === 'voice' ? '🎤 Voice note' : c.lastMessage.type === 'image' ? '📷 Photo' : c.lastMessage.type === 'video' ? '🎥 Video' : '📎 File') : 'No messages yet',
     time:    c.lastMessage ? new Date(c.lastMessage.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
     unread:  c.sellerUnread,
     pinned:  c.isPinned,
@@ -68,7 +68,7 @@ export function SellerMessages() {
     setUploading(true);
     try {
       const attachment = await apiUploadAttachment(activeId, file);
-      const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'file';
+      const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'voice' : file.type === 'application/pdf' ? 'pdf' : 'document';
       await send({ type: kind, attachments: [attachment] });
     } finally {
       setUploading(false);

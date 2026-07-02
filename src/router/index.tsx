@@ -71,6 +71,7 @@ const StoreMarketing     = lazy(() => named(import('@/features/seller/store/Dash
 const StoreLoyalty       = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/loyalty/Loyalty'),          'StoreLoyalty'));
 const StoreIntegrations  = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/integrations/Integrations'),'StoreIntegrations'));
 const StoreActivity      = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/activity/Activity'),        'StoreActivity'));
+const StoreFollowers     = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/followers/StoreFollowers'), 'StoreFollowers'));
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 const AdminOverview      = lazy(() => named(import('@/features/admin/pages/AdminOverview'),                     'AdminOverview'));
@@ -101,17 +102,17 @@ export const router = createBrowserRouter([
               { index: true,             element: <Homepage /> },
               { path: 'pricing',         element: <PricingPage /> },
               { path: 'sellers',         element: <ForSellersPage /> },
-              { path: 'account/profile', element: <UserProfile /> },
             ],
           },
           // Pages with their own embedded navbar (no PublicLayout wrapper needed)
+          { path: 'account/profile', element: <UserProfile /> },
           { path: 'marketplace',     element: <Marketplace /> },
           { path: 'cart',            element: <CartPage /> },
           { path: 'checkout',        element: <CheckoutPage /> },
           { path: 'order-success',   element: <OrderSuccessPage /> },
           { path: 'marketplace/:id', element: <ProductDetail /> },
-          { path: 'store/:slug',     element: <SellerStorefront /> },
-          { path: 'education',       element: <EducationMarketplace /> },
+          { path: 'store/:slug', element: <SellerStorefront /> },
+          { path: 'education',   element: <EducationMarketplace /> },
         ],
       },
 
@@ -170,6 +171,7 @@ export const router = createBrowserRouter([
           { path: 'loyalty',                          element: <StoreLoyalty /> },
           { path: 'integrations',                     element: <StoreIntegrations /> },
           { path: 'activity',                         element: <StoreActivity /> },
+          { path: 'followers',                        element: <StoreFollowers /> },
           { path: 'shipping',                         element: <SellerShipping /> },
           { path: 'messages',                         element: <SellerMessages /> },
         ],

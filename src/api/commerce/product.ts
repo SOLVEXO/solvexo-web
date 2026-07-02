@@ -51,11 +51,16 @@ export interface StoreProduct {
   images:            string[];
   tags:              string[];
   digital:           DigitalMeta | null;
-  status:            'draft' | 'active' | 'archived';
+  status:            'draft' | 'active' | 'archived' | 'scheduled';
+  scheduledAt:       string | null;
   isListedOnSolvexo: boolean;
   isDelete:          boolean;
   createdAt:         string;
   updatedAt:         string;
+  // injected by getProductById
+  sellerName:        string | null;
+  storeSlug:         string | null;
+  storeName:         string | null;
 }
 
 // ── Request payloads ──────────────────────────────────────────────────────────
@@ -69,6 +74,7 @@ export interface CreatePhysicalPayload {
   tags:              string[];
   isListedOnSolvexo: boolean;
   status:            'draft' | 'active' | 'scheduled';
+  scheduledAt?:      string | null;
   price:             number;
   compareAtPrice:    number | null;
   size:              string;
@@ -87,6 +93,7 @@ export interface CreateDigitalPayload {
   tags:              string[];
   isListedOnSolvexo: boolean;
   status:            'draft' | 'active' | 'scheduled';
+  scheduledAt?:      string | null;
   price:             number;
   compareAtPrice:    number | null;
   digital:           DigitalMeta;
@@ -101,6 +108,7 @@ export interface EditPhysicalPayload {
   tags:              string[];
   isListedOnSolvexo: boolean;
   status:            'draft' | 'active' | 'scheduled';
+  scheduledAt?:      string | null;
   price:             number;
   compareAtPrice:    number | null;
   size:              string;
@@ -115,6 +123,7 @@ export interface EditDigitalPayload {
   name:           string;
   description:    string;
   status:         'draft' | 'active' | 'scheduled';
+  scheduledAt?:   string | null;
   price:          number;
   compareAtPrice: number | null;
   digital:        DigitalMeta;
@@ -189,15 +198,15 @@ export function apiCreateDigitalProduct(payload: CreateDigitalPayload) {
   );
 }
 
-export function apiEditPhysicalProduct(id: string, payload: EditPhysicalPayload) {
+export function apiEditPhysicalProduct(_id: string, payload: EditPhysicalPayload) {
   return client.post<never, ApiResponse<EditProductData>>(
-    ENDPOINTS.PRODUCT.EDIT_PHYSICAL(id), payload,
+    ENDPOINTS.PRODUCT.EDIT_PRODUCT, payload,
   );
 }
 
-export function apiEditDigitalProduct(id: string, payload: EditDigitalPayload) {
+export function apiEditDigitalProduct(_id: string, payload: EditDigitalPayload) {
   return client.post<never, ApiResponse<EditProductData>>(
-    ENDPOINTS.PRODUCT.EDIT_DIGITAL(id), payload,
+    ENDPOINTS.PRODUCT.EDIT_PRODUCT, payload,
   );
 }
 

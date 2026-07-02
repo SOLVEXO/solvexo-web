@@ -16,7 +16,7 @@ const PUBLIC_PAGES: NavPage[] = [
   { label: 'Home',       path: '/',                   Icon: Home         },
   { label: 'Marketplace',    path: '/marketplace',        Icon: ShoppingCart },
   // { label: 'Product Detail', path: '/marketplace/1',      Icon: FileText     },
-  { label: 'Storefront',     path: '/store/teacherspro',  Icon: Store        },
+  // { label: 'Storefront',     path: '/store/teacherspro',  Icon: Store        },
   { label: 'Pricing',        path: '/pricing',            Icon: DollarSign   },
   { label: 'For Sellers',    path: '/sellers',            Icon: Users        },
   { label: 'Edu Listing',    path: '/education',          Icon: BookOpen     },

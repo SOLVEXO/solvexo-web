@@ -2,15 +2,14 @@ import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  User, ShoppingBag, Heart, MapPin, Phone, Mail, Camera,
-  Check, Shield, LogOut, ShoppingCart, ImageOff, Loader2, Star,
+  User, ShoppingBag, Heart, MapPin, Mail, Camera,
+  Check, Shield, ShoppingCart, ImageOff, Loader2, Star,
   Plus, Pencil, ArrowLeft, Home, Briefcase, Star as StarIcon,
   ChevronRight, Menu, X, MessageSquare, Ban, Flag, Trash2,
   type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
-import { TokenStorage } from '@/api/commerce/auth';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useCartContext } from '@/contexts/CartContext';
 import {
@@ -58,19 +57,18 @@ interface SidebarProps {
   loading:        boolean;
   tab:            Tab;
   setTab:         (t: Tab) => void;
-  onLogout:       () => void;
   wishlistCount:  number;
   mobileOpen:     boolean;
   onMobileClose:  () => void;
 }
 
-function ProfileSidebar({ profile, loading, tab, setTab, onLogout, wishlistCount, mobileOpen, onMobileClose }: SidebarProps) {
+function ProfileSidebar({ profile, loading, tab, setTab, wishlistCount, mobileOpen, onMobileClose }: SidebarProps) {
   const initials = profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? '..';
 
   const inner = (
     <>
       {/* ── Avatar + info ── */}
-      <div className="px-5 pt-7 pb-5 border-b border-bone">
+      <div className="px-5 pt-7 pb-5 border-b border-bone shrink-0">
         {/* Avatar */}
         <div className="flex flex-col items-center text-center mb-4">
           <div className="relative mb-3">
@@ -134,7 +132,7 @@ function ProfileSidebar({ profile, loading, tab, setTab, onLogout, wishlistCount
       </div>
 
       {/* ── Navigation ── */}
-      <nav className="flex-1 px-3 py-4">
+      <nav className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-3 py-4">
         <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.08em] px-2 mb-2">Account</p>
         {NAV_ITEMS.map(item => {
           const active = tab === item.id;
@@ -167,41 +165,19 @@ function ProfileSidebar({ profile, loading, tab, setTab, onLogout, wishlistCount
         })}
       </nav>
 
-      {/* ── Quick info + Logout ── */}
-      <div className="px-5 pb-5 border-t border-bone pt-4">
-        {!loading && (
-          <div className="flex flex-col gap-2 mb-4">
-            {[
-              { Icon: Phone,  value: profile?.phone   || 'Not set' },
-              { Icon: Shield, value: 'Secure Account' },
-            ].map((r, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <r.Icon size={12} className="text-brand-orange shrink-0" />
-                <span className="text-[11px] text-slate truncate">{r.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        <button
-          onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 px-4 py-[9px] rounded-[9px] border border-bone bg-white text-[13px] text-slate cursor-pointer hover:border-error hover:text-error transition-colors"
-        >
-          <LogOut size={13} /> Logout
-        </button>
-      </div>
     </>
   );
 
   return (
     <>
       {/* ── Desktop sidebar ── */}
-      <aside className="hidden md:flex w-[260px] shrink-0 bg-white border-r border-bone sticky top-[60px] h-[calc(100vh-60px)] flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <aside className="hidden md:flex w-[260px] shrink-0 bg-white border-r border-bone flex-col h-full">
         {inner}
       </aside>
 
       {/* ── Mobile drawer ── */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
+        <div className="md:hidden fixed inset-x-0 top-[44px] bottom-0 z-50 flex">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onMobileClose} />
           <aside className="relative flex flex-col w-[280px] max-w-[85vw] h-full bg-white shadow-2xl overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-bone">
@@ -699,13 +675,13 @@ function toBuyerEntry(c: Conversation): ChatListEntry {
     id:      c._id,
     name:    c.store?.name ?? `Seller #${c.sellerId?.slice(-6).toUpperCase() ?? '——'}`,
     image:   c.store?.logo,
-    preview: c.lastMessage ? (c.lastMessage.type === 'text' ? c.lastMessage.text ?? '' : `📎 ${c.lastMessage.type}`) : 'No messages yet',
+    preview: c.lastMessage ? (c.lastMessage.type === 'text' ? c.lastMessage.text ?? '' : c.lastMessage.type === 'voice' ? '🎤 Voice note' : c.lastMessage.type === 'image' ? '📷 Photo' : c.lastMessage.type === 'video' ? '🎥 Video' : '📎 File') : 'No messages yet',
     time:    c.lastMessage ? new Date(c.lastMessage.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
     unread:  c.buyerUnread,
   };
 }
 
-function MessagesTab() {
+function MessagesTab({ initialConversationId }: { initialConversationId?: string | null }) {
   const { profile } = useGetProfile();
   const { conversations, loading: listLoading, error: listError, refetch: refetchList } = useConversations();
   const { results: searchResults, search, loading: searching } = useSearchConversations();
@@ -714,8 +690,13 @@ function MessagesTab() {
   const isSearching = query.trim().length >= 2;
   const list = isSearching ? searchResults : conversations;
 
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(initialConversationId ?? null);
   const active = list.find(c => c._id === activeId) ?? null;
+
+  // Auto-open the conversation passed via URL ?conversation=xxx
+  useEffect(() => {
+    if (initialConversationId) setActiveId(initialConversationId);
+  }, [initialConversationId]);
 
   const { messages, loading: msgLoading, sending, send, edit, remove, markSeen, hasMore, loadMore } = useMessages(activeId);
   const { block, unblock, report } = useModeration();
@@ -752,7 +733,7 @@ function MessagesTab() {
     setUploading(true);
     try {
       const attachment = await apiUploadAttachment(activeId, file);
-      const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'file';
+      const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'voice' : file.type === 'application/pdf' ? 'pdf' : 'document';
       await send({ type: kind, attachments: [attachment] });
     } finally {
       setUploading(false);
@@ -801,7 +782,6 @@ function MessagesTab() {
             onQueryChange={handleSearch}
             loading={isSearching ? searching : listLoading}
             error={listError}
-            onNew={() => setShowNewChat(true)}
           />
         </div>
 
@@ -999,9 +979,9 @@ function MobileTopBar({ tab, onOpen }: { tab: Tab; onOpen: () => void }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function UserProfile() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [tab,         setTab]         = useState<Tab>((searchParams.get('tab') as Tab | null) ?? 'profile');
+  const [tab, setTab] = useState<Tab>((searchParams.get('tab') as Tab | null) ?? 'profile');
+  const initialConversationId = searchParams.get('conversation');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const { profile, loading } = useGetProfile();
@@ -1009,20 +989,13 @@ export function UserProfile() {
 
   const handleSetTab = (t: Tab) => { setTab(t); setSidebarOpen(false); };
 
-  const handleLogout = () => {
-    TokenStorage.clear();
-    navigate('/');
-    window.location.reload();
-  };
-
   return (
-    <div className="bg-cream flex flex-col md:flex-row md:h-[calc(100vh-60px)] md:overflow-hidden">
+    <div className="bg-cream flex flex-col md:flex-row h-[calc(100vh-108px)] md:h-[calc(100vh-44px)] overflow-hidden">
       <ProfileSidebar
         profile={profile}
         loading={loading}
         tab={tab}
         setTab={handleSetTab}
-        onLogout={handleLogout}
         wishlistCount={wishlistCount}
         mobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
@@ -1030,12 +1003,12 @@ export function UserProfile() {
 
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
         <MobileTopBar tab={tab} onOpen={() => setSidebarOpen(true)} />
-        <main className="flex-1 min-w-0 px-4 md:px-7 py-4 md:py-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <main className="flex-1 min-h-0 min-w-0 px-4 md:px-7 py-4 md:py-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {tab === 'profile'   && <ProfileTab />}
           {tab === 'wishlist'  && <WishlistTab />}
           {tab === 'addresses' && <AddressTab />}
           {tab === 'orders'    && <OrdersTab />}
-          {tab === 'messages'  && <MessagesTab />}
+          {tab === 'messages'  && <MessagesTab initialConversationId={initialConversationId} />}
         </main>
       </div>
     </div>

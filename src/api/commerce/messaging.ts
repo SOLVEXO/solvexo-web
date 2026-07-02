@@ -6,7 +6,7 @@ import { ENDPOINTS } from '../endpoints';
 // use the {success,message,data} envelope that the rest of the app uses;
 // each endpoint returns its own raw shape).
 // ─────────────────────────────────────────────────────────────────────────────
-export type MessageType   = 'text' | 'image' | 'file' | 'video' | 'product_share';
+export type MessageType   = 'text' | 'image' | 'video' | 'pdf' | 'document' | 'voice' | 'product_share';
 export type SenderRole    = 'user' | 'seller' | 'admin';
 export type TargetType    = 'user' | 'message' | 'conversation';
 export type ReportStatus  = 'pending' | 'reviewed' | 'resolved';
@@ -128,7 +128,7 @@ export interface ListConversationsParams   { storeId?: string; page?: number; li
 export interface SearchConversationsParams { q: string; storeId?: string }
 
 export interface SendTextMessagePayload       { type: 'text'; text: string; replyTo?: MessageReplyTo }
-export interface SendAttachmentMessagePayload { type: 'image' | 'file' | 'video'; attachments: MessageAttachment[]; replyTo?: MessageReplyTo }
+export interface SendAttachmentMessagePayload { type: 'image' | 'video' | 'pdf' | 'document' | 'voice'; attachments: MessageAttachment[]; replyTo?: MessageReplyTo }
 export interface SendProductSharePayload      { type: 'product_share'; productShare: ProductSharePayload; replyTo?: MessageReplyTo }
 export type SendMessagePayload = SendTextMessagePayload | SendAttachmentMessagePayload | SendProductSharePayload;
 

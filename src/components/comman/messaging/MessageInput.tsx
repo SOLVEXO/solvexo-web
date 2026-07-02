@@ -1,32 +1,93 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { clsx } from 'clsx';
-import { Paperclip, Send, Loader2, X } from 'lucide-react';
+import { Paperclip, Send, Loader2, X, Mic, MicOff, Play, Pause } from 'lucide-react';
 import type { Message } from '@/api/commerce/messaging';
 import { EmojiPicker } from './EmojiPicker';
 
 interface MessageInputProps {
-  value:        string;
-  onChange:     (v: string) => void;
-  onSend:       () => void;
-  onFileSelect: (file: File) => void;
-  uploading:    boolean;
-  sending:      boolean;
-  replyTo?:     Message | null;
+  value:          string;
+  onChange:       (v: string) => void;
+  onSend:         () => void;
+  onFileSelect:   (file: File) => void;
+  uploading:      boolean;
+  sending:        boolean;
+  replyTo?:       Message | null;
   onCancelReply?: () => void;
 }
 
-// The rounded pill composer bar Instagram DMs and WhatsApp both use:
-// emoji + text field + attachment inside one pill, a circular send
-// button that lights up once there's something to send.
-export function MessageInput({ value, onChange, onSend, onFileSelect, uploading, sending, replyTo, onCancelReply }: MessageInputProps) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const canSend = value.trim().length > 0 && !sending;
+// ── Voice recorder hook ───────────────────────────────────────────────────────
+function useVoiceRecorder(onReady: (file: File) => void) {
+  const [recording,  setRecording]  = useState(false);
+  const [seconds,    setSeconds]    = useState(0);
+  const mrRef    = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const start = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4' });
+      mrRef.current    = mr;
+      chunksRef.current = [];
+      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const mimeType = mr.mimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+        const ext  = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const file = new File([blob], `voice-note-${Date.now()}.${ext}`, { type: mimeType });
+        onReady(file);
+        stream.getTracks().forEach(t => t.stop());
+      };
+      mr.start(100);
+      setRecording(true);
+      setSeconds(0);
+      timerRef.current = setInterval(() => setSeconds(s => s + 1), 1000);
+    } catch {
+      // microphone permission denied — silently ignore
+    }
+  };
+
+  const stop = () => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    mrRef.current?.stop();
+    mrRef.current = null;
+    setRecording(false);
+    setSeconds(0);
+  };
+
+  const cancel = () => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    if (mrRef.current) {
+      mrRef.current.ondataavailable = null;
+      mrRef.current.onstop = null;
+      mrRef.current.stop();
+      mrRef.current = null;
+    }
+    chunksRef.current = [];
+    setRecording(false);
+    setSeconds(0);
+  };
+
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  const fmt = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+
+  return { recording, seconds, formattedTime: fmt(seconds), start, stop, cancel };
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+export function MessageInput({
+  value, onChange, onSend, onFileSelect, uploading, sending, replyTo, onCancelReply,
+}: MessageInputProps) {
+  const fileRef  = useRef<HTMLInputElement>(null);
+  const canSend  = value.trim().length > 0 && !sending;
+
+  const { recording, formattedTime, start, stop, cancel } = useVoiceRecorder(file => {
+    onFileSelect(file);
+  });
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (canSend) onSend();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (canSend) onSend(); }
   };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,6 +95,37 @@ export function MessageInput({ value, onChange, onSend, onFileSelect, uploading,
     e.target.value = '';
     if (file) onFileSelect(file);
   };
+
+  // ── Voice recording active state ─────────────────────────────────────────
+  if (recording) {
+    return (
+      <div className="border-t border-[#EEECE4] bg-white px-4 py-[10px] shrink-0">
+        <div className="flex items-center gap-3 bg-cream rounded-[22px] px-4 py-[11px]">
+          {/* Animated mic dot */}
+          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+          <span className="text-[13px] font-medium text-charcoal flex-1">Recording {formattedTime}</span>
+          {/* Cancel */}
+          <button
+            type="button"
+            onClick={cancel}
+            className="w-9 h-9 flex items-center justify-center rounded-full text-slate hover:bg-bone cursor-pointer bg-transparent border-none"
+            title="Cancel"
+          >
+            <MicOff size={17} />
+          </button>
+          {/* Send */}
+          <button
+            type="button"
+            onClick={stop}
+            className="w-[42px] h-[42px] rounded-full bg-brand-orange text-white border-none flex items-center justify-center cursor-pointer hover:opacity-90"
+            title="Send voice note"
+          >
+            {uploading ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="border-t border-[#EEECE4] bg-white px-4 py-[10px] shrink-0">
@@ -70,20 +162,32 @@ export function MessageInput({ value, onChange, onSend, onFileSelect, uploading,
           >
             {uploading ? <Loader2 size={17} className="animate-spin" /> : <Paperclip size={17} />}
           </button>
-          <input ref={fileRef} type="file" className="hidden" onChange={handleFile} />
+          <input ref={fileRef} type="file" className="hidden" accept="image/*,video/*,.pdf,.doc,.docx,.zip" onChange={handleFile} />
         </div>
 
-        <button
-          type="button"
-          onClick={onSend}
-          disabled={!canSend}
-          className={clsx(
-            'w-[42px] h-[42px] shrink-0 rounded-full border-none flex items-center justify-center cursor-pointer transition-colors',
-            canSend ? 'bg-brand-orange text-white hover:opacity-90' : 'bg-bone text-slate cursor-not-allowed',
-          )}
-        >
-          {sending ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
-        </button>
+        {/* Send OR mic button — mic shows when input is empty */}
+        {canSend ? (
+          <button
+            type="button"
+            onClick={onSend}
+            disabled={sending}
+            className="w-[42px] h-[42px] shrink-0 rounded-full border-none flex items-center justify-center cursor-pointer bg-brand-orange text-white hover:opacity-90"
+          >
+            {sending ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={start}
+            className={clsx(
+              'w-[42px] h-[42px] shrink-0 rounded-full border-none flex items-center justify-center cursor-pointer transition-colors',
+              'bg-bone text-slate hover:bg-brand-pale-orange hover:text-brand-orange',
+            )}
+            title="Hold to record voice note"
+          >
+            <Mic size={17} />
+          </button>
+        )}
       </div>
     </div>
   );

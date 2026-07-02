@@ -169,6 +169,7 @@ export default function StoreEditProduct() {
           productId, name: phys.name, description: phys.description,
           subCategoryId: null, images: phys.images, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
+          scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
           price: Number(phys.price), compareAtPrice: phys.compareAtPrice ? Number(phys.compareAtPrice) : null,
           size: phys.size, color: phys.color, stock: Number(phys.stock), shippingWeight: phys.shippingWeight,
         });
@@ -178,7 +179,9 @@ export default function StoreEditProduct() {
         const res = await apiEditDigitalProduct(productId, {
           productId, variantId,
           name: dig.name, description: dig.description,
-          status: finalStatus, price: Number(dig.price),
+          status: finalStatus,
+          scheduledAt: finalStatus === 'scheduled' ? dig.scheduledAt || null : null,
+          price: Number(dig.price),
           compareAtPrice: dig.compareAtPrice ? Number(dig.compareAtPrice) : null,
           digital: { files, downloadLimit: dig.downloadLimit, linkExpiryDays: dig.linkExpiryDays ? Number(dig.linkExpiryDays) : null, pdfStampingEnabled: dig.pdfStampingEnabled, licenseType: dig.licenseType, buyerDeliveryMessage: dig.buyerDeliveryMessage },
         });
