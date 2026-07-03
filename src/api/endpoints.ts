@@ -223,4 +223,19 @@ export const ENDPOINTS = {
     },
   },
 
+  // ── RATING / REVIEWS ──────────────────────────────────────────────────────
+  RATING: {
+    ADD_REVIEW:      '/api/rating/add-review',
+    MY_REVIEWS:      '/api/rating/my-reviews',
+    EDIT_REVIEW:     (reviewId: string) => `/api/rating/${reviewId}`,
+    DELETE_REVIEW:   (reviewId: string) => `/api/rating/${reviewId}`,
+    PRODUCT_REVIEWS: (productId: string) => `/api/rating/product/${productId}`,
+    STORE_REVIEWS:   (storeId: string) => `/api/rating/store-reviews/${storeId}`,
+    REPLY:           (reviewId: string) => `/api/rating/reply/${reviewId}`,
+    EDIT_REPLY:      (reviewId: string) => `/api/rating/edit-reply/${reviewId}`,
+    FLAG:            (reviewId: string) => `/api/rating/flag/${reviewId}`,
+    UNFLAG:          (reviewId: string) => `/api/rating/unflag/${reviewId}`,
+    MODERATE_DELETE: (reviewId: string) => `/api/rating/admin/${reviewId}`,
+  },
+
 } as const;

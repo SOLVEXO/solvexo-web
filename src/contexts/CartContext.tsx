@@ -2,8 +2,8 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import {
   apiGetCart, apiAddToCart, apiUpdateCartQuantity, apiRemoveCartItem, apiClearCart,
   type Cart, type CartItem,
-} from '@/api/commerce/cart';
-import { TokenStorage } from '@/api/commerce/auth';
+} from '@/api/services/cart';
+import { TokenStorage } from '@/api/services/auth';
 
 // ── localStorage: variantId → type map ────────────────────────────────────────
 const TYPES_KEY = 'solvexo_cart_types';

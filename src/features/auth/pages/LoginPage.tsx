@@ -6,7 +6,7 @@ import { Button } from '@/components/comman/ui/Button';
 import { Eye, EyeOff, Globe, Smartphone, Share2 } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
-import type { AppRole } from '@/api/commerce/auth';
+import type { AppRole } from '@/api/services/auth';
 
 function RoleSwitch({ role, onToggle }: { role: AppRole; onToggle: (r: AppRole) => void }) {
   return (

@@ -9,7 +9,7 @@ import { useConversations, useSearchConversations } from '@/hooks/messaging/useC
 import { useConversation } from '@/hooks/messaging/useConversation';
 import { useMessages } from '@/hooks/messaging/useMessages';
 import { useModeration } from '@/hooks/messaging/useModeration';
-import { apiUploadAttachment, type Conversation } from '@/api/commerce/messaging';
+import { apiUploadAttachment, type Conversation } from '@/api/services/messaging';
 import { ChatList, ChatWindow, type ChatListEntry } from '@/components/comman/messaging';
 import type { ActionMenuItem } from '@/components/comman/ui';
 

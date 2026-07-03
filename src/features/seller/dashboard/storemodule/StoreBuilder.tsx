@@ -12,7 +12,7 @@ import { useUpdateStore } from '@/hooks/store/useUpdateStore';
 import { useGetStore } from '@/hooks/store/useGetStore';
 import { StorePageHeader } from '@/components/layouts/StoreLayout';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
-import { apiSaveBuilderConfig, apiGetBuilderConfig, apiGetMyStores, type MyStoreItem } from '@/api/commerce/store';
+import { apiSaveBuilderConfig, apiGetBuilderConfig, apiGetMyStores, type MyStoreItem } from '@/api/services/store';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type Section     = 'theme' | 'layout' | 'header' | 'products' | 'footer' | 'seo';

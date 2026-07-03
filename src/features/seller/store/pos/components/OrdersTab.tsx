@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Avatar } from '@/components/comman/ui/Avatar';
 import { Badge } from '@/components/comman/ui/Badge';
-import { apiGetSales, apiGetSaleById, apiVoidSale, type Sale, type SaleStatus } from '@/api/commerce/posSales';
-import { apiGetDailyReport, type DailyReport } from '@/api/commerce/posReports';
+import { apiGetSales, apiGetSaleById, apiVoidSale, type Sale, type SaleStatus } from '@/api/services/pos/posSales';
+import { apiGetDailyReport, type DailyReport } from '@/api/services/pos/posReports';
 import { usePosSession } from '../context/PosSessionContext';
 import { ReceiptOverlay } from './sale/ReceiptOverlay';
 import { RefundOverlay } from './RefundOverlay';

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiGetProductById, type MarketplaceProduct, type ProductVariant } from '@/api/commerce/marketplace';
+import { apiGetProductById, type MarketplaceProduct, type ProductVariant } from '@/api/services/marketplace';
 
 interface ProductDetail {
   product:        MarketplaceProduct & { sellerName: string };

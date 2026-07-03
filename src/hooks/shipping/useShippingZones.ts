@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiGetShippingZones, type ShippingZone } from '@/api/commerce/shipping';
+import { apiGetShippingZones, type ShippingZone } from '@/api/services/shipping';
 
 export function useShippingZones() {
   const [zones,   setZones]   = useState<ShippingZone[]>([]);

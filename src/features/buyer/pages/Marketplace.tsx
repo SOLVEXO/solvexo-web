@@ -13,7 +13,7 @@ import {
   ShoppingCart, ShoppingBag, Star, Heart, ImageOff,
   Loader2, SlidersHorizontal, X,
 } from 'lucide-react';
-import type { MarketplaceProduct } from '@/api/commerce/marketplace';
+import type { MarketplaceProduct } from '@/api/services/marketplace';
 
 function SolvexoIcon({ size = 32 }: { size?: number }) {
   return (

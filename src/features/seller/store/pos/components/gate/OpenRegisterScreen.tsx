@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
-import { apiListRegisters, type PosRegister } from '@/api/commerce/posRegisters';
-import { apiListShifts, type PosShift } from '@/api/commerce/posShifts';
-import { apiOpenSession, type RegisterSession } from '@/api/commerce/posSessions';
+import { apiListRegisters, type PosRegister } from '@/api/services/pos/posRegisters';
+import { apiListShifts, type PosShift } from '@/api/services/pos/posShifts';
+import { apiOpenSession, type RegisterSession } from '@/api/services/pos/posSessions';
 
 interface OpenRegisterScreenProps {
   storeId:    string;

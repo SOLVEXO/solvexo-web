@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { History, Lock } from 'lucide-react';
 import { Badge } from '@/components/comman/ui/Badge';
-import { apiGetSessionHistory, apiForceCloseSession, type RegisterSession } from '@/api/commerce/posSessions';
-import { apiListRegisters, type PosRegister } from '@/api/commerce/posRegisters';
-import { apiGetEmployees, type PosEmployee } from '@/api/commerce/posEmployees';
+import { apiGetSessionHistory, apiForceCloseSession, type RegisterSession } from '@/api/services/pos/posSessions';
+import { apiListRegisters, type PosRegister } from '@/api/services/pos/posRegisters';
+import { apiGetEmployees, type PosEmployee } from '@/api/services/pos/posEmployees';
 import { DarkModal, DarkField, DarkInput, DarkSelect, DarkButton, DarkEmptyState, DarkSkeleton, DarkTable } from './darkUi';
 
 interface SessionsTabProps { storeId: string }

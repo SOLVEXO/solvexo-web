@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, Download, Loader2, CalendarClock } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { apiCreatePhysicalProduct, apiCreateDigitalProduct } from '@/api/commerce/product';
+import { apiCreatePhysicalProduct, apiCreateDigitalProduct } from '@/api/services/product';
 import { addCachedProduct } from './_cache';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal } from '@/components/comman/ui';
 

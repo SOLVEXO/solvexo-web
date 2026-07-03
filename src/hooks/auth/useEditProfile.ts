@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { apiEditProfile, type EditProfilePayload, type ProfileData } from '@/api/commerce/auth';
+import { apiEditProfile, type EditProfilePayload, type ProfileData } from '@/api/services/auth';
 
 export function useEditProfile() {
   const [loading, setLoading] = useState(false);

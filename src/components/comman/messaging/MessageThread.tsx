@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react';
-import type { Message } from '@/api/commerce/messaging';
+import type { Message } from '@/api/services/messaging';
 import { groupMessages } from './groupMessages';
 import { DateDivider } from './DateDivider';
 import { MessageBubble } from './MessageBubble';

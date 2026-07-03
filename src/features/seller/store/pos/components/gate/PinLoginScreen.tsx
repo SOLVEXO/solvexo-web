@@ -3,7 +3,7 @@ import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { useForm } from '@/hooks/useForm';
 import { required, email as emailValidator, exactLength, numeric } from '@/utils/validation/validators';
 import type { Schema } from '@/utils/validation/schemas';
-import { apiPinLogin, type PinLoginResult } from '@/api/commerce/posPinLogin';
+import { apiPinLogin, type PinLoginResult } from '@/api/services/pos/posPinLogin';
 
 interface PinLoginFormData {
   email: string;

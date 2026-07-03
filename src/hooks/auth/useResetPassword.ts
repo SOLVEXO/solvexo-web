@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { apiResetPassword, AuthContext } from '@/api/commerce/auth';
+import { apiResetPassword, AuthContext } from '@/api/services/auth';
 
 export function useResetPassword() {
   const [loading, setLoading] = useState(false);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Monitor } from 'lucide-react';
 import { Badge } from '@/components/comman/ui/Badge';
-import { apiAddRegister, apiListRegisters, apiUpdateRegister, apiRemoveRegister, type PosRegister } from '@/api/commerce/posRegisters';
+import { apiAddRegister, apiListRegisters, apiUpdateRegister, apiRemoveRegister, type PosRegister } from '@/api/services/pos/posRegisters';
 import { DarkModal, DarkField, DarkInput, DarkSelect, DarkButton, DarkEmptyState, DarkSkeleton, DarkTable } from './darkUi';
 
 interface RegistersTabProps { storeId: string }

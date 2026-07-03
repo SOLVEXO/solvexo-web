@@ -5,7 +5,7 @@ import { Button } from '@/components/comman/ui/Button';
 import { Eye, EyeOff, Globe, Smartphone, Share2 } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
-import { apiLogin, TokenStorage } from '@/api/commerce/auth';
+import { apiLogin, TokenStorage } from '@/api/services/auth';
 
 const SOCIAL = [
   { Icon: Globe,      label: 'Google',   color: '#4285F4' },

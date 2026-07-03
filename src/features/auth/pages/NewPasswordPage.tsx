@@ -7,7 +7,7 @@ import { Button } from '@/components/comman/ui/Button';
 import { Eye, EyeOff, ArrowRight, Check, Circle } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { newPasswordSchema, type NewPasswordFormData } from '@/utils/validation/schemas';
-import { AuthContext } from '@/api/commerce/auth';
+import { AuthContext } from '@/api/services/auth';
 
 function getStrength(password: string) {
   if (!password) return { score: 0, label: '', colorClass: '', bgClass: 'bg-bone' };

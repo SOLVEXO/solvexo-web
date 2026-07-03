@@ -5,8 +5,8 @@ import {
   CheckCircle2, MapPin, Package, ShoppingBag, Download,
   Loader2, ArrowRight, Home, Truck, Box, BadgeCheck,
 } from 'lucide-react';
-import type { PlacedOrder, OrderItem, OrderDeliveryAddress } from '@/api/commerce/payment';
-import { apiGetDownloadUrl } from '@/api/commerce/orders';
+import type { PlacedOrder, OrderItem, OrderDeliveryAddress } from '@/api/services/payment';
+import { apiGetDownloadUrl } from '@/api/services/orders';
 import { clsx } from 'clsx';
 
 // ─────────────────────────────────────────────────────────────────────────────

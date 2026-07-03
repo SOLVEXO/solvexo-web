@@ -5,7 +5,7 @@ import { ShoppingCart, ClipboardList, Package, BarChart2, Settings2, Banknote } 
 import type { LucideIcon } from 'lucide-react';
 import { Avatar } from '@/components/comman/ui/Avatar';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
-import { apiCashInOut } from '@/api/commerce/posSessions';
+import { apiCashInOut } from '@/api/services/pos/posSessions';
 import { usePosSession } from '../context/PosSessionContext';
 import { ProfileOverlay } from './ProfileOverlay';
 import type { ActiveTab } from '../pos.types';

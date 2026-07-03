@@ -4,7 +4,7 @@ import {
   Check, CheckCheck, Paperclip, FileText, Video as VideoIcon, Play, Pause,
   Reply as ReplyIcon, ChevronDown, Pencil, Trash2, X as XIcon,
 } from 'lucide-react';
-import type { Message } from '@/api/commerce/messaging';
+import type { Message } from '@/api/services/messaging';
 import { ChatAvatar } from './ChatAvatar';
 
 interface MessageBubbleProps {

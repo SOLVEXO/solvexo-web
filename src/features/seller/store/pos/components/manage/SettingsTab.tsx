@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiGetPosSettings, apiUpdatePosSettings, type PosSettings } from '@/api/commerce/posSettings';
+import { apiGetPosSettings, apiUpdatePosSettings, type PosSettings } from '@/api/services/pos/posSettings';
 import { DarkField, DarkInput, DarkTextarea, DarkButton, DarkSkeleton } from './darkUi';
 
 interface SettingsTabProps { storeId: string }

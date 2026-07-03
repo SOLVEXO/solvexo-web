@@ -5,9 +5,9 @@ import {
   apiGetDailyReport, apiGetDateRangeReport, apiExportDailyReportCsv,
   apiGetRegisterReport, apiGetEmployeeReport,
   type DailyReport, type DateRangeReport, type RegisterReport, type EmployeeReport,
-} from '@/api/commerce/posReports';
-import { apiListRegisters, type PosRegister } from '@/api/commerce/posRegisters';
-import { apiGetEmployees, type PosEmployee } from '@/api/commerce/posEmployees';
+} from '@/api/services/pos/posReports';
+import { apiListRegisters, type PosRegister } from '@/api/services/pos/posRegisters';
+import { apiGetEmployees, type PosEmployee } from '@/api/services/pos/posEmployees';
 import { DarkField, DarkInput, DarkSelect, DarkButton, DarkMetricCard } from './darkUi';
 
 type Section = 'daily' | 'range' | 'register' | 'employee';

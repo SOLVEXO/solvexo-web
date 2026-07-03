@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { X, Mail, Shield, Clock, Monitor, KeyRound } from 'lucide-react';
 import { Avatar } from '@/components/comman/ui/Avatar';
 import { Badge } from '@/components/comman/ui/Badge';
-import { apiGetEmployeeById, apiResetEmployeePin, type PosEmployee } from '@/api/commerce/posEmployees';
-import { apiGetShiftById, type PosShift } from '@/api/commerce/posShifts';
+import { apiGetEmployeeById, apiResetEmployeePin, type PosEmployee } from '@/api/services/pos/posEmployees';
+import { apiGetShiftById, type PosShift } from '@/api/services/pos/posShifts';
 
 interface ProfileOverlayProps {
   storeId:      string;

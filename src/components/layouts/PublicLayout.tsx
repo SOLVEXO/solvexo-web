@@ -6,7 +6,7 @@ import {
   ChevronRight, Shield, type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
-import { TokenStorage } from '@/api/commerce/auth';
+import { TokenStorage } from '@/api/services/auth';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data

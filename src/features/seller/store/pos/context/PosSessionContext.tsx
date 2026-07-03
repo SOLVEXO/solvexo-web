@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { apiGetEmployees, apiAddEmployee, type PosEmployee } from '@/api/commerce/posEmployees';
-import { apiListRegisters, apiAddRegister, type PosRegister } from '@/api/commerce/posRegisters';
-import { apiGetActiveSession, apiOpenSession, type RegisterSession } from '@/api/commerce/posSessions';
-import { TokenStorage } from '@/api/commerce/auth';
+import { apiGetEmployees, apiAddEmployee, type PosEmployee } from '@/api/services/pos/posEmployees';
+import { apiListRegisters, apiAddRegister, type PosRegister } from '@/api/services/pos/posRegisters';
+import { apiGetActiveSession, apiOpenSession, type RegisterSession } from '@/api/services/pos/posSessions';
+import { TokenStorage } from '@/api/services/auth';
 
 interface StoredPosSession {
   employee:     PosEmployee;

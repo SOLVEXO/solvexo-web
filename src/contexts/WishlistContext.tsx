@@ -4,8 +4,8 @@ import {
 import {
   apiGetWishlist, apiAddToWishlist, apiRemoveFromWishlist, apiGetWishlistItem,
   type WishlistListItem,
-} from '@/api/commerce/wishlist';
-import { TokenStorage } from '@/api/commerce/auth';
+} from '@/api/services/wishlist';
+import { TokenStorage } from '@/api/services/auth';
 
 export interface WishlistContextValue {
   wishlistItems:      WishlistListItem[];

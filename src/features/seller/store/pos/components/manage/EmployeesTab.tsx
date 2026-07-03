@@ -7,8 +7,8 @@ import type { Schema } from '@/utils/validation/schemas';
 import {
   apiAddEmployee, apiGetEmployees, apiUpdateEmployee, apiRemoveEmployee, apiResetEmployeePin,
   type PosEmployee, type EmployeeRole,
-} from '@/api/commerce/posEmployees';
-import { apiListShifts, type PosShift } from '@/api/commerce/posShifts';
+} from '@/api/services/pos/posEmployees';
+import { apiListShifts, type PosShift } from '@/api/services/pos/posShifts';
 import {
   DarkModal, DarkField, DarkInput, DarkSelect, DarkButton, DarkEmptyState, DarkSkeleton, DarkTable,
 } from './darkUi';

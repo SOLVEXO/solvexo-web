@@ -5,7 +5,7 @@ import {
   Loader2, Calendar, CheckCircle, XCircle, Hash,
 } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { apiGetMyProductById } from '@/api/commerce/product';
+import { apiGetMyProductById } from '@/api/services/product';
 import { getCachedProducts, type ProductEntry } from './_cache';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

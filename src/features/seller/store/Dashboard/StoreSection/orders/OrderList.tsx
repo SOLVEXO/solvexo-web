@@ -3,7 +3,7 @@ import {
   ShoppingCart, AlertCircle, RefreshCw,
   DollarSign, Clock, TrendingUp, Eye, CheckCheck, Truck,
 } from 'lucide-react';
-import { apiMarkOrderPaid, apiUpdateOrderStatus } from '@/api/commerce/orders';
+import { apiMarkOrderPaid, apiUpdateOrderStatus } from '@/api/services/orders';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   Table,      type TableColumn,
@@ -20,7 +20,7 @@ import {
   apiGetSellerOrders,
   type SellerOrder,
   type SellerOrderStats,
-} from '@/api/commerce/product';
+} from '@/api/services/product';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
 // ── Customer cell ──────────────────────────────────────────────────────────────

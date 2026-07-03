@@ -10,7 +10,7 @@ import {
   PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
-import { apiGetStoreById, type StoreData } from '@/api/commerce/store';
+import { apiGetStoreById, type StoreData } from '@/api/services/store';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
 interface StoreWorkspaceValue {

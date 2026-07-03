@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollText } from 'lucide-react';
-import { apiGetAuditLogs, type PosAuditLog } from '@/api/commerce/posAuditLogs';
+import { apiGetAuditLogs, type PosAuditLog } from '@/api/services/pos/posAuditLogs';
 import { DarkEmptyState, DarkSkeleton, DarkTable } from './darkUi';
 
 interface AuditLogTabProps { storeId: string }

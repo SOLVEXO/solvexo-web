@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { Paperclip, Send, Loader2, X, Mic, MicOff, Play, Pause } from 'lucide-react';
-import type { Message } from '@/api/commerce/messaging';
+import type { Message } from '@/api/services/messaging';
 import { EmojiPicker } from './EmojiPicker';
 
 interface MessageInputProps {

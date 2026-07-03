@@ -12,7 +12,8 @@ import {
   ArrowRight, ArrowLeft, Package, Download, ClipboardList, CheckCircle,
   Search, ShoppingCart, Star, Link2, Mail, Smartphone, ImageOff, Loader2, Heart,
 } from 'lucide-react';
-import type { ProductVariant } from '@/api/commerce/marketplace';
+import type { ProductVariant } from '@/api/services/marketplace';
+import { ProductReviewsSection } from './ProductReviews';
 
 
 function SolvexoIcon({ size = 32 }: { size?: number }) {
@@ -325,13 +326,8 @@ export function ProductDetail() {
 
               <div className="h-px bg-bone my-4" />
 
-              {/* Reviews placeholder */}
-              <div className="text-[15px] font-bold text-[#141413] mb-3">
-                Reviews ({product.totalRatings})
-              </div>
-              {product.totalRatings === 0 && (
-                <p className="text-[13px] text-[#8C8A82]">No reviews yet. Be the first to buy!</p>
-              )}
+              {/* Reviews */}
+              <ProductReviewsSection productId={product._id} />
             </div>
 
             {/* RIGHT: sticky purchase card */}

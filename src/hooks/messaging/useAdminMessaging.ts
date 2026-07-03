@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   apiAdminListConversations, apiAdminGetConversationById, apiAdminGetReports,
   type Conversation, type Report, type GetReportsParams, type AdminListConversationsParams,
-} from '@/api/commerce/messaging';
+} from '@/api/services/messaging';
 
 export function useAdminConversations(params?: AdminListConversationsParams) {
   const [conversations, setConversations] = useState<Conversation[]>([]);

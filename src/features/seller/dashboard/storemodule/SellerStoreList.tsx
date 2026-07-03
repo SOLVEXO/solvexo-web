@@ -14,7 +14,7 @@ import {
   Card,
   SkeletonBox,
 } from '@/components/comman/ui';
-import type { MyStoreItem } from '@/api/commerce/store';
+import type { MyStoreItem } from '@/api/services/store';
 
 // ── Store cell: logo + name ───────────────────────────────────────────────────
 function StoreCell({ store }: { store: MyStoreItem }) {

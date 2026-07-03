@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { apiRefundSale, type Sale } from '@/api/commerce/posSales';
+import { apiRefundSale, type Sale } from '@/api/services/pos/posSales';
 
 interface RefundOverlayProps {
   sale: Sale;

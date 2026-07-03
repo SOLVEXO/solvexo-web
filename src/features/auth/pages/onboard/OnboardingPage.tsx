@@ -12,7 +12,7 @@ import {
   ArrowRight, ArrowLeft, Check, AlertTriangle, Loader, Loader2,
 } from 'lucide-react';
 import { useUpload } from '@/hooks/upload/useUpload';
-import type { SellerType, ProductType, StoreData } from '@/api/commerce/store';
+import type { SellerType, ProductType, StoreData } from '@/api/services/store';
 
 const STEPS = ['Store Info', 'Seller Type', 'What You Sell', 'Go Live'];
 

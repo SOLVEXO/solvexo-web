@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiGetMyStores, type MyStoreItem } from '@/api/commerce/store';
+import { apiGetMyStores, type MyStoreItem } from '@/api/services/store';
 
 export function useMyStores() {
   const [stores,  setStores]  = useState<MyStoreItem[]>([]);

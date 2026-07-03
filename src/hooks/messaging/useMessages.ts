@@ -3,7 +3,7 @@ import {
   apiGetMessages, apiSendMessage, apiSearchMessages, apiEditMessage,
   apiDeleteMessage, apiMarkMessageSeen,
   type Message, type SendMessagePayload,
-} from '@/api/commerce/messaging';
+} from '@/api/services/messaging';
 
 export function useMessages(conversationId: string | null) {
   const [messages,   setMessages]   = useState<Message[]>([]);

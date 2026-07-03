@@ -5,7 +5,7 @@ import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import {
   apiGetMyProductById, apiEditPhysicalProduct, apiEditDigitalProduct,
   type StoreProduct, type ProductVariant,
-} from '@/api/commerce/product';
+} from '@/api/services/product';
 import { getCachedProducts, updateCachedProduct, type ProductEntry } from './_cache';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal } from '@/components/comman/ui';
 

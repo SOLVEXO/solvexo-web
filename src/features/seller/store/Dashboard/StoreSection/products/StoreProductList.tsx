@@ -20,7 +20,7 @@ import {
 import {
   apiGetStoreInventory,
   type InventoryProduct,
-} from '@/api/commerce/product';
+} from '@/api/services/product';
 
 // ── Product thumbnail cell ────────────────────────────────────────────────────
 function ProductCell({ p }: { p: InventoryProduct }) {

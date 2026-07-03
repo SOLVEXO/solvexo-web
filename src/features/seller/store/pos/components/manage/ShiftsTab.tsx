@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Clock } from 'lucide-react';
 import { Badge } from '@/components/comman/ui/Badge';
-import { apiAddShift, apiListShifts, apiUpdateShift, apiDeleteShift, type PosShift } from '@/api/commerce/posShifts';
+import { apiAddShift, apiListShifts, apiUpdateShift, apiDeleteShift, type PosShift } from '@/api/services/pos/posShifts';
 import { DarkModal, DarkField, DarkInput, DarkSelect, DarkButton, DarkEmptyState, DarkSkeleton, DarkTable } from './darkUi';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

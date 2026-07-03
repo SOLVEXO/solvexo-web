@@ -1,7 +1,7 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Home, Store, ShoppingCart, Package, UserCircle } from 'lucide-react';
-import { TokenStorage } from '@/api/commerce/auth';
+import { TokenStorage } from '@/api/services/auth';
 import { useCartContext } from '@/contexts/CartContext';
 
 // ── Bottom navigation tab bar (mobile only) ───────────────────────────────────

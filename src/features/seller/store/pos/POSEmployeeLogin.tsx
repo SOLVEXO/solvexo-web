@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import type { PinLoginResult } from '@/api/commerce/posPinLogin';
+import type { PinLoginResult } from '@/api/services/pos/posPinLogin';
 import { PosSessionProvider, usePosSession } from './context/PosSessionContext';
 import { PinLoginScreen } from './components/gate/PinLoginScreen';
 import { PosTerminal } from './components/PosTerminal';

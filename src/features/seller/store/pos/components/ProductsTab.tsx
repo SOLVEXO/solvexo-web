@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/comman/ui/Badge';
-import { apiGetPosProducts, apiSearchPosProducts, type PosProduct } from '@/api/commerce/posProducts';
+import { apiGetPosProducts, apiSearchPosProducts, type PosProduct } from '@/api/services/pos/posProducts';
 import { usePosSession } from '../context/PosSessionContext';
 
 interface FlatRow {

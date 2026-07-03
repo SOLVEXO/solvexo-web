@@ -3,7 +3,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { X, Loader2, MessageSquare, Flag, Paperclip } from 'lucide-react';
 import { useAdminConversations, useAdminReports } from '@/hooks/messaging/useAdminMessaging';
 import { useMessages } from '@/hooks/messaging/useMessages';
-import type { ReportStatus, TargetType } from '@/api/commerce/messaging';
+import type { ReportStatus, TargetType } from '@/api/services/messaging';
 
 type MainTab = 'conversations' | 'reports';
 

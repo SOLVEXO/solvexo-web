@@ -1,5 +1,5 @@
-import type { PosProductVariant } from '@/api/commerce/posProducts';
-import type { PosPaymentMethod, Sale } from '@/api/commerce/posSales';
+import type { PosProductVariant } from '@/api/services/pos/posProducts';
+import type { PosPaymentMethod, Sale } from '@/api/services/pos/posSales';
 
 export type { PosPaymentMethod, PosProductVariant };
 

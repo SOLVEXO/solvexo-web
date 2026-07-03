@@ -15,11 +15,11 @@ import { useCartContext } from '@/contexts/CartContext';
 import {
   apiGetMyAddresses, apiAddAddress, apiUpdateAddress,
   type Address, type AddressPayload,
-} from '@/api/commerce/address';
+} from '@/api/services/address';
 import { useConversations, useSearchConversations, useStartConversation } from '@/hooks/messaging/useConversations';
 import { useMessages } from '@/hooks/messaging/useMessages';
 import { useModeration } from '@/hooks/messaging/useModeration';
-import { apiUploadAttachment, apiDeleteConversation, type Conversation } from '@/api/commerce/messaging';
+import { apiUploadAttachment, apiDeleteConversation, type Conversation } from '@/api/services/messaging';
 import { ChatList, ChatWindow, NewChatModal, type ChatListEntry } from '@/components/comman/messaging';
 import {
   Table,     type TableColumn,
@@ -31,13 +31,15 @@ import {
   SkeletonBox,
 } from '@/components/comman/ui';
 import { OrdersTab } from '@/features/buyer/pages/MyOrdersPage';
+import { ReviewsTab } from '@/features/buyer/pages/MyReviewsPage';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses' | 'messages';
+type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses' | 'messages' | 'reviews';
 
 const NAV_ITEMS: { id: Tab; label: string; Icon: LucideIcon }[] = [
   { id: 'profile',   label: 'My Profile', Icon: User          },
   { id: 'orders',    label: 'My Orders',  Icon: ShoppingBag    },
+  { id: 'reviews',   label: 'My Reviews', Icon: Star           },
   { id: 'wishlist',  label: 'Wishlist',   Icon: Heart          },
   { id: 'addresses', label: 'Addresses',  Icon: MapPin         },
   { id: 'messages',  label: 'Messages',   Icon: MessageSquare  },
@@ -1008,6 +1010,7 @@ export function UserProfile() {
           {tab === 'wishlist'  && <WishlistTab />}
           {tab === 'addresses' && <AddressTab />}
           {tab === 'orders'    && <OrdersTab />}
+          {tab === 'reviews'   && <ReviewsTab />}
           {tab === 'messages'  && <MessagesTab initialConversationId={initialConversationId} />}
         </main>
       </div>

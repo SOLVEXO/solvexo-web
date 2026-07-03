@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { MessageCircle } from 'lucide-react';
 import type { ActionMenuItem } from '@/components/comman/ui';
-import type { Message, SendMessagePayload } from '@/api/commerce/messaging';
+import type { Message, SendMessagePayload } from '@/api/services/messaging';
 import { ChatHeader } from './ChatHeader';
 import { MessageThread } from './MessageThread';
 import { MessageInput } from './MessageInput';

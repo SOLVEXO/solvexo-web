@@ -3,7 +3,7 @@ import {
   apiGetConversationById, apiArchiveConversation, apiRestoreConversation,
   apiPinConversation, apiMuteConversation, apiDeleteConversation,
   type Conversation,
-} from '@/api/commerce/messaging';
+} from '@/api/services/messaging';
 
 export function useConversation(id: string | null) {
   const [conversation, setConversation] = useState<Conversation | null>(null);

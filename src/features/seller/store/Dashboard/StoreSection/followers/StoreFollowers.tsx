@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Users, UserPlus, RefreshCw } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import { apiGetStoreFollowers, type FollowerUser } from '@/api/commerce/store';
+import { apiGetStoreFollowers, type FollowerUser } from '@/api/services/store';
 
 interface FollowerEntry { followedAt: string; user: FollowerUser }
 

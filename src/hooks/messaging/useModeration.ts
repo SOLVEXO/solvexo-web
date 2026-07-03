@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { apiBlockUser, apiUnblockUser, apiReportEntity, type BlockUserPayload, type ReportPayload } from '@/api/commerce/messaging';
+import { apiBlockUser, apiUnblockUser, apiReportEntity, type BlockUserPayload, type ReportPayload } from '@/api/services/messaging';
 
 export function useModeration() {
   const [loading, setLoading] = useState(false);

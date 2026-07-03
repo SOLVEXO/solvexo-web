@@ -1,4 +1,4 @@
-import type { Message } from '@/api/commerce/messaging';
+import type { Message } from '@/api/services/messaging';
 
 export interface MessageGroup {
   senderId:  string;

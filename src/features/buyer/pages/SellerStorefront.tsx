@@ -14,8 +14,8 @@ import {
   apiGetPublicStoreFilters,
   apiFollowStore, apiGetFollowStatus,
   type PublicStoreData,
-} from '@/api/commerce/store';
-import { apiStartConversation } from '@/api/commerce/messaging';
+} from '@/api/services/store';
+import { apiStartConversation } from '@/api/services/messaging';
 
 // ── Builder config default (mirrors StoreBuilder DEFAULT) ─────────────────────
 const CFG_DEFAULT = {

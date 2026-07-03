@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { apiGetPosProducts, apiSearchPosProducts, apiGetProductByBarcode } from '@/api/commerce/posProducts';
+import { apiGetPosProducts, apiSearchPosProducts, apiGetProductByBarcode } from '@/api/services/pos/posProducts';
 import {
   apiCreateSale, apiCompleteSale, apiEditHeldSaleItems,
   apiGetHeldSales, apiDiscardHeldSale,
   type Sale, type PosPaymentMethod,
-} from '@/api/commerce/posSales';
-import { apiGetPosSettings } from '@/api/commerce/posSettings';
+} from '@/api/services/pos/posSales';
+import { apiGetPosSettings } from '@/api/services/pos/posSettings';
 import { usePosSession } from '../context/PosSessionContext';
 import type {
   CartItem, PosView, AppliedDiscount, PosDiscountType, POSSaleState,

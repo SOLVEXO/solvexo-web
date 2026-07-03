@@ -59,3 +59,5 @@ export type { DateTimePickerModalProps }     from './DateTimePickerModal';
 
 export { Modal }                             from './Modal';
 export type { ModalProps }                   from './Modal';
+
+export { StarRating }                        from './StarRating';

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   apiListConversations, apiSearchConversations, apiStartConversation,
   type Conversation, type ListConversationsParams, type StartConversationPayload,
-} from '@/api/commerce/messaging';
+} from '@/api/services/messaging';
 
 export function useConversations(params?: ListConversationsParams) {
   const [conversations, setConversations] = useState<Conversation[]>([]);

@@ -3,9 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
-import { apiGetMyAddresses, type Address } from '@/api/commerce/address';
-import { apiCreateCheckout, type Checkout, type CheckoutSummary } from '@/api/commerce/checkout';
-import { apiPlaceCodOrder, apiPlaceOrder } from '@/api/commerce/payment';
+import { apiGetMyAddresses, type Address } from '@/api/services/address';
+import { apiCreateCheckout, type Checkout, type CheckoutSummary } from '@/api/services/checkout';
+import { apiPlaceCodOrder, apiPlaceOrder } from '@/api/services/payment';
 import { Button } from '@/components/comman/ui/Button';
 import {
   ArrowLeft, MapPin, Truck, CreditCard, CheckCircle2,

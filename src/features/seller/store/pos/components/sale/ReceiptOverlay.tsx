@@ -1,5 +1,5 @@
 import { CheckCircle, Printer, ArrowRight } from 'lucide-react';
-import type { Sale } from '@/api/commerce/posSales';
+import type { Sale } from '@/api/services/pos/posSales';
 
 interface ReceiptOverlayProps {
   sale:      Sale;

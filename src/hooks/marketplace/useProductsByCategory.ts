@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiGetAllProducts, type MarketplaceProduct } from '@/api/commerce/marketplace';
+import { apiGetAllProducts, type MarketplaceProduct } from '@/api/services/marketplace';
 
 export function useProductsByCategory(page = 1, limit = 10) {
   const [products, setProducts] = useState<MarketplaceProduct[]>([]);

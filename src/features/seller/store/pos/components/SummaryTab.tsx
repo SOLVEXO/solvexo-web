@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiGetSessionReport, apiCloseSession, type SessionReport } from '@/api/commerce/posSessions';
+import { apiGetSessionReport, apiCloseSession, type SessionReport } from '@/api/services/pos/posSessions';
 import { usePosSession } from '../context/PosSessionContext';
 
 interface SummaryTabProps {

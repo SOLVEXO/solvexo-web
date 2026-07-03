@@ -4,7 +4,7 @@ import { useVerifyOtp } from '@/hooks/auth/useVerifyOtp';
 import { Button } from '@/components/comman/ui/Button';
 import { AlertTriangle, ArrowRight, Check } from 'lucide-react';
 import { runSchema, otpSchema } from '@/utils/validation/schemas';
-import { AuthContext } from '@/api/commerce/auth';
+import { AuthContext } from '@/api/services/auth';
 
 function OTPInput({ values, onChange }: { values: string[]; onChange: (i: number, v: string) => void }) {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
