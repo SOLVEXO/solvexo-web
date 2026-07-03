@@ -85,6 +85,7 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
   const navigate     = useNavigate();
   const { pathname } = useLocation();
   const { store, storeId, loading } = useStoreWorkspace();
+  const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
 
   const isActive = (seg: string) =>
     seg.startsWith('/')
@@ -207,28 +208,48 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
               }
               {section.items.map(item => {
                 const active = isActive(item.path);
+                const isLockedPos = item.id === 'pos' && !posEnabled;
                 return (
                   <div
                     key={item.id}
-                    onClick={() => navigate(item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`)}
+                    onClick={() => {
+                      if (isLockedPos) return;
+                      navigate(item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`);
+                    }}
                     title={!open ? item.label : undefined}
                     className={clsx(
                       'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5',
-                      'cursor-pointer transition-colors duration-150',
+                      isLockedPos ? 'cursor-default' : 'cursor-pointer',
+                      'transition-colors duration-150',
                       !open && 'lg:justify-center lg:px-0',
                       active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1A1917]',
                     )}
                   >
                     <item.Icon
                       size={15}
-                      className={clsx('shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')}
+                      className={clsx(
+                        'shrink-0',
+                        isLockedPos ? 'text-slate opacity-35' : active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55',
+                      )}
                     />
                     {open && (
                       <>
-                        <span className={clsx('text-[13px] flex-1', active ? 'font-semibold text-white' : 'font-normal text-slate')}>
+                        <span className={clsx(
+                          'text-[13px] flex-1',
+                          isLockedPos ? 'font-normal text-slate opacity-40' : active ? 'font-semibold text-white' : 'font-normal text-slate',
+                        )}>
                           {item.label}
                         </span>
-                        {active && <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
+                        {isLockedPos ? (
+                          <span
+                            onClick={e => { e.stopPropagation(); navigate(`/seller/store/${storeId}/pos`); }}
+                            className="text-[9px] font-bold uppercase tracking-[0.03em] px-[7px] py-[2px] rounded-full bg-brand-orange text-white cursor-pointer shrink-0"
+                          >
+                            Upgrade
+                          </span>
+                        ) : active && (
+                          <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />
+                        )}
                       </>
                     )}
                   </div>

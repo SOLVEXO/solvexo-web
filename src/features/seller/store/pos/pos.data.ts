@@ -2,9 +2,17 @@ import {
   Coffee, ShoppingBag, Image as ImageIcon, Flame, Leaf, Droplets,
   Pencil, Camera, Sparkles, BookOpen, Droplet, Key, Utensils, Ruler,
 } from 'lucide-react';
-import type { PosProduct, PosCustomer } from './pos.types';
+// NOTE: unused since the POS module was wired to real backend data — kept only
+// as historical reference; safe to delete.
+interface LegacyMockProduct {
+  name: string; price: number; icon: LucideIconType; sku: string; category: string; stock: number;
+}
+interface LegacyMockCustomer {
+  name: string; email: string; points: number; segment: string;
+}
+type LucideIconType = import('lucide-react').LucideIcon;
 
-export const POS_PRODUCTS: PosProduct[] = [
+export const POS_PRODUCTS: LegacyMockProduct[] = [
   { name: 'Ceramic Mug',        price: 28, icon: Coffee,      sku: 'MUG-001', category: 'Ceramics',    stock: 34 },
   { name: 'Linen Tote',         price: 42, icon: ShoppingBag, sku: 'TOT-002', category: 'Accessories', stock: 18 },
   { name: 'Wall Print A3',      price: 18, icon: ImageIcon,   sku: 'PRT-003', category: 'Prints',      stock: 52 },
@@ -36,7 +44,7 @@ export const RECENT_SALES = [
   { id: 'POS-8837', customer: 'Tom B.',   items: 6, total: 118.00, method: 'Cash', time: '1:22 PM' },
 ];
 
-export const POS_CUSTOMERS: PosCustomer[] = [
+export const POS_CUSTOMERS: LegacyMockCustomer[] = [
   { name: 'Sarah Mitchell', email: 'sarah@email.com', points: 420, segment: 'VIP'   },
   { name: 'David Reynolds', email: 'david@email.com', points: 180, segment: 'Loyal' },
   { name: 'Lena Kowalski',  email: 'lena@email.com',  points: 60,  segment: 'New'   },

@@ -6,17 +6,8 @@ export function SaleTab() {
   const sale = usePOSSale();
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      <ProductGrid
-        cart={sale.cart}
-        addItem={sale.addItem}
-        searchQuery={sale.searchQuery}
-        setSearchQuery={sale.setSearchQuery}
-        activeCategory={sale.activeCategory}
-        setActiveCategory={sale.setActiveCategory}
-        categories={sale.categories}
-        filtered={sale.filtered}
-      />
+    <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden">
+      <ProductGrid sale={sale} />
       <CartPanel sale={sale} />
     </div>
   );

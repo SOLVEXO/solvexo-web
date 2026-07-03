@@ -148,4 +148,79 @@ export const ENDPOINTS = {
     },
   },
 
+  // ── POS ───────────────────────────────────────────────────────────────────
+  POS: {
+    PIN_LOGIN: '/api/pos/pin-login',
+
+    EMPLOYEES: {
+      CREATE:     '/api/pos/employees',
+      LIST:       (storeId: string) => `/api/pos/employees/${storeId}`,
+      GET_BY_ID:  (storeId: string, employeeId: string) => `/api/pos/employees/${storeId}/${employeeId}`,
+      UPDATE:     (storeId: string, employeeId: string) => `/api/pos/employees/${storeId}/${employeeId}`,
+      REMOVE:     (storeId: string, employeeId: string) => `/api/pos/employees/${storeId}/${employeeId}`,
+      RESET_PIN:  (storeId: string, employeeId: string) => `/api/pos/employees/${storeId}/${employeeId}/reset-pin`,
+    },
+
+    REGISTERS: {
+      ADD:       (storeId: string) => `/api/pos/registers/${storeId}`,
+      LIST:      (storeId: string) => `/api/pos/registers/${storeId}`,
+      GET_BY_ID: (storeId: string, registerId: string) => `/api/pos/registers/${storeId}/${registerId}`,
+      UPDATE:    (storeId: string, registerId: string) => `/api/pos/registers/${storeId}/${registerId}`,
+      REMOVE:    (storeId: string, registerId: string) => `/api/pos/registers/${storeId}/${registerId}`,
+    },
+
+    SHIFTS: {
+      ADD:       (storeId: string) => `/api/pos/shifts/${storeId}`,
+      LIST:      (storeId: string) => `/api/pos/shifts/${storeId}`,
+      GET_BY_ID: (storeId: string, shiftId: string) => `/api/pos/shifts/${storeId}/${shiftId}`,
+      UPDATE:    (storeId: string, shiftId: string) => `/api/pos/shifts/${storeId}/${shiftId}`,
+      DELETE:    (storeId: string, shiftId: string) => `/api/pos/shifts/${storeId}/${shiftId}`,
+    },
+
+    PRODUCTS: {
+      SEARCH:         '/api/pos/products/search',
+      LIST:           (storeId: string) => `/api/pos/products/${storeId}`,
+      GET_BY_BARCODE: (storeId: string, barcode: string) => `/api/pos/products/barcode/${storeId}/${barcode}`,
+    },
+
+    SESSIONS: {
+      OPEN:            '/api/pos/sessions/open',
+      CLOSE:           '/api/pos/sessions/close',
+      ACTIVE:          '/api/pos/sessions/active',
+      HISTORY:         '/api/pos/sessions/history',
+      CASH_ADJUSTMENT: (sessionId: string) => `/api/pos/sessions/${sessionId}/cash-adjustment`,
+      REPORT:          (sessionId: string) => `/api/pos/sessions/${sessionId}/report`,
+      FORCE_CLOSE:     (sessionId: string) => `/api/pos/sessions/${sessionId}/force-close`,
+    },
+
+    SALES: {
+      CREATE:      '/api/pos/sales',
+      HELD:        '/api/pos/sales/held',
+      LIST:        '/api/pos/sales',
+      GET_BY_ID:   (saleId: string) => `/api/pos/sales/${saleId}`,
+      COMPLETE:    (saleId: string) => `/api/pos/sales/${saleId}/complete`,
+      REFUND:      (saleId: string) => `/api/pos/sales/${saleId}/refund`,
+      DISCARD:     (saleId: string) => `/api/pos/sales/${saleId}/discard`,
+      VOID:        (saleId: string) => `/api/pos/sales/${saleId}/void`,
+      UPDATE_ITEMS:(saleId: string) => `/api/pos/sales/${saleId}/items`,
+    },
+
+    REPORTS: {
+      DAILY:          '/api/pos/reports/daily',
+      RANGE:          '/api/pos/reports/range',
+      DAILY_EXPORT:   '/api/pos/reports/daily/export',
+      REGISTER:       (registerId: string) => `/api/pos/reports/register/${registerId}`,
+      EMPLOYEE:       (employeeId: string) => `/api/pos/reports/employee/${employeeId}`,
+    },
+
+    SETTINGS: {
+      GET:    (storeId: string) => `/api/pos/settings/${storeId}`,
+      UPDATE: (storeId: string) => `/api/pos/settings/${storeId}`,
+    },
+
+    AUDIT_LOGS: {
+      LIST: (storeId: string) => `/api/pos/audit-logs/${storeId}`,
+    },
+  },
+
 } as const;

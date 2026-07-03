@@ -50,6 +50,8 @@ const SellerMessages       = lazy(() => named(import('@/features/seller/dashboar
 const SellerSubscriptions  = lazy(() => named(import('@/features/seller/dashboard/SellerSubscriptions'),       'SellerSubscriptions'));
 const SellerStoreList      = lazy(() => named(import('@/features/seller/dashboard/storemodule/SellerStoreList'),'SellerStoreList'));
 const POSRegister          = lazy(() => named(import('@/features/seller/store/pos/POSRegister'),                'POSRegister'));
+const POSEmployeeLogin     = lazy(() => named(import('@/features/seller/store/pos/POSEmployeeLogin'),           'POSEmployeeLogin'));
+const PosLanding           = lazy(() => named(import('@/features/seller/store/pos/PosLanding'),                 'PosLanding'));
 
 // ── Store Workspace ───────────────────────────────────────────────────────────
 const StoreDashboard     = lazy(() => import('@/features/seller/store/Dashboard/StoreDashboard'));
@@ -125,8 +127,9 @@ export const router = createBrowserRouter([
       { path: '/verify-otp',      element: <VerifyOTPPage /> },
       { path: '/new-password',    element: <NewPasswordPage /> },
 
-      // ── POS — standalone (no seller sidebar) ──────────────────────────
-      { path: '/seller/store/:storeId/pos', element: <POSRegister /> },
+      // ── POS terminal — standalone (no seller sidebar) ──────────────────
+      { path: '/seller/store/:storeId/pos/register', element: <POSRegister /> },
+      { path: '/seller/store/:storeId/pos/login',    element: <POSEmployeeLogin /> },
 
       // ── Seller pages with dark sidebar ────────────────────────────────
       {
@@ -152,6 +155,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true,                              element: <Navigate to="dashboard" replace /> },
           { path: 'dashboard',                        element: <StoreDashboard /> },
+          { path: 'pos',                               element: <PosLanding /> },
           { path: 'orders',                           element: <StoreOrderList /> },
           { path: 'products',                         element: <StoreProductList /> },
           { path: 'products/add',                     element: <StoreAddProduct /> },
@@ -172,6 +176,7 @@ export const router = createBrowserRouter([
           { path: 'integrations',                     element: <StoreIntegrations /> },
           { path: 'activity',                         element: <StoreActivity /> },
           { path: 'followers',                        element: <StoreFollowers /> },
+          { path: 'pos-admin',                        element: <Navigate to="../pos" replace /> },
           { path: 'shipping',                         element: <SellerShipping /> },
           { path: 'messages',                         element: <SellerMessages /> },
         ],

@@ -1,31 +1,26 @@
 import { clsx } from 'clsx';
-import type { DiscountType, AppliedDiscount, PosView } from '../../pos.types';
+import type { PosDiscountType, AppliedDiscount, PosView } from '../../pos.types';
 
 interface DiscountPanelProps {
-  discountType:       DiscountType;
-  setDiscountType:    (t: DiscountType) => void;
-  discountVal:        string;
-  setDiscountVal:     (v: string) => void;
-  couponCode:         string;
-  setCouponCode:      (v: string) => void;
-  appliedDiscount:    AppliedDiscount | null;
-  setAppliedDiscount: (d: AppliedDiscount | null) => void;
-  applyDiscount:      () => void;
-  setPosView:         (v: PosView) => void;
+  discountType:    PosDiscountType;
+  setDiscountType: (t: PosDiscountType) => void;
+  discountVal:     string;
+  setDiscountVal:  (v: string) => void;
+  appliedDiscount: AppliedDiscount | null;
+  applyDiscount:   () => void;
+  removeDiscount:  () => void;
+  setPosView:      (v: PosView) => void;
 }
 
-const DISCOUNT_TABS: { id: DiscountType; label: string }[] = [
-  { id: 'pct',    label: '% Off'  },
-  { id: 'fixed',  label: '$ Off'  },
-  { id: 'coupon', label: 'Coupon' },
+const DISCOUNT_TABS: { id: PosDiscountType; label: string }[] = [
+  { id: 'pct',   label: '% Off' },
+  { id: 'fixed', label: '$ Off' },
 ];
 
 export function DiscountPanel({
   discountType, setDiscountType,
   discountVal, setDiscountVal,
-  couponCode, setCouponCode,
-  appliedDiscount, setAppliedDiscount,
-  applyDiscount,
+  appliedDiscount, applyDiscount, removeDiscount,
   setPosView,
 }: DiscountPanelProps) {
   return (
@@ -50,21 +45,12 @@ export function DiscountPanel({
         ))}
       </div>
 
-      {discountType !== 'coupon' ? (
-        <input
-          value={discountVal}
-          onChange={e => setDiscountVal(e.target.value)}
-          placeholder={discountType === 'pct' ? 'e.g. 10 (for 10%)' : 'e.g. 5.00'}
-          className="w-full bg-carbon border-0 rounded-lg px-3 py-[7px] text-[12px] text-white outline-none mb-2 box-border"
-        />
-      ) : (
-        <input
-          value={couponCode}
-          onChange={e => setCouponCode(e.target.value)}
-          placeholder="Enter coupon code (try: SAVE10)"
-          className="w-full bg-carbon border-0 rounded-lg px-3 py-[7px] text-[12px] text-white outline-none mb-2 box-border"
-        />
-      )}
+      <input
+        value={discountVal}
+        onChange={e => setDiscountVal(e.target.value)}
+        placeholder={discountType === 'pct' ? 'e.g. 10 (for 10%)' : 'e.g. 5.00'}
+        className="w-full bg-carbon border-0 rounded-lg px-3 py-[7px] text-[12px] text-white outline-none mb-2 box-border"
+      />
 
       <div className="flex gap-2">
         <button
@@ -75,7 +61,7 @@ export function DiscountPanel({
         </button>
         {appliedDiscount && (
           <button
-            onClick={() => { setAppliedDiscount(null); setPosView('charge'); }}
+            onClick={() => { removeDiscount(); setPosView('charge'); }}
             className="px-3 py-2 bg-carbon border-0 rounded-lg text-[12px] text-error cursor-pointer"
           >
             Remove

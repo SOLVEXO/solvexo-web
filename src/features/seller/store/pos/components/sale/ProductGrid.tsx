@@ -1,145 +1,220 @@
 import { clsx } from 'clsx';
-import { Search, Camera } from 'lucide-react';
-import { HELD_SALES } from '../../pos.data';
-import type { CartItem, PosProduct } from '../../pos.types';
+import { Search, ScanLine, ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
+import { useState } from 'react';
+import type { CartItem, POSSaleState } from '../../pos.types';
 
 interface ProductGridProps {
-  cart:              CartItem[];
-  addItem:           (p: PosProduct) => void;
-  searchQuery:       string;
-  setSearchQuery:    (q: string) => void;
-  activeCategory:    string;
-  setActiveCategory: (c: string) => void;
-  categories:        string[];
-  filtered:          PosProduct[];
+  sale: POSSaleState;
 }
 
-export function ProductGrid({
-  cart, addItem,
-  searchQuery, setSearchQuery,
-  activeCategory, setActiveCategory,
-  categories, filtered,
-}: ProductGridProps) {
+// A barcode scanner acts like a keyboard: it types the code then sends Enter.
+// Anything numeric ending in Enter is treated as a scan; everything else is a
+// live text search — one input handles both, no separate "scan mode" needed.
+const BARCODE_PATTERN = /^\d{6,}$/;
+
+export function ProductGrid({ sale }: ProductGridProps) {
+  const {
+    products, productsLoading, productsError,
+    searchQuery, setSearchQuery, page, totalPages, setPage,
+    lookupBarcode, barcodeError,
+    cart, addItem,
+    heldSales, heldSalesLoading, resumeHeldSale, discardHeldSale,
+  } = sale;
+
+  function cartQtyFor(variantId: string) {
+    return cart.find(i => i.variantId === variantId)?.qty ?? 0;
+  }
+
+  function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== 'Enter') return;
+    const value = searchQuery.trim();
+    if (BARCODE_PATTERN.test(value)) lookupBarcode(value);
+  }
+
   return (
-    <div className="flex-1 flex flex-col overflow-hidden border-r border-carbon">
+    <div className="flex-1 flex flex-col min-h-[420px] lg:min-h-0 lg:overflow-hidden lg:border-r border-carbon">
 
       {/* Search bar */}
-      <div className="flex gap-2 items-center px-4 py-[10px] bg-pos-surface border-b border-carbon shrink-0">
-        <div className="flex-1 flex items-center bg-carbon rounded-lg overflow-hidden">
+      <div className="flex flex-col gap-1 px-4 py-[10px] bg-pos-surface border-b border-carbon shrink-0">
+        <div className="flex items-center bg-carbon rounded-lg overflow-hidden">
           <Search size={13} className="ml-3 shrink-0 text-pos-faint" />
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search products or scan barcode (SKU)..."
+            onKeyDown={handleSearchKeyDown}
+            placeholder="Search products, or scan a barcode…"
             className="flex-1 px-3 py-2 text-[13px] bg-transparent border-0 outline-none text-white"
           />
+          <ScanLine size={13} className="mr-3 shrink-0 text-pos-muted" />
         </div>
-        <button className="px-[14px] py-[7px] bg-carbon border-0 rounded-lg text-[12px] cursor-pointer flex items-center gap-[6px] shrink-0 text-pos-faint">
-          <Camera size={12} /> Scan
-        </button>
-        <button className="px-[14px] py-[7px] bg-carbon border-0 rounded-lg text-[12px] cursor-pointer shrink-0 text-pos-faint">
-          + Custom Item
-        </button>
-      </div>
-
-      {/* Category pills */}
-      <div className="flex gap-[6px] px-4 py-2 bg-pos-surface border-b border-carbon shrink-0 overflow-x-auto">
-        {categories.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className={clsx(
-              'shrink-0 px-[14px] py-[5px] rounded-[20px] text-[11px] font-medium cursor-pointer border-0',
-              activeCategory === cat
-                ? 'bg-brand-orange text-white'
-                : 'bg-charcoal text-pos-faint',
-            )}
-          >
-            {cat}
-          </button>
-        ))}
+        {barcodeError && <span className="text-[11px] text-error px-1">{barcodeError}</span>}
       </div>
 
       {/* Product cards grid */}
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(140px,1fr))]">
-          {filtered.map(p => {
-            const inCart = cart.find(i => i.name === p.name);
-            return (
-              <button
-                key={p.name}
-                onClick={() => addItem(p)}
-                className={clsx(
-                  'relative flex flex-col items-center px-[14px] pt-5 pb-4 rounded-xl text-center transition-[border-color] duration-150 bg-pos-surface border min-h-0',
-                  inCart ? 'border-brand-orange' : 'border-charcoal',
-                  p.stock === 0 ? 'cursor-not-allowed opacity-45' : 'cursor-pointer',
-                )}
-              >
-                {/* Qty badge */}
-                {inCart && (
-                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand-orange text-white text-[10px] font-bold flex items-center justify-center">
-                    {inCart.qty}
-                  </div>
-                )}
-
-                {/* Icon */}
-                <div className="w-12 h-12 mb-[10px] flex items-center justify-center shrink-0">
-                  <p.icon
-                    size={30}
-                    className={clsx('text-brand-orange', p.stock === 0 && 'opacity-30')}
-                  />
-                </div>
-
-                {/* Name */}
-                <span className="block text-[12px] font-semibold text-white leading-[1.35] mb-1 break-words">
-                  {p.name}
-                </span>
-
-                {/* SKU */}
-                <span className="block text-[10px] mb-2 text-pos-muted">
-                  {p.sku}
-                </span>
-
-                {/* Price */}
-                <span className={clsx(
-                  'block text-[15px] font-bold',
-                  p.stock === 0 ? 'text-pos-muted' : 'text-brand-orange',
-                )}>
-                  ${p.price.toFixed(2)}
-                </span>
-
-                {/* Stock states */}
-                {p.stock > 0 && p.stock <= 8 && (
-                  <span className="block text-[10px] mt-1 text-warning">Low: {p.stock} left</span>
-                )}
-                {p.stock === 0 && (
-                  <span className="block text-[10px] mt-1 text-error">Out of stock</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {productsLoading ? (
+          <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(140px,1fr))]">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="h-[150px] rounded-xl bg-pos-surface border border-charcoal animate-pulse" />
+            ))}
+          </div>
+        ) : productsError ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <ImageOff size={36} className="text-error mb-3" />
+            <p className="text-[13px] font-semibold text-white mb-1">Failed to load products</p>
+            <p className="text-[12px] text-pos-muted max-w-[280px]">{productsError}</p>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Search size={36} className="text-pos-muted mb-3" />
+            <p className="text-[13px] font-semibold text-white mb-1">No products found</p>
+            <p className="text-[12px] text-pos-muted">Try a different search term.</p>
+          </div>
+        ) : (
+          <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(140px,1fr))]">
+            {products.map(p => (
+              <ProductCard
+                key={p.productId}
+                product={p}
+                cartQtyFor={cartQtyFor}
+                onAdd={addItem}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Held sales bar */}
-      {HELD_SALES.length > 0 && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-pos-surface border-t border-carbon shrink-0">
-          <span className="text-[11px] shrink-0 text-pos-muted">On Hold:</span>
-          {HELD_SALES.map(h => (
-            <button
-              key={h.id}
-              className="flex items-center gap-2 px-3 py-[5px] bg-carbon border-0 rounded-lg cursor-pointer"
-            >
-              <span className="text-[11px] font-medium text-white">{h.customer}</span>
-              <span className="text-[11px] text-brand-orange">${h.total.toFixed(2)}</span>
-              <span className="text-[10px] text-pos-muted">{h.time}</span>
-            </button>
-          ))}
-          <button className="ml-auto px-3 py-[5px] bg-transparent border border-carbon rounded-lg cursor-pointer text-[11px] text-pos-faint">
-            Hold Current Sale
+      {/* Pagination */}
+      {!searchQuery && totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 px-4 py-2 bg-pos-surface border-t border-carbon shrink-0">
+          <button
+            onClick={() => setPage(Math.max(1, page - 1))}
+            disabled={page <= 1}
+            className="w-7 h-7 rounded-lg bg-carbon border-0 text-white cursor-pointer flex items-center justify-center disabled:opacity-30"
+          >
+            <ChevronLeft size={14} />
           </button>
+          <span className="text-[11px] text-pos-muted">Page {page} of {totalPages}</span>
+          <button
+            onClick={() => setPage(Math.min(totalPages, page + 1))}
+            disabled={page >= totalPages}
+            className="w-7 h-7 rounded-lg bg-carbon border-0 text-white cursor-pointer flex items-center justify-center disabled:opacity-30"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Held sales bar */}
+      {(heldSales.length > 0 || heldSalesLoading) && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-pos-surface border-t border-carbon shrink-0 overflow-x-auto">
+          <span className="text-[11px] shrink-0 text-pos-muted">On Hold:</span>
+          {heldSales.map(h => (
+            <div key={h._id} className="flex items-center gap-2 px-3 py-[5px] bg-carbon rounded-lg shrink-0">
+              <button
+                onClick={() => resumeHeldSale(h)}
+                className="bg-transparent border-0 cursor-pointer flex items-center gap-2"
+              >
+                <span className="text-[11px] font-medium text-white">{h.customerName}</span>
+                <span className="text-[11px] text-brand-orange">${h.total.toFixed(2)}</span>
+              </button>
+              <button
+                onClick={() => discardHeldSale(h._id)}
+                className="text-[13px] leading-none bg-transparent border-0 cursor-pointer text-[#6A6862]"
+                title="Discard held sale"
+              >
+                ×
+              </button>
+            </div>
+          ))}
         </div>
       )}
     </div>
   );
 }
+
+function ProductCard({
+  product, cartQtyFor, onAdd,
+}: {
+  product: POSSaleState['products'][number];
+  cartQtyFor: (variantId: string) => number;
+  onAdd: (item: Parameters<POSSaleState['addItem']>[0]) => void;
+}) {
+  const variants = product.variants ?? [];
+  const [selectedId, setSelectedId] = useState(
+    variants.find(v => v.isDefault)?.variantId ?? variants[0]?.variantId ?? '',
+  );
+  const variant = variants.find(v => v.variantId === selectedId) ?? variants[0];
+
+  if (!variant) return null;
+
+  const inCartQty = cartQtyFor(variant.variantId);
+  const outOfStock = variant.stock <= 0;
+
+  return (
+    <div
+      className={clsx(
+        'relative flex flex-col items-center px-[14px] pt-4 pb-4 rounded-xl text-center bg-pos-surface border',
+        inCartQty > 0 ? 'border-brand-orange' : 'border-charcoal',
+      )}
+    >
+      {inCartQty > 0 && (
+        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand-orange text-white text-[10px] font-bold flex items-center justify-center">
+          {inCartQty}
+        </div>
+      )}
+
+      <button
+        onClick={() => !outOfStock && onAdd({
+          productId: product.productId,
+          variantId: variant.variantId,
+          name:      product.name,
+          sku:       variant.sku,
+          image:     product.image,
+          price:     variant.price,
+          stock:     variant.stock,
+        })}
+        disabled={outOfStock}
+        className={clsx('flex flex-col items-center w-full bg-transparent border-0', outOfStock ? 'cursor-not-allowed opacity-45' : 'cursor-pointer')}
+      >
+        <div className="w-14 h-14 mb-[10px] flex items-center justify-center shrink-0 rounded-lg overflow-hidden bg-carbon">
+          {product.image ? (
+            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+          ) : (
+            <ImageOff size={22} className="text-pos-muted" />
+          )}
+        </div>
+
+        <span className="block text-[12px] font-semibold text-white leading-[1.35] mb-1 break-words">
+          {product.name}
+        </span>
+        <span className="block text-[10px] mb-2 text-pos-muted">{variant.sku}</span>
+        <span className={clsx('block text-[15px] font-bold', outOfStock ? 'text-pos-muted' : 'text-brand-orange')}>
+          ${variant.price.toFixed(2)}
+        </span>
+
+        {!outOfStock && variant.stock <= 8 && (
+          <span className="block text-[10px] mt-1 text-warning">Low: {variant.stock} left</span>
+        )}
+        {outOfStock && <span className="block text-[10px] mt-1 text-error">Out of stock</span>}
+      </button>
+
+      {variants.length > 1 && (
+        <select
+          value={selectedId}
+          onChange={e => setSelectedId(e.target.value)}
+          onClick={e => e.stopPropagation()}
+          className="mt-2 w-full bg-carbon border-0 rounded-md px-1 py-1 text-[10px] text-white outline-none"
+        >
+          {variants.map(v => (
+            <option key={v.variantId} value={v.variantId}>
+              {[v.size, v.color].filter(Boolean).join(' / ') || v.sku}
+            </option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+}
+
+export type { CartItem };
