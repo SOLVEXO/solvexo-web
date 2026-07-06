@@ -310,10 +310,11 @@ export interface StorePageHeaderProps {
 export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderProps) {
   const { toggle } = useContext(StoreSidebarCtx);
   return (
-    <div className="bg-white border-b border-bone px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
+    <div className="bg-white/90 backdrop-blur-md border-b border-bone shadow-xs px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
       <div className="flex items-center gap-3">
         <button
           onClick={toggle}
+          aria-label="Toggle sidebar"
           className="lg:hidden size-8 rounded-md border border-bone flex items-center justify-center text-slate hover:bg-cream transition-colors cursor-pointer shrink-0"
         >
           <PanelLeftOpen size={16} />
@@ -325,9 +326,12 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
       </div>
       <div className="flex items-center gap-[10px]">
         {actions}
-        <div className="size-[34px] rounded-md bg-brand-pale-orange flex items-center justify-center cursor-pointer shrink-0">
+        <button
+          aria-label="Notifications"
+          className="size-[34px] rounded-md bg-brand-pale-orange flex items-center justify-center cursor-pointer shrink-0 border-none hover:opacity-80 transition-opacity"
+        >
           <Bell size={16} className="text-brand-orange" />
-        </div>
+        </button>
       </div>
     </div>
   );

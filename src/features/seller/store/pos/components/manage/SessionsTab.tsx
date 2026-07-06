@@ -72,7 +72,7 @@ export function SessionsTab({ storeId }: SessionsTabProps) {
                 <td className="px-4 py-[10px]"><Badge color={s.status === 'open' ? 'green' : 'gray'}>{s.status}</Badge></td>
                 <td className="px-4 py-[10px] text-right">
                   {s.status === 'open' && (
-                    <DarkButton variant="danger" icon={<Lock size={11} />} onClick={() => setClosing(s)} className="!px-3 !py-1 text-[11px]">
+                    <DarkButton variant="danger" icon={<Lock size={11} />} onClick={() => setClosing(s)} className="px-3! py-1! text-[11px]">
                       Force Close
                     </DarkButton>
                   )}

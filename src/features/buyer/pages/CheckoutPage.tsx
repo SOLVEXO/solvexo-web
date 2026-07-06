@@ -211,7 +211,7 @@ export function CheckoutPage() {
   return (
     <div className="min-h-screen bg-cream">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-4 md:px-10 gap-4">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-bone shadow-xs h-[60px] flex items-center px-4 md:px-10 gap-4">
         <div className="flex-1 flex items-center gap-2">
           <SolvexoIcon size={28} />
           <span className="font-bold text-[15px] text-carbon">Solvex</span>
@@ -230,7 +230,7 @@ export function CheckoutPage() {
           {/* ── Left panel ─────────────────────────────────────────────── */}
           {isDigital ? (
             /* ── Digital: single-step payment ──────────────────────────── */
-            <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
+            <div className="bg-white rounded-xl shadow-card border border-bone overflow-hidden">
 
               {/* Header */}
               <div className="px-6 pt-5 pb-4 border-b border-bone flex items-center justify-between">
@@ -300,7 +300,7 @@ export function CheckoutPage() {
             </div>
           ) : (
             /* ── Physical: 3-step flow ──────────────────────────────────── */
-            <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
+            <div className="bg-white rounded-xl shadow-card border border-bone overflow-hidden">
 
             {/* ── Card Header ───────────────────────────────────────────── */}
             <div className="px-6 pt-5 pb-4 border-b border-bone">
@@ -700,7 +700,7 @@ export function CheckoutPage() {
           )} {/* end isDigital ? ... : ... */}
 
           {/* ── Right: Order Summary ──────────────────────────────────── */}
-          <div className="bg-white rounded-[12px] border border-bone p-6 lg:sticky top-20">
+          <div className="bg-white rounded-xl shadow-card border border-bone p-6 lg:sticky top-20">
             <p className="text-[15px] font-bold text-carbon mb-[18px]">Order Summary</p>
 
             {/* Items — filtered to current cartType only */}

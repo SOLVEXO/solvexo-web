@@ -56,7 +56,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
     'bg-transparent text-slate border-0 hover:bg-cream',
   // Inline link style — no padding, orange text (Forgot password, View All…)
   link:
-    'bg-transparent text-brand-orange border-0 !p-0 hover:opacity-80 active:scale-100',
+    'bg-transparent text-brand-orange border-0 p-0! hover:opacity-80 active:scale-100',
   // Dark fill — dark-theme CTAs
   dark:
     'bg-charcoal text-white border-0 shadow-[0_1px_2px_rgba(0,0,0,0.2)] hover:bg-carbon',
@@ -97,7 +97,7 @@ export function Button({
         SIZES[size],
         VARIANTS[variant],
         fullWidth  && 'w-full',
-        pill       && '!rounded-full',
+        pill       && 'rounded-full!',
         isDisabled && 'opacity-50 cursor-not-allowed pointer-events-none',
         className,
       )}

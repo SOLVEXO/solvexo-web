@@ -4,10 +4,18 @@ import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useResetPassword } from '@/hooks/auth/useResetPassword';
 import { Button } from '@/components/comman/ui/Button';
-import { Eye, EyeOff, ArrowRight, Check, Circle } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Check, Circle, Lock, ShieldCheck, KeyRound } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { newPasswordSchema, type NewPasswordFormData } from '@/utils/validation/schemas';
 import { AuthContext } from '@/api/services/auth';
+import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
+import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
+
+const HIGHLIGHTS = [
+  { Icon: KeyRound,    text: 'Verify with the code we emailed you' },
+  { Icon: Lock,        text: 'Choose a strong, unique password' },
+  { Icon: ShieldCheck, text: 'You will stay signed out of other devices' },
+];
 
 function getStrength(password: string) {
   if (!password) return { score: 0, label: '', colorClass: '', bgClass: 'bg-bone' };
@@ -109,85 +117,84 @@ export function NewPasswordPage() {
 
   if (resetPassword.success) {
     return (
-      <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
-        <div className="bg-white rounded-[20px] px-6 py-6 md:px-10 md:py-9 w-full max-w-[440px] border border-bone">
-          <h1 className="text-[22px] font-bold text-carbon text-center mb-2">Password updated!</h1>
-          <p className="text-[13px] text-slate text-center leading-[1.6] mb-7">
-            Your password has been changed. You can now sign in.
-          </p>
-          <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/login')}>
-            Sign In Now <ArrowRight size={14} className="inline align-middle ml-1" />
-          </Button>
-        </div>
-      </div>
+      <AuthSplitLayout heading="Password updated." subtext="You're all set — sign back in with your new password." highlights={HIGHLIGHTS}>
+        <div className="lg:hidden flex justify-center mb-6"><SolvexoLogo size={32} /></div>
+        <h1 className="text-[22px] font-bold text-carbon text-center mb-2">Password updated!</h1>
+        <p className="text-[13px] text-slate text-center leading-[1.6] mb-6">
+          Your password has been changed. You can now sign in.
+        </p>
+        <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/login')}>
+          Sign In Now <ArrowRight size={14} className="inline align-middle ml-1" />
+        </Button>
+      </AuthSplitLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-[20px] px-6 py-6 md:px-10 md:py-9 w-full max-w-[440px] border border-bone">
-        <h1 className="text-[22px] font-bold text-carbon text-center mb-2">Reset your password</h1>
-        {userEmail && (
-          <p className="text-[13px] text-slate text-center mb-5 leading-[1.6]">
-            Enter the code sent to <strong className="text-carbon">{userEmail}</strong>
+    <AuthSplitLayout heading="Almost there. Set a new password." subtext="Enter the code we emailed you and choose a new password to finish." highlights={HIGHLIGHTS}>
+      <div className="lg:hidden flex justify-center mb-6"><SolvexoLogo size={32} /></div>
+
+      <h1 className="text-[22px] font-bold text-carbon text-center lg:text-left mb-2">Reset your password</h1>
+      {userEmail && (
+        <p className="text-[13px] text-slate text-center lg:text-left mb-5 leading-[1.6]">
+          Enter the code sent to <strong className="text-carbon">{userEmail}</strong>
+        </p>
+      )}
+
+      {/* OTP */}
+      <div className="mb-4">
+        <label htmlFor="reset-otp" className="block text-[12px] font-medium text-charcoal mb-[6px]">Verification Code</label>
+        <input
+          id="reset-otp"
+          type="text" inputMode="numeric" maxLength={6} placeholder="Enter 6-digit OTP" value={otp} autoComplete="one-time-code"
+          onChange={e => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
+          className={clsx(
+            'w-full px-3 py-[10px] rounded-lg border text-charcoal outline-none bg-white text-center',
+            otpError ? 'border-error' : otp.length === 6 ? 'border-success' : 'border-bone',
+            otp ? 'tracking-[0.3em] font-bold text-[18px]' : 'text-[13px]',
+          )}
+        />
+        {otpError && <p className="text-[11px] text-error mt-[5px]">{otpError}</p>}
+        {otp.length === 6 && !otpError && (
+          <p className="text-[11px] text-success mt-[5px] flex items-center gap-1">
+            <Check size={11} /> Code entered
           </p>
         )}
-
-        {/* OTP */}
-        <div className="mb-5">
-          <label htmlFor="reset-otp" className="block text-[12px] font-medium text-charcoal mb-[6px]">Verification Code</label>
-          <input
-            id="reset-otp"
-            type="text" inputMode="numeric" maxLength={6} placeholder="Enter 6-digit OTP" value={otp} autoComplete="one-time-code"
-            onChange={e => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
-            className={clsx(
-              'w-full px-3 py-[10px] rounded-lg border text-charcoal outline-none bg-white text-center',
-              otpError ? 'border-error' : otp.length === 6 ? 'border-success' : 'border-bone',
-              otp ? 'tracking-[0.3em] font-bold text-[18px]' : 'text-[13px]',
-            )}
-          />
-          {otpError && <p className="text-[11px] text-error mt-[5px]">{otpError}</p>}
-          {otp.length === 6 && !otpError && (
-            <p className="text-[11px] text-success mt-[5px] flex items-center gap-1">
-              <Check size={11} /> Code entered
-            </p>
-          )}
-        </div>
-
-        {/* New password */}
-        <div className="mb-4">
-          <PasswordInput label="New Password" placeholder="Enter new password"
-            value={values.password} onChange={v => setValue('password', v)}
-            onBlur={blur('password')} error={errors.password} />
-          <StrengthBar password={values.password} />
-        </div>
-
-        {/* Confirm */}
-        <div className="mb-5">
-          <PasswordInput label="Confirm Password" placeholder="Confirm new password"
-            value={values.confirmPassword} onChange={v => setValue('confirmPassword', v)}
-            onBlur={blur('confirmPassword')} error={errors.confirmPassword} />
-          {values.confirmPassword && (
-            <p className={clsx('text-[11px] mt-[5px]', passwordsMatch ? 'text-success' : 'text-error')}>
-              {passwordsMatch
-                ? <><Check size={11} className="inline align-middle mr-[3px]" />Passwords match</>
-                : <>✗ Passwords do not match</>}
-            </p>
-          )}
-        </div>
-
-        {resetPassword.error && (
-          <div className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 text-[13px] text-error">
-            {resetPassword.error}
-          </div>
-        )}
-
-        <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={resetPassword.loading}>
-          {resetPassword.loading
-            ? 'Resetting...'
-            : <span>Reset Password <ArrowRight size={14} className="inline align-middle ml-1" /></span>}
-        </Button>
       </div>
-    </div>
+
+      {/* New password */}
+      <div className="mb-3">
+        <PasswordInput label="New Password" placeholder="Enter new password"
+          value={values.password} onChange={v => setValue('password', v)}
+          onBlur={blur('password')} error={errors.password} />
+        <StrengthBar password={values.password} />
+      </div>
+
+      {/* Confirm */}
+      <div className="mb-4">
+        <PasswordInput label="Confirm Password" placeholder="Confirm new password"
+          value={values.confirmPassword} onChange={v => setValue('confirmPassword', v)}
+          onBlur={blur('confirmPassword')} error={errors.confirmPassword} />
+        {values.confirmPassword && (
+          <p className={clsx('text-[11px] mt-[5px]', passwordsMatch ? 'text-success' : 'text-error')}>
+            {passwordsMatch
+              ? <><Check size={11} className="inline align-middle mr-[3px]" />Passwords match</>
+              : <>✗ Passwords do not match</>}
+          </p>
+        )}
+      </div>
+
+      {resetPassword.error && (
+        <div className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 text-[13px] text-error">
+          {resetPassword.error}
+        </div>
+      )}
+
+      <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={resetPassword.loading}>
+        {resetPassword.loading
+          ? 'Resetting...'
+          : <span>Reset Password <ArrowRight size={14} className="inline align-middle ml-1" /></span>}
+      </Button>
+    </AuthSplitLayout>
   );
 }

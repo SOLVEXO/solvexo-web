@@ -190,6 +190,7 @@ export function AdminLayout() {
         <div className="lg:hidden flex items-center gap-3 px-4 py-[11px] bg-admin-bg border-b border-charcoal sticky top-0 z-30 shrink-0">
           <button
             onClick={toggle}
+            aria-label="Toggle sidebar"
             className="size-8 rounded-md flex items-center justify-center text-pos-muted hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
           >
             <PanelLeftOpen size={17} />

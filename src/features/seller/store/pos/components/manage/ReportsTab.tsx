@@ -68,7 +68,7 @@ function DailySection({ storeId }: { storeId: string }) {
   return (
     <div>
       <div className="flex items-end gap-3 mb-4 flex-wrap">
-        <DarkField label="Date" className="!mb-0">
+        <DarkField label="Date" className="mb-0!">
           <DarkInput type="date" value={date} onChange={e => setDate(e.target.value)} />
         </DarkField>
         <DarkButton variant="outline" icon={<Download size={13} />} onClick={handleExport} loading={exporting}>Export CSV</DarkButton>
@@ -136,8 +136,8 @@ function RangeSection({ storeId }: { storeId: string }) {
   return (
     <div>
       <div className="flex items-end gap-3 mb-4 flex-wrap">
-        <DarkField label="From" className="!mb-0"><DarkInput type="date" value={from} onChange={e => setFrom(e.target.value)} /></DarkField>
-        <DarkField label="To" className="!mb-0"><DarkInput type="date" value={to} onChange={e => setTo(e.target.value)} /></DarkField>
+        <DarkField label="From" className="mb-0!"><DarkInput type="date" value={from} onChange={e => setFrom(e.target.value)} /></DarkField>
+        <DarkField label="To" className="mb-0!"><DarkInput type="date" value={to} onChange={e => setTo(e.target.value)} /></DarkField>
         <DarkButton onClick={load} loading={loading}>Run Report</DarkButton>
       </div>
 

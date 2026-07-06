@@ -5,6 +5,15 @@ import { Button } from '@/components/comman/ui/Button';
 import { AlertTriangle, ArrowRight, Check } from 'lucide-react';
 import { runSchema, otpSchema } from '@/utils/validation/schemas';
 import { AuthContext, apiResendOtp, type AppRole } from '@/api/services/auth';
+import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
+import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
+import { Mail, ShieldCheck, KeyRound } from 'lucide-react';
+
+const HIGHLIGHTS = [
+  { Icon: Mail,        text: 'Check your inbox for a 6-digit code' },
+  { Icon: KeyRound,    text: 'Codes expire after a short window' },
+  { Icon: ShieldCheck, text: 'This keeps your account secure' },
+];
 
 function OTPInput({ values, onChange }: { values: string[]; onChange: (i: number, v: string) => void }) {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
@@ -128,38 +137,38 @@ export function VerifyOTPPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-[20px] px-6 py-6 md:px-10 md:py-9 w-full max-w-[440px] border border-bone">
-        <h1 className="text-[22px] font-bold text-carbon text-center mb-2">
-          Verify your email
-        </h1>
-        <p className="text-[13px] text-slate text-center mb-1 leading-[1.6]">
-          We sent a 6-digit verification code to
-        </p>
-        <p className="text-[14px] font-semibold text-carbon text-center mb-7">
-          {userEmail || '—'}
-        </p>
+    <AuthSplitLayout heading="One last step." subtext="Verify your email address to finish setting up your Solvexo account." highlights={HIGHLIGHTS}>
+      <div className="lg:hidden flex justify-center mb-6"><SolvexoLogo size={32} /></div>
 
-        <div className="mb-5">
-          <OTPInput values={otp} onChange={handleChange} />
-        </div>
+      <h1 className="text-[22px] font-bold text-carbon text-center mb-2">
+        Verify your email
+      </h1>
+      <p className="text-[13px] text-slate text-center mb-1 leading-[1.6]">
+        We sent a 6-digit verification code to
+      </p>
+      <p className="text-[14px] font-semibold text-carbon text-center mb-6">
+        {userEmail || '—'}
+      </p>
 
-        {(error || verifyOtp.error) && (
-          <div className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 flex items-center gap-2">
-            <AlertTriangle size={14} className="text-error shrink-0" />
-            <span className="text-[13px] text-error">{error || verifyOtp.error}</span>
-          </div>
-        )}
-
-        <Button variant="primary" size="lg" fullWidth onClick={handleVerify} disabled={otp.join('').length < 6 || verifyOtp.loading}>
-          {verifyOtp.loading ? 'Verifying...' : <span>Verify Code <ArrowRight size={14} className="inline align-middle ml-1" /></span>}
-        </Button>
-
-        <div className="flex items-center justify-center gap-[6px] mt-5">
-          <span className="text-[13px] text-slate">Didn't receive it?</span>
-          <ResendTimer email={userEmail} role={userRole} />
-        </div>
+      <div className="mb-5">
+        <OTPInput values={otp} onChange={handleChange} />
       </div>
-    </div>
+
+      {(error || verifyOtp.error) && (
+        <div className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 flex items-center gap-2">
+          <AlertTriangle size={14} className="text-error shrink-0" />
+          <span className="text-[13px] text-error">{error || verifyOtp.error}</span>
+        </div>
+      )}
+
+      <Button variant="primary" size="lg" fullWidth onClick={handleVerify} disabled={otp.join('').length < 6 || verifyOtp.loading}>
+        {verifyOtp.loading ? 'Verifying...' : <span>Verify Code <ArrowRight size={14} className="inline align-middle ml-1" /></span>}
+      </Button>
+
+      <div className="flex items-center justify-center gap-[6px] mt-5">
+        <span className="text-[13px] text-slate">Didn't receive it?</span>
+        <ResendTimer email={userEmail} role={userRole} />
+      </div>
+    </AuthSplitLayout>
   );
 }

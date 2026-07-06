@@ -14,7 +14,10 @@ export function RootLayout() {
   return (
     <>
       <ReferenceNav />
-      <div style={{ paddingTop: 44 }}>
+      {/* height is explicit (not just paddingTop) so full-viewport child pages can
+          size themselves with h-full instead of an independent calc(100vh - 44px),
+          which produced a 1px scrollbar mismatch at some browser zoom levels */}
+      <div style={{ paddingTop: 44, height: '100vh' }}>
         <Suspense fallback={<PageSpinner />}>
           <Outlet />
         </Suspense>

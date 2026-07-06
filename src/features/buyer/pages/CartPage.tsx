@@ -77,7 +77,7 @@ export function CartPage() {
     <div className="min-h-screen bg-cream">
 
       {/* ── Nav ── */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-4 md:px-10 gap-4">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-bone shadow-xs h-[60px] flex items-center px-4 md:px-10 gap-4">
         <div className="flex-1 flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
           <SolvexoIcon size={28} />
           <span className="font-bold text-[15px] text-carbon">Solvex</span>
@@ -107,7 +107,7 @@ export function CartPage() {
 
         {/* ── Empty ── */}
         {isEmpty && (
-          <div className="bg-white rounded-[12px] border border-bone p-10 text-center">
+          <div className="bg-white rounded-xl shadow-card border border-bone p-10 text-center">
             <div className="w-16 h-16 rounded-2xl bg-bone flex items-center justify-center mx-auto mb-4">
               <ShoppingBag size={30} className="text-slate opacity-60" />
             </div>
@@ -122,7 +122,7 @@ export function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
 
             {/* ── Left: Cart card ── */}
-            <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
+            <div className="bg-white rounded-xl shadow-card border border-bone overflow-hidden">
 
               {/* Card header */}
               <div className="px-6 pt-5 pb-4 border-b border-bone flex items-center justify-between">
@@ -269,7 +269,7 @@ export function CartPage() {
             </div>
 
             {/* ── Right: Order Summary ── */}
-            <div className="bg-white rounded-[12px] border border-bone p-6 lg:sticky top-20 flex flex-col gap-5">
+            <div className="bg-white rounded-xl shadow-card border border-bone p-6 lg:sticky top-20 flex flex-col gap-5">
               <p className="text-[15px] font-bold text-carbon">Order Summary</p>
 
               {/* Item list */}
@@ -318,7 +318,7 @@ export function CartPage() {
                 {!typeKnown && (
                   <button
                     onClick={() => navigate('/checkout', { state: { cartType: 'physical' } })}
-                    className="w-full flex items-center justify-center gap-2 bg-brand-orange text-white rounded-[10px] px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 bg-brand-orange text-white rounded-xl px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer transition-[background-color,box-shadow] hover:bg-brand-deep-orange shadow-[0_1px_2px_rgba(184,90,54,0.15)] hover:shadow-[0_2px_8px_rgba(184,90,54,0.25)]"
                   >
                     <Package size={15} /> Proceed to Checkout
                     <ChevronRight size={14} className="ml-auto" />
@@ -329,7 +329,7 @@ export function CartPage() {
                 {hasPhysical && (
                   <button
                     onClick={() => navigate('/checkout', { state: { cartType: 'physical' } })}
-                    className="w-full flex items-center justify-between gap-2 bg-brand-orange text-white rounded-[10px] px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer"
+                    className="w-full flex items-center justify-between gap-2 bg-brand-orange text-white rounded-xl px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer transition-[background-color,box-shadow] hover:bg-brand-deep-orange shadow-[0_1px_2px_rgba(184,90,54,0.15)] hover:shadow-[0_2px_8px_rgba(184,90,54,0.25)]"
                   >
                     <span className="flex items-center gap-2">
                       <Package size={15} />
@@ -347,10 +347,10 @@ export function CartPage() {
                   <button
                     onClick={() => navigate('/checkout', { state: { cartType: 'digital' } })}
                     className={clsx(
-                      'w-full flex items-center justify-between gap-2 rounded-[10px] px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer',
+                      'w-full flex items-center justify-between gap-2 rounded-xl px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer transition-[background-color,box-shadow]',
                       hasPhysical
-                        ? 'bg-[#3851D1] text-white'
-                        : 'bg-brand-orange text-white',
+                        ? 'bg-[#3851D1] text-white hover:bg-[#2E42B0]'
+                        : 'bg-brand-orange text-white hover:bg-brand-deep-orange',
                     )}
                   >
                     <span className="flex items-center gap-2">

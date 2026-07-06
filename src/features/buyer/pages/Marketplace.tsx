@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 
-// ── Promotional banner carousel (admin-managed, live from /api/banners) ───────
+// ── Promotional banner carousel — full-bleed hero background (admin-managed) ──
 function BannerCarousel({ banners }: { banners: Banner[] }) {
   const [index, setIndex] = useState(0);
 
@@ -32,33 +32,36 @@ function BannerCarousel({ banners }: { banners: Banner[] }) {
 
   const go = (dir: 1 | -1) => setIndex(i => (i + dir + sorted.length) % sorted.length);
 
-  const content = <img loading="lazy" decoding="async" src={active.bannerImage} alt="" className="w-full h-full object-cover" />;
+  const content = <img loading="lazy" decoding="async" src={active.bannerImage} alt="" className="absolute inset-0 w-full h-full object-cover" />;
 
   return (
-    <div className="relative w-full h-full aspect-[16/9] rounded-2xl bg-white overflow-hidden group">
+    <div className="absolute inset-0 group">
       {active.urlOnTap ? (
-        <a href={active.urlOnTap} target="_blank" rel="noreferrer">{content}</a>
+        <a href={active.urlOnTap} target="_blank" rel="noreferrer" className="absolute inset-0">{content}</a>
       ) : content}
 
       {sorted.length > 1 && (
         <>
           <button
             onClick={() => go(-1)}
-            className="absolute left-3 top-1/2 -translate-y-1/2 size-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Previous banner"
+            className="absolute left-3 top-1/2 -translate-y-1/2 size-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10"
           >
             <ChevronLeft size={16} className="text-charcoal" />
           </button>
           <button
             onClick={() => go(1)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 size-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Next banner"
+            className="absolute right-3 top-1/2 -translate-y-1/2 size-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10"
           >
             <ChevronRight size={16} className="text-charcoal" />
           </button>
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-[6px]">
+          <div className="absolute bottom-4 right-4 sm:right-6 lg:right-10 flex gap-[6px] z-10">
             {sorted.map((b, i) => (
               <button
                 key={b._id}
                 onClick={() => setIndex(i)}
+                aria-label={`Go to banner ${i + 1}`}
                 className="h-[6px] rounded-full border-none cursor-pointer transition-all"
                 style={{ width: i === index ? 18 : 6, background: i === index ? '#D97757' : 'rgba(255,255,255,0.7)' }}
               />
@@ -84,7 +87,7 @@ function SolvexoIcon({ size = 32 }: { size?: number }) {
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function ProductCardSkeleton() {
   return (
-    <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
+    <div className="bg-white rounded-xl border border-bone overflow-hidden">
       <div className="animate-pulse h-[130px] sm:h-[160px] lg:h-[180px] bg-bone" />
       <div className="p-2 sm:p-4">
         <div className="animate-pulse h-[12px] bg-bone rounded-[6px] mb-2" />
@@ -166,7 +169,7 @@ const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, i
   const vId         = defaultVariant?._id ?? '';
 
   return (
-    <Card padding="none" hover onClick={() => onClick(product._id)} className="overflow-hidden">
+    <Card padding="none" hover shadow={false} onClick={() => onClick(product._id)} className="overflow-hidden">
       {/* Image */}
       <div className="relative">
         <ProductImage
@@ -387,7 +390,7 @@ export function Marketplace() {
     <div className="min-h-screen bg-cream">
 
       {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-bone shadow-xs">
         <div className="h-[60px] flex items-center gap-3 px-4 sm:px-6 lg:px-10">
 
           {/* Logo */}
@@ -426,9 +429,10 @@ export function Marketplace() {
             </Button>
 
             {/* Wishlist */}
-            <div
+            <button
               onClick={() => navigate('/account/profile?tab=wishlist')}
-              className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer shrink-0"
+              aria-label={`Wishlist${wishlistCount > 0 ? ` (${wishlistCount} items)` : ''}`}
+              className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer shrink-0 transition-transform hover:scale-105"
             >
               <Heart size={16} className={wishlistCount > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'} />
               {wishlistCount > 0 && (
@@ -436,12 +440,13 @@ export function Marketplace() {
                   {wishlistCount > 99 ? '99+' : wishlistCount}
                 </span>
               )}
-            </div>
+            </button>
 
             {/* Cart */}
-            <div
+            <button
               onClick={() => navigate('/cart')}
-              className="relative w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer shrink-0"
+              aria-label={`Cart${cartCount > 0 ? ` (${cartCount} items)` : ''}`}
+              className="relative w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer shrink-0 transition-transform hover:scale-105"
             >
               <ShoppingCart size={16} className="text-white" />
               {cartCount > 0 && (
@@ -449,43 +454,59 @@ export function Marketplace() {
                   {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}
-            </div>
+            </button>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero + Promo banner ──────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-[#FBECE4] to-[#FFF5EE] border-b border-[#F5D5C2]">
-        <div className={clsx(
-          'px-4 sm:px-6 lg:px-10 py-7 sm:py-9 lg:py-10 grid gap-6 items-center',
-          banners.length > 0 ? 'grid-cols-1 lg:grid-cols-12' : 'grid-cols-1',
-        )}>
+      {/* ── Hero ─ full-bleed banner with overlaid copy ─────────────────────── */}
+      <div className="relative overflow-hidden h-[300px] sm:h-[360px] lg:h-[420px] border-b border-[#F5D5C2]">
 
-          {/* Left text */}
-          <div className={clsx('min-w-0 flex items-center justify-between gap-6', banners.length > 0 && 'lg:col-span-4')}>
-            <div className="min-w-0">
-              <h1 className="font-serif text-[20px] sm:text-[26px] lg:text-[30px] font-bold text-carbon mb-[6px] sm:mb-2 leading-[1.2]">
-                Discover Something<br className="hidden sm:block" /> Made with Love
-              </h1>
-              <p className="text-[12px] sm:text-[13px] text-slate mb-4 sm:mb-5 max-w-[380px]">
-                Shop unique products from independent sellers, creators, and educators.
-              </p>
-              <Button variant="primary" size="md">
-                Shop Now <span className="ml-1">→</span>
-              </Button>
-            </div>
-
-            {banners.length === 0 && (
-              <ShoppingBag size={80} className="text-brand-orange hidden sm:block shrink-0" />
-            )}
+        {/* Background: live promo banner if available, else brand gradient */}
+        {banners.length > 0 ? (
+          <BannerCarousel banners={banners} />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#FBECE4] via-[#FDF1E9] to-[#FFF5EE]">
+            <div className="absolute -top-16 -right-16 size-64 rounded-full bg-brand-orange/[0.08] blur-3xl pointer-events-none" />
+            <ShoppingBag size={220} className="absolute -bottom-10 -right-10 text-brand-orange/[0.08] hidden sm:block" />
           </div>
+        )}
 
-          {/* Right: live promo banner (admin-managed) */}
-          {banners.length > 0 && (
-            <div className="lg:col-span-8">
-              <BannerCarousel banners={banners} />
-            </div>
-          )}
+        {/* Legibility scrim — always present so overlaid text reads over any banner image */}
+        <div className={clsx(
+          'absolute inset-0 pointer-events-none',
+          banners.length > 0
+            ? 'bg-gradient-to-r from-black/65 via-black/30 to-transparent'
+            : '',
+        )} />
+
+        {/* Overlaid copy */}
+        <div className="relative z-[1] h-full flex items-center px-4 sm:px-6 lg:px-10">
+          <div className="min-w-0 max-w-[520px]">
+            <span className={clsx(
+              'inline-block text-[10px] font-bold uppercase tracking-[0.12em] rounded-full px-3 py-1 mb-3 border',
+              banners.length > 0
+                ? 'text-white bg-white/15 border-white/25 backdrop-blur-sm'
+                : 'text-brand-deep-orange bg-white/60 border-brand-orange/20',
+            )}>
+              The marketplace for makers
+            </span>
+            <h1 className={clsx(
+              'font-serif text-[26px] sm:text-[32px] lg:text-[40px] font-bold mb-3 leading-[1.12] tracking-tight',
+              banners.length > 0 ? 'text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]' : 'text-carbon',
+            )}>
+              Discover Something<br className="hidden sm:block" /> Made with Love
+            </h1>
+            <p className={clsx(
+              'text-[12px] sm:text-[13px] mb-5 leading-[1.6]',
+              banners.length > 0 ? 'text-white/85' : 'text-slate',
+            )}>
+              Shop unique products from independent sellers, creators, and educators.
+            </p>
+            <Button variant="primary" size="md">
+              Shop Now <span className="ml-1">→</span>
+            </Button>
+          </div>
         </div>
       </div>
 
