@@ -65,7 +65,7 @@ export function StoreIntegrations() {
       <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
         {/* Metrics */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {metrics.map(m => (
             <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
@@ -103,7 +103,7 @@ export function StoreIntegrations() {
 
         {/* Connected Apps Grid */}
         {activeTab === 'connected' && (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredApps.map(app => (
               <div key={app.id} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5 relative">
                 <div className="absolute top-4 right-4">
@@ -117,7 +117,7 @@ export function StoreIntegrations() {
                 <p className="text-[16px] font-bold text-carbon mb-1 pr-[80px]">{app.name}</p>
                 <p className="text-[13px] text-slate mb-4 leading-[1.5]">{app.desc}</p>
                 <div className="flex items-center gap-2">
-                  <button className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-xs text-[#4A4945] cursor-pointer">
+                  <button className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">
                     Configure
                   </button>
                   <button className="px-[14px] py-[5px] bg-[#FDECEA] border border-[#F5C6C2] rounded-[7px] text-xs font-medium text-[#C0392B] cursor-pointer">
@@ -138,21 +138,21 @@ export function StoreIntegrations() {
         {/* Developer Tools */}
         <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5 mt-1">
           <p className="text-[15px] font-bold text-carbon mb-5">Developer Tools — API &amp; Webhooks</p>
-          <div className="grid grid-cols-2 gap-5 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
             <div>
-              <p className="text-xs font-medium text-[#4A4945] mb-1.5">API Key</p>
+              <p className="text-xs font-medium text-graphite mb-1.5">API Key</p>
               <input
                 readOnly
                 value={apiKey}
-                className="w-full font-mono text-xs text-[#4A4945] px-3 py-[9px] rounded-lg border border-bone bg-cream outline-none box-border"
+                className="w-full font-mono text-xs text-graphite px-3 py-[9px] rounded-lg border border-bone bg-cream outline-none box-border"
               />
               <div className="flex gap-2 mt-2">
-                <button className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Copy</button>
+                <button className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">Copy</button>
                 <button className="px-[14px] py-[5px] bg-[#FDECEA] border border-[#F5C6C2] rounded-[7px] text-xs font-medium text-[#C0392B] cursor-pointer">Regenerate</button>
               </div>
             </div>
             <div>
-              <p className="text-xs font-medium text-[#4A4945] mb-1.5">Webhook URL</p>
+              <p className="text-xs font-medium text-graphite mb-1.5">Webhook URL</p>
               <div className="flex items-center gap-2">
                 <input
                   placeholder="https://your-app.com/webhooks/solvexo"
@@ -167,7 +167,7 @@ export function StoreIntegrations() {
             </div>
           </div>
           <div>
-            <p className="text-xs font-medium text-[#4A4945] mb-[10px]">Active Webhook Events</p>
+            <p className="text-xs font-medium text-graphite mb-[10px]">Active Webhook Events</p>
             <div className="flex flex-wrap gap-2">
               {WEBHOOK_EVENTS.map(event => (
                 <span key={event} className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E3F4EA] rounded-[20px] text-[11px] font-medium text-[#1E7A3C]">

@@ -188,7 +188,7 @@ export function StoreReviews() {
                 <div className="flex flex-col gap-2">
                   {(['5', '4', '3', '2', '1'] as const).map(star => (
                     <div key={star} className="flex items-center gap-2">
-                      <span className="text-xs text-[#4A4945] w-7 shrink-0">{star} ★</span>
+                      <span className="text-xs text-graphite w-7 shrink-0">{star} ★</span>
                       <div className="flex-1 h-1.5 rounded-[3px] bg-bone overflow-hidden">
                         <div className="h-full rounded-[3px] bg-brand-orange" style={{ width: stats?.ratingBreakdown[star] ?? '0%' }} />
                       </div>
@@ -204,7 +204,7 @@ export function StoreReviews() {
           <Card>
             <p className="text-[13px] font-semibold text-charcoal mb-4">Reputation Insights</p>
             {loading && !stats ? (
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => <SkeletonBox key={i} height={74} rounded="10px" />)}
               </div>
             ) : (
@@ -219,7 +219,7 @@ export function StoreReviews() {
                 ].map(item => (
                   <div key={item.label} className="bg-cream rounded-[10px] px-4 py-[14px]">
                     <p className="text-[22px] font-bold leading-[1.15]" style={{ color: item.color }}>{item.value}</p>
-                    <p className="text-xs font-medium text-[#4A4945] mt-1">{item.label}</p>
+                    <p className="text-xs font-medium text-graphite mt-1">{item.label}</p>
                     {item.sub && <p className="text-[11px] text-slate mt-0.5">{item.sub}</p>}
                   </div>
                 ))}
@@ -235,7 +235,7 @@ export function StoreReviews() {
             <select
               value={ratingFilter}
               onChange={e => { setRatingFilter(e.target.value); setPage(1); }}
-              className="w-[150px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer"
+              className="w-[150px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
             >
               <option value="">All Ratings</option>
               <option value="5">5 Stars</option>
@@ -247,7 +247,7 @@ export function StoreReviews() {
             <select
               value={sortFilter}
               onChange={e => setSortFilter(e.target.value)}
-              className="w-[140px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer"
+              className="w-[140px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
             >
               <option value="">All</option>
               <option value="replied">Replied</option>
@@ -336,7 +336,7 @@ function ReplyModal({
           />
           {error && <p className="text-[12px] text-error mb-3">{error}</p>}
           <div className="flex gap-2">
-            <button onClick={onClose} className="flex-1 py-[9px] bg-white border border-bone rounded-lg text-[13px] text-[#4A4945] cursor-pointer">
+            <button onClick={onClose} className="flex-1 py-[9px] bg-white border border-bone rounded-lg text-[13px] text-graphite cursor-pointer">
               Cancel
             </button>
             <button onClick={submit} disabled={saving} className="flex-1 py-[9px] bg-brand-orange border-0 rounded-lg text-[13px] font-semibold text-white cursor-pointer disabled:opacity-50">

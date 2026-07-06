@@ -179,7 +179,7 @@ function ProductCard({
       >
         <div className="w-14 h-14 mb-[10px] flex items-center justify-center shrink-0 rounded-lg overflow-hidden bg-carbon">
           {product.image ? (
-            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+            <img loading="lazy" decoding="async" src={product.image} alt={product.name} className="w-full h-full object-cover" />
           ) : (
             <ImageOff size={22} className="text-pos-muted" />
           )}

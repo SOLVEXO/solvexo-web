@@ -77,7 +77,7 @@ export default function StoreCustomerList() {
         subtitle="Manage buyer relationships, segments and loyalty."
         actions={
           <>
-            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
               Export CSV
             </button>
             <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
@@ -90,13 +90,13 @@ export default function StoreCustomerList() {
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* ── Metrics ── */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
-              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
-              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
               {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
-              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
+              {m.sub   && <p className="text-xs text-slate mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
@@ -136,20 +136,20 @@ export default function StoreCustomerList() {
         <div className="flex gap-4 items-start">
 
           {/* Table */}
-          <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex-1 min-w-0 overflow-hidden">
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex-1 min-w-0 overflow-hidden">
             {/* Filters */}
-            <div className="flex gap-2.5 px-5 py-3.5 border-b border-[#E8E6DC] flex-wrap items-center">
-              <div className="flex items-center gap-1.5 border border-[#E8E6DC] rounded-lg px-3 bg-white flex-1 max-w-[260px]">
+            <div className="flex gap-2.5 px-5 py-3.5 border-b border-bone flex-wrap items-center">
+              <div className="flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white flex-1 max-w-[260px]">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input placeholder="Search customers…" value={search} onChange={e => setSearch(e.target.value)}
-                  className="border-none outline-none text-[13px] py-2 w-full text-[#2C2A28] bg-transparent" />
+                  className="border-none outline-none text-[13px] py-2 w-full text-charcoal bg-transparent" />
               </div>
               <select value={seg} onChange={e => setSeg(e.target.value)}
-                className="w-[150px] px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white cursor-pointer box-border">
+                className="w-[150px] px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white cursor-pointer box-border">
                 {['All Segments','VIP','Loyal','Returning','New','At Risk'].map(o => <option key={o}>{o}</option>)}
               </select>
               <select value={sort} onChange={e => setSort(e.target.value)}
-                className="w-[160px] px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white cursor-pointer box-border">
+                className="w-[160px] px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white cursor-pointer box-border">
                 {['Sort: Default','Highest LTV','Most Orders','Recently Active','Newest'].map(o => <option key={o}>{o}</option>)}
               </select>
             </div>
@@ -160,7 +160,7 @@ export default function StoreCustomerList() {
                 <thead>
                   <tr>
                     {['Customer','Orders','Lifetime Value','Last Order','Segment','Joined',''].map(h => (
-                      <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold text-[#8C8A82] uppercase tracking-[0.05em] border-b border-[#E8E6DC] bg-[#FAF9F5] whitespace-nowrap">
+                      <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">
                         {h}
                       </th>
                     ))}
@@ -187,21 +187,21 @@ export default function StoreCustomerList() {
                               style={{ background: av.bg, color: av.color }}
                             >{c.initials}</div>
                             <div>
-                              <p className="text-[13px] font-semibold text-[#2C2A28] leading-[1.3]">{c.name}</p>
-                              <p className="text-[11px] text-[#8C8A82]">{c.email}</p>
+                              <p className="text-[13px] font-semibold text-charcoal leading-[1.3]">{c.name}</p>
+                              <p className="text-[11px] text-slate">{c.email}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-[13px] font-semibold text-[#2C2A28]">{c.orders}</td>
-                        <td className="px-4 py-3 text-[13px] font-semibold text-[#2C2A28]">{c.ltv}</td>
-                        <td className="px-4 py-3 text-[13px] text-[#8C8A82]">{c.lastOrder}</td>
+                        <td className="px-4 py-3 text-[13px] font-semibold text-charcoal">{c.orders}</td>
+                        <td className="px-4 py-3 text-[13px] font-semibold text-charcoal">{c.ltv}</td>
+                        <td className="px-4 py-3 text-[13px] text-slate">{c.lastOrder}</td>
                         <td className="px-4 py-3">
                           <span
                             className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold"
                             style={{ background: sg.bg, color: sg.color }}
                           >{c.segment}</span>
                         </td>
-                        <td className="px-4 py-3 text-[13px] text-[#8C8A82]">{c.joined}</td>
+                        <td className="px-4 py-3 text-[13px] text-slate">{c.joined}</td>
                         <td className="px-4 py-3">
                           <button onClick={e => { e.stopPropagation(); setSel(sel?.id === c.id ? null : c); }}
                             className="text-xs font-medium text-brand-orange bg-transparent border-none cursor-pointer">
@@ -219,7 +219,7 @@ export default function StoreCustomerList() {
           {/* Detail panel */}
           {sel && (
             <div className="w-[300px] shrink-0">
-              <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-5 sticky top-[70px]">
+              <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-5 sticky top-[70px]">
                 {/* Avatar + name */}
                 <div className="flex flex-col items-center text-center pb-4 border-b border-[#F0EEE6] mb-3.5">
                   <div
@@ -228,8 +228,8 @@ export default function StoreCustomerList() {
                   >
                     {sel.initials}
                   </div>
-                  <p className="text-[15px] font-bold text-[#141413] mb-[3px]">{sel.name}</p>
-                  <p className="text-xs text-[#8C8A82] mb-2">{sel.email}</p>
+                  <p className="text-[15px] font-bold text-carbon mb-[3px]">{sel.name}</p>
+                  <p className="text-xs text-slate mb-2">{sel.email}</p>
                   <span
                     className="px-3 py-[3px] rounded-[20px] text-[11px] font-semibold"
                     style={{ background: segmentStyle[sel.segment].bg, color: segmentStyle[sel.segment].color }}
@@ -243,27 +243,27 @@ export default function StoreCustomerList() {
                   <tbody>
                     {[['Customer ID', sel.id],['Member Since', sel.joined],['Total Orders', String(sel.orders)],['Lifetime Value', sel.ltv],['Last Purchase', sel.lastOrder]].map(([label, value]) => (
                       <tr key={label} className="border-b border-[#F0EEE6]">
-                        <td className="py-[7px] text-[#8C8A82]">{label}</td>
-                        <td className="py-[7px] font-semibold text-[#141413] text-right">{value}</td>
+                        <td className="py-[7px] text-slate">{label}</td>
+                        <td className="py-[7px] font-semibold text-carbon text-right">{value}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
                 {/* Recent orders */}
-                <p className="text-[11px] font-semibold text-[#8C8A82] uppercase tracking-[0.07em] mb-2">Recent Orders</p>
+                <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.07em] mb-2">Recent Orders</p>
                 <div className="flex flex-col gap-1.5 mb-4">
                   {sel.orders > 0 ? (
                     [{ id: '#8821', product: 'Grade 5 Math Bundle', amount: '$49.00', status: 'Paid' },
                      { id: '#8820', product: 'Fractions Kit', amount: '$18.00', status: 'Fulfilled' }]
                     .slice(0, Math.min(sel.orders, 2)).map(o => (
-                      <div key={o.id} className="flex justify-between items-center bg-[#FAF9F5] rounded-lg px-3 py-[9px]">
+                      <div key={o.id} className="flex justify-between items-center bg-cream rounded-lg px-3 py-[9px]">
                         <div>
-                          <p className="text-[11px] font-semibold text-[#141413]">{o.id}</p>
-                          <p className="text-[11px] text-[#8C8A82]">{o.product}</p>
+                          <p className="text-[11px] font-semibold text-carbon">{o.id}</p>
+                          <p className="text-[11px] text-slate">{o.product}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-xs font-bold text-[#141413] mb-[3px]">{o.amount}</p>
+                          <p className="text-xs font-bold text-carbon mb-[3px]">{o.amount}</p>
                           <span
                             className="text-[10px] font-semibold px-[7px] py-[2px] rounded"
                             style={{ background: o.status === 'Paid' ? '#E3F4EA' : '#EAF0FB', color: o.status === 'Paid' ? '#1E7A3C' : '#2156A8' }}
@@ -274,16 +274,16 @@ export default function StoreCustomerList() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-xs text-[#8C8A82] italic">No orders yet</p>
+                    <p className="text-xs text-slate italic">No orders yet</p>
                   )}
                 </div>
 
                 {/* Action buttons */}
                 <div className="flex gap-2">
-                  <button className="flex-1 py-2 bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer flex items-center justify-center gap-[5px]">
+                  <button className="flex-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer flex items-center justify-center gap-[5px]">
                     <Mail size={13} /> Email
                   </button>
-                  <button className="flex-1 py-2 bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer flex items-center justify-center gap-[5px]">
+                  <button className="flex-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer flex items-center justify-center gap-[5px]">
                     <Gift size={13} /> Loyalty Gift
                   </button>
                 </div>

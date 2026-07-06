@@ -33,7 +33,7 @@ function StepBadge({ n, active, done }: { n: number; active: boolean; done: bool
       'w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold flex-shrink-0 transition-colors',
       done ? 'bg-success text-white' :
         active ? 'bg-brand-orange text-white' :
-          'bg-bone text-[#8C8A82]',
+          'bg-bone text-slate',
     )}>
       {done ? <CheckCircle2 size={14} /> : n}
     </div>
@@ -214,7 +214,7 @@ export function CheckoutPage() {
       <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-4 md:px-10 gap-4">
         <div className="flex-1 flex items-center gap-2">
           <SolvexoIcon size={28} />
-          <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
+          <span className="font-bold text-[15px] text-carbon">Solvex</span>
           <span className="font-bold text-[15px] text-brand-orange">o</span>
         </div>
         <Button variant="ghost" size="sm" onClick={() => navigate('/cart')}>
@@ -236,12 +236,12 @@ export function CheckoutPage() {
               <div className="px-6 pt-5 pb-4 border-b border-bone flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-[2px]">
-                    <h1 className="text-[20px] font-bold text-[#141413] leading-tight">Checkout</h1>
+                    <h1 className="text-[20px] font-bold text-carbon leading-tight">Checkout</h1>
                     <span className="flex items-center gap-1 px-2 py-[3px] rounded-full text-[10px] font-semibold bg-[#EEF0FF] text-[#3851D1]">
                       <Download size={9} /> Digital Delivery
                     </span>
                   </div>
-                  <p className="text-[12px] text-[#8C8A82] mt-[2px]">
+                  <p className="text-[12px] text-slate mt-[2px]">
                     {cartLoading ? 'Loading…' : `${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart`}
                   </p>
                 </div>
@@ -255,7 +255,7 @@ export function CheckoutPage() {
                 {creatingCheckout ? (
                   <div className="flex flex-col items-center gap-3 py-8">
                     <Loader2 size={24} className="animate-spin text-brand-orange" />
-                    <p className="text-[13px] text-[#8C8A82]">Preparing your order…</p>
+                    <p className="text-[13px] text-slate">Preparing your order…</p>
                   </div>
                 ) : checkoutError ? (
                   <div className="flex items-start gap-2 text-[12px] text-[#C13030] bg-[#FFF0F0] border border-[#FECACA] rounded-[8px] px-3 py-2">
@@ -271,7 +271,7 @@ export function CheckoutPage() {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-1 text-[11px] text-[#8C8A82] mb-5">
+                    <div className="flex items-center gap-1 text-[11px] text-slate mb-5">
                       <ShieldCheck size={12} className="text-success" />
                       Your payment info is secure and encrypted
                     </div>
@@ -306,8 +306,8 @@ export function CheckoutPage() {
             <div className="px-6 pt-5 pb-4 border-b border-bone">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h1 className="text-[20px] font-bold text-[#141413] leading-tight">Checkout</h1>
-                  <p className="text-[12px] text-[#8C8A82] mt-[2px]">
+                  <h1 className="text-[20px] font-bold text-carbon leading-tight">Checkout</h1>
+                  <p className="text-[12px] text-slate mt-[2px]">
                     {cartLoading ? 'Loading…' : `${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart`}
                   </p>
                 </div>
@@ -338,13 +338,13 @@ export function CheckoutPage() {
                       'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-200',
                       step > n ? 'bg-success text-white' :
                         step === n ? 'bg-brand-orange text-white ring-4 ring-brand-pale-orange' :
-                          'bg-bone text-[#8C8A82]',
+                          'bg-bone text-slate',
                     )}>
                       {step > n ? <CheckCircle2 size={12} /> : n}
                     </div>
                     <span className={clsx(
                       'text-[10px] font-semibold whitespace-nowrap',
-                      step === n ? 'text-brand-orange' : step > n ? 'text-[#1E7A3C]' : 'text-[#8C8A82]',
+                      step === n ? 'text-brand-orange' : step > n ? 'text-[#1E7A3C]' : 'text-slate',
                     )}>{label}</span>
                   </div>
                 ))}
@@ -356,7 +356,7 @@ export function CheckoutPage() {
               <div className="flex items-center gap-3 px-5 py-4 border-b border-bone">
                 <StepBadge n={1} active={step === 1} done={step > 1} />
                 <MapPin size={16} className="text-brand-orange" />
-                <span className="font-semibold text-[14px] text-[#141413]">Delivery Address</span>
+                <span className="font-semibold text-[14px] text-carbon">Delivery Address</span>
                 {step > 1 && (
                   <Button
                     variant="ghost" size="sm"
@@ -372,12 +372,12 @@ export function CheckoutPage() {
               {step === 1 && (
                 <div className="p-5">
                   {addrLoading ? (
-                    <div className="flex items-center gap-2 text-[13px] text-[#8C8A82]">
+                    <div className="flex items-center gap-2 text-[13px] text-slate">
                       <Loader2 size={14} className="animate-spin" /> Loading addresses…
                     </div>
                   ) : addresses.length === 0 ? (
                     <div className="flex flex-col gap-3">
-                      <div className="flex items-start gap-2 text-[13px] text-[#8C8A82]">
+                      <div className="flex items-start gap-2 text-[13px] text-slate">
                         <AlertCircle size={14} className="mt-[2px] flex-shrink-0" />
                         No saved addresses. Please add one from your profile.
                       </div>
@@ -400,20 +400,20 @@ export function CheckoutPage() {
                           {selectedAddr ? (
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-[2px]">
-                                <span className="text-[13px] font-semibold text-[#141413]">{selectedAddr.recipientName}</span>
-                                <span className="text-[11px] text-[#8C8A82] bg-bone rounded-full px-2 py-[1px]">{selectedAddr.label}</span>
+                                <span className="text-[13px] font-semibold text-carbon">{selectedAddr.recipientName}</span>
+                                <span className="text-[11px] text-slate bg-bone rounded-full px-2 py-[1px]">{selectedAddr.label}</span>
                                 {selectedAddr.isDefault && (
                                   <span className="text-[11px] text-brand-orange bg-brand-pale-orange rounded-full px-2 py-[1px] font-medium">Default</span>
                                 )}
                               </div>
-                              <p className="text-[12px] text-[#8C8A82] truncate">
+                              <p className="text-[12px] text-slate truncate">
                                 {selectedAddr.addressLine1}, {selectedAddr.city}, {selectedAddr.state} {selectedAddr.zipCode}
                               </p>
                             </div>
                           ) : (
-                            <span className="text-[13px] text-[#8C8A82]">Select a delivery address…</span>
+                            <span className="text-[13px] text-slate">Select a delivery address…</span>
                           )}
-                          <ChevronRight size={15} className={clsx('flex-shrink-0 text-[#8C8A82] transition-transform', addrDropOpen && 'rotate-90')} />
+                          <ChevronRight size={15} className={clsx('flex-shrink-0 text-slate transition-transform', addrDropOpen && 'rotate-90')} />
                         </button>
 
                         {/* Dropdown list */}
@@ -442,14 +442,14 @@ export function CheckoutPage() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap mb-[2px]">
-                                    <span className="text-[13px] font-semibold text-[#141413]">{addr.recipientName}</span>
-                                    <span className="text-[11px] text-[#8C8A82] bg-bone rounded-full px-2 py-[1px]">{addr.label}</span>
+                                    <span className="text-[13px] font-semibold text-carbon">{addr.recipientName}</span>
+                                    <span className="text-[11px] text-slate bg-bone rounded-full px-2 py-[1px]">{addr.label}</span>
                                     {addr.isDefault && (
                                       <span className="text-[11px] text-brand-orange bg-brand-pale-orange rounded-full px-2 py-[1px] font-medium">Default</span>
                                     )}
                                   </div>
-                                  <p className="text-[12px] text-[#8C8A82]">{addr.phoneNumber}</p>
-                                  <p className="text-[12px] text-[#141413] mt-[1px]">
+                                  <p className="text-[12px] text-slate">{addr.phoneNumber}</p>
+                                  <p className="text-[12px] text-carbon mt-[1px]">
                                     {addr.addressLine1}{addr.addressLine2 ? `, ${addr.addressLine2}` : ''}, {addr.city}, {addr.state} {addr.zipCode}
                                   </p>
                                 </div>
@@ -484,7 +484,7 @@ export function CheckoutPage() {
               )}
 
               {step > 1 && selectedAddr && (
-                <div className="px-5 py-3 text-[13px] text-[#141413]">
+                <div className="px-5 py-3 text-[13px] text-carbon">
                   <span className="font-medium">{selectedAddr.recipientName}</span>
                   {' — '}
                   {selectedAddr.addressLine1}, {selectedAddr.city}, {selectedAddr.state}
@@ -499,7 +499,7 @@ export function CheckoutPage() {
               <div className="flex items-center gap-3 px-5 py-4 border-b border-bone">
                 <StepBadge n={2} active={step === 2} done={step > 2} />
                 <Truck size={16} className="text-brand-orange" />
-                <span className="font-semibold text-[14px] text-[#141413]">Shipping Method</span>
+                <span className="font-semibold text-[14px] text-carbon">Shipping Method</span>
                 {step > 2 && (
                   <Button
                     variant="ghost" size="sm"
@@ -515,7 +515,7 @@ export function CheckoutPage() {
               {step === 2 && (
                 <div className="p-5">
                   {zonesLoading ? (
-                    <div className="flex items-center gap-2 text-[13px] text-[#8C8A82]">
+                    <div className="flex items-center gap-2 text-[13px] text-slate">
                       <Loader2 size={14} className="animate-spin" /> Loading shipping options…
                     </div>
                   ) : (
@@ -533,21 +533,21 @@ export function CheckoutPage() {
                           {selectedZone ? (
                             <div className="flex-1 min-w-0 flex items-center justify-between">
                               <div>
-                                <p className="text-[13px] font-semibold text-[#141413]">
+                                <p className="text-[13px] font-semibold text-carbon">
                                   {selectedZone.city}, {selectedZone.province}
                                 </p>
-                                <p className="text-[12px] text-[#8C8A82] mt-[1px]">
+                                <p className="text-[12px] text-slate mt-[1px]">
                                   Estimated delivery: {selectedZone.estimatedDeliveryTime}
                                 </p>
                               </div>
-                              <span className="text-[13px] font-bold text-[#141413] ml-4 flex-shrink-0">
+                              <span className="text-[13px] font-bold text-carbon ml-4 flex-shrink-0">
                                 Rs. {selectedZone.shippingPrice.toLocaleString()}
                               </span>
                             </div>
                           ) : (
-                            <span className="text-[13px] text-[#8C8A82]">Select a shipping method…</span>
+                            <span className="text-[13px] text-slate">Select a shipping method…</span>
                           )}
-                          <ChevronRight size={15} className={clsx('flex-shrink-0 text-[#8C8A82] transition-transform ml-2', shippingDropOpen && 'rotate-90')} />
+                          <ChevronRight size={15} className={clsx('flex-shrink-0 text-slate transition-transform ml-2', shippingDropOpen && 'rotate-90')} />
                         </button>
 
                         {/* Dropdown list */}
@@ -573,14 +573,14 @@ export function CheckoutPage() {
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-[13px] font-semibold text-[#141413]">
+                                  <p className="text-[13px] font-semibold text-carbon">
                                     {zone.city}, {zone.province}
                                   </p>
-                                  <p className="text-[12px] text-[#8C8A82] mt-[1px]">
+                                  <p className="text-[12px] text-slate mt-[1px]">
                                     Estimated delivery: {zone.estimatedDeliveryTime}
                                   </p>
                                 </div>
-                                <span className="text-[13px] font-bold text-[#141413] flex-shrink-0">
+                                <span className="text-[13px] font-bold text-carbon flex-shrink-0">
                                   Rs. {zone.shippingPrice.toLocaleString()}
                                 </span>
                               </button>
@@ -615,7 +615,7 @@ export function CheckoutPage() {
               )}
 
               {step > 2 && selectedZone && (
-                <div className="px-5 py-3 text-[13px] text-[#141413]">
+                <div className="px-5 py-3 text-[13px] text-carbon">
                   <span className="font-medium">{selectedZone.city}, {selectedZone.province}</span>
                   {' — '}
                   Rs. {selectedZone.shippingPrice.toLocaleString()} · {selectedZone.estimatedDeliveryTime}
@@ -630,7 +630,7 @@ export function CheckoutPage() {
               <div className="flex items-center gap-3 px-5 py-4 border-b border-bone">
                 <StepBadge n={3} active={step === 3} done={false} />
                 <CreditCard size={16} className="text-brand-orange" />
-                <span className="font-semibold text-[14px] text-[#141413]">Payment Method</span>
+                <span className="font-semibold text-[14px] text-carbon">Payment Method</span>
               </div>
 
               {step === 3 && (
@@ -657,11 +657,11 @@ export function CheckoutPage() {
                           />
                           <div className="flex items-center gap-3 flex-1">
                             <div className="w-9 h-9 rounded-[8px] bg-bone flex items-center justify-center flex-shrink-0">
-                              <Icon size={17} className="text-[#4A4945]" />
+                              <Icon size={17} className="text-graphite" />
                             </div>
                             <div>
-                              <p className="text-[13px] font-semibold text-[#141413]">{label}</p>
-                              <p className="text-[11px] text-[#8C8A82]">{desc}</p>
+                              <p className="text-[13px] font-semibold text-carbon">{label}</p>
+                              <p className="text-[11px] text-slate">{desc}</p>
                             </div>
                           </div>
                         </label>
@@ -669,7 +669,7 @@ export function CheckoutPage() {
                     })}
                   </div>
 
-                  <div className="flex items-center gap-1 text-[11px] text-[#8C8A82] mb-4">
+                  <div className="flex items-center gap-1 text-[11px] text-slate mb-4">
                     <ShieldCheck size={12} className="text-success" />
                     Your payment info is secure and encrypted
                   </div>
@@ -701,18 +701,18 @@ export function CheckoutPage() {
 
           {/* ── Right: Order Summary ──────────────────────────────────── */}
           <div className="bg-white rounded-[12px] border border-bone p-6 lg:sticky top-20">
-            <p className="text-[15px] font-bold text-[#141413] mb-[18px]">Order Summary</p>
+            <p className="text-[15px] font-bold text-carbon mb-[18px]">Order Summary</p>
 
             {/* Items — filtered to current cartType only */}
             <div className="flex flex-col gap-2 mb-5">
               {checkout
                 ? filteredCheckoutItems.map(item => (
                   <div key={item.variantId} className="flex justify-between text-[12px]">
-                    <span className="text-[#141413] truncate max-w-[150px]">
+                    <span className="text-carbon truncate max-w-[150px]">
                       {item.name}
-                      <span className="text-[#8C8A82] ml-1">×{item.quantity}</span>
+                      <span className="text-slate ml-1">×{item.quantity}</span>
                     </span>
-                    <span className="font-medium text-[#141413] flex-shrink-0">
+                    <span className="font-medium text-carbon flex-shrink-0">
                       Rs. {item.totalPrice.toLocaleString()}
                     </span>
                   </div>
@@ -722,11 +722,11 @@ export function CheckoutPage() {
                   const ttl   = item.itemTotal ?? price * item.quantity;
                   return (
                     <div key={item.productVariantId} className="flex justify-between text-[12px]">
-                      <span className="text-[#141413] truncate max-w-[150px]">
+                      <span className="text-carbon truncate max-w-[150px]">
                         {item.name}
-                        <span className="text-[#8C8A82] ml-1">×{item.quantity}</span>
+                        <span className="text-slate ml-1">×{item.quantity}</span>
                       </span>
-                      <span className="font-medium text-[#141413] flex-shrink-0">
+                      <span className="font-medium text-carbon flex-shrink-0">
                         Rs. {ttl.toLocaleString()}
                       </span>
                     </div>
@@ -739,22 +739,22 @@ export function CheckoutPage() {
 
             <div className="flex flex-col gap-3 mb-5">
               <div className="flex justify-between text-[13px]">
-                <span className="text-[#8C8A82]">Subtotal</span>
-                <span className="font-semibold text-[#141413]">Rs. {filteredSubtotal.toLocaleString()}</span>
+                <span className="text-slate">Subtotal</span>
+                <span className="font-semibold text-carbon">Rs. {filteredSubtotal.toLocaleString()}</span>
               </div>
               {!isDigital && (
                 <div className="flex justify-between text-[13px]">
-                  <span className="text-[#8C8A82]">Shipping</span>
+                  <span className="text-slate">Shipping</span>
                   {selectedZone || summary
-                    ? <span className="font-semibold text-[#141413]">Rs. {shipping.toLocaleString()}</span>
+                    ? <span className="font-semibold text-carbon">Rs. {shipping.toLocaleString()}</span>
                     : <span className="text-success font-medium">Select method</span>
                   }
                 </div>
               )}
               {tax > 0 && (
                 <div className="flex justify-between text-[13px]">
-                  <span className="text-[#8C8A82]">Tax</span>
-                  <span className="font-semibold text-[#141413]">Rs. {tax.toLocaleString()}</span>
+                  <span className="text-slate">Tax</span>
+                  <span className="font-semibold text-carbon">Rs. {tax.toLocaleString()}</span>
                 </div>
               )}
             </div>
@@ -762,12 +762,12 @@ export function CheckoutPage() {
             <div className="h-px bg-bone mb-4" />
 
             <div className="flex justify-between text-[16px] font-bold">
-              <span className="text-[#141413]">Total</span>
-              <span className="text-[#141413]">Rs. {total.toLocaleString()}</span>
+              <span className="text-carbon">Total</span>
+              <span className="text-carbon">Rs. {total.toLocaleString()}</span>
             </div>
 
             {checkout && (
-              <p className="text-[11px] text-[#8C8A82] mt-2 text-right">
+              <p className="text-[11px] text-slate mt-2 text-right">
                 Checkout ID: {checkout._id.slice(-8).toUpperCase()}
               </p>
             )}

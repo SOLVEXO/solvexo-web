@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { X, Loader2, Store } from 'lucide-react';
 
 interface NewChatModalProps {
@@ -12,13 +12,29 @@ interface NewChatModalProps {
 // store ID they want to reach out to.
 export function NewChatModal({ onClose, onStart, starting }: NewChatModalProps) {
   const [storeId, setStoreId] = useState('');
+  const titleId   = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    dialogRef.current?.focus();
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-[380px] bg-white rounded-[16px] shadow-2xl overflow-hidden">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="w-full max-w-[380px] bg-white rounded-[16px] shadow-2xl overflow-hidden outline-none"
+      >
         <div className="flex items-center justify-between px-4 py-[14px] border-b border-[#EEECE4]">
-          <p className="text-[15px] font-bold text-charcoal">New message</p>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-full bg-cream border-none cursor-pointer">
+          <p id={titleId} className="text-[15px] font-bold text-charcoal">New message</p>
+          <button onClick={onClose} aria-label="Close dialog" className="w-7 h-7 flex items-center justify-center rounded-full bg-cream border-none cursor-pointer">
             <X size={13} className="text-charcoal" />
           </button>
         </div>
@@ -30,6 +46,7 @@ export function NewChatModal({ onClose, onStart, starting }: NewChatModalProps) 
               value={storeId}
               onChange={e => setStoreId(e.target.value)}
               placeholder="Enter store ID to message"
+              aria-label="Store ID to message"
               className="flex-1 bg-transparent border-none outline-none text-[13px] text-charcoal"
               autoFocus
             />

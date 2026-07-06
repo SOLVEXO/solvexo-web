@@ -56,6 +56,7 @@ function VoiceNoteBubble({ url, own }: { url: string; own: boolean }) {
       />
       <button
         onClick={toggle}
+        aria-label={playing ? 'Pause voice note' : 'Play voice note'}
         className={clsx(
           'w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-none cursor-pointer',
           own ? 'bg-white/25 text-white hover:bg-white/35' : 'bg-brand-pale-orange text-brand-orange hover:opacity-80',
@@ -122,7 +123,7 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
 
       {open && (
         <div className={clsx(
-          'absolute top-[22px] z-30 bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.14)] py-[5px] min-w-[138px]',
+          'absolute top-[22px] z-30 bg-white border border-bone rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.14)] py-[5px] min-w-[138px]',
           own ? 'right-0' : 'left-0',
         )}>
           <button
@@ -204,7 +205,7 @@ export function MessageBubble({
   if (message.isDeleted) {
     return (
       <div className={clsx('flex w-full mb-[2px]', own ? 'justify-end' : 'justify-start')}>
-        <div className="px-4 py-2 text-[13px] italic text-slate bg-[#F0EEE6] rounded-[18px] border border-[#E8E6DC]">
+        <div className="px-4 py-2 text-[13px] italic text-slate bg-[#F0EEE6] rounded-[18px] border border-bone">
           This message was deleted
         </div>
       </div>
@@ -255,7 +256,7 @@ export function MessageBubble({
                   <span className="text-[10px]">Enter to save</span>
                   <button
                     onClick={onCancelEdit}
-                    className={clsx('w-6 h-6 rounded-full flex items-center justify-center border-none cursor-pointer', own ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-bone text-charcoal hover:bg-[#E8E6DC]')}
+                    className={clsx('w-6 h-6 rounded-full flex items-center justify-center border-none cursor-pointer', own ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-bone text-charcoal hover:bg-bone')}
                   >
                     <XIcon size={11} />
                   </button>
@@ -309,7 +310,7 @@ export function MessageBubble({
                 {message.type === 'product_share' && (
                   <div className="flex items-center gap-[10px] min-w-[180px]">
                     {message.productShare?.image ? (
-                      <img src={message.productShare.image} alt="" className="w-11 h-11 rounded-[10px] object-cover shrink-0" />
+                      <img loading="lazy" decoding="async" src={message.productShare.image} alt="" className="w-11 h-11 rounded-[10px] object-cover shrink-0" />
                     ) : (
                       <div className={clsx('w-11 h-11 rounded-[10px] shrink-0 flex items-center justify-center', own ? 'bg-white/15' : 'bg-cream')}>
                         <Paperclip size={16} />
@@ -329,7 +330,7 @@ export function MessageBubble({
                   <div className="flex flex-col gap-1">
                     {(message.attachments ?? []).filter(Boolean).map(a => (
                       <a key={a.url} href={a.url} target="_blank" rel="noreferrer">
-                        <img src={a.url} alt={a.fileName ?? ''} className="rounded-[12px] max-w-[240px] max-h-[240px] object-cover" />
+                        <img loading="lazy" decoding="async" src={a.url} alt={a.fileName ?? ''} className="rounded-[12px] max-w-[240px] max-h-[240px] object-cover" />
                       </a>
                     ))}
                   </div>

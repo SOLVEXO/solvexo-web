@@ -35,6 +35,7 @@ export interface AddressPayload {
 
 interface AddressResponse  { success?: boolean; message: string; data: Address }
 interface AddressListResponse { message: string; data: Address[] }
+interface AddressByIdResponse { message: string; data: Address | null }
 
 // ── API ───────────────────────────────────────────────────────────────────────
 
@@ -52,4 +53,12 @@ export function apiGetDefaultAddress() {
 
 export function apiUpdateAddress(addressId: string, payload: Partial<AddressPayload>) {
   return client.post<never, AddressResponse>(ENDPOINTS.ADDRESS.UPDATE, { addressId, ...payload });
+}
+
+export function apiGetAddressById(addressId: string) {
+  return client.get<never, AddressByIdResponse>(ENDPOINTS.ADDRESS.GET_BY_ID(addressId));
+}
+
+export function apiSetDefaultAddress(addressId: string) {
+  return client.patch<never, AddressResponse>(ENDPOINTS.ADDRESS.SET_DEFAULT(addressId));
 }

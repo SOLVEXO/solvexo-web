@@ -74,7 +74,7 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
 
   return (
     <div>
-      <div className="text-[15px] font-bold text-[#141413] mb-4">
+      <div className="text-[15px] font-bold text-carbon mb-4">
         Ratings &amp; Reviews
       </div>
 
@@ -82,9 +82,9 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
       {hasReviews && (
         <div className="flex flex-col sm:flex-row gap-6 mb-5 pb-5 border-b border-bone">
           <div className="flex flex-col items-center sm:items-start shrink-0 sm:w-[140px]">
-            <p className="text-[40px] font-extrabold text-[#141413] leading-none">{stats!.averageRating.toFixed(1)}</p>
+            <p className="text-[40px] font-extrabold text-carbon leading-none">{stats!.averageRating.toFixed(1)}</p>
             <StarRating value={stats!.averageRating} size={16} className="my-[6px]" />
-            <p className="text-[12px] text-[#8C8A82]">{stats!.totalReviews} review{stats!.totalReviews !== 1 ? 's' : ''}</p>
+            <p className="text-[12px] text-slate">{stats!.totalReviews} review{stats!.totalReviews !== 1 ? 's' : ''}</p>
           </div>
 
           <div className="flex-1 flex flex-col gap-[6px] min-w-0">
@@ -98,14 +98,14 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
                   onClick={() => { setRatingFilter(active ? null : Number(star)); setPage(1); }}
                   className="flex items-center gap-2 bg-transparent border-0 cursor-pointer p-0 group"
                 >
-                  <span className={`text-[12px] w-9 text-left shrink-0 ${active ? 'font-bold text-brand-orange' : 'text-[#4A4945]'}`}>{star} ★</span>
+                  <span className={`text-[12px] w-9 text-left shrink-0 ${active ? 'font-bold text-brand-orange' : 'text-graphite'}`}>{star} ★</span>
                   <div className="flex-1 h-[7px] rounded-full bg-bone overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-[width] duration-300 ${active ? 'bg-brand-orange' : 'bg-[#D9D6CC] group-hover:bg-brand-orange/60'}`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="text-[11px] text-[#8C8A82] w-7 text-right shrink-0">{count}</span>
+                  <span className="text-[11px] text-slate w-7 text-right shrink-0">{count}</span>
                 </button>
               );
             })}
@@ -134,10 +134,10 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
       ) : !hasReviews ? (
         <div className="text-center py-8">
           <Star size={28} className="text-bone mx-auto mb-2" />
-          <p className="text-[13px] text-[#8C8A82]">No reviews yet. Be the first to buy and review!</p>
+          <p className="text-[13px] text-slate">No reviews yet. Be the first to buy and review!</p>
         </div>
       ) : reviews.length === 0 ? (
-        <p className="text-[13px] text-[#8C8A82] py-4">No {ratingFilter}-star reviews.</p>
+        <p className="text-[13px] text-slate py-4">No {ratingFilter}-star reviews.</p>
       ) : (
         <div className="flex flex-col gap-5">
           {reviews.map(r => {
@@ -152,7 +152,7 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[13px] font-bold text-[#141413]">{r.customerName}</span>
+                        <span className="text-[13px] font-bold text-carbon">{r.customerName}</span>
                         {r.isVerifiedPurchase && (
                           <span className="flex items-center gap-1 text-[10px] font-semibold text-success bg-success-bg px-[7px] py-[2px] rounded-full">
                             <ShieldCheck size={10} /> Verified Purchase
@@ -161,7 +161,7 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
                       </div>
                       <div className="flex items-center gap-2 mt-[3px]">
                         {r.rating != null && <StarRating value={r.rating} size={12} />}
-                        <span className="text-[11px] text-[#8C8A82]">{timeAgo(r.createdAt)}</span>
+                        <span className="text-[11px] text-slate">{timeAgo(r.createdAt)}</span>
                       </div>
                     </div>
                   </div>
@@ -181,7 +181,7 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
                 {r.comments.length > 0 && (
                   <div className="mt-3">
                     {r.comments.map((c, i) => (
-                      <p key={i} className="text-[13px] text-[#4A4945] leading-[1.6] mb-1">{c.text}</p>
+                      <p key={i} className="text-[13px] text-graphite leading-[1.6] mb-1">{c.text}</p>
                     ))}
                   </div>
                 )}
@@ -189,7 +189,7 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
                 {r.media.length > 0 && (
                   <div className="flex gap-2 mt-3 flex-wrap">
                     {r.media.map((url, i) => (
-                      <img key={i} src={url} alt="" className="w-16 h-16 rounded-lg object-cover border border-bone" />
+                      <img loading="lazy" decoding="async" key={i} src={url} alt="" className="w-16 h-16 rounded-lg object-cover border border-bone" />
                     ))}
                   </div>
                 )}
@@ -197,7 +197,7 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
                 {r.sellerReply && (
                   <div className="bg-white border border-bone rounded-lg px-3 py-[10px] mt-3">
                     <p className="text-[11px] font-semibold text-brand-orange mb-1">Reply from the seller</p>
-                    <p className="text-[12px] text-[#4A4945] leading-[1.5]">{r.sellerReply.text}</p>
+                    <p className="text-[12px] text-graphite leading-[1.5]">{r.sellerReply.text}</p>
                   </div>
                 )}
               </div>
@@ -213,7 +213,7 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
               >
                 Prev
               </button>
-              <span className="text-[11px] text-[#8C8A82]">Page {page} of {totalPages}</span>
+              <span className="text-[11px] text-slate">Page {page} of {totalPages}</span>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}

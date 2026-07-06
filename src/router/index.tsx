@@ -30,6 +30,7 @@ const SellerStorefront     = lazy(() => named(import('@/features/buyer/pages/Sel
 const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/EducationMarketplace'),            'EducationMarketplace'));
 const PricingPage          = lazy(() => named(import('@/features/buyer/pages/PricingPage'),                     'PricingPage'));
 const ForSellersPage       = lazy(() => named(import('@/features/buyer/pages/ForSellersPage'),                  'ForSellersPage'));
+const FaqPage              = lazy(() => named(import('@/features/buyer/pages/FaqPage'),                         'FaqPage'));
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 const LoginPage            = lazy(() => named(import('@/features/auth/pages/LoginPage'),                        'LoginPage'));
@@ -83,6 +84,8 @@ const AdminMessaging     = lazy(() => named(import('@/features/admin/pages/Admin
 const AdminMarketplace   = lazy(() => named(import('@/features/admin/pages/AdminMarketplace'),                  'AdminMarketplace'));
 const AdminFinance       = lazy(() => named(import('@/features/admin/pages/AdminFinance'),                      'AdminFinance'));
 const AdminAnnouncements = lazy(() => named(import('@/features/admin/pages/AdminAnnouncements'),                'AdminAnnouncements'));
+const AdminBanners       = lazy(() => named(import('@/features/admin/pages/AdminBanners'),                       'AdminBanners'));
+const AdminFaqs          = lazy(() => named(import('@/features/admin/pages/AdminFaqs'),                          'AdminFaqs'));
 const AdminConfig        = lazy(() => named(import('@/features/admin/pages/AdminConfig'),                       'AdminConfig'));
 const AdminSettings      = lazy(() => named(import('@/features/admin/pages/settings/AdminSettings'),           'AdminSettings'));
 
@@ -104,6 +107,7 @@ export const router = createBrowserRouter([
               { index: true,             element: <Homepage /> },
               { path: 'pricing',         element: <PricingPage /> },
               { path: 'sellers',         element: <ForSellersPage /> },
+              { path: 'faq',             element: <FaqPage /> },
             ],
           },
           // Pages with their own embedded navbar (no PublicLayout wrapper needed)
@@ -194,6 +198,8 @@ export const router = createBrowserRouter([
           { path: 'marketplace',  element: <AdminMarketplace /> },
           { path: 'finance',      element: <AdminFinance /> },
           { path: 'announcements',element: <AdminAnnouncements /> },
+          { path: 'banners',      element: <AdminBanners /> },
+          { path: 'faqs',         element: <AdminFaqs /> },
           { path: 'config',       element: <AdminConfig /> },
           { path: 'settings',     element: <AdminSettings /> },
         ],

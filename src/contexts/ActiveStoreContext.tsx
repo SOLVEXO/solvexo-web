@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { apiGetMyStores, type MyStoreItem } from '@/api/services/store';
 
 const STORAGE_KEY = 'solvexo_active_store';
@@ -37,17 +37,21 @@ export function ActiveStoreProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true; };
   }, []);
 
-  const switchStore = (id: string) => {
+  const switchStore = useCallback((id: string) => {
     setActiveStoreId(id);
     if (id === 'all') localStorage.removeItem(STORAGE_KEY);
     else              localStorage.setItem(STORAGE_KEY, id);
-  };
+  }, []);
 
   const activeStore =
     activeStoreId === 'all' ? null : (stores.find(s => s._id === activeStoreId) ?? null);
 
+  const value = useMemo<ActiveStoreContextValue>(() => ({
+    stores, activeStoreId, activeStore, loading, switchStore,
+  }), [stores, activeStoreId, activeStore, loading, switchStore]);
+
   return (
-    <Ctx.Provider value={{ stores, activeStoreId, activeStore, loading, switchStore }}>
+    <Ctx.Provider value={value}>
       {children}
     </Ctx.Provider>
   );

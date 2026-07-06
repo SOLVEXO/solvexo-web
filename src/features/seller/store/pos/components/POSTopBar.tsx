@@ -167,8 +167,8 @@ function CashAdjustmentOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
-      <div className="w-[320px] bg-pos-surface border border-carbon rounded-2xl p-5">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4">
+      <div className="w-full max-w-[320px] bg-pos-surface border border-carbon rounded-2xl p-5">
         <p className="text-[14px] font-bold text-white mb-4">Cash In / Out</p>
 
         <div className="flex gap-[6px] mb-3">

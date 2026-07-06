@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -60,11 +60,12 @@ function PasswordInput({ label, placeholder, value, onChange, onBlur, error }: {
   onChange: (v: string) => void; onBlur?: () => void; error?: string;
 }) {
   const [show, setShow] = useState(false);
+  const id = useId();
   return (
     <div>
-      <label className="block text-[12px] font-medium text-charcoal mb-[6px]">{label}</label>
+      <label htmlFor={id} className="block text-[12px] font-medium text-charcoal mb-[6px]">{label}</label>
       <div className="relative">
-        <input type={show ? 'text' : 'password'} placeholder={placeholder} value={value}
+        <input id={id} type={show ? 'text' : 'password'} placeholder={placeholder} value={value} autoComplete="new-password"
           onChange={e => onChange(e.target.value)} onBlur={onBlur}
           className={clsx(
             'w-full px-3 pr-[42px] py-[10px] rounded-lg border text-[13px] text-charcoal outline-none bg-white',
@@ -72,6 +73,7 @@ function PasswordInput({ label, placeholder, value, onChange, onBlur, error }: {
           )}
         />
         <button type="button" onClick={() => setShow(s => !s)}
+          aria-label={show ? 'Hide password' : 'Show password'}
           className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate p-0 flex">
           {show ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
@@ -133,9 +135,10 @@ export function NewPasswordPage() {
 
         {/* OTP */}
         <div className="mb-5">
-          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Verification Code</label>
+          <label htmlFor="reset-otp" className="block text-[12px] font-medium text-charcoal mb-[6px]">Verification Code</label>
           <input
-            type="text" inputMode="numeric" maxLength={6} placeholder="Enter 6-digit OTP" value={otp}
+            id="reset-otp"
+            type="text" inputMode="numeric" maxLength={6} placeholder="Enter 6-digit OTP" value={otp} autoComplete="one-time-code"
             onChange={e => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
             className={clsx(
               'w-full px-3 py-[10px] rounded-lg border text-charcoal outline-none bg-white text-center',

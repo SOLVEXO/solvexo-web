@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { clsx } from 'clsx';
-import { Paperclip, Send, Loader2, X, Mic, MicOff, Play, Pause } from 'lucide-react';
+import { Paperclip, Send, Loader2, X, Mic, MicOff } from 'lucide-react';
 import type { Message } from '@/api/services/messaging';
 import { EmojiPicker } from './EmojiPicker';
 
@@ -108,6 +108,7 @@ export function MessageInput({
           <button
             type="button"
             onClick={cancel}
+            aria-label="Cancel recording"
             className="w-9 h-9 flex items-center justify-center rounded-full text-slate hover:bg-bone cursor-pointer bg-transparent border-none"
             title="Cancel"
           >
@@ -117,6 +118,7 @@ export function MessageInput({
           <button
             type="button"
             onClick={stop}
+            aria-label="Send voice note"
             className="w-[42px] h-[42px] rounded-full bg-brand-orange text-white border-none flex items-center justify-center cursor-pointer hover:opacity-90"
             title="Send voice note"
           >
@@ -135,7 +137,7 @@ export function MessageInput({
             <p className="text-[11px] font-semibold text-brand-deep-orange">Replying to</p>
             <p className="text-[12px] text-slate truncate">{replyTo.text ?? `[${replyTo.type}]`}</p>
           </div>
-          <button onClick={onCancelReply} className="p-1 rounded-full hover:bg-bone cursor-pointer bg-transparent border-none text-slate shrink-0">
+          <button onClick={onCancelReply} aria-label="Cancel reply" className="p-1 rounded-full hover:bg-bone cursor-pointer bg-transparent border-none text-slate shrink-0">
             <X size={13} />
           </button>
         </div>
@@ -158,6 +160,7 @@ export function MessageInput({
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
+            aria-label="Attach file"
             className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full cursor-pointer border-none bg-transparent text-slate hover:bg-bone disabled:opacity-50"
           >
             {uploading ? <Loader2 size={17} className="animate-spin" /> : <Paperclip size={17} />}
@@ -171,6 +174,7 @@ export function MessageInput({
             type="button"
             onClick={onSend}
             disabled={sending}
+            aria-label="Send message"
             className="w-[42px] h-[42px] shrink-0 rounded-full border-none flex items-center justify-center cursor-pointer bg-brand-orange text-white hover:opacity-90"
           >
             {sending ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
@@ -179,6 +183,7 @@ export function MessageInput({
           <button
             type="button"
             onClick={start}
+            aria-label="Record voice note"
             className={clsx(
               'w-[42px] h-[42px] shrink-0 rounded-full border-none flex items-center justify-center cursor-pointer transition-colors',
               'bg-bone text-slate hover:bg-brand-pale-orange hover:text-brand-orange',

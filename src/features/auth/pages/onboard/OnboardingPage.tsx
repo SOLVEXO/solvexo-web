@@ -136,7 +136,7 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
             {logoUploading
               ? <Loader2 size={28} className="text-brand-orange animate-spin" />
               : preview
-                ? <img src={preview} alt="logo" className="w-full h-full object-cover" />
+                ? <img loading="lazy" decoding="async" src={preview} alt="logo" className="w-full h-full object-cover" />
                 : <Camera size={28} className="text-brand-orange" />}
             <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleFile} disabled={logoUploading} />
           </label>
@@ -149,8 +149,8 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
         </div>
 
         <div className="mb-4">
-          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Name <span className="text-brand-orange">*</span></label>
-          <input placeholder="e.g. Creative Classroom Resources"
+          <label htmlFor="onboard-store-name" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Name <span className="text-brand-orange">*</span></label>
+          <input id="onboard-store-name" placeholder="e.g. Creative Classroom Resources"
             value={form.storeName} onChange={e => setForm({ ...form, storeName: e.target.value })}
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white" />
           {form.storeName && (
@@ -161,8 +161,8 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
         </div>
 
         <div className="mb-4">
-          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Category <span className="text-brand-orange">*</span></label>
-          <select value={form.categoryId} onChange={e => setForm({ ...form, categoryId: e.target.value })}
+          <label htmlFor="onboard-category" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Category <span className="text-brand-orange">*</span></label>
+          <select id="onboard-category" value={form.categoryId} onChange={e => setForm({ ...form, categoryId: e.target.value })}
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white cursor-pointer">
             <option value="">Select your main category...</option>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -170,8 +170,8 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
         </div>
 
         <div className="mb-6">
-          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Description <span className="text-slate font-normal">(optional)</span></label>
-          <textarea placeholder="Tell buyers what makes your store special..."
+          <label htmlFor="onboard-description" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Description <span className="text-slate font-normal">(optional)</span></label>
+          <textarea id="onboard-description" placeholder="Tell buyers what makes your store special..."
             rows={4} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white resize-y" />
         </div>

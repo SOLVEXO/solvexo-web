@@ -72,14 +72,14 @@ const ORDER_COLUMNS: TableColumn<OrderRow>[] = [
           <div className="w-[26px] h-[26px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0" style={{ background: av.bg, color: av.color }}>
             {row.initials}
           </div>
-          <span className="text-[#4A4945]">{row.customer}</span>
+          <span className="text-graphite">{row.customer}</span>
         </div>
       );
     },
   },
   {
     key: 'product', header: 'Product',
-    render: row => <span className="text-[#4A4945]">{row.product}</span>,
+    render: row => <span className="text-graphite">{row.product}</span>,
   },
   {
     key: 'amount', header: 'Amount',
@@ -198,7 +198,7 @@ function MyStoreCard() {
             >
               <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0 overflow-hidden border border-[#EDEBE2]">
                 {store.logo
-                  ? <img src={store.logo} alt={store.name} className="w-full h-full object-cover" />
+                  ? <img loading="lazy" decoding="async" src={store.logo} alt={store.name} className="w-full h-full object-cover" />
                   : <Store size={15} className="text-brand-orange" />}
               </div>
               <div className="flex-1 min-w-0">
@@ -239,7 +239,7 @@ export function SellerDashboard() {
       <div className="px-5 pt-4 pb-6 flex flex-col gap-4">
 
         {/* ── Row 1: Metric Cards ── */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {metrics.map((m) => (
             <div
               key={m.label}

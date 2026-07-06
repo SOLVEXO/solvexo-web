@@ -54,7 +54,7 @@ export function ReviewsTab() {
         >
           <div className="w-10 h-10 rounded-lg bg-cream border border-bone overflow-hidden shrink-0">
             {r.product?.image ? (
-              <img src={r.product.image} alt="" className="w-full h-full object-cover" />
+              <img loading="lazy" decoding="async" src={r.product.image} alt="" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center"><ImageOff size={14} className="text-slate" /></div>
             )}

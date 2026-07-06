@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   apiGetMessages, apiSendMessage, apiSearchMessages, apiEditMessage,
   apiDeleteMessage, apiMarkMessageSeen,
@@ -12,14 +12,21 @@ export function useMessages(conversationId: string | null) {
   const [loading,    setLoading]    = useState(() => !!conversationId);
   const [sending,    setSending]    = useState(false);
   const [error,      setError]      = useState('');
+  const requestId = useRef(0);
 
   const refetch = useCallback(() => {
     if (!conversationId) return Promise.resolve();
+    const thisRequest = ++requestId.current;
     setLoading(true);
     return apiGetMessages(conversationId)
-      .then(res => { setMessages(res.messages ?? []); setNextCursor(res.nextCursor ?? null); setHasMore(res.hasMore ?? false); })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load messages.'))
-      .finally(() => setLoading(false));
+      .then(res => {
+        if (requestId.current !== thisRequest) return;
+        setMessages(res.messages ?? []);
+        setNextCursor(res.nextCursor ?? null);
+        setHasMore(res.hasMore ?? false);
+      })
+      .catch((err: unknown) => { if (requestId.current === thisRequest) setError(err instanceof Error ? err.message : 'Failed to load messages.'); })
+      .finally(() => { if (requestId.current === thisRequest) setLoading(false); });
   }, [conversationId]);
 
   useEffect(() => { refetch(); }, [refetch]);
@@ -75,18 +82,20 @@ export function useSearchMessages(conversationId: string | null) {
   const [results, setResults] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
+  const requestId = useRef(0);
 
   async function search(q: string) {
     if (!conversationId) return;
+    const thisRequest = ++requestId.current;
     setError('');
     setLoading(true);
     try {
       const res = await apiSearchMessages(conversationId, { q });
-      setResults(res ?? []);
+      if (requestId.current === thisRequest) setResults(res ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Search failed.');
+      if (requestId.current === thisRequest) setError(err instanceof Error ? err.message : 'Search failed.');
     } finally {
-      setLoading(false);
+      if (requestId.current === thisRequest) setLoading(false);
     }
   }
 

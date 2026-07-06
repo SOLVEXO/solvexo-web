@@ -33,6 +33,7 @@ export interface MarketplaceProduct {
   name:              string;
   sellerId:          string;
   storeId?:          string;
+  storeSlug?:        string | null;
   slug:              string;
   description:       string;
   productType?:      'physical' | 'digital';

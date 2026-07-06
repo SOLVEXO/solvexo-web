@@ -53,8 +53,8 @@ export function RefundOverlay({ sale, actingEmployeeId, onClose, onDone }: Refun
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
-      <div className="w-[400px] bg-pos-surface border border-carbon rounded-2xl p-5 max-h-[80vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4">
+      <div className="w-full max-w-[400px] bg-pos-surface border border-carbon rounded-2xl p-5 max-h-[80vh] overflow-y-auto">
         <p className="text-[14px] font-bold text-white mb-1">Refund {sale.saleNumber}</p>
         <p className="text-[12px] text-pos-muted mb-4">
           Select item quantities to refund, or refund the full sale.

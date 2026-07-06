@@ -14,7 +14,7 @@ const ta  = `${inp} resize-y min-h-[100px]`;
 
 function L({ children, req }: { children: ReactNode; req?: boolean }) {
   return (
-    <label className="text-[12px] font-semibold text-[#4A4945] block mb-1.5">
+    <label className="text-[12px] font-semibold text-graphite block mb-1.5">
       {children}{req && <span className="text-red-500 ml-0.5">*</span>}
     </label>
   );
@@ -176,7 +176,7 @@ export default function StoreAddProduct() {
 
           {/* Product Type */}
           <Card title="Product Type">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {([
                 { t: 'physical' as const, Icon: Package,  label: 'Physical Product', desc: 'Shipped to the customer',   enabled: supportsPhysical },
                 { t: 'digital'  as const, Icon: Download, label: 'Digital Download',  desc: 'Instant downloadable file', enabled: supportsDigital  },
@@ -238,7 +238,7 @@ export default function StoreAddProduct() {
           {pType === 'digital' && (
             <Card title="Delivery Settings">
               <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <F label="Download Limit">
                     <input value={dig.downloadLimit} onChange={e => sd('downloadLimit', e.target.value)} placeholder="unlimited" className={inp} />
                   </F>
@@ -322,7 +322,7 @@ export default function StoreAddProduct() {
                 <F label="Stock Quantity" req>
                   <input type="number" min="0" value={phys.stock} onChange={e => sp('stock', e.target.value)} placeholder="0" className={inp} />
                 </F>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <F label="Size">
                     <input value={phys.size} onChange={e => sp('size', e.target.value)} placeholder="L, XL…" className={inp} />
                   </F>

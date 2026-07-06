@@ -15,6 +15,7 @@ export const ENDPOINTS = {
     REFRESH_TOKEN: '/api/auth/refresh',
     GET_PROFILE: '/api/auth/getprofile',
     EDIT_PROFILE: '/api/auth/edit-profile',
+    RESEND_OTP: '/api/auth/resend-otp',
   },
 
   // ── STORE ─────────────────────────────────────────────────────────────────
@@ -68,6 +69,7 @@ export const ENDPOINTS = {
     GET: '/api/cart/get-wishlist',
     GET_ITEM: '/api/cart/get-wishlist-item',
     REMOVE: '/api/cart/remove-from-wishlist',
+    CLEAR: '/api/cart/clear-wishlist',
   },
 
   // ── ADDRESS ────────────────────────────────────────────────────────────────
@@ -76,6 +78,8 @@ export const ENDPOINTS = {
     GET_ALL: '/address/getMyAddresses',
     GET_DEFAULT: '/address/getDefaultAddress',
     UPDATE: '/address/update-address',
+    GET_BY_ID: (addressId: string) => `/address/get-address-by-id/${addressId}`,
+    SET_DEFAULT: (addressId: string) => `/address/setDefaultAddress/${addressId}`,
   },
 
   SHIPPING: {
@@ -110,6 +114,15 @@ export const ENDPOINTS = {
     MARK_PAID:     (id: string) => `/api/orders/mark-paid/${id}`,
     UPDATE_STATUS: '/api/orders/update-status',
     DOWNLOAD_URL:  '/api/orders/download-url',
+
+    MY_ORDERS:       '/api/orders/my-orders',
+    GET_BY_ID:       (orderId: string) => `/api/orders/${orderId}`,
+    CANCEL:          (orderId: string) => `/api/orders/cancel/${orderId}`,
+    RETURN_REQUEST:  (orderId: string) => `/api/orders/return-request/${orderId}`,
+    SELLER_RETURNS:  '/api/orders/returns',
+    RETURN_ACTION:   (orderId: string) => `/api/orders/return-action/${orderId}`,
+    GET_DOWNLOAD_LINK: '/api/orders/get-download-link',
+    STREAM_PDF:        '/api/orders/stream-pdf',
   },
 
   // ── MESSAGING ─────────────────────────────────────────────────────────────
@@ -221,6 +234,28 @@ export const ENDPOINTS = {
     AUDIT_LOGS: {
       LIST: (storeId: string) => `/api/pos/audit-logs/${storeId}`,
     },
+  },
+
+  // ── BANNERS ───────────────────────────────────────────────────────────────
+  BANNER: {
+    LIST:   '/api/banners',
+    COUNT:  '/api/banners/count',
+    CREATE: '/api/banners',
+    UPLOAD: '/api/banners/upload',
+    UPDATE: (id: string) => `/api/banners/${id}`,
+    DELETE: (id: string) => `/api/banners/${id}`,
+  },
+
+  // ── FAQS ──────────────────────────────────────────────────────────────────
+  FAQ: {
+    LIST:       '/api/faqs',
+    SEARCH:     '/api/faqs/search',
+    CATEGORIES: '/api/faqs/categories',
+    ADMIN_ALL:  '/api/faqs/admin/all',
+    CREATE:     '/api/faqs',
+    UPDATE:     (id: string) => `/api/faqs/${id}`,
+    TOGGLE:     (id: string) => `/api/faqs/${id}/toggle`,
+    DELETE:     (id: string) => `/api/faqs/${id}`,
   },
 
   // ── RATING / REVIEWS ──────────────────────────────────────────────────────

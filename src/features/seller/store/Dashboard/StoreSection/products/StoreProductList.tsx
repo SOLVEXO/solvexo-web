@@ -28,7 +28,7 @@ function ProductCell({ p }: { p: InventoryProduct }) {
     <div className="flex items-center gap-2.5">
       <div className="w-9 h-9 rounded-lg shrink-0 bg-brand-pale-orange border border-[#EDEBE2] flex items-center justify-center overflow-hidden">
         {p.image
-          ? <img src={p.image} alt="" className="w-full h-full object-cover" />
+          ? <img loading="lazy" decoding="async" src={p.image} alt="" className="w-full h-full object-cover" />
           : p.type === 'digital'
             ? <Download size={14} className="text-brand-orange" />
             : <Package  size={14} className="text-brand-orange" />}
@@ -55,11 +55,23 @@ export default function StoreProductList() {
   const [error,         setError]         = useState('');
 
   const LIMIT = 10;
+  const SEARCH_LIMIT = 1000;
   const [refreshKey, setRefreshKey] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const isSearching = debouncedSearch.trim().length > 0;
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(id);
+  }, [search]);
 
   useEffect(() => {
     let cancelled = false;
-    apiGetStoreInventory(storeId, page, LIMIT)
+    setLoading(true);
+    // When searching, fetch a much larger page so the search covers the whole
+    // catalog rather than just the currently-visible page (no server-side search endpoint exists).
+    const [fetchPage, fetchLimit] = isSearching ? [1, SEARCH_LIMIT] : [page, LIMIT];
+    apiGetStoreInventory(storeId, fetchPage, fetchLimit)
       .then(res => {
         if (cancelled) return;
         setProducts(res.data.products);
@@ -71,7 +83,7 @@ export default function StoreProductList() {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [storeId, page, refreshKey]);
+  }, [storeId, page, refreshKey, isSearching]);
 
   const goAdd    = () => navigate(`/seller/store/${storeId}/products/add`);
   const goEdit   = (p: InventoryProduct) => navigate(`/seller/store/${storeId}/products/edit/${p.productId}`);
@@ -90,10 +102,10 @@ export default function StoreProductList() {
     setRefreshKey(k => k + 1);
   };
 
-  const filtered = search.trim()
+  const filtered = isSearching
     ? products.filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.sku.toLowerCase().includes(search.toLowerCase())
+        p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        p.sku.toLowerCase().includes(debouncedSearch.toLowerCase())
       )
     : products;
 
@@ -180,7 +192,7 @@ export default function StoreProductList() {
       <div className="px-7 py-5 flex flex-col gap-5">
 
         {/* ── Stats ──────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard
             label="Total Products"
             value={stats?.totalProducts ?? 0}
@@ -270,7 +282,7 @@ export default function StoreProductList() {
                 columns={columns}
                 data={filtered}
                 keyExtractor={p => p.productId}
-                pagination={{
+                pagination={isSearching ? undefined : {
                   page,
                   total:    totalProducts,
                   perPage:  LIMIT,

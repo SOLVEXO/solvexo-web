@@ -83,7 +83,7 @@ function StoreInfoCard() {
         <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-[10px] bg-brand-pale-orange border border-[#EAE8DE] flex items-center justify-center overflow-hidden shrink-0">
             {store?.logo
-              ? <img src={store.logo} alt={store?.name} className="w-full h-full object-cover" />
+              ? <img loading="lazy" decoding="async" src={store.logo} alt={store?.name} className="w-full h-full object-cover" />
               : <Globe size={18} className="text-brand-orange" />}
           </div>
           <div className="min-w-0">
@@ -144,7 +144,7 @@ function StoreInfoCard() {
               {store!.productTypes!.map(pt => (
                 <span
                   key={pt}
-                  className="text-[10px] font-medium text-charcoal bg-bone border border-[#E8E6DC] px-[8px] py-[3px] rounded-[5px] capitalize"
+                  className="text-[10px] font-medium text-charcoal bg-bone border border-bone px-[8px] py-[3px] rounded-[5px] capitalize"
                 >
                   {pt.replace(/_/g, ' ')}
                 </span>
@@ -201,12 +201,12 @@ function QuickActionsRow({ storeId }: { storeId: string }) {
       <div className="px-5 pt-4 pb-3 border-b border-[#F3F2EC]">
         <p className="text-sm font-bold text-charcoal">Quick Actions</p>
       </div>
-      <div className="px-4 py-4 grid grid-cols-6 gap-3">
+      <div className="px-4 py-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {actions.map(({ Icon, label, path, color }) => (
           <button
             key={label}
             onClick={() => navigate(`/seller/store/${storeId}/${path}`)}
-            className="flex flex-col items-center gap-2 py-4 px-2 rounded-[10px] border border-bone bg-transparent cursor-pointer transition-colors duration-150 hover:bg-[#FAF9F5] w-full"
+            className="flex flex-col items-center gap-2 py-4 px-2 rounded-[10px] border border-bone bg-transparent cursor-pointer transition-colors duration-150 hover:bg-cream w-full"
           >
             <div
               className="w-9 h-9 rounded-[9px] flex items-center justify-center"
@@ -226,7 +226,7 @@ function QuickActionsRow({ storeId }: { storeId: string }) {
 function DashSkeleton() {
   return (
     <div className="px-7 py-6 flex flex-col gap-5">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1,2,3,4].map(i => (
           <div key={i} className="bg-white rounded-[10px] border border-bone p-5">
             <div className="animate-pulse w-9 h-9 rounded-[8px] bg-bone mb-[14px]" />
@@ -279,7 +279,7 @@ export default function StoreDashboard() {
               href={`/store/${store.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-[7px] bg-white border border-bone rounded-[7px] text-[12px] font-medium text-charcoal no-underline transition-colors duration-100 hover:bg-[#FAF9F5]"
+              className="inline-flex items-center gap-1.5 px-3 py-[7px] bg-white border border-bone rounded-[7px] text-[12px] font-medium text-charcoal no-underline transition-colors duration-100 hover:bg-cream"
             >
               <ExternalLink size={12} />
               View Store
@@ -292,7 +292,7 @@ export default function StoreDashboard() {
         <div className="px-7 py-6 flex flex-col gap-5">
 
           {/* Metric Cards */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard label="Total Revenue"   value="$0" sub="No sales yet"           Icon={TrendingUp}  color="#D97757" />
             <MetricCard label="Total Orders"    value="0"  sub="No orders yet"          Icon={Package}     color="#8B5CF6" />
             <MetricCard label="Active Products" value="0"  sub="Add your first product" Icon={ShoppingBag} color="#0EA5E9" />
@@ -308,7 +308,7 @@ export default function StoreDashboard() {
               title="Revenue Overview"
               subtitle="Monthly revenue trend"
               action={
-                <span className="text-[10px] font-medium text-slate bg-bone border border-[#E8E6DC] px-[8px] py-[3px] rounded-[5px]">
+                <span className="text-[10px] font-medium text-slate bg-bone border border-bone px-[8px] py-[3px] rounded-[5px]">
                   Sample data
                 </span>
               }

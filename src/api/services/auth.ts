@@ -157,3 +157,11 @@ export function apiEditProfile(payload: EditProfilePayload) {
   return client.post<never, ApiResponse<ProfileData>>(ENDPOINTS.AUTH.EDIT_PROFILE, payload);
 }
 
+/** POST /auth/resend-otp — resends OTP to email during signup/forgot-password flow */
+export interface ResendOtpPayload { email: string; role: AppRole }
+interface ResendOtpData { userId: string; otp?: string }
+
+export function apiResendOtp(payload: ResendOtpPayload) {
+  return client.post<never, ApiResponse<ResendOtpData>>(ENDPOINTS.AUTH.RESEND_OTP, payload);
+}
+

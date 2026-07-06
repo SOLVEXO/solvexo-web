@@ -66,7 +66,7 @@ export function EducationMarketplace() {
           {/* Logo */}
           <div className="flex items-center gap-[6px] shrink-0">
             <SolvexoIcon size={28} />
-            <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
+            <span className="font-bold text-[15px] text-carbon">Solvex</span>
             <span className="font-bold text-[15px] text-brand-orange">o</span>
             <span className="text-bone mx-1 hidden md:inline">|</span>
             <span className="text-[13px] text-slate hidden md:inline">Education</span>

@@ -4,7 +4,7 @@ import { useVerifyOtp } from '@/hooks/auth/useVerifyOtp';
 import { Button } from '@/components/comman/ui/Button';
 import { AlertTriangle, ArrowRight, Check } from 'lucide-react';
 import { runSchema, otpSchema } from '@/utils/validation/schemas';
-import { AuthContext } from '@/api/services/auth';
+import { AuthContext, apiResendOtp, type AppRole } from '@/api/services/auth';
 
 function OTPInput({ values, onChange }: { values: string[]; onChange: (i: number, v: string) => void }) {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
@@ -32,10 +32,11 @@ function OTPInput({ values, onChange }: { values: string[]; onChange: (i: number
 
   return (
     <div>
-      <div className="flex gap-[10px] justify-center mb-2">
+      <div role="group" aria-label="6-digit verification code" className="flex gap-[10px] justify-center mb-2">
         {values.map((val, i) => (
           <input key={i}
             ref={el => { refs.current[i] = el; }}
+            aria-label={`Digit ${i + 1} of 6`}
             type="text" inputMode="numeric" maxLength={1} value={val}
             onChange={e => handleChange(i, e.target.value)}
             onKeyDown={e => handleKeyDown(i, e)}
@@ -56,9 +57,11 @@ function OTPInput({ values, onChange }: { values: string[]; onChange: (i: number
   );
 }
 
-function ResendTimer() {
+function ResendTimer({ email, role }: { email: string; role: AppRole }) {
   const [seconds,   setSeconds]   = useState(59);
   const [canResend, setCanResend] = useState(false);
+  const [sending,   setSending]   = useState(false);
+  const [error,     setError]     = useState('');
 
   useState(() => {
     const t = setInterval(() => {
@@ -70,12 +73,29 @@ function ResendTimer() {
     return () => clearInterval(t);
   });
 
+  const handleResend = async () => {
+    setSending(true);
+    setError('');
+    try {
+      await apiResendOtp({ email, role });
+      setSeconds(59);
+      setCanResend(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to resend code.');
+    } finally {
+      setSending(false);
+    }
+  };
+
   if (canResend) {
     return (
-      <button onClick={() => { setSeconds(59); setCanResend(false); }}
-        className="text-[13px] text-brand-orange font-semibold bg-transparent border-none cursor-pointer">
-        Resend code
-      </button>
+      <div className="flex flex-col items-center gap-1">
+        <button onClick={handleResend} disabled={sending}
+          className="text-[13px] text-brand-orange font-semibold bg-transparent border-none cursor-pointer disabled:opacity-50">
+          {sending ? 'Sending…' : 'Resend code'}
+        </button>
+        {error && <p className="text-[11px] text-error">{error}</p>}
+      </div>
     );
   }
   return (
@@ -93,6 +113,7 @@ export function VerifyOTPPage() {
 
   const ctx       = AuthContext.get();
   const userEmail = ctx?.email ?? '';
+  const userRole  = ctx?.role ?? 'user';
 
   const handleChange = (i: number, val: string) => {
     const next = [...otp]; next[i] = val; setOtp(next); setError('');
@@ -136,7 +157,7 @@ export function VerifyOTPPage() {
 
         <div className="flex items-center justify-center gap-[6px] mt-5">
           <span className="text-[13px] text-slate">Didn't receive it?</span>
-          <ResendTimer />
+          <ResendTimer email={userEmail} role={userRole} />
         </div>
       </div>
     </div>

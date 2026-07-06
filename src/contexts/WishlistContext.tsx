@@ -1,8 +1,8 @@
 import {
-  createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode,
+  createContext, useContext, useEffect, useState, useCallback, useMemo, useRef, type ReactNode,
 } from 'react';
 import {
-  apiGetWishlist, apiAddToWishlist, apiRemoveFromWishlist, apiGetWishlistItem,
+  apiGetWishlist, apiAddToWishlist, apiRemoveFromWishlist, apiGetWishlistItem, apiClearWishlist,
   type WishlistListItem,
 } from '@/api/services/wishlist';
 import { TokenStorage } from '@/api/services/auth';
@@ -16,6 +16,8 @@ export interface WishlistContextValue {
   addToWishlist:      (productId: string, variantId: string) => Promise<void>;
   removeFromWishlist: (productId: string, variantId: string) => Promise<void>;
   toggleWishlist:     (productId: string, variantId: string) => Promise<void>;
+  clearWishlist:      () => Promise<void>;
+  clearing:           boolean;
 }
 
 const WishlistContext = createContext<WishlistContextValue | null>(null);
@@ -34,6 +36,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   const [wishlistItems, setWishlistItems] = useState<WishlistListItem[]>([]);
   const [loading,       setLoading]       = useState(true);
   const [wishlisting,   setWishlisting]   = useState<string | null>(null);
+  const [clearing,      setClearing]      = useState(false);
   const [wishlistedKeys, setWishlistedKeys] = useState(() => new Set<string>());
 
   // Maps "productId::variantId" → wishlistId (needed for removal)
@@ -114,17 +117,41 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     }
   }, [wishlistedKeys, addToWishlist, removeFromWishlist]);
 
+  const clearWishlist = useCallback(async () => {
+    const prevItems = wishlistItems;
+    const prevKeys  = wishlistedKeys;
+    setClearing(true);
+    // Optimistic
+    setWishlistItems([]);
+    setWishlistedKeys(new Set());
+    idMap.current.clear();
+    try {
+      await apiClearWishlist();
+    } catch (err) {
+      // Rollback
+      setWishlistItems(prevItems);
+      setWishlistedKeys(prevKeys);
+      throw err;
+    } finally {
+      setClearing(false);
+    }
+  }, [wishlistItems, wishlistedKeys]);
+
+  const value = useMemo<WishlistContextValue>(() => ({
+    wishlistItems,
+    wishlistCount: wishlistItems.length,
+    loading,
+    wishlisting,
+    clearing,
+    isWishlisted,
+    addToWishlist,
+    removeFromWishlist,
+    toggleWishlist,
+    clearWishlist,
+  }), [wishlistItems, loading, wishlisting, clearing, isWishlisted, addToWishlist, removeFromWishlist, toggleWishlist, clearWishlist]);
+
   return (
-    <WishlistContext.Provider value={{
-      wishlistItems,
-      wishlistCount: wishlistItems.length,
-      loading,
-      wishlisting,
-      isWishlisted,
-      addToWishlist,
-      removeFromWishlist,
-      toggleWishlist,
-    }}>
+    <WishlistContext.Provider value={value}>
       {children}
     </WishlistContext.Provider>
   );

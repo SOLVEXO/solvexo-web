@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { X, ChevronLeft, ChevronRight, CalendarClock } from 'lucide-react';
 
 const MONTHS    = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -23,6 +23,16 @@ type Mode = 'hour' | 'minute';
 type Sel  = { y: number; m: number; d: number };
 
 export function DateTimePickerModal({ value, onChange, onClose }: DateTimePickerModalProps) {
+  const titleId   = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    dialogRef.current?.focus();
+    const onKeyDown = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
   const init = value ? new Date(value) : null;
   const now  = new Date();
 
@@ -91,10 +101,17 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
 
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
 
       {/* Modal card */}
-      <div className="relative flex flex-col w-full max-w-[360px] max-h-[92vh] bg-white rounded-2xl border border-bone shadow-[0_32px_80px_rgba(0,0,0,0.28)] overflow-hidden">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="relative flex flex-col w-full max-w-[360px] max-h-[92vh] bg-white rounded-2xl border border-bone shadow-[0_32px_80px_rgba(0,0,0,0.28)] overflow-hidden outline-none"
+      >
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="shrink-0 flex items-center justify-between px-5 py-[14px] border-b border-bone">
@@ -103,13 +120,14 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
               <CalendarClock size={15} className="text-brand-orange" />
             </div>
             <div>
-              <p className="text-[14px] font-bold text-charcoal leading-tight">Schedule Go-Live</p>
+              <p id={titleId} className="text-[14px] font-bold text-charcoal leading-tight">Schedule Go-Live</p>
               <p className="text-[11px] text-slate mt-[1px]">Choose date &amp; time</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close dialog"
             className="w-7 h-7 rounded-full bg-bone flex items-center justify-center border-none cursor-pointer text-slate hover:bg-[#E0DED6] hover:text-charcoal transition-colors shrink-0"
           >
             <X size={13} />
@@ -125,6 +143,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
               <button
                 type="button"
                 onClick={prevMonth}
+                aria-label="Previous month"
                 className="w-7 h-7 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#E0DED6] hover:text-charcoal transition-colors"
               >
                 <ChevronLeft size={14} />
@@ -133,6 +152,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
               <button
                 type="button"
                 onClick={nextMonth}
+                aria-label="Next month"
                 className="w-7 h-7 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#E0DED6] hover:text-charcoal transition-colors"
               >
                 <ChevronRight size={14} />
@@ -241,9 +261,18 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
                   ? HOURS.map(h => {
                       const pos      = polar(h === 12 ? 0 : h, 12, R_ITEM);
                       const isActive = h === hour;
+                      const pick     = () => { setHour(h); setMode('minute'); };
                       return (
-                        <g key={h} style={{ cursor: 'pointer' }}
-                          onClick={() => { setHour(h); setMode('minute'); }}>
+                        <g
+                          key={h}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`${h} o'clock`}
+                          aria-pressed={isActive}
+                          style={{ cursor: 'pointer' }}
+                          onClick={pick}
+                          onKeyDown={(e: KeyboardEvent<SVGGElement>) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } }}
+                        >
                           <circle cx={pos.x} cy={pos.y} r="16" fill="transparent" />
                           <text
                             x={pos.x} y={pos.y}
@@ -259,8 +288,18 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
                   : MINS.map(m => {
                       const pos      = polar(m, 60, R_ITEM);
                       const isActive = m === minute;
+                      const pick     = () => setMinute(m);
                       return (
-                        <g key={m} style={{ cursor: 'pointer' }} onClick={() => setMinute(m)}>
+                        <g
+                          key={m}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`${m} minutes`}
+                          aria-pressed={isActive}
+                          style={{ cursor: 'pointer' }}
+                          onClick={pick}
+                          onKeyDown={(e: KeyboardEvent<SVGGElement>) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } }}
+                        >
                           <circle cx={pos.x} cy={pos.y} r="16" fill="transparent" />
                           <text
                             x={pos.x} y={pos.y}

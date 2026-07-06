@@ -57,7 +57,7 @@ export function SellerAnalytics() {
               <option>Last 30 days</option>
               <option>Last year</option>
             </select>
-            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
               Export PDF
             </button>
           </>
@@ -67,7 +67,7 @@ export function SellerAnalytics() {
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* Metrics row */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {metrics.map(m => (
             <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
@@ -79,7 +79,7 @@ export function SellerAnalytics() {
         </div>
 
         {/* Charts row */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <AreaChart
             data={monthlyData}
             dataKey="revenue"
@@ -99,7 +99,7 @@ export function SellerAnalytics() {
         </div>
 
         {/* Bottom row */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <DonutChart
             data={trafficSources}
             title="Traffic Sources"

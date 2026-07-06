@@ -40,6 +40,14 @@ export function SellerMessages() {
   const isSearching = query.trim().length >= 2;
   const list = isSearching ? searchResults : conversations;
 
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) return;
+    const id = setTimeout(() => search(trimmed, storeId), 300);
+    return () => clearTimeout(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, storeId]);
+
   const [activeId, setActiveId] = useState<string | null>(null);
   const { conversation, pin, mute, archive, restore, remove } = useConversation(activeId);
   const { messages, loading: msgLoading, sending, send, edit, remove: removeMessage, markSeen, hasMore, loadMore } = useMessages(activeId);
@@ -58,10 +66,7 @@ export function SellerMessages() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId, messages.length]);
 
-  const handleSearch = (v: string) => {
-    setQuery(v);
-    if (v.trim().length >= 2) search(v.trim(), storeId);
-  };
+  const handleSearch = (v: string) => setQuery(v);
 
   const handleUpload = async (file: File) => {
     if (!activeId) return;

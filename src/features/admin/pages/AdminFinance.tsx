@@ -55,7 +55,7 @@ export function AdminFinance() {
       </div>
 
       {/* ── Metrics ── */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {metrics.map(m => (
           <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
             <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
@@ -67,7 +67,7 @@ export function AdminFinance() {
       </div>
 
       {/* ── Revenue split ── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         {/* Revenue Breakdown */}
         <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5">
@@ -81,7 +81,7 @@ export function AdminFinance() {
             ].map(item => (
               <div key={item.label}>
                 <div className="flex justify-between mb-[5px]">
-                  <span className="text-[12px] text-[#4A4945]">{item.label}</span>
+                  <span className="text-[12px] text-graphite">{item.label}</span>
                   <span className="text-[12px] font-semibold text-charcoal">{item.value}</span>
                 </div>
                 <div className="h-[6px] rounded-[3px] bg-bone">
@@ -125,7 +125,7 @@ export function AdminFinance() {
             <thead>
               <tr>
                 {['ID','Seller','Amount','Method','Period','Status','Actions'].map(h => (
-                  <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-[#FAF9F5] whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -160,7 +160,7 @@ export function AdminFinance() {
                     {/* Amount */}
                     <td className="px-4 py-3 text-[13px] font-bold text-charcoal">{p.amount}</td>
                     {/* Method */}
-                    <td className="px-4 py-3 text-[13px] text-[#4A4945]">{p.method}</td>
+                    <td className="px-4 py-3 text-[13px] text-graphite">{p.method}</td>
                     {/* Period */}
                     <td className="px-4 py-3 text-[13px] text-slate">{p.period}</td>
                     {/* Status */}
@@ -174,7 +174,7 @@ export function AdminFinance() {
                         {p.status === 'Pending' ? (
                           <>
                             <button onClick={() => approve(p.id)} className="text-[11px] font-medium text-[#2D8A4E] bg-transparent border-none cursor-pointer">Approve</button>
-                            <span className="text-[#E8E6DC] text-[13px]">|</span>
+                            <span className="text-bone text-[13px]">|</span>
                             <button onClick={() => hold(p.id)}    className="text-[11px] font-medium text-[#C13030] bg-transparent border-none cursor-pointer">Hold</button>
                           </>
                         ) : (

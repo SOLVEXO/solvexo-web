@@ -110,7 +110,7 @@ export function AdminSettings() {
                       <div className="relative flex-shrink-0">
                         <div className="w-[76px] h-[76px] rounded-full bg-[#FDECEA] text-[#C0392B] text-[26px] font-bold flex items-center justify-center overflow-hidden">
                           {profile?.profileImage
-                            ? <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                            ? <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
                             : (profile?.name?.slice(0, 2).toUpperCase() ?? 'AD')}
                         </div>
                         <button className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#C13030] border-none flex items-center justify-center cursor-pointer">
@@ -120,7 +120,7 @@ export function AdminSettings() {
                       <div>
                         <p className="text-[13px] font-semibold text-charcoal mb-[3px]">Profile Photo</p>
                         <p className="text-[12px] text-slate mb-2">JPG, PNG — max 2 MB</p>
-                        <button className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-[12px] text-[#4A4945] cursor-pointer">
+                        <button className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-[12px] text-graphite cursor-pointer">
                           Upload Photo
                         </button>
                       </div>
@@ -129,25 +129,25 @@ export function AdminSettings() {
                     <div className="h-px bg-[#F0EEE6] mb-5" />
 
                     {/* Name */}
-                    <div className="grid grid-cols-2 gap-[14px] mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px] mb-4">
                       <div>
-                        <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">First Name</label>
+                        <label className="text-[12px] font-medium text-graphite mb-[5px] block">First Name</label>
                         <input value={firstName} onChange={e => setFirstName(e.target.value)}
-                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                       </div>
                       <div>
-                        <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Last Name</label>
+                        <label className="text-[12px] font-medium text-graphite mb-[5px] block">Last Name</label>
                         <input value={lastName} onChange={e => setLastName(e.target.value)}
-                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                       </div>
                     </div>
 
                     {/* Email */}
                     <div className="mb-4">
-                      <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Email</label>
+                      <label className="text-[12px] font-medium text-graphite mb-[5px] block">Email</label>
                       <div className="flex items-center gap-[10px]">
                         <input readOnly value={profile?.email ?? ''}
-                          className="flex-1 px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-[#FAF9F5] box-border" />
+                          className="flex-1 px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-cream box-border" />
                         {profile?.isVerified && (
                           <span className="px-[10px] py-1 rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C] flex items-center gap-1 flex-shrink-0">
                             <Check size={10} /> Verified
@@ -158,29 +158,29 @@ export function AdminSettings() {
 
                     {/* Phone */}
                     <div className="mb-4">
-                      <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Phone Number</label>
+                      <label className="text-[12px] font-medium text-graphite mb-[5px] block">Phone Number</label>
                       <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. +92 300 0000000"
-                        className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                        className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                     </div>
 
                     {/* Address */}
                     <div className="mb-4">
-                      <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Address</label>
+                      <label className="text-[12px] font-medium text-graphite mb-[5px] block">Address</label>
                       <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address"
-                        className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                        className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                     </div>
 
                     {/* Role + Status */}
-                    <div className="grid grid-cols-2 gap-[14px] mb-[22px]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px] mb-[22px]">
                       <div>
-                        <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Role</label>
+                        <label className="text-[12px] font-medium text-graphite mb-[5px] block">Role</label>
                         <input readOnly value={profile?.role ?? ''}
-                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-[#FAF9F5] box-border capitalize" />
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-cream box-border capitalize" />
                       </div>
                       <div>
-                        <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Account Status</label>
+                        <label className="text-[12px] font-medium text-graphite mb-[5px] block">Account Status</label>
                         <input readOnly value={profile?.status ?? ''}
-                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none bg-[#FAF9F5] box-border capitalize"
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none bg-cream box-border capitalize"
                           style={{ color: profile?.status === 'active' ? '#1E7A3C' : '#8C8A82' }} />
                       </div>
                     </div>

@@ -144,7 +144,7 @@ function ShiftFormModal({
       <DarkField label="Shift Name" required>
         <DarkInput value={name} onChange={e => setName(e.target.value)} placeholder="Morning Shift" />
       </DarkField>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <DarkField label="Start Time" required>
           <DarkInput type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
         </DarkField>

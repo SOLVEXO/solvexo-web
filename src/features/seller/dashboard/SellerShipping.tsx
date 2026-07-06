@@ -69,19 +69,19 @@ export function SellerShipping() {
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* ── Metrics ── */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
-              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
-              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
               {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
-              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
+              {m.sub   && <p className="text-xs text-slate mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
 
         {/* ── Tab bar ── */}
-        <div className="border-b border-[#E8E6DC]">
+        <div className="border-b border-bone">
           <div className="flex items-center gap-0">
             {TABS.map(tab => (
               <button
@@ -105,14 +105,14 @@ export function SellerShipping() {
         {activeTab === 'zones' && (
           <div className="flex flex-col gap-3.5">
             {ZONES.map(zone => (
-              <div key={zone.name} className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-[18px]">
+              <div key={zone.name} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-[18px]">
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div>
-                    <p className="text-sm font-semibold text-[#141413] mb-[3px]">{zone.name}</p>
-                    <p className="text-xs text-[#8C8A82]">{zone.coverage}</p>
+                    <p className="text-sm font-semibold text-carbon mb-[3px]">{zone.name}</p>
+                    <p className="text-xs text-slate">{zone.coverage}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button className="px-3 py-[5px] bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">
+                    <button className="px-3 py-[5px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">
                       Edit
                     </button>
                     <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C]">
@@ -125,12 +125,12 @@ export function SellerShipping() {
                   {zone.services.map(svc => (
                     <div
                       key={svc.name}
-                      className="inline-flex flex-col items-start px-3.5 py-2.5 border border-[#E8E6DC] rounded-[9px] bg-[#FAF9F5] cursor-pointer transition-[border-color] duration-[120ms]"
+                      className="inline-flex flex-col items-start px-3.5 py-2.5 border border-bone rounded-[9px] bg-cream cursor-pointer transition-[border-color] duration-[120ms]"
                       onMouseEnter={e => (e.currentTarget.style.borderColor = '#D97757')}
                       onMouseLeave={e => (e.currentTarget.style.borderColor = '#E8E6DC')}
                     >
-                      <span className="text-xs font-semibold text-[#4A4945] leading-[1.3]">{svc.name}</span>
-                      <span className="text-[11px] text-[#8C8A82] mb-[5px]">{svc.days}</span>
+                      <span className="text-xs font-semibold text-graphite leading-[1.3]">{svc.name}</span>
+                      <span className="text-[11px] text-slate mb-[5px]">{svc.days}</span>
                       <span className="text-sm font-bold text-brand-orange">{svc.price}</span>
                     </div>
                   ))}
@@ -142,8 +142,8 @@ export function SellerShipping() {
 
         {/* ── Placeholder Tabs ── */}
         {activeTab !== 'zones' && (
-          <div className="flex items-center justify-center h-[180px] bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-            <p className="text-[13px] text-[#8C8A82]">
+          <div className="flex items-center justify-center h-[180px] bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <p className="text-[13px] text-slate">
               {TABS.find(t => t.id === activeTab)?.label} — coming soon
             </p>
           </div>

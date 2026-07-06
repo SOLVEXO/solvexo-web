@@ -43,7 +43,7 @@ export function SellerFinance() {
         subtitle="Track earnings, payouts, fees, and tax reports."
         actions={
           <>
-            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
               Download Tax Report
             </button>
             <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
@@ -56,16 +56,16 @@ export function SellerFinance() {
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* ── Balance Card ── */}
-        <div className="bg-[#141413] rounded-xl px-7 py-6 flex justify-between items-center">
+        <div className="bg-carbon rounded-xl px-7 py-6 flex justify-between items-center">
           <div>
-            <p className="text-[10px] font-semibold text-[#8C8A82] uppercase tracking-[0.1em] mb-2">
+            <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.1em] mb-2">
               Available Balance
             </p>
             <p className="text-[32px] font-bold text-white leading-[1.1] mb-3">$3,160.40</p>
             <div className="flex items-center gap-6">
-              <span className="text-[11px] text-[#8C8A82]">Pending: <span className="text-white font-medium">$840.00</span></span>
+              <span className="text-[11px] text-slate">Pending: <span className="text-white font-medium">$840.00</span></span>
               <span className="text-[11px] text-brand-orange font-medium">Next Payout: May 25</span>
-              <span className="text-[11px] text-[#8C8A82]">Method: Bank ••4821</span>
+              <span className="text-[11px] text-slate">Method: Bank ••4821</span>
             </div>
           </div>
           <button className="px-5 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer flex items-center gap-1.5">
@@ -74,13 +74,13 @@ export function SellerFinance() {
         </div>
 
         {/* ── Metrics ── */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
-              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
-              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
               {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
-              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
+              {m.sub   && <p className="text-xs text-slate mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
@@ -89,18 +89,18 @@ export function SellerFinance() {
         <div className="flex gap-4 items-start">
 
           {/* LEFT — Transaction History */}
-          <div className="flex-1 min-w-0 bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#E8E6DC] flex-wrap gap-2.5">
-              <p className="text-sm font-semibold text-[#141413]">Transaction History</p>
+          <div className="flex-1 min-w-0 bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-bone flex-wrap gap-2.5">
+              <p className="text-sm font-semibold text-carbon">Transaction History</p>
               <div className="flex items-center gap-2">
-                <select className="px-3 py-[7px] text-[13px] border border-[#E8E6DC] rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer">
+                <select className="px-3 py-[7px] text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer">
                   <option>All Types</option>
                   <option>Sale</option>
                   <option>Payout</option>
                   <option>Fee</option>
                   <option>Refund</option>
                 </select>
-                <button className="px-3.5 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs text-[#4A4945] cursor-pointer">
+                <button className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs text-graphite cursor-pointer">
                   Export CSV
                 </button>
               </div>
@@ -111,7 +111,7 @@ export function SellerFinance() {
                 <thead>
                   <tr>
                     {['Date','Description','Type','Amount','Balance'].map(h => (
-                      <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold text-[#8C8A82] uppercase tracking-[0.05em] border-b border-[#E8E6DC] bg-[#FAF9F5] whitespace-nowrap">
+                      <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">
                         {h}
                       </th>
                     ))}
@@ -127,8 +127,8 @@ export function SellerFinance() {
                         onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                       >
-                        <td className="px-4 py-3 text-[13px] text-[#8C8A82] whitespace-nowrap">{t.date}</td>
-                        <td className="px-4 py-3 text-[13px] text-[#4A4945]">{t.description}</td>
+                        <td className="px-4 py-3 text-[13px] text-slate whitespace-nowrap">{t.date}</td>
+                        <td className="px-4 py-3 text-[13px] text-graphite">{t.description}</td>
                         <td className="px-4 py-3">
                           <span
                             className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold"
@@ -143,7 +143,7 @@ export function SellerFinance() {
                         >
                           {t.amount}
                         </td>
-                        <td className="px-4 py-3 text-[13px] font-medium text-[#141413] whitespace-nowrap">
+                        <td className="px-4 py-3 text-[13px] font-medium text-carbon whitespace-nowrap">
                           {t.balance}
                         </td>
                       </tr>
@@ -158,47 +158,47 @@ export function SellerFinance() {
           <div className="w-[280px] shrink-0 flex flex-col gap-3.5">
 
             {/* Payout Schedule */}
-            <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
-              <p className="text-[13px] font-semibold text-[#141413] mb-3">Payout Schedule</p>
+            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
+              <p className="text-[13px] font-semibold text-carbon mb-3">Payout Schedule</p>
               <div className="flex flex-col gap-2.5">
                 {[['Frequency','Weekly (Every Monday)'],['Method','Bank Transfer ••4821'],['Currency','USD'],['Minimum','$50.00']].map(([label, val]) => (
                   <div key={label} className="flex justify-between items-center">
-                    <span className="text-xs text-[#8C8A82]">{label}</span>
-                    <span className="text-xs font-medium text-[#4A4945]">{val}</span>
+                    <span className="text-xs text-slate">{label}</span>
+                    <span className="text-xs font-medium text-graphite">{val}</span>
                   </div>
                 ))}
               </div>
               <div className="mt-3 pt-3 border-t border-[#F0EEE6]">
-                <button className="px-3.5 py-1.5 bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">
+                <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">
                   Update Payout Method
                 </button>
               </div>
             </div>
 
             {/* Fee Breakdown */}
-            <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
-              <p className="text-[13px] font-semibold text-[#141413] mb-3">Fee Breakdown</p>
+            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
+              <p className="text-[13px] font-semibold text-carbon mb-3">Fee Breakdown</p>
               <div className="flex flex-col gap-2.5">
                 {[['Marketplace Listing Fee','Free'],['Transaction Fee','8% per sale'],['Payment Processing','2.9% + $0.30'],['Digital Delivery','Included'],['AI Credits','750 / month']].map(([label, val]) => (
                   <div key={label} className="flex justify-between items-center">
-                    <span className="text-xs text-[#8C8A82]">{label}</span>
-                    <span className="text-xs font-medium text-[#4A4945]">{val}</span>
+                    <span className="text-xs text-slate">{label}</span>
+                    <span className="text-xs font-medium text-graphite">{val}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Tax Reports */}
-            <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
-              <p className="text-[13px] font-semibold text-[#141413] mb-3">Tax Reports</p>
+            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
+              <p className="text-[13px] font-semibold text-carbon mb-3">Tax Reports</p>
               <div className="flex flex-col gap-3">
                 {TAX_REPORTS.map(r => (
                   <div key={r.name} className="flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium text-[#4A4945] leading-[1.3]">{r.name}</p>
-                      <p className="text-[11px] text-[#8C8A82] mt-0.5">{r.period} · {r.date}</p>
+                      <p className="text-[13px] font-medium text-graphite leading-[1.3]">{r.name}</p>
+                      <p className="text-[11px] text-slate mt-0.5">{r.period} · {r.date}</p>
                     </div>
-                    <button className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-white border border-[#E8E6DC] rounded-[6px] text-[11px] font-medium text-[#8C8A82] cursor-pointer">
+                    <button className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] font-medium text-slate cursor-pointer">
                       <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
                         <path d="M6 1v7M3 5l3 3 3-3M1 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>

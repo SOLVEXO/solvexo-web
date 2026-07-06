@@ -33,7 +33,7 @@ function ChartTooltip({ active, payload, label, valuePrefix = '', valueSuffix = 
         <div key={p.name} className="flex items-center justify-between gap-4 mb-0.5">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color }} />
-            <span className="text-[#4A4945]">{p.name}</span>
+            <span className="text-graphite">{p.name}</span>
           </span>
           <span className="font-bold text-charcoal">{valuePrefix}{p.value.toLocaleString()}{valueSuffix}</span>
         </div>

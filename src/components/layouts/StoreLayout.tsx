@@ -168,7 +168,7 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
                 {loading
                   ? <div className="animate-pulse size-9 bg-charcoal rounded-[9px]" />
                   : store?.logo
-                    ? <img src={store.logo} className="w-full h-full object-cover" alt="" />
+                    ? <img loading="lazy" decoding="async" src={store.logo} className="w-full h-full object-cover" alt="" />
                     : initials}
               </div>
               <div className="flex-1 min-w-0">
@@ -191,7 +191,7 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
         ) : (
           <div className="flex justify-center pt-3 pb-2 shrink-0">
             <div className="size-8 rounded-[8px] shrink-0 bg-brand-orange overflow-hidden flex items-center justify-center text-[11px] font-bold text-white">
-              {loading ? '…' : store?.logo ? <img src={store.logo} className="w-full h-full object-cover" alt="" /> : initials}
+              {loading ? '…' : store?.logo ? <img loading="lazy" decoding="async" src={store.logo} className="w-full h-full object-cover" alt="" /> : initials}
             </div>
           </div>
         )}
@@ -209,14 +209,21 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
               {section.items.map(item => {
                 const active = isActive(item.path);
                 const isLockedPos = item.id === 'pos' && !posEnabled;
+                const goToItem = () => {
+                  if (isLockedPos) return;
+                  navigate(item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`);
+                };
                 return (
                   <div
                     key={item.id}
-                    onClick={() => {
-                      if (isLockedPos) return;
-                      navigate(item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`);
-                    }}
+                    role="button"
+                    tabIndex={0}
+                    onClick={goToItem}
+                    onKeyDown={e => { if (!isLockedPos && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); goToItem(); } }}
                     title={!open ? item.label : undefined}
+                    aria-label={item.label}
+                    aria-current={active ? 'page' : undefined}
+                    aria-disabled={isLockedPos || undefined}
                     className={clsx(
                       'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5',
                       isLockedPos ? 'cursor-default' : 'cursor-pointer',
@@ -241,12 +248,13 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
                           {item.label}
                         </span>
                         {isLockedPos ? (
-                          <span
+                          <button
+                            type="button"
                             onClick={e => { e.stopPropagation(); navigate(`/seller/store/${storeId}/pos`); }}
-                            className="text-[9px] font-bold uppercase tracking-[0.03em] px-[7px] py-[2px] rounded-full bg-brand-orange text-white cursor-pointer shrink-0"
+                            className="text-[9px] font-bold uppercase tracking-[0.03em] px-[7px] py-[2px] rounded-full bg-brand-orange text-white border-none cursor-pointer shrink-0"
                           >
                             Upgrade
-                          </span>
+                          </button>
                         ) : active && (
                           <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />
                         )}

@@ -42,6 +42,14 @@ export function BuyerMessages() {
   const isSearching = query.trim().length >= 2;
   const list = isSearching ? searchResults : conversations;
 
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) return;
+    const id = setTimeout(() => search(trimmed), 300);
+    return () => clearTimeout(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
   const [activeId, setActiveId] = useState<string | null>(conversationId ?? null);
 
   // If URL has conversationId, auto-open it
@@ -64,10 +72,7 @@ export function BuyerMessages() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId, messages.length]);
 
-  const handleSearch = (v: string) => {
-    setQuery(v);
-    if (v.trim().length >= 2) search(v.trim());
-  };
+  const handleSearch = (v: string) => setQuery(v);
 
   const handleSelect = (id: string) => {
     setActiveId(id);
@@ -79,7 +84,7 @@ export function BuyerMessages() {
     setUploading(true);
     try {
       const attachment = await apiUploadAttachment(activeId, file);
-      const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'file';
+      const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'document';
       await send({ type: kind, attachments: [attachment] });
     } finally {
       setUploading(false);

@@ -56,7 +56,7 @@ export function AdminOverview() {
       </div>
 
       {/* ── Metrics Row ── */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {METRICS.map((m) => (
           <div
             key={m.label}
@@ -83,7 +83,7 @@ export function AdminOverview() {
       </div>
 
       {/* ── Row 2: Recent Signups + Platform Health ── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         {/* Recent Signups */}
         <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
@@ -133,7 +133,7 @@ export function AdminOverview() {
               return (
                 <div
                   key={item.label}
-                  className="flex items-center gap-3 px-[14px] py-[10px] rounded-lg bg-[#FAF9F5]"
+                  className="flex items-center gap-3 px-[14px] py-[10px] rounded-lg bg-cream"
                 >
                   <item.Icon size={18} style={{ color: iconColor }} className="flex-shrink-0" />
                   <span className="text-[13px] font-medium text-charcoal flex-1">
@@ -150,7 +150,7 @@ export function AdminOverview() {
       </div>
 
       {/* ── Row 3: Top Categories + Admin Action Log ── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         {/* Top Categories */}
         <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
@@ -161,7 +161,7 @@ export function AdminOverview() {
             {TOP_CATEGORIES.map((cat) => (
               <div key={cat.name}>
                 <div className="flex justify-between items-center mb-[5px]">
-                  <span className="text-[12px] text-[#4A4945]">{cat.name}</span>
+                  <span className="text-[12px] text-graphite">{cat.name}</span>
                   <span className="text-[12px] font-semibold text-charcoal">{cat.gmv}</span>
                 </div>
                 <div className="h-2 rounded-[4px] bg-bone">
@@ -188,7 +188,7 @@ export function AdminOverview() {
               >
                 <div className="w-2 h-2 rounded-full bg-brand-orange flex-shrink-0 mt-1" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12px] text-[#4A4945] leading-[1.4]">{a.action}</p>
+                  <p className="text-[12px] text-graphite leading-[1.4]">{a.action}</p>
                   <p className="text-[11px] text-slate mt-[3px]">
                     {a.admin} · {a.time}
                   </p>

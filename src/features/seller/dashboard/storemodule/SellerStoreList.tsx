@@ -22,7 +22,7 @@ function StoreCell({ store }: { store: MyStoreItem }) {
     <div className="flex items-center gap-[10px]">
       <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0 overflow-hidden border border-[#EDEBE2]">
         {store.logo
-          ? <img src={store.logo} alt={store.name} className="w-full h-full object-cover" />
+          ? <img loading="lazy" decoding="async" src={store.logo} alt={store.name} className="w-full h-full object-cover" />
           : <Store size={15} className="text-brand-orange" />}
       </div>
       <span className="font-semibold text-charcoal">{store.name}</span>

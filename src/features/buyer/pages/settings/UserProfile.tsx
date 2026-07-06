@@ -13,7 +13,7 @@ import { useEditProfile } from '@/hooks/auth/useEditProfile';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useCartContext } from '@/contexts/CartContext';
 import {
-  apiGetMyAddresses, apiAddAddress, apiUpdateAddress,
+  apiGetMyAddresses, apiAddAddress, apiUpdateAddress, apiSetDefaultAddress,
   type Address, type AddressPayload,
 } from '@/api/services/address';
 import { useConversations, useSearchConversations, useStartConversation } from '@/hooks/messaging/useConversations';
@@ -46,7 +46,7 @@ const NAV_ITEMS: { id: Tab; label: string; Icon: LucideIcon }[] = [
 ];
 
 const INPUT_CLS  = 'w-full py-[10px] px-[13px] text-[13px] border border-bone rounded-[9px] outline-none text-charcoal bg-white box-border';
-const LABEL_CLS  = 'text-[12px] font-medium text-[#4A4945] mb-[6px] block';
+const LABEL_CLS  = 'text-[12px] font-medium text-graphite mb-[6px] block';
 const EMPTY_FORM: AddressPayload = {
   label: 'Home', recipientName: '', phoneNumber: '',
   addressLine1: '', addressLine2: '', state: '', city: '', zipCode: '',
@@ -78,7 +78,7 @@ function ProfileSidebar({ profile, loading, tab, setTab, wishlistCount, mobileOp
               {loading
                 ? <SkeletonBox width={80} height={80} rounded="50%" />
                 : profile?.profileImage
-                  ? <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                  ? <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
                   : initials}
             </div>
             <button className="absolute bottom-0 right-0 w-[26px] h-[26px] rounded-full bg-brand-orange border-2 border-white flex items-center justify-center cursor-pointer">
@@ -211,7 +211,7 @@ function WishlistImg({ images, name }: { images?: string[]; name: string }) {
     );
   }
   return (
-    <img src={src} alt={name} onError={() => setErr(true)}
+    <img loading="lazy" decoding="async" src={src} alt={name} onError={() => setErr(true)}
       className="w-[84px] h-[84px] rounded-[12px] object-cover shrink-0 border border-[#EDEBE2]" />
   );
 }
@@ -219,7 +219,7 @@ function WishlistImg({ images, name }: { images?: string[]; name: string }) {
 // ── Wishlist tab ──────────────────────────────────────────────────────────────
 function WishlistTab() {
   const navigate = useNavigate();
-  const { wishlistItems, wishlistCount, loading: wLoading, wishlisting, removeFromWishlist } = useWishlistContext();
+  const { wishlistItems, wishlistCount, loading: wLoading, wishlisting, removeFromWishlist, clearWishlist, clearing } = useWishlistContext();
   const { addToCart, adding } = useCartContext();
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [addingId,   setAddingId]   = useState<string | null>(null);
@@ -231,6 +231,10 @@ function WishlistTab() {
   const handleAddToCart = (productId: string, variantId: string, type?: 'physical' | 'digital') => {
     setAddingId(variantId);
     addToCart(productId, variantId, type).finally(() => setAddingId(null));
+  };
+  const handleClearAll = () => {
+    if (!window.confirm('Remove all items from your wishlist?')) return;
+    clearWishlist().catch(err => alert(err instanceof Error ? err.message : 'Failed to clear wishlist.'));
   };
 
   if (wLoading) {
@@ -295,9 +299,18 @@ function WishlistTab() {
           <p className="text-[11px] text-slate mb-[3px]">Account / Wishlist</p>
           <h1 className="text-[22px] font-bold text-charcoal leading-none">Wishlist</h1>
         </div>
-        <div className="text-right pb-[2px]">
-          <p className="text-[13px] font-semibold text-charcoal leading-tight">Saved Items</p>
-          <p className="text-[11px] text-slate mt-[2px]">{wishlistCount} item{wishlistCount !== 1 ? 's' : ''}</p>
+        <div className="flex flex-col items-end gap-[6px] pb-[2px]">
+          <div className="text-right">
+            <p className="text-[13px] font-semibold text-charcoal leading-tight">Saved Items</p>
+            <p className="text-[11px] text-slate mt-[2px]">{wishlistCount} item{wishlistCount !== 1 ? 's' : ''}</p>
+          </div>
+          <button
+            onClick={handleClearAll}
+            disabled={clearing}
+            className="text-[11px] font-medium text-error bg-transparent border-none cursor-pointer disabled:opacity-50"
+          >
+            {clearing ? 'Clearing…' : 'Clear All'}
+          </button>
         </div>
       </div>
       <div className="divide-y divide-[#F5F4EF]">
@@ -328,7 +341,7 @@ function WishlistTab() {
               <div className="flex-1 min-w-0 flex flex-col gap-[7px]">
                 <p
                   onClick={() => navigate(`/marketplace/${p._id}`)}
-                  className="font-bold text-[14px] text-[#141413] cursor-pointer leading-snug hover:text-brand-orange transition-colors line-clamp-1"
+                  className="font-bold text-[14px] text-carbon cursor-pointer leading-snug hover:text-brand-orange transition-colors line-clamp-1"
                 >
                   {p.name}
                 </p>
@@ -364,7 +377,7 @@ function WishlistTab() {
                 {/* Price row */}
                 {variant && (
                   <div className="flex items-center gap-[8px]">
-                    <span className="font-bold text-[16px] text-[#141413]">
+                    <span className="font-bold text-[16px] text-carbon">
                       ${variant.price.toLocaleString()}
                     </span>
                     {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
@@ -421,7 +434,7 @@ function AddrField({ label, value, onChange, placeholder, half }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string; half?: boolean;
 }) {
   return (
-    <div className={half ? '' : 'col-span-2'}>
+    <div className={half ? '' : 'sm:col-span-2'}>
       <label className={LABEL_CLS}>{label}</label>
       <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={INPUT_CLS} />
     </div>
@@ -436,8 +449,8 @@ function AddressForm({ initial, onSave, onCancel, saving }: {
 
   return (
     <div className="border-[1.5px] border-brand-orange rounded-[12px] px-5 py-5 bg-[#FFFAF7]">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="sm:col-span-2">
           <label className={LABEL_CLS}>Label</label>
           <div className="flex gap-2">
             {(['Home', 'Work', 'Other'] as const).map(l => (
@@ -460,14 +473,14 @@ function AddressForm({ initial, onSave, onCancel, saving }: {
         <AddrField label="City"                      value={form.city}               onChange={v => set('city', v)}           placeholder="e.g. Karachi"     half />
         <AddrField label="State"                     value={form.state}              onChange={v => set('state', v)}          placeholder="e.g. Sindh"       half />
         <AddrField label="Zip Code"                  value={form.zipCode}            onChange={v => set('zipCode', v)}        placeholder="e.g. 75300"       half />
-        <div className="col-span-2 flex items-center gap-2">
+        <div className="sm:col-span-2 flex items-center gap-2">
           <input
             type="checkbox" id="addr-default"
             checked={form.isDefault ?? false}
             onChange={e => set('isDefault', e.target.checked)}
             className="w-[15px] h-[15px] cursor-pointer accent-brand-orange"
           />
-          <label htmlFor="addr-default" className="text-[12px] text-[#4A4945] cursor-pointer">
+          <label htmlFor="addr-default" className="text-[12px] text-graphite cursor-pointer">
             Set as default address
           </label>
         </div>
@@ -530,6 +543,19 @@ function AddressTab() {
     finally { setSaving(false); }
   };
 
+  const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null);
+  const handleSetDefault = async (addressId: string) => {
+    setSettingDefaultId(addressId);
+    try {
+      await apiSetDefaultAddress(addressId);
+      await refreshAddresses();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to set default address.');
+    } finally {
+      setSettingDefaultId(null);
+    }
+  };
+
   const columns: TableColumn<Address>[] = [
     {
       key: 'no', header: '#', width: '48px',
@@ -582,7 +608,14 @@ function AddressTab() {
       render: a => (
         <ActionMenu
           align="right"
-          items={[{ label: 'Edit', onClick: () => { setEditTarget(a); setView('edit'); }, icon: <Pencil size={13} /> }]}
+          items={[
+            { label: 'Edit', onClick: () => { setEditTarget(a); setView('edit'); }, icon: <Pencil size={13} /> },
+            ...(a.isDefault ? [] : [{
+              label: settingDefaultId === a._id ? 'Setting…' : 'Set as Default',
+              onClick: () => handleSetDefault(a._id),
+              icon: <StarIcon size={13} />,
+            }]),
+          ]}
         />
       ),
     },
@@ -870,7 +903,7 @@ function ProfileTab() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className={LABEL_CLS}>First Name</label>
                 <input value={firstName} onChange={e => setFirstName(e.target.value)} className={INPUT_CLS} />

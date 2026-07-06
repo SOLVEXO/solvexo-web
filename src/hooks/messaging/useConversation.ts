@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   apiGetConversationById, apiArchiveConversation, apiRestoreConversation,
   apiPinConversation, apiMuteConversation, apiDeleteConversation,
@@ -10,14 +10,16 @@ export function useConversation(id: string | null) {
   const [loading, setLoading] = useState(() => !!id);
   const [error,   setError]   = useState('');
   const [acting,  setActing]  = useState(false);
+  const requestId = useRef(0);
 
   const refetch = useCallback(() => {
     if (!id) return Promise.resolve();
+    const thisRequest = ++requestId.current;
     setLoading(true);
     return apiGetConversationById(id)
-      .then(res => setConversation(res))
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load conversation.'))
-      .finally(() => setLoading(false));
+      .then(res => { if (requestId.current === thisRequest) setConversation(res); })
+      .catch((err: unknown) => { if (requestId.current === thisRequest) setError(err instanceof Error ? err.message : 'Failed to load conversation.'); })
+      .finally(() => { if (requestId.current === thisRequest) setLoading(false); });
   }, [id]);
 
   useEffect(() => { refetch(); }, [refetch]);

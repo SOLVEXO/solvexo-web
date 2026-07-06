@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
-  PanelLeftClose, PanelLeftOpen, MessageSquare,
+  PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -22,6 +22,8 @@ const ADMIN_NAV: AdminNavItem[] = [
   { id: 'messages',      Icon: MessageSquare,   label: 'Messaging',       path: '/admin/messages'      },
   { id: 'marketplace',   Icon: Store,           label: 'Marketplace',     path: '/admin/marketplace'   },
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
+  { id: 'banners',       Icon: ImageIcon,       label: 'Banners',         path: '/admin/banners'       },
+  { id: 'faqs',          Icon: HelpCircle,      label: 'FAQs',            path: '/admin/faqs'          },
   { id: 'announcements', Icon: Bell,            label: 'Announcements',   path: '/admin/announcements' },
   { id: 'config',        Icon: Settings,        label: 'Platform Config', path: '/admin/config'        },
   { id: 'settings',      Icon: UserCog,         label: 'My Settings',     path: '/admin/settings'      },
@@ -98,7 +100,7 @@ function AdminSidebar({ open, onToggle, onClose }: AdminSidebarProps) {
               <div className="flex items-center gap-2 mt-2">
                 <div className="size-[26px] rounded-full shrink-0 bg-error flex items-center justify-center overflow-hidden text-[9px] font-bold text-white">
                   {profile.profileImage
-                    ? <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                    ? <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
                     : profile.name.slice(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -122,12 +124,15 @@ function AdminSidebar({ open, onToggle, onClose }: AdminSidebarProps) {
           {ADMIN_NAV.map(item => {
             const active = isActive(item.path);
             return (
-              <div
+              <button
                 key={item.id}
+                type="button"
                 onClick={() => navigate(item.path)}
                 title={!open ? item.label : undefined}
+                aria-label={item.label}
+                aria-current={active ? 'page' : undefined}
                 className={clsx(
-                  'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5',
+                  'w-full flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 border-none text-left',
                   'cursor-pointer transition-colors duration-150',
                   !open && 'lg:justify-center lg:px-0',
                   active ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
@@ -151,7 +156,7 @@ function AdminSidebar({ open, onToggle, onClose }: AdminSidebarProps) {
                     {active && <div className="w-[3px] h-3 rounded-[2px] bg-error" />}
                   </>
                 )}
-              </div>
+              </button>
             );
           })}
         </nav>

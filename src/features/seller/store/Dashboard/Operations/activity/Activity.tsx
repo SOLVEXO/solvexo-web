@@ -88,8 +88,8 @@ export function StoreActivity() {
         subtitle="Full audit trail of all staff actions, changes, and security events."
         actions={
           <>
-            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">Export Log</button>
-            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">Security Settings</button>
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">Export Log</button>
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">Security Settings</button>
           </>
         }
       />
@@ -97,7 +97,7 @@ export function StoreActivity() {
       <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
         {/* Metrics */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {metrics.map(m => (
             <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
@@ -144,7 +144,7 @@ export function StoreActivity() {
 
             {/* Team Member filter */}
             <div className="px-4 py-[14px] border-b border-bone">
-              <p className="text-xs font-semibold text-[#4A4945] mb-[10px]">Filter by Team Member</p>
+              <p className="text-xs font-semibold text-graphite mb-[10px]">Filter by Team Member</p>
               {TEAM_MEMBERS.map(m => (
                 <label key={m.id} className="flex items-center gap-2 mb-2 cursor-pointer">
                   <button
@@ -158,7 +158,7 @@ export function StoreActivity() {
                   >
                     {activeMember === m.id && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </button>
-                  <span className="text-[13px] text-[#4A4945]">
+                  <span className="text-[13px] text-graphite">
                     {m.label}
                     {m.sub && <span className="text-[11px] text-slate ml-1">({m.sub})</span>}
                   </span>
@@ -168,7 +168,7 @@ export function StoreActivity() {
 
             {/* Date Range */}
             <div className="px-4 py-[14px]">
-              <p className="text-xs font-semibold text-[#4A4945] mb-2">Date Range</p>
+              <p className="text-xs font-semibold text-graphite mb-2">Date Range</p>
               <select
                 value={dateRange}
                 onChange={e => setDateRange(e.target.value)}
@@ -179,7 +179,7 @@ export function StoreActivity() {
                 <option value="last90">Last 90 days</option>
                 <option value="custom">Custom range</option>
               </select>
-              <button className="w-full py-[7px] bg-white border border-bone rounded-lg text-xs text-[#4A4945] cursor-pointer">
+              <button className="w-full py-[7px] bg-white border border-bone rounded-lg text-xs text-graphite cursor-pointer">
                 Apply Filter
               </button>
             </div>

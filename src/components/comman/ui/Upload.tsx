@@ -49,7 +49,7 @@ export function ImageUpload({
           {uploading
             ? <Loader2 size={22} className="text-brand-orange animate-spin" />
             : url
-              ? <img src={url} alt="" className="w-full h-full object-cover" />
+              ? <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
               : <Camera size={22} className="text-brand-orange" />}
           <input type="file" accept={accept} className="hidden" onChange={handleFile} disabled={uploading} />
         </label>
@@ -63,7 +63,7 @@ export function ImageUpload({
     <div className={clsx('flex flex-wrap gap-2', className)}>
       {value.map((url, i) => (
         <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-bone group">
-          <img src={url} alt="" className="w-full h-full object-cover" />
+          <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
           <button
             type="button"
             onClick={() => remove(i)}

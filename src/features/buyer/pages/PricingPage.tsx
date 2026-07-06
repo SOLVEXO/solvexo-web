@@ -4,6 +4,7 @@ import { clsx } from 'clsx';
 import { ArrowRight, Sparkles, User, Lock, Star, Receipt, MessageSquare, Check, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useFaqs } from '@/hooks/useFaqs';
 
 const SERIF = "'Lora', Georgia, serif";
 
@@ -103,8 +104,8 @@ const ADDONS: { Icon: LucideIcon; name: string; price: string; unit: string }[] 
   { Icon: MessageSquare,  name: 'SMS Notifications',              price: '$0.05', unit: 'per message'           },
 ];
 
-// ── FAQ exact from reference ───────────────────────────────────────────────────
-const FAQS = [
+// ── FAQ fallback (shown until admin adds FAQs under the "pricing" category) ───
+const FALLBACK_FAQS = [
   {
     q: 'Can I switch plans anytime?',
     a: "Yes. You can upgrade or downgrade your plan at any time. Changes take effect immediately and we'll prorate any billing differences.",
@@ -133,6 +134,11 @@ export function PricingPage() {
   usePageTitle('Pricing');
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
 
+  const { faqs: liveFaqs } = useFaqs();
+  const faqs = liveFaqs.length > 0
+    ? liveFaqs.map(f => ({ q: f.question, a: f.answer }))
+    : FALLBACK_FAQS;
+
   const getPrice = (plan: typeof PLANS[0]) => {
     if (plan.monthly === null) return 'Custom';
     if (plan.monthly === 0)    return 'Free';
@@ -151,10 +157,10 @@ export function PricingPage() {
           </span>
         </div>
 
-        <h1 className="block text-2xl md:text-4xl lg:text-[42px] font-bold text-[#141413] leading-[1.2] mb-[14px]" style={{ fontFamily: SERIF }}>
+        <h1 className="block text-2xl md:text-4xl lg:text-[42px] font-bold text-carbon leading-[1.2] mb-[14px]" style={{ fontFamily: SERIF }}>
           Simple, transparent pricing
         </h1>
-        <p className="block text-sm md:text-[16px] text-[#8C8A82] leading-[1.6] mb-8">
+        <p className="block text-sm md:text-[16px] text-slate leading-[1.6] mb-8">
           Start free. Scale as you grow. Every plan includes marketplace access, digital delivery, and AI-powered tools.
         </p>
 
@@ -260,8 +266,8 @@ export function PricingPage() {
                 ))}
                 {plan.missing.map(f => (
                   <div key={f} className="flex gap-2 items-start opacity-40">
-                    <X size={13} className="text-[#8C8A82] flex-shrink-0 mt-[1px]" />
-                    <span className="text-[12px] text-[#8C8A82] leading-[1.5]">
+                    <X size={13} className="text-slate flex-shrink-0 mt-[1px]" />
+                    <span className="text-[12px] text-slate leading-[1.5]">
                       {f}
                     </span>
                   </div>
@@ -274,10 +280,10 @@ export function PricingPage() {
 
       {/* ── Add-ons ───────────────────────────────────────────────────────── */}
       <div className="px-4 md:px-8 lg:px-12 pb-16 max-w-[1200px] mx-auto">
-        <h2 className="text-[24px] font-bold text-[#141413] mb-2">
+        <h2 className="text-[24px] font-bold text-carbon mb-2">
           Add-ons &amp; extras
         </h2>
-        <p className="text-[14px] text-[#8C8A82] mb-7">
+        <p className="text-[14px] text-slate mb-7">
           Extend your plan with exactly what you need.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]">
@@ -288,8 +294,8 @@ export function PricingPage() {
             >
               <a.Icon size={28} className="text-brand-orange flex-shrink-0" />
               <div className="flex-1">
-                <p className="text-[13px] font-semibold text-[#141413] mb-[2px]">{a.name}</p>
-                <p className="text-[11px] text-[#8C8A82]">{a.unit}</p>
+                <p className="text-[13px] font-semibold text-carbon mb-[2px]">{a.name}</p>
+                <p className="text-[11px] text-slate">{a.unit}</p>
               </div>
               <span className="text-[14px] font-bold text-brand-orange flex-shrink-0">
                 {a.price}
@@ -302,19 +308,19 @@ export function PricingPage() {
       {/* ── FAQ ───────────────────────────────────────────────────────────── */}
       <div className="bg-white px-4 md:px-8 lg:px-12 py-16 border-t border-bone">
         <div className="max-w-[720px] mx-auto">
-          <h2 className="text-[28px] font-bold text-[#141413] text-center mb-10" style={{ fontFamily: SERIF }}>
+          <h2 className="text-[28px] font-bold text-carbon text-center mb-10" style={{ fontFamily: SERIF }}>
             Frequently asked questions
           </h2>
           <div className="flex flex-col gap-0">
-            {FAQS.map((faq, i) => (
+            {faqs.map((faq, i) => (
               <div
                 key={faq.q}
-                className={clsx('py-5', i < FAQS.length - 1 && 'border-b border-bone')}
+                className={clsx('py-5', i < faqs.length - 1 && 'border-b border-bone')}
               >
-                <p className="text-[14px] font-semibold text-[#141413] mb-2">
+                <p className="text-[14px] font-semibold text-carbon mb-2">
                   {faq.q}
                 </p>
-                <p className="text-[13px] text-[#8C8A82] leading-[1.7]">
+                <p className="text-[13px] text-slate leading-[1.7]">
                   {faq.a}
                 </p>
               </div>
@@ -328,7 +334,7 @@ export function PricingPage() {
         <h2 className="block text-2xl md:text-[32px] font-bold text-white mb-[14px]" style={{ fontFamily: SERIF }}>
           Start selling today — it's free
         </h2>
-        <p className="block text-[15px] text-[#8C8A82] mb-8">
+        <p className="block text-[15px] text-slate mb-8">
           No credit card required. Cancel or upgrade anytime.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

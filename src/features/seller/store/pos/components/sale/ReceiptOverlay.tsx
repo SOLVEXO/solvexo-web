@@ -8,8 +8,8 @@ interface ReceiptOverlayProps {
 
 export function ReceiptOverlay({ sale, resetSale }: ReceiptOverlayProps) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/85 z-20">
-      <div className="bg-pos-surface border border-carbon rounded-2xl p-6 w-[320px]">
+    <div className="absolute inset-0 flex items-center justify-center bg-black/85 z-20 px-4">
+      <div className="bg-pos-surface border border-carbon rounded-2xl p-6 w-full max-w-[320px]">
 
         {/* Header */}
         <div className="text-center mb-5">
@@ -26,7 +26,7 @@ export function ReceiptOverlay({ sale, resetSale }: ReceiptOverlayProps) {
         <div className="mb-4">
           {sale.items.map(item => (
             <div key={item._id} className="flex justify-between py-1 border-b border-carbon">
-              <span className="text-[11px] text-[#8C8A82]">{item.qty}× {item.name}</span>
+              <span className="text-[11px] text-slate">{item.qty}× {item.name}</span>
               <span className="text-[11px] text-white">${item.lineTotal.toFixed(2)}</span>
             </div>
           ))}

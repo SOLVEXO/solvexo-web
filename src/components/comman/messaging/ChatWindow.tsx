@@ -45,7 +45,7 @@ export function ChatWindow({
 
   if (!open) {
     return (
-      <div className="flex-1 hidden md:flex flex-col items-center justify-center gap-3 bg-[#FAF9F5] text-center px-8">
+      <div className="flex-1 hidden md:flex flex-col items-center justify-center gap-3 bg-cream text-center px-8">
         <div className="w-16 h-16 rounded-full bg-brand-pale-orange flex items-center justify-center">
           <MessageCircle size={28} className="text-brand-orange" />
         </div>

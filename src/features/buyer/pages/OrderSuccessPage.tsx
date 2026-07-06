@@ -21,7 +21,7 @@ function SolvexoLogo({ onClick }: { onClick: () => void }) {
         <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7" />
         <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      <span className="font-bold text-[15px] text-[#141413]">Solvex<span className="text-brand-orange">o</span></span>
+      <span className="font-bold text-[15px] text-carbon">Solvex<span className="text-brand-orange">o</span></span>
     </button>
   );
 }

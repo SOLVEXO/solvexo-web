@@ -64,8 +64,8 @@ export function OpenRegisterScreen({ storeId, employeeId, employeeName, onSucces
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center bg-pos-bg">
-      <div className="w-[380px] bg-pos-surface border border-carbon rounded-2xl p-7">
+    <div className="flex-1 flex items-center justify-center bg-pos-bg px-4">
+      <div className="w-full max-w-[380px] bg-pos-surface border border-carbon rounded-2xl p-7">
         <div className="flex flex-col items-center mb-5">
           <SolvexoIcon size={32} />
           <p className="text-[16px] font-bold text-white mt-3">Open Register</p>

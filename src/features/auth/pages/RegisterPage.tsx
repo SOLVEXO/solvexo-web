@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId, cloneElement, isValidElement } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRegister } from '@/hooks/auth/useRegister';
@@ -13,11 +13,13 @@ const ROLE_OPTIONS = [
   { value: 'seller', label: 'Seller', description: 'Create a store and sell to thousands of buyers' },
 ];
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({ label, error, inputId, children }: { label: string; error?: string; inputId?: string; children: React.ReactElement }) {
+  const generatedId = useId();
+  const id = inputId ?? generatedId;
   return (
     <div className="mb-4">
-      <label className="block text-[12px] font-medium text-charcoal mb-[6px]">{label}</label>
-      {children}
+      <label htmlFor={id} className="block text-[12px] font-medium text-charcoal mb-[6px]">{label}</label>
+      {inputId ? children : (isValidElement(children) ? cloneElement(children, { id } as Record<string, unknown>) : children)}
       {error && <p className="text-[11px] text-error mt-[5px]">{error}</p>}
     </div>
   );
@@ -70,7 +72,7 @@ export function RegisterPage() {
         <div className="h-px bg-bone mb-5" />
 
         <Field label="Full Name" error={errors.name}>
-          <input type="text" placeholder="Enter Your Name"
+          <input type="text" placeholder="Enter Your Name" autoComplete="name"
             value={values.name} onChange={set('name')} onBlur={blur('name')}
             className={[
               'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white transition-[border-color] duration-150',
@@ -79,7 +81,7 @@ export function RegisterPage() {
         </Field>
 
         <Field label="Email Address" error={errors.email}>
-          <input type="email" placeholder="Enter Your Email"
+          <input type="email" placeholder="Enter Your Email" autoComplete="email"
             value={values.email} onChange={set('email')} onBlur={blur('email')}
             className={[
               'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white transition-[border-color] duration-150',
@@ -88,7 +90,7 @@ export function RegisterPage() {
         </Field>
 
         <Field label="Phone Number" error={errors.phone}>
-          <input type="tel" placeholder="Enter Your Phone Number"
+          <input type="tel" placeholder="Enter Your Phone Number" autoComplete="tel"
             value={values.phone} onChange={set('phone')} onBlur={blur('phone')}
             className={[
               'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white transition-[border-color] duration-150',
@@ -105,10 +107,11 @@ export function RegisterPage() {
             ].join(' ')} />
         </Field>
 
-        <Field label="Password" error={errors.password}>
+        <Field label="Password" error={errors.password} inputId="register-password">
           <div className="relative">
             <input
-              type={showPass ? 'text' : 'password'} placeholder="Create Your Password"
+              id="register-password"
+              type={showPass ? 'text' : 'password'} placeholder="Create Your Password" autoComplete="new-password"
               value={values.password} onChange={set('password')} onBlur={blur('password')}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
               className={[
@@ -117,6 +120,7 @@ export function RegisterPage() {
               ].join(' ')}
             />
             <button type="button" onClick={() => setShowPass(s => !s)}
+              aria-label={showPass ? 'Hide password' : 'Show password'}
               className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate p-0 flex">
               {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>

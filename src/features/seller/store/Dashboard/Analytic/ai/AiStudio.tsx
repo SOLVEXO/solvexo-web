@@ -19,8 +19,8 @@ const TOOLS: { id: AITool; Icon: LucideIcon; title: string; desc: string }[] = [
 ];
 
 // shared input / label class strings
-const inputCls = 'w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border';
-const labelCls = 'text-xs font-medium text-[#4A4945] mb-[6px] block';
+const inputCls = 'w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border';
+const labelCls = 'text-xs font-medium text-graphite mb-[6px] block';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function StoreAIStudio() {
@@ -40,7 +40,7 @@ export function StoreAIStudio() {
             <span className="inline-flex items-center gap-[5px] px-3 py-[5px] bg-brand-pale-orange rounded-md text-xs font-semibold text-[#C96847]">
               <Sparkles size={12} /> 750 credits remaining
             </span>
-            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
               Buy Credits
             </button>
           </>
@@ -78,7 +78,7 @@ export function StoreAIStudio() {
         </div>
 
         {/* ── Tool selector (2 rows × 3 cols) ── */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {TOOLS.map(tool => {
             const active = activeAI === tool.id;
             return (
@@ -106,7 +106,7 @@ export function StoreAIStudio() {
         </div>
 
         {/* ── Workspace: Input + Output ── */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
           {/* LEFT: Input panel */}
           <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
@@ -207,7 +207,7 @@ export function StoreAIStudio() {
                   {['Answer Key','Word Problems','Visual Diagrams','Common Core Standards'].map(item => (
                     <label key={item} className="flex items-center gap-2 mb-2 cursor-pointer">
                       <input type="checkbox" defaultChecked style={{ accentColor: '#D97757' }} />
-                      <span className="text-xs text-[#4A4945]">{item}</span>
+                      <span className="text-xs text-graphite">{item}</span>
                     </label>
                   ))}
                 </div>
@@ -259,7 +259,7 @@ export function StoreAIStudio() {
                 {/* Title */}
                 <div>
                   <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.08em] mb-2">Generated Title</p>
-                  <div className="bg-[#FAF9F5] border border-bone rounded-lg px-[14px] py-3 text-[13px] font-semibold text-charcoal leading-[1.5]">
+                  <div className="bg-cream border border-bone rounded-lg px-[14px] py-3 text-[13px] font-semibold text-charcoal leading-[1.5]">
                     Grade 5 Math Mastery Bundle — Complete Full-Year Curriculum with Worksheets, Assessments &amp; Answer Keys | Common Core Aligned
                   </div>
                 </div>
@@ -267,7 +267,7 @@ export function StoreAIStudio() {
                 {/* Description */}
                 <div>
                   <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.08em] mb-2">Generated Description</p>
-                  <div className="bg-[#FAF9F5] border border-bone rounded-lg px-[14px] py-3 text-xs text-[#4A4945] leading-[1.7]">
+                  <div className="bg-cream border border-bone rounded-lg px-[14px] py-3 text-xs text-graphite leading-[1.7]">
                     Transform your Grade 5 classroom with this comprehensive, ready-to-use math curriculum designed to take students from foundational concepts to grade-level mastery. This all-in-one bundle covers <strong>36 weeks</strong> of instruction across fractions, decimals, geometry, measurement, and data analysis...
                   </div>
                 </div>
@@ -289,10 +289,10 @@ export function StoreAIStudio() {
                   <button className="flex-1 py-[10px] bg-brand-orange border-0 rounded-lg text-[13px] font-semibold text-white cursor-pointer">
                     Use This
                   </button>
-                  <button onClick={() => setGenerated(false)} className="px-[18px] py-[10px] bg-white border border-bone rounded-lg text-xs text-[#4A4945] cursor-pointer">
+                  <button onClick={() => setGenerated(false)} className="px-[18px] py-[10px] bg-white border border-bone rounded-lg text-xs text-graphite cursor-pointer">
                     Regenerate
                   </button>
-                  <button className="px-[18px] py-[10px] bg-white border border-bone rounded-lg text-xs text-[#4A4945] cursor-pointer">
+                  <button className="px-[18px] py-[10px] bg-white border border-bone rounded-lg text-xs text-graphite cursor-pointer">
                     Edit
                   </button>
                 </div>
@@ -308,7 +308,7 @@ export function StoreAIStudio() {
                   <p className="text-[40px] font-bold text-brand-orange leading-none">$49.00</p>
                   <p className="text-xs text-slate mt-1">Optimal range: $44 – $55</p>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {[
                     { label: 'Underpriced', price: '$39', color: '#1A72C2', bg: '#E6F1FB' },
                     { label: 'Optimal',     price: '$49', color: '#2D8A4E', bg: '#EBF7EF' },
@@ -349,7 +349,7 @@ export function StoreAIStudio() {
                 </p>
                 <div className="flex gap-2">
                   <button className="px-[18px] py-[9px] bg-brand-orange border-0 rounded-lg text-xs font-semibold text-white cursor-pointer">Download PDF</button>
-                  <button className="px-[18px] py-[9px] bg-white border border-bone rounded-lg text-xs text-[#4A4945] cursor-pointer">Preview</button>
+                  <button className="px-[18px] py-[9px] bg-white border border-bone rounded-lg text-xs text-graphite cursor-pointer">Preview</button>
                 </div>
               </div>
             )}

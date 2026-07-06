@@ -118,7 +118,7 @@ export default function StoreProductDetail() {
           {/* Image */}
           <div className="w-[200px] shrink-0 bg-[#F5F4EF] flex items-center justify-center border-r border-bone">
             {p.images[0]
-              ? <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+              ? <img loading="lazy" decoding="async" src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
               : (
                 <div className="flex flex-col items-center gap-2 p-6">
                   {isDigital ? <Download size={28} className="text-[#C0BDB5]" /> : <Package size={28} className="text-[#C0BDB5]" />}
@@ -295,10 +295,10 @@ export default function StoreProductDetail() {
                 <div className="px-5 py-3.5 border-b border-bone">
                   <p className="text-[12px] font-bold text-charcoal uppercase tracking-[0.06em]">Images</p>
                 </div>
-                <div className="p-3 grid grid-cols-3 gap-2">
+                <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {p.images.map((img, i) => (
                     <div key={i} className="aspect-square rounded-lg overflow-hidden bg-[#F5F4EF] border border-bone">
-                      <img src={img} alt={`${p.name} ${i + 1}`} className="w-full h-full object-cover" />
+                      <img loading="lazy" decoding="async" src={img} alt={`${p.name} ${i + 1}`} className="w-full h-full object-cover" />
                     </div>
                   ))}
                 </div>

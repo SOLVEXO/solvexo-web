@@ -86,7 +86,7 @@ export function AdminModeration() {
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* Metrics */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {metrics.map(m => (
             <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
@@ -107,14 +107,14 @@ export function AdminModeration() {
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
               <input placeholder="Search flagged items..." value={search} onChange={e => setSearch(e.target.value)}
-                className="border-none outline-none text-[13px] py-2 w-full text-[#2C2A28] bg-transparent" />
+                className="border-none outline-none text-[13px] py-2 w-full text-charcoal bg-transparent" />
             </div>
             {[
               { value: typeF, set: setTypeF, opts: ['All Types','Listing','Seller','Review'] },
               { value: riskF, set: setRiskF, opts: ['All Priority','high','medium','low']    },
             ].map((s, i) => (
               <select key={i} value={s.value} onChange={e => s.set(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white text-[#2C2A28] outline-none cursor-pointer">
+                className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white text-charcoal outline-none cursor-pointer">
                 {s.opts.map(o => <option key={o} value={o.startsWith('All') ? '' : o}>{o}</option>)}
               </select>
             ))}
@@ -126,7 +126,7 @@ export function AdminModeration() {
               <thead>
                 <tr>
                   {['#','Type','Item','Seller','Reason','Risk','Reported','Actions'].map(h => (
-                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-[#FAF9F5] whitespace-nowrap">
+                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">
                       {h}
                     </th>
                   ))}
@@ -155,9 +155,9 @@ export function AdminModeration() {
                         <p className="text-[13px] font-medium text-charcoal m-0">{item.item}</p>
                       </td>
                       {/* Seller */}
-                      <td className="px-4 py-3 text-[13px] text-[#4A4945] whitespace-nowrap">{item.seller}</td>
+                      <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{item.seller}</td>
                       {/* Reason */}
-                      <td className="px-4 py-3 text-[13px] text-[#4A4945] max-w-[200px]">{item.reason}</td>
+                      <td className="px-4 py-3 text-[13px] text-graphite max-w-[200px]">{item.reason}</td>
                       {/* Risk */}
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-1 px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"

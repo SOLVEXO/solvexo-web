@@ -268,7 +268,7 @@ export function SellerStorefront() {
         <div className="h-[60px] flex items-center gap-3 px-4 sm:px-6 lg:px-10">
           <div className="flex items-center gap-[6px] shrink-0">
             <SolvexoIcon size={28} />
-            <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
+            <span className="font-bold text-[15px] text-carbon">Solvex</span>
             <span className="font-bold text-[15px] text-brand-orange">o</span>
             <span className="text-bone mx-1 hidden md:inline">|</span>
             <span className="text-[13px] text-slate hidden md:inline">Marketplace</span>
@@ -309,7 +309,7 @@ export function SellerStorefront() {
             {/* Store logo */}
             <div className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-[18px] bg-white flex items-center justify-center shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
               {store.logo
-                ? <img src={store.logo} alt={store.name} className="w-full h-full rounded-[18px] object-cover" />
+                ? <img loading="lazy" decoding="async" src={store.logo} alt={store.name} className="w-full h-full rounded-[18px] object-cover" />
                 : <Store size={36} style={{ color: cfg.primaryColor }} />
               }
             </div>
@@ -424,7 +424,7 @@ export function SellerStorefront() {
                   {/* Image */}
                   <div className="relative w-full h-[110px] sm:h-[150px] lg:h-[170px] bg-[#EAF4EE] flex items-center justify-center">
                     {p.images?.[0]
-                      ? <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                      ? <img loading="lazy" decoding="async" src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
                       : <Package size={28} className="text-[#5A8A6A]" />
                     }
                     <button

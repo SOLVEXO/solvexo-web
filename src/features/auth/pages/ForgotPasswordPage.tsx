@@ -31,9 +31,10 @@ export function ForgotPasswordPage() {
         </p>
 
         <div className="mb-5">
-          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Email Address</label>
+          <label htmlFor="forgot-email" className="block text-[12px] font-medium text-charcoal mb-[6px]">Email Address</label>
           <input
-            type="email" placeholder="Enter your email"
+            id="forgot-email"
+            type="email" placeholder="Enter your email" autoComplete="email"
             value={values.email} onChange={set('email')} onBlur={blur('email')}
             onKeyDown={e => e.key === 'Enter' && handleSubmit()}
             className={[

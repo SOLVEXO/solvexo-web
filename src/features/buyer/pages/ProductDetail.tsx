@@ -81,13 +81,13 @@ function ProductImage({ images, name, selected }: { images: string[]; name: stri
     return (
       <div className="h-[240px] md:h-[340px] lg:h-[400px] rounded-2xl flex flex-col items-center justify-center gap-2 mb-4 bg-gradient-to-br from-[#FBECE4] to-[#FFF5EE]">
         <ImageOff size={60} className="text-brand-orange opacity-50" />
-        <span className="text-[12px] text-[#8C8A82]">{name}</span>
+        <span className="text-[12px] text-slate">{name}</span>
       </div>
     );
   }
 
   return (
-    <img
+    <img loading="lazy" decoding="async"
       src={src}
       alt={name}
       onError={() => setErrored(true)}
@@ -108,7 +108,7 @@ function VariantSelector({ variants, selected, onSelect }: {
       {variants.some(v => v.color) && (
         <div className="mb-[10px]">
           <p className="text-[12px] font-semibold text-charcoal mb-[6px]">
-            Color: <span className="font-normal text-[#8C8A82]">{selected?.color ?? '—'}</span>
+            Color: <span className="font-normal text-slate">{selected?.color ?? '—'}</span>
           </p>
           <div className="flex flex-wrap gap-[6px]">
             {variants.map(v => (
@@ -131,7 +131,7 @@ function VariantSelector({ variants, selected, onSelect }: {
       {variants.some(v => v.size) && (
         <div>
           <p className="text-[12px] font-semibold text-charcoal mb-[6px]">
-            Size: <span className="font-normal text-[#8C8A82]">{selected?.size ?? '—'}</span>
+            Size: <span className="font-normal text-slate">{selected?.size ?? '—'}</span>
           </p>
           <div className="flex flex-wrap gap-[6px]">
             {variants.map(v => (
@@ -186,11 +186,11 @@ export function ProductDetail() {
       <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-4 md:px-10">
         <div className="flex-1 flex items-center gap-2">
           <SolvexoIcon size={28} />
-          <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
+          <span className="font-bold text-[15px] text-carbon">Solvex</span>
           <span className="font-bold text-[15px] text-brand-orange">o</span>
         </div>
         <div className="w-[160px] sm:w-[280px] md:w-[440px] relative flex-shrink-0">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8C8A82] pointer-events-none flex">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate pointer-events-none flex">
             <Search size={14} />
           </span>
           <input
@@ -247,8 +247,8 @@ export function ProductDetail() {
         <div className="px-4 md:px-6 lg:px-10 py-6 md:py-8">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 mb-6 text-[13px]">
-            <span className="text-[#8C8A82] cursor-pointer" onClick={() => navigate('/marketplace')}>Marketplace</span>
-            <span className="text-[#8C8A82]">/</span>
+            <span className="text-slate cursor-pointer" onClick={() => navigate('/marketplace')}>Marketplace</span>
+            <span className="text-slate">/</span>
             <span className="text-charcoal font-bold overflow-hidden text-ellipsis whitespace-nowrap max-w-[260px]">
               {product.name}
             </span>
@@ -274,8 +274,8 @@ export function ProductDetail() {
               )}
 
               {/* Description */}
-              <h2 className="text-[18px] font-bold text-[#141413] mb-3">About This Product</h2>
-              <p className="text-[13px] text-[#8C8A82] leading-[1.8] mb-4">
+              <h2 className="text-[18px] font-bold text-carbon mb-3">About This Product</h2>
+              <p className="text-[13px] text-slate leading-[1.8] mb-4">
                 {product.description || 'No description available.'}
               </p>
 
@@ -287,7 +287,7 @@ export function ProductDetail() {
                   </span>
                 )}
                 {activeVariant?.sku && (
-                  <span className="bg-cream text-[#8C8A82] text-[11px] font-medium px-2 py-[3px] rounded-[6px] border border-bone">
+                  <span className="bg-cream text-slate text-[11px] font-medium px-2 py-[3px] rounded-[6px] border border-bone">
                     SKU: {activeVariant.sku}
                   </span>
                 )}
@@ -301,16 +301,16 @@ export function ProductDetail() {
               <div className="h-px bg-bone my-4" />
 
               {/* Seller */}
-              <div className="text-[15px] font-bold text-[#141413] mb-[14px]">About the Seller</div>
+              <div className="text-[15px] font-bold text-carbon mb-[14px]">About the Seller</div>
               <div className="flex items-start gap-[14px] mb-4">
                 <div className="w-[52px] h-[52px] rounded-full bg-success-bg text-success flex items-center justify-center font-bold text-[16px] flex-shrink-0">
                   {sellerInitials}
                 </div>
                 <div className="flex-1">
-                  <div className="text-[15px] font-bold text-[#141413] mb-1">
+                  <div className="text-[15px] font-bold text-carbon mb-1">
                     {product.sellerName ?? 'Unknown Seller'}
                   </div>
-                  <p className="text-[12px] text-[#8C8A82] leading-[1.6] mb-[10px]">
+                  <p className="text-[12px] text-slate leading-[1.6] mb-[10px]">
                     Independent seller on Solvexo marketplace.
                   </p>
                   <Button
@@ -335,10 +335,10 @@ export function ProductDetail() {
               <Card padding="none">
                 <div className="px-6 pt-6 pb-0">
                   <Badge color="orange">Physical</Badge>
-                  <h1 className="text-[21px] font-bold text-[#141413] mt-3 mb-[6px] leading-[1.35] break-words font-serif">
+                  <h1 className="text-[21px] font-bold text-carbon mt-3 mb-[6px] leading-[1.35] break-words font-serif">
                     {product.name}
                   </h1>
-                  <p className="text-[12px] text-[#8C8A82] mb-4 flex items-center gap-1 flex-wrap">
+                  <p className="text-[12px] text-slate mb-4 flex items-center gap-1 flex-wrap">
                     {product.sellerName && <>by {product.sellerName}</>}
                     {product.averageRating > 0 && (
                       <span className="flex items-center gap-[3px]">
@@ -349,7 +349,7 @@ export function ProductDetail() {
                   </p>
 
                   {/* Price */}
-                  <div className="text-[32px] font-extrabold text-[#141413] mb-1 tracking-[-0.5px]">
+                  <div className="text-[32px] font-extrabold text-carbon mb-1 tracking-[-0.5px]">
                     {activeVariant ? `$${activeVariant.price.toLocaleString()}` : '—'}
                   </div>
                   <div className="text-[12px] text-success mb-4 flex items-center gap-[5px]">
@@ -417,7 +417,7 @@ export function ProductDetail() {
                               size={16}
                               className={clsx(
                                 'transition-[color,fill] duration-150',
-                                wishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#8C8A82] fill-none',
+                                wishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none',
                               )}
                             />
                           </button>
@@ -443,7 +443,7 @@ export function ProductDetail() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="font-semibold text-[12px] text-charcoal mb-[2px]">{row.label}</div>
-                        <div className="text-[11px] text-[#8C8A82] break-words leading-[1.55]">{row.value}</div>
+                        <div className="text-[11px] text-slate break-words leading-[1.55]">{row.value}</div>
                       </div>
                     </div>
                   ))}
@@ -453,9 +453,9 @@ export function ProductDetail() {
 
                 {/* Share */}
                 <div className="px-6 py-[14px] flex items-center gap-2">
-                  <span className="text-[12px] text-[#8C8A82] flex-1">Share this listing</span>
+                  <span className="text-[12px] text-slate flex-1">Share this listing</span>
                   {[Link2, Mail, Smartphone].map((Icon, i) => (
-                    <button key={i} className="w-[30px] h-[30px] rounded-lg bg-cream border border-bone cursor-pointer flex items-center justify-center text-[#8C8A82]">
+                    <button key={i} className="w-[30px] h-[30px] rounded-lg bg-cream border border-bone cursor-pointer flex items-center justify-center text-slate">
                       <Icon size={14} />
                     </button>
                   ))}
@@ -481,7 +481,7 @@ function ThumbImage({ src, active, onClick }: { src: string; active: boolean; on
       )}
     >
       {!errored && src
-        ? <img src={src} alt="" onError={() => setErrored(true)} className="w-full h-full object-cover" />
+        ? <img loading="lazy" decoding="async" src={src} alt="" onError={() => setErrored(true)} className="w-full h-full object-cover" />
         : <ImageOff size={20} className="text-brand-orange opacity-50" />
       }
     </div>

@@ -53,19 +53,19 @@ export function AdminAnnouncements() {
         <p className="text-[14px] font-bold text-charcoal mb-[18px]">Create Announcement</p>
         <div className="flex flex-col gap-4">
           <div>
-            <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Title</label>
+            <label className="text-[12px] font-medium text-graphite mb-[5px] block">Title</label>
             <input placeholder="Announcement title…" value={title} onChange={e => setTitle(e.target.value)}
-              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
           </div>
           <div>
-            <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Message</label>
+            <label className="text-[12px] font-medium text-graphite mb-[5px] block">Message</label>
             <textarea rows={4} placeholder="Write your announcement message here…" value={body} onChange={e => setBody(e.target.value)}
-              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border resize-y leading-[1.6]" />
+              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border resize-y leading-[1.6]" />
           </div>
           <div className="max-w-[260px]">
-            <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Audience</label>
+            <label className="text-[12px] font-medium text-graphite mb-[5px] block">Audience</label>
             <select value={audience} onChange={e => setAudience(e.target.value)}
-              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border cursor-pointer">
+              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border cursor-pointer">
               <option>All Users</option>
               <option>Sellers Only</option>
               <option>Buyers Only</option>
@@ -78,7 +78,7 @@ export function AdminAnnouncements() {
               Publish Now
             </button>
             <button onClick={() => createEntry('Draft')}
-              className="px-[18px] py-[9px] bg-white border border-bone rounded-lg text-[13px] font-medium text-[#4A4945] cursor-pointer">
+              className="px-[18px] py-[9px] bg-white border border-bone rounded-lg text-[13px] font-medium text-graphite cursor-pointer">
               Save as Draft
             </button>
           </div>

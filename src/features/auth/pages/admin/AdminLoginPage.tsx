@@ -62,10 +62,12 @@ export function AdminLoginPage() {
 
         {/* Email */}
         <div className="mb-4">
-          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Email Address</label>
+          <label htmlFor="admin-login-email" className="block text-[12px] font-medium text-charcoal mb-[6px]">Email Address</label>
           <input
+            id="admin-login-email"
             type="email"
             placeholder="Enter Your Email"
+            autoComplete="email"
             value={values.email}
             onChange={set('email')}
             onBlur={blur('email')}
@@ -79,11 +81,13 @@ export function AdminLoginPage() {
 
         {/* Password */}
         <div className="mb-2">
-          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Password</label>
+          <label htmlFor="admin-login-password" className="block text-[12px] font-medium text-charcoal mb-[6px]">Password</label>
           <div className="relative">
             <input
+              id="admin-login-password"
               type={showPass ? 'text' : 'password'}
               placeholder="Enter Your password"
+              autoComplete="current-password"
               value={values.password}
               onChange={set('password')}
               onBlur={blur('password')}
@@ -96,6 +100,7 @@ export function AdminLoginPage() {
             <button
               type="button"
               onClick={() => setShowPass(s => !s)}
+              aria-label={showPass ? 'Hide password' : 'Show password'}
               className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate p-0 flex"
             >
               {showPass ? <EyeOff size={16} /> : <Eye size={16} />}

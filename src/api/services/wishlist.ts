@@ -93,6 +93,8 @@ interface RemoveWishlistResponse {
   };
 }
 
+interface ClearWishlistResponse { message: string }
+
 // ── API ───────────────────────────────────────────────────────────────────────
 
 export function apiAddToWishlist(productId: string, productVariantId: string) {
@@ -113,4 +115,8 @@ export function apiGetWishlistItem(productId: string, productVariantId: string) 
 
 export function apiRemoveFromWishlist(wishlistId: string) {
   return client.post<never, RemoveWishlistResponse>(ENDPOINTS.WISHLIST.REMOVE, { wishlistId });
+}
+
+export function apiClearWishlist() {
+  return client.post<never, ClearWishlistResponse>(ENDPOINTS.WISHLIST.CLEAR);
 }

@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { label: 'Sellers',     path: '/sellers',     orange: true  },
   { label: 'Pricing',     path: '/pricing',     orange: true  },
   { label: 'Learn',       path: '/education',   orange: false },
+  { label: 'FAQ',         path: '/faq',         orange: false },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -125,7 +126,7 @@ function AvatarImage({
       'rounded-full bg-brand-pale-orange flex items-center justify-center overflow-hidden shrink-0 border-2 border-bone',
     )}>
       {profileImage
-        ? <img src={profileImage} alt={name} className="w-full h-full object-cover" />
+        ? <img loading="lazy" decoding="async" src={profileImage} alt={name} className="w-full h-full object-cover" />
         : <span className="font-bold text-brand-deep-orange">{initials}</span>
       }
     </div>
@@ -155,7 +156,7 @@ function AvatarTrigger({
       {loading
         ? <div className="w-full h-full bg-bone animate-pulse" />
         : profileImage
-        ? <img src={profileImage} alt={name} className="w-full h-full object-cover" />
+        ? <img loading="lazy" decoding="async" src={profileImage} alt={name} className="w-full h-full object-cover" />
         : <span className="text-[11px] font-bold text-brand-deep-orange">{initials}</span>
       }
     </button>

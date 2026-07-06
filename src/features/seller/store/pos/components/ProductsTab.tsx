@@ -104,7 +104,7 @@ export function ProductsTab() {
                 <td className="px-4 py-[10px]">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded bg-carbon overflow-hidden shrink-0">
-                      {row.image && <img src={row.image} alt="" className="w-full h-full object-cover" />}
+                      {row.image && <img loading="lazy" decoding="async" src={row.image} alt="" className="w-full h-full object-cover" />}
                     </div>
                     <span className="text-[12px] font-medium text-white">{row.name}</span>
                   </div>

@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductsByCategory } from '@/hooks/marketplace/useProductsByCategory';
+import { useBanners } from '@/hooks/useBanners';
+import type { Banner } from '@/api/services/banner';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
@@ -11,9 +13,62 @@ import { TabBar, Pagination, FilterDropdown } from '@/components/comman/ui';
 import type { Tab } from '@/components/comman/ui';
 import {
   ShoppingCart, ShoppingBag, Star, Heart, ImageOff,
-  Loader2, SlidersHorizontal, X,
+  Loader2, SlidersHorizontal, X, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
+
+// ── Promotional banner carousel (admin-managed, live from /api/banners) ───────
+function BannerCarousel({ banners }: { banners: Banner[] }) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (banners.length < 2) return;
+    const id = setInterval(() => setIndex(i => (i + 1) % banners.length), 5000);
+    return () => clearInterval(id);
+  }, [banners.length]);
+
+  const sorted = [...banners].sort((a, b) => a.order - b.order);
+  const active = sorted[index];
+
+  const go = (dir: 1 | -1) => setIndex(i => (i + dir + sorted.length) % sorted.length);
+
+  const content = <img loading="lazy" decoding="async" src={active.bannerImage} alt="" className="w-full h-full object-cover" />;
+
+  return (
+    <div className="relative w-full h-full aspect-[16/9] rounded-2xl bg-white overflow-hidden group">
+      {active.urlOnTap ? (
+        <a href={active.urlOnTap} target="_blank" rel="noreferrer">{content}</a>
+      ) : content}
+
+      {sorted.length > 1 && (
+        <>
+          <button
+            onClick={() => go(-1)}
+            className="absolute left-3 top-1/2 -translate-y-1/2 size-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <ChevronLeft size={16} className="text-charcoal" />
+          </button>
+          <button
+            onClick={() => go(1)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 size-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <ChevronRight size={16} className="text-charcoal" />
+          </button>
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-[6px]">
+            {sorted.map((b, i) => (
+              <button
+                key={b._id}
+                onClick={() => setIndex(i)}
+                className="h-[6px] rounded-full border-none cursor-pointer transition-all"
+                style={{ width: i === index ? 18 : 6, background: i === index ? '#D97757' : 'rgba(255,255,255,0.7)' }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function SolvexoIcon({ size = 32 }: { size?: number }) {
   return (
@@ -63,6 +118,8 @@ function ProductImage({ images, name, className }: { images: string[]; name: str
     <img
       src={src}
       alt={name}
+      loading="lazy"
+      decoding="async"
       onError={() => setErrored(true)}
       className={clsx('w-full object-cover block', className)}
     />
@@ -88,14 +145,14 @@ function StarRating({ rating, count }: { rating: number; count?: number }) {
 }
 
 // ── Product Card ──────────────────────────────────────────────────────────────
-function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, isWishlisting, onToggleWishlist }: {
+const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, isWishlisting, onToggleWishlist }: {
   product:          MarketplaceProduct;
-  onClick:          () => void;
-  onAddToCart:      (e: React.MouseEvent) => void;
+  onClick:          (id: string) => void;
+  onAddToCart:      (e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => void;
   isAdding:         boolean;
   isWishlisted:     boolean;
   isWishlisting:    boolean;
-  onToggleWishlist: (e: React.MouseEvent) => void;
+  onToggleWishlist: (e: React.MouseEvent, id: string, variantId: string) => void;
 }) {
   const pType     = product.productType ?? product.type ?? 'physical';
   const isDigital = pType === 'digital';
@@ -106,9 +163,10 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
     : null;
   const compareAt   = defaultVariant?.compareAtPrice ?? null;
   const ratingCount = product.totalRatings ?? 0;
+  const vId         = defaultVariant?._id ?? '';
 
   return (
-    <Card padding="none" hover onClick={onClick} className="overflow-hidden">
+    <Card padding="none" hover onClick={() => onClick(product._id)} className="overflow-hidden">
       {/* Image */}
       <div className="relative">
         <ProductImage
@@ -117,7 +175,7 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
           className="h-[130px] sm:h-[160px] lg:h-[180px]"
         />
         <button
-          onClick={onToggleWishlist}
+          onClick={e => onToggleWishlist(e, product._id, vId)}
           disabled={isWishlisting}
           className={clsx(
             'absolute top-[8px] right-[8px] w-7 h-7 sm:w-8 sm:h-8 rounded-full',
@@ -165,7 +223,12 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
               <span className="hidden sm:inline text-[11px] text-slate line-through">${compareAt.toLocaleString()}</span>
             )}
           </div>
-          <Button variant="secondary" size="sm" onClick={onAddToCart} className="inline-flex shrink-0">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={e => onAddToCart(e, product._id, vId, product.productType ?? product.type ?? 'physical')}
+            className="inline-flex shrink-0"
+          >
             {isAdding ? <Loader2 size={11} className="animate-spin" /> : <ShoppingCart size={11} />}
             <span className="hidden lg:inline">{isAdding ? 'Adding…' : 'Add to Cart'}</span>
           </Button>
@@ -173,7 +236,7 @@ function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, is
       </div>
     </Card>
   );
-}
+});
 
 // ── Filter data ───────────────────────────────────────────────────────────────
 const FILTER_GROUPS = [
@@ -242,14 +305,22 @@ export function Marketplace() {
   const [page,          setPage]          = useState(1);
   const [mobileFilters, setMobileFilters] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ price: [], type: [], rating: [] });
+  const [searchInput, setSearchInput] = useState('');
+  const [search,      setSearch]      = useState('');
 
   const LIMIT = 20;
   const { products, total, loading, error } = useProductsByCategory(page, LIMIT);
   const { cartCount, addToCart, adding }    = useCartContext();
   const { wishlistCount, isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
+  const { banners } = useBanners();
 
   const totalPages        = Math.ceil(total / LIMIT) || 1;
   const activeFilterCount = filters.price.length + filters.type.length + filters.rating.length;
+
+  useEffect(() => {
+    const id = setTimeout(() => setSearch(searchInput.trim().toLowerCase()), 300);
+    return () => clearTimeout(id);
+  }, [searchInput]);
 
   const toggleFilter = (key: keyof FilterState, value: string) => {
     setFilters(prev => {
@@ -262,13 +333,55 @@ export function Marketplace() {
 
   const goToPage = (p: number) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
-  const filtered = activeTab === 'All'
-    ? products
-    : activeTab === 'Physical'
-      ? products.filter(p => (p.productType ?? p.type) === 'physical')
-      : activeTab === 'Digital'
-        ? products.filter(p => (p.productType ?? p.type) === 'digital')
-        : products;
+  const handleCardClick = useCallback((id: string) => navigate(`/marketplace/${id}`), [navigate]);
+  const handleAddToCart = useCallback((e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => {
+    e.stopPropagation();
+    if (variantId) addToCart(id, variantId, type);
+  }, [addToCart]);
+  const handleToggleWishlist = useCallback((e: React.MouseEvent, id: string, variantId: string) => {
+    e.stopPropagation();
+    if (variantId) toggleWishlist(id, variantId);
+  }, [toggleWishlist]);
+
+  const matchesPriceFilter = (price: number | null) => {
+    if (filters.price.length === 0 || price == null) return true;
+    return filters.price.some(label => {
+      if (label === 'Under $10')  return price < 10;
+      if (label === '$10–$50')    return price >= 10 && price <= 50;
+      if (label === '$50–$100')   return price >= 50 && price <= 100;
+      if (label === '$100+')      return price > 100;
+      return true;
+    });
+  };
+
+  const matchesRatingFilter = (rating: number) => {
+    if (filters.rating.length === 0) return true;
+    return filters.rating.some(label => {
+      if (label === '4★ & up') return rating >= 4;
+      if (label === '3★ & up') return rating >= 3;
+      return true;
+    });
+  };
+
+  const filtered = products
+    .filter(p => {
+      const pType = p.productType ?? p.type ?? 'physical';
+      if (activeTab === 'Physical' && pType !== 'physical') return false;
+      if (activeTab === 'Digital'  && pType !== 'digital')  return false;
+      if (filters.type.length > 0 && !filters.type.some(t => t.toLowerCase() === pType)) return false;
+      if (search && !p.name.toLowerCase().includes(search) && !p.tags?.some(t => t.toLowerCase().includes(search))) return false;
+      const lowestPrice = p.variants.length > 0 ? Math.min(...p.variants.map(v => v.price)) : null;
+      if (!matchesPriceFilter(lowestPrice)) return false;
+      if (!matchesRatingFilter(p.averageRating)) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const priceOf = (p: MarketplaceProduct) => p.variants.length > 0 ? Math.min(...p.variants.map(v => v.price)) : 0;
+      if (sortBy === 'price-asc')  return priceOf(a) - priceOf(b);
+      if (sortBy === 'price-desc') return priceOf(b) - priceOf(a);
+      if (sortBy === 'best-rated') return b.averageRating - a.averageRating;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   return (
     <div className="min-h-screen bg-cream">
@@ -280,7 +393,7 @@ export function Marketplace() {
           {/* Logo */}
           <div className="flex items-center gap-[6px] shrink-0">
             <SolvexoIcon size={28} />
-            <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
+            <span className="font-bold text-[15px] text-carbon">Solvex</span>
             <span className="font-bold text-[15px] text-brand-orange">o</span>
             <span className="text-bone mx-1 hidden md:inline">|</span>
             <span className="text-[13px] text-slate hidden md:inline">Marketplace</span>
@@ -289,8 +402,11 @@ export function Marketplace() {
           {/* Search */}
           <div className="flex-1 flex justify-center px-2 sm:px-4">
             <input
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
               placeholder="Search marketplace..."
-              className="w-full max-w-[240px] sm:max-w-[360px] lg:max-w-[480px] px-[14px] py-[9px] rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none focus:border-brand-orange transition-colors"
+              aria-label="Search marketplace"
+              className="w-full max-w-[240px] sm:max-w-[360px] lg:max-w-[480px] px-[14px] py-[9px] rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 transition-colors"
             />
           </div>
 
@@ -338,24 +454,38 @@ export function Marketplace() {
         </div>
       </nav>
 
-      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
+      {/* ── Hero + Promo banner ──────────────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-[#FBECE4] to-[#FFF5EE] border-b border-[#F5D5C2]">
-        <div className="px-4 sm:px-6 lg:px-10 py-7 sm:py-9 lg:py-10 flex items-center justify-between gap-6">
+        <div className={clsx(
+          'px-4 sm:px-6 lg:px-10 py-7 sm:py-9 lg:py-10 grid gap-6 items-center',
+          banners.length > 0 ? 'grid-cols-1 lg:grid-cols-12' : 'grid-cols-1',
+        )}>
 
           {/* Left text */}
-          <div className="min-w-0">
-            <h1 className="font-serif text-[20px] sm:text-[26px] lg:text-[30px] font-bold text-carbon mb-[6px] sm:mb-2 leading-[1.2]">
-              Discover Something<br className="hidden sm:block" /> Made with Love
-            </h1>
-            <p className="text-[12px] sm:text-[13px] text-slate mb-4 sm:mb-5 max-w-[380px]">
-              Shop unique products from independent sellers, creators, and educators.
-            </p>
-            <Button variant="primary" size="md">
-              Shop Now <span className="ml-1">→</span>
-            </Button>
+          <div className={clsx('min-w-0 flex items-center justify-between gap-6', banners.length > 0 && 'lg:col-span-4')}>
+            <div className="min-w-0">
+              <h1 className="font-serif text-[20px] sm:text-[26px] lg:text-[30px] font-bold text-carbon mb-[6px] sm:mb-2 leading-[1.2]">
+                Discover Something<br className="hidden sm:block" /> Made with Love
+              </h1>
+              <p className="text-[12px] sm:text-[13px] text-slate mb-4 sm:mb-5 max-w-[380px]">
+                Shop unique products from independent sellers, creators, and educators.
+              </p>
+              <Button variant="primary" size="md">
+                Shop Now <span className="ml-1">→</span>
+              </Button>
+            </div>
+
+            {banners.length === 0 && (
+              <ShoppingBag size={80} className="text-brand-orange hidden sm:block shrink-0" />
+            )}
           </div>
 
-          <ShoppingBag size={80} className="text-brand-orange hidden sm:block shrink-0" />
+          {/* Right: live promo banner (admin-managed) */}
+          {banners.length > 0 && (
+            <div className="lg:col-span-8">
+              <BannerCarousel banners={banners} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -454,12 +584,12 @@ export function Marketplace() {
                       <ProductCard
                         key={p._id}
                         product={p}
-                        onClick={() => navigate(`/marketplace/${p._id}`)}
+                        onClick={handleCardClick}
                         isAdding={adding === vId}
-                        onAddToCart={e => { e.stopPropagation(); if (defVariant) addToCart(p._id, vId, p.productType ?? p.type ?? 'physical'); }}
+                        onAddToCart={handleAddToCart}
                         isWishlisted={isWishlisted(p._id, vId)}
                         isWishlisting={wishlisting === vId}
-                        onToggleWishlist={e => { e.stopPropagation(); if (defVariant) toggleWishlist(p._id, vId); }}
+                        onToggleWishlist={handleToggleWishlist}
                       />
                     );
                   })
@@ -468,7 +598,9 @@ export function Marketplace() {
 
             {!loading && !error && filtered.length === 0 && (
               <div className="text-center py-[60px] text-slate text-[14px]">
-                No products found in this category yet.
+                {search || activeFilterCount > 0
+                  ? 'No products match your search or filters.'
+                  : 'No products found in this category yet.'}
               </div>
             )}
 

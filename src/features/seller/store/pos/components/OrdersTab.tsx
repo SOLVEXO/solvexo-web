@@ -256,8 +256,8 @@ function VoidConfirmOverlay({ sale, onClose, onConfirm }: { sale: Sale; onClose:
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
-      <div className="w-[340px] bg-pos-surface border border-carbon rounded-2xl p-5">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4">
+      <div className="w-full max-w-[340px] bg-pos-surface border border-carbon rounded-2xl p-5">
         <p className="text-[14px] font-bold text-white mb-2">Void {sale.saleNumber}?</p>
         <p className="text-[12px] text-pos-muted mb-3">This restores stock and reverses the sale from register totals. This cannot be undone.</p>
         <input

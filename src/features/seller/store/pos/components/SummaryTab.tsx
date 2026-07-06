@@ -81,7 +81,7 @@ export function SummaryTab({ onShiftClosed }: SummaryTabProps) {
       </div>
 
       {/* Metrics grid */}
-      <div className="grid grid-cols-3 gap-[14px] mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px] mb-6">
         {shiftMetrics.map(({ label, value, sub }) => (
           <div key={label} className="bg-pos-surface border border-carbon rounded-xl p-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.08em] mb-1 text-pos-muted">{label}</p>
@@ -92,7 +92,7 @@ export function SummaryTab({ onShiftClosed }: SummaryTabProps) {
       </div>
 
       {/* Cash drawer */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-pos-surface border border-carbon rounded-xl p-4">
           <p className="text-[13px] font-semibold text-white mb-[14px]">Cash Drawer Reconciliation</p>
           {drawerRows.map(([label, val, isWarning]) => (
@@ -158,8 +158,8 @@ function CloseShiftOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
-      <div className="w-[340px] bg-pos-surface border border-carbon rounded-2xl p-5">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4">
+      <div className="w-full max-w-[340px] bg-pos-surface border border-carbon rounded-2xl p-5">
         <p className="text-[14px] font-bold text-white mb-2">Close Shift</p>
         <p className="text-[12px] text-pos-muted mb-3">Expected cash in drawer: <span className="text-white font-semibold">${expectedCash.toFixed(2)}</span></p>
         <input

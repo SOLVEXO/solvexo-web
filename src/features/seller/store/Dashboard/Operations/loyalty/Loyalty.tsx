@@ -46,7 +46,7 @@ export function StoreLoyalty() {
         subtitle="Build lasting customer relationships with a points-based loyalty program."
         actions={
           <>
-            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
               Program Settings
             </button>
             <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
@@ -59,7 +59,7 @@ export function StoreLoyalty() {
       <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
         {/* Metrics */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {metrics.map(m => (
             <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
@@ -91,7 +91,7 @@ export function StoreLoyalty() {
 
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
             {/* Member Distribution */}
             <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
@@ -102,7 +102,7 @@ export function StoreLoyalty() {
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
                         <tier.Icon size={18} style={{ color: tier.iconColor }} />
-                        <span className="text-[13px] font-semibold text-[#4A4945]">{tier.name}</span>
+                        <span className="text-[13px] font-semibold text-graphite">{tier.name}</span>
                       </div>
                       <span className="text-xs text-slate">{tier.members.toLocaleString()} members</span>
                     </div>
@@ -125,7 +125,7 @@ export function StoreLoyalty() {
                     className="flex items-center justify-between py-[10px]"
                     style={{ borderBottom: i < POINTS_ACTIVITY.length - 1 ? '1px solid #F0EEE6' : 'none' }}
                   >
-                    <span className="text-[13px] text-[#4A4945]">{item.label}</span>
+                    <span className="text-[13px] text-graphite">{item.label}</span>
                     <span className="text-[13px] font-bold" style={{ color: item.positive ? '#2D8A4E' : '#C13030' }}>{item.value}</span>
                   </div>
                 ))}

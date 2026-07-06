@@ -65,7 +65,7 @@ export function StoreMarketing() {
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* Metrics */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {metrics.map(m => (
             <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
@@ -96,12 +96,12 @@ export function StoreMarketing() {
           <div className="flex flex-col gap-5">
             <div className="flex items-center justify-between">
               <p className="text-[15px] font-bold text-carbon">Active Coupons</p>
-              <button className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
+              <button className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
                 + New Coupon
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {COUPONS.map(coupon => (
                 <div key={coupon.code} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
                   <div className="flex items-center justify-between mb-3">
@@ -132,8 +132,8 @@ export function StoreMarketing() {
                     </div>
                   )}
                   <div className="flex gap-2">
-                    <button className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Edit</button>
-                    <button className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Pause</button>
+                    <button className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">Edit</button>
+                    <button className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">Pause</button>
                   </div>
                 </div>
               ))}
@@ -142,14 +142,14 @@ export function StoreMarketing() {
             {/* Create coupon form */}
             <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
               <p className="text-sm font-bold text-carbon mb-4">Create New Coupon</p>
-              <div className="grid grid-cols-3 gap-3.5 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mb-4">
                 <div>
-                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Coupon Code</label>
+                  <label className="text-xs font-medium text-graphite mb-[5px] block">Coupon Code</label>
                   <input placeholder="e.g. SAVE20" value={couponCode} onChange={e => setCouponCode(e.target.value.toUpperCase())}
                     className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Discount Type</label>
+                  <label className="text-xs font-medium text-graphite mb-[5px] block">Discount Type</label>
                   <select value={discountType} onChange={e => setDiscountType(e.target.value)}
                     className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white cursor-pointer box-border">
                     <option value="">Select type…</option>
@@ -159,22 +159,22 @@ export function StoreMarketing() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Value</label>
+                  <label className="text-xs font-medium text-graphite mb-[5px] block">Value</label>
                   <input placeholder="e.g. 20 or 10.00" value={value} onChange={e => setValue(e.target.value)}
                     className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Minimum Order ($)</label>
+                  <label className="text-xs font-medium text-graphite mb-[5px] block">Minimum Order ($)</label>
                   <input placeholder="0.00" value={minOrder} onChange={e => setMinOrder(e.target.value)}
                     className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Usage Limit</label>
+                  <label className="text-xs font-medium text-graphite mb-[5px] block">Usage Limit</label>
                   <input placeholder="Leave blank for unlimited" value={usageLimit} onChange={e => setUsageLimit(e.target.value)}
                     className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-[#4A4945] mb-[5px] block">Expiry Date</label>
+                  <label className="text-xs font-medium text-graphite mb-[5px] block">Expiry Date</label>
                   <input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)}
                     className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
@@ -191,11 +191,11 @@ export function StoreMarketing() {
           <div className="flex flex-col gap-5">
             <div className="flex items-center justify-between">
               <p className="text-[15px] font-bold text-carbon">Email Campaigns</p>
-              <button className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
+              <button className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
                 + New Campaign
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {CAMPAIGNS.map(campaign => {
                 const st = statusStyle[campaign.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
                 return (
@@ -208,7 +208,7 @@ export function StoreMarketing() {
                     </div>
                     <p className="text-xs text-slate mb-3.5">{campaign.info}</p>
                     {campaign.sent > 0 && (
-                      <div className="grid grid-cols-4 gap-2 mb-3.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-3.5">
                         {[['Sent', campaign.sent.toLocaleString()],['Opened', campaign.opened.toLocaleString()],['Clicked', campaign.clicked.toLocaleString()],['Revenue', campaign.revenue]].map(([label, val]) => (
                           <div key={label} className="text-center bg-cream rounded-lg py-2 px-1">
                             <p className="text-sm font-bold text-carbon">{val}</p>
@@ -218,8 +218,8 @@ export function StoreMarketing() {
                       </div>
                     )}
                     <div className="flex gap-2">
-                      <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-[#4A4945] cursor-pointer">Edit</button>
-                      <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-[#4A4945] cursor-pointer">View</button>
+                      <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">Edit</button>
+                      <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">View</button>
                     </div>
                   </div>
                 );

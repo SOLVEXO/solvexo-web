@@ -15,7 +15,7 @@ export function ChatAvatar({ name, image, size = 40, online, className }: ChatAv
   return (
     <div className={className} style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
       {image ? (
-        <img
+        <img loading="lazy" decoding="async"
           src={image}
           alt={name}
           className="rounded-full object-cover"

@@ -69,7 +69,7 @@ export function AdminUsers() {
       </div>
 
       {/* ── Metrics ── */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {metrics.map(m => (
           <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
             <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
@@ -90,14 +90,14 @@ export function AdminUsers() {
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input placeholder="Search by name or email…" value={search} onChange={e => setSearch(e.target.value)}
-              className="border-none outline-none text-[13px] py-2 w-full text-[#2C2A28] bg-transparent" />
+              className="border-none outline-none text-[13px] py-2 w-full text-charcoal bg-transparent" />
           </div>
           <select value={roleFilter} onChange={e => setRole(e.target.value)}
-            className="px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer">
+            className="px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer">
             {['All Roles','Seller','Buyer','Admin'].map(o => <option key={o}>{o}</option>)}
           </select>
           <select value={statusFilter} onChange={e => setStatusF(e.target.value)}
-            className="px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer">
+            className="px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer">
             {['All Statuses','Active','Suspended','Pending'].map(o => <option key={o}>{o}</option>)}
           </select>
         </div>
@@ -108,7 +108,7 @@ export function AdminUsers() {
             <thead>
               <tr>
                 {['User','Email','Role','Plan','Status','Joined','Actions'].map(h => (
-                  <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-[#FAF9F5] whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -140,14 +140,14 @@ export function AdminUsers() {
                       </div>
                     </td>
                     {/* Email */}
-                    <td className="px-4 py-3 text-[13px] text-[#4A4945]">{u.email}</td>
+                    <td className="px-4 py-3 text-[13px] text-graphite">{u.email}</td>
                     {/* Role */}
                     <td className="px-4 py-3">
                       <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
                         style={{ background: rs.bg, color: rs.color }}>{u.role}</span>
                     </td>
                     {/* Plan */}
-                    <td className="px-4 py-3 text-[13px] text-[#4A4945]">{u.plan}</td>
+                    <td className="px-4 py-3 text-[13px] text-graphite">{u.plan}</td>
                     {/* Status */}
                     <td className="px-4 py-3">
                       <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
@@ -159,7 +159,7 @@ export function AdminUsers() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <button className="text-[12px] font-medium text-[#1A72C2] bg-transparent border-none cursor-pointer">View</button>
-                        <span className="text-[#E8E6DC] text-[13px]">|</span>
+                        <span className="text-bone text-[13px]">|</span>
                         <button className="text-[12px] font-medium text-[#C13030] bg-transparent border-none cursor-pointer">
                           {u.status === 'Suspended' ? 'Unsuspend' : 'Suspend'}
                         </button>

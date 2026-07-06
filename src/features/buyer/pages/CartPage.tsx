@@ -31,7 +31,7 @@ function CartItemImage({ images, name }: { images?: string[]; name: string }) {
     );
   }
   return (
-    <img
+    <img loading="lazy" decoding="async"
       src={src} alt={name} onError={() => setErrored(true)}
       className="w-[72px] h-[72px] rounded-[10px] object-cover shrink-0 block"
     />
@@ -42,7 +42,7 @@ export function CartPage() {
   const navigate = useNavigate();
   usePageTitle('Cart');
 
-  const { cart, loading, cartCount, updateQty, removeItem, clearCart } = useCartContext();
+  const { cart, loading, cartCount, updateQty, removeItem, clearCart, error, clearError } = useCartContext();
   const [clearing,   setClearing]   = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export function CartPage() {
       <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-4 md:px-10 gap-4">
         <div className="flex-1 flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
           <SolvexoIcon size={28} />
-          <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
+          <span className="font-bold text-[15px] text-carbon">Solvex</span>
           <span className="font-bold text-[15px] text-brand-orange">o</span>
         </div>
         <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')}>
@@ -91,14 +91,28 @@ export function CartPage() {
 
       <div className="max-w-[960px] mx-auto px-4 md:px-6 py-6 md:py-8">
 
+        {/* ── Error banner ── */}
+        {error && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-[10px] border border-[#FECACA] bg-[#FFF0F0] px-4 py-3">
+            <span className="text-[13px] text-error">{error}</span>
+            <button
+              onClick={clearError}
+              aria-label="Dismiss error"
+              className="text-[12px] font-semibold text-error cursor-pointer shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* ── Empty ── */}
         {isEmpty && (
           <div className="bg-white rounded-[12px] border border-bone p-10 text-center">
             <div className="w-16 h-16 rounded-2xl bg-bone flex items-center justify-center mx-auto mb-4">
               <ShoppingBag size={30} className="text-slate opacity-60" />
             </div>
-            <p className="text-[16px] font-semibold text-[#141413] mb-2">Your cart is empty</p>
-            <p className="text-[13px] text-[#8C8A82] mb-6">Browse the marketplace and add products to get started.</p>
+            <p className="text-[16px] font-semibold text-carbon mb-2">Your cart is empty</p>
+            <p className="text-[13px] text-slate mb-6">Browse the marketplace and add products to get started.</p>
             <Button variant="primary" onClick={() => navigate('/marketplace')}>Browse Marketplace</Button>
           </div>
         )}
@@ -113,8 +127,8 @@ export function CartPage() {
               {/* Card header */}
               <div className="px-6 pt-5 pb-4 border-b border-bone flex items-center justify-between">
                 <div>
-                  <h1 className="text-[20px] font-bold text-[#141413] leading-tight">Shopping Cart</h1>
-                  <p className="text-[12px] text-[#8C8A82] mt-[2px]">
+                  <h1 className="text-[20px] font-bold text-carbon leading-tight">Shopping Cart</h1>
+                  <p className="text-[12px] text-slate mt-[2px]">
                     {loading ? 'Loading…' : `${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart`}
                   </p>
                 </div>
@@ -165,7 +179,7 @@ export function CartPage() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start gap-2 mb-[3px] flex-wrap">
-                        <p className="font-semibold text-[14px] text-[#141413] leading-[1.35]">
+                        <p className="font-semibold text-[14px] text-carbon leading-[1.35]">
                           {item.name}
                         </p>
                         {item.type === 'physical' && (
@@ -179,7 +193,7 @@ export function CartPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-[12px] text-[#8C8A82] mb-3">
+                      <p className="text-[12px] text-slate mb-3">
                         Rs {price.toLocaleString()} each
                       </p>
 
@@ -198,7 +212,7 @@ export function CartPage() {
                           <Minus size={12} />
                         </button>
 
-                        <span className="min-w-[36px] text-center text-[14px] font-bold text-[#141413]">
+                        <span className="min-w-[36px] text-center text-[14px] font-bold text-carbon">
                           {isUpdating
                             ? <Loader2 size={13} className="animate-spin mx-auto block" />
                             : item.quantity}
@@ -229,7 +243,7 @@ export function CartPage() {
                     </div>
 
                     {/* Line total */}
-                    <p className="font-bold text-[15px] text-[#141413] shrink-0">
+                    <p className="font-bold text-[15px] text-carbon shrink-0">
                       Rs {lineTotal.toLocaleString()}
                     </p>
                   </div>
@@ -256,7 +270,7 @@ export function CartPage() {
 
             {/* ── Right: Order Summary ── */}
             <div className="bg-white rounded-[12px] border border-bone p-6 lg:sticky top-20 flex flex-col gap-5">
-              <p className="text-[15px] font-bold text-[#141413]">Order Summary</p>
+              <p className="text-[15px] font-bold text-carbon">Order Summary</p>
 
               {/* Item list */}
               {!loading && (
@@ -266,11 +280,11 @@ export function CartPage() {
                     const ttl   = item.itemTotal ?? price * item.quantity;
                     return (
                       <div key={item.productVariantId} className="flex justify-between text-[12px] gap-2">
-                        <span className="text-[#141413] truncate">
+                        <span className="text-carbon truncate">
                           {item.name}
-                          <span className="text-[#8C8A82] ml-1">×{item.quantity}</span>
+                          <span className="text-slate ml-1">×{item.quantity}</span>
                         </span>
-                        <span className="font-medium text-[#141413] shrink-0">Rs {ttl.toLocaleString()}</span>
+                        <span className="font-medium text-carbon shrink-0">Rs {ttl.toLocaleString()}</span>
                       </div>
                     );
                   })}
@@ -281,11 +295,11 @@ export function CartPage() {
 
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-[13px]">
-                  <span className="text-[#8C8A82]">Subtotal ({cartCount} items)</span>
-                  <span className="font-semibold text-[#141413]">Rs {(cart?.totalPrice ?? 0).toLocaleString()}</span>
+                  <span className="text-slate">Subtotal ({cartCount} items)</span>
+                  <span className="font-semibold text-carbon">Rs {(cart?.totalPrice ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-[13px]">
-                  <span className="text-[#8C8A82]">Shipping</span>
+                  <span className="text-slate">Shipping</span>
                   <span className="text-success font-medium text-[12px]">Calculated at checkout</span>
                 </div>
               </div>
@@ -293,8 +307,8 @@ export function CartPage() {
               <div className="h-px bg-bone" />
 
               <div className="flex justify-between text-[16px] font-bold">
-                <span className="text-[#141413]">Total</span>
-                <span className="text-[#141413]">Rs {(cart?.totalPrice ?? 0).toLocaleString()}</span>
+                <span className="text-carbon">Total</span>
+                <span className="text-carbon">Rs {(cart?.totalPrice ?? 0).toLocaleString()}</span>
               </div>
 
               {/* ── Checkout Buttons ── */}

@@ -146,7 +146,7 @@ function SidebarStoreItem({ label, sub, logo, onClick }: {
       className="flex items-center gap-[9px] w-full py-[7px] px-[10px] rounded-md bg-transparent border-0 cursor-pointer text-left transition-colors duration-[120ms] hover:bg-dark-hover"
     >
       <div className="size-[26px] rounded-[7px] shrink-0 bg-charcoal overflow-hidden flex items-center justify-center text-[9px] font-bold text-slate">
-        {logo ? <img src={logo} alt={label} className="w-full h-full object-cover" /> : initials}
+        {logo ? <img loading="lazy" decoding="async" src={logo} alt={label} className="w-full h-full object-cover" /> : initials}
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[12px] font-medium text-dark-text truncate">{label}</p>
@@ -243,42 +243,48 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
 
                   if (!open) {
                     return (
-                      <div
+                      <button
                         key={item.id}
+                        type="button"
                         onClick={() => navigate(item.children[0].path)}
                         title={item.label}
+                        aria-label={item.label}
                         className={clsx(
-                          'flex items-center justify-center py-[9px] rounded-md mb-0.5 cursor-pointer transition-colors duration-150',
+                          'w-full flex items-center justify-center py-[9px] rounded-md mb-0.5 cursor-pointer border-none transition-colors duration-150',
                           anyChildActive ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
                         )}
                       >
                         <item.Icon size={15} className={clsx('shrink-0', anyChildActive ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
-                      </div>
+                      </button>
                     );
                   }
 
                   return (
                     <div key={item.id} className="mb-0.5">
-                      <div
+                      <button
+                        type="button"
                         onClick={() => toggleDropdown(item.id)}
-                        className="flex items-center gap-[10px] py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 hover:bg-dark-active"
+                        aria-expanded={isOpen}
+                        className="w-full flex items-center gap-[10px] py-[9px] px-[10px] rounded-md cursor-pointer border-none text-left transition-colors duration-150 hover:bg-dark-active"
                       >
                         <item.Icon size={15} className={clsx('shrink-0', anyChildActive ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
                         <span className={clsx('text-[13px] flex-1', anyChildActive ? 'font-semibold text-white' : 'font-normal text-slate')}>
                           {item.label}
                         </span>
                         <ChevronDown size={14} className={clsx('text-slate transition-transform duration-200', isOpen && 'rotate-180')} />
-                      </div>
+                      </button>
                       {isOpen && (
                         <div className="pl-[18px]">
                           {item.children.map(child => {
                             const active = isActive(child.path);
                             return (
-                              <div
+                              <button
                                 key={child.id}
+                                type="button"
                                 onClick={() => navigate(child.path)}
+                                aria-current={active ? 'page' : undefined}
                                 className={clsx(
-                                  'flex items-center gap-[10px] py-2 px-[10px] rounded-md mb-0.5',
+                                  'w-full flex items-center gap-[10px] py-2 px-[10px] rounded-md mb-0.5 border-none text-left',
                                   'cursor-pointer transition-colors duration-150',
                                   active ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
                                 )}
@@ -288,7 +294,7 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
                                   {child.label}
                                 </span>
                                 {active && <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
-                              </div>
+                              </button>
                             );
                           })}
                         </div>
@@ -299,12 +305,15 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
 
                 const active = isActive(item.path);
                 return (
-                  <div
+                  <button
                     key={item.id}
+                    type="button"
                     onClick={() => navigate(item.path)}
                     title={!open ? item.label : undefined}
+                    aria-label={item.label}
+                    aria-current={active ? 'page' : undefined}
                     className={clsx(
-                      'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5',
+                      'w-full flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 border-none text-left',
                       'cursor-pointer transition-colors duration-150',
                       !open && 'lg:justify-center lg:px-0',
                       active ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
@@ -319,7 +328,7 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
                         {active && <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
                       </>
                     )}
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -333,7 +342,7 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
               {profileLoading
                 ? <div className="animate-pulse w-full h-full bg-[#3C3A38]" />
                 : profile?.profileImage
-                  ? <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                  ? <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
                   : <span className="text-[10px] font-bold text-brand-orange">{profile?.name?.slice(0, 2).toUpperCase() ?? '--'}</span>
               }
             </div>

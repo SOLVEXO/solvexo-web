@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import {
   apiGetCart, apiAddToCart, apiUpdateCartQuantity, apiRemoveCartItem, apiClearCart,
   type Cart, type CartItem,
@@ -47,6 +47,8 @@ interface CartContextValue {
   cartCount:     number;
   loading:       boolean;
   adding:        string | null;
+  error:         string | null;
+  clearError:    () => void;
   addToCart:     (productId: string, productVariantId: string, type?: 'physical' | 'digital') => Promise<void>;
   updateQty:     (productId: string, productVariantId: string, action: 'increase' | 'decrease') => Promise<void>;
   removeItem:    (productId: string, productVariantId: string) => Promise<void>;
@@ -64,6 +66,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cart,    setCart]    = useState<Cart | null>(null);
   const [loading, setLoading] = useState(false);
   const [adding,  setAdding]  = useState<string | null>(null);
+  const [error,   setError]   = useState<string | null>(null);
+  const clearError = useCallback(() => setError(null), []);
 
   const fetchCart = useCallback(() => {
     if (!TokenStorage.isLoggedIn()) return;
@@ -85,9 +89,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   ) => {
     setAdding(productVariantId);
     if (type) storeType(productVariantId, type);
+    setError(null);
     try {
       const res = await apiAddToCart(productId, productVariantId);
       setCart(mergeTypes(res.data));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add item to cart.');
     } finally {
       setAdding(null);
     }
@@ -109,8 +116,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return { ...prev, items, totalItems, totalPrice };
     });
 
+    setError(null);
     try {
       await apiUpdateCartQuantity(productId, productVariantId, action);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update quantity.');
     } finally {
       syncCart(c => setCart(c));
     }
@@ -126,8 +136,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return { ...prev, items, totalItems, totalPrice };
     });
 
+    setError(null);
     try {
       await apiRemoveCartItem(productId, productVariantId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove item.');
     } finally {
       syncCart(c => setCart(c));
     }
@@ -137,15 +150,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!cart?._id) return;
     clearTypes();
     setCart(null);
+    setError(null);
     try {
       await apiClearCart(cart._id);
-    } catch {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to clear cart.');
       syncCart(c => setCart(c));
     }
   }, [cart]);
 
+  const value = useMemo<CartContextValue>(() => ({
+    cart, cartCount, loading, adding, error, clearError, addToCart, updateQty, removeItem, clearCart, refetch: fetchCart,
+  }), [cart, cartCount, loading, adding, error, clearError, addToCart, updateQty, removeItem, clearCart, fetchCart]);
+
   return (
-    <CartCtx.Provider value={{ cart, cartCount, loading, adding, addToCart, updateQty, removeItem, clearCart, refetch: fetchCart }}>
+    <CartCtx.Provider value={value}>
       {children}
     </CartCtx.Provider>
   );

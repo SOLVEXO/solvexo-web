@@ -99,7 +99,7 @@ export function StoreBuilder() {
             {/* Theme panel */}
             {activeSection === 'theme' && (
               <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-                <p className="text-[13px] font-bold text-[#141413] mb-[14px]">Theme Colors</p>
+                <p className="text-[13px] font-bold text-carbon mb-[14px]">Theme Colors</p>
                 <div className="flex flex-col gap-3">
                   {THEME_COLORS.map(tc => (
                     <div key={tc.label} className="flex items-center justify-between">
@@ -109,7 +109,7 @@ export function StoreBuilder() {
                           className="w-[22px] h-[22px] rounded-[5px] border border-bone cursor-pointer shrink-0"
                           style={{ background: tc.value }}
                         />
-                        <span className="text-[11px] font-mono text-[#8C8A82]">{tc.value}</span>
+                        <span className="text-[11px] font-mono text-slate">{tc.value}</span>
                       </div>
                     </div>
                   ))}
@@ -133,7 +133,7 @@ export function StoreBuilder() {
             {/* Layout panel */}
             {activeSection === 'layout' && (
               <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-                <p className="text-[13px] font-bold text-[#141413] mb-3">Layout Style</p>
+                <p className="text-[13px] font-bold text-carbon mb-3">Layout Style</p>
                 <div className="flex flex-col gap-2">
                   {LAYOUT_OPTIONS.map(opt => (
                     <button
@@ -160,10 +160,10 @@ export function StoreBuilder() {
             {/* Generic panel */}
             {(activeSection === 'header' || activeSection === 'products' || activeSection === 'footer' || activeSection === 'seo') && (
               <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-                <p className="text-[13px] font-bold text-[#141413] mb-[6px]">
+                <p className="text-[13px] font-bold text-carbon mb-[6px]">
                   {SECTIONS.find(s => s.id === activeSection)?.label} Settings
                 </p>
-                <p className="text-[12px] text-[#8C8A82]">
+                <p className="text-[12px] text-slate">
                   Advanced settings for this section are coming soon.
                 </p>
               </div>
@@ -184,7 +184,7 @@ export function StoreBuilder() {
 
               {/* URL bar */}
               <div className="flex-1 flex justify-center">
-                <div className="bg-white border border-bone rounded-lg px-[14px] py-1 text-[12px] text-[#8C8A82] min-w-[220px] text-center flex items-center justify-center gap-1">
+                <div className="bg-white border border-bone rounded-lg px-[14px] py-1 text-[12px] text-slate min-w-[220px] text-center flex items-center justify-center gap-1">
                   <Lock size={10} /> myshop.solvexo.store
                 </div>
               </div>
@@ -195,7 +195,7 @@ export function StoreBuilder() {
                   <Monitor size={14} className="text-brand-deep-orange" />
                 </button>
                 <button className="w-7 h-7 rounded-[6px] flex items-center justify-center bg-[#F0EEE6] border-none cursor-pointer">
-                  <Smartphone size={14} className="text-[#8C8A82]" />
+                  <Smartphone size={14} className="text-slate" />
                 </button>
               </div>
             </div>
@@ -222,10 +222,10 @@ export function StoreBuilder() {
 
               {/* Hero */}
               <section className="px-8 py-[60px] text-center bg-brand-pale-orange">
-                <h2 className="text-[32px] font-bold text-[#141413] mb-[10px] leading-[1.2]" style={{ fontFamily: 'Georgia, serif' }}>
+                <h2 className="text-[32px] font-bold text-carbon mb-[10px] leading-[1.2]" style={{ fontFamily: 'Georgia, serif' }}>
                   Welcome to My Shop
                 </h2>
-                <p className="text-[14px] text-[#8C8A82] mb-6">
+                <p className="text-[14px] text-slate mb-6">
                   Handcrafted educational resources for modern classrooms.
                 </p>
                 <button className="px-7 py-[11px] bg-brand-orange border-none rounded-lg text-[14px] font-semibold text-white cursor-pointer">
@@ -235,17 +235,17 @@ export function StoreBuilder() {
 
               {/* Featured Products */}
               <section className="p-8">
-                <h3 className="text-[17px] font-bold text-[#141413] mb-5">
+                <h3 className="text-[17px] font-bold text-carbon mb-5">
                   Featured Products
                 </h3>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {PREVIEW_PRODUCTS.map(p => (
                     <div key={p.name} className="border border-bone rounded-[10px] bg-white overflow-hidden">
                       <div className="h-[120px] bg-[#EAF4EE] flex items-center justify-center">
                         <p.Icon size={38} className="text-[#5A8A6A]" />
                       </div>
                       <div className="px-[14px] py-3">
-                        <p className="text-[13px] font-semibold text-[#141413] mb-1">{p.name}</p>
+                        <p className="text-[13px] font-semibold text-carbon mb-1">{p.name}</p>
                         <p className="text-[14px] font-bold text-brand-orange">{p.price}</p>
                       </div>
                     </div>

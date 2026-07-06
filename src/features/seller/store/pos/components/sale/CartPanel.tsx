@@ -45,7 +45,7 @@ export function CartPanel({ sale }: CartPanelProps) {
             {isResuming ? 'Resuming Held Sale' : 'Current Sale'}
           </p>
           {cart.length > 0 && (
-            <p className="text-[11px] text-[#8C8A82] mt-[1px]">
+            <p className="text-[11px] text-slate mt-[1px]">
               {cart.reduce((s, i) => s + i.qty, 0)} items · ${subtotal.toFixed(2)} subtotal
             </p>
           )}
@@ -106,7 +106,7 @@ export function CartPanel({ sale }: CartPanelProps) {
               <div className="flex items-start gap-[10px]">
                 <div className="w-[26px] h-[26px] mt-[1px] shrink-0 rounded-md overflow-hidden bg-carbon flex items-center justify-center">
                   {item.image ? (
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <img loading="lazy" decoding="async" src={item.image} alt={item.name} className="w-full h-full object-cover" />
                   ) : (
                     <ImageOff size={13} className="text-pos-muted" />
                   )}
@@ -212,7 +212,7 @@ export function CartPanel({ sale }: CartPanelProps) {
             </div>
 
             {/* Payment methods */}
-            <div className="grid grid-cols-3 gap-[6px] mb-[10px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[6px] mb-[10px]">
               {PAYMENT_METHODS.map(([id, IconComp, label]) => (
                 <button
                   key={id}

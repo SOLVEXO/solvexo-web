@@ -39,7 +39,7 @@ function ConversationDrawer({ conversationId, onClose }: { conversationId: strin
                   {m.type === 'product_share' && (
                     <p className="text-[13px] text-charcoal">Shared product: {m.productShare?.title ?? `#${m.productShare?.productId}`}{m.productShare?.price != null && ` — $${m.productShare.price}`}</p>
                   )}
-                  {(m.type === 'image' || m.type === 'file' || m.type === 'video') && m.attachments?.map(a => (
+                  {(m.type === 'image' || m.type === 'document' || m.type === 'video') && m.attachments?.map(a => (
                     <a key={a.url} href={a.url} target="_blank" rel="noreferrer" className="text-[13px] text-brand-orange underline flex items-center gap-1">
                       <Paperclip size={11} /> {a.fileName}
                     </a>
@@ -87,7 +87,7 @@ function ConversationsPanel() {
           <thead>
             <tr>
               {['Conversation','Store','Buyer','Seller','Status','Updated',''].map(h => (
-                <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-[#FAF9F5] whitespace-nowrap">{h}</th>
+                <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
@@ -101,9 +101,9 @@ function ConversationsPanel() {
             ) : conversations.map(c => (
               <tr key={c._id} className="border-b border-[#F0EEE6]">
                 <td className="px-4 py-3 text-[13px] font-bold text-[#B95A3A] whitespace-nowrap">{c._id.slice(-8).toUpperCase()}</td>
-                <td className="px-4 py-3 text-[13px] text-[#4A4945] whitespace-nowrap">{c.storeId?.slice(-8) ?? '—'}</td>
-                <td className="px-4 py-3 text-[13px] text-[#4A4945] whitespace-nowrap">{c.buyerId?.slice(-8) ?? '—'}</td>
-                <td className="px-4 py-3 text-[13px] text-[#4A4945] whitespace-nowrap">{c.sellerId?.slice(-8) ?? '—'}</td>
+                <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{c.storeId?.slice(-8) ?? '—'}</td>
+                <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{c.buyerId?.slice(-8) ?? '—'}</td>
+                <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{c.sellerId?.slice(-8) ?? '—'}</td>
                 <td className="px-4 py-3">
                   <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
                     style={{ background: c.isArchived ? '#F0EEE6' : '#EAF7EF', color: c.isArchived ? '#5A5852' : '#1E7A3C' }}>
@@ -159,7 +159,7 @@ function ReportsPanel() {
           <thead>
             <tr>
               {['Report','Type','Target','Reporter','Reason','Status','Created'].map(h => (
-                <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-[#FAF9F5] whitespace-nowrap">{h}</th>
+                <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
@@ -173,10 +173,10 @@ function ReportsPanel() {
             ) : reports.map(r => (
               <tr key={r._id} className="border-b border-[#F0EEE6]">
                 <td className="px-4 py-3 text-[13px] font-bold text-[#B95A3A] whitespace-nowrap flex items-center gap-1"><Flag size={11} /> {r._id.slice(-8).toUpperCase()}</td>
-                <td className="px-4 py-3 text-[13px] text-[#4A4945] capitalize whitespace-nowrap">{r.targetType}</td>
-                <td className="px-4 py-3 text-[13px] text-[#4A4945] whitespace-nowrap">{r.targetId.slice(-8)}</td>
-                <td className="px-4 py-3 text-[13px] text-[#4A4945] whitespace-nowrap">{r.reporterId?.slice(-8) ?? '—'}</td>
-                <td className="px-4 py-3 text-[13px] text-[#4A4945] max-w-[220px] truncate">{r.reason}{r.details ? ` — ${r.details}` : ''}</td>
+                <td className="px-4 py-3 text-[13px] text-graphite capitalize whitespace-nowrap">{r.targetType}</td>
+                <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{r.targetId.slice(-8)}</td>
+                <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{r.reporterId?.slice(-8) ?? '—'}</td>
+                <td className="px-4 py-3 text-[13px] text-graphite max-w-[220px] truncate">{r.reason}{r.details ? ` — ${r.details}` : ''}</td>
                 <td className="px-4 py-3">
                   <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
                     style={{

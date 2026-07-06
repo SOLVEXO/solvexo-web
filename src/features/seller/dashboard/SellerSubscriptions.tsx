@@ -68,7 +68,7 @@ export function SellerSubscriptions() {
         subtitle="Manage recurring billing plans, subscribers, and subscription revenue."
         actions={
           <>
-            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
+            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
               Export Subscribers
             </button>
             <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
@@ -83,11 +83,11 @@ export function SellerSubscriptions() {
         {/* ── Metrics ── */}
         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
-              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
+              <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
               {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
-              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
+              {m.sub   && <p className="text-xs text-slate mt-1">{m.sub}</p>}
             </div>
           ))}
         </div>
@@ -95,22 +95,22 @@ export function SellerSubscriptions() {
         {/* ── Plan Cards ── */}
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
           {PLANS.map(plan => (
-            <div key={plan.name} className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5 flex flex-col">
+            <div key={plan.name} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5 flex flex-col">
               {/* Name + Price */}
               <div className="mb-[10px]">
-                <p className="text-[15px] font-bold text-[#141413] mb-1">{plan.name}</p>
+                <p className="text-[15px] font-bold text-carbon mb-1">{plan.name}</p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-[18px] font-bold text-brand-orange">{plan.price}</span>
-                  <span className="text-xs text-[#8C8A82]">{plan.annual}</span>
+                  <span className="text-xs text-slate">{plan.annual}</span>
                 </div>
               </div>
 
-              <p className="text-xs text-[#8C8A82] mb-4 leading-[1.6]">{plan.desc}</p>
+              <p className="text-xs text-slate mb-4 leading-[1.6]">{plan.desc}</p>
 
               {/* Features */}
               <ul className="flex flex-col gap-2 mb-5 p-0 list-none">
                 {plan.features.map(feat => (
-                  <li key={feat} className="flex items-center gap-2 text-[13px] text-[#4A4945]">
+                  <li key={feat} className="flex items-center gap-2 text-[13px] text-graphite">
                     <Check size={13} style={{ color: '#2D8A4E', flexShrink: 0 }} />
                     {feat}
                   </li>
@@ -119,12 +119,12 @@ export function SellerSubscriptions() {
 
               {/* Stats */}
               <div className="flex items-center justify-between py-3 border-t border-[#F0EEE6] mb-[14px]">
-                <span className="text-xs text-[#8C8A82]">{plan.subscribers} subscribers</span>
+                <span className="text-xs text-slate">{plan.subscribers} subscribers</span>
                 <span className="text-xs font-bold text-[#2D8A4E]">{plan.mrr}/mo</span>
               </div>
 
               {/* Edit button */}
-              <button className="w-full py-2 bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
+              <button className="w-full py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
                 Edit Plan
               </button>
             </div>
@@ -132,10 +132,10 @@ export function SellerSubscriptions() {
         </div>
 
         {/* ── Subscribers Table ── */}
-        <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
           {/* Table header */}
-          <div className="flex items-center justify-between px-5 py-[14px] border-b border-[#E8E6DC]">
-            <p className="text-[15px] font-bold text-[#141413]">Subscribers</p>
+          <div className="flex items-center justify-between px-5 py-[14px] border-b border-bone">
+            <p className="text-[15px] font-bold text-carbon">Subscribers</p>
             <div className="flex items-center gap-0.5 bg-[#F5F4EF] rounded-lg p-[3px]">
               {SUB_TABS.map(tab => (
                 <button
@@ -159,7 +159,7 @@ export function SellerSubscriptions() {
               <thead>
                 <tr>
                   {['SUB ID','CUSTOMER','PLAN','AMOUNT','STATUS','STARTED','NEXT BILLING','TOTAL PAID',''].map(h => (
-                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-[#8C8A82] uppercase tracking-[0.05em] border-b border-[#E8E6DC] bg-[#FAF9F5] whitespace-nowrap">
+                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">
                       {h}
                     </th>
                   ))}
@@ -187,19 +187,19 @@ export function SellerSubscriptions() {
                           >
                             {sub.initials}
                           </div>
-                          <span className="text-[13px] font-medium text-[#141413] whitespace-nowrap">{sub.name}</span>
+                          <span className="text-[13px] font-medium text-carbon whitespace-nowrap">{sub.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-[13px] text-[#4A4945] whitespace-nowrap">{sub.plan}</td>
-                      <td className="px-4 py-3 text-[13px] font-semibold text-[#141413] whitespace-nowrap">{sub.amount}</td>
+                      <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{sub.plan}</td>
+                      <td className="px-4 py-3 text-[13px] font-semibold text-carbon whitespace-nowrap">{sub.amount}</td>
                       <td className="px-4 py-3">
                         <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C]">{sub.status}</span>
                       </td>
-                      <td className="px-4 py-3 text-[13px] text-[#8C8A82] whitespace-nowrap">{sub.started}</td>
-                      <td className="px-4 py-3 text-[13px] text-[#8C8A82] whitespace-nowrap">{sub.nextBilling}</td>
-                      <td className="px-4 py-3 text-[13px] font-semibold text-[#141413]">{sub.totalPaid}</td>
+                      <td className="px-4 py-3 text-[13px] text-slate whitespace-nowrap">{sub.started}</td>
+                      <td className="px-4 py-3 text-[13px] text-slate whitespace-nowrap">{sub.nextBilling}</td>
+                      <td className="px-4 py-3 text-[13px] font-semibold text-carbon">{sub.totalPaid}</td>
                       <td className="px-4 py-3">
-                        <button className="px-3 py-1 bg-white border border-[#E8E6DC] rounded-[6px] text-xs text-[#4A4945] cursor-pointer">
+                        <button className="px-3 py-1 bg-white border border-bone rounded-[6px] text-xs text-graphite cursor-pointer">
                           Manage
                         </button>
                       </td>

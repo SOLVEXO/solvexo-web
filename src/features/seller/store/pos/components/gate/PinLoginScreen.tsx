@@ -44,8 +44,8 @@ export function PinLoginScreen({ storeId, onSuccess }: PinLoginScreenProps) {
   );
 
   return (
-    <div className="flex-1 flex items-center justify-center bg-pos-bg">
-      <div className="w-[340px] bg-pos-surface border border-carbon rounded-2xl p-7">
+    <div className="flex-1 flex items-center justify-center bg-pos-bg px-4">
+      <div className="w-full max-w-[340px] bg-pos-surface border border-carbon rounded-2xl p-7">
         <div className="flex flex-col items-center mb-6">
           <SolvexoIcon size={36} />
           <p className="text-[16px] font-bold text-white mt-3">POS Employee Login</p>

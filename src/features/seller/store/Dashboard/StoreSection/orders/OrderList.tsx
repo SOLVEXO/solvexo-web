@@ -234,7 +234,7 @@ export function StoreOrderList() {
         title="Orders"
         subtitle={loading ? 'Loading…' : `${totalOrders} order${totalOrders !== 1 ? 's' : ''}`}
         actions={
-          <button className="flex items-center gap-1.5 bg-white text-[#4A4945] border border-bone rounded-[9px] px-4 py-[9px] text-[13px] font-medium cursor-pointer">
+          <button className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-4 py-[9px] text-[13px] font-medium cursor-pointer">
             Export CSV
           </button>
         }
@@ -243,7 +243,7 @@ export function StoreOrderList() {
       <div className="px-7 py-5 flex flex-col gap-5">
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard
             label="Total Orders"
             value={stats?.totalOrders ?? 0}

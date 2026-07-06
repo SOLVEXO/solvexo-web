@@ -25,7 +25,7 @@ export function ChatListItem({ name, image, preview, time, unread, pinned, muted
       onClick={onClick}
       className={clsx(
         'w-full flex items-center gap-[11px] px-[14px] py-[10px] text-left cursor-pointer border-none transition-colors',
-        active ? 'bg-brand-pale-orange' : 'bg-transparent hover:bg-[#FAF9F5]',
+        active ? 'bg-brand-pale-orange' : 'bg-transparent hover:bg-cream',
       )}
     >
       <ChatAvatar name={name} image={image} size={48} />

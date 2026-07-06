@@ -187,7 +187,7 @@ function ThemePanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => vo
                 className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
               />
             </label>
-            <span className="text-[11px] font-mono text-[#8C8A82] w-[58px] select-all">{cfg[c.key] as string}</span>
+            <span className="text-[11px] font-mono text-slate w-[58px] select-all">{cfg[c.key] as string}</span>
           </div>
         </Row>
       ))}
@@ -538,7 +538,7 @@ function StorePreview({ cfg, device }: { cfg: Config; device: Device }) {
             {products.map(p => (
               <div
                 key={p.name}
-                className="rounded-[8px] bg-white overflow-hidden border border-[#E8E6DC] shadow-[0_1px_3px_rgba(0,0,0,0.06)] cursor-pointer"
+                className="rounded-[8px] bg-white overflow-hidden border border-bone shadow-[0_1px_3px_rgba(0,0,0,0.06)] cursor-pointer"
                 style={cfg.layoutStyle === 'Minimal' ? { border: 'none', borderRadius: 0, borderBottom: '1px solid #E8E6DC', boxShadow: 'none' } : {}}
               >
                 <div
@@ -554,7 +554,7 @@ function StorePreview({ cfg, device }: { cfg: Config; device: Device }) {
                   {cfg.showRatings && (
                     <div className="flex items-center gap-[3px] mb-[3px]">
                       <Star size={8} className="fill-[#F59E0B] text-[#F59E0B]" />
-                      <span className="text-[9px] text-[#8C8A82]">{p.rating} ({p.reviews})</span>
+                      <span className="text-[9px] text-slate">{p.rating} ({p.reviews})</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between gap-1 mt-[4px]">
@@ -578,7 +578,7 @@ function StorePreview({ cfg, device }: { cfg: Config; device: Device }) {
 
         {/* Footer */}
         <footer
-          className="px-5 pt-6 pb-4 mt-2 border-t border-[#E8E6DC]"
+          className="px-5 pt-6 pb-4 mt-2 border-t border-bone"
           style={{ background: cfg.headerStyle === 'dark' ? '#2C2A28' : cfg.bgColor }}
         >
           <div className="flex items-center gap-[6px] mb-2">
@@ -770,7 +770,6 @@ export function StoreBuilder() {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const storeId = activeStoreId; // for backward compat
   const PageHeader = urlStoreId ? StorePageHeader : SellerPageHeader;
 
   const headerActions = (
@@ -870,7 +869,7 @@ export function StoreBuilder() {
               <div className="w-[11px] h-[11px] rounded-full bg-[#52C45A]" />
             </div>
             <div className="flex-1 flex justify-center">
-              <div className="bg-white border border-bone rounded-lg px-3 py-[5px] text-[11px] text-[#8C8A82] flex items-center gap-[5px] min-w-[200px] justify-center">
+              <div className="bg-white border border-bone rounded-lg px-3 py-[5px] text-[11px] text-slate flex items-center gap-[5px] min-w-[200px] justify-center">
                 <Lock size={9} />
                 {cfg.storeName.toLowerCase().replace(/\s+/g, '-')}.solvexo.store
               </div>

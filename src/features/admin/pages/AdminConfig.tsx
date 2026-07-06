@@ -67,9 +67,9 @@ export function AdminConfig() {
         </div>
         {maintenance && (
           <div className="mt-4">
-            <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Maintenance Message</label>
+            <label className="text-[12px] font-medium text-graphite mb-[5px] block">Maintenance Message</label>
             <input placeholder="We are back soon! Scheduled maintenance until 4:00 AM UTC." value={maintenanceMsg} onChange={e => setMaintenanceMsg(e.target.value)}
-              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
             <p className="text-[11px] mt-2 font-semibold text-[#C13030] flex items-center gap-1">
               <AlertTriangle size={11} /> Maintenance mode is ON — users cannot access the platform.
             </p>
@@ -78,7 +78,7 @@ export function AdminConfig() {
       </div>
 
       {/* ── 2-col ── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         {/* Feature Flags */}
         <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
@@ -107,14 +107,14 @@ export function AdminConfig() {
             <p className="text-[14px] font-bold text-charcoal mb-4">AI Configuration</p>
             <div className="flex flex-col gap-[14px]">
               <div>
-                <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Monthly Credit Limit (per seller)</label>
+                <label className="text-[12px] font-medium text-graphite mb-[5px] block">Monthly Credit Limit (per seller)</label>
                 <input type="number" value={aiCredits} onChange={e => setAiCredits(e.target.value)}
-                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
               </div>
               <div>
-                <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">AI Model</label>
+                <label className="text-[12px] font-medium text-graphite mb-[5px] block">AI Model</label>
                 <select value={aiModel} onChange={e => setAiModel(e.target.value)}
-                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border cursor-pointer">
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border cursor-pointer">
                   <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
                   <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
                   <option value="claude-opus-4">Claude Opus 4</option>
@@ -137,23 +137,23 @@ export function AdminConfig() {
             <p className="text-[14px] font-bold text-charcoal mb-4">Email Configuration</p>
             <div className="flex flex-col gap-[14px]">
               <div>
-                <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">From Name</label>
+                <label className="text-[12px] font-medium text-graphite mb-[5px] block">From Name</label>
                 <input value={fromName} onChange={e => setFromName(e.target.value)}
-                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
               </div>
               <div>
-                <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">From Email</label>
+                <label className="text-[12px] font-medium text-graphite mb-[5px] block">From Email</label>
                 <input type="email" value={fromEmail} onChange={e => setFromEmail(e.target.value)}
-                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
               </div>
               <div>
-                <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Reply-To Email</label>
+                <label className="text-[12px] font-medium text-graphite mb-[5px] block">Reply-To Email</label>
                 <input type="email" value={replyTo} onChange={e => setReplyTo(e.target.value)}
-                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border" />
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
               </div>
               <div>
-                <label className="text-[12px] font-medium text-[#4A4945] mb-[5px] block">Email Provider</label>
-                <select className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#2C2A28] bg-white box-border cursor-pointer">
+                <label className="text-[12px] font-medium text-graphite mb-[5px] block">Email Provider</label>
+                <select className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border cursor-pointer">
                   <option>SendGrid</option>
                   <option>Mailgun</option>
                   <option>AWS SES</option>

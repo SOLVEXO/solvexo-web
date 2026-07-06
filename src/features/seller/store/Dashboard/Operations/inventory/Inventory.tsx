@@ -29,7 +29,7 @@ function ProductCell({ p }: { p: InventoryProduct }) {
     <div className="flex items-center gap-2.5">
       <div className="w-9 h-9 rounded-lg shrink-0 bg-brand-pale-orange border border-[#EDEBE2] flex items-center justify-center overflow-hidden">
         {p.image
-          ? <img src={p.image} alt="" className="w-full h-full object-cover" />
+          ? <img loading="lazy" decoding="async" src={p.image} alt="" className="w-full h-full object-cover" />
           : p.type === 'digital'
             ? <Download size={14} className="text-brand-orange" />
             : <Package  size={14} className="text-brand-orange" />}
@@ -174,7 +174,7 @@ export function StoreInventory() {
         subtitle={loading ? 'Loading…' : `${totalProducts} product${totalProducts !== 1 ? 's' : ''}`}
         actions={
           <>
-            <button className="flex items-center gap-1.5 bg-white text-[#4A4945] border border-bone rounded-[9px] px-4 py-[9px] text-[13px] font-medium cursor-pointer">
+            <button className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-4 py-[9px] text-[13px] font-medium cursor-pointer">
               Export
             </button>
             <button
@@ -190,7 +190,7 @@ export function StoreInventory() {
       <div className="px-7 py-5 flex flex-col gap-5">
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard
             label="Total Products"
             value={stats?.totalProducts ?? 0}

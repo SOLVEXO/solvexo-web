@@ -106,7 +106,7 @@ export function SellerSettings() {
             {/* Profile section */}
             {active === 'profile' && (
               <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-                <p className="text-base font-bold text-[#141413] mb-[22px]">Profile</p>
+                <p className="text-base font-bold text-carbon mb-[22px]">Profile</p>
 
                 {profileLoading ? (
                   <div>
@@ -133,7 +133,7 @@ export function SellerSettings() {
                       <div className="relative shrink-0">
                         <div className="w-[76px] h-[76px] rounded-full bg-brand-pale-orange text-brand-deep-orange text-[26px] font-bold flex items-center justify-center overflow-hidden">
                           {profile?.profileImage
-                            ? <img src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                            ? <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
                             : (profile?.name?.slice(0, 2).toUpperCase() ?? 'ME')}
                         </div>
                         <button className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-brand-orange border-none flex items-center justify-center cursor-pointer">
@@ -141,8 +141,8 @@ export function SellerSettings() {
                         </button>
                       </div>
                       <div>
-                        <p className="text-[13px] font-semibold text-[#141413] mb-[3px]">Profile Photo</p>
-                        <p className="text-xs text-[#8C8A82] mb-2">JPG, PNG — max 2 MB</p>
+                        <p className="text-[13px] font-semibold text-carbon mb-[3px]">Profile Photo</p>
+                        <p className="text-xs text-slate mb-2">JPG, PNG — max 2 MB</p>
                         <button className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-xs text-slate cursor-pointer">
                           Upload Photo
                         </button>
@@ -152,7 +152,7 @@ export function SellerSettings() {
                     <div className="h-px bg-[#F0EEE6] mb-5" />
 
                     {/* Name */}
-                    <div className="grid grid-cols-2 gap-[14px] mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px] mb-4">
                       <div>
                         <label className="text-[12px] font-medium text-slate mb-[5px] block">First Name</label>
                         <input
@@ -178,7 +178,7 @@ export function SellerSettings() {
                         <input
                           readOnly
                           value={profile?.email ?? ''}
-                          className="flex-1 px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#8C8A82] bg-[#FAF9F5] box-border"
+                          className="flex-1 px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-cream box-border"
                         />
                         {profile?.isVerified && (
                           <span className="px-[10px] py-1 rounded-[5px] text-[11px] font-semibold bg-success-bg text-success flex items-center gap-1 shrink-0">
@@ -211,13 +211,13 @@ export function SellerSettings() {
                     </div>
 
                     {/* Role + Status — read only */}
-                    <div className="grid grid-cols-2 gap-[14px] mb-[22px]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px] mb-[22px]">
                       <div>
                         <label className="text-[12px] font-medium text-slate mb-[5px] block">Role</label>
                         <input
                           readOnly
                           value={profile?.role ?? ''}
-                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-[#8C8A82] bg-[#FAF9F5] capitalize box-border"
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-cream capitalize box-border"
                         />
                       </div>
                       <div>
@@ -225,7 +225,7 @@ export function SellerSettings() {
                         <input
                           readOnly
                           value={profile?.status ?? ''}
-                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none bg-[#FAF9F5] capitalize box-border"
+                          className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none bg-cream capitalize box-border"
                           style={{ color: profile?.status === 'active' ? '#1E7A3C' : '#8C8A82' }}
                         />
                       </div>
@@ -252,13 +252,13 @@ export function SellerSettings() {
             {active !== 'profile' && (
               <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
                 <div className="flex flex-col items-center justify-center py-[60px] text-center">
-                  <div className="text-[#8C8A82] mb-[14px]">
+                  <div className="text-slate mb-[14px]">
                     {activeItem ? <activeItem.Icon size={40} /> : <Settings size={40} />}
                   </div>
-                  <p className="text-[15px] font-semibold text-[#141413] mb-[6px]">
+                  <p className="text-[15px] font-semibold text-carbon mb-[6px]">
                     {activeItem?.label ?? 'Settings'}
                   </p>
-                  <p className="text-[13px] text-[#8C8A82]">
+                  <p className="text-[13px] text-slate">
                     {active === 'delete-account'
                       ? 'Permanently delete your account and all data.'
                       : 'Settings for this section are coming soon.'}
@@ -280,7 +280,7 @@ export function SellerSettings() {
                 <div key={group.group}>
                   {gi > 0 && <div className="h-px bg-[#F0EEE6]" />}
                   <div className="px-4 pt-[10px] pb-1">
-                    <p className={`text-[10px] font-semibold uppercase tracking-[0.08em] ${group.isDanger ? 'text-[#C0392B]' : 'text-[#8C8A82]'}`}>
+                    <p className={`text-[10px] font-semibold uppercase tracking-[0.08em] ${group.isDanger ? 'text-[#C0392B]' : 'text-slate'}`}>
                       {group.group}
                     </p>
                   </div>

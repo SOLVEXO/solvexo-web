@@ -9,7 +9,7 @@ interface FollowerEntry { followedAt: string; user: FollowerUser }
 function Avatar({ name, image }: { name: string; image?: string | null }) {
   const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
   if (image) {
-    return <img src={image} alt={name} className="w-9 h-9 rounded-full object-cover shrink-0" />;
+    return <img loading="lazy" decoding="async" src={image} alt={name} className="w-9 h-9 rounded-full object-cover shrink-0" />;
   }
   return (
     <div className="w-9 h-9 rounded-full bg-brand-pale-orange text-brand-orange flex items-center justify-center text-[12px] font-bold shrink-0">
@@ -22,7 +22,7 @@ function Avatar({ name, image }: { name: string; image?: string | null }) {
 function FollowerRow({ entry }: { entry: FollowerEntry }) {
   const when = new Date(entry.followedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
   return (
-    <div className="flex items-center gap-3 px-5 py-[14px] border-b border-[#F3F2EC] last:border-none hover:bg-[#FAF9F5] transition-colors">
+    <div className="flex items-center gap-3 px-5 py-[14px] border-b border-[#F3F2EC] last:border-none hover:bg-cream transition-colors">
       <Avatar name={entry.user.name} image={entry.user.profileImage} />
       <div className="flex-1 min-w-0">
         <p className="text-[14px] font-semibold text-charcoal truncate">{entry.user.name}</p>
@@ -92,7 +92,7 @@ export function StoreFollowers() {
           <button
             onClick={() => load(page, true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 px-3 py-[7px] bg-white border border-bone rounded-[7px] text-[12px] font-medium text-charcoal cursor-pointer hover:bg-[#FAF9F5] disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-[7px] bg-white border border-bone rounded-[7px] text-[12px] font-medium text-charcoal cursor-pointer hover:bg-cream disabled:opacity-50"
           >
             <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
             Refresh
@@ -139,7 +139,7 @@ export function StoreFollowers() {
                 <button
                   onClick={() => load(page - 1)}
                   disabled={page <= 1}
-                  className="px-4 py-[7px] rounded-[7px] text-[12px] font-medium border border-bone bg-white text-charcoal cursor-pointer hover:bg-[#FAF9F5] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-4 py-[7px] rounded-[7px] text-[12px] font-medium border border-bone bg-white text-charcoal cursor-pointer hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
@@ -147,7 +147,7 @@ export function StoreFollowers() {
                 <button
                   onClick={() => load(page + 1)}
                   disabled={page >= pages}
-                  className="px-4 py-[7px] rounded-[7px] text-[12px] font-medium border border-bone bg-white text-charcoal cursor-pointer hover:bg-[#FAF9F5] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-4 py-[7px] rounded-[7px] text-[12px] font-medium border border-bone bg-white text-charcoal cursor-pointer hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
