@@ -15,8 +15,11 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             cd /home/deploy/apps/solvexo-web
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/main
             npm ci
             npm run build
-            pm2 restart solvexo-web || pm2 start npm --name "solvexo-web" -- start
+            pm2 delete solvexo-web || true
+            pm2 start serve --name "solvexo-web" -- -s /home/deploy/apps/solvexo-web/dist -l 3000
             pm2 save
+            echo "solvexo-web deployed at $(date)"
