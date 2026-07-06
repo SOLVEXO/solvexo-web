@@ -169,7 +169,7 @@ const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, i
   const vId         = defaultVariant?._id ?? '';
 
   return (
-    <Card padding="none" hover shadow={false} onClick={() => onClick(product._id)} className="overflow-hidden">
+    <Card padding="none" hover onClick={() => onClick(product._id)} className="overflow-hidden">
       {/* Image */}
       <div className="relative">
         <ProductImage
