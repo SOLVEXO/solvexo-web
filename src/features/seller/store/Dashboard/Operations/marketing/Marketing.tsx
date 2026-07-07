@@ -1,7 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Gift, type LucideIcon } from 'lucide-react';
-import { StorePageHeader } from '@/components/layouts/StoreLayout';
+import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import {
+  apiGetCoupons, apiCreateCoupon, apiUpdateCoupon, apiDeleteCoupon,
+  type Coupon, type DiscountType,
+} from '@/api/services/marketing';
 
 type Tab = 'coupons' | 'email' | 'cart' | 'affiliate' | 'giftcards';
 
@@ -13,25 +17,12 @@ const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
   { id: 'giftcards', label: 'Gift Cards',      Icon: Gift         },
 ];
 
-const COUPONS = [
-  { code: 'BACK2SCHOOL', type: '20% Off',     uses: 84, limit: 200,  expires: 'Jun 30', revenue: '$1,240', status: 'Active' },
-  { code: 'NEWTEACHER10',type: '$10 Off $50+', uses: 62, limit: null, expires: 'Never',  revenue: '$820',   status: 'Active' },
-  { code: 'SUMMER30',    type: '30% Off',     uses: 38, limit: 100,  expires: 'Jul 31', revenue: '$920',   status: 'Active' },
-];
-
 const CAMPAIGNS = [
   { name: 'Back to School Sale',      status: 'Sent',   info: 'Sent May 15, 2025',     sent: 2840, opened: 1136, clicked: 284, revenue: '$1,480' },
   { name: 'Welcome New Buyers',       status: 'Active', info: 'Automated — ongoing',    sent: 362,  opened: 181,  clicked: 54,  revenue: '$620'   },
   { name: 'Summer Discount Blast',    status: 'Draft',  info: 'Scheduled Jun 1, 2025', sent: 0,    opened: 0,    clicked: 0,   revenue: '—'      },
   { name: 'Re-engage At-Risk Buyers', status: 'Paused', info: 'Paused Apr 30, 2025',   sent: 38,   opened: 12,   clicked: 4,   revenue: '$180'   },
 ];
-
-const metrics = [
-  { label: 'Marketing Revenue',  value: '$4,280', trend: '+22%',               sub: null,                 trendUp: true  },
-  { label: 'Active Campaigns',   value: '3',      trend: null,                 sub: '2 email · 1 coupon', trendUp: false },
-  { label: 'Coupon Redemptions', value: '184',    trend: 'Last 30 days',       sub: null,                 trendUp: true  },
-  { label: 'Cart Recovery',      value: '$640',   trend: '12 carts recovered', sub: null,                 trendUp: true  },
-] as const;
 
 const statusStyle: Record<string, { bg: string; color: string }> = {
   Sent:   { bg: '#E3F4EA', color: '#1E7A3C' },
@@ -40,51 +31,101 @@ const statusStyle: Record<string, { bg: string; color: string }> = {
   Paused: { bg: '#FFF4DC', color: '#B36200' },
 };
 
+const emptyForm = { code: '', discountType: '' as DiscountType | '', value: '', minOrder: '', usageLimit: '', expiryDate: '' };
+
 export function StoreMarketing() {
   usePageTitle('Marketing');
-  const [tab,          setTab]          = useState<Tab>('coupons');
-  const [couponCode,   setCouponCode]   = useState('');
-  const [discountType, setDiscountType] = useState('');
-  const [value,        setValue]        = useState('');
-  const [minOrder,     setMinOrder]     = useState('');
-  const [usageLimit,   setUsageLimit]   = useState('');
-  const [expiryDate,   setExpiryDate]   = useState('');
+  const { storeId } = useStoreWorkspace();
+  const [tab, setTab] = useState<Tab>('coupons');
+
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
+
+  useEffect(() => {
+    if (!storeId) return;
+    setLoading(true);
+    apiGetCoupons(storeId)
+      .then(res => setCoupons(res.data.coupons))
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load coupons.'))
+      .finally(() => setLoading(false));
+  }, [storeId]);
+
+  function startEdit(c: Coupon) {
+    setEditingId(c._id);
+    setForm({
+      code: c.code,
+      discountType: c.discountType,
+      value: String(c.discountValue),
+      minOrder: c.minOrderAmount != null ? String(c.minOrderAmount) : '',
+      usageLimit: c.usageLimit != null ? String(c.usageLimit) : '',
+      expiryDate: c.expiresAt ? c.expiresAt.slice(0, 10) : '',
+    });
+  }
+
+  async function togglePause(c: Coupon) {
+    const res = await apiUpdateCoupon(storeId, c._id, { isActive: !c.isActive });
+    setCoupons(prev => prev.map(x => x._id === c._id ? res.data : x));
+  }
+
+  async function handleSubmit() {
+    if (!form.code || !form.discountType || !form.value) return;
+    const payload = {
+      code: form.code,
+      discountType: form.discountType as DiscountType,
+      discountValue: Number(form.value),
+      minOrderAmount: form.minOrder ? Number(form.minOrder) : undefined,
+      usageLimit: form.usageLimit ? Number(form.usageLimit) : undefined,
+      expiresAt: form.expiryDate || undefined,
+    };
+    if (editingId) {
+      const res = await apiUpdateCoupon(storeId, editingId, payload);
+      setCoupons(prev => prev.map(c => c._id === editingId ? res.data : c));
+    } else {
+      const res = await apiCreateCoupon(storeId, payload);
+      setCoupons(prev => [res.data, ...prev]);
+    }
+    setEditingId(null);
+    setForm(emptyForm);
+  }
+
+  async function handleDelete(id: string) {
+    await apiDeleteCoupon(storeId, id);
+    setCoupons(prev => prev.filter(c => c._id !== id));
+  }
+
+  const activeCount = coupons.filter(c => c.isActive).length;
+  const totalRedemptions = coupons.reduce((sum, c) => sum + c.usageCount, 0);
 
   return (
     <>
       <StorePageHeader
         title="Marketing"
         subtitle="Drive traffic, recover sales, and reward customers."
-        actions={
-          <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
-            + Create Campaign
-          </button>
-        }
       />
 
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
-        {/* Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
-              <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
-              {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
-              {m.sub   && <p className="text-xs text-slate mt-1">{m.sub}</p>}
-            </div>
-          ))}
+        {/* Metrics — coupon numbers are real; email/cart features below have no backend yet */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Active Coupons</p>
+            <p className="text-[28px] font-bold text-carbon leading-[1.15]">{activeCount}</p>
+          </div>
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Total Redemptions</p>
+            <p className="text-[28px] font-bold text-carbon leading-[1.15]">{totalRedemptions}</p>
+          </div>
         </div>
 
         {/* Tab bar */}
         <div className="flex items-center gap-0.5 border-b border-bone">
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium cursor-pointer border-none bg-transparent transition-all duration-[120ms] -mb-px"
-              style={{
-                borderBottom: `2px solid ${tab === t.id ? '#D97757' : 'transparent'}`,
-                color: tab === t.id ? '#D97757' : '#8C8A82',
-              }}
+              className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium cursor-pointer border-none bg-transparent -mb-px"
+              style={{ borderBottom: `2px solid ${tab === t.id ? '#D97757' : 'transparent'}`, color: tab === t.id ? '#D97757' : '#8C8A82' }}
             >
               <t.Icon size={14} /> {t.label}
             </button>
@@ -94,99 +135,106 @@ export function StoreMarketing() {
         {/* Coupons Tab */}
         {tab === 'coupons' && (
           <div className="flex flex-col gap-5">
-            <div className="flex items-center justify-between">
-              <p className="text-[15px] font-bold text-carbon">Active Coupons</p>
-              <button className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
-                + New Coupon
-              </button>
-            </div>
+            <p className="text-[15px] font-bold text-carbon">Active Coupons</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {COUPONS.map(coupon => (
-                <div key={coupon.code} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="px-3 py-[5px] rounded-lg border-2 border-dashed border-brand-orange font-mono text-[13px] font-bold text-[#B95A3A] bg-brand-pale-orange">
-                      {coupon.code}
+            {loading ? (
+              <p className="text-xs text-slate">Loading…</p>
+            ) : error ? (
+              <p className="text-xs text-error">{error}</p>
+            ) : coupons.length === 0 ? (
+              <p className="text-xs text-slate italic">No coupons yet — create one below.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {coupons.map(coupon => (
+                  <div key={coupon._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="px-3 py-[5px] rounded-lg border-2 border-dashed border-brand-orange font-mono text-[13px] font-bold text-[#B95A3A] bg-brand-pale-orange">
+                        {coupon.code}
+                      </div>
+                      <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: coupon.isActive ? '#E3F4EA' : '#F0EEE6', color: coupon.isActive ? '#1E7A3C' : '#5A5852' }}>
+                        {coupon.isActive ? 'Active' : 'Paused'}
+                      </span>
                     </div>
-                    <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C]">
-                      {coupon.status}
-                    </span>
-                  </div>
-                  <p className="text-[13px] font-semibold text-carbon mb-3">{coupon.type}</p>
-                  <table className="w-full border-collapse text-xs mb-3">
-                    <tbody>
-                      {[['Uses', `${coupon.uses} / ${coupon.limit ?? 'Unlimited'}`],['Expires', coupon.expires],['Revenue', coupon.revenue]].map(([label, val], i, arr) => (
-                        <tr key={label} style={{ borderBottom: i < arr.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
-                          <td className="py-1.5 text-slate">{label}</td>
-                          <td className="py-1.5 font-semibold text-carbon text-right">{val}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {coupon.limit && (
-                    <div className="h-[5px] bg-bone rounded-[3px] mb-3.5 overflow-hidden">
-                      <div
-                        className="h-full rounded-[3px] bg-brand-orange"
-                        style={{ width: `${(coupon.uses / coupon.limit) * 100}%` }}
-                      />
+                    <p className="text-[13px] font-semibold text-carbon mb-3">
+                      {coupon.discountType === 'percentage' ? `${coupon.discountValue}% Off` : `$${coupon.discountValue} Off`}
+                    </p>
+                    <table className="w-full border-collapse text-xs mb-3">
+                      <tbody>
+                        {[
+                          ['Uses', `${coupon.usageCount} / ${coupon.usageLimit ?? 'Unlimited'}`],
+                          ['Expires', coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : 'Never'],
+                        ].map(([label, val], i) => (
+                          <tr key={label} style={{ borderBottom: i === 0 ? '1px solid #F0EEE6' : 'none' }}>
+                            <td className="py-1.5 text-slate">{label}</td>
+                            <td className="py-1.5 font-semibold text-carbon text-right">{val}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="flex gap-2">
+                      <button onClick={() => startEdit(coupon)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">Edit</button>
+                      <button onClick={() => togglePause(coupon)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">{coupon.isActive ? 'Pause' : 'Activate'}</button>
+                      <button onClick={() => handleDelete(coupon._id)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-error cursor-pointer">Delete</button>
                     </div>
-                  )}
-                  <div className="flex gap-2">
-                    <button className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">Edit</button>
-                    <button className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">Pause</button>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
-            {/* Create coupon form */}
+            {/* Create / Edit coupon form */}
             <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-              <p className="text-sm font-bold text-carbon mb-4">Create New Coupon</p>
+              <p className="text-sm font-bold text-carbon mb-4">{editingId ? 'Edit Coupon' : 'Create New Coupon'}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mb-4">
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Coupon Code</label>
-                  <input placeholder="e.g. SAVE20" value={couponCode} onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                  <input placeholder="e.g. SAVE20" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
                     className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Discount Type</label>
-                  <select value={discountType} onChange={e => setDiscountType(e.target.value)}
+                  <select value={form.discountType} onChange={e => setForm(f => ({ ...f, discountType: e.target.value as DiscountType }))}
                     className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white cursor-pointer box-border">
                     <option value="">Select type…</option>
-                    <option>Percentage Off</option>
-                    <option>Fixed Amount Off</option>
-                    <option>Free Shipping</option>
+                    <option value="percentage">Percentage Off</option>
+                    <option value="fixed">Fixed Amount Off</option>
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Value</label>
-                  <input placeholder="e.g. 20 or 10.00" value={value} onChange={e => setValue(e.target.value)}
+                  <input placeholder="e.g. 20 or 10.00" value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))}
                     className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Minimum Order ($)</label>
-                  <input placeholder="0.00" value={minOrder} onChange={e => setMinOrder(e.target.value)}
+                  <input placeholder="0.00" value={form.minOrder} onChange={e => setForm(f => ({ ...f, minOrder: e.target.value }))}
                     className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Usage Limit</label>
-                  <input placeholder="Leave blank for unlimited" value={usageLimit} onChange={e => setUsageLimit(e.target.value)}
+                  <input placeholder="Leave blank for unlimited" value={form.usageLimit} onChange={e => setForm(f => ({ ...f, usageLimit: e.target.value }))}
                     className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Expiry Date</label>
-                  <input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)}
+                  <input type="date" value={form.expiryDate} onChange={e => setForm(f => ({ ...f, expiryDate: e.target.value }))}
                     className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
                 </div>
               </div>
-              <button className="px-6 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer">
-                Create Coupon
-              </button>
+              <div className="flex gap-2">
+                <button onClick={handleSubmit} className="px-6 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer">
+                  {editingId ? 'Update Coupon' : 'Create Coupon'}
+                </button>
+                {editingId && (
+                  <button onClick={() => { setEditingId(null); setForm(emptyForm); }} className="px-6 py-2.5 bg-white border border-bone rounded-lg text-[13px] font-medium text-graphite cursor-pointer">
+                    Cancel
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Email Tab */}
+        {/* Email Tab — no backend yet, static preview */}
         {tab === 'email' && (
           <div className="flex flex-col gap-5">
             <div className="flex items-center justify-between">

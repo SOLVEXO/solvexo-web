@@ -1,10 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { StorePageHeader } from '@/components/layouts/StoreLayout';
-import { Star, Trophy, Gift, Users, Settings, Award, Gem } from 'lucide-react';
+import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { Modal } from '@/components/comman/ui/Modal';
+import { Star, Trophy, Gift, Users, Settings, Award, Gem, Trash2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import {
+  apiGetLoyaltyOverview, apiGetLoyaltyProgram, apiUpdateLoyaltyProgram, apiUpdateEarningRules,
+  apiUpdateTiers, apiGetLoyaltyMembers, apiGetMemberTransactions, apiAwardPoints,
+  apiCreateReward, apiGetRewards, apiUpdateReward, apiDeleteReward,
+  type LoyaltyProgram, type LoyaltyOverview, type LoyaltyMember, type LoyaltyTransaction,
+  type Reward, type RewardType, type LoyaltyTier,
+} from '@/api/services/loyalty';
 
-const TABS: { id: string; Icon: LucideIcon; label: string }[] = [
+type TabId = 'overview' | 'tiers' | 'rewards' | 'members' | 'earning-rules';
+
+const TABS: { id: TabId; Icon: LucideIcon; label: string }[] = [
   { id: 'overview',      Icon: Star,     label: 'Overview'        },
   { id: 'tiers',         Icon: Trophy,   label: 'Tiers'           },
   { id: 'rewards',       Icon: Gift,     label: 'Rewards Catalog' },
@@ -12,32 +22,37 @@ const TABS: { id: string; Icon: LucideIcon; label: string }[] = [
   { id: 'earning-rules', Icon: Settings, label: 'Earning Rules'   },
 ];
 
-const TIERS: { Icon: LucideIcon; iconColor: string; barColor: string; name: string; members: number; pct: number }[] = [
-  { Icon: Award, iconColor: '#CD7F32', barColor: '#8C6A3A', name: 'Bronze',   members: 892, pct: 67 },
-  { Icon: Award, iconColor: '#A0A0A0', barColor: '#A0A0A0', name: 'Silver',   members: 312, pct: 24 },
-  { Icon: Award, iconColor: '#D4A017', barColor: '#D4A017', name: 'Gold',     members: 94,  pct: 7  },
-  { Icon: Gem,   iconColor: '#4A90D9', barColor: '#4A90D9', name: 'Platinum', members: 28,  pct: 2  },
-];
+const TIER_ICONS: Record<string, { Icon: LucideIcon; color: string }> = {
+  bronze:   { Icon: Award, color: '#CD7F32' },
+  silver:   { Icon: Award, color: '#A0A0A0' },
+  gold:     { Icon: Award, color: '#D4A017' },
+  platinum: { Icon: Gem,   color: '#4A90D9' },
+};
 
-const POINTS_ACTIVITY = [
-  { label: 'Points Earned from Purchases', value: '142,800', positive: true  },
-  { label: 'Points Earned from Reviews',   value: '8,400',   positive: true  },
-  { label: 'Points Earned from Referrals', value: '12,200',  positive: true  },
-  { label: 'Birthday Bonuses',             value: '6,000',   positive: true  },
-  { label: 'Points Expired',               value: '-24,000', positive: false },
-  { label: 'Total Points Redeemed',        value: '-84,200', positive: false },
-];
-
-const metrics = [
-  { label: 'Program Members',              value: '1,326',   trend: '+84 this month',       sub: null,                  trendUp: true  },
-  { label: 'Points Issued',                value: '248,400', trend: 'Last 30 days',         sub: null,                  trendUp: true  },
-  { label: 'Points Redeemed',              value: '84,200',  trend: null,                   sub: '34% redemption rate', trendUp: false },
-  { label: 'Revenue from Loyal Customers', value: '$8,200',  trend: '+31% vs non-members',  sub: null,                  trendUp: true  },
-] as const;
+const ACTIVITY_LABELS: Record<string, string> = {
+  purchase: 'Points Earned from Purchases',
+  review: 'Points Earned from Reviews',
+  referral: 'Points Earned from Referrals',
+  birthday: 'Birthday Bonuses',
+  adjustment: 'Manual Adjustments',
+  expire: 'Points Expired',
+  redeem: 'Points Redeemed',
+};
 
 export function StoreLoyalty() {
   usePageTitle('Loyalty');
-  const [activeTab, setActiveTab] = useState('overview');
+  const { storeId } = useStoreWorkspace();
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
+
+  const [program, setProgram] = useState<LoyaltyProgram | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showCreateReward, setShowCreateReward] = useState(false);
+  const [awardingMember, setAwardingMember] = useState<LoyaltyMember | null>(null);
+
+  useEffect(() => {
+    if (!storeId) return;
+    apiGetLoyaltyProgram(storeId).then(res => setProgram(res.data)).catch(() => {});
+  }, [storeId]);
 
   return (
     <>
@@ -46,10 +61,10 @@ export function StoreLoyalty() {
         subtitle="Build lasting customer relationships with a points-based loyalty program."
         actions={
           <>
-            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
+            <button onClick={() => setShowSettings(true)} className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
               Program Settings
             </button>
-            <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
+            <button onClick={() => setShowCreateReward(true)} className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
               + Create Reward
             </button>
           </>
@@ -58,98 +73,527 @@ export function StoreLoyalty() {
 
       <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
-        {/* Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
-              <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
-              {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
-              {m.sub   && <p className="text-xs text-slate mt-1">{m.sub}</p>}
-            </div>
-          ))}
-        </div>
+        {program && !program.isEnabled && (
+          <div className="bg-[#FFF4DC] border border-[#F0D9A0] rounded-[10px] px-4 py-3 text-xs text-[#8A6200]">
+            Loyalty program is currently <strong>disabled</strong> — customers aren't earning points yet. Enable it from Program Settings.
+          </div>
+        )}
 
-        {/* Tab bar */}
         <div className="flex items-center gap-0.5 border-b border-bone">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="px-4 py-[10px] text-[13px] font-medium cursor-pointer border-none rounded-tl-lg rounded-tr-lg transition-all duration-[120ms] flex items-center gap-1.5"
+              className="px-4 py-[10px] text-[13px] font-medium cursor-pointer border-none rounded-tl-lg rounded-tr-lg flex items-center gap-1.5"
               style={{
                 background: activeTab === tab.id ? '#fff' : 'transparent',
                 color: activeTab === tab.id ? '#141413' : '#8C8A82',
                 borderBottom: activeTab === tab.id ? '2px solid #D97757' : '2px solid transparent',
               }}
             >
-              <tab.Icon size={13} />
-              {tab.label}
+              <tab.Icon size={13} /> {tab.label}
             </button>
           ))}
         </div>
 
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {activeTab === 'overview' && <OverviewTab storeId={storeId} />}
+        {activeTab === 'tiers' && program && <TiersTab storeId={storeId} program={program} onSaved={setProgram} />}
+        {activeTab === 'rewards' && <RewardsTab storeId={storeId} showCreate={showCreateReward} onCloseCreate={() => setShowCreateReward(false)} />}
+        {activeTab === 'members' && <MembersTab storeId={storeId} onAward={setAwardingMember} />}
+        {activeTab === 'earning-rules' && program && <EarningRulesTab storeId={storeId} program={program} onSaved={setProgram} />}
+      </div>
 
-            {/* Member Distribution */}
-            <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-              <p className="text-[14px] font-bold text-carbon mb-[18px]">Member Distribution</p>
-              <div className="flex flex-col gap-4">
-                {TIERS.map(tier => (
-                  <div key={tier.name}>
+      {showSettings && program && (
+        <ProgramSettingsModal storeId={storeId} program={program} onClose={() => setShowSettings(false)} onSaved={p => { setProgram(p); setShowSettings(false); }} />
+      )}
+      {awardingMember && (
+        <AwardPointsModal storeId={storeId} member={awardingMember} onClose={() => setAwardingMember(null)} />
+      )}
+    </>
+  );
+}
+
+// ── Overview ──────────────────────────────────────────────────────────────────
+
+function OverviewTab({ storeId }: { storeId: string }) {
+  const [data, setData] = useState<LoyaltyOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!storeId) return;
+    apiGetLoyaltyOverview(storeId).then(res => setData(res.data)).finally(() => setLoading(false));
+  }, [storeId]);
+
+  if (loading) return <p className="text-xs text-slate">Loading…</p>;
+  if (!data) return <p className="text-xs text-error">Failed to load overview.</p>;
+
+  const metrics = [
+    { label: 'Program Members', value: data.programMembers.toLocaleString() },
+    { label: 'Points Issued (30d)', value: data.pointsIssuedLast30Days.toLocaleString() },
+    { label: 'Points Redeemed', value: data.pointsRedeemedTotal.toLocaleString() },
+    { label: 'Revenue from Members (30d)', value: `$${data.revenueFromMembersLast30Days.toFixed(2)}` },
+  ];
+
+  const activityRows = Object.entries(ACTIVITY_LABELS).map(([type, label]) => ({
+    label, value: data.pointsActivityLast30Days[type] ?? 0,
+  }));
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {metrics.map(m => (
+          <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
+            <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <p className="text-[14px] font-bold text-carbon mb-[18px]">Member Distribution</p>
+          {data.memberDistribution.length === 0 ? (
+            <p className="text-xs text-slate italic">No tiers configured yet.</p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {data.memberDistribution.map(tier => {
+                const style = TIER_ICONS[tier.tier.toLowerCase()] ?? { Icon: Award, color: '#8C8A82' };
+                return (
+                  <div key={tier.tier}>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <tier.Icon size={18} style={{ color: tier.iconColor }} />
-                        <span className="text-[13px] font-semibold text-graphite">{tier.name}</span>
+                        <style.Icon size={18} style={{ color: style.color }} />
+                        <span className="text-[13px] font-semibold text-graphite">{tier.tier}</span>
                       </div>
                       <span className="text-xs text-slate">{tier.members.toLocaleString()} members</span>
                     </div>
                     <div className="h-2 rounded-[4px] bg-bone overflow-hidden">
-                      <div className="h-full rounded-[4px]" style={{ width: `${tier.pct}%`, background: tier.barColor }} />
+                      <div className="h-full rounded-[4px]" style={{ width: `${tier.percent}%`, background: style.color }} />
                     </div>
-                    <p className="text-[11px] text-slate mt-[3px] text-right">{tier.pct}%</p>
+                    <p className="text-[11px] text-slate mt-[3px] text-right">{tier.percent}%</p>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
+          )}
+        </div>
 
-            {/* Points Activity */}
-            <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-              <p className="text-[14px] font-bold text-carbon mb-[18px]">Points Activity (Last 30 Days)</p>
-              <div className="flex flex-col">
-                {POINTS_ACTIVITY.map((item, i) => (
-                  <div
-                    key={item.label}
-                    className="flex items-center justify-between py-[10px]"
-                    style={{ borderBottom: i < POINTS_ACTIVITY.length - 1 ? '1px solid #F0EEE6' : 'none' }}
-                  >
-                    <span className="text-[13px] text-graphite">{item.label}</span>
-                    <span className="text-[13px] font-bold" style={{ color: item.positive ? '#2D8A4E' : '#C13030' }}>{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <p className="text-[14px] font-bold text-carbon mb-[18px]">Points Activity (Last 30 Days)</p>
+          <div className="flex flex-col">
+            {activityRows.map((item, i) => {
+              const isRedeemLike = item.value < 0;
+              return (
+                <div key={item.label} className="flex items-center justify-between py-[10px]" style={{ borderBottom: i < activityRows.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
+                  <span className="text-[13px] text-graphite">{item.label}</span>
+                  <span className="text-[13px] font-bold" style={{ color: isRedeemLike ? '#C13030' : '#2D8A4E' }}>
+                    {item.value > 0 ? '+' : ''}{item.value.toLocaleString()}
+                  </span>
+                </div>
+              );
+            })}
           </div>
-        )}
-
-        {/* Other Tabs */}
-        {activeTab !== 'overview' && (
-          <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-            <p className="text-[14px] font-bold text-carbon mb-2">
-              {TABS.find(t => t.id === activeTab)?.label}
-            </p>
-            <p className="text-[13px] text-slate">
-              {activeTab === 'tiers'         && 'Configure tier thresholds, benefits, and upgrade criteria.'}
-              {activeTab === 'rewards'       && 'Create and manage redeemable rewards for your loyalty members.'}
-              {activeTab === 'members'       && 'View individual member points balances, activity, and tier status.'}
-              {activeTab === 'earning-rules' && 'Define how members earn points — purchases, reviews, referrals and more.'}
-            </p>
-          </div>
-        )}
-
+        </div>
       </div>
-    </>
+    </div>
+  );
+}
+
+// ── Tiers ─────────────────────────────────────────────────────────────────────
+
+function TiersTab({ storeId, program, onSaved }: { storeId: string; program: LoyaltyProgram; onSaved: (p: LoyaltyProgram) => void }) {
+  const [tiers, setTiers] = useState<LoyaltyTier[]>(program.tiers);
+  const [saving, setSaving] = useState(false);
+
+  function update(i: number, patch: Partial<LoyaltyTier>) {
+    setTiers(prev => prev.map((t, idx) => idx === i ? { ...t, ...patch } : t));
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await apiUpdateTiers(storeId, tiers);
+      onSaved(res.data);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex flex-col gap-3.5">
+      <p className="text-[14px] font-bold text-carbon">Tier Thresholds</p>
+      {tiers.map((tier, i) => (
+        <div key={i} className="grid grid-cols-[1fr_140px_1fr_32px] gap-2.5 items-end">
+          <div>
+            <label className="text-xs font-medium text-graphite mb-[5px] block">Tier Name</label>
+            <input value={tier.name} onChange={e => update(i, { name: e.target.value })}
+              className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-graphite mb-[5px] block">Min Points</label>
+            <input type="number" value={tier.minPoints} onChange={e => update(i, { minPoints: Number(e.target.value) })}
+              className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-graphite mb-[5px] block">Benefits (comma-separated)</label>
+            <input value={tier.benefits.join(', ')} onChange={e => update(i, { benefits: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+              className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+          </div>
+          <button onClick={() => setTiers(prev => prev.filter((_, idx) => idx !== i))} className="w-8 h-8 flex items-center justify-center bg-white border border-bone rounded-lg text-error cursor-pointer">
+            <Trash2 size={14} />
+          </button>
+        </div>
+      ))}
+      <div className="flex gap-2">
+        <button onClick={() => setTiers(prev => [...prev, { name: '', minPoints: 0, benefits: [] }])} className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
+          + Add Tier
+        </button>
+        <button onClick={save} disabled={saving} className="px-6 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer disabled:opacity-50">
+          {saving ? 'Saving…' : 'Save Tiers'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Rewards Catalog ───────────────────────────────────────────────────────────
+
+const emptyRewardForm = { name: '', description: '', pointsCost: '', type: 'fixed_discount' as RewardType, discountValue: '', productId: '', stockLimit: '' };
+
+function RewardsTab({ storeId, showCreate, onCloseCreate }: { storeId: string; showCreate: boolean; onCloseCreate: () => void }) {
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState(emptyRewardForm);
+
+  useEffect(() => {
+    if (!storeId) return;
+    apiGetRewards(storeId).then(res => setRewards(res.data)).finally(() => setLoading(false));
+  }, [storeId]);
+
+  async function handleCreate() {
+    if (!form.name || !form.pointsCost) return;
+    const res = await apiCreateReward(storeId, {
+      name: form.name,
+      description: form.description || undefined,
+      pointsCost: Number(form.pointsCost),
+      type: form.type,
+      discountValue: form.discountValue ? Number(form.discountValue) : undefined,
+      productId: form.productId || undefined,
+      stockLimit: form.stockLimit ? Number(form.stockLimit) : undefined,
+    });
+    setRewards(prev => [res.data, ...prev]);
+    setForm(emptyRewardForm);
+    onCloseCreate();
+  }
+
+  async function toggleActive(r: Reward) {
+    const res = await apiUpdateReward(storeId, r._id, { isActive: !r.isActive });
+    setRewards(prev => prev.map(x => x._id === r._id ? res.data : x));
+  }
+
+  async function remove(r: Reward) {
+    await apiDeleteReward(storeId, r._id);
+    setRewards(prev => prev.filter(x => x._id !== r._id));
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      {loading ? (
+        <p className="text-xs text-slate">Loading…</p>
+      ) : rewards.length === 0 ? (
+        <p className="text-xs text-slate italic">No rewards yet — click "+ Create Reward" to add one.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {rewards.map(r => (
+            <div key={r._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-carbon">{r.name}</p>
+                <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: r.isActive ? '#E3F4EA' : '#F0EEE6', color: r.isActive ? '#1E7A3C' : '#5A5852' }}>
+                  {r.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              {r.description && <p className="text-xs text-slate mb-2">{r.description}</p>}
+              <p className="text-[13px] font-bold text-brand-orange mb-3">{r.pointsCost} points</p>
+              <p className="text-xs text-slate mb-3">
+                {r.type === 'fixed_discount' ? `$${r.discountValue} discount` : `Free product`}
+                {r.stockLimit != null && ` — ${r.redeemedCount}/${r.stockLimit} redeemed`}
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => toggleActive(r)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">
+                  {r.isActive ? 'Deactivate' : 'Activate'}
+                </button>
+                <button onClick={() => remove(r)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-error cursor-pointer">Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showCreate && (
+        <Modal title="Create Reward" onClose={onCloseCreate} footer={
+          <>
+            <button onClick={onCloseCreate} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">Cancel</button>
+            <button onClick={handleCreate} className="px-4 py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">Create</button>
+          </>
+        }>
+          <div className="flex flex-col gap-3">
+            <div>
+              <label className="text-xs font-medium text-graphite mb-[5px] block">Name</label>
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-graphite mb-[5px] block">Points Cost</label>
+              <input type="number" value={form.pointsCost} onChange={e => setForm(f => ({ ...f, pointsCost: e.target.value }))}
+                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-graphite mb-[5px] block">Type</label>
+              <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as RewardType }))}
+                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white cursor-pointer box-border">
+                <option value="fixed_discount">Fixed Discount</option>
+                <option value="free_product">Free Product</option>
+              </select>
+            </div>
+            {form.type === 'fixed_discount' ? (
+              <div>
+                <label className="text-xs font-medium text-graphite mb-[5px] block">Discount Value ($)</label>
+                <input type="number" value={form.discountValue} onChange={e => setForm(f => ({ ...f, discountValue: e.target.value }))}
+                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+              </div>
+            ) : (
+              <div>
+                <label className="text-xs font-medium text-graphite mb-[5px] block">Product ID</label>
+                <input value={form.productId} onChange={e => setForm(f => ({ ...f, productId: e.target.value }))}
+                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+              </div>
+            )}
+            <div>
+              <label className="text-xs font-medium text-graphite mb-[5px] block">Stock Limit (optional)</label>
+              <input type="number" value={form.stockLimit} onChange={e => setForm(f => ({ ...f, stockLimit: e.target.value }))}
+                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── Member Activity ───────────────────────────────────────────────────────────
+
+function MembersTab({ storeId, onAward }: { storeId: string; onAward: (m: LoyaltyMember) => void }) {
+  const [members, setMembers] = useState<LoyaltyMember[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!storeId) return;
+    apiGetLoyaltyMembers(storeId).then(res => { setMembers(res.data.members); setTotal(res.data.pagination.total); }).finally(() => setLoading(false));
+  }, [storeId]);
+
+  return (
+    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-bone">
+        <p className="text-[13px] font-semibold text-carbon">{loading ? 'Loading members…' : `${total} Member${total === 1 ? '' : 's'}`}</p>
+      </div>
+      {loading ? (
+        <p className="p-4 text-xs text-slate">Loading…</p>
+      ) : members.length === 0 ? (
+        <p className="p-8 text-center text-xs text-slate">No loyalty members yet.</p>
+      ) : (
+        <table className="w-full border-collapse">
+          <thead>
+            <tr>
+              {['Customer', 'Points Balance', 'Lifetime Points', 'Tier', 'Last Activity', ''].map(h => (
+                <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {members.map((m, i) => (
+              <tr key={m._id} style={{ borderBottom: i < members.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
+                <td className="px-4 py-3">
+                  <p className="text-[13px] font-semibold text-charcoal">{m.user?.name ?? 'Unknown'}</p>
+                  <p className="text-[11px] text-slate">{m.user?.email}</p>
+                </td>
+                <td className="px-4 py-3 text-[13px] font-semibold text-charcoal">{m.pointsBalance.toLocaleString()}</td>
+                <td className="px-4 py-3 text-[13px] text-slate">{m.lifetimePoints.toLocaleString()}</td>
+                <td className="px-4 py-3 text-[13px] text-slate">{m.currentTier ?? '—'}</td>
+                <td className="px-4 py-3 text-[13px] text-slate">{new Date(m.lastActivityAt).toLocaleDateString()}</td>
+                <td className="px-4 py-3">
+                  <button onClick={() => onAward(m)} className="text-xs font-medium text-brand-orange bg-transparent border-none cursor-pointer">Award Points</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+// ── Earning Rules ─────────────────────────────────────────────────────────────
+
+function EarningRulesTab({ storeId, program, onSaved }: { storeId: string; program: LoyaltyProgram; onSaved: (p: LoyaltyProgram) => void }) {
+  const [form, setForm] = useState({
+    pointsPerDollar: String(program.pointsPerDollar),
+    pointsPerReview: String(program.pointsPerReview),
+    pointsPerReferral: String(program.pointsPerReferral),
+    birthdayBonusPoints: String(program.birthdayBonusPoints),
+  });
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await apiUpdateEarningRules(storeId, {
+        pointsPerDollar: Number(form.pointsPerDollar),
+        pointsPerReview: Number(form.pointsPerReview),
+        pointsPerReferral: Number(form.pointsPerReferral),
+        birthdayBonusPoints: Number(form.birthdayBonusPoints),
+      });
+      onSaved(res.data);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const fields: { key: keyof typeof form; label: string; hint: string }[] = [
+    { key: 'pointsPerDollar', label: 'Points per $1 spent', hint: 'Awarded automatically when an order is completed' },
+    { key: 'pointsPerReview', label: 'Points per verified review', hint: 'Awarded automatically for a star rating on a verified purchase' },
+    { key: 'pointsPerReferral', label: 'Points per referral', hint: 'Awarded manually from Member Activity until referrals are automated' },
+    { key: 'birthdayBonusPoints', label: 'Birthday bonus points', hint: 'Awarded manually from Member Activity until birthdate collection is automated' },
+  ];
+
+  return (
+    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex flex-col gap-4 max-w-[480px]">
+      <p className="text-[14px] font-bold text-carbon">Earning Rules</p>
+      {fields.map(f => (
+        <div key={f.key}>
+          <label className="text-xs font-medium text-graphite mb-[5px] block">{f.label}</label>
+          <input type="number" value={form[f.key]} onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+          <p className="text-[11px] text-slate mt-1">{f.hint}</p>
+        </div>
+      ))}
+      <button onClick={save} disabled={saving} className="px-6 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer self-start disabled:opacity-50">
+        {saving ? 'Saving…' : 'Save Earning Rules'}
+      </button>
+    </div>
+  );
+}
+
+// ── Modals ────────────────────────────────────────────────────────────────────
+
+function ProgramSettingsModal({ storeId, program, onClose, onSaved }: { storeId: string; program: LoyaltyProgram; onClose: () => void; onSaved: (p: LoyaltyProgram) => void }) {
+  const [isEnabled, setIsEnabled] = useState(program.isEnabled);
+  const [expiry, setExpiry] = useState(program.pointsExpiryMonths != null ? String(program.pointsExpiryMonths) : '');
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await apiUpdateLoyaltyProgram(storeId, { isEnabled, pointsExpiryMonths: expiry ? Number(expiry) : null });
+      onSaved(res.data);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title="Program Settings" onClose={onClose} footer={
+      <>
+        <button onClick={onClose} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">Cancel</button>
+        <button onClick={save} disabled={saving} className="px-4 py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer disabled:opacity-50">
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </>
+    }>
+      <div className="flex flex-col gap-4">
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <input type="checkbox" checked={isEnabled} onChange={e => setIsEnabled(e.target.checked)} className="w-4 h-4 cursor-pointer" />
+          <span className="text-[13px] text-graphite">Loyalty program enabled</span>
+        </label>
+        <div>
+          <label className="text-xs font-medium text-graphite mb-[5px] block">Points expire after (months)</label>
+          <input type="number" placeholder="Leave blank for never" value={expiry} onChange={e => setExpiry(e.target.value)}
+            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function AwardPointsModal({ storeId, member, onClose }: { storeId: string; member: LoyaltyMember; onClose: () => void }) {
+  const [points, setPoints] = useState('');
+  const [type, setType] = useState<'referral' | 'birthday' | 'adjustment'>('birthday');
+  const [description, setDescription] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [history, setHistory] = useState<LoyaltyTransaction[]>([]);
+
+  useEffect(() => {
+    apiGetMemberTransactions(storeId, member._id).then(res => setHistory(res.data.transactions)).catch(() => {});
+  }, [storeId, member._id]);
+
+  async function submit() {
+    if (!points || !description) return;
+    setSaving(true);
+    try {
+      await apiAwardPoints(storeId, member._id, { points: Number(points), type, description });
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title={`Award Points — ${member.user?.name ?? 'Member'}`} onClose={onClose} width={480} footer={
+      <>
+        <button onClick={onClose} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">Cancel</button>
+        <button onClick={submit} disabled={saving} className="px-4 py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer disabled:opacity-50">
+          {saving ? 'Awarding…' : 'Award'}
+        </button>
+      </>
+    }>
+      <div className="flex flex-col gap-3 mb-4">
+        <div>
+          <label className="text-xs font-medium text-graphite mb-[5px] block">Points (negative to deduct)</label>
+          <input type="number" value={points} onChange={e => setPoints(e.target.value)}
+            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-graphite mb-[5px] block">Reason</label>
+          <select value={type} onChange={e => setType(e.target.value as any)}
+            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white cursor-pointer box-border">
+            <option value="birthday">Birthday bonus</option>
+            <option value="referral">Referral bonus</option>
+            <option value="adjustment">Manual adjustment</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-graphite mb-[5px] block">Description</label>
+          <input value={description} onChange={e => setDescription(e.target.value)}
+            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+        </div>
+      </div>
+
+      <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.07em] mb-2">Recent History</p>
+      <div className="flex flex-col gap-1.5 max-h-[160px] overflow-y-auto">
+        {history.length === 0 ? (
+          <p className="text-xs text-slate italic">No transactions yet.</p>
+        ) : history.map(tx => (
+          <div key={tx._id} className="flex justify-between items-center bg-cream rounded-lg px-3 py-2">
+            <div>
+              <p className="text-[11px] font-semibold text-carbon">{tx.description ?? tx.type}</p>
+              <p className="text-[11px] text-slate">{new Date(tx.createdAt).toLocaleDateString()}</p>
+            </div>
+            <span className="text-xs font-bold" style={{ color: tx.points > 0 ? '#2D8A4E' : '#C13030' }}>
+              {tx.points > 0 ? '+' : ''}{tx.points}
+            </span>
+          </div>
+        ))}
+      </div>
+    </Modal>
   );
 }

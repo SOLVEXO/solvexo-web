@@ -186,3 +186,38 @@ export function apiGetStoreFollowers(storeId: string, page = 1, limit = 20) {
     `${ENDPOINTS.STORE.FOLLOWERS(storeId)}?page=${page}&limit=${limit}`,
   );
 }
+
+// ── Customers (staff-facing) ──────────────────────────────────────────────────
+
+export interface StoreCustomer {
+  _id:       string;
+  name:      string;
+  email:     string;
+  phone:     string;
+  createdAt: string;
+}
+
+export interface UpdateStoreCustomerPayload {
+  name?:  string;
+  phone?: string;
+  email?: string;
+}
+
+interface PaginatedCustomers {
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+  customers:  StoreCustomer[];
+}
+
+/** GET /api/store/:storeId/customers  (seller only) */
+export function apiGetStoreCustomers(storeId: string, page = 1, limit = 20) {
+  return client.get<never, ApiResponse<PaginatedCustomers>>(
+    `${ENDPOINTS.STORE.CUSTOMERS.LIST(storeId)}?page=${page}&limit=${limit}`,
+  );
+}
+
+/** PATCH /api/store/:storeId/customers/:customerId  (seller only) */
+export function apiUpdateStoreCustomer(storeId: string, customerId: string, payload: UpdateStoreCustomerPayload) {
+  return client.patch<never, ApiResponse<StoreCustomer>>(
+    ENDPOINTS.STORE.CUSTOMERS.UPDATE(storeId, customerId), payload,
+  );
+}

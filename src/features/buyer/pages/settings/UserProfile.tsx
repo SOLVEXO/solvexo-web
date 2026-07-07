@@ -32,6 +32,9 @@ import {
 } from '@/components/comman/ui';
 import { OrdersTab } from '@/features/buyer/pages/MyOrdersPage';
 import { ReviewsTab } from '@/features/buyer/pages/MyReviewsPage';
+import { apiChangePassword, apiDeleteAccount } from '@/api/services/users';
+import { TokenStorage } from '@/api/services/auth';
+import { Modal } from '@/components/comman/ui/Modal';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses' | 'messages' | 'reviews';
@@ -855,12 +858,48 @@ function MessagesTab({ initialConversationId }: { initialConversationId?: string
 
 // ── Profile edit tab ──────────────────────────────────────────────────────────
 function ProfileTab() {
+  const navigate = useNavigate();
   const { profile, loading } = useGetProfile();
   const { execute: editProfile, loading: saving, error: saveError, success: saved } = useEditProfile();
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
   const [phone,     setPhone]     = useState('');
   const [address,   setAddress]   = useState('');
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword,     setNewPassword]     = useState('');
+  const [pwSaving,  setPwSaving]  = useState(false);
+  const [pwError,   setPwError]   = useState('');
+  const [pwSuccess, setPwSuccess] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleChangePassword = async () => {
+    setPwError(''); setPwSuccess(false);
+    if (!currentPassword || !newPassword) return;
+    setPwSaving(true);
+    try {
+      await apiChangePassword({ currentPassword, newPassword });
+      setPwSuccess(true);
+      setCurrentPassword(''); setNewPassword('');
+    } catch (err) {
+      setPwError(err instanceof Error ? err.message : 'Failed to change password');
+    } finally {
+      setPwSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await apiDeleteAccount();
+      TokenStorage.clear();
+      navigate('/login');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (!profile) return;
@@ -978,17 +1017,63 @@ function ProfileTab() {
             <Shield size={14} className="text-brand-orange" />
             <p className="text-[12px] font-semibold text-charcoal">Security</p>
           </div>
-          <p className="text-[11px] text-slate leading-relaxed">
-            Your account is protected with email verification. Keep your credentials safe and never share your password.
-          </p>
           {profile?.isVerified && (
-            <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-success-bg rounded-[8px]">
+            <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-success-bg rounded-[8px]">
               <Check size={12} className="text-success shrink-0" />
               <span className="text-[11px] text-success font-medium">Email verified</span>
             </div>
           )}
+
+          <label className={LABEL_CLS}>Current Password</label>
+          <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className={clsx(INPUT_CLS, 'mb-3')} />
+          <label className={LABEL_CLS}>New Password</label>
+          <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className={clsx(INPUT_CLS, 'mb-3')} />
+
+          <button
+            onClick={handleChangePassword}
+            disabled={pwSaving}
+            className={clsx(
+              'w-full px-4 py-[9px] bg-white border border-bone rounded-[9px] text-[12px] font-semibold text-charcoal flex items-center justify-center gap-2',
+              pwSaving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
+            )}
+          >
+            {pwSaving && <Loader2 size={12} className="animate-spin" />}
+            {pwSaving ? 'Updating…' : 'Change Password'}
+          </button>
+          {pwSuccess && <p className="text-[11px] text-success font-medium mt-2">Password changed</p>}
+          {pwError && <p className="text-[11px] text-error font-medium mt-2">{pwError}</p>}
+        </Card>
+
+        <Card>
+          <p className="text-[12px] font-semibold text-error mb-2">Danger Zone</p>
+          <p className="text-[11px] text-slate leading-relaxed mb-3">
+            Deactivating your account signs you out and hides your profile. This can't be undone from the app.
+          </p>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="w-full px-4 py-[9px] bg-white border border-error rounded-[9px] text-[12px] font-semibold text-error cursor-pointer flex items-center justify-center gap-2"
+          >
+            <Trash2 size={13} /> Delete Account
+          </button>
         </Card>
       </div>
+
+      {showDeleteConfirm && (
+        <Modal title="Delete your account?" onClose={() => setShowDeleteConfirm(false)} footer={
+          <>
+            <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
+              Cancel
+            </button>
+            <button onClick={handleDeleteAccount} disabled={deleting} className="px-4 py-2 bg-error border-none rounded-lg text-xs font-semibold text-white cursor-pointer disabled:opacity-50">
+              {deleting ? 'Deleting…' : 'Delete Account'}
+            </button>
+          </>
+        }>
+          <p className="text-[13px] text-slate">
+            This deactivates your account and signs you out immediately. You'll need to contact support to reactivate it.
+          </p>
+        </Modal>
+      )}
     </div>
   );
 }

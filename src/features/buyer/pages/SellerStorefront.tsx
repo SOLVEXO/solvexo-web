@@ -7,7 +7,7 @@ import { Card } from '@/components/comman/ui/Card';
 import { FilterDropdown } from '@/components/comman/ui';
 import {
   ShoppingCart, Star, Heart, ArrowLeft, Users,
-  Store, Package, Loader2, MessageCircle, BadgeCheck, Award,
+  Store, Package, Loader2, MessageCircle, BadgeCheck, Award, Gift,
 } from 'lucide-react';
 import {
   apiGetPublicStore, apiGetPublicStoreProducts,
@@ -16,6 +16,8 @@ import {
   type PublicStoreData,
 } from '@/api/services/store';
 import { apiStartConversation } from '@/api/services/messaging';
+import { apiGetMyBalance, apiGetRewards, apiRedeemReward, type LoyaltyBalance, type Reward } from '@/api/services/loyalty';
+import { Modal } from '@/components/comman/ui/Modal';
 
 // ── Builder config default (mirrors StoreBuilder DEFAULT) ─────────────────────
 const CFG_DEFAULT = {
@@ -130,6 +132,11 @@ export function SellerStorefront() {
   const [wishlisted,     setWishlisted]    = useState<Set<string>>(new Set());
   const [tags,           setTags]          = useState<string[]>([]);
   const [activeTag,      setActiveTag]     = useState<string>('all');
+  const [loyalty,        setLoyalty]       = useState<LoyaltyBalance | null>(null);
+  const [showRewards,    setShowRewards]   = useState(false);
+  const [rewards,        setRewards]       = useState<Reward[]>([]);
+  const [rewardsLoading, setRewardsLoading] = useState(false);
+  const [redeemingId,    setRedeemingId]   = useState<string | null>(null);
 
   const isLoggedIn = !!localStorage.getItem('accessToken');
 
@@ -178,6 +185,34 @@ export function SellerStorefront() {
       .catch(() => {})
       .finally(() => setFollowStatusLoaded(true));
   }, [store, isLoggedIn]);
+
+  // ── Loyalty balance ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!store || !isLoggedIn) return;
+    apiGetMyBalance(store.storeId).then(res => setLoyalty(res.data)).catch(() => {});
+  }, [store, isLoggedIn]);
+
+  const openRewards = () => {
+    if (!store) return;
+    setShowRewards(true);
+    if (rewards.length === 0) {
+      setRewardsLoading(true);
+      apiGetRewards(store.storeId).then(res => setRewards(res.data)).finally(() => setRewardsLoading(false));
+    }
+  };
+
+  const handleRedeem = async (reward: Reward) => {
+    if (!store) return;
+    setRedeemingId(reward._id);
+    try {
+      const res = await apiRedeemReward(store.storeId, reward._id);
+      setLoyalty(prev => prev ? { ...prev, pointsBalance: res.data.remainingBalance } : prev);
+    } catch {
+      // insufficient points / out of stock — surfaced by the axios error interceptor
+    } finally {
+      setRedeemingId(null);
+    }
+  };
 
   // ── Products ────────────────────────────────────────────────────────────────
   const loadProducts = useCallback(() => {
@@ -336,6 +371,15 @@ export function SellerStorefront() {
 
             {/* Actions */}
             <div className="flex flex-row sm:flex-col gap-2 items-center sm:items-end shrink-0">
+              {isLoggedIn && loyalty && (
+                <button
+                  onClick={openRewards}
+                  className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap"
+                >
+                  <Gift size={13} style={{ color: cfg.primaryColor }} />
+                  {loyalty.pointsBalance.toLocaleString()} points
+                </button>
+              )}
               <button
                 onClick={handleFollow}
                 disabled={followLoading || !followStatusLoaded}
@@ -484,6 +528,46 @@ export function SellerStorefront() {
           </>
         )}
       </div>
+
+      {showRewards && (
+        <Modal title="Rewards Catalog" onClose={() => setShowRewards(false)}>
+          <p className="text-[13px] text-slate mb-4">
+            You have <strong style={{ color: cfg.primaryColor }}>{loyalty?.pointsBalance.toLocaleString() ?? 0} points</strong> at {store.name}.
+            {loyalty?.nextTier && ` ${loyalty.nextTier.pointsNeeded} more points to reach ${loyalty.nextTier.name}.`}
+          </p>
+
+          {rewardsLoading ? (
+            <p className="text-xs text-slate">Loading…</p>
+          ) : rewards.length === 0 ? (
+            <p className="text-xs text-slate italic">No rewards available yet.</p>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {rewards.map(r => {
+                const canAfford = (loyalty?.pointsBalance ?? 0) >= r.pointsCost;
+                const outOfStock = r.stockLimit != null && r.redeemedCount >= r.stockLimit;
+                return (
+                  <div key={r._id} className="flex items-center justify-between gap-3 bg-cream rounded-lg px-3.5 py-3">
+                    <div>
+                      <p className="text-[13px] font-semibold text-carbon">{r.name}</p>
+                      <p className="text-[11px] text-slate">
+                        {r.pointsCost.toLocaleString()} points — {r.type === 'fixed_discount' ? `$${r.discountValue} off` : 'Free product'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleRedeem(r)}
+                      disabled={!canAfford || outOfStock || redeemingId === r._id}
+                      className="px-3.5 py-[7px] rounded-lg text-xs font-semibold text-white border-none cursor-pointer whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{ background: cfg.primaryColor }}
+                    >
+                      {redeemingId === r._id ? 'Redeeming…' : outOfStock ? 'Out of stock' : canAfford ? 'Redeem' : 'Not enough points'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }

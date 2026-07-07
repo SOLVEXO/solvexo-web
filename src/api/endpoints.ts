@@ -5,6 +5,12 @@
 
 export const ENDPOINTS = {
 
+  // ── USERS (self-service account management) ──────────────────────────────
+  USERS: {
+    CHANGE_PASSWORD: '/api/users/change-password',
+    DELETE_ACCOUNT:  '/api/users/profile',
+  },
+
   // ── AUTH ───────────────────────────────────────────────────────────────────
   AUTH: {
     REGISTER: '/api/auth/register',
@@ -38,6 +44,48 @@ export const ENDPOINTS = {
     FOLLOW: (storeId: string) => `/api/store/${storeId}/follow`,
     FOLLOW_STATUS: (storeId: string) => `/api/store/${storeId}/follow-status`,
     FOLLOWERS: (storeId: string) => `/api/store/${storeId}/followers`,
+
+    // Customers (staff-facing — only people who ordered from this store)
+    CUSTOMERS: {
+      LIST:   (storeId: string) => `/api/store/${storeId}/customers`,
+      UPDATE: (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}`,
+    },
+  },
+
+  // ── ACTIVITY LOG ──────────────────────────────────────────────────────────
+  ACTIVITY_LOG: {
+    LIST:   (storeId: string) => `/api/activity-log/${storeId}`,
+    STATS:  (storeId: string) => `/api/activity-log/${storeId}/stats`,
+    EXPORT: (storeId: string) => `/api/activity-log/${storeId}/export`,
+  },
+
+  // ── MARKETING ─────────────────────────────────────────────────────────────
+  MARKETING: {
+    COUPONS: {
+      CREATE: (storeId: string) => `/api/marketing/${storeId}/coupons`,
+      LIST:   (storeId: string) => `/api/marketing/${storeId}/coupons`,
+      UPDATE: (storeId: string, couponId: string) => `/api/marketing/${storeId}/coupons/${couponId}`,
+      DELETE: (storeId: string, couponId: string) => `/api/marketing/${storeId}/coupons/${couponId}`,
+    },
+  },
+
+  // ── LOYALTY & REWARDS ─────────────────────────────────────────────────────
+  LOYALTY: {
+    OVERVIEW:      (storeId: string) => `/api/loyalty/${storeId}/overview`,
+    PROGRAM:       (storeId: string) => `/api/loyalty/${storeId}/program`,
+    EARNING_RULES: (storeId: string) => `/api/loyalty/${storeId}/earning-rules`,
+    TIERS:         (storeId: string) => `/api/loyalty/${storeId}/tiers`,
+    MEMBERS:       (storeId: string) => `/api/loyalty/${storeId}/members`,
+    MEMBER_TRANSACTIONS: (storeId: string, memberId: string) => `/api/loyalty/${storeId}/members/${memberId}/transactions`,
+    AWARD_POINTS:  (storeId: string, memberId: string) => `/api/loyalty/${storeId}/members/${memberId}/award`,
+    REWARDS: {
+      CREATE: (storeId: string) => `/api/loyalty/${storeId}/rewards`,
+      LIST:   (storeId: string) => `/api/loyalty/${storeId}/rewards`,
+      UPDATE: (storeId: string, rewardId: string) => `/api/loyalty/${storeId}/rewards/${rewardId}`,
+      DELETE: (storeId: string, rewardId: string) => `/api/loyalty/${storeId}/rewards/${rewardId}`,
+    },
+    MY_BALANCE: (storeId: string) => `/api/loyalty/${storeId}/my-balance`,
+    REDEEM:     (storeId: string) => `/api/loyalty/${storeId}/redeem`,
   },
 
   PRODUCT: {
