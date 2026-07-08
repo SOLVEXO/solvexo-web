@@ -5,7 +5,7 @@ import {
   User, ShoppingBag, Heart, MapPin, Mail, Camera,
   Check, Shield, ShoppingCart, ImageOff, Loader2, Star,
   Plus, Pencil, ArrowLeft, Home, Briefcase, Star as StarIcon,
-  ChevronRight, Menu, X, MessageSquare, Ban, Flag, Trash2,
+  ChevronRight, Menu, X, MessageSquare, Ban, Flag, Trash2, RefreshCw,
   type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -13,7 +13,7 @@ import { useEditProfile } from '@/hooks/auth/useEditProfile';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useCartContext } from '@/contexts/CartContext';
 import {
-  apiGetMyAddresses, apiAddAddress, apiUpdateAddress, apiSetDefaultAddress,
+  apiGetMyAddresses, apiAddAddress, apiUpdateAddress, apiSetDefaultAddress, apiDeleteAddress,
   type Address, type AddressPayload,
 } from '@/api/services/address';
 import { useConversations, useSearchConversations, useStartConversation } from '@/hooks/messaging/useConversations';
@@ -32,16 +32,18 @@ import {
 } from '@/components/comman/ui';
 import { OrdersTab } from '@/features/buyer/pages/MyOrdersPage';
 import { ReviewsTab } from '@/features/buyer/pages/MyReviewsPage';
+import { SubscriptionsTab } from '@/features/buyer/pages/MySubscriptionsPage';
 import { apiChangePassword, apiDeleteAccount } from '@/api/services/users';
 import { TokenStorage } from '@/api/services/auth';
 import { Modal } from '@/components/comman/ui/Modal';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses' | 'messages' | 'reviews';
+type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses' | 'messages' | 'reviews' | 'subscriptions';
 
 const NAV_ITEMS: { id: Tab; label: string; Icon: LucideIcon }[] = [
   { id: 'profile',   label: 'My Profile', Icon: User          },
   { id: 'orders',    label: 'My Orders',  Icon: ShoppingBag    },
+  { id: 'subscriptions', label: 'My Subscriptions', Icon: RefreshCw },
   { id: 'reviews',   label: 'My Reviews', Icon: Star           },
   { id: 'wishlist',  label: 'Wishlist',   Icon: Heart          },
   { id: 'addresses', label: 'Addresses',  Icon: MapPin         },
@@ -559,6 +561,20 @@ function AddressTab() {
     }
   };
 
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const handleDeleteAddress = async (addressId: string) => {
+    if (!window.confirm('Delete this address? This cannot be undone.')) return;
+    setDeletingId(addressId);
+    try {
+      await apiDeleteAddress(addressId);
+      await refreshAddresses();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete address.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const columns: TableColumn<Address>[] = [
     {
       key: 'no', header: '#', width: '48px',
@@ -618,6 +634,12 @@ function AddressTab() {
               onClick: () => handleSetDefault(a._id),
               icon: <StarIcon size={13} />,
             }]),
+            {
+              label: deletingId === a._id ? 'Deleting…' : 'Delete',
+              onClick: () => handleDeleteAddress(a._id),
+              icon: <Trash2 size={13} />,
+              danger: true,
+            },
           ]}
         />
       ),
@@ -1128,6 +1150,7 @@ export function UserProfile() {
           {tab === 'wishlist'  && <WishlistTab />}
           {tab === 'addresses' && <AddressTab />}
           {tab === 'orders'    && <OrdersTab />}
+          {tab === 'subscriptions' && <SubscriptionsTab />}
           {tab === 'reviews'   && <ReviewsTab />}
           {tab === 'messages'  && <MessagesTab initialConversationId={initialConversationId} />}
         </main>

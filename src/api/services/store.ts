@@ -121,9 +121,25 @@ export interface PublicStoreProductsParams {
   tag?:        string;
 }
 
+export interface PublicStoreProduct {
+  _id:         string;
+  name:        string;
+  images?:     string[];
+  type?:       'physical' | 'digital';
+  tags?:       string[];
+  averageRating?: number;
+  defaultVariantPrice: number | null;
+  // Present only when the requester has an active, discount-granting
+  // subscription to this store — resolved server-side only.
+  subscriberPrice?:    number;
+  youSaveUSD?:         number;
+  discountPercent?:    number;
+  subscriberPlanName?: string;
+}
+
 export interface PublicStoreProductsData {
   pagination: { page: number; limit: number; total: number; totalPages: number };
-  products:   unknown[];
+  products:   PublicStoreProduct[];
 }
 
 /** GET /api/store/public/:slug */

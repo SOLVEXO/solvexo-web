@@ -1,0 +1,250 @@
+import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { RefreshCw, ImageOff, Loader2 } from 'lucide-react';
+import {
+  Card, EmptyState, SkeletonBox, Table, type TableColumn,
+  ActionMenu, type ActionMenuItem, Badge,
+} from '@/components/comman/ui';
+import { Button } from '@/components/comman/ui/Button';
+import { Modal } from '@/components/comman/ui/Modal';
+import {
+  apiGetMySubscriptions, apiGetMySubscriptionById, apiPauseMySubscription, apiResumeMySubscription,
+  apiCancelMySubscription, apiChangeMyPlan, apiBrowseStorePlans,
+  type Subscription, type BuyerPlan, type SubscriptionInvoice, type BillingInterval,
+} from '@/api/services/subscriptions';
+
+type EnrichedSub = Subscription & {
+  store: { _id: string; name: string; logo: string | null; slug: string } | null;
+  plan: { _id: string; name: string; features: string[] } | null;
+};
+
+const STATUS_COLOR: Record<string, 'green' | 'orange' | 'gray' | 'red'> = {
+  active: 'green', paused: 'orange', canceled: 'gray', past_due: 'red',
+};
+
+// ── Manage modal: details, invoices, pause/resume/cancel, change plan ────────
+function ManageSubscriptionModal({ sub, onClose, onChanged }: {
+  sub: EnrichedSub; onClose: () => void; onChanged: () => void;
+}) {
+  const [invoices, setInvoices] = useState<SubscriptionInvoice[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [changingPlan, setChangingPlan] = useState(false);
+  const [plans, setPlans] = useState<BuyerPlan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState('');
+  const [selectedInterval, setSelectedInterval] = useState<BillingInterval>('monthly');
+
+  useEffect(() => {
+    apiGetMySubscriptionById(sub._id)
+      .then(res => setInvoices(res.data.invoices))
+      .catch(() => {})
+      .finally(() => setLoadingInvoices(false));
+  }, [sub._id]);
+
+  async function openChangePlan() {
+    setChangingPlan(true);
+    if (sub.store) {
+      const res = await apiBrowseStorePlans(sub.store._id).catch(() => null);
+      if (res) setPlans(res.data.filter(p => p._id !== sub.planId));
+    }
+  }
+
+  async function submitChangePlan() {
+    if (!selectedPlanId) return;
+    setBusy(true);
+    setError('');
+    try {
+      await apiChangeMyPlan(sub._id, selectedPlanId, selectedInterval);
+      onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to change plan.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handle(action: 'pause' | 'resume' | 'cancel') {
+    setBusy(true);
+    setError('');
+    try {
+      if (action === 'pause') await apiPauseMySubscription(sub._id);
+      else if (action === 'resume') await apiResumeMySubscription(sub._id);
+      else {
+        const atPeriodEnd = window.confirm('Cancel at the end of your billing period? OK = at period end, Cancel = immediately.');
+        await apiCancelMySubscription(sub._id, atPeriodEnd);
+      }
+      onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Action failed.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal title={sub.plan?.name ?? 'Manage Subscription'} width={520} onClose={onClose}>
+      <div className="flex flex-col gap-4">
+        <div className="bg-cream rounded-lg px-4 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-[13px] font-semibold text-charcoal">{sub.store?.name ?? 'Store'}</p>
+            <p className="text-[11px] text-slate">{sub.billingInterval} — ${sub.amountUSD.toFixed(2)}</p>
+          </div>
+          <Badge color={STATUS_COLOR[sub.status] ?? 'gray'}>{sub.status}{sub.pendingCancellation ? ' (ending)' : ''}</Badge>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 text-[12px]">
+          <div><p className="text-slate mb-0.5">Next billing</p><p className="font-semibold text-charcoal">{new Date(sub.nextBillingDate).toLocaleDateString()}</p></div>
+          <div><p className="text-slate mb-0.5">Total paid</p><p className="font-semibold text-charcoal">${sub.totalPaidUSD.toFixed(2)}</p></div>
+          {sub.creditBalanceUSD > 0 && (
+            <div className="col-span-2"><p className="text-slate mb-0.5">Account credit</p><p className="font-semibold text-[#1E7A3C]">${sub.creditBalanceUSD.toFixed(2)}</p></div>
+          )}
+        </div>
+
+        {!changingPlan ? (
+          <div className="flex flex-wrap gap-2">
+            {sub.status === 'active' && <Button size="sm" variant="outline" onClick={() => handle('pause')} disabled={busy}>Pause</Button>}
+            {sub.status === 'paused' && <Button size="sm" variant="outline" onClick={() => handle('resume')} disabled={busy}>Resume</Button>}
+            {sub.status === 'active' && <Button size="sm" variant="outline" onClick={openChangePlan} disabled={busy}>Change Plan</Button>}
+            {(sub.status === 'active' || sub.status === 'paused' || sub.status === 'past_due') && (
+              <Button size="sm" variant="danger" onClick={() => handle('cancel')} disabled={busy}>Cancel Subscription</Button>
+            )}
+          </div>
+        ) : (
+          <div className="border border-bone rounded-lg p-3 flex flex-col gap-3">
+            <p className="text-[12px] font-semibold text-charcoal">Choose a new plan</p>
+            {plans.length === 0 ? (
+              <p className="text-[12px] text-slate">No other plans available for this store.</p>
+            ) : (
+              <>
+                <select value={selectedPlanId} onChange={e => setSelectedPlanId(e.target.value)}
+                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none bg-white cursor-pointer">
+                  <option value="">Select a plan…</option>
+                  {plans.map(p => <option key={p._id} value={p._id}>{p.name} — ${p.monthlyPriceUSD}/mo</option>)}
+                </select>
+                <div className="flex gap-2">
+                  {(['monthly', 'yearly'] as const).map(iv => (
+                    <button key={iv} type="button" onClick={() => setSelectedInterval(iv)}
+                      className="flex-1 py-2 rounded-lg text-[12px] font-semibold capitalize cursor-pointer transition-all"
+                      style={{ border: `1.5px solid ${selectedInterval === iv ? '#D97757' : '#E8E6DC'}`, background: selectedInterval === iv ? '#FBECE4' : '#fff', color: selectedInterval === iv ? '#D97757' : '#8C8A82' }}>
+                      {iv}
+                    </button>
+                  ))}
+                </div>
+                <Button size="sm" onClick={submitChangePlan} loading={busy} disabled={!selectedPlanId}>Confirm Change</Button>
+              </>
+            )}
+            <button onClick={() => setChangingPlan(false)} className="text-[11px] text-slate bg-transparent border-none cursor-pointer text-left">Back</button>
+          </div>
+        )}
+
+        {error && <p className="text-[12px] text-error">{error}</p>}
+
+        <div>
+          <p className="text-[12px] font-semibold text-charcoal mb-2">Invoices</p>
+          {loadingInvoices ? (
+            <Loader2 size={16} className="animate-spin text-brand-orange" />
+          ) : invoices.length === 0 ? (
+            <p className="text-[12px] text-slate">No invoices yet.</p>
+          ) : (
+            <div className="flex flex-col gap-1.5 max-h-[160px] overflow-y-auto">
+              {invoices.map(inv => (
+                <div key={inv._id} className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded bg-cream">
+                  <span className="text-slate">{new Date(inv.createdAt).toLocaleDateString()} · {inv.type}</span>
+                  <span className={`font-semibold ${inv.status === 'paid' ? 'text-[#1E7A3C]' : inv.status === 'failed' ? 'text-error' : 'text-slate'}`}>
+                    {inv.amountUSD < 0 ? '−' : ''}${Math.abs(inv.amountUSD).toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+export function SubscriptionsTab() {
+  const navigate = useNavigate();
+  const [subs, setSubs] = useState<EnrichedSub[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [managing, setManaging] = useState<EnrichedSub | null>(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    apiGetMySubscriptions({ page, limit: 10 })
+      .then(res => { setSubs(res.data.subscriptions); setTotal(res.data.pagination.total); })
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load your subscriptions.'))
+      .finally(() => setLoading(false));
+  }, [page]);
+
+  useEffect(load, [load]);
+
+  const columns: TableColumn<EnrichedSub>[] = [
+    {
+      key: 'store', header: 'Store', width: '220px',
+      render: s => (
+        <button onClick={() => s.store && navigate(`/store/${s.store.slug}`)} className="flex items-center gap-[10px] bg-transparent border-0 cursor-pointer text-left p-0">
+          <div className="w-9 h-9 rounded-lg bg-cream border border-bone overflow-hidden shrink-0 flex items-center justify-center">
+            {s.store?.logo ? <img loading="lazy" decoding="async" src={s.store.logo} alt="" className="w-full h-full object-cover" /> : <ImageOff size={13} className="text-slate" />}
+          </div>
+          <span className="text-[13px] font-semibold text-charcoal truncate max-w-[140px]">{s.store?.name ?? 'Store'}</span>
+        </button>
+      ),
+    },
+    { key: 'plan', header: 'Plan', render: s => <span className="text-[13px] text-graphite">{s.plan?.name ?? '—'} — {s.billingInterval}</span> },
+    { key: 'amount', header: 'Amount', render: s => <span className="text-[13px] font-semibold text-charcoal">${s.amountUSD.toFixed(2)}</span> },
+    {
+      key: 'status', header: 'Status',
+      render: s => <Badge color={STATUS_COLOR[s.status] ?? 'gray'} dot>{s.status}{s.pendingCancellation ? ' (ending)' : ''}</Badge>,
+    },
+    { key: 'nextBilling', header: 'Next Billing', render: s => <span className="text-[12px] text-slate">{new Date(s.nextBillingDate).toLocaleDateString()}</span> },
+    {
+      key: 'actions', header: '', align: 'right', width: '60px',
+      render: s => {
+        const items: ActionMenuItem[] = [{ label: 'Manage', onClick: () => setManaging(s) }];
+        return <ActionMenu items={items} />;
+      },
+    },
+  ];
+
+  return (
+    <Card padding="none">
+      <div className="px-5 pt-5 pb-4 border-b border-bone flex items-end justify-between">
+        <div>
+          <p className="text-[11px] text-slate mb-[3px]">Account / My Subscriptions</p>
+          <h1 className="text-[22px] font-bold text-charcoal leading-none">My Subscriptions</h1>
+        </div>
+        <div className="text-right pb-[2px]">
+          <p className="text-[13px] font-semibold text-charcoal leading-tight">Total</p>
+          <p className="text-[11px] text-slate mt-[2px]">{total} subscription{total !== 1 ? 's' : ''}</p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex flex-col gap-2 p-5">{[1, 2, 3].map(i => <SkeletonBox key={i} height={56} rounded="8px" />)}</div>
+      ) : error ? (
+        <p className="text-[13px] text-error p-5">{error}</p>
+      ) : subs.length === 0 ? (
+        <EmptyState
+          icon={<RefreshCw size={28} className="text-brand-orange opacity-55" />}
+          title="No subscriptions yet"
+          description="Subscribe to a store's plan from its storefront to see it here."
+        />
+      ) : (
+        <Table columns={columns} data={subs} keyExtractor={s => s._id} pagination={{ page, total, perPage: 10, onChange: setPage, label: 'subscriptions' }} />
+      )}
+
+      {managing && (
+        <ManageSubscriptionModal
+          sub={managing}
+          onClose={() => setManaging(null)}
+          onChanged={() => { setManaging(null); load(); }}
+        />
+      )}
+    </Card>
+  );
+}

@@ -7,6 +7,8 @@ import {
   type StoreProduct, type ProductVariant,
 } from '@/api/services/product';
 import { getCachedProducts, updateCachedProduct, type ProductEntry } from './_cache';
+import { SubcategoryField } from './SubcategoryField';
+import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal } from '@/components/comman/ui';
 
 type ProductStatus = 'draft' | 'active' | 'scheduled';
@@ -66,12 +68,12 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
 
 const blankPhys = {
   name: '', description: '', price: '', compareAtPrice: '',
-  stock: '', size: '', color: '', shippingWeight: '',
+  stock: '', size: '', color: '', shippingWeight: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
 };
 const blankDig = {
-  name: '', description: '', price: '', compareAtPrice: '',
+  name: '', description: '', price: '', compareAtPrice: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   fileData: null as PrivateUploadData | null,
@@ -87,6 +89,7 @@ function physFromEntry(p: StoreProduct, v: ProductVariant): PhysForm {
     name: p.name, description: p.description,
     price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
     stock: String(v.stock), size: v.size ?? '', color: v.color ?? '', shippingWeight: v.shippingWeight ?? '',
+    subCategoryId: p.subCategoryId ?? '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
     scheduledAt: '', tags: [...p.tags], tagInput: '', images: [...p.images],
   };
@@ -96,6 +99,7 @@ function digFromEntry(p: StoreProduct, v: ProductVariant): DigForm {
   return {
     name: p.name, description: p.description,
     price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
+    subCategoryId: p.subCategoryId ?? '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
     scheduledAt: '', tags: [...p.tags], tagInput: '', images: [...p.images],
     fileData: f0 ? { publicId: f0.url, resourceType: 'raw', fileName: f0.name, fileSize: f0.size, mimeType: f0.mimeType } : null,
@@ -111,7 +115,8 @@ export default function StoreEditProduct() {
   const navigate           = useNavigate();
   const { state }          = useLocation() as { state: { entry?: ProductEntry } | null };
   const { productId = '' } = useParams<{ productId: string }>();
-  const { storeId }        = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
+  const { mainCategory, subcategories, loading: catLoading, refetch: refetchCats } = useStoreSubcategories(store?.categoryId);
 
   const [fetching,          setFetching]          = useState(true);
   const [saving,            setSaving]            = useState(false);
@@ -167,7 +172,7 @@ export default function StoreEditProduct() {
       if (pType === 'physical') {
         const res = await apiEditPhysicalProduct(productId, {
           productId, name: phys.name, description: phys.description,
-          subCategoryId: null, images: phys.images, tags: phys.tags,
+          subCategoryId: phys.subCategoryId || null, images: phys.images, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
           price: Number(phys.price), compareAtPrice: phys.compareAtPrice ? Number(phys.compareAtPrice) : null,
@@ -179,6 +184,7 @@ export default function StoreEditProduct() {
         const res = await apiEditDigitalProduct(productId, {
           productId, variantId,
           name: dig.name, description: dig.description,
+          subCategoryId: dig.subCategoryId || null,
           status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? dig.scheduledAt || null : null,
           price: Number(dig.price),
@@ -250,6 +256,20 @@ export default function StoreEditProduct() {
                   placeholder="Describe your product…" className={ta} />
               </F>
             </div>
+          </Card>
+
+          {/* Category */}
+          <Card title="Category">
+            <SubcategoryField
+              mainCategoryName={mainCategory?.name ?? ''}
+              mainCategoryId={store?.categoryId ?? ''}
+              subcategories={subcategories}
+              loading={catLoading}
+              value={cur.subCategoryId}
+              onChange={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
+              onCreated={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
+              refetch={refetchCats}
+            />
           </Card>
 
           {/* Product Images */}

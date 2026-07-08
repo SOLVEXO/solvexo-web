@@ -7,7 +7,7 @@ import { Card } from '@/components/comman/ui/Card';
 import { FilterDropdown } from '@/components/comman/ui';
 import {
   ShoppingCart, Star, Heart, ArrowLeft, Users,
-  Store, Package, Loader2, MessageCircle, BadgeCheck, Award, Gift,
+  Store, Package, Loader2, MessageCircle, BadgeCheck, Award, Gift, RefreshCw, Check,
 } from 'lucide-react';
 import {
   apiGetPublicStore, apiGetPublicStoreProducts,
@@ -17,6 +17,7 @@ import {
 } from '@/api/services/store';
 import { apiStartConversation } from '@/api/services/messaging';
 import { apiGetMyBalance, apiGetRewards, apiRedeemReward, type LoyaltyBalance, type Reward } from '@/api/services/loyalty';
+import { apiBrowseStorePlans, apiSubscribeToPlan, type BuyerPlan, type BillingInterval } from '@/api/services/subscriptions';
 import { Modal } from '@/components/comman/ui/Modal';
 
 // ── Builder config default (mirrors StoreBuilder DEFAULT) ─────────────────────
@@ -137,6 +138,11 @@ export function SellerStorefront() {
   const [rewards,        setRewards]       = useState<Reward[]>([]);
   const [rewardsLoading, setRewardsLoading] = useState(false);
   const [redeemingId,    setRedeemingId]   = useState<string | null>(null);
+  const [plans,          setPlans]         = useState<BuyerPlan[]>([]);
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>('monthly');
+  const [subscribingId,  setSubscribingId] = useState<string | null>(null);
+  const [subscribeError, setSubscribeError] = useState('');
+  const [subscribedMsg,  setSubscribedMsg]  = useState('');
 
   const isLoggedIn = !!localStorage.getItem('accessToken');
 
@@ -191,6 +197,52 @@ export function SellerStorefront() {
     if (!store || !isLoggedIn) return;
     apiGetMyBalance(store.storeId).then(res => setLoyalty(res.data)).catch(() => {});
   }, [store, isLoggedIn]);
+
+  useEffect(() => {
+    if (!store) return;
+    apiBrowseStorePlans(store.storeId).then(res => setPlans(res.data)).catch(() => {});
+  }, [store]);
+
+  const handleSubscribe = async (plan: BuyerPlan, interval: BillingInterval) => {
+    if (!isLoggedIn) { navigate('/login'); return; }
+    setSubscribingId(plan._id);
+    setSubscribeError('');
+    setSubscribedMsg('');
+    try {
+      await apiSubscribeToPlan(plan._id, interval);
+      setSubscribedMsg(`You're in! Welcome to ${plan.name} — member pricing is already live across the store.`);
+      if (store) apiGetPublicStoreProducts(store.storeId, { page, limit: 12, sort: sortBy as any, tag: activeTag !== 'all' ? activeTag : undefined })
+        .then(res => setProducts(res.data.products)).catch(() => {});
+    } catch (err) {
+      setSubscribeError(err instanceof Error ? err.message : 'Failed to subscribe.');
+    } finally {
+      setSubscribingId(null);
+    }
+  };
+
+  // Human-readable bullets derived from structured benefits — not free text.
+  const benefitLabel = (b: any): string | null => {
+    switch (b.type) {
+      case 'discount': {
+        const scope = b.scope === 'store' ? 'storewide' : b.scope === 'category' ? 'on select categories' : 'on select products';
+        return `${b.discountPercent}% off ${scope}`;
+      }
+      case 'shipping':
+        return b.shippingType === 'free' ? 'Free shipping' : `${b.shippingDiscountPercent}% off shipping`;
+      case 'early_access':
+        return `Early access to new arrivals (${b.earlyAccessHours}h head start)`;
+      case 'loyalty_multiplier':
+        return `${b.multiplier}x loyalty points`;
+      case 'credits':
+        return `${b.creditsPerCycle} ${b.creditType === 'service' ? 'service' : 'download'} credits every cycle`;
+      case 'priority_support':
+        return 'Priority customer support';
+      case 'priority_booking':
+        return 'Priority booking slots';
+      default:
+        return b.label ?? null;
+    }
+  };
 
   const openRewards = () => {
     if (!store) return;
@@ -371,6 +423,15 @@ export function SellerStorefront() {
 
             {/* Actions */}
             <div className="flex flex-row sm:flex-col gap-2 items-center sm:items-end shrink-0">
+              {plans.length > 0 && (
+                <button
+                  onClick={() => document.getElementById('store-membership')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap"
+                >
+                  <RefreshCw size={13} style={{ color: cfg.primaryColor }} />
+                  Membership
+                </button>
+              )}
               {isLoggedIn && loyalty && (
                 <button
                   onClick={openRewards}
@@ -493,10 +554,22 @@ export function SellerStorefront() {
                       {p.name}
                     </p>
                     {cfg.showRatings && p.averageRating > 0 && <StarRating rating={p.averageRating} color={cfg.primaryColor} />}
+                    {cfg.showPrice && p.subscriberPrice != null && (
+                      <p className="text-[9px] sm:text-[10px] font-semibold mt-1" style={{ color: cfg.primaryColor }}>
+                        Members save {p.discountPercent}%
+                      </p>
+                    )}
                     <div className="flex items-center justify-between gap-1 mt-[6px] sm:mt-[10px]">
                       {cfg.showPrice && (
-                        <span className="font-bold text-[12px] sm:text-[15px] shrink-0" style={{ color: cfg.textColor }}>
-                          PKR {p.defaultVariantPrice ?? '—'}
+                        <span className="flex items-baseline gap-[6px] shrink-0">
+                          <span className="font-bold text-[12px] sm:text-[15px]" style={{ color: p.subscriberPrice != null ? cfg.primaryColor : cfg.textColor }}>
+                            PKR {p.subscriberPrice ?? p.defaultVariantPrice ?? '—'}
+                          </span>
+                          {p.subscriberPrice != null && (
+                            <span className="text-[10px] sm:text-[11px] line-through opacity-60" style={{ color: cfg.textColor }}>
+                              {p.defaultVariantPrice}
+                            </span>
+                          )}
                         </span>
                       )}
                       {cfg.showAddToCart && (
@@ -528,6 +601,86 @@ export function SellerStorefront() {
           </>
         )}
       </div>
+
+      {/* ── Store Membership — real on-page pricing section, not a modal ──────── */}
+      {plans.length > 0 && (
+        <div id="store-membership" className="border-t border-bone py-10 px-4 sm:px-6 lg:px-10" style={{ background: cfg.bgColor }}>
+          <div className="max-w-[900px] mx-auto text-center mb-8">
+            <span className="inline-block text-[10px] font-bold uppercase tracking-[0.12em] rounded-full px-3 py-1 mb-3" style={{ color: cfg.primaryColor, background: `${cfg.primaryColor}18` }}>
+              Store Membership
+            </span>
+            <h2 className="text-[22px] sm:text-[26px] font-bold mb-2" style={{ color: cfg.textColor }}>
+              Shop {store.name} for less, every time
+            </h2>
+            <p className="text-[13px] text-slate max-w-[520px] mx-auto">
+              Join once and member pricing applies automatically on every visit — no codes to remember. Cancel anytime.
+            </p>
+
+            {plans.some(p => p.yearlyPriceUSD != null) && (
+              <div className="inline-flex items-center gap-1 mt-5 bg-white rounded-full p-1 border border-bone">
+                {(['monthly', 'yearly'] as const).map(iv => (
+                  <button key={iv} onClick={() => setBillingInterval(iv)}
+                    className="px-4 py-[7px] rounded-full text-[12px] font-semibold cursor-pointer border-none capitalize transition-colors"
+                    style={{ background: billingInterval === iv ? cfg.primaryColor : 'transparent', color: billingInterval === iv ? '#fff' : cfg.textColor }}>
+                    {iv}{iv === 'yearly' && ' · save more'}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {subscribedMsg && (
+            <div className="max-w-[520px] mx-auto mb-6 px-4 py-3 rounded-lg bg-[#E3F4EA] text-[#1E7A3C] text-[13px] font-medium text-center">{subscribedMsg}</div>
+          )}
+          {subscribeError && (
+            <div className="max-w-[520px] mx-auto mb-6 px-4 py-3 rounded-lg bg-[#FDECEA] text-[#C13030] text-[13px] font-medium text-center">{subscribeError}</div>
+          )}
+
+          <div className={clsx('grid gap-5 max-w-[960px] mx-auto', plans.length === 1 ? 'grid-cols-1 max-w-[380px]' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3')}>
+            {plans.map((plan, idx) => {
+              const price = billingInterval === 'yearly' && plan.displayYearlyPrice != null ? plan.displayYearlyPrice : plan.displayMonthlyPrice;
+              const bullets = plan.benefits.map(benefitLabel).filter(Boolean) as string[];
+              const isPopular = idx === Math.min(1, plans.length - 1) && plans.length > 1;
+              return (
+                <div key={plan._id} className="relative bg-white rounded-2xl p-6 flex flex-col"
+                  style={{ border: isPopular ? `2px solid ${cfg.primaryColor}` : '1px solid #E8E6DC', boxShadow: isPopular ? `0 8px 24px ${cfg.primaryColor}22` : undefined }}>
+                  {isPopular && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide text-white" style={{ background: cfg.primaryColor }}>
+                      Most Popular
+                    </span>
+                  )}
+                  <p className="text-[16px] font-bold text-carbon mb-1">{plan.name}</p>
+                  {plan.description && <p className="text-[12px] text-slate mb-4">{plan.description}</p>}
+                  <div className="mb-4">
+                    <span className="text-[32px] font-bold" style={{ color: cfg.textColor }}>{price}</span>
+                    <span className="text-[12px] text-slate">/{billingInterval === 'yearly' ? 'yr' : 'mo'}</span>
+                  </div>
+                  <ul className="flex flex-col gap-2 mb-6 p-0 list-none flex-1">
+                    {bullets.length > 0 ? bullets.map(b => (
+                      <li key={b} className="flex items-start gap-2 text-[12.5px] text-graphite">
+                        <Check size={13} className="mt-[2px] shrink-0" style={{ color: cfg.primaryColor }} />{b}
+                      </li>
+                    )) : plan.features.map(f => (
+                      <li key={f} className="flex items-start gap-2 text-[12.5px] text-graphite">
+                        <Check size={13} className="mt-[2px] shrink-0" style={{ color: cfg.primaryColor }} />{f}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    onClick={() => handleSubscribe(plan, billingInterval === 'yearly' && plan.yearlyPriceUSD != null ? 'yearly' : 'monthly')}
+                    disabled={subscribingId === plan._id}
+                    className="w-full py-[11px] rounded-xl text-[13px] font-bold text-white border-none cursor-pointer disabled:opacity-50 transition-opacity"
+                    style={{ background: cfg.primaryColor }}
+                  >
+                    {subscribingId === plan._id ? 'Subscribing…' : 'Become a Member'}
+                  </button>
+                  <p className="text-[10.5px] text-slate text-center mt-2">Cancel anytime — no long-term commitment</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {showRewards && (
         <Modal title="Rewards Catalog" onClose={() => setShowRewards(false)}>

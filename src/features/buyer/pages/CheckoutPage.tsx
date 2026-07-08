@@ -4,7 +4,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
 import { apiGetMyAddresses, type Address } from '@/api/services/address';
-import { apiCreateCheckout, type Checkout, type CheckoutSummary } from '@/api/services/checkout';
+import { apiCreateCheckout, type Checkout, type CheckoutSummary, type SubscriptionSavingsHint } from '@/api/services/checkout';
 import { apiPlaceCodOrder, apiPlaceOrder } from '@/api/services/payment';
 import { Button } from '@/components/comman/ui/Button';
 import {
@@ -78,6 +78,7 @@ export function CheckoutPage() {
   const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [summary, setSummary] = useState<CheckoutSummary | null>(null);
   const [allowedMethods, setAllowedMethods] = useState<string[]>([]);
+  const [savingsHints, setSavingsHints] = useState<SubscriptionSavingsHint[]>([]);
 
   // Payment
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
@@ -116,6 +117,7 @@ export function CheckoutPage() {
         if (cancelled) return;
         setCheckout(res.data.checkout);
         setSummary(res.data.summary);
+        setSavingsHints(res.data.subscriptionSavingsHints ?? []);
         setAllowedMethods(res.data.allowedPaymentMethods.filter(m => m !== 'cash_on_delivery'));
         setStep(3);
       })
@@ -176,6 +178,7 @@ export function CheckoutPage() {
       });
       setCheckout(res.data.checkout);
       setSummary(res.data.summary);
+      setSavingsHints(res.data.subscriptionSavingsHints ?? []);
       setAllowedMethods(res.data.allowedPaymentMethods);
       setStep(3);
     } catch (err) {
@@ -757,6 +760,12 @@ export function CheckoutPage() {
                   <span className="font-semibold text-carbon">Rs. {tax.toLocaleString()}</span>
                 </div>
               )}
+              {!!summary?.subscriberSavingsUSD && summary.subscriberSavingsUSD > 0 && (
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-success">Member savings</span>
+                  <span className="font-semibold text-success">-${summary.subscriberSavingsUSD.toFixed(2)}</span>
+                </div>
+              )}
             </div>
 
             <div className="h-px bg-bone mb-4" />
@@ -770,6 +779,25 @@ export function CheckoutPage() {
               <p className="text-[11px] text-slate mt-2 text-right">
                 Checkout ID: {checkout._id.slice(-8).toUpperCase()}
               </p>
+            )}
+
+            {savingsHints.length > 0 && (
+              <div className="mt-4 flex flex-col gap-2">
+                {savingsHints.map(hint => (
+                  <button
+                    key={hint.storeId}
+                    onClick={() => hint.storeSlug && navigate(`/store/${hint.storeSlug}`)}
+                    className="w-full text-left px-3.5 py-3 rounded-lg bg-brand-pale-orange border border-brand-orange/20 cursor-pointer"
+                  >
+                    <p className="text-[12.5px] font-semibold text-brand-deep-orange">
+                      You could save ${hint.potentialSavingsUSD.toFixed(2)} on this order
+                    </p>
+                    <p className="text-[11px] text-brand-orange/80 mt-0.5">
+                      Join {hint.storeName}'s {hint.planName} membership before checking out →
+                    </p>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 

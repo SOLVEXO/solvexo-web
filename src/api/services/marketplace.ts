@@ -17,6 +17,15 @@ export interface ProductVariant {
   isDelete:       boolean;
   createdAt:      string;
   updatedAt:      string;
+  // Present only when the requester has an active, discount-granting
+  // subscription to this product's store — resolved server-side only.
+  // The product itself is never hidden or gated; this is purely a price
+  // annotation shown alongside the regular price.
+  subscriberPrice?:    number;
+  youSaveUSD?:         number;
+  discountPercent?:    number;
+  subscriberPlanName?: string;
+  minOrderValueUSD?:   number | null;
 }
 
 export interface DigitalProduct {
@@ -80,9 +89,11 @@ interface ProductByIdResponse {
   };
 }
 
-export function apiGetAllProducts(page = 1, limit = 10) {
+export function apiGetAllProducts(page = 1, limit = 10, categoryId?: string) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (categoryId) params.set('id', categoryId);
   return client.get<never, ProductsByCategoryResponse>(
-    `${ENDPOINTS.MARKETPLACE.PRODUCTS_BY_CATEGORY}?page=${page}&limit=${limit}`,
+    `${ENDPOINTS.MARKETPLACE.PRODUCTS_BY_CATEGORY}?${params.toString()}`,
   );
 }
 

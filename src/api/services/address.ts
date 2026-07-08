@@ -62,3 +62,7 @@ export function apiGetAddressById(addressId: string) {
 export function apiSetDefaultAddress(addressId: string) {
   return client.patch<never, AddressResponse>(ENDPOINTS.ADDRESS.SET_DEFAULT(addressId));
 }
+
+export function apiDeleteAddress(addressId: string) {
+  return client.delete<never, { success?: boolean; message: string }>(ENDPOINTS.ADDRESS.DELETE(addressId));
+}

@@ -4,6 +4,8 @@ import { Package, Download, Loader2, CalendarClock } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { apiCreatePhysicalProduct, apiCreateDigitalProduct } from '@/api/services/product';
 import { addCachedProduct } from './_cache';
+import { SubcategoryField } from './SubcategoryField';
+import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal } from '@/components/comman/ui';
 
 type ProductType   = 'physical' | 'digital';
@@ -65,12 +67,12 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
 
 const initPhys = {
   name: '', description: '', price: '', compareAtPrice: '',
-  stock: '', size: '', color: '', shippingWeight: '',
+  stock: '', size: '', color: '', shippingWeight: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
 };
 const initDig = {
-  name: '', description: '', price: '', compareAtPrice: '',
+  name: '', description: '', price: '', compareAtPrice: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   fileData: null as PrivateUploadData | null,
@@ -87,6 +89,8 @@ export default function StoreAddProduct() {
 
   const supportsPhysical = !store || store.productTypes.includes('physical_products');
   const supportsDigital  = !store || store.productTypes.includes('digital_downloads');
+
+  const { mainCategory, subcategories, loading: catLoading, refetch: refetchCats } = useStoreSubcategories(store?.categoryId);
 
   const [pType,             setPType]             = useState<ProductType>('physical');
   const [saving,            setSaving]            = useState(false);
@@ -118,7 +122,7 @@ export default function StoreAddProduct() {
       if (pType === 'physical') {
         const res = await apiCreatePhysicalProduct({
           storeId, name: phys.name, description: phys.description,
-          subCategoryId: null, images: phys.images, tags: phys.tags,
+          subCategoryId: phys.subCategoryId || null, images: phys.images, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
           price: Number(phys.price), compareAtPrice: phys.compareAtPrice ? Number(phys.compareAtPrice) : null,
@@ -129,7 +133,7 @@ export default function StoreAddProduct() {
         const files = dig.fileData ? [{ url: dig.fileData.publicId, name: dig.fileData.fileName, size: dig.fileData.fileSize, mimeType: dig.fileData.mimeType }] : [];
         const res = await apiCreateDigitalProduct({
           storeId, name: dig.name, description: dig.description,
-          productType: 'digital', subCategoryId: null, images: dig.images, tags: dig.tags,
+          productType: 'digital', subCategoryId: dig.subCategoryId || null, images: dig.images, tags: dig.tags,
           isListedOnSolvexo: dig.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? dig.scheduledAt || null : null,
           price: Number(dig.price), compareAtPrice: dig.compareAtPrice ? Number(dig.compareAtPrice) : null,
@@ -214,6 +218,20 @@ export default function StoreAddProduct() {
                   className={ta} />
               </F>
             </div>
+          </Card>
+
+          {/* Category */}
+          <Card title="Category">
+            <SubcategoryField
+              mainCategoryName={mainCategory?.name ?? ''}
+              mainCategoryId={store?.categoryId ?? ''}
+              subcategories={subcategories}
+              loading={catLoading}
+              value={cur.subCategoryId}
+              onChange={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
+              onCreated={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
+              refetch={refetchCats}
+            />
           </Card>
 
           {/* Product Images */}

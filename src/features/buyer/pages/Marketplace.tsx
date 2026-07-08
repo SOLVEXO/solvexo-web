@@ -16,6 +16,7 @@ import {
   Loader2, SlidersHorizontal, X, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
+import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 
 // ── Promotional banner carousel — full-bleed hero background (admin-managed) ──
 function BannerCarousel({ banners }: { banners: Banner[] }) {
@@ -167,6 +168,8 @@ const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, i
   const compareAt   = defaultVariant?.compareAtPrice ?? null;
   const ratingCount = product.totalRatings ?? 0;
   const vId         = defaultVariant?._id ?? '';
+  const subscriberPrice = defaultVariant?.subscriberPrice;
+  const discountPercent = defaultVariant?.discountPercent;
 
   return (
     <Card padding="none" hover onClick={() => onClick(product._id)} className="overflow-hidden">
@@ -217,12 +220,17 @@ const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, i
             ))}
           </div>
         )}
+        {subscriberPrice != null && (
+          <p className="text-[9px] sm:text-[10px] font-semibold text-brand-orange mt-1">Members save {discountPercent}%</p>
+        )}
         <div className="flex items-center justify-between mt-[8px] sm:mt-[10px]">
           <div className="flex items-baseline gap-[3px]">
-            <span className="font-bold text-[13px] sm:text-[15px] text-carbon">
-              {lowestPrice != null ? `$${lowestPrice.toLocaleString()}` : '—'}
+            <span className={clsx('font-bold text-[13px] sm:text-[15px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
+              {subscriberPrice != null ? `$${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `$${lowestPrice.toLocaleString()}` : '—'}
             </span>
-            {compareAt != null && compareAt > (lowestPrice ?? 0) && (
+            {subscriberPrice != null && lowestPrice != null ? (
+              <span className="hidden sm:inline text-[11px] text-slate line-through">${lowestPrice.toLocaleString()}</span>
+            ) : compareAt != null && compareAt > (lowestPrice ?? 0) && (
               <span className="hidden sm:inline text-[11px] text-slate line-through">${compareAt.toLocaleString()}</span>
             )}
           </div>
@@ -250,12 +258,50 @@ const FILTER_GROUPS = [
 
 interface FilterState { price: string[]; type: string[]; rating: string[]; }
 
-function FilterPanel({ filters, onChange }: {
+function FilterPanel({ filters, onChange, categories = [], selectedCategory, onCategoryChange }: {
   filters:  FilterState;
   onChange: (key: keyof FilterState, value: string) => void;
+  categories:       CategoryNode[];
+  selectedCategory: string;
+  onCategoryChange: (id: string) => void;
 }) {
   return (
     <div className="space-y-5">
+      {categories.length > 0 && (
+        <div>
+          <p className="text-[10px] font-bold text-slate uppercase tracking-[0.1em] mb-[10px]">
+            Category
+          </p>
+          <div className="flex flex-wrap gap-[6px]">
+            <button
+              onClick={() => onCategoryChange('')}
+              className={clsx(
+                'px-[10px] py-[5px] rounded-full text-[11.5px] font-medium border transition-all duration-150 cursor-pointer leading-none',
+                selectedCategory === ''
+                  ? 'bg-brand-orange text-white border-brand-orange'
+                  : 'bg-white text-charcoal border-[#DDD9D0] hover:border-brand-orange hover:text-brand-orange',
+              )}
+            >
+              All
+            </button>
+            {categories.map(c => (
+              <button
+                key={c._id}
+                onClick={() => onCategoryChange(c._id)}
+                className={clsx(
+                  'px-[10px] py-[5px] rounded-full text-[11.5px] font-medium border transition-all duration-150 cursor-pointer leading-none',
+                  selectedCategory === c._id
+                    ? 'bg-brand-orange text-white border-brand-orange'
+                    : 'bg-white text-charcoal border-[#DDD9D0] hover:border-brand-orange hover:text-brand-orange',
+                )}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+          <div className="h-px bg-bone my-5" />
+        </div>
+      )}
       {FILTER_GROUPS.map((group, gi) => (
         <div key={group.key}>
           {gi > 0 && <div className="h-px bg-bone mb-5 -mt-[2px]" />}
@@ -310,9 +356,24 @@ export function Marketplace() {
   const [filters, setFilters] = useState<FilterState>({ price: [], type: [], rating: [] });
   const [searchInput, setSearchInput] = useState('');
   const [search,      setSearch]      = useState('');
+  const [categories,       setCategories]       = useState<CategoryNode[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetCategoryTree()
+      .then(res => { if (!cancelled) setCategories(res.data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleCategoryChange = (id: string) => {
+    setSelectedCategory(id);
+    setPage(1);
+  };
 
   const LIMIT = 20;
-  const { products, total, loading, error } = useProductsByCategory(page, LIMIT);
+  const { products, total, loading, error } = useProductsByCategory(page, LIMIT, selectedCategory || undefined);
   const { cartCount, addToCart, adding }    = useCartContext();
   const { wishlistCount, isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
   const { banners } = useBanners();
@@ -567,7 +628,7 @@ export function Marketplace() {
                 )}
               </div>
               <div className="px-5 py-5">
-                <FilterPanel filters={filters} onChange={toggleFilter} />
+                <FilterPanel filters={filters} onChange={toggleFilter} categories={categories} selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
               </div>
             </div>
           </aside>
@@ -687,7 +748,7 @@ export function Marketplace() {
         </div>
 
         <div className="px-5 py-4 overflow-y-auto max-h-[55vh]">
-          <FilterPanel filters={filters} onChange={toggleFilter} />
+          <FilterPanel filters={filters} onChange={toggleFilter} categories={categories} selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
         </div>
 
         <div className="px-5 pt-3 pb-6 border-t border-bone">

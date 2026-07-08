@@ -5,8 +5,8 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
-  LayoutDashboard, Store, RefreshCw,
-  Settings, FolderOpen,
+  LayoutDashboard, Store,
+  Settings,
   Bell, ChevronDown, List, Plus, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
@@ -48,16 +48,9 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'Customers',
-    items: [
-      { id: 'subscriptions', Icon: RefreshCw, label: 'Subscriptions', path: '/seller/subscriptions' },
-    ],
-  },
-  {
     label: 'Operations',
     items: [
-      { id: 'settings',   Icon: Settings,   label: 'Settings',   path: '/seller/settings'   },
-      { id: 'categories', Icon: FolderOpen, label: 'Categories', path: '/seller/categories' },
+      { id: 'settings', Icon: Settings, label: 'Settings', path: '/seller/settings' },
     ],
   },
 ];

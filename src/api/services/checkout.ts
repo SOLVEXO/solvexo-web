@@ -18,6 +18,8 @@ export interface CheckoutItem {
   quantity:     number;
   price:        number;
   totalPrice:   number;
+  originalPrice?:          number | null;
+  subscriberDiscountUSD?:  number;
 }
 
 export interface Checkout {
@@ -32,6 +34,7 @@ export interface Checkout {
   subtotal:          number;
   shippingFee:       number;
   taxAmount:         number;
+  subscriberSavingsUSD?: number;
   totalAmount:       number;
   status:            string;
   expiredAt:         string;
@@ -45,6 +48,11 @@ export interface CheckoutSummary {
   shippingFee: number;
   taxAmount:   number;
   totalAmount: number;
+  subscriberSavingsUSD?: number;
+}
+
+export interface SubscriptionSavingsHint {
+  storeId: string; storeName: string; storeSlug: string; planId: string; planName: string; potentialSavingsUSD: number;
 }
 
 export interface CreateCheckoutPayload {
@@ -59,6 +67,7 @@ interface CreateCheckoutResponse {
     checkout:               Checkout;
     allowedPaymentMethods:  string[];
     summary:                CheckoutSummary;
+    subscriptionSavingsHints: SubscriptionSavingsHint[];
   };
 }
 

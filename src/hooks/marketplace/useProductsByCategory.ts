@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiGetAllProducts, type MarketplaceProduct } from '@/api/services/marketplace';
 
-export function useProductsByCategory(page = 1, limit = 10) {
+export function useProductsByCategory(page = 1, limit = 10, categoryId?: string) {
   const [products, setProducts] = useState<MarketplaceProduct[]>([]);
   const [total,    setTotal]    = useState(0);
   const [loading,  setLoading]  = useState(true);
@@ -11,7 +11,7 @@ export function useProductsByCategory(page = 1, limit = 10) {
     let cancelled = false;
     setLoading(true);
     setError('');
-    apiGetAllProducts(page, limit)
+    apiGetAllProducts(page, limit, categoryId)
       .then(res => {
         if (!cancelled) {
           setProducts(res.data.products);
@@ -23,7 +23,7 @@ export function useProductsByCategory(page = 1, limit = 10) {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [page, limit]);
+  }, [page, limit, categoryId]);
 
   return { products, total, loading, error };
 }

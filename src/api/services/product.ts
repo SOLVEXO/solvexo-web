@@ -122,6 +122,7 @@ export interface EditDigitalPayload {
   variantId:      string | null;
   name:           string;
   description:    string;
+  subCategoryId:  string | null;
   status:         'draft' | 'active' | 'scheduled';
   scheduledAt?:   string | null;
   price:          number;

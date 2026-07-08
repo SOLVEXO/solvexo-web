@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
-  PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle,
+  PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, FolderTree, RefreshCw,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -21,6 +21,8 @@ const ADMIN_NAV: AdminNavItem[] = [
   { id: 'moderation',    Icon: Shield,          label: 'Moderation',      path: '/admin/moderation'    },
   { id: 'messages',      Icon: MessageSquare,   label: 'Messaging',       path: '/admin/messages'      },
   { id: 'marketplace',   Icon: Store,           label: 'Marketplace',     path: '/admin/marketplace'   },
+  { id: 'categories',    Icon: FolderTree,      label: 'Categories',      path: '/admin/categories'    },
+  { id: 'subscriptions', Icon: RefreshCw,       label: 'Subscriptions',   path: '/admin/subscriptions' },
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
   { id: 'banners',       Icon: ImageIcon,       label: 'Banners',         path: '/admin/banners'       },
   { id: 'faqs',          Icon: HelpCircle,      label: 'FAQs',            path: '/admin/faqs'          },

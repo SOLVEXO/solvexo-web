@@ -24,6 +24,13 @@ export const ENDPOINTS = {
     RESEND_OTP: '/api/auth/resend-otp',
   },
 
+  // ── CATEGORIES ────────────────────────────────────────────────────────────
+  CATEGORIES: {
+    ADD:       '/api/categories/add-category',
+    TREE:      '/api/categories/category-tree',
+    GET_BY_ID: (id: string) => `/api/categories/category/${id}`,
+  },
+
   // ── STORE ─────────────────────────────────────────────────────────────────
   STORE: {
     CREATE: '/api/store/create-store',
@@ -57,6 +64,50 @@ export const ENDPOINTS = {
     LIST:   (storeId: string) => `/api/activity-log/${storeId}`,
     STATS:  (storeId: string) => `/api/activity-log/${storeId}/stats`,
     EXPORT: (storeId: string) => `/api/activity-log/${storeId}/export`,
+  },
+
+  // ── SUBSCRIPTIONS ─────────────────────────────────────────────────────────
+  SUBSCRIPTIONS: {
+    // Buyer
+    BROWSE_PLANS: (storeId: string) => `/api/subscriptions/public/${storeId}/plans`,
+    SUBSCRIBE:    '/api/subscriptions/subscribe',
+    MY:           '/api/subscriptions/my',
+    MY_BY_ID:     (id: string) => `/api/subscriptions/my/${id}`,
+    MY_PAUSE:     (id: string) => `/api/subscriptions/my/${id}/pause`,
+    MY_RESUME:    (id: string) => `/api/subscriptions/my/${id}/resume`,
+    MY_CANCEL:    (id: string) => `/api/subscriptions/my/${id}/cancel`,
+    MY_CHANGE_PLAN: (id: string) => `/api/subscriptions/my/${id}/change-plan`,
+
+    // Seller (store-scoped)
+    PLANS: {
+      CREATE:    (storeId: string) => `/api/subscriptions/${storeId}/plans`,
+      LIST:      (storeId: string) => `/api/subscriptions/${storeId}/plans`,
+      GET_BY_ID: (storeId: string, id: string) => `/api/subscriptions/${storeId}/plans/${id}`,
+      UPDATE:    (storeId: string, id: string) => `/api/subscriptions/${storeId}/plans/${id}`,
+      ARCHIVE:   (storeId: string, id: string) => `/api/subscriptions/${storeId}/plans/${id}`,
+      ESTIMATE_HEALTH: (storeId: string) => `/api/subscriptions/${storeId}/plans/estimate-health`,
+    },
+    DASHBOARD:   (storeId: string) => `/api/subscriptions/${storeId}/dashboard`,
+    EXPORT:      (storeId: string) => `/api/subscriptions/${storeId}/export`,
+    SUBSCRIBERS: {
+      LIST:      (storeId: string) => `/api/subscriptions/${storeId}/subscribers`,
+      GET_BY_ID: (storeId: string, id: string) => `/api/subscriptions/${storeId}/subscribers/${id}`,
+      PAUSE:     (storeId: string, id: string) => `/api/subscriptions/${storeId}/subscribers/${id}/pause`,
+      RESUME:    (storeId: string, id: string) => `/api/subscriptions/${storeId}/subscribers/${id}/resume`,
+      CANCEL:    (storeId: string, id: string) => `/api/subscriptions/${storeId}/subscribers/${id}/cancel`,
+    },
+
+    // Admin
+    ADMIN: {
+      OVERVIEW:          '/api/subscriptions/admin/overview',
+      STORES:            '/api/subscriptions/admin/stores',
+      STORE_DETAIL:      (storeId: string) => `/api/subscriptions/admin/stores/${storeId}`,
+      SUSPEND_PLAN:      (id: string) => `/api/subscriptions/admin/plans/${id}/suspend`,
+      UNSUSPEND_PLAN:    (id: string) => `/api/subscriptions/admin/plans/${id}/unsuspend`,
+      PAYMENT_FAILURES:  '/api/subscriptions/admin/payment-failures',
+      SUB_DETAIL:        (id: string) => `/api/subscriptions/admin/subscriptions/${id}`,
+      SUB_PAYMENT_ATTEMPTS: (id: string) => `/api/subscriptions/admin/subscriptions/${id}/payment-attempts`,
+    },
   },
 
   // ── MARKETING ─────────────────────────────────────────────────────────────
@@ -128,6 +179,7 @@ export const ENDPOINTS = {
     UPDATE: '/address/update-address',
     GET_BY_ID: (addressId: string) => `/address/get-address-by-id/${addressId}`,
     SET_DEFAULT: (addressId: string) => `/address/setDefaultAddress/${addressId}`,
+    DELETE: (addressId: string) => `/address/delete-address/${addressId}`,
   },
 
   SHIPPING: {

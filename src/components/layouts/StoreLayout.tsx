@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, Sparkles, Bell, ChevronLeft, Monitor, Store,
   ClipboardList, Megaphone, Star, Plug, Activity, Search, Wallet,
-  Truck, MessageSquare, UserPlus,
+  Truck, MessageSquare, UserPlus, FolderTree, RefreshCw,
   PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
@@ -63,6 +63,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { id: 'inventory',    Icon: ClipboardList, label: 'Inventory',    path: 'inventory'    },
       { id: 'marketing',    Icon: Megaphone,     label: 'Marketing',    path: 'marketing'    },
       { id: 'loyalty',      Icon: Star,          label: 'Loyalty',      path: 'loyalty'      },
+      { id: 'subscriptions',Icon: RefreshCw,     label: 'Subscriptions', path: 'subscriptions' },
       { id: 'integrations', Icon: Plug,           label: 'Integrations', path: 'integrations' },
       { id: 'followers',    Icon: UserPlus,       label: 'Followers',    path: 'followers'    },
       { id: 'activity',     Icon: Activity,       label: 'Activity Log', path: 'activity'     },
@@ -73,7 +74,8 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: 'Manage',
     items: [
-      { id: 'settings', Icon: Settings, label: 'Settings', path: 'settings' },
+      { id: 'categories', Icon: FolderTree, label: 'Categories', path: 'categories' },
+      { id: 'settings',   Icon: Settings,   label: 'Settings',   path: 'settings'   },
     ],
   },
 ];

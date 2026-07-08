@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useUpload } from '@/hooks/upload/useUpload';
 import type { SellerType, ProductType, StoreData } from '@/api/services/store';
+import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 
 const STEPS = ['Store Info', 'Seller Type', 'What You Sell', 'Go Live'];
 
@@ -34,15 +35,10 @@ const PRODUCT_TYPES: { id: ProductType; Icon: React.ElementType; title: string; 
   { id: 'in_person_pos',     Icon: MonitorSmartphone, title: 'In-Person / POS',       desc: 'Sell at a physical location' },
 ];
 
-const CATEGORIES = [
-  'Education & Learning', 'Art & Design', 'Handmade & Crafts',
-  'Digital Downloads', 'Home & Lifestyle', 'Business & Productivity',
-  'Fashion & Apparel', 'Technology', 'Arts & Crafts',
-];
-
 interface StoreForm {
   storeName:    string;
   categoryId:   string;
+  categoryName: string;
   description:  string;
   logo:         string;
   sellerType:   SellerType | '';
@@ -108,8 +104,24 @@ function PageHeader({ onSignIn }: { onSignIn: () => void }) {
 // ── Step 1 — Store Info ───────────────────────────────────────────────────────
 function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void }) {
   const [preview, setPreview] = useState('');
+  const [categories, setCategories] = useState<CategoryNode[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const canProceed = form.storeName.trim().length > 0 && form.categoryId.length > 0;
   const { upload: uploadLogo, uploading: logoUploading } = useUpload('public');
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetCategoryTree()
+      .then(res => { if (!cancelled) setCategories(res.data); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setCategoriesLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleCategoryChange = (id: string) => {
+    const name = categories.find(c => c._id === id)?.name ?? '';
+    setForm({ ...form, categoryId: id, categoryName: name });
+  };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -162,10 +174,11 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
 
         <div className="mb-4">
           <label htmlFor="onboard-category" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Category <span className="text-brand-orange">*</span></label>
-          <select id="onboard-category" value={form.categoryId} onChange={e => setForm({ ...form, categoryId: e.target.value })}
-            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white cursor-pointer">
-            <option value="">Select your main category...</option>
-            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          <select id="onboard-category" value={form.categoryId} onChange={e => handleCategoryChange(e.target.value)}
+            disabled={categoriesLoading}
+            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white cursor-pointer disabled:opacity-60">
+            <option value="">{categoriesLoading ? 'Loading categories...' : 'Select your main category...'}</option>
+            {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
           </select>
         </div>
 
@@ -311,7 +324,7 @@ function Step3({ form, setForm, onNext, onBack, loading, error }: {
 }
 
 // ── Step 4 — Go Live ──────────────────────────────────────────────────────────
-function Step4({ store }: { store: StoreData | null }) {
+function Step4({ store, categoryName }: { store: StoreData | null; categoryName: string }) {
   const navigate = useNavigate();
 
   const sellerLabel   = SELLER_TYPES.find(t => t.id === store?.sellerType)?.title ?? store?.sellerType ?? '—';
@@ -333,7 +346,7 @@ function Step4({ store }: { store: StoreData | null }) {
               { Icon: Store,      label: 'Store',        value: store?.name ?? '—' },
               { Icon: Globe,      label: 'Store URL',    value: store?.slug ? `${store.slug}.solvexo.store` : '—' },
               { Icon: User,       label: 'Seller type',  value: sellerLabel },
-              { Icon: Package,    label: 'Category',     value: store?.categoryId ?? '—' },
+              { Icon: Package,    label: 'Category',     value: categoryName || '—' },
               { Icon: Download,   label: 'Products',     value: productLabels || '—' },
               { Icon: CreditCard, label: 'Plan',         value: store?.plan ? `${store.plan.charAt(0).toUpperCase() + store.plan.slice(1)} — Free` : 'Starter — Free' },
               { Icon: Sparkles,   label: 'AI Credits',   value: store?.aiCredits != null ? `${store.aiCredits} free credits included` : '—' },
@@ -382,7 +395,7 @@ export function OnboardingPage() {
   const [step, setStep]             = useState(1);
   const [maxReached, setMaxReached] = useState(1);
   const [form, setForm] = useState<StoreForm>({
-    storeName: '', categoryId: '', description: '', logo: '',
+    storeName: '', categoryId: '', categoryName: '', description: '', logo: '',
     sellerType: '', sellerKey: '', productTypes: [],
   });
 
@@ -425,7 +438,7 @@ export function OnboardingPage() {
             loading={createStore.loading} error={createStore.error}
           />
         )}
-        {step === 4 && <Step4 store={createStore.store} />}
+        {step === 4 && <Step4 store={createStore.store} categoryName={form.categoryName} />}
       </div>
     </div>
   );
