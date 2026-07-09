@@ -10,6 +10,7 @@ import { PublicLayout } from '@/components/layouts/PublicLayout';
 import { SellerLayout } from '@/components/layouts/SellerLayout';
 import { AdminLayout }  from '@/components/layouts/AdminLayout';
 import { StoreLayout }  from '@/components/layouts/StoreLayout';
+import { RequireRole }  from './RequireRole';
 
 // ── Lazy helpers ──────────────────────────────────────────────────────────────
 const named = <T extends Record<string, unknown>>(
@@ -43,6 +44,7 @@ const NewPasswordPage      = lazy(() => named(import('@/features/auth/pages/NewP
 
 // ── Seller ────────────────────────────────────────────────────────────────────
 const SellerDashboard      = lazy(() => named(import('@/features/seller/dashboard/SellerDashboard'),            'SellerDashboard'));
+const SellerAnalytics      = lazy(() => named(import('@/features/seller/dashboard/SellerAnalytics'),             'SellerAnalytics'));
 const StoreBuilder         = lazy(() => named(import('@/features/seller/dashboard/storemodule/StoreBuilder'),   'StoreBuilder'));
 const SellerSettings       = lazy(() => named(import('@/features/seller/dashboard/settings/SellerSettings'),   'SellerSettings'));
 const SellerShipping       = lazy(() => named(import('@/features/seller/dashboard/SellerShipping'),             'SellerShipping'));
@@ -78,6 +80,7 @@ const StoreFollowers     = lazy(() => named(import('@/features/seller/store/Dash
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 const AdminOverview      = lazy(() => named(import('@/features/admin/pages/AdminOverview'),                     'AdminOverview'));
+const AdminAnalytics     = lazy(() => named(import('@/features/admin/pages/AdminAnalytics'),                    'AdminAnalytics'));
 const AdminUsers         = lazy(() => named(import('@/features/admin/pages/AdminUsers'),                        'AdminUsers'));
 const AdminModeration    = lazy(() => named(import('@/features/admin/pages/AdminModeration'),                   'AdminModeration'));
 const AdminMessaging     = lazy(() => named(import('@/features/admin/pages/AdminMessaging'),                    'AdminMessaging'));
@@ -144,6 +147,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true,           element: <Navigate to="/seller/dashboard" replace /> },
           { path: 'dashboard',     element: <SellerDashboard /> },
+          { path: 'analytics',     element: <SellerAnalytics /> },
           { path: 'shipping',      element: <SellerShipping /> },
           { path: 'messages',      element: <SellerMessages /> },
           { path: 'stores',        element: <SellerStoreList /> },
@@ -194,13 +198,14 @@ export const router = createBrowserRouter([
         element: <AdminLayout />,
         children: [
           { index: true,          element: <AdminOverview /> },
+          { path: 'analytics',    element: <RequireRole role="admin"><AdminAnalytics /></RequireRole> },
           { path: 'users',        element: <AdminUsers /> },
           { path: 'moderation',   element: <AdminModeration /> },
           { path: 'messages',     element: <AdminMessaging /> },
           { path: 'marketplace',  element: <AdminMarketplace /> },
           { path: 'categories',   element: <AdminCategories /> },
           { path: 'subscriptions',element: <AdminSubscriptions /> },
-          { path: 'finance',      element: <AdminFinance /> },
+          { path: 'finance',      element: <RequireRole role="admin"><AdminFinance /></RequireRole> },
           { path: 'announcements',element: <AdminAnnouncements /> },
           { path: 'banners',      element: <AdminBanners /> },
           { path: 'faqs',         element: <AdminFaqs /> },

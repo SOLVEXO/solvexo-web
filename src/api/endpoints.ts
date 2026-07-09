@@ -359,6 +359,65 @@ export const ENDPOINTS = {
   },
 
   // ── RATING / REVIEWS ──────────────────────────────────────────────────────
+  // ── ANALYTICS ─────────────────────────────────────────────────────────────
+  ANALYTICS: {
+    SELLER: {
+      OVERVIEW:             '/api/seller/analytics/overview',
+      REVENUE_OVER_TIME:    '/api/seller/analytics/revenue-over-time',
+      ORDERS_OVER_TIME:     '/api/seller/analytics/orders-over-time',
+      TRAFFIC_SOURCES:      '/api/seller/analytics/traffic-sources',
+      TOP_PRODUCTS:         '/api/seller/analytics/top-products',
+      CUSTOMERS:            '/api/seller/analytics/customers',
+      PRODUCTS_PERFORMANCE: '/api/seller/analytics/products/performance',
+      INVENTORY_INSIGHTS:   '/api/seller/analytics/inventory-insights',
+      PAYMENT_METHODS:      '/api/seller/analytics/payment-methods',
+      REVENUE_BREAKDOWN:    '/api/seller/analytics/revenue-breakdown',
+      EXPORT:               '/api/seller/analytics/export',
+    },
+    ADMIN: {
+      OVERVIEW:                    '/api/admin/analytics/overview',
+      REVENUE_OVER_TIME:           '/api/admin/analytics/revenue-over-time',
+      REVENUE_BREAKDOWN:           '/api/admin/analytics/revenue-breakdown',
+      SELLERS_TOP:                 '/api/admin/analytics/sellers/top',
+      SELLERS_PERFORMANCE:         '/api/admin/analytics/sellers/performance',
+      SELLERS_REGISTRATION_TRENDS: '/api/admin/analytics/sellers/registration-trends',
+      CUSTOMERS:                   '/api/admin/analytics/customers',
+      PRODUCTS_TOP:                '/api/admin/analytics/products/top',
+      CATEGORIES_TOP:              '/api/admin/analytics/categories/top',
+      PRODUCTS_PERFORMANCE:        '/api/admin/analytics/products/performance',
+      INVENTORY_INSIGHTS:          '/api/admin/analytics/inventory-insights',
+      ORDERS_OVER_TIME:            '/api/admin/analytics/orders-over-time',
+      ORDERS_STATUS_BREAKDOWN:     '/api/admin/analytics/orders/status-breakdown',
+      PAYMENTS_BREAKDOWN:          '/api/admin/analytics/payments/breakdown',
+      PLATFORM_METRICS:            '/api/admin/analytics/platform-metrics',
+      EXPORT:                      '/api/admin/analytics/export',
+    },
+  },
+
+  // ── FINANCE ───────────────────────────────────────────────────────────────
+  FINANCE: {
+    ADMIN: {
+      OVERVIEW:              '/api/admin/finance/overview',
+      REVENUE_OVER_TIME:     '/api/admin/finance/revenue-over-time',
+      COMMISSION_OVER_TIME:  '/api/admin/finance/commission-over-time',
+      SELLER_BALANCES:       '/api/admin/finance/sellers/balances',
+      SELLER_DETAIL:         (storeId: string) => `/api/admin/finance/sellers/${storeId}`,
+      SELLER_TRANSACTIONS:   (storeId: string) => `/api/admin/finance/sellers/${storeId}/transactions`,
+      MANUAL_PAYOUT:         (storeId: string) => `/api/admin/finance/sellers/${storeId}/payouts/manual`,
+      TRANSACTIONS:          '/api/admin/finance/transactions',
+      PAYOUT_QUEUE:          '/api/admin/finance/payouts',
+      APPROVE_PAYOUT:        (payoutId: string) => `/api/admin/finance/payouts/${payoutId}/approve`,
+      REJECT_PAYOUT:         (payoutId: string) => `/api/admin/finance/payouts/${payoutId}/reject`,
+      RETRY_PAYOUT:          (payoutId: string) => `/api/admin/finance/payouts/${payoutId}/retry`,
+      PROCESS_CLEARING:      '/api/admin/finance/process-clearing',
+      REFUND_REPORT:         '/api/admin/finance/reports/refunds',
+      TAX_REPORTS:           '/api/admin/finance/reports/tax',
+      SETTLEMENT_REPORT:     '/api/admin/finance/reports/settlement',
+      MONTHLY_REPORT:        '/api/admin/finance/reports/monthly',
+      EXPORT:                '/api/admin/finance/export',
+    },
+  },
+
   RATING: {
     ADD_REVIEW:      '/api/rating/add-review',
     MY_REVIEWS:      '/api/rating/my-reviews',

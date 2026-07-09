@@ -1,0 +1,82 @@
+import { MetricCard, Table, EmptyState, type TableColumn } from '@/components/comman/ui';
+import { LineChart } from '@/components/comman/charts';
+import { Users } from 'lucide-react';
+import { useSellerAnalyticsCustomers } from '@/hooks/seller/useSellerAnalytics';
+import type { SellerAnalyticsParams, GeoBreakdownRow, TopCustomerRow } from '@/api/services/analytics/analytics';
+import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
+import { ChartCardSkeleton, TableCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
+import { formatCurrency, formatBucketLabel } from '@/components/comman/analytics/format';
+
+export function SellerCustomersTab({ params }: { params: SellerAnalyticsParams }) {
+  const customers = useSellerAnalyticsCustomers(params);
+
+  if (customers.error) {
+    return <AnalyticsErrorState message={customers.error} onRetry={customers.refetch} />;
+  }
+
+  const d = customers.data;
+
+  const ltvColumns: TableColumn<TopCustomerRow>[] = [
+    { key: 'name', header: 'Customer', render: r => <div><p className="font-medium">{r.name}</p><p className="text-[11px] text-slate">{r.email}</p></div> },
+    { key: 'totalOrders', header: 'Total Orders', align: 'right' },
+    { key: 'lifetimeValue', header: 'Lifetime Value', align: 'right', render: r => formatCurrency(r.lifetimeValue) },
+  ];
+
+  const geoColumns: TableColumn<GeoBreakdownRow>[] = [
+    { key: 'state', header: 'State' },
+    { key: 'orders', header: 'Orders', align: 'right' },
+    { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatCurrency(r.revenue) },
+  ];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <MetricCard label="Avg. Lifetime Value" value={d ? formatCurrency(d.averageLifetimeValue) : ''} loading={customers.loading} sub="All-time, per customer" />
+
+      {customers.loading ? (
+        <ChartCardSkeleton />
+      ) : d ? (
+        <LineChart
+          title="New vs. Returning Customers"
+          data={d.newVsReturning.map(p => ({
+            label: formatBucketLabel(p.date, d.granularity),
+            newCustomers: p.newCustomers,
+            returningCustomers: p.returningCustomers,
+          }))}
+          lines={[
+            { dataKey: 'newCustomers', label: 'New', color: '#D97757' },
+            { dataKey: 'returningCustomers', label: 'Returning', color: '#2C2A28' },
+          ]}
+        />
+      ) : null}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <div className="px-5 pt-4 pb-3">
+            <p className="text-[14px] font-bold text-charcoal">Top Customers by Lifetime Value</p>
+          </div>
+          {customers.loading ? (
+            <div className="px-5 pb-5"><TableCardSkeleton /></div>
+          ) : d && d.topCustomersByLtv.length > 0 ? (
+            <Table columns={ltvColumns} data={d.topCustomersByLtv} keyExtractor={r => r.userId} />
+          ) : (
+            <EmptyState icon={<Users size={28} className="text-slate" />} title="No customer activity yet" description="No non-cancelled orders were placed in this period." />
+          )}
+        </div>
+
+        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <div className="px-5 pt-4 pb-3">
+            <p className="text-[14px] font-bold text-charcoal">Geographic Distribution</p>
+            <p className="text-[12px] text-slate">Physical orders only — digital orders have no shipping address.</p>
+          </div>
+          {customers.loading ? (
+            <div className="px-5 pb-5"><TableCardSkeleton /></div>
+          ) : d && d.geographicBreakdown.length > 0 ? (
+            <Table columns={geoColumns} data={d.geographicBreakdown} keyExtractor={r => r.state} />
+          ) : (
+            <EmptyState icon={<Users size={28} className="text-slate" />} title="No geographic data" description="No physical orders with shipping addresses were placed in this period." />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
