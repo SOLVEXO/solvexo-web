@@ -5,6 +5,7 @@ import {
   Sparkles, Bot, FileText, CheckCircle, type LucideIcon,
 } from 'lucide-react';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { ComingSoonBanner } from '@/components/comman/ui';
 
 // ── Types & Data ──────────────────────────────────────────────────────────────
 type AITool = 'listing' | 'pricing' | 'worksheet' | 'seo' | 'email' | 'images';
@@ -40,7 +41,11 @@ export function StoreAIStudio() {
             <span className="inline-flex items-center gap-[5px] px-3 py-[5px] bg-brand-pale-orange rounded-md text-xs font-semibold text-[#C96847]">
               <Sparkles size={12} /> 750 credits remaining
             </span>
-            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
+            <button
+              disabled
+              title="Not connected to a backend yet"
+              className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite opacity-50 cursor-not-allowed"
+            >
               Buy Credits
             </button>
           </>
@@ -48,6 +53,8 @@ export function StoreAIStudio() {
       />
 
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+
+        <ComingSoonBanner message="AI Studio isn't connected to a real generation backend yet — responses shown are illustrative examples." />
 
         {/* ── Credits banner ── */}
         <div
@@ -286,13 +293,21 @@ export function StoreAIStudio() {
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-1">
-                  <button className="flex-1 py-[10px] bg-brand-orange border-0 rounded-lg text-[13px] font-semibold text-white cursor-pointer">
+                  <button
+                    disabled
+                    title="Not connected to a backend yet"
+                    className="flex-1 py-[10px] bg-brand-orange border-0 rounded-lg text-[13px] font-semibold text-white opacity-50 cursor-not-allowed"
+                  >
                     Use This
                   </button>
                   <button onClick={() => setGenerated(false)} className="px-[18px] py-[10px] bg-white border border-bone rounded-lg text-xs text-graphite cursor-pointer">
                     Regenerate
                   </button>
-                  <button className="px-[18px] py-[10px] bg-white border border-bone rounded-lg text-xs text-graphite cursor-pointer">
+                  <button
+                    disabled
+                    title="Not connected to a backend yet"
+                    className="px-[18px] py-[10px] bg-white border border-bone rounded-lg text-xs text-graphite opacity-50 cursor-not-allowed"
+                  >
                     Edit
                   </button>
                 </div>
@@ -333,7 +348,11 @@ export function StoreAIStudio() {
                     </tbody>
                   </table>
                 </div>
-                <button className="py-[10px] bg-brand-orange border-0 rounded-lg text-[13px] font-semibold text-white cursor-pointer">
+                <button
+                  disabled
+                  title="Not connected to a backend yet"
+                  className="py-[10px] bg-brand-orange border-0 rounded-lg text-[13px] font-semibold text-white opacity-50 cursor-not-allowed"
+                >
                   Apply Price
                 </button>
               </div>
@@ -348,8 +367,20 @@ export function StoreAIStudio() {
                   Your Grade 5 Fractions worksheet with<br />10 questions is ready to download.
                 </p>
                 <div className="flex gap-2">
-                  <button className="px-[18px] py-[9px] bg-brand-orange border-0 rounded-lg text-xs font-semibold text-white cursor-pointer">Download PDF</button>
-                  <button className="px-[18px] py-[9px] bg-white border border-bone rounded-lg text-xs text-graphite cursor-pointer">Preview</button>
+                  <button
+                    disabled
+                    title="Not connected to a backend yet"
+                    className="px-[18px] py-[9px] bg-brand-orange border-0 rounded-lg text-xs font-semibold text-white opacity-50 cursor-not-allowed"
+                  >
+                    Download PDF
+                  </button>
+                  <button
+                    disabled
+                    title="Not connected to a backend yet"
+                    className="px-[18px] py-[9px] bg-white border border-bone rounded-lg text-xs text-graphite opacity-50 cursor-not-allowed"
+                  >
+                    Preview
+                  </button>
                 </div>
               </div>
             )}

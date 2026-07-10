@@ -1,6 +1,7 @@
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { ArrowRight } from 'lucide-react';
+import { ComingSoonBanner } from '@/components/comman/ui';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const TRANSACTIONS = [
@@ -43,10 +44,18 @@ export function StoreFinance() {
         subtitle="Track earnings, payouts, fees, and tax reports."
         actions={
           <>
-            <button className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
+            <button
+              disabled
+              title="Not connected to a backend yet"
+              className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite opacity-50 cursor-not-allowed"
+            >
               Download Tax Report
             </button>
-            <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
+            <button
+              disabled
+              title="Not connected to a backend yet"
+              className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white opacity-50 cursor-not-allowed"
+            >
               Request Payout
             </button>
           </>
@@ -54,6 +63,8 @@ export function StoreFinance() {
       />
 
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+
+        <ComingSoonBanner message="Finance & Payouts isn't connected to live payment data yet — balances, transactions, and payouts shown are illustrative." />
 
         {/* ── Balance Card ── */}
         <div className="bg-carbon rounded-xl px-7 py-6 flex justify-between items-center">
@@ -68,7 +79,11 @@ export function StoreFinance() {
               <span className="text-[11px] text-slate">Method: Bank ••4821</span>
             </div>
           </div>
-          <button className="px-5 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer flex items-center gap-1.5">
+          <button
+            disabled
+            title="Not connected to a backend yet"
+            className="px-5 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white opacity-50 cursor-not-allowed flex items-center gap-1.5"
+          >
             Request Payout <ArrowRight size={14} />
           </button>
         </div>
@@ -93,14 +108,22 @@ export function StoreFinance() {
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-bone flex-wrap gap-2.5">
               <p className="text-sm font-semibold text-carbon">Transaction History</p>
               <div className="flex items-center gap-2">
-                <select className="px-3 py-[7px] text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer">
+                <select
+                  disabled
+                  title="Not connected to a backend yet"
+                  className="px-3 py-[7px] text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none opacity-50 cursor-not-allowed"
+                >
                   <option>All Types</option>
                   <option>Sale</option>
                   <option>Payout</option>
                   <option>Fee</option>
                   <option>Refund</option>
                 </select>
-                <button className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs text-graphite cursor-pointer">
+                <button
+                  disabled
+                  title="Not connected to a backend yet"
+                  className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs text-graphite opacity-50 cursor-not-allowed"
+                >
                   Export CSV
                 </button>
               </div>
@@ -169,7 +192,11 @@ export function StoreFinance() {
                 ))}
               </div>
               <div className="mt-3 pt-3 border-t border-[#F0EEE6]">
-                <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">
+                <button
+                  disabled
+                  title="Not connected to a backend yet"
+                  className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite opacity-50 cursor-not-allowed"
+                >
                   Update Payout Method
                 </button>
               </div>
@@ -198,7 +225,11 @@ export function StoreFinance() {
                       <p className="text-[13px] font-medium text-graphite leading-[1.3]">{r.name}</p>
                       <p className="text-[11px] text-slate mt-0.5">{r.period} · {r.date}</p>
                     </div>
-                    <button className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] font-medium text-slate cursor-pointer">
+                    <button
+                      disabled
+                      title="Not connected to a backend yet"
+                      className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] font-medium text-slate opacity-50 cursor-not-allowed"
+                    >
                       <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
                         <path d="M6 1v7M3 5l3 3 3-3M1 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>

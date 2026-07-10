@@ -97,4 +97,8 @@ export interface POSSaleState {
   lastSale:    Sale | null;
   charge:      (status: 'completed' | 'held') => Promise<void>;
   resetSale:   () => void;
+
+  // Offline sync — sales created while offline queue here and sync on reconnect
+  pendingSyncCount: number;
+  syncNow:          () => Promise<void>;
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
+import { TokenStorage, type AppRole } from '@/api/services/auth';
 
 interface AdminNavItem {
   id:    string;
@@ -185,6 +186,11 @@ export function AdminLayout() {
 
   const toggle  = () => setSidebarOpen(o => !o);
   const onClose = () => setSidebarOpen(false);
+
+  const user = TokenStorage.getUser<{ role?: AppRole }>();
+  if (!TokenStorage.isLoggedIn() || user?.role !== 'admin') {
+    return <Navigate to="/admin/login" replace />;
+  }
 
   return (
     <div className="flex h-screen bg-cream overflow-hidden">

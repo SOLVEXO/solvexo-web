@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { ReferenceNav } from './ReferenceNav';
+import { ErrorBoundary } from '@/components/comman/ErrorBoundary';
 
 function PageSpinner() {
   return (
@@ -11,6 +12,7 @@ function PageSpinner() {
 }
 
 export function RootLayout() {
+  const { pathname } = useLocation();
   return (
     <>
       <ReferenceNav />
@@ -18,9 +20,12 @@ export function RootLayout() {
           size themselves with h-full instead of an independent calc(100vh - 44px),
           which produced a 1px scrollbar mismatch at some browser zoom levels */}
       <div style={{ paddingTop: 44, height: '100vh' }}>
-        <Suspense fallback={<PageSpinner />}>
-          <Outlet />
-        </Suspense>
+        {/* keyed by pathname so navigating to a new route always remounts past a caught error */}
+        <ErrorBoundary key={pathname}>
+          <Suspense fallback={<PageSpinner />}>
+            <Outlet />
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </>
   );

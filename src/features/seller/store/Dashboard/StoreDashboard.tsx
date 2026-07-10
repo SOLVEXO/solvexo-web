@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, ShoppingBag, Package, Users,
@@ -9,16 +9,49 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { AreaChart } from '@/components/comman/charts';
+import {
+  apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime,
+  type SellerOverviewData, type RevenuePoint,
+} from '@/api/services/analytics/analytics';
+import { apiGetStoreInventory } from '@/api/services/product';
+import { formatCurrency, formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
 
-// ── Sample revenue data (replaced by real data once sales exist) ───────────────
-const sampleRevenue = [
-  { month: 'Jan', revenue: 420  },
-  { month: 'Feb', revenue: 680  },
-  { month: 'Mar', revenue: 510  },
-  { month: 'Apr', revenue: 900  },
-  { month: 'May', revenue: 760  },
-  { month: 'Jun', revenue: 1120 },
-];
+interface StoreMetrics {
+  overview:      SellerOverviewData;
+  revenueSeries: RevenuePoint[];
+  totalProducts: number;
+}
+
+function useStoreDashboardMetrics(storeId: string) {
+  const [metrics, setMetrics] = useState<StoreMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState('');
+
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    Promise.all([
+      apiSellerAnalyticsOverview({ storeId, range: '30d' }),
+      apiSellerAnalyticsRevenueOverTime({ storeId, range: '6m', granularity: 'month' }),
+      apiGetStoreInventory(storeId, 1, 1),
+    ])
+      .then(([overviewRes, revenueRes, inventoryRes]) => {
+        if (cancelled) return;
+        setMetrics({
+          overview: overviewRes.data,
+          revenueSeries: revenueRes.data.series,
+          totalProducts: inventoryRes.data.stats.totalProducts,
+        });
+      })
+      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store metrics.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [storeId]);
+
+  return { metrics, loading, error };
+}
 
 // ── Badge style maps ───────────────────────────────────────────────────────────
 const planStyles: Record<string, { bg: string; color: string }> = {
@@ -263,10 +296,17 @@ function DashSkeleton() {
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function StoreDashboard() {
   const { store, storeId, loading } = useStoreWorkspace();
+  const { metrics, loading: metricsLoading, error: metricsError } = useStoreDashboardMetrics(storeId);
 
   const subtitle = store
     ? `${store.sellerType ?? 'Seller'} · ${store.plan ?? ''} plan`
     : '';
+
+  const chartData = (metrics?.revenueSeries ?? []).map(p => ({
+    month: formatBucketLabel(p.date, 'month'),
+    revenue: p.grossRevenue,
+  }));
+  const totalCustomers = metrics ? metrics.overview.newCustomersCount + metrics.overview.returningCustomersCount : 0;
 
   return (
     <div>
@@ -288,30 +328,41 @@ export default function StoreDashboard() {
         }
       />
 
-      {loading ? <DashSkeleton /> : (
+      {loading || metricsLoading ? <DashSkeleton /> : (
         <div className="px-7 py-6 flex flex-col gap-5">
+
+          {metricsError && (
+            <p className="px-4 py-3 rounded-[10px] bg-error-bg text-error text-[12.5px]">{metricsError}</p>
+          )}
 
           {/* Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard label="Total Revenue"   value="$0" sub="No sales yet"           Icon={TrendingUp}  color="#D97757" />
-            <MetricCard label="Total Orders"    value="0"  sub="No orders yet"          Icon={Package}     color="#8B5CF6" />
-            <MetricCard label="Active Products" value="0"  sub="Add your first product" Icon={ShoppingBag} color="#0EA5E9" />
-            <MetricCard label="Customers"       value="0"  sub="No customers yet"       Icon={Users}       color="#22C55E" />
+            <MetricCard
+              label="Revenue (30 days)" value={formatCurrency(metrics?.overview.totalRevenue ?? 0)}
+              sub={metrics?.overview.totalRevenue ? 'vs previous period' : 'No sales yet'} Icon={TrendingUp} color="#D97757"
+            />
+            <MetricCard
+              label="Orders (30 days)" value={formatNumber(metrics?.overview.totalOrders ?? 0)}
+              sub={metrics?.overview.totalOrders ? `${formatNumber(metrics.overview.cancelledOrders)} cancelled` : 'No orders yet'} Icon={Package} color="#8B5CF6"
+            />
+            <MetricCard
+              label="Active Products" value={formatNumber(metrics?.totalProducts ?? 0)}
+              sub={metrics?.totalProducts ? 'In your catalog' : 'Add your first product'} Icon={ShoppingBag} color="#0EA5E9"
+            />
+            <MetricCard
+              label="Customers (30 days)" value={formatNumber(totalCustomers)}
+              sub={totalCustomers ? `${formatNumber(metrics?.overview.newCustomersCount ?? 0)} new` : 'No customers yet'} Icon={Users} color="#22C55E"
+            />
           </div>
 
           {/* Revenue Chart + Store Info */}
-          <div className="grid grid-cols-[2fr_1fr] gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
             <AreaChart
-              data={sampleRevenue}
+              data={chartData}
               dataKey="revenue"
               xKey="month"
               title="Revenue Overview"
-              subtitle="Monthly revenue trend"
-              action={
-                <span className="text-[10px] font-medium text-slate bg-bone border border-bone px-[8px] py-[3px] rounded-[5px]">
-                  Sample data
-                </span>
-              }
+              subtitle="Monthly revenue trend — last 6 months"
               height={220}
               valuePrefix="$"
               yTickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`}

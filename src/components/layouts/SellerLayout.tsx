@@ -1,12 +1,13 @@
 import { type ReactNode, useState, useRef, useEffect, createContext, useContext } from 'react';
 import { ActiveStoreProvider, useActiveStore } from '@/contexts/ActiveStoreContext';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { TokenStorage, type AppRole } from '@/api/services/auth';
+import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Store,
-  Settings,
+  Settings, BarChart2, Truck, MessageSquare,
   Bell, ChevronDown, List, Plus, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
@@ -50,7 +51,10 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Operations',
     items: [
-      { id: 'settings', Icon: Settings, label: 'Settings', path: '/seller/settings' },
+      { id: 'analytics', Icon: BarChart2,     label: 'Analytics', path: '/seller/analytics' },
+      { id: 'shipping',  Icon: Truck,         label: 'Shipping',  path: '/seller/shipping'  },
+      { id: 'messages',  Icon: MessageSquare, label: 'Messages',  path: '/seller/messages'  },
+      { id: 'settings',  Icon: Settings,      label: 'Settings',  path: '/seller/settings'  },
     ],
   },
 ];
@@ -415,6 +419,11 @@ export function SellerLayout() {
 
   const toggle  = () => setSidebarOpen(o => !o);
   const onClose = () => setSidebarOpen(false);
+
+  const user = TokenStorage.getUser<{ role?: AppRole }>();
+  if (!TokenStorage.isLoggedIn() || user?.role !== 'seller') {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <ActiveStoreProvider>

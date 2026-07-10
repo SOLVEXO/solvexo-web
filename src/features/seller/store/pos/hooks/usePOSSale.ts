@@ -3,13 +3,58 @@ import { apiGetPosProducts, apiSearchPosProducts, apiGetProductByBarcode } from 
 import {
   apiCreateSale, apiCompleteSale, apiEditHeldSaleItems,
   apiGetHeldSales, apiDiscardHeldSale,
-  type Sale, type PosPaymentMethod,
+  type Sale, type PosPaymentMethod, type CreateSalePayload,
 } from '@/api/services/pos/posSales';
 import { apiGetPosSettings } from '@/api/services/pos/posSettings';
+import { isNetworkError } from '@/api/client';
+import { enqueueSale, getQueuedSales, removeQueuedSale, countQueuedSales } from '../offlineQueue';
 import { usePosSession } from '../context/PosSessionContext';
 import type {
   CartItem, PosView, AppliedDiscount, PosDiscountType, POSSaleState,
 } from '../pos.types';
+
+// Builds a Sale-shaped receipt entirely client-side for a sale that couldn't
+// reach the server — it's queued locally and will be created for real once
+// connectivity returns, but the cashier still needs a receipt right now.
+function buildOfflineSale(payload: CreateSalePayload, cart: CartItem[], subtotal: number, discount: number, tax: number, total: number): Sale {
+  const now = new Date().toISOString();
+  return {
+    _id: `offline-${payload.idempotencyKey}`,
+    saleNumber: 'PENDING SYNC',
+    storeId: payload.storeId,
+    sessionId: payload.sessionId,
+    registerId: payload.registerId,
+    employeeId: payload.employeeId,
+    items: cart.map(i => ({
+      _id: i.variantId,
+      productId: i.productId,
+      variantId: i.variantId,
+      name: i.name,
+      sku: i.sku,
+      image: i.image,
+      price: i.customPrice ?? i.price,
+      qty: i.qty,
+      lineTotal: (i.customPrice ?? i.price) * i.qty,
+      refundedQty: 0,
+    })),
+    subtotal,
+    discount,
+    tax,
+    total,
+    paymentMethod: payload.paymentMethod,
+    customerId: null,
+    customerName: payload.customerName ?? 'Walk-in',
+    notes: payload.notes ?? null,
+    heldAt: null,
+    status: payload.status ?? 'completed',
+    idempotencyKey: payload.idempotencyKey ?? null,
+    voidedAt: null,
+    voidedBy: null,
+    refundedAmount: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
 
 const PAGE_SIZE = 30;
 
@@ -104,7 +149,14 @@ export function usePOSSale(): POSSaleState {
     }));
 
   const setCustomPrice = (variantId: string, price: string) =>
-    setCart(prev => prev.map(i => i.variantId === variantId ? { ...i, customPrice: parseFloat(price) || null } : i));
+    setCart(prev => prev.map(i => {
+      if (i.variantId !== variantId) return i;
+      const parsed = parseFloat(price);
+      // Floor at 0 — a negative/zero override would let a line item erase real revenue
+      // while stock is still deducted from inventory.
+      const customPrice = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+      return { ...i, customPrice };
+    }));
 
   // ── View / customer / discount / payment / note ──────────────────────────
   const [posView, setPosView]           = useState<PosView>('charge');
@@ -118,10 +170,15 @@ export function usePOSSale(): POSSaleState {
 
   const applyDiscount = () => {
     if (!discountVal) return;
+    const parsed = parseFloat(discountVal);
+    if (!Number.isFinite(parsed) || parsed <= 0) return;
+    // Percent discounts are capped at 100 — fixed discounts are already capped to the
+    // sale subtotal when the total is computed below, so no separate ceiling is needed here.
+    const value = discountType === 'pct' ? Math.min(parsed, 100) : parsed;
     setAppliedDiscount({
       type:  discountType,
-      value: parseFloat(discountVal),
-      label: discountType === 'pct' ? `${discountVal}% off` : `$${discountVal} off`,
+      value,
+      label: discountType === 'pct' ? `${value}% off` : `$${value} off`,
     });
     setPosView('charge');
   };
@@ -193,6 +250,38 @@ export function usePOSSale(): POSSaleState {
   const [chargeError, setChargeError] = useState('');
   const [lastSale, setLastSale]       = useState<Sale | null>(null);
 
+  // ── Offline sync ──────────────────────────────────────────────────────────
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+
+  const refreshPendingSyncCount = useCallback(() => {
+    countQueuedSales().then(setPendingSyncCount).catch(() => {});
+  }, []);
+
+  const flushOfflineQueue = useCallback(async () => {
+    const queued = await getQueuedSales().catch(() => []);
+    for (const item of queued) {
+      try {
+        await apiCreateSale(item.payload);
+        await removeQueuedSale(item.idempotencyKey);
+      } catch (err) {
+        if (isNetworkError(err)) break; // still offline — stop and retry later
+        // A real server rejection (e.g. stale stock) — leave it queued rather
+        // than silently discard a sale the cashier already rang up.
+      }
+    }
+    refreshPendingSyncCount();
+  }, [refreshPendingSyncCount]);
+
+  useEffect(() => {
+    refreshPendingSyncCount();
+    window.addEventListener('online', flushOfflineQueue);
+    const interval = setInterval(flushOfflineQueue, 30_000);
+    return () => {
+      window.removeEventListener('online', flushOfflineQueue);
+      clearInterval(interval);
+    };
+  }, [flushOfflineQueue, refreshPendingSyncCount]);
+
   function resetSaleInternal() {
     setCart([]);
     setAppliedDiscount(null);
@@ -224,7 +313,7 @@ export function usePOSSale(): POSSaleState {
         setLastSale(res.data);
         setPosView('receipt');
       } else {
-        const res = await apiCreateSale({
+        const payload: CreateSalePayload = {
           storeId,
           sessionId,
           registerId,
@@ -237,12 +326,27 @@ export function usePOSSale(): POSSaleState {
           notes: note || undefined,
           status,
           idempotencyKey: crypto.randomUUID(),
-        });
-        if (status === 'completed') {
-          setLastSale(res.data);
-          setPosView('receipt');
-        } else {
-          resetSaleInternal();
+        };
+        try {
+          const res = await apiCreateSale(payload);
+          if (status === 'completed') {
+            setLastSale(res.data);
+            setPosView('receipt');
+          } else {
+            resetSaleInternal();
+          }
+        } catch (err) {
+          if (!isNetworkError(err)) throw err;
+          // No connection — queue it locally and let the cashier keep going.
+          // It's created for real on the server as soon as connectivity returns.
+          await enqueueSale(payload);
+          refreshPendingSyncCount();
+          if (status === 'completed') {
+            setLastSale(buildOfflineSale(payload, cart, subtotal, discountAmt, tax, total));
+            setPosView('receipt');
+          } else {
+            resetSaleInternal();
+          }
         }
       }
       reloadProducts();
@@ -281,5 +385,7 @@ export function usePOSSale(): POSSaleState {
     resumeHeldSale, discardHeldSale: discardHeldSaleFn, reloadHeldSales,
 
     charging, chargeError, lastSale, charge, resetSale,
+
+    pendingSyncCount, syncNow: flushOfflineQueue,
   };
 }

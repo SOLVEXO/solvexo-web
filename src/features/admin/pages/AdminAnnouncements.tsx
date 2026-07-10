@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { ComingSoonBanner } from '@/components/comman/ui';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 interface Announcement {
@@ -47,6 +48,8 @@ export function AdminAnnouncements() {
         <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Announcements</h1>
         <p className="text-[12px] text-slate">Broadcast platform-wide messages to users and sellers.</p>
       </div>
+
+      <ComingSoonBanner message="Announcements aren't saved to a backend yet — changes here are local to this session and will reset on refresh." />
 
       {/* ── Create form ── */}
       <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5">
@@ -113,7 +116,7 @@ export function AdminAnnouncements() {
                     <p className="text-[11px] text-[#B0AEA8]">{ann.date}</p>
                   </div>
                   <div className="flex items-center gap-[10px] flex-shrink-0">
-                    <button className="text-[12px] text-slate bg-transparent border-none cursor-pointer">Edit</button>
+                    <button disabled title="Not connected to a backend yet" className="text-[12px] text-slate bg-transparent border-none opacity-40 cursor-not-allowed">Edit</button>
                     <button onClick={() => remove(ann.id)} className="text-[12px] text-[#C13030] bg-transparent border-none cursor-pointer">Delete</button>
                   </div>
                 </div>

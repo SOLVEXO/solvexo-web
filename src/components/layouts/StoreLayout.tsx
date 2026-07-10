@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { Outlet, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, Sparkles, Bell, ChevronLeft, Monitor, Store,
   ClipboardList, Megaphone, Star, Plug, Activity, Search, Wallet,
-  Truck, MessageSquare, UserPlus, FolderTree, RefreshCw,
+  Truck, MessageSquare, UserPlus, FolderTree, RefreshCw, Undo2,
   PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
@@ -41,8 +42,9 @@ const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { id: 'dashboard',     Icon: LayoutDashboard, label: 'Dashboard',     path: 'dashboard'    },
       { id: 'orders',        Icon: Package,         label: 'Orders',        path: 'orders'       },
+      { id: 'returns',       Icon: Undo2,           label: 'Returns',       path: 'returns'      },
       { id: 'products',      Icon: ShoppingBag,     label: 'Products',      path: 'products'     },
-      { id: 'customers',     Icon: Users,           label: 'Customers',     path: 'returns'      },
+      { id: 'customers',     Icon: Users,           label: 'Customers',     path: 'customer/list' },
       { id: 'pos',           Icon: Monitor,         label: 'POS Register',  path: 'pos'          },
       { id: 'store-builder', Icon: Store,           label: 'Store Builder', path: 'storebuilder' },
     ],
@@ -394,6 +396,11 @@ export function StoreLayout() {
 
   const toggle  = () => setSidebarOpen(o => !o);
   const onClose = () => setSidebarOpen(false);
+
+  const user = TokenStorage.getUser<{ role?: AppRole }>();
+  if (!TokenStorage.isLoggedIn() || user?.role !== 'seller') {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <StoreWorkspaceProvider>

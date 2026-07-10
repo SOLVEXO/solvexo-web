@@ -1,7 +1,7 @@
 import { clsx } from 'clsx';
 import {
   ShoppingCart, User, Tag, Pause, ImageOff,
-  CreditCard, Banknote, Wallet,
+  CreditCard, Banknote, Wallet, CloudOff,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { CustomerPanel } from './CustomerPanel';
@@ -31,6 +31,7 @@ export function CartPanel({ sale }: CartPanelProps) {
     resetSale, charge, charging, chargeError, lastSale,
     resumingSaleId,
     discountVal,
+    pendingSyncCount, syncNow,
   } = sale;
 
   const isResuming = !!resumingSaleId;
@@ -75,6 +76,20 @@ export function CartPanel({ sale }: CartPanelProps) {
           </button>
         </div>
       </div>
+
+      {pendingSyncCount > 0 && (
+        <button
+          onClick={() => syncNow()}
+          className="flex items-center gap-2 px-[18px] py-2 bg-[#3A2A1A] border-b border-carbon text-left cursor-pointer border-x-0 border-t-0 w-full"
+          title="Retry syncing now"
+        >
+          <CloudOff size={13} className="text-brand-orange shrink-0" />
+          <span className="text-[11px] text-brand-orange flex-1">
+            {pendingSyncCount} sale{pendingSyncCount !== 1 ? 's' : ''} waiting to sync
+          </span>
+          <span className="text-[10px] text-pos-faint underline">Retry now</span>
+        </button>
+      )}
 
       {/* Slide-in panels */}
       {posView === 'customer' && <CustomerPanel sale={sale} />}

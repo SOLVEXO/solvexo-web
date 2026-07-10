@@ -3,6 +3,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader } from '@/components/layouts/StoreLayout';
 import { CreditCard, DollarSign, BarChart2, Mail, Package, Zap, Check } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { ComingSoonBanner } from '@/components/comman/ui';
 
 type AppTab = 'connected' | 'available';
 
@@ -64,6 +65,8 @@ export function StoreIntegrations() {
 
       <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
+        <ComingSoonBanner message="Apps & Integrations isn't connected to a real integrations backend yet — connections, API keys, and webhooks shown are illustrative." />
+
         {/* Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {metrics.map(m => (
@@ -117,10 +120,18 @@ export function StoreIntegrations() {
                 <p className="text-[16px] font-bold text-carbon mb-1 pr-[80px]">{app.name}</p>
                 <p className="text-[13px] text-slate mb-4 leading-[1.5]">{app.desc}</p>
                 <div className="flex items-center gap-2">
-                  <button className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">
+                  <button
+                    disabled
+                    title="Not connected to a backend yet"
+                    className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-xs text-graphite opacity-50 cursor-not-allowed"
+                  >
                     Configure
                   </button>
-                  <button className="px-[14px] py-[5px] bg-[#FDECEA] border border-[#F5C6C2] rounded-[7px] text-xs font-medium text-[#C0392B] cursor-pointer">
+                  <button
+                    disabled
+                    title="Not connected to a backend yet"
+                    className="px-[14px] py-[5px] bg-[#FDECEA] border border-[#F5C6C2] rounded-[7px] text-xs font-medium text-[#C0392B] opacity-50 cursor-not-allowed"
+                  >
                     Disconnect
                   </button>
                 </div>
@@ -147,8 +158,20 @@ export function StoreIntegrations() {
                 className="w-full font-mono text-xs text-graphite px-3 py-[9px] rounded-lg border border-bone bg-cream outline-none box-border"
               />
               <div className="flex gap-2 mt-2">
-                <button className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">Copy</button>
-                <button className="px-[14px] py-[5px] bg-[#FDECEA] border border-[#F5C6C2] rounded-[7px] text-xs font-medium text-[#C0392B] cursor-pointer">Regenerate</button>
+                <button
+                  disabled
+                  title="Not connected to a backend yet"
+                  className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-xs text-graphite opacity-50 cursor-not-allowed"
+                >
+                  Copy
+                </button>
+                <button
+                  disabled
+                  title="Not connected to a backend yet"
+                  className="px-[14px] py-[5px] bg-[#FDECEA] border border-[#F5C6C2] rounded-[7px] text-xs font-medium text-[#C0392B] opacity-50 cursor-not-allowed"
+                >
+                  Regenerate
+                </button>
               </div>
             </div>
             <div>
@@ -160,7 +183,11 @@ export function StoreIntegrations() {
                   onChange={e => setWebhookUrl(e.target.value)}
                   className="flex-1 px-3 py-[9px] text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none"
                 />
-                <button className="px-4 py-[9px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer shrink-0">
+                <button
+                  disabled
+                  title="Not connected to a backend yet"
+                  className="px-4 py-[9px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white opacity-50 cursor-not-allowed shrink-0"
+                >
                   Save
                 </button>
               </div>

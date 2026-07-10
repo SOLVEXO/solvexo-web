@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { Sparkles, Check, X } from 'lucide-react';
+import { ComingSoonBanner } from '@/components/comman/ui';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 type Product = { id: string; name: string; score: number };
@@ -65,10 +66,18 @@ export function StoreSEO() {
         subtitle="Optimize your store and products for search engines."
         actions={
           <>
-            <button className="px-[14px] py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer flex items-center gap-[5px]">
+            <button
+              disabled
+              title="Not connected to a backend yet"
+              className="px-[14px] py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite opacity-50 cursor-not-allowed flex items-center gap-[5px]"
+            >
               <Sparkles size={12} /> AI SEO Audit
             </button>
-            <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
+            <button
+              disabled
+              title="Not connected to a backend yet"
+              className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white opacity-50 cursor-not-allowed"
+            >
               Save All Changes
             </button>
           </>
@@ -76,6 +85,8 @@ export function StoreSEO() {
       />
 
       <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
+
+        <ComingSoonBanner message="SEO Manager isn't connected to a live audit or persistence backend yet — scores and fields shown are illustrative, and edits here aren't saved." />
 
         {/* ── Metrics ── */}
         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
@@ -150,7 +161,11 @@ export function StoreSEO() {
                   <textarea rows={3} defaultValue="High-quality educational worksheets and resources for students and teachers."
                     className={`${inputCls} resize-y leading-[1.5]`} />
                 </div>
-                <button className="px-[14px] py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
+                <button
+                  disabled
+                  title="Not connected to a backend yet"
+                  className="px-[14px] py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite opacity-50 cursor-not-allowed"
+                >
                   Save Store SEO
                 </button>
               </div>
@@ -184,7 +199,11 @@ export function StoreSEO() {
                     </div>
                   </div>
                 </div>
-                <button className="px-3 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer flex items-center gap-[5px] shrink-0">
+                <button
+                  disabled
+                  title="Not connected to a backend yet"
+                  className="px-3 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite opacity-50 cursor-not-allowed flex items-center gap-[5px] shrink-0"
+                >
                   <Sparkles size={12} /> AI Optimize All
                 </button>
               </div>

@@ -46,6 +46,10 @@ const PAYMENT_LABELS: Record<string, { label: string; desc: string; Icon: React.
   cash_on_delivery: { label: 'Cash on Delivery',     desc: 'Pay when your order arrives',     Icon: Banknote   },
 };
 
+// Methods the frontend can't actually process yet — shown disabled with a "Coming soon"
+// badge instead of silently accepting a selection that handlePlaceOrder can't fulfil.
+const UNAVAILABLE_METHODS = new Set(['stripe']);
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function CheckoutPage() {
   usePageTitle('Checkout');
@@ -202,8 +206,11 @@ export function CheckoutPage() {
         const res = await apiPlaceCodOrder({ checkoutId: checkout._id });
         await clearCart();
         navigate('/order-success', { state: { orders: res.data.orders } });
+      } else {
+        // Card/Stripe checkout isn't wired up yet — the option is disabled in the UI,
+        // this is a defensive guard in case selectedMethod is ever set another way.
+        setPlaceError('This payment method is not available yet. Please choose Cash on Delivery.');
       }
-      // stripe: handle separately when Stripe integration is added
     } catch (err) {
       setPlaceError(err instanceof Error ? err.message : 'Failed to place order. Please try again.');
     } finally {
@@ -642,28 +649,39 @@ export function CheckoutPage() {
                     {effectiveMethods.map(method => {
                       const meta = PAYMENT_LABELS[method] ?? { label: method, desc: '', Icon: CreditCard };
                       const { label, desc, Icon } = meta;
+                      const unavailable = UNAVAILABLE_METHODS.has(method);
                       return (
                         <label
                           key={method}
                           className={clsx(
-                            'flex gap-3 p-4 rounded-[10px] border cursor-pointer transition-colors',
-                            selectedMethod === method
-                              ? 'border-brand-orange bg-brand-pale-orange'
-                              : 'border-bone bg-cream hover:border-[#c5c4bc]',
+                            'flex gap-3 p-4 rounded-[10px] border transition-colors',
+                            unavailable
+                              ? 'cursor-not-allowed opacity-60 border-bone bg-cream'
+                              : selectedMethod === method
+                                ? 'cursor-pointer border-brand-orange bg-brand-pale-orange'
+                                : 'cursor-pointer border-bone bg-cream hover:border-[#c5c4bc]',
                           )}
                         >
                           <input
                             type="radio" name="payment"
-                            className="mt-[3px] accent-brand-orange flex-shrink-0"
+                            className="mt-[3px] accent-brand-orange flex-shrink-0 disabled:cursor-not-allowed"
                             checked={selectedMethod === method}
+                            disabled={unavailable}
                             onChange={() => setSelectedMethod(method)}
                           />
                           <div className="flex items-center gap-3 flex-1">
                             <div className="w-9 h-9 rounded-[8px] bg-bone flex items-center justify-center flex-shrink-0">
                               <Icon size={17} className="text-graphite" />
                             </div>
-                            <div>
-                              <p className="text-[13px] font-semibold text-carbon">{label}</p>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="text-[13px] font-semibold text-carbon">{label}</p>
+                                {unavailable && (
+                                  <span className="text-[10px] font-semibold px-2 py-[1px] rounded-full bg-bone text-slate">
+                                    Coming soon
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-[11px] text-slate">{desc}</p>
                             </div>
                           </div>

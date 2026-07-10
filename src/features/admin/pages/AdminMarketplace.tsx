@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { ComingSoonBanner } from '@/components/comman/ui';
 import { Star } from 'lucide-react';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -54,6 +55,8 @@ export function AdminMarketplace() {
         <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Marketplace Management</h1>
         <p className="text-[12px] text-slate">Review, feature and manage all marketplace listings.</p>
       </div>
+
+      <ComingSoonBanner />
 
       {/* ── Metrics ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -142,12 +145,12 @@ export function AdminMarketplace() {
                     {/* Actions */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <button className="text-[11px] font-medium bg-transparent border-none cursor-pointer"
+                        <button disabled title="Not connected to a backend yet" className="text-[11px] font-medium bg-transparent border-none opacity-40 cursor-not-allowed"
                           style={{ color: p.featured ? '#8C8A82' : '#D97757' }}>
                           {p.featured ? 'Unfeature' : 'Feature'}
                         </button>
                         <span className="text-bone text-[13px]">|</span>
-                        <button className="text-[11px] font-medium text-[#C13030] bg-transparent border-none cursor-pointer">
+                        <button disabled title="Not connected to a backend yet" className="text-[11px] font-medium text-[#C13030] bg-transparent border-none opacity-40 cursor-not-allowed">
                           Remove
                         </button>
                       </div>

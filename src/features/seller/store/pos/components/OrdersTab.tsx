@@ -170,7 +170,7 @@ export function OrdersTab() {
                     >
                       Receipt
                     </button>
-                    {(s.status === 'completed' || s.status === 'partially_refunded') && (
+                    {(s.status === 'completed' || s.status === 'partially_refunded') && employee?.role === 'manager' && (
                       <button
                         onClick={() => setRefundingSale(s)}
                         className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-error"

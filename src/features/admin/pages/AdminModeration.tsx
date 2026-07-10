@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { ComingSoonBanner } from '@/components/comman/ui';
 import { ArrowLeft, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -84,6 +85,8 @@ export function AdminModeration() {
 
       {/* ── Content ── */}
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+
+        <ComingSoonBanner />
 
         {/* Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -170,8 +173,15 @@ export function AdminModeration() {
                       {/* Actions */}
                       <td className="px-4 py-3">
                         <div className="flex gap-[6px]">
-                          {[['Review','#1A72C2'],['Approve','#2D8A4E'],['Remove','#C13030']].map(([lbl, bg]) => (
-                            <button key={lbl} className="px-[10px] py-1 rounded-[6px] text-[11px] font-medium text-white border-none cursor-pointer whitespace-nowrap"
+                          {[
+                            { lbl: 'Review',  bg: '#1A72C2', isMutating: false },
+                            { lbl: 'Approve', bg: '#2D8A4E', isMutating: true  },
+                            { lbl: 'Remove',  bg: '#C13030', isMutating: true  },
+                          ].map(({ lbl, bg, isMutating }) => (
+                            <button key={lbl}
+                              disabled={isMutating}
+                              title={isMutating ? 'Not connected to a backend yet' : undefined}
+                              className={`px-[10px] py-1 rounded-[6px] text-[11px] font-medium text-white border-none whitespace-nowrap ${isMutating ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                               style={{ background: bg }}>
                               {lbl}
                             </button>

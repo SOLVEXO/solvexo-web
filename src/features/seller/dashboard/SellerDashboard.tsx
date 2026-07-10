@@ -1,110 +1,21 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AreaChart } from '@/components/comman/charts';
-import { ArrowRight, Store } from 'lucide-react';
+import { ArrowRight, Store, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/comman/ui/Button';
 import { Table } from '@/components/comman/ui/Table';
 import type { TableColumn } from '@/components/comman/ui/Table';
+import { Avatar } from '@/components/comman/ui/Avatar';
+import { StatusBadge } from '@/components/comman/ui/Badge';
+import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useMyStores } from '@/hooks/store/useMyStores';
-
-// ── Data ──────────────────────────────────────────────────────────────────────
-const revenueData = [
-  { day: 'Mon', sales: 1240 },
-  { day: 'Tue', sales: 1820 },
-  { day: 'Wed', sales: 1450 },
-  { day: 'Thu', sales: 2100 },
-  { day: 'Fri', sales: 1900 },
-  { day: 'Sat', sales: 2640 },
-  { day: 'Sun', sales: 2200 },
-];
-
-const topProducts = [
-  { name: 'Grade 5 Math Bundle',        sales: 847, revenue: '$41,503', pct: 100 },
-  { name: 'Fractions Mastery Kit',      sales: 623, revenue: '$11,214', pct: 74  },
-  { name: 'Reading Comprehension Pack', sales: 501, revenue: '$11,022', pct: 59  },
-  { name: 'Science Lab Worksheets',     sales: 389, revenue: '$5,835',  pct: 46  },
-  { name: 'Creative Writing Prompts',   sales: 278, revenue: '$3,336',  pct: 33  },
-];
-
-const recentOrders = [
-  { id: '#8821', customer: 'Sarah M.', initials: 'SM', product: 'Grade 5 Math Bundle', amount: '$49.00', status: 'Paid' },
-  { id: '#8820', customer: 'David R.', initials: 'DR', product: 'Fractions Mastery Kit', amount: '$18.00', status: 'Fulfilled' },
-  { id: '#8819', customer: 'Lena K.', initials: 'LK', product: 'Creative Writing Prompts', amount: '$12.00', status: 'Pending' },
-  { id: '#8818', customer: 'Tom B.', initials: 'TB', product: 'Science Lab Worksheets', amount: '$15.00', status: 'Paid' },
-];
-
-const metrics = [
-  { label: "Today's Revenue", value: '$1,284', trend: '+12.4% vs yesterday', sub: null },
-  { label: 'Orders', value: '38', trend: '6 pending', sub: 'Active orders' },
-  { label: 'Visitors', value: '2,140', trend: '+8.2% this week', sub: null },
-  { label: 'Conversion', value: '1.78%', trend: '+0.2% vs last week', sub: null },
-] as const;
-
-// Initials avatar color map
-const avatarColors: Record<string, { bg: string; color: string }> = {
-  SM: { bg: '#FDECEA', color: '#C0392B' },
-  DR: { bg: '#EAF3FB', color: '#2156A8' },
-  LK: { bg: '#EAF7EF', color: '#1E7A3C' },
-  TB: { bg: '#FFF4E5', color: '#B36200' },
-};
-
-// Status badge styles
-const statusStyles: Record<string, { bg: string; color: string }> = {
-  Paid: { bg: '#E3F4EA', color: '#1E7A3C' },
-  Fulfilled: { bg: '#EAF0FB', color: '#2156A8' },
-  Pending: { bg: '#FFF0E0', color: '#B36200' },
-};
-
-// ── Order table columns ───────────────────────────────────────────────────────
-type OrderRow = { id: string; customer: string; initials: string; product: string; amount: string; status: string };
-
-const ORDER_COLUMNS: TableColumn<OrderRow>[] = [
-  {
-    key: 'id', header: 'Order',
-    render: row => <span className="font-semibold text-brand-orange">{row.id}</span>,
-  },
-  {
-    key: 'customer', header: 'Customer',
-    render: row => {
-      const av = avatarColors[row.initials] ?? { bg: '#F0EEE6', color: '#5A5852' };
-      return (
-        <div className="flex items-center gap-2">
-          <div className="w-[26px] h-[26px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0" style={{ background: av.bg, color: av.color }}>
-            {row.initials}
-          </div>
-          <span className="text-graphite">{row.customer}</span>
-        </div>
-      );
-    },
-  },
-  {
-    key: 'product', header: 'Product',
-    render: row => <span className="text-graphite">{row.product}</span>,
-  },
-  {
-    key: 'amount', header: 'Amount',
-    render: row => <span className="font-semibold text-charcoal">{row.amount}</span>,
-  },
-  {
-    key: 'status', header: 'Status',
-    render: row => {
-      const st = statusStyles[row.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
-      return (
-        <span className="inline-block text-[11px] font-semibold px-[10px] py-[3px] rounded-[5px]" style={{ background: st.bg, color: st.color }}>
-          {row.status}
-        </span>
-      );
-    },
-  },
-  {
-    key: 'actions', header: 'Actions',
-    render: () => (
-      <button className="bg-transparent border-0 cursor-pointer text-xs text-brand-orange font-semibold hover:underline">
-        View
-      </button>
-    ),
-  },
-];
+import {
+  apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsTopProducts,
+  type SellerOverviewData, type RevenuePoint, type TopProductRow,
+} from '@/api/services/analytics/analytics';
+import { apiGetSellerOrders, type SellerOrder } from '@/api/services/product';
+import { formatCurrency, formatNumber, formatPercent, formatBucketLabel } from '@/components/comman/analytics/format';
 
 // ── My Store Card ────────────────────────────────────────────────────────────
 const statusColors: Record<string, { bg: string; color: string }> = {
@@ -135,9 +46,10 @@ function MyStoreCardSkeleton() {
   );
 }
 
-function MyStoreCard() {
+interface MyStore { _id: string; name: string; slug: string; status: string; logo?: string | null }
+
+function MyStoreCard({ stores, loading, error }: { stores: MyStore[]; loading: boolean; error: string }) {
   const navigate = useNavigate();
-  const { stores, loading, error } = useMyStores();
 
   if (loading) return <MyStoreCardSkeleton />;
 
@@ -219,28 +131,117 @@ function MyStoreCard() {
   );
 }
 
+// ── Recent orders table columns ──────────────────────────────────────────────
+const ORDER_COLUMNS: TableColumn<SellerOrder>[] = [
+  {
+    key: 'orderNumber', header: 'Order',
+    render: row => <span className="font-semibold text-brand-orange">{row.orderNumber}</span>,
+  },
+  {
+    key: 'customer', header: 'Customer',
+    render: row => (
+      <div className="flex items-center gap-2">
+        <Avatar name={row.customer.name || 'Guest'} size={26} />
+        <span className="text-graphite">{row.customer.name}</span>
+      </div>
+    ),
+  },
+  {
+    key: 'product', header: 'Product',
+    render: row => <span className="text-graphite">{row.product}</span>,
+  },
+  {
+    key: 'amount', header: 'Amount',
+    render: row => <span className="font-semibold text-charcoal">{formatCurrency(row.amount)}</span>,
+  },
+  {
+    key: 'status', header: 'Status',
+    render: row => <StatusBadge status={row.status} size="sm" />,
+  },
+];
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerDashboard() {
   const navigate = useNavigate();
   const subtitle = "Welcome back — Here's your store overview.";
+
+  const { stores, loading: storesLoading, error: storesError } = useMyStores();
+  const storeId = stores[0]?._id ?? null;
+
+  const [overview, setOverview]       = useState<SellerOverviewData | null>(null);
+  const [revenueSeries, setRevenueSeries] = useState<RevenuePoint[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProductRow[]>([]);
+  const [recentOrders, setRecentOrders] = useState<SellerOrder[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState('');
+
+  useEffect(() => {
+    if (storesLoading) return;
+    if (!storeId) { setLoading(false); return; }
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    Promise.all([
+      apiSellerAnalyticsOverview({ storeId, range: '7d' }),
+      apiSellerAnalyticsRevenueOverTime({ storeId, range: '7d' }),
+      apiSellerAnalyticsTopProducts({ storeId, limit: 5, sort: 'revenue' }),
+      apiGetSellerOrders(storeId, 1, 4),
+    ])
+      .then(([overviewRes, revenueRes, productsRes, ordersRes]) => {
+        if (cancelled) return;
+        setOverview(overviewRes.data);
+        setRevenueSeries(revenueRes.data.series);
+        setTopProducts(productsRes.data);
+        setRecentOrders(ordersRes.data.orders);
+      })
+      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load dashboard data.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [storeId, storesLoading]);
+
+  const metrics = overview ? [
+    { label: 'Revenue (7 days)',  value: formatCurrency(overview.totalRevenue), trend: overview.totalRevenueChangePercent != null ? formatPercent(overview.totalRevenueChangePercent, { signed: true }) : null, sub: null },
+    { label: 'Orders (7 days)',   value: formatNumber(overview.totalOrders),    trend: overview.totalOrdersChange ? formatPercent(overview.totalOrdersChange, { signed: true }) : null, sub: null },
+    { label: 'Avg Order Value',   value: formatCurrency(overview.avgOrderValue), trend: overview.avgOrderValueChangePercent != null ? formatPercent(overview.avgOrderValueChangePercent, { signed: true }) : null, sub: null },
+    { label: 'Repeat Buyers',     value: formatPercent(overview.repeatBuyerPercent), trend: null, sub: overview.repeatBuyerTrend === 'improving' ? 'Improving' : overview.repeatBuyerTrend === 'declining' ? 'Declining' : 'Steady' },
+  ] : [];
+
+  const chartData = revenueSeries.map(p => ({ day: formatBucketLabel(p.date, 'day'), sales: p.grossRevenue }));
+  const revenueTotal = revenueSeries.reduce((s, p) => s + p.grossRevenue, 0);
+  const maxProductRevenue = Math.max(1, ...topProducts.map(p => p.revenue));
+
+  const hasStore = !!storeId;
 
   return (
     <>
       <SellerPageHeader
         title="Dashboard"
         subtitle={subtitle}
-        actions={
-          <>
-            
-          </>
-        }
       />
 
       <div className="px-5 pt-4 pb-6 flex flex-col gap-4">
 
+        {error && (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-[10px] bg-error-bg text-error text-[12.5px]">
+            <AlertCircle size={14} className="shrink-0" />
+            {error}
+          </div>
+        )}
+
         {/* ── Row 1: Metric Cards ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {metrics.map((m) => (
+          {(loading || storesLoading) ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-white border border-bone rounded-[10px] px-5 py-4">
+                <SkeletonBox className="h-3 w-24 mb-3" />
+                <SkeletonBox className="h-7 w-16" />
+              </div>
+            ))
+          ) : !hasStore ? (
+            <div className="col-span-full bg-white border border-bone rounded-[10px] px-5 py-6 text-center text-[13px] text-slate">
+              Create a store to see your revenue, orders, and product metrics here.
+            </div>
+          ) : metrics.map((m) => (
             <div
               key={m.label}
               className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
@@ -251,9 +252,11 @@ export function SellerDashboard() {
               <p className="text-[28px] font-bold text-charcoal leading-[1.15]">
                 {m.value}
               </p>
-              <p className="text-xs text-[#2D8A4E] mt-[5px]">
-                ▲ {m.trend}
-              </p>
+              {m.trend && (
+                <p className="text-xs text-[#2D8A4E] mt-[5px]">
+                  ▲ {m.trend}
+                </p>
+              )}
               {m.sub && (
                 <p className="text-[11px] text-slate mt-0.5">
                   {m.sub}
@@ -264,46 +267,52 @@ export function SellerDashboard() {
         </div>
 
         {/* ── Row 2: Revenue Chart + My Store (col-8 + col-4) ── */}
-        <div className="grid grid-cols-[2fr_1fr] gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
           <AreaChart
-            data={revenueData}
+            data={chartData}
             dataKey="sales"
             xKey="day"
             title="Revenue — Last 7 Days"
-            action={<span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">$13,434 total</span>}
+            action={hasStore ? <span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">{formatCurrency(revenueTotal)} total</span> : undefined}
             height={240}
             valuePrefix="$"
             yTickFormatter={v => `$${v.toLocaleString()}`}
           />
-          <MyStoreCard />
+          <MyStoreCard stores={stores} loading={storesLoading} error={storesError} />
         </div>
 
         {/* ── Row 3: Top Products + Recent Orders ── */}
-        <div className="grid grid-cols-[320px_1fr] gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
 
           {/* Top Products */}
           <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
             <div className="px-[18px] pt-4 pb-3 flex items-center justify-between border-b border-bone">
               <p className="text-sm font-bold text-charcoal">Top Products</p>
-              <button onClick={() => navigate('/seller/products')} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
-                View All <ArrowRight size={14} />
-              </button>
+              {hasStore && (
+                <button onClick={() => navigate(`/seller/store/${storeId}/products`)} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
+                  View All <ArrowRight size={14} />
+                </button>
+              )}
             </div>
             <div className="px-[18px] py-3 space-y-[14px]">
-              {topProducts.map((p, i) => (
-                <div key={p.name}>
+              {loading || storesLoading ? (
+                Array.from({ length: 4 }).map((_, i) => <SkeletonBox key={i} className="h-8 w-full" />)
+              ) : !hasStore || topProducts.length === 0 ? (
+                <p className="text-[12.5px] text-slate py-2">{hasStore ? 'No product sales in the last 7 days yet.' : 'Create a store to see your top products.'}</p>
+              ) : topProducts.map((p, i) => (
+                <div key={p.productId}>
                   <div className="flex items-center justify-between mb-[6px]">
                     <div className="flex items-center gap-[7px] min-w-0">
                       <span className="text-[10px] font-bold text-slate shrink-0 w-4">#{i + 1}</span>
                       <span className="text-[12px] font-medium text-charcoal truncate">{p.name}</span>
                     </div>
                     <div className="shrink-0 ml-3 text-right">
-                      <span className="text-[12px] font-bold text-carbon">{p.revenue}</span>
-                      <span className="text-[10px] text-slate ml-1">{p.sales} sales</span>
+                      <span className="text-[12px] font-bold text-carbon">{formatCurrency(p.revenue)}</span>
+                      <span className="text-[10px] text-slate ml-1">{p.unitsSold} sold</span>
                     </div>
                   </div>
                   <div className="h-[3px] bg-cream rounded-full overflow-hidden">
-                    <div className="h-full bg-brand-orange rounded-full" style={{ width: `${p.pct}%` }} />
+                    <div className="h-full bg-brand-orange rounded-full" style={{ width: `${Math.round((p.revenue / maxProductRevenue) * 100)}%` }} />
                   </div>
                 </div>
               ))}
@@ -314,15 +323,27 @@ export function SellerDashboard() {
           <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
             <div className="px-5 pt-4 pb-[10px] flex items-center justify-between">
               <p className="text-sm font-bold text-charcoal">Recent Orders</p>
-              <button onClick={() => navigate('/seller/orders')} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
-                View All <ArrowRight size={14} />
-              </button>
+              {hasStore && (
+                <button onClick={() => navigate(`/seller/store/${storeId}/orders`)} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
+                  View All <ArrowRight size={14} />
+                </button>
+              )}
             </div>
-            <Table
-              columns={ORDER_COLUMNS}
-              data={recentOrders}
-              keyExtractor={row => row.id}
-            />
+            {loading || storesLoading ? (
+              <div className="px-5 py-4 flex flex-col gap-2">
+                {Array.from({ length: 4 }).map((_, i) => <SkeletonBox key={i} className="h-8 w-full" />)}
+              </div>
+            ) : !hasStore || recentOrders.length === 0 ? (
+              <p className="px-5 py-4 text-[12.5px] text-slate">
+                {hasStore ? 'No orders yet.' : 'Create a store to see recent orders.'}
+              </p>
+            ) : (
+              <Table
+                columns={ORDER_COLUMNS}
+                data={recentOrders}
+                keyExtractor={row => row.orderId}
+              />
+            )}
           </div>
         </div>
 

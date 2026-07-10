@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { ComingSoonBanner } from '@/components/comman/ui';
 import { AlertCircle, AlertTriangle } from 'lucide-react';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -17,9 +18,10 @@ const DEFAULT_FLAGS: ToggleItem[] = [
 ];
 
 // ── Toggle switch ─────────────────────────────────────────────────────────────
-function ToggleSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
+function ToggleSwitch({ enabled, onToggle, disabled }: { enabled: boolean; onToggle: () => void; disabled?: boolean }) {
   return (
-    <button onClick={onToggle} className="relative w-10 h-[22px] cursor-pointer bg-transparent border-none flex-shrink-0 p-0">
+    <button onClick={onToggle} disabled={disabled} title={disabled ? 'Not connected to a backend yet' : undefined}
+      className={`relative w-10 h-[22px] bg-transparent border-none flex-shrink-0 p-0 ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
       <div className="w-full h-full rounded-[11px] transition-colors duration-200"
         style={{ background: enabled ? '#D97757' : '#E8E6DC' }} />
       <div className="absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-[left] duration-200"
@@ -51,6 +53,8 @@ export function AdminConfig() {
         <p className="text-[12px] text-slate">Feature flags, AI settings, email config and system controls.</p>
       </div>
 
+      <ComingSoonBanner />
+
       {/* ── Maintenance Mode ── */}
       <div
         className="bg-white rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
@@ -63,7 +67,7 @@ export function AdminConfig() {
             </p>
             <p className="text-[12px] text-slate">When enabled, the platform shows a maintenance page to all users.</p>
           </div>
-          <ToggleSwitch enabled={maintenance} onToggle={() => setMaintenance(m => !m)} />
+          <ToggleSwitch enabled={maintenance} onToggle={() => setMaintenance(m => !m)} disabled />
         </div>
         {maintenance && (
           <div className="mt-4">
@@ -92,7 +96,7 @@ export function AdminConfig() {
                     <p className="text-[13px] font-medium text-charcoal">{flag.label}</p>
                     <p className="text-[11px] text-slate">{flag.desc}</p>
                   </div>
-                  <ToggleSwitch enabled={flag.enabled} onToggle={() => toggleFlag(flag.id)} />
+                  <ToggleSwitch enabled={flag.enabled} onToggle={() => toggleFlag(flag.id)} disabled />
                 </div>
               </div>
             ))}
@@ -126,7 +130,7 @@ export function AdminConfig() {
                   At {aiCredits} credits × 12,481 active sellers = ~{(parseInt(aiCredits || '0') * 12481).toLocaleString()} credits / month
                 </p>
               </div>
-              <button className="px-[18px] py-2 bg-brand-orange border-none rounded-lg text-[12px] font-semibold text-white cursor-pointer self-start">
+              <button disabled title="Not connected to a backend yet" className="px-[18px] py-2 bg-brand-orange border-none rounded-lg text-[12px] font-semibold text-white opacity-40 cursor-not-allowed self-start">
                 Save AI Config
               </button>
             </div>
@@ -160,7 +164,7 @@ export function AdminConfig() {
                   <option>Postmark</option>
                 </select>
               </div>
-              <button className="px-[18px] py-2 bg-brand-orange border-none rounded-lg text-[12px] font-semibold text-white cursor-pointer self-start">
+              <button disabled title="Not connected to a backend yet" className="px-[18px] py-2 bg-brand-orange border-none rounded-lg text-[12px] font-semibold text-white opacity-40 cursor-not-allowed self-start">
                 Save Email Config
               </button>
             </div>

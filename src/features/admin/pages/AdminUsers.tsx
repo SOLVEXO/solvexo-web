@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { ComingSoonBanner } from '@/components/comman/ui';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 interface User {
@@ -67,6 +68,8 @@ export function AdminUsers() {
         <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Users &amp; Sellers</h1>
         <p className="text-[12px] text-slate">Manage all platform users, sellers and accounts.</p>
       </div>
+
+      <ComingSoonBanner />
 
       {/* ── Metrics ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -158,9 +161,9 @@ export function AdminUsers() {
                     {/* Actions */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <button className="text-[12px] font-medium text-[#1A72C2] bg-transparent border-none cursor-pointer">View</button>
+                        <button disabled title="Not connected to a backend yet" className="text-[12px] font-medium text-[#1A72C2] bg-transparent border-none opacity-40 cursor-not-allowed">View</button>
                         <span className="text-bone text-[13px]">|</span>
-                        <button className="text-[12px] font-medium text-[#C13030] bg-transparent border-none cursor-pointer">
+                        <button disabled title="Not connected to a backend yet" className="text-[12px] font-medium text-[#C13030] bg-transparent border-none opacity-40 cursor-not-allowed">
                           {u.status === 'Suspended' ? 'Unsuspend' : 'Suspend'}
                         </button>
                       </div>

@@ -41,8 +41,19 @@ client.interceptors.response.use(
       window.location.href = '/login';
     }
 
-    return Promise.reject(new Error(msg));
+    // `isNetworkError` distinguishes "the request never reached the server" (no
+    // network, timeout, DNS failure — safe to retry/queue) from a real server
+    // rejection (4xx/5xx — retrying with the same input will just fail again).
+    // Existing call sites are unaffected: they only ever read `.message`.
+    return Promise.reject(Object.assign(new Error(msg), {
+      isNetworkError: !err.response,
+      status: err.response?.status,
+    }));
   },
 );
+
+export function isNetworkError(err: unknown): boolean {
+  return err instanceof Error && (err as Error & { isNetworkError?: boolean }).isNetworkError === true;
+}
 
 export default client;

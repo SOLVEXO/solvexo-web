@@ -4,6 +4,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Badge } from '@/components/comman/ui/Badge';
 import { Card } from '@/components/comman/ui/Card';
+import { ComingSoonBanner } from '@/components/comman/ui/ComingSoonBanner';
 import { ArrowRight, ShoppingCart, GraduationCap, Star, Sparkles, BookOpen, BookMarked, Microscope, Heart } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -55,6 +56,13 @@ export function EducationMarketplace() {
   usePageTitle('Education');
   const [activeGrade,   setActiveGrade]   = useState('All Grades');
   const [activeSubject, setActiveSubject] = useState('All');
+  const [searchQuery,   setSearchQuery]   = useState('');
+
+  const filteredProducts = PRODUCTS.filter(p =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.seller.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.subject.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-cream">
@@ -76,6 +84,8 @@ export function EducationMarketplace() {
           <div className="flex-1 flex justify-center px-2 sm:px-4">
             <input
               placeholder="Search resources..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
               className="w-full max-w-[240px] sm:max-w-[360px] lg:max-w-[480px] px-[14px] py-[9px] rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none focus:border-[#2D8A4E] transition-colors"
             />
           </div>
@@ -121,8 +131,9 @@ export function EducationMarketplace() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => {}}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] transition-colors cursor-pointer"
+                disabled
+                title="Not connected to a backend yet"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent opacity-50 cursor-not-allowed transition-colors"
               >
                 Browse All Resources
               </button>
@@ -136,6 +147,11 @@ export function EducationMarketplace() {
             <GraduationCap size={60} />
           </div>
         </div>
+      </div>
+
+      {/* ── Coming soon notice ──────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-6 lg:px-10 pt-4">
+        <ComingSoonBanner message="This marketplace preview isn't wired to live listings yet — search and product data shown are illustrative." />
       </div>
 
       {/* ── Filter Bar ───────────────────────────────────────────────────────── */}
@@ -176,9 +192,16 @@ export function EducationMarketplace() {
           Top-rated resources trusted by thousands of educators.
         </p>
 
+        {/* Empty state when the preview search matches nothing */}
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-10 text-[13px] text-slate mb-6 sm:mb-7">
+            No resources match "{searchQuery}".
+          </div>
+        )}
+
         {/* Grid: 2-col mobile → 2-col sm → 4-col lg */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-7">
-          {PRODUCTS.map(p => (
+          {filteredProducts.map(p => (
             <Card key={p.name} padding="none" hover onClick={() => navigate('/marketplace/1')} className="overflow-hidden">
 
               {/* Image */}
@@ -241,7 +264,13 @@ export function EducationMarketplace() {
               Generate custom worksheets, quizzes, and lesson activities in seconds with AI. Save hours of prep time.
             </p>
           </div>
-          <Button variant="primary" size="md" onClick={() => {}} className="shrink-0 w-full sm:w-auto">
+          <Button
+            variant="primary"
+            size="md"
+            disabled
+            title="Not connected to a backend yet"
+            className="shrink-0 w-full sm:w-auto"
+          >
             Try AI Builder <ArrowRight size={14} className="inline align-middle ml-1" />
           </Button>
         </div>
