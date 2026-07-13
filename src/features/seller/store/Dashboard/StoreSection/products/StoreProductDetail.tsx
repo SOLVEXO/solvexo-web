@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   Edit2, Package, Download, Tag, Globe,
-  Loader2, Calendar, CheckCircle, XCircle, Hash,
+  Calendar, CheckCircle, XCircle, Hash,
 } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { apiGetMyProductById } from '@/api/services/product';
 import { getCachedProducts, type ProductEntry } from './_cache';
+import { SkeletonBox } from '@/components/comman/ui';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatDate(iso: string) {
@@ -76,8 +77,62 @@ export default function StoreProductDetail() {
 
   if (fetching) {
     return (
-      <div className="flex items-center justify-center h-screen bg-cream">
-        <Loader2 size={24} className="text-brand-orange animate-spin" />
+      <div className="bg-cream min-h-screen">
+
+        {/* ── Header skeleton ── */}
+        <div className="sticky top-0 z-10 bg-white border-b border-bone px-7 py-[14px] flex items-center justify-between">
+          <div className="flex flex-col gap-2">
+            <SkeletonBox width={220} height={17} rounded="6px" />
+            <SkeletonBox width={90} height={18} rounded="5px" />
+          </div>
+          <SkeletonBox width={150} height={38} rounded="9px" />
+        </div>
+
+        <div className="px-7 py-5 flex flex-col gap-4">
+
+          {/* ── Hero skeleton ── */}
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden flex">
+            <SkeletonBox width={200} height={200} rounded="0px" className="shrink-0" />
+            <div className="flex-1 px-6 py-5 flex flex-col gap-3">
+              <SkeletonBox width="55%" height={20} rounded="6px" />
+              <SkeletonBox width="30%" height={14} rounded="5px" />
+              <SkeletonBox width="90%" height={14} rounded="5px" />
+              <div className="flex items-center gap-6 pt-4 mt-4 border-t border-bone">
+                <SkeletonBox width={70} height={30} rounded="5px" />
+                <SkeletonBox width={70} height={30} rounded="5px" />
+                <SkeletonBox width={70} height={30} rounded="5px" />
+                <SkeletonBox width={70} height={30} rounded="5px" />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Content grid skeleton ── */}
+          <div className="grid grid-cols-[1fr_280px] gap-4 items-start">
+
+            {/* Left column */}
+            <div className="flex flex-col gap-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4 flex flex-col gap-3">
+                  <SkeletonBox width={140} height={12} rounded="4px" />
+                  <SkeletonBox width="100%" height={14} rounded="5px" />
+                  <SkeletonBox width="100%" height={14} rounded="5px" />
+                  <SkeletonBox width="60%" height={14} rounded="5px" />
+                </div>
+              ))}
+            </div>
+
+            {/* Right sidebar */}
+            <div className="flex flex-col gap-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4 flex flex-col gap-3">
+                  <SkeletonBox width={100} height={12} rounded="4px" />
+                  <SkeletonBox width="100%" height={14} rounded="5px" />
+                  <SkeletonBox width="50%" height={14} rounded="5px" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

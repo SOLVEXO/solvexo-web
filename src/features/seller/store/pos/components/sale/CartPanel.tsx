@@ -55,7 +55,8 @@ export function CartPanel({ sale }: CartPanelProps) {
           <button
             onClick={() => setPosView(posView === 'customer' ? 'charge' : 'customer')}
             className={clsx(
-              'px-[10px] py-[5px] border-0 rounded-lg text-[11px] cursor-pointer flex items-center gap-1',
+              'px-3 py-[6px] border-0 rounded-lg text-[11px] cursor-pointer flex items-center gap-1',
+              'transition-transform duration-100 active:scale-95',
               posView === 'customer' ? 'bg-brand-deep-orange' : 'bg-charcoal',
               customerName !== 'Walk-in' ? 'text-brand-orange' : 'text-pos-faint',
             )}
@@ -66,7 +67,8 @@ export function CartPanel({ sale }: CartPanelProps) {
           <button
             onClick={() => setPosView(posView === 'discount' ? 'charge' : 'discount')}
             className={clsx(
-              'px-[10px] py-[5px] border-0 rounded-lg text-[11px] cursor-pointer flex items-center gap-1',
+              'px-3 py-[6px] border-0 rounded-lg text-[11px] cursor-pointer flex items-center gap-1',
+              'transition-transform duration-100 active:scale-95',
               posView === 'discount' ? 'bg-brand-deep-orange' : 'bg-charcoal',
               appliedDiscount ? 'text-brand-orange' : 'text-pos-faint',
             )}
@@ -80,7 +82,7 @@ export function CartPanel({ sale }: CartPanelProps) {
       {pendingSyncCount > 0 && (
         <button
           onClick={() => syncNow()}
-          className="flex items-center gap-2 px-[18px] py-2 bg-[#3A2A1A] border-b border-carbon text-left cursor-pointer border-x-0 border-t-0 w-full"
+          className="flex items-center gap-2 px-[18px] py-2 bg-[#3A2A1A] border-b border-carbon text-left cursor-pointer border-x-0 border-t-0 w-full transition-opacity duration-150 active:opacity-80"
           title="Retry syncing now"
         >
           <CloudOff size={13} className="text-brand-orange shrink-0" />
@@ -92,32 +94,40 @@ export function CartPanel({ sale }: CartPanelProps) {
       )}
 
       {/* Slide-in panels */}
-      {posView === 'customer' && <CustomerPanel sale={sale} />}
+      {posView === 'customer' && (
+        <div className="pos-panel-enter">
+          <CustomerPanel sale={sale} />
+        </div>
+      )}
       {posView === 'discount' && (
-        <DiscountPanel
-          discountType={sale.discountType}
-          setDiscountType={sale.setDiscountType}
-          discountVal={discountVal}
-          setDiscountVal={sale.setDiscountVal}
-          appliedDiscount={appliedDiscount}
-          applyDiscount={sale.applyDiscount}
-          removeDiscount={sale.removeDiscount}
-          setPosView={setPosView}
-        />
+        <div className="pos-panel-enter">
+          <DiscountPanel
+            discountType={sale.discountType}
+            setDiscountType={sale.setDiscountType}
+            discountVal={discountVal}
+            setDiscountVal={sale.setDiscountVal}
+            appliedDiscount={appliedDiscount}
+            applyDiscount={sale.applyDiscount}
+            removeDiscount={sale.removeDiscount}
+            setPosView={setPosView}
+          />
+        </div>
       )}
 
       {/* Cart items */}
       <div className="flex-1 overflow-y-auto px-[18px] py-2">
         {cart.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full pt-10">
-            <ShoppingCart size={48} className="mb-3 text-charcoal" />
-            <p className="text-[13px] text-[#3A3836] text-center leading-[1.5]">
+            <div className="w-16 h-16 rounded-2xl bg-carbon flex items-center justify-center mb-4 shrink-0">
+              <ShoppingCart size={26} className="text-charcoal" />
+            </div>
+            <p className="text-[13px] text-[#3A3836] text-center leading-[1.6]">
               Tap a product to add it<br />to the cart
             </p>
           </div>
         ) : (
           cart.map(item => (
-            <div key={item.variantId} className="py-[10px] border-b border-carbon">
+            <div key={item.variantId} className="py-3 border-b border-carbon pos-item-enter">
               <div className="flex items-start gap-[10px]">
                 <div className="w-[26px] h-[26px] mt-[1px] shrink-0 rounded-md overflow-hidden bg-carbon flex items-center justify-center">
                   {item.image ? (
@@ -132,18 +142,18 @@ export function CartPanel({ sale }: CartPanelProps) {
                 </div>
                 <button
                   onClick={() => removeItem(item.variantId)}
-                  className="text-[16px] bg-transparent border-0 cursor-pointer leading-none -mt-[2px] text-[#3A3836]"
+                  className="text-[16px] bg-transparent border-0 cursor-pointer leading-none text-[#3A3836] p-[6px] -m-[6px] rounded-md transition-transform duration-100 active:scale-90"
                 >
                   ×
                 </button>
               </div>
 
-              <div className="flex items-center justify-between mt-2 pl-9">
+              <div className="flex items-center justify-between mt-[10px] pl-9">
                 {/* Qty controls */}
-                <div className="flex items-center gap-[6px]">
+                <div className="flex items-center gap-[8px]">
                   <button
                     onClick={() => updateQty(item.variantId, -1)}
-                    className="w-[22px] h-[22px] rounded-[6px] bg-carbon border-0 text-white cursor-pointer flex items-center justify-center text-[14px]"
+                    className="w-7 h-7 rounded-[6px] bg-carbon border-0 text-white cursor-pointer flex items-center justify-center text-[14px] transition-transform duration-100 active:scale-90"
                   >
                     −
                   </button>
@@ -152,7 +162,7 @@ export function CartPanel({ sale }: CartPanelProps) {
                   </span>
                   <button
                     onClick={() => updateQty(item.variantId, 1)}
-                    className="w-[22px] h-[22px] rounded-[6px] bg-carbon border-0 text-white cursor-pointer flex items-center justify-center text-[14px]"
+                    className="w-7 h-7 rounded-[6px] bg-carbon border-0 text-white cursor-pointer flex items-center justify-center text-[14px] transition-transform duration-100 active:scale-90"
                   >
                     +
                   </button>
@@ -192,7 +202,7 @@ export function CartPanel({ sale }: CartPanelProps) {
       </div>
 
       {/* Cart footer */}
-      <div className="px-[18px] py-[14px] border-t border-carbon bg-[#141312] shrink-0">
+      <div className="px-[18px] py-4 border-t border-carbon bg-[#141312] shrink-0 shadow-lg">
         {cart.length > 0 && (
           <>
             {/* Totals */}
@@ -233,7 +243,8 @@ export function CartPanel({ sale }: CartPanelProps) {
                   key={id}
                   onClick={() => setPaymentMethod(id)}
                   className={clsx(
-                    'px-1 py-2 rounded-lg cursor-pointer flex flex-col items-center gap-[3px] border',
+                    'px-1 py-[10px] rounded-lg cursor-pointer flex flex-col items-center gap-1 border',
+                    'transition-transform duration-100 active:scale-95',
                     paymentMethod === id
                       ? 'bg-brand-deep-orange border-brand-orange'
                       : 'bg-charcoal border-transparent',
@@ -268,7 +279,7 @@ export function CartPanel({ sale }: CartPanelProps) {
                     <button
                       key={amt}
                       onClick={() => setCashGiven(amt.toString())}
-                      className="px-[10px] py-[6px] bg-carbon border-0 rounded-lg text-[11px] text-white cursor-pointer"
+                      className="px-3 py-[6px] bg-carbon border-0 rounded-lg text-[11px] text-white cursor-pointer transition-transform duration-100 active:scale-95"
                     >
                       ${amt}
                     </button>
@@ -296,11 +307,11 @@ export function CartPanel({ sale }: CartPanelProps) {
           onClick={() => cart.length > 0 && !charging && charge('completed')}
           disabled={cart.length === 0 || charging}
           className={clsx(
-            'w-full rounded-[10px] py-[13px] text-center text-[15px] font-bold text-white border-0',
-            'flex items-center justify-center gap-[6px]',
+            'w-full rounded-[10px] py-[15px] text-center text-[15px] font-bold text-white border-0',
+            'flex items-center justify-center gap-[6px] transition-all duration-150',
             cart.length === 0 || charging
               ? 'bg-charcoal opacity-40 cursor-default'
-              : 'bg-brand-orange cursor-pointer',
+              : 'bg-brand-orange cursor-pointer shadow-md active:scale-[0.98]',
           )}
         >
           {charging
@@ -315,7 +326,7 @@ export function CartPanel({ sale }: CartPanelProps) {
           <div className="flex gap-2 mt-2">
             <button
               onClick={resetSale}
-              className="flex-1 py-[7px] bg-pos-surface border border-carbon rounded-lg cursor-pointer flex items-center justify-center gap-1"
+              className="flex-1 py-2 bg-pos-surface border border-carbon rounded-lg cursor-pointer flex items-center justify-center gap-1 transition-transform duration-100 active:scale-95"
             >
               <span className="text-[11px] text-pos-muted">× Clear</span>
             </button>
@@ -323,7 +334,7 @@ export function CartPanel({ sale }: CartPanelProps) {
               <button
                 onClick={() => !charging && charge('held')}
                 disabled={charging}
-                className="flex-1 py-[7px] bg-pos-surface border border-carbon rounded-lg cursor-pointer flex items-center justify-center gap-1 disabled:opacity-50"
+                className="flex-1 py-2 bg-pos-surface border border-carbon rounded-lg cursor-pointer flex items-center justify-center gap-1 transition-transform duration-100 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
               >
                 <Pause size={11} className="text-pos-muted" />
                 <span className="text-[11px] text-pos-muted">Hold</span>

@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { X, Loader2, Store } from 'lucide-react';
+import { useFocusTrap } from '@/components/comman/ui/useFocusTrap';
 
 interface NewChatModalProps {
   onClose:  () => void;
@@ -15,22 +16,17 @@ export function NewChatModal({ onClose, onStart, starting }: NewChatModalProps) 
   const titleId   = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    dialogRef.current?.focus();
-    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+  useFocusTrap(dialogRef, onClose);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 starting:opacity-0">
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="w-full max-w-[380px] bg-white rounded-[16px] shadow-2xl overflow-hidden outline-none"
+        className="w-full max-w-[380px] bg-white rounded-[16px] shadow-2xl overflow-hidden outline-none transition-all duration-200 ease-out starting:opacity-0 starting:scale-95"
       >
         <div className="flex items-center justify-between px-4 py-[14px] border-b border-[#EEECE4]">
           <p id={titleId} className="text-[15px] font-bold text-charcoal">New message</p>

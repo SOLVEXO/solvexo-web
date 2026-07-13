@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useResetPassword } from '@/hooks/auth/useResetPassword';
 import { Button } from '@/components/comman/ui/Button';
-import { Eye, EyeOff, ArrowRight, Check, Circle, Lock, ShieldCheck, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Check, Circle, Lock, ShieldCheck, KeyRound, AlertTriangle } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { newPasswordSchema, type NewPasswordFormData } from '@/utils/validation/schemas';
 import { AuthContext } from '@/api/services/auth';
@@ -77,12 +77,13 @@ function PasswordInput({ label, placeholder, value, onChange, onBlur, error }: {
           onChange={e => onChange(e.target.value)} onBlur={onBlur}
           className={clsx(
             'w-full px-3 pr-[42px] py-[10px] rounded-lg border text-[13px] text-charcoal outline-none bg-white',
-            error ? 'border-error' : 'border-bone',
+            'transition-[border-color,box-shadow] duration-150 focus:ring-2',
+            error ? 'border-error focus:ring-error/10' : 'border-bone focus:border-brand-orange focus:ring-brand-orange/10',
           )}
         />
         <button type="button" onClick={() => setShow(s => !s)}
           aria-label={show ? 'Hide password' : 'Show password'}
-          className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate p-0 flex">
+          className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate p-0 flex hover:text-charcoal transition-colors">
           {show ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
@@ -150,7 +151,8 @@ export function NewPasswordPage() {
           onChange={e => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
           className={clsx(
             'w-full px-3 py-[10px] rounded-lg border text-charcoal outline-none bg-white text-center',
-            otpError ? 'border-error' : otp.length === 6 ? 'border-success' : 'border-bone',
+            'transition-[border-color,box-shadow,letter-spacing] duration-150 focus:ring-2 focus:ring-brand-orange/10',
+            otpError ? 'border-error' : otp.length === 6 ? 'border-success' : 'border-bone focus:border-brand-orange',
             otp ? 'tracking-[0.3em] font-bold text-[18px]' : 'text-[13px]',
           )}
         />
@@ -185,8 +187,9 @@ export function NewPasswordPage() {
       </div>
 
       {resetPassword.error && (
-        <div className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 text-[13px] text-error">
-          {resetPassword.error}
+        <div className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mb-4 text-[13px] text-error">
+          <AlertTriangle size={14} className="shrink-0" />
+          <span>{resetPassword.error}</span>
         </div>
       )}
 

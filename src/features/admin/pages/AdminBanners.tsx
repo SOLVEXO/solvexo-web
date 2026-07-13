@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, ImageIcon, Loader2, ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { Plus, ImageIcon, ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminBanners } from '@/hooks/admin/useAdminBanners';
 import { apiCreateBannerFromUrl, apiUpdateBanner, apiDeleteBanner, type Banner } from '@/api/services/banner';
@@ -8,6 +8,8 @@ import { Modal } from '@/components/comman/ui/Modal';
 import { Input } from '@/components/comman/ui/Input';
 import { Toggle } from '@/components/comman/ui/Toggle';
 import { ImageUpload } from '@/components/comman/ui/Upload';
+import { EmptyState } from '@/components/comman/ui/EmptyState';
+import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 
 const MAX_BANNERS = 4;
 
@@ -117,19 +119,32 @@ export function AdminBanners() {
 
       <div className="px-7 pt-5 pb-8">
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 size={20} className="animate-spin text-brand-orange" /></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-white border border-bone rounded-[10px] overflow-hidden flex flex-col">
+                <SkeletonBox className="aspect-[16/9] w-full" rounded="0" />
+                <div className="p-3 flex flex-col gap-2">
+                  <SkeletonBox className="h-4 w-1/2" />
+                  <SkeletonBox className="h-4 w-3/4" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : error ? (
           <p className="text-[13px] text-error text-center py-8">{error}</p>
         ) : banners.length === 0 ? (
-          <div className="bg-white border border-bone rounded-[10px] flex flex-col items-center justify-center py-16 gap-3">
-            <ImageIcon size={28} className="text-slate" />
-            <p className="text-[13px] text-slate">No banners yet. Add one to feature it on the homepage.</p>
-            <Button icon={<Plus size={14} />} onClick={() => setEditing('new')}>Add Banner</Button>
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <EmptyState
+              icon={<ImageIcon size={28} className="text-slate" />}
+              title="No banners yet"
+              description="Add one to feature it on the homepage."
+              action={{ label: 'Add Banner', onClick: () => setEditing('new'), icon: <Plus size={14} /> }}
+            />
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...banners].sort((a, b) => a.order - b.order).map(b => (
-              <div key={b._id} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col">
+              <div key={b._id} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col transition-shadow duration-200 hover:shadow-md">
                 <div className="aspect-[16/9] bg-cream">
                   <img loading="lazy" decoding="async" src={b.bannerImage} alt="" className="w-full h-full object-cover" />
                 </div>
@@ -147,10 +162,10 @@ export function AdminBanners() {
                     </a>
                   )}
                   <div className="flex items-center gap-2 mt-auto pt-2">
-                    <button onClick={() => setEditing(b)} className="flex-1 px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-charcoal bg-cream border border-bone cursor-pointer flex items-center justify-center gap-1">
+                    <button onClick={() => setEditing(b)} className="flex-1 px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-charcoal bg-cream border border-bone cursor-pointer flex items-center justify-center gap-1 outline-none transition-colors duration-150 hover:bg-bone focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
                       <Pencil size={11} /> Edit
                     </button>
-                    <button onClick={() => handleDelete(b)} className="flex-1 px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-error bg-error-bg border border-[#FECACA] cursor-pointer flex items-center justify-center gap-1">
+                    <button onClick={() => handleDelete(b)} className="flex-1 px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-error bg-error-bg border border-[#FECACA] cursor-pointer flex items-center justify-center gap-1 outline-none transition-colors duration-150 hover:bg-error hover:text-white focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
                       <Trash2 size={11} /> Delete
                     </button>
                   </div>

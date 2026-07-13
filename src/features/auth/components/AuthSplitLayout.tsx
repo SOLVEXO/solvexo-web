@@ -52,20 +52,20 @@ export function AuthSplitLayout({
           {brandingHeader ?? <SolvexoLogo size={30} variant="light" />}
 
           <div>
-            <h2 className="font-serif text-[26px] xl:text-[32px] font-bold text-white leading-[1.15] mb-3">
+            <h2 className="font-serif text-[26px] xl:text-[32px] font-bold text-white leading-[1.15] mb-4">
               {heading}
             </h2>
-            <p className="text-[13px] text-white/70 leading-[1.6] max-w-[380px] mb-6">
+            <p className="text-[13px] text-white/70 leading-[1.6] max-w-[380px] mb-8">
               {subtext}
             </p>
             {highlights.length > 0 && (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 {highlights.map(({ Icon, text }) => (
-                  <div key={text} className="flex items-center gap-3">
+                  <div key={text} className="flex items-center gap-3 transition-transform duration-200 ease-out hover:translate-x-0.5">
                     <div className="size-7 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
                       <Icon size={14} className={accentIconClass} />
                     </div>
-                    <span className="text-[12.5px] text-white/85">{text}</span>
+                    <span className="text-[12.5px] text-white/85 leading-[1.4]">{text}</span>
                   </div>
                 ))}
               </div>
@@ -77,7 +77,7 @@ export function AuthSplitLayout({
       </div>
 
       {/* ── Form panel ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden flex flex-col items-center px-4 py-4">
+      <div className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden flex flex-col items-center px-4 py-6 sm:py-8">
         <div className={clsx('w-full my-auto', maxWidth)}>
           {children}
         </div>

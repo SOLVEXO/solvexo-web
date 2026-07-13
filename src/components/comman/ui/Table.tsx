@@ -1,13 +1,15 @@
 import { type ReactNode } from 'react';
 import { clsx } from 'clsx';
+import { ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { Pagination } from './Pagination';
 
 export interface TableColumn<T = Record<string, unknown>> {
-  key:     string;
-  header:  string;
-  render?: (row: T, index: number) => ReactNode;
-  align?:  'left' | 'center' | 'right';
-  width?:  string;
+  key:       string;
+  header:    string;
+  render?:   (row: T, index: number) => ReactNode;
+  align?:    'left' | 'center' | 'right';
+  width?:    string;
+  sortable?: boolean;
 }
 
 export interface TablePagination {
@@ -18,13 +20,24 @@ export interface TablePagination {
   label?:   string;
 }
 
+export interface TableSort {
+  key:       string;
+  direction: 'asc' | 'desc';
+}
+
 interface TableProps<T = Record<string, unknown>> {
-  columns:      TableColumn<T>[];
-  data:         T[];
-  keyExtractor: (row: T, index: number) => string | number;
-  onRowClick?:  (row: T) => void;
-  pagination?:  TablePagination;
-  className?:   string;
+  columns:           TableColumn<T>[];
+  data:              T[];
+  keyExtractor:      (row: T, index: number) => string | number;
+  onRowClick?:       (row: T) => void;
+  pagination?:       TablePagination;
+  className?:        string;
+  sort?:             TableSort;
+  onSortChange?:     (key: string) => void;
+  selectable?:       boolean;
+  selectedKeys?:     Set<string | number>;
+  onSelectionChange?: (keys: Set<string | number>) => void;
+  bulkActions?:      (selectedKeys: Set<string | number>) => ReactNode;
 }
 
 const TH =
@@ -33,56 +46,137 @@ const TH =
 
 export function Table<T = Record<string, unknown>>({
   columns, data, keyExtractor, onRowClick, pagination, className,
+  sort, onSortChange, selectable, selectedKeys, onSelectionChange, bulkActions,
 }: TableProps<T>) {
   const perPage    = pagination?.perPage ?? 10;
   const start      = pagination ? (pagination.page - 1) * perPage + 1 : 1;
   const end        = pagination ? Math.min(pagination.page * perPage, pagination.total) : data.length;
   const label      = pagination?.label ?? 'items';
 
+  const keys        = selectedKeys ?? new Set<string | number>();
+  const rowKeys     = data.map((row, i) => keyExtractor(row, i));
+  const allSelected = selectable && rowKeys.length > 0 && rowKeys.every(k => keys.has(k));
+  const someSelected = selectable && rowKeys.some(k => keys.has(k));
+
+  const toggleAll = () => {
+    if (!onSelectionChange) return;
+    if (allSelected) {
+      onSelectionChange(new Set());
+    } else {
+      onSelectionChange(new Set(rowKeys));
+    }
+  };
+
+  const toggleRow = (key: string | number) => {
+    if (!onSelectionChange) return;
+    const next = new Set(keys);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    onSelectionChange(next);
+  };
+
   return (
     <div className={className}>
+      {selectable && keys.size > 0 && bulkActions && (
+        <div className="px-5 py-2.5 border-b border-bone bg-brand-pale-orange/40 flex items-center gap-3">
+          <span className="text-[12px] font-medium text-charcoal">{keys.size} selected</span>
+          <div className="flex items-center gap-2 ml-auto">
+            {bulkActions(keys)}
+          </div>
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[13px]">
           <thead>
             <tr className="border-y border-bone bg-cream">
-              {columns.map(col => (
-                <th
-                  key={col.key}
-                  className={clsx(TH, col.align === 'right' && 'text-right', col.align === 'center' && 'text-center')}
-                  style={col.width ? { width: col.width } : undefined}
-                >
-                  {col.header}
+              {selectable && (
+                <th className={clsx(TH, 'w-[40px]')}>
+                  <input
+                    type="checkbox"
+                    className="accent-brand-orange cursor-pointer"
+                    checked={!!allSelected}
+                    ref={el => { if (el) el.indeterminate = !allSelected && !!someSelected; }}
+                    onChange={toggleAll}
+                    aria-label="Select all rows"
+                  />
                 </th>
-              ))}
+              )}
+              {columns.map(col => {
+                const isSorted   = sort?.key === col.key;
+                const ariaSort: 'ascending' | 'descending' | 'none' =
+                  isSorted ? (sort!.direction === 'asc' ? 'ascending' : 'descending') : 'none';
+                return (
+                  <th
+                    key={col.key}
+                    className={clsx(TH, col.align === 'right' && 'text-right', col.align === 'center' && 'text-center')}
+                    style={col.width ? { width: col.width } : undefined}
+                    aria-sort={col.sortable ? ariaSort : undefined}
+                  >
+                    {col.sortable ? (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => onSortChange?.(col.key)}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSortChange?.(col.key); } }}
+                        className={clsx(
+                          'inline-flex items-center gap-1 cursor-pointer select-none',
+                          col.align === 'right' && 'flex-row-reverse',
+                        )}
+                      >
+                        {col.header}
+                        {isSorted
+                          ? (sort!.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />)
+                          : <ArrowUpDown size={12} className="text-slate/60" />}
+                      </span>
+                    ) : (
+                      col.header
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
-            {data.map((row, i) => (
-              <tr
-                key={keyExtractor(row, i)}
-                className={clsx(
-                  i < data.length - 1 && 'border-b border-[#F0EEE6]',
-                  onRowClick && 'cursor-pointer',
-                  'transition-colors duration-100 hover:bg-cream',
-                )}
-                onClick={() => onRowClick?.(row)}
-              >
-                {columns.map(col => (
-                  <td
-                    key={col.key}
-                    className={clsx(
-                      'px-4 py-[13px] text-carbon',
-                      col.align === 'right'  && 'text-right',
-                      col.align === 'center' && 'text-center',
-                    )}
-                  >
-                    {col.render
-                      ? col.render(row, i)
-                      : String((row as Record<string, unknown>)[col.key] ?? '')}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {data.map((row, i) => {
+              const rowKey = keyExtractor(row, i);
+              return (
+                <tr
+                  key={rowKey}
+                  className={clsx(
+                    i < data.length - 1 && 'border-b border-[#F0EEE6]',
+                    onRowClick && 'cursor-pointer',
+                    'transition-colors duration-100 hover:bg-cream',
+                  )}
+                  onClick={() => onRowClick?.(row)}
+                >
+                  {selectable && (
+                    <td className="px-4 py-[13px]" onClick={e => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        className="accent-brand-orange cursor-pointer"
+                        checked={keys.has(rowKey)}
+                        onChange={() => toggleRow(rowKey)}
+                        aria-label="Select row"
+                      />
+                    </td>
+                  )}
+                  {columns.map(col => (
+                    <td
+                      key={col.key}
+                      className={clsx(
+                        'px-4 py-[13px] text-carbon',
+                        col.align === 'right'  && 'text-right',
+                        col.align === 'center' && 'text-center',
+                      )}
+                    >
+                      {col.render
+                        ? col.render(row, i)
+                        : String((row as Record<string, unknown>)[col.key] ?? '')}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

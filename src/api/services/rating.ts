@@ -75,6 +75,8 @@ export interface ProductReviewEntry {
   media:              string[];
   isVerifiedPurchase: boolean;
   sellerReply:        SellerReply | null;
+  helpfulCount:       number;
+  helpfulByMe:        boolean;
   createdAt:          string;
 }
 
@@ -144,15 +146,29 @@ export function apiGetMyReviews(page = 1) {
 
 // ── Public / buyer-facing: read ────────────────────────────────────────────────
 
-/** GET /api/rating/product/:productId?page=&limit=&rating= */
-export function apiGetProductReviews(productId: string, query: { page?: number; limit?: number; rating?: number } = {}) {
+/** GET /api/rating/product/:productId?page=&limit=&rating=&sort=&hasMedia=&verifiedOnly= */
+export function apiGetProductReviews(productId: string, query: {
+  page?: number; limit?: number; rating?: number;
+  sort?: 'newest' | 'oldest' | 'highest_rating' | 'lowest_rating' | 'most_helpful';
+  hasMedia?: boolean; verifiedOnly?: boolean;
+} = {}) {
   const params = new URLSearchParams();
   if (query.page) params.set('page', String(query.page));
   if (query.limit) params.set('limit', String(query.limit));
   if (query.rating) params.set('rating', String(query.rating));
+  if (query.sort) params.set('sort', query.sort);
+  if (query.hasMedia) params.set('hasMedia', 'true');
+  if (query.verifiedOnly) params.set('verifiedOnly', 'true');
   const qs = params.toString();
   return client.get<never, ApiResponse<{ stats: ProductReviewStats; pagination: Pagination; reviews: ProductReviewEntry[] }>>(
     `${ENDPOINTS.RATING.PRODUCT_REVIEWS(productId)}${qs ? `?${qs}` : ''}`,
+  );
+}
+
+/** POST /api/rating/:reviewId/helpful — toggle */
+export function apiToggleReviewHelpful(reviewId: string) {
+  return client.post<never, ApiResponse<{ helpfulCount: number; helpfulByMe: boolean }>>(
+    ENDPOINTS.RATING.TOGGLE_HELPFUL(reviewId),
   );
 }
 

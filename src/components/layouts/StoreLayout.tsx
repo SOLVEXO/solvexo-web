@@ -7,11 +7,13 @@ import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, Sparkles, Bell, ChevronLeft, Monitor, Store,
   ClipboardList, Megaphone, Star, Plug, Activity, Search, Wallet,
-  Truck, MessageSquare, UserPlus, FolderTree, RefreshCw, Undo2,
+  Truck, MessageSquare, UserPlus, FolderTree, RefreshCw, Undo2, CreditCard,
   PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
+import { useCommandPalette } from '@/hooks/useCommandPalette';
+import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
 interface StoreWorkspaceValue {
@@ -77,10 +79,32 @@ const NAV: { group: string; items: NavItem[] }[] = [
     group: 'Manage',
     items: [
       { id: 'categories', Icon: FolderTree, label: 'Categories', path: 'categories' },
+      { id: 'plan-billing', Icon: CreditCard, label: 'Plan & Billing', path: 'plan-billing' },
       { id: 'settings',   Icon: Settings,   label: 'Settings',   path: 'settings'   },
     ],
   },
 ];
+
+function buildPaletteItems(
+  navigate: (path: string) => void,
+  storeId: string,
+  posEnabled: boolean,
+): CommandPaletteItem[] {
+  const result: CommandPaletteItem[] = [];
+  NAV.forEach(section => {
+    section.items.forEach(item => {
+      if (item.id === 'pos' && !posEnabled) return; // exclude locked POS item from search
+      result.push({
+        id:       item.id,
+        label:    item.label,
+        group:    section.group,
+        icon:     item.Icon,
+        onSelect: () => navigate(item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`),
+      });
+    });
+  });
+  return result;
+}
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 interface StoreSidebarProps { open: boolean; onToggle: () => void; onClose: () => void; }
@@ -90,6 +114,8 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
   const { pathname } = useLocation();
   const { store, storeId, loading } = useStoreWorkspace();
   const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
+  const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
+  const paletteItems = buildPaletteItems(navigate, storeId, posEnabled);
 
   const isActive = (seg: string) =>
     seg.startsWith('/')
@@ -108,6 +134,20 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
       className="size-7 rounded-md flex items-center justify-center shrink-0 text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
     >
       {open ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
+    </button>
+  );
+
+  const paletteHint = (
+    <button
+      type="button"
+      onClick={() => setPaletteOpen(true)}
+      title="Search (Ctrl+K)"
+      className={clsx(
+        'flex items-center gap-1 rounded-md border border-dark-active text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer shrink-0',
+        open ? 'px-[7px] py-[3px] text-[10px] font-semibold' : 'size-7 justify-center text-[9px] font-semibold',
+      )}
+    >
+      {open ? '⌘K' : 'K'}
     </button>
   );
 
@@ -146,6 +186,7 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
               >
                 <ChevronLeft size={14} /> All Stores
               </button>
+              {paletteHint}
               {toggleBtn}
             </>
           ) : (
@@ -157,6 +198,7 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
               >
                 <ChevronLeft size={15} />
               </button>
+              {paletteHint}
               {toggleBtn}
             </>
           )}
@@ -300,6 +342,8 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
           </div>
         )}
       </aside>
+
+      <CommandPalette items={paletteItems} open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </>
   );
 }

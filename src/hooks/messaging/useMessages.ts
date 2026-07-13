@@ -4,15 +4,24 @@ import {
   apiDeleteMessage, apiMarkMessageSeen,
   type Message, type SendMessagePayload,
 } from '@/api/services/messaging';
+import { acquireMessagingSocket, releaseMessagingSocket, getMessagingSocket } from '@/api/messagingSocket';
+
+export type OptimisticMessage = Message & { _tempId?: string; _pending?: boolean; _failed?: boolean };
+
+const TYPING_IDLE_MS = 3000;
 
 export function useMessages(conversationId: string | null) {
-  const [messages,   setMessages]   = useState<Message[]>([]);
+  const [messages,   setMessages]   = useState<OptimisticMessage[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore,    setHasMore]    = useState(false);
   const [loading,    setLoading]    = useState(() => !!conversationId);
   const [sending,    setSending]    = useState(false);
   const [error,      setError]      = useState('');
+  const [otherUserId,  setOtherUserId]  = useState<string | null>(null);
+  const [otherOnline,  setOtherOnline]  = useState(false);
+  const [otherTyping,  setOtherTyping]  = useState(false);
   const requestId = useRef(0);
+  const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refetch = useCallback(() => {
     if (!conversationId) return Promise.resolve();
@@ -31,6 +40,75 @@ export function useMessages(conversationId: string | null) {
 
   useEffect(() => { refetch(); }, [refetch]);
 
+  // Realtime: join the thread room, sync new/edited/deleted messages, typing, presence.
+  useEffect(() => {
+    if (!conversationId) return;
+    const socket = acquireMessagingSocket();
+    setOtherOnline(false);
+    setOtherTyping(false);
+
+    function handleJoined(info: { conversationId: string; otherUserId: string; otherOnline: boolean }) {
+      if (info.conversationId !== conversationId) return;
+      setOtherUserId(info.otherUserId);
+      setOtherOnline(info.otherOnline);
+    }
+
+    function handleNew(message: Message) {
+      if (message.conversationId !== conversationId) return;
+      setMessages(prev => prev.some(m => m._id === message._id) ? prev : [...prev, message]);
+    }
+
+    function handleEdited(message: Message) {
+      if (message.conversationId !== conversationId) return;
+      setMessages(prev => prev.map(m => m._id === message._id ? message : m));
+    }
+
+    function handleDeleted({ messageId }: { messageId: string }) {
+      setMessages(prev => prev.map(m => m._id === messageId ? { ...m, isDeleted: true, text: null } : m));
+    }
+
+    function handleTyping(body: { conversationId: string; userId: string; isTyping: boolean }) {
+      if (body.conversationId !== conversationId) return;
+      setOtherTyping(body.isTyping);
+    }
+
+    socket.emit('join-conversation', conversationId);
+    socket.on('messaging:joined', handleJoined);
+    socket.on('message:new', handleNew);
+    socket.on('message:edited', handleEdited);
+    socket.on('message:deleted', handleDeleted);
+    socket.on('typing', handleTyping);
+
+    return () => {
+      socket.emit('leave-conversation', conversationId);
+      socket.off('messaging:joined', handleJoined);
+      socket.off('message:new', handleNew);
+      socket.off('message:edited', handleEdited);
+      socket.off('message:deleted', handleDeleted);
+      socket.off('typing', handleTyping);
+      releaseMessagingSocket();
+    };
+  }, [conversationId]);
+
+  // Subscribe to the other participant's presence once known.
+  useEffect(() => {
+    if (!otherUserId) return;
+    const socket = acquireMessagingSocket();
+    function handlePresence(p: { online: boolean }) { setOtherOnline(p.online); }
+    socket.on(`presence:${otherUserId}`, handlePresence);
+    socket.emit('presence:check', [otherUserId]);
+    function handleStatus(list: { userId: string; online: boolean }[]) {
+      const found = list.find(s => s.userId === otherUserId);
+      if (found) setOtherOnline(found.online);
+    }
+    socket.on('presence:status', handleStatus);
+    return () => {
+      socket.off(`presence:${otherUserId}`, handlePresence);
+      socket.off('presence:status', handleStatus);
+      releaseMessagingSocket();
+    };
+  }, [otherUserId]);
+
   async function loadMore() {
     if (!conversationId || !nextCursor) return;
     try {
@@ -47,12 +125,39 @@ export function useMessages(conversationId: string | null) {
     if (!conversationId) return null;
     setError('');
     setSending(true);
+
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const optimistic: OptimisticMessage = {
+      _id: tempId,
+      _tempId: tempId,
+      _pending: true,
+      conversationId,
+      senderId: '',
+      senderRole: 'user',
+      type: payload.type,
+      text: 'text' in payload ? payload.text : null,
+      attachments: 'attachments' in payload ? payload.attachments : [],
+      productShare: null,
+      replyTo: payload.replyTo ?? null,
+      status: 'sent',
+      seenBy: [],
+      isEdited: false,
+      editedAt: null,
+      isDeleted: false,
+      deletedAt: null,
+      isFlagged: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimistic]);
+
     try {
       const res = await apiSendMessage(conversationId, payload);
-      setMessages(prev => [...prev, res]);
+      setMessages(prev => prev.map(m => m._tempId === tempId ? res : m).filter(m => m._id !== tempId || m === res));
       return res;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message.');
+      setMessages(prev => prev.map(m => m._tempId === tempId ? { ...m, _pending: false, _failed: true } : m));
       return null;
     } finally {
       setSending(false);
@@ -66,8 +171,8 @@ export function useMessages(conversationId: string | null) {
   }
 
   async function remove(messageId: string) {
+    setMessages(prev => prev.map(m => m._id === messageId ? { ...m, isDeleted: true, text: null } : m));
     await apiDeleteMessage(messageId);
-    setMessages(prev => prev.filter(m => m._id !== messageId));
   }
 
   async function markSeen(messageId: string) {
@@ -75,7 +180,21 @@ export function useMessages(conversationId: string | null) {
     await apiMarkMessageSeen(messageId, conversationId);
   }
 
-  return { messages, loading, sending, error, hasMore, refetch, loadMore, send, edit, remove, markSeen };
+  function sendTyping(isTyping: boolean) {
+    if (!conversationId) return;
+    getMessagingSocket()?.emit('typing', { conversationId, isTyping });
+    if (typingTimeout.current) clearTimeout(typingTimeout.current);
+    if (isTyping) {
+      typingTimeout.current = setTimeout(() => {
+        getMessagingSocket()?.emit('typing', { conversationId, isTyping: false });
+      }, TYPING_IDLE_MS);
+    }
+  }
+
+  return {
+    messages, loading, sending, error, hasMore, refetch, loadMore, send, edit, remove, markSeen,
+    otherOnline, otherTyping, sendTyping,
+  };
 }
 
 export function useSearchMessages(conversationId: string | null) {

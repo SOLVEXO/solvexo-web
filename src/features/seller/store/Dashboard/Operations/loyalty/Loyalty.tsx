@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Modal } from '@/components/comman/ui/Modal';
+import { EmptyState, SkeletonBox } from '@/components/comman/ui';
 import { Star, Trophy, Gift, Users, Settings, Award, Gem, Trash2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
   apiGetLoyaltyOverview, apiGetLoyaltyProgram, apiUpdateLoyaltyProgram, apiUpdateEarningRules,
   apiUpdateTiers, apiGetLoyaltyMembers, apiGetMemberTransactions, apiAwardPoints,
-  apiCreateReward, apiGetRewards, apiUpdateReward, apiDeleteReward,
+  apiCreateReward, apiGetRewardsForManagement, apiUpdateReward, apiDeleteReward,
   type LoyaltyProgram, type LoyaltyOverview, type LoyaltyMember, type LoyaltyTransaction,
   type Reward, type RewardType, type LoyaltyTier,
 } from '@/api/services/loyalty';
@@ -28,6 +29,8 @@ const TIER_ICONS: Record<string, { Icon: LucideIcon; color: string }> = {
   gold:     { Icon: Award, color: '#D4A017' },
   platinum: { Icon: Gem,   color: '#4A90D9' },
 };
+
+const INPUT_CLS = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50';
 
 const ACTIVITY_LABELS: Record<string, string> = {
   purchase: 'Points Earned from Purchases',
@@ -61,10 +64,10 @@ export function StoreLoyalty() {
         subtitle="Build lasting customer relationships with a points-based loyalty program."
         actions={
           <>
-            <button onClick={() => setShowSettings(true)} className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
+            <button onClick={() => setShowSettings(true)} className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
               Program Settings
             </button>
-            <button onClick={() => setShowCreateReward(true)} className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
+            <button onClick={() => setShowCreateReward(true)} className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
               + Create Reward
             </button>
           </>
@@ -84,7 +87,7 @@ export function StoreLoyalty() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="px-4 py-[10px] text-[13px] font-medium cursor-pointer border-none rounded-tl-lg rounded-tr-lg flex items-center gap-1.5"
+              className="px-4 py-[10px] text-[13px] font-medium cursor-pointer border-none rounded-tl-lg rounded-tr-lg flex items-center gap-1.5 transition-colors duration-150 hover:text-brand-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
               style={{
                 background: activeTab === tab.id ? '#fff' : 'transparent',
                 color: activeTab === tab.id ? '#141413' : '#8C8A82',
@@ -124,7 +127,18 @@ function OverviewTab({ storeId }: { storeId: string }) {
     apiGetLoyaltyOverview(storeId).then(res => setData(res.data)).finally(() => setLoading(false));
   }, [storeId]);
 
-  if (loading) return <p className="text-xs text-slate">Loading…</p>;
+  if (loading) return (
+    <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs flex flex-col gap-2">
+            <SkeletonBox width="60%" height={11} />
+            <SkeletonBox width="40%" height={24} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
   if (!data) return <p className="text-xs text-error">Failed to load overview.</p>;
 
   const metrics = [
@@ -142,7 +156,7 @@ function OverviewTab({ storeId }: { storeId: string }) {
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {metrics.map(m => (
-          <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
             <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
             <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
           </div>
@@ -150,7 +164,7 @@ function OverviewTab({ storeId }: { storeId: string }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
           <p className="text-[14px] font-bold text-carbon mb-[18px]">Member Distribution</p>
           {data.memberDistribution.length === 0 ? (
             <p className="text-xs text-slate italic">No tiers configured yet.</p>
@@ -178,7 +192,7 @@ function OverviewTab({ storeId }: { storeId: string }) {
           )}
         </div>
 
-        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
           <p className="text-[14px] font-bold text-carbon mb-[18px]">Points Activity (Last 30 Days)</p>
           <div className="flex flex-col">
             {activityRows.map((item, i) => {
@@ -220,35 +234,35 @@ function TiersTab({ storeId, program, onSaved }: { storeId: string; program: Loy
   }
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex flex-col gap-3.5">
+    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs flex flex-col gap-4">
       <p className="text-[14px] font-bold text-carbon">Tier Thresholds</p>
       {tiers.map((tier, i) => (
         <div key={i} className="grid grid-cols-[1fr_140px_1fr_32px] gap-2.5 items-end">
           <div>
             <label className="text-xs font-medium text-graphite mb-[5px] block">Tier Name</label>
             <input value={tier.name} onChange={e => update(i, { name: e.target.value })}
-              className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+              className={INPUT_CLS} />
           </div>
           <div>
             <label className="text-xs font-medium text-graphite mb-[5px] block">Min Points</label>
             <input type="number" value={tier.minPoints} onChange={e => update(i, { minPoints: Number(e.target.value) })}
-              className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+              className={INPUT_CLS} />
           </div>
           <div>
             <label className="text-xs font-medium text-graphite mb-[5px] block">Benefits (comma-separated)</label>
             <input value={tier.benefits.join(', ')} onChange={e => update(i, { benefits: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-              className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+              className={INPUT_CLS} />
           </div>
-          <button onClick={() => setTiers(prev => prev.filter((_, idx) => idx !== i))} className="w-8 h-8 flex items-center justify-center bg-white border border-bone rounded-lg text-error cursor-pointer">
+          <button onClick={() => setTiers(prev => prev.filter((_, idx) => idx !== i))} className="w-8 h-8 flex items-center justify-center bg-white border border-bone rounded-lg text-error cursor-pointer transition-colors duration-150 hover:bg-error hover:text-white hover:border-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
             <Trash2 size={14} />
           </button>
         </div>
       ))}
       <div className="flex gap-2">
-        <button onClick={() => setTiers(prev => [...prev, { name: '', minPoints: 0, benefits: [] }])} className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
+        <button onClick={() => setTiers(prev => [...prev, { name: '', minPoints: 0, benefits: [] }])} className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
           + Add Tier
         </button>
-        <button onClick={save} disabled={saving} className="px-6 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer disabled:opacity-50">
+        <button onClick={save} disabled={saving} className="px-6 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
           {saving ? 'Saving…' : 'Save Tiers'}
         </button>
       </div>
@@ -267,7 +281,7 @@ function RewardsTab({ storeId, showCreate, onCloseCreate }: { storeId: string; s
 
   useEffect(() => {
     if (!storeId) return;
-    apiGetRewards(storeId).then(res => setRewards(res.data)).finally(() => setLoading(false));
+    apiGetRewardsForManagement(storeId).then(res => setRewards(res.data)).finally(() => setLoading(false));
   }, [storeId]);
 
   async function handleCreate() {
@@ -299,13 +313,25 @@ function RewardsTab({ storeId, showCreate, onCloseCreate }: { storeId: string; s
   return (
     <div className="flex flex-col gap-5">
       {loading ? (
-        <p className="text-xs text-slate">Loading…</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs flex flex-col gap-3">
+              <SkeletonBox width="70%" height={16} />
+              <SkeletonBox width="40%" height={13} />
+              <SkeletonBox width="100%" height={30} rounded="7px" />
+            </div>
+          ))}
+        </div>
       ) : rewards.length === 0 ? (
-        <p className="text-xs text-slate italic">No rewards yet — click "+ Create Reward" to add one.</p>
+        <EmptyState
+          icon={<Gift size={28} className="text-brand-orange opacity-55" />}
+          title="No rewards yet"
+          description={'Click "+ Create Reward" to add your first reward.'}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {rewards.map(r => (
-            <div key={r._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <div key={r._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-[1px]">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-semibold text-carbon">{r.name}</p>
                 <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: r.isActive ? '#E3F4EA' : '#F0EEE6', color: r.isActive ? '#1E7A3C' : '#5A5852' }}>
@@ -319,10 +345,10 @@ function RewardsTab({ storeId, showCreate, onCloseCreate }: { storeId: string; s
                 {r.stockLimit != null && ` — ${r.redeemedCount}/${r.stockLimit} redeemed`}
               </p>
               <div className="flex gap-2">
-                <button onClick={() => toggleActive(r)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">
+                <button onClick={() => toggleActive(r)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
                   {r.isActive ? 'Deactivate' : 'Activate'}
                 </button>
-                <button onClick={() => remove(r)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-error cursor-pointer">Delete</button>
+                <button onClick={() => remove(r)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-error cursor-pointer transition-colors duration-150 hover:bg-error hover:text-white hover:border-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Delete</button>
               </div>
             </div>
           ))}
@@ -332,25 +358,25 @@ function RewardsTab({ storeId, showCreate, onCloseCreate }: { storeId: string; s
       {showCreate && (
         <Modal title="Create Reward" onClose={onCloseCreate} footer={
           <>
-            <button onClick={onCloseCreate} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">Cancel</button>
-            <button onClick={handleCreate} className="px-4 py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">Create</button>
+            <button onClick={onCloseCreate} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Cancel</button>
+            <button onClick={handleCreate} className="px-4 py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">Create</button>
           </>
         }>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3.5">
             <div>
               <label className="text-xs font-medium text-graphite mb-[5px] block">Name</label>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                className={INPUT_CLS} />
             </div>
             <div>
               <label className="text-xs font-medium text-graphite mb-[5px] block">Points Cost</label>
               <input type="number" value={form.pointsCost} onChange={e => setForm(f => ({ ...f, pointsCost: e.target.value }))}
-                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                className={INPUT_CLS} />
             </div>
             <div>
               <label className="text-xs font-medium text-graphite mb-[5px] block">Type</label>
               <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as RewardType }))}
-                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white cursor-pointer box-border">
+                className={`${INPUT_CLS} cursor-pointer`}>
                 <option value="fixed_discount">Fixed Discount</option>
                 <option value="free_product">Free Product</option>
               </select>
@@ -359,19 +385,19 @@ function RewardsTab({ storeId, showCreate, onCloseCreate }: { storeId: string; s
               <div>
                 <label className="text-xs font-medium text-graphite mb-[5px] block">Discount Value ($)</label>
                 <input type="number" value={form.discountValue} onChange={e => setForm(f => ({ ...f, discountValue: e.target.value }))}
-                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                  className={INPUT_CLS} />
               </div>
             ) : (
               <div>
                 <label className="text-xs font-medium text-graphite mb-[5px] block">Product ID</label>
                 <input value={form.productId} onChange={e => setForm(f => ({ ...f, productId: e.target.value }))}
-                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                  className={INPUT_CLS} />
               </div>
             )}
             <div>
               <label className="text-xs font-medium text-graphite mb-[5px] block">Stock Limit (optional)</label>
               <input type="number" value={form.stockLimit} onChange={e => setForm(f => ({ ...f, stockLimit: e.target.value }))}
-                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                className={INPUT_CLS} />
             </div>
           </div>
         </Modal>
@@ -393,14 +419,28 @@ function MembersTab({ storeId, onAward }: { storeId: string; onAward: (m: Loyalt
   }, [storeId]);
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+    <div className="bg-white border border-bone rounded-[10px] shadow-xs overflow-hidden">
       <div className="px-5 py-3.5 border-b border-bone">
         <p className="text-[13px] font-semibold text-carbon">{loading ? 'Loading members…' : `${total} Member${total === 1 ? '' : 's'}`}</p>
       </div>
       {loading ? (
-        <p className="p-4 text-xs text-slate">Loading…</p>
+        <div className="p-4 flex flex-col gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <SkeletonBox width="25%" height={13} />
+              <SkeletonBox width="12%" height={13} className="ml-auto" />
+              <SkeletonBox width="12%" height={13} />
+              <SkeletonBox width="10%" height={13} />
+              <SkeletonBox width="15%" height={13} />
+            </div>
+          ))}
+        </div>
       ) : members.length === 0 ? (
-        <p className="p-8 text-center text-xs text-slate">No loyalty members yet.</p>
+        <EmptyState
+          icon={<Users size={28} className="text-brand-orange opacity-55" />}
+          title="No loyalty members yet"
+          description="Members will appear here once customers start earning points."
+        />
       ) : (
         <table className="w-full border-collapse">
           <thead>
@@ -412,7 +452,7 @@ function MembersTab({ storeId, onAward }: { storeId: string; onAward: (m: Loyalt
           </thead>
           <tbody>
             {members.map((m, i) => (
-              <tr key={m._id} style={{ borderBottom: i < members.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
+              <tr key={m._id} className="transition-colors duration-150 hover:bg-cream" style={{ borderBottom: i < members.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
                 <td className="px-4 py-3">
                   <p className="text-[13px] font-semibold text-charcoal">{m.user?.name ?? 'Unknown'}</p>
                   <p className="text-[11px] text-slate">{m.user?.email}</p>
@@ -422,7 +462,7 @@ function MembersTab({ storeId, onAward }: { storeId: string; onAward: (m: Loyalt
                 <td className="px-4 py-3 text-[13px] text-slate">{m.currentTier ?? '—'}</td>
                 <td className="px-4 py-3 text-[13px] text-slate">{new Date(m.lastActivityAt).toLocaleDateString()}</td>
                 <td className="px-4 py-3">
-                  <button onClick={() => onAward(m)} className="text-xs font-medium text-brand-orange bg-transparent border-none cursor-pointer">Award Points</button>
+                  <button onClick={() => onAward(m)} className="text-xs font-medium text-brand-orange bg-transparent border-none cursor-pointer transition-opacity duration-150 hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 rounded-sm">Award Points</button>
                 </td>
               </tr>
             ))}
@@ -467,17 +507,17 @@ function EarningRulesTab({ storeId, program, onSaved }: { storeId: string; progr
   ];
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex flex-col gap-4 max-w-[480px]">
+    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs flex flex-col gap-4 max-w-[480px]">
       <p className="text-[14px] font-bold text-carbon">Earning Rules</p>
       {fields.map(f => (
         <div key={f.key}>
           <label className="text-xs font-medium text-graphite mb-[5px] block">{f.label}</label>
           <input type="number" value={form[f.key]} onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+            className={INPUT_CLS} />
           <p className="text-[11px] text-slate mt-1">{f.hint}</p>
         </div>
       ))}
-      <button onClick={save} disabled={saving} className="px-6 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer self-start disabled:opacity-50">
+      <button onClick={save} disabled={saving} className="px-6 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer self-start transition-colors duration-150 hover:bg-brand-deep-orange disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
         {saving ? 'Saving…' : 'Save Earning Rules'}
       </button>
     </div>
@@ -504,8 +544,8 @@ function ProgramSettingsModal({ storeId, program, onClose, onSaved }: { storeId:
   return (
     <Modal title="Program Settings" onClose={onClose} footer={
       <>
-        <button onClick={onClose} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">Cancel</button>
-        <button onClick={save} disabled={saving} className="px-4 py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer disabled:opacity-50">
+        <button onClick={onClose} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Cancel</button>
+        <button onClick={save} disabled={saving} className="px-4 py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
           {saving ? 'Saving…' : 'Save'}
         </button>
       </>
@@ -518,7 +558,7 @@ function ProgramSettingsModal({ storeId, program, onClose, onSaved }: { storeId:
         <div>
           <label className="text-xs font-medium text-graphite mb-[5px] block">Points expire after (months)</label>
           <input type="number" placeholder="Leave blank for never" value={expiry} onChange={e => setExpiry(e.target.value)}
-            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+            className={INPUT_CLS} />
         </div>
       </div>
     </Modal>
@@ -550,22 +590,22 @@ function AwardPointsModal({ storeId, member, onClose }: { storeId: string; membe
   return (
     <Modal title={`Award Points — ${member.user?.name ?? 'Member'}`} onClose={onClose} width={480} footer={
       <>
-        <button onClick={onClose} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">Cancel</button>
-        <button onClick={submit} disabled={saving} className="px-4 py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer disabled:opacity-50">
+        <button onClick={onClose} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Cancel</button>
+        <button onClick={submit} disabled={saving} className="px-4 py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
           {saving ? 'Awarding…' : 'Award'}
         </button>
       </>
     }>
-      <div className="flex flex-col gap-3 mb-4">
+      <div className="flex flex-col gap-3.5 mb-4">
         <div>
           <label className="text-xs font-medium text-graphite mb-[5px] block">Points (negative to deduct)</label>
           <input type="number" value={points} onChange={e => setPoints(e.target.value)}
-            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+            className={INPUT_CLS} />
         </div>
         <div>
           <label className="text-xs font-medium text-graphite mb-[5px] block">Reason</label>
           <select value={type} onChange={e => setType(e.target.value as any)}
-            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white cursor-pointer box-border">
+            className={`${INPUT_CLS} cursor-pointer`}>
             <option value="birthday">Birthday bonus</option>
             <option value="referral">Referral bonus</option>
             <option value="adjustment">Manual adjustment</option>
@@ -574,7 +614,7 @@ function AwardPointsModal({ storeId, member, onClose }: { storeId: string; membe
         <div>
           <label className="text-xs font-medium text-graphite mb-[5px] block">Description</label>
           <input value={description} onChange={e => setDescription(e.target.value)}
-            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+            className={INPUT_CLS} />
         </div>
       </div>
 
@@ -583,7 +623,7 @@ function AwardPointsModal({ storeId, member, onClose }: { storeId: string; membe
         {history.length === 0 ? (
           <p className="text-xs text-slate italic">No transactions yet.</p>
         ) : history.map(tx => (
-          <div key={tx._id} className="flex justify-between items-center bg-cream rounded-lg px-3 py-2">
+          <div key={tx._id} className="flex justify-between items-center bg-cream rounded-lg px-3 py-2 transition-colors duration-150 hover:bg-bone">
             <div>
               <p className="text-[11px] font-semibold text-carbon">{tx.description ?? tx.type}</p>
               <p className="text-[11px] text-slate">{new Date(tx.createdAt).toLocaleDateString()}</p>

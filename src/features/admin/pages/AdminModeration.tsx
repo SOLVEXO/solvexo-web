@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { ComingSoonBanner } from '@/components/comman/ui';
-import { ArrowLeft, AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import { ComingSoonBanner, EmptyState } from '@/components/comman/ui';
+import { ArrowLeft, AlertCircle, AlertTriangle, Info, SearchX } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ export function AdminModeration() {
           </span>
           <button
             onClick={() => navigate('/seller/dashboard')}
-            className="px-3 py-[6px] rounded-lg text-[12px] font-medium text-slate bg-transparent border border-bone cursor-pointer flex items-center gap-[5px]"
+            className="px-3 py-[6px] rounded-lg text-[12px] font-medium text-slate bg-transparent border border-bone cursor-pointer flex items-center gap-[5px] outline-none transition-colors duration-150 hover:bg-cream focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50"
           >
             <ArrowLeft size={13} /> Back to Demo
           </button>
@@ -105,7 +105,7 @@ export function AdminModeration() {
 
           {/* Filters */}
           <div className="px-5 py-[14px] border-b border-bone flex gap-[10px] items-center flex-wrap">
-            <div className="flex items-center gap-[6px] border border-bone rounded-lg px-3 bg-white flex-1 max-w-[280px]">
+            <div className="flex items-center gap-[6px] border border-bone rounded-lg px-3 bg-white flex-1 max-w-[280px] transition-[border-color,box-shadow] duration-150 focus-within:border-brand-orange focus-within:ring-2 focus-within:ring-brand-orange/10">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
@@ -117,7 +117,7 @@ export function AdminModeration() {
               { value: riskF, set: setRiskF, opts: ['All Priority','high','medium','low']    },
             ].map((s, i) => (
               <select key={i} value={s.value} onChange={e => s.set(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white text-charcoal outline-none cursor-pointer">
+                className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white text-charcoal outline-none cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
                 {s.opts.map(o => <option key={o} value={o.startsWith('All') ? '' : o}>{o}</option>)}
               </select>
             ))}
@@ -136,15 +136,24 @@ export function AdminModeration() {
                 </tr>
               </thead>
               <tbody>
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={8}>
+                      <EmptyState
+                        icon={<SearchX size={28} className="text-slate" />}
+                        title="No flagged items match your filters"
+                        description="Try adjusting your search or clearing the type/priority filters."
+                      />
+                    </td>
+                  </tr>
+                )}
                 {filtered.map((item, i) => {
                   const risk = RISK[item.risk];
                   const ts   = typeStyle[item.type];
                   return (
                     <tr key={item.id}
-                      className="transition-colors duration-[120ms]"
-                      style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none', background: item.risk === 'high' ? '#FFFAF9' : '#fff' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
-                      onMouseLeave={e => (e.currentTarget.style.background = item.risk === 'high' ? '#FFFAF9' : '#fff')}
+                      className={`transition-colors duration-[120ms] hover:bg-[#FAF9F5] ${item.risk === 'high' ? 'bg-[#FFFAF9]' : 'bg-white'}`}
+                      style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none' }}
                     >
                       {/* ID */}
                       <td className="px-4 py-3 font-bold text-[#B95A3A] whitespace-nowrap text-[13px]">{item.id}</td>
@@ -181,7 +190,7 @@ export function AdminModeration() {
                             <button key={lbl}
                               disabled={isMutating}
                               title={isMutating ? 'Not connected to a backend yet' : undefined}
-                              className={`px-[10px] py-1 rounded-[6px] text-[11px] font-medium text-white border-none whitespace-nowrap ${isMutating ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                              className={`px-[10px] py-1 rounded-[6px] text-[11px] font-medium text-white border-none whitespace-nowrap outline-none transition-[filter,transform] duration-150 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50 ${isMutating ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:brightness-110 active:scale-[0.96]'}`}
                               style={{ background: bg }}>
                               {lbl}
                             </button>

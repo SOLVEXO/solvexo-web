@@ -8,7 +8,7 @@ import {
   ChevronRight, Menu, X, MessageSquare, Ban, Flag, Trash2, RefreshCw,
   type LucideIcon,
 } from 'lucide-react';
-import { useGetProfile } from '@/hooks/auth/useGetProfile';
+import { useGetProfile, invalidateProfileCache } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useCartContext } from '@/contexts/CartContext';
@@ -758,7 +758,10 @@ function MessagesTab({ initialConversationId }: { initialConversationId?: string
     if (initialConversationId) setActiveId(initialConversationId);
   }, [initialConversationId]);
 
-  const { messages, loading: msgLoading, sending, send, edit, remove, markSeen, hasMore, loadMore } = useMessages(activeId);
+  const {
+    messages, loading: msgLoading, sending, send, edit, remove, markSeen, hasMore, loadMore,
+    otherOnline, otherTyping, sendTyping,
+  } = useMessages(activeId);
   const { block, unblock, report } = useModeration();
   const { execute: startConversation, loading: starting } = useStartConversation();
 
@@ -849,7 +852,7 @@ function MessagesTab({ initialConversationId }: { initialConversationId?: string
           open={!!active}
           headerName={active ? (active.store?.name ?? `Seller #${active.sellerId.slice(-6).toUpperCase()}`) : ''}
           headerImage={active?.store?.logo}
-          headerSubtitle={active ? 'Seller' : undefined}
+          headerSubtitle={undefined}
           menuItems={menuItems}
           onBack={() => setActiveId(null)}
           messages={messages}
@@ -864,6 +867,10 @@ function MessagesTab({ initialConversationId }: { initialConversationId?: string
           onUpload={file => void handleUpload(file)}
           onEditMessage={(id, text) => void edit(id, text)}
           onDeleteMessage={id => void remove(id)}
+          otherOnline={otherOnline}
+          otherTyping={otherTyping}
+          onTyping={sendTyping}
+          conversationId={activeId}
         />
       </div>
 
@@ -917,6 +924,7 @@ function ProfileTab() {
     try {
       await apiDeleteAccount();
       TokenStorage.clear();
+      invalidateProfileCache();
       navigate('/login');
     } finally {
       setDeleting(false);

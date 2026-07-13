@@ -131,9 +131,14 @@ export function apiCreateReward(storeId: string, payload: CreateRewardPayload) {
   return client.post<never, ApiResponse<Reward>>(ENDPOINTS.LOYALTY.REWARDS.CREATE(storeId), payload);
 }
 
-/** GET /api/loyalty/:storeId/rewards */
+/** GET /api/loyalty/:storeId/rewards — public, active-only */
 export function apiGetRewards(storeId: string) {
   return client.get<never, ApiResponse<Reward[]>>(ENDPOINTS.LOYALTY.REWARDS.LIST(storeId));
+}
+
+/** GET /api/loyalty/:storeId/rewards/manage — seller-only, includes inactive rewards */
+export function apiGetRewardsForManagement(storeId: string) {
+  return client.get<never, ApiResponse<Reward[]>>(ENDPOINTS.LOYALTY.REWARDS.MANAGE(storeId));
 }
 
 /** PATCH /api/loyalty/:storeId/rewards/:rewardId */

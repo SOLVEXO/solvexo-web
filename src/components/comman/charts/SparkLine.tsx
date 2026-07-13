@@ -1,4 +1,5 @@
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
+import { CHART_DEFAULT_COLOR } from './chartTheme';
 
 interface TooltipPayload { value: number }
 interface SparkTooltipProps {
@@ -29,7 +30,7 @@ export interface SparkLineProps {
 
 export function SparkLine({
   data,
-  color = '#D97757',
+  color = CHART_DEFAULT_COLOR,
   width = 80,
   height = 36,
   valuePrefix = '',
@@ -39,8 +40,21 @@ export function SparkLine({
   const chartData = data.map((v, i) => ({ i, v }));
   const gradId = `spark-grad-${color.replace('#', '')}`;
 
+  if (!data.length) {
+    return (
+      <div
+        className="flex items-center justify-center"
+        style={{ width, height }}
+        role="img"
+        aria-label="Chart"
+      >
+        <p className="text-slate text-[13px]">No data yet</p>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ width, height }}>
+    <div style={{ width, height }} role="img" aria-label="Chart">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
           <defs>

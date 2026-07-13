@@ -3,6 +3,7 @@ import {
   apiListConversations, apiSearchConversations, apiStartConversation,
   type Conversation, type ListConversationsParams, type StartConversationPayload,
 } from '@/api/services/messaging';
+import { acquireMessagingSocket, releaseMessagingSocket } from '@/api/messagingSocket';
 
 export function useConversations(params?: ListConversationsParams) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -22,6 +23,26 @@ export function useConversations(params?: ListConversationsParams) {
   }, [storeId]);
 
   useEffect(() => { refetch(); }, [refetch]);
+
+  // Instant inbox updates: new message / read state bumps the conversation to
+  // the top with fresh unread + lastMessage, no manual refresh needed.
+  useEffect(() => {
+    const socket = acquireMessagingSocket();
+
+    function handleUpdate(updated: Conversation) {
+      if (storeId && updated.storeId !== storeId) return;
+      setConversations(prev => {
+        const rest = prev.filter(c => c._id !== updated._id);
+        return [{ ...prev.find(c => c._id === updated._id), ...updated }, ...rest];
+      });
+    }
+
+    socket.on('conversation:update', handleUpdate);
+    return () => {
+      socket.off('conversation:update', handleUpdate);
+      releaseMessagingSocket();
+    };
+  }, [storeId]);
 
   return { conversations, loading, error, refetch };
 }

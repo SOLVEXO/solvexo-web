@@ -38,7 +38,7 @@ function FollowerRow({ entry }: { entry: FollowerEntry }) {
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 function Skeleton() {
   return (
-    <div className="bg-white rounded-[10px] border border-bone shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+    <div className="bg-white rounded-[10px] border border-bone shadow-xs overflow-hidden">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="flex items-center gap-3 px-5 py-[14px] border-b border-[#F3F2EC] last:border-none">
           <div className="animate-pulse w-9 h-9 rounded-full bg-bone shrink-0" />
@@ -92,7 +92,7 @@ export function StoreFollowers() {
           <button
             onClick={() => load(page, true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 px-3 py-[7px] bg-white border border-bone rounded-[7px] text-[12px] font-medium text-charcoal cursor-pointer hover:bg-cream disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-[7px] bg-white border border-bone rounded-[7px] text-[12px] font-medium text-charcoal cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
           >
             <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
             Refresh
@@ -102,7 +102,7 @@ export function StoreFollowers() {
 
       <div className="px-7 py-6">
         {loading ? <Skeleton /> : followers.length === 0 ? (
-          <div className="bg-white rounded-[10px] border border-bone shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex flex-col items-center justify-center py-16 gap-4">
+          <div className="bg-white rounded-[10px] border border-bone shadow-xs flex flex-col items-center justify-center py-16 gap-4">
             <div className="w-12 h-12 rounded-full bg-brand-pale-orange flex items-center justify-center">
               <UserPlus size={20} className="text-brand-orange" />
             </div>
@@ -114,7 +114,7 @@ export function StoreFollowers() {
         ) : (
           <>
             {/* Summary card */}
-            <div className="bg-white rounded-[10px] border border-bone shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4 mb-4 flex items-center gap-3">
+            <div className="bg-white rounded-[10px] border border-bone shadow-xs px-5 py-4 mb-4 flex items-center gap-3">
               <div className="w-9 h-9 rounded-[8px] bg-brand-pale-orange flex items-center justify-center shrink-0">
                 <Users size={16} className="text-brand-orange" />
               </div>
@@ -125,7 +125,7 @@ export function StoreFollowers() {
             </div>
 
             {/* List */}
-            <div className="bg-white rounded-[10px] border border-bone shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+            <div className="bg-white rounded-[10px] border border-bone shadow-xs overflow-hidden">
               <div className="px-5 py-3 border-b border-[#F3F2EC] flex items-center justify-between">
                 <p className="text-[12px] font-semibold text-slate uppercase tracking-[0.06em]">Followers</p>
                 <p className="text-[11px] text-slate">{followers.length} shown</p>
@@ -139,7 +139,7 @@ export function StoreFollowers() {
                 <button
                   onClick={() => load(page - 1)}
                   disabled={page <= 1}
-                  className="px-4 py-[7px] rounded-[7px] text-[12px] font-medium border border-bone bg-white text-charcoal cursor-pointer hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-4 py-[7px] rounded-[7px] text-[12px] font-medium border border-bone bg-white text-charcoal cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
                 >
                   Previous
                 </button>
@@ -147,7 +147,7 @@ export function StoreFollowers() {
                 <button
                   onClick={() => load(page + 1)}
                   disabled={page >= pages}
-                  className="px-4 py-[7px] rounded-[7px] text-[12px] font-medium border border-bone bg-white text-charcoal cursor-pointer hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-4 py-[7px] rounded-[7px] text-[12px] font-medium border border-bone bg-white text-charcoal cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
                 >
                   Next
                 </button>

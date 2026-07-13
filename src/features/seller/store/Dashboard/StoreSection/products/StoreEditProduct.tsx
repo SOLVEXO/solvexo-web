@@ -9,7 +9,7 @@ import {
 import { getCachedProducts, updateCachedProduct, type ProductEntry } from './_cache';
 import { SubcategoryField } from './SubcategoryField';
 import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
-import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal } from '@/components/comman/ui';
+import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal, SkeletonBox } from '@/components/comman/ui';
 
 type ProductStatus = 'draft' | 'active' | 'scheduled';
 
@@ -203,8 +203,50 @@ export default function StoreEditProduct() {
 
   if (fetching) {
     return (
-      <div className="flex items-center justify-center h-screen bg-cream">
-        <Loader2 size={24} className="text-brand-orange animate-spin" />
+      <div className="bg-cream min-h-screen">
+        {/* ── Header skeleton ── */}
+        <div className="px-7 py-5 bg-white border-b border-bone flex items-center justify-between">
+          <div className="flex flex-col gap-2">
+            <SkeletonBox width={160} height={18} rounded="6px" />
+            <SkeletonBox width={120} height={12} rounded="4px" />
+          </div>
+          <div className="flex items-center gap-3">
+            <SkeletonBox width={80} height={36} rounded="9px" />
+            <SkeletonBox width={110} height={36} rounded="9px" />
+          </div>
+        </div>
+
+        {/* ── 2-column body skeleton ── */}
+        <div className="px-7 py-6 grid grid-cols-[1fr_296px] gap-5 items-start">
+          {/* Left column */}
+          <div className="flex flex-col gap-5">
+            <div className="bg-white border border-bone rounded-[10px] p-5 flex flex-col gap-4">
+              <SkeletonBox width="30%" height={14} rounded="4px" />
+              <SkeletonBox height={38} rounded="8px" />
+              <SkeletonBox height={100} rounded="8px" />
+            </div>
+            <div className="bg-white border border-bone rounded-[10px] p-5 flex flex-col gap-4">
+              <SkeletonBox width="20%" height={14} rounded="4px" />
+              <SkeletonBox height={38} rounded="8px" />
+            </div>
+            <div className="bg-white border border-bone rounded-[10px] p-5">
+              <SkeletonBox height={120} rounded="8px" />
+            </div>
+          </div>
+
+          {/* Right sidebar */}
+          <div className="flex flex-col gap-4">
+            <div className="bg-white border border-bone rounded-[10px] p-5 flex flex-col gap-3">
+              <SkeletonBox width="40%" height={14} rounded="4px" />
+              <SkeletonBox height={38} rounded="8px" />
+              <SkeletonBox height={38} rounded="8px" />
+            </div>
+            <div className="bg-white border border-bone rounded-[10px] p-5 flex flex-col gap-3">
+              <SkeletonBox width="50%" height={14} rounded="4px" />
+              <SkeletonBox height={38} rounded="8px" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

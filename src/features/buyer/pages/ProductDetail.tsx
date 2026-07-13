@@ -8,6 +8,7 @@ import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Badge } from '@/components/comman/ui/Badge';
 import { Card } from '@/components/comman/ui/Card';
+import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import {
   ArrowRight, ArrowLeft, Package, Download, ClipboardList, CheckCircle,
   Search, ShoppingCart, Star, Link2, Mail, Smartphone, ImageOff, Loader2, Heart,
@@ -19,52 +20,49 @@ import { ProductReviewsSection } from './ProductReviews';
 function SolvexoIcon({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="8" fill="#D97757"/>
+      <rect width="32" height="32" rx="8" fill="#D97757" />
       <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-      <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7"/>
-      <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7" />
+      <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function DetailSkeleton() {
-  const box = (w: string | number, h: number, r = 6) => (
-    <div className="animate-pulse" style={{ width: w, height: h, borderRadius: r, background: '#E8E6DC' }} />
-  );
   return (
     <div className="px-4 md:px-6 lg:px-10 py-6 md:py-7">
       {/* Breadcrumb */}
       <div className="flex gap-2 mb-6">
         {[80, 20, 60, 20, 120].map((w, i) => (
-          <div key={i} className="animate-pulse h-[13px] rounded bg-bone" style={{ width: w }} />
+          <SkeletonBox key={i} width={w} height={13} rounded="4px" />
         ))}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-9 items-start min-w-0">
         {/* Left */}
         <div>
-          <div className="animate-pulse h-[340px] rounded-2xl bg-bone mb-4" />
+          <SkeletonBox className="w-full h-[240px] md:h-[340px] lg:h-[400px] mb-4" rounded="16px" />
           <div className="flex gap-[10px] mb-6">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="animate-pulse w-[70px] h-[70px] rounded-[10px] bg-bone" />
+            {[1, 2, 3, 4].map(i => (
+              <SkeletonBox key={i} width={70} height={70} rounded="10px" />
             ))}
           </div>
-          {box('40%', 18, 6)}
+          <SkeletonBox width="40%" height={18} rounded="6px" />
           <div className="mt-3 flex flex-col gap-2">
             {[100, 95, 90, 80].map((w, i) => (
-              <div key={i} className="animate-pulse h-3 rounded bg-bone" style={{ width: `${w}%` }} />
+              <SkeletonBox key={i} width={`${w}%`} height={12} rounded="4px" />
             ))}
           </div>
         </div>
         {/* Right */}
-        <div className="bg-white rounded-[12px] border border-bone p-6">
-          {box(60, 20, 4)}
-          <div className="mt-3">{box('80%', 24, 6)}</div>
-          <div className="mt-2">{box('50%', 13, 4)}</div>
-          <div className="mt-4">{box(80, 36, 8)}</div>
+        <div className="bg-white rounded-xl border border-bone shadow-xs p-6">
+          <SkeletonBox width={60} height={20} rounded="4px" />
+          <div className="mt-3"><SkeletonBox width="80%" height={24} rounded="6px" /></div>
+          <div className="mt-2"><SkeletonBox width="50%" height={13} rounded="4px" /></div>
+          <div className="mt-4"><SkeletonBox width={80} height={36} rounded="8px" /></div>
           <div className="mt-5 flex flex-col gap-[10px]">
-            {box('100%', 44, 10)}
-            {box('100%', 40, 10)}
+            <SkeletonBox width="100%" height={44} rounded="10px" />
+            <SkeletonBox width="100%" height={40} rounded="10px" />
           </div>
         </div>
       </div>
@@ -168,10 +166,10 @@ export function ProductDetail() {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [addedFeedback, setAddedFeedback] = useState(false);
 
-  const product       = detail?.product ?? null;
-  const variants      = detail?.variants ?? [];
+  const product = detail?.product ?? null;
+  const variants = detail?.variants ?? [];
   const activeVariant = selectedVariant ?? detail?.defaultVariant ?? null;
-  const allImages     = [
+  const allImages = [
     ...(product?.images ?? []),
     ...(activeVariant?.images ?? []),
   ].filter((v, i, a) => a.indexOf(v) === i); // deduplicate
@@ -206,7 +204,7 @@ export function ProductDetail() {
           {/* Wishlist icon */}
           <div
             onClick={() => navigate('/account/profile?tab=wishlist')}
-            className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer"
+            className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer transition-transform hover:scale-105"
           >
             <Heart size={16} className={wishlistCount > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'} />
             {wishlistCount > 0 && (
@@ -219,7 +217,7 @@ export function ProductDetail() {
           {/* Cart icon */}
           <div
             onClick={() => navigate('/cart')}
-            className="relative w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer"
+            className="relative w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer transition-transform hover:scale-105"
           >
             <ShoppingCart size={16} className="text-white" />
             {cartCount > 0 && (
@@ -244,7 +242,7 @@ export function ProductDetail() {
 
       {/* Content */}
       {!loading && product && (
-        <div className="px-4 md:px-6 lg:px-10 py-6 md:py-8">
+        <div className="px-4 md:px-6 lg:px-10 py-6 md:py-8 pb-[92px] lg:pb-8">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 mb-6 text-[13px]">
             <span className="text-slate cursor-pointer" onClick={() => navigate('/marketplace')}>Marketplace</span>
@@ -301,33 +299,68 @@ export function ProductDetail() {
               <div className="h-px bg-bone my-4" />
 
               {/* Seller */}
-              <div className="text-[15px] font-bold text-carbon mb-[14px]">About the Seller</div>
-              <div className="flex items-start gap-[14px] mb-4">
+              {/* Seller */}
+              <div className="text-[15px] font-bold text-carbon mb-[14px]">
+                About the Seller
+              </div>
+
+              <div className="flex items-center gap-[14px] mb-4">
+
                 <div className="w-[52px] h-[52px] rounded-full bg-success-bg text-success flex items-center justify-center font-bold text-[16px] flex-shrink-0">
                   {sellerInitials}
                 </div>
-                <div className="flex-1">
-                  <div className="text-[15px] font-bold text-carbon mb-1">
-                    {product.sellerName ?? 'Unknown Seller'}
+
+                <div className="flex-1 min-w-0">
+
+                  <div className="flex items-center justify-between gap-3">
+
+                    <div className="min-w-0">
+                      <div className="text-[15px] font-bold text-carbon truncate">
+                        {product.sellerName ?? 'Unknown Seller'}
+                      </div>
+
+                      <div className="flex items-center gap-1 mt-[3px]">
+                        <Star size={12} className="text-brand-orange fill-brand-orange" />
+
+                        <span className="text-[12px] font-semibold text-charcoal">
+                          {product.averageRating?.toFixed(1) ?? '0.0'}
+                        </span>
+
+                        <span className="text-[12px] text-slate">
+                          ({product.totalRatings ?? 0})
+                        </span>
+                      </div>
+                    </div>
+
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        product.storeSlug &&
+                        navigate(`/store/${product.storeSlug}`)
+                      }
+                      disabled={!product.storeSlug}
+                    >
+                      View Store
+                      <ArrowRight size={14} className="inline align-middle ml-1" />
+                    </Button>
+
                   </div>
-                  <p className="text-[12px] text-slate leading-[1.6] mb-[10px]">
+
+
+                  <p className="text-[12px] text-slate leading-[1.6] mt-1">
                     Independent seller on Solvexo marketplace.
                   </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => product.storeSlug && navigate(`/store/${product.storeSlug}`)}
-                    disabled={!product.storeSlug}
-                  >
-                    View Store <ArrowRight size={14} className="inline align-middle ml-1" />
-                  </Button>
+
                 </div>
+
               </div>
 
               <div className="h-px bg-bone my-4" />
 
               {/* Reviews */}
-              <ProductReviewsSection productId={product._id} />
+              <ProductReviewsSection productId={product._id} storeName={product.sellerName} />
             </div>
 
             {/* RIGHT: sticky purchase card */}
@@ -401,7 +434,7 @@ export function ProductDetail() {
                       {/* Wishlist toggle button */}
                       {product && activeVariant && (() => {
                         const wishlisted = isWishlisted(product._id, activeVariant._id);
-                        const busy       = wishlisting === activeVariant._id;
+                        const busy = wishlisting === activeVariant._id;
                         return (
                           <button
                             onClick={() => toggleWishlist(product._id, activeVariant._id)}
@@ -432,10 +465,10 @@ export function ProductDetail() {
                 {/* Info rows */}
                 <div className="px-6 py-5 flex flex-col gap-4">
                   {[
-                    { Icon: Package,       label: "Seller",    value: product.sellerName ?? 'Unknown' },
-                    { Icon: Download,      label: 'Delivery',  value: 'Ships after purchase' },
-                    { Icon: ClipboardList, label: 'SKU',       value: activeVariant?.sku ?? '—' },
-                    { Icon: CheckCircle,   label: 'Status',    value: product.status },
+                    { Icon: Package, label: "Seller", value: product.sellerName ?? 'Unknown' },
+                    { Icon: Download, label: 'Delivery', value: 'Ships after purchase' },
+                    { Icon: ClipboardList, label: 'SKU', value: activeVariant?.sku ?? '—' },
+                    { Icon: CheckCircle, label: 'Status', value: product.status },
                   ].map(row => (
                     <div key={row.label} className="flex gap-3 items-start">
                       <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center flex-shrink-0">
@@ -465,6 +498,36 @@ export function ProductDetail() {
           </div>
         </div>
       )}
+
+      {/* Mobile sticky Add to Cart bar */}
+      {!loading && product && activeVariant && (
+        <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-white border-t border-bone px-4 py-3 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] text-slate leading-none mb-[3px]">Price</p>
+            <p className="text-[17px] font-extrabold text-carbon leading-none truncate">
+              ${activeVariant.price.toLocaleString()}
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            size="md"
+            className="justify-center flex-1 max-w-[220px]"
+            disabled={(activeVariant.stock ?? 0) <= 0}
+            onClick={async () => {
+              await addToCart(product._id, activeVariant._id, product.productType ?? product.type ?? 'physical');
+              setAddedFeedback(true);
+              setTimeout(() => setAddedFeedback(false), 2000);
+            }}
+          >
+            {adding === activeVariant._id
+              ? <><Loader2 size={13} className="animate-spin" /> Adding…</>
+              : addedFeedback
+                ? '✓ Added to Cart'
+                : <><ShoppingCart size={14} /> Add to Cart</>
+            }
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -476,8 +539,9 @@ function ThumbImage({ src, active, onClick }: { src: string; active: boolean; on
     <div
       onClick={onClick}
       className={clsx(
-        'w-[70px] h-[70px] rounded-[10px] overflow-hidden cursor-pointer bg-brand-pale-orange flex items-center justify-center border-2',
-        active ? 'border-brand-orange' : 'border-transparent',
+        'w-[70px] h-[70px] rounded-[10px] overflow-hidden cursor-pointer bg-brand-pale-orange flex items-center justify-center border-2 shrink-0',
+        'transition-[border-color,opacity,transform] duration-150 ease-out hover:-translate-y-[1px]',
+        active ? 'border-brand-orange' : 'border-transparent opacity-70 hover:opacity-100',
       )}
     >
       {!errored && src

@@ -37,6 +37,8 @@ export const ENDPOINTS = {
     UPDATE: '/api/store/update-store',
     GET_BY_ID: (id: string) => `/api/store/getStoreById/${id}`,
     MY_STORES: '/api/store/my-stores',
+    CUSTOM_DOMAIN: (storeId: string) => `/api/store/${storeId}/custom-domain`,
+    WHITE_LABEL:   (storeId: string) => `/api/store/${storeId}/white-label`,
 
     // Builder
     SAVE_BUILDER_CONFIG: '/api/store/save-builder-config',
@@ -77,6 +79,13 @@ export const ENDPOINTS = {
     MY_RESUME:    (id: string) => `/api/subscriptions/my/${id}/resume`,
     MY_CANCEL:    (id: string) => `/api/subscriptions/my/${id}/cancel`,
     MY_CHANGE_PLAN: (id: string) => `/api/subscriptions/my/${id}/change-plan`,
+    MY_TIMELINE:  (id: string) => `/api/subscriptions/my/${id}/timeline`,
+    MY_SETUP_INTENT: '/api/subscriptions/my/setup-intent',
+    MY_BILLING_PORTAL: '/api/subscriptions/my/billing-portal',
+    MY_BENEFITS:  (storeId: string) => `/api/subscriptions/my/benefits/${storeId}`,
+    MY_CREDITS:   '/api/subscriptions/my/credits',
+    MY_CREDITS_SPEND: (storeId: string) => `/api/subscriptions/my/credits/${storeId}/spend`,
+    MY_NOTIFICATION_PREFS: '/api/subscriptions/my/notification-preferences',
 
     // Seller (store-scoped)
     PLANS: {
@@ -89,12 +98,14 @@ export const ENDPOINTS = {
     },
     DASHBOARD:   (storeId: string) => `/api/subscriptions/${storeId}/dashboard`,
     EXPORT:      (storeId: string) => `/api/subscriptions/${storeId}/export`,
+    ANALYTICS_ADVANCED: (storeId: string) => `/api/subscriptions/${storeId}/analytics/advanced`,
     SUBSCRIBERS: {
       LIST:      (storeId: string) => `/api/subscriptions/${storeId}/subscribers`,
       GET_BY_ID: (storeId: string, id: string) => `/api/subscriptions/${storeId}/subscribers/${id}`,
       PAUSE:     (storeId: string, id: string) => `/api/subscriptions/${storeId}/subscribers/${id}/pause`,
       RESUME:    (storeId: string, id: string) => `/api/subscriptions/${storeId}/subscribers/${id}/resume`,
       CANCEL:    (storeId: string, id: string) => `/api/subscriptions/${storeId}/subscribers/${id}/cancel`,
+      REFUND_INVOICE: (storeId: string, id: string, invoiceId: string) => `/api/subscriptions/${storeId}/subscribers/${id}/invoices/${invoiceId}/refund`,
     },
 
     // Admin
@@ -107,6 +118,12 @@ export const ENDPOINTS = {
       PAYMENT_FAILURES:  '/api/subscriptions/admin/payment-failures',
       SUB_DETAIL:        (id: string) => `/api/subscriptions/admin/subscriptions/${id}`,
       SUB_PAYMENT_ATTEMPTS: (id: string) => `/api/subscriptions/admin/subscriptions/${id}/payment-attempts`,
+      LTV:               '/api/subscriptions/admin/ltv',
+      REVENUE_BREAKDOWN: '/api/subscriptions/admin/revenue-breakdown',
+      CHURN_COHORTS:     '/api/subscriptions/admin/churn-cohorts',
+      INVOICE_REFUND:    (invoiceId: string) => `/api/subscriptions/admin/invoices/${invoiceId}/refund`,
+      WEBHOOKS:          '/api/subscriptions/admin/webhooks',
+      WEBHOOK_RETRY:     (id: string) => `/api/subscriptions/admin/webhooks/${id}/retry`,
     },
   },
 
@@ -132,6 +149,7 @@ export const ENDPOINTS = {
     REWARDS: {
       CREATE: (storeId: string) => `/api/loyalty/${storeId}/rewards`,
       LIST:   (storeId: string) => `/api/loyalty/${storeId}/rewards`,
+      MANAGE: (storeId: string) => `/api/loyalty/${storeId}/rewards/manage`,
       UPDATE: (storeId: string, rewardId: string) => `/api/loyalty/${storeId}/rewards/${rewardId}`,
       DELETE: (storeId: string, rewardId: string) => `/api/loyalty/${storeId}/rewards/${rewardId}`,
     },
@@ -274,6 +292,15 @@ export const ENDPOINTS = {
       RESET_PIN:  (storeId: string, employeeId: string) => `/api/pos/employees/${storeId}/${employeeId}/reset-pin`,
     },
 
+    LOCATIONS: {
+      CREATE:    (storeId: string) => `/api/pos/locations/${storeId}`,
+      LIST:      (storeId: string) => `/api/pos/locations/${storeId}`,
+      OVERVIEW:  (storeId: string) => `/api/pos/locations/${storeId}/overview`,
+      GET_BY_ID: (storeId: string, locationId: string) => `/api/pos/locations/${storeId}/${locationId}`,
+      UPDATE:    (storeId: string, locationId: string) => `/api/pos/locations/${storeId}/${locationId}`,
+      ARCHIVE:   (storeId: string, locationId: string) => `/api/pos/locations/${storeId}/${locationId}`,
+    },
+
     REGISTERS: {
       ADD:       (storeId: string) => `/api/pos/registers/${storeId}`,
       LIST:      (storeId: string) => `/api/pos/registers/${storeId}`,
@@ -396,6 +423,23 @@ export const ENDPOINTS = {
 
   // ── FINANCE ───────────────────────────────────────────────────────────────
   FINANCE: {
+    SELLER: {
+      DASHBOARD:             (storeId: string) => `/api/finance/${storeId}/dashboard`,
+      TRANSACTIONS:          (storeId: string) => `/api/finance/${storeId}/transactions`,
+      TRANSACTIONS_EXPORT:   (storeId: string) => `/api/finance/${storeId}/transactions/export`,
+      ANALYTICS:             (storeId: string) => `/api/finance/${storeId}/analytics`,
+      REQUEST_PAYOUT:        (storeId: string) => `/api/finance/${storeId}/payouts/request`,
+      PAYOUTS:               (storeId: string) => `/api/finance/${storeId}/payouts`,
+      PAYOUT_BY_ID:          (storeId: string, payoutId: string) => `/api/finance/${storeId}/payouts/${payoutId}`,
+      ADD_PAYOUT_METHOD:     (storeId: string) => `/api/finance/${storeId}/payout-methods`,
+      PAYOUT_METHODS:        (storeId: string) => `/api/finance/${storeId}/payout-methods`,
+      SET_DEFAULT_METHOD:    (storeId: string, methodId: string) => `/api/finance/${storeId}/payout-methods/${methodId}/default`,
+      UPDATE_PAYOUT_METHOD:  (storeId: string, methodId: string) => `/api/finance/${storeId}/payout-methods/${methodId}`,
+      DELETE_PAYOUT_METHOD:  (storeId: string, methodId: string) => `/api/finance/${storeId}/payout-methods/${methodId}`,
+      PAYOUT_SCHEDULE:       (storeId: string) => `/api/finance/${storeId}/payout-schedule`,
+      GENERATE_TAX_REPORT:   (storeId: string) => `/api/finance/${storeId}/tax-reports/generate`,
+      TAX_REPORTS:           (storeId: string) => `/api/finance/${storeId}/tax-reports`,
+    },
     ADMIN: {
       OVERVIEW:              '/api/admin/finance/overview',
       REVENUE_OVER_TIME:     '/api/admin/finance/revenue-over-time',
@@ -430,6 +474,7 @@ export const ENDPOINTS = {
     FLAG:            (reviewId: string) => `/api/rating/flag/${reviewId}`,
     UNFLAG:          (reviewId: string) => `/api/rating/unflag/${reviewId}`,
     MODERATE_DELETE: (reviewId: string) => `/api/rating/admin/${reviewId}`,
+    TOGGLE_HELPFUL:  (reviewId: string) => `/api/rating/${reviewId}/helpful`,
   },
 
 } as const;

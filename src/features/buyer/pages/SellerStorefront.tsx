@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
-import { FilterDropdown } from '@/components/comman/ui';
+import { FilterDropdown, SkeletonBox } from '@/components/comman/ui';
 import {
   ShoppingCart, Star, Heart, ArrowLeft, Users,
   Store, Package, Loader2, MessageCircle, BadgeCheck, Award, Gift, RefreshCw, Check,
@@ -329,8 +329,29 @@ export function SellerStorefront() {
   // ── Loading / Error states ──────────────────────────────────────────────────
   if (loadingStore) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: CFG_DEFAULT.bgColor }}>
-        <Loader2 size={32} className="animate-spin" style={{ color: CFG_DEFAULT.primaryColor }} />
+      <div className="min-h-screen" style={{ background: CFG_DEFAULT.bgColor }}>
+        {/* Nav skeleton */}
+        <div className="h-[60px] flex items-center gap-3 px-4 sm:px-6 lg:px-10 bg-white border-b border-bone">
+          <SkeletonBox width={100} height={20} rounded="4px" />
+          <div className="flex-1" />
+          <SkeletonBox width={36} height={36} rounded="9999px" />
+        </div>
+        {/* Banner skeleton */}
+        <div className="px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
+            <SkeletonBox width={84} height={84} rounded="18px" />
+            <div className="flex-1 flex flex-col gap-2">
+              <SkeletonBox width="220px" height={26} rounded="6px" />
+              <SkeletonBox width="140px" height={14} rounded="4px" />
+            </div>
+          </div>
+        </div>
+        {/* Product grid skeleton */}
+        <div className="px-4 sm:px-6 lg:px-10 py-4 sm:py-5 lg:py-6 grid grid-cols-2 md:grid-cols-3 gap-[10px] sm:gap-3 lg:gap-[14px]">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <SkeletonBox key={i} height={170} rounded="10px" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -513,8 +534,10 @@ export function SellerStorefront() {
         </div>
 
         {loadingProds ? (
-          <div className="flex justify-center py-16">
-            <Loader2 size={28} className="animate-spin" style={{ color: cfg.primaryColor }} />
+          <div className={clsx('grid gap-[10px] sm:gap-3 lg:gap-[14px]', colClass)}>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+              <SkeletonBox key={i} height={170} rounded="10px" />
+            ))}
           </div>
         ) : products.length === 0 ? (
           <div className="flex flex-col items-center py-20 gap-3">

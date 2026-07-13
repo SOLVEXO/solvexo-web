@@ -1,11 +1,5 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-
-const FONT = "'Poppins', sans-serif";
-
-const DEFAULT_COLORS = [
-  '#D97757', '#2C2A28', '#8C8A82', '#2D8A4E',
-  '#2156A8', '#B36200', '#7C3AED', '#C0392B',
-];
+import { CHART_FONT, CHART_COLORS } from './chartTheme';
 
 export interface DonutSegment {
   label: string;
@@ -54,10 +48,28 @@ export function DonutChart({
   const total    = data.reduce((s, d) => s + d.value, 0);
   const ir       = innerRadius ?? Math.round(size * 0.33);
   const or       = Math.round(size * 0.47);
-  const segments = data.map((d, i) => ({ ...d, color: d.color ?? DEFAULT_COLORS[i % DEFAULT_COLORS.length] }));
+  const segments = data.map((d, i) => ({ ...d, color: d.color ?? CHART_COLORS[i % CHART_COLORS.length] }));
+  const ariaLabel = title ? `${title} chart` : 'Chart';
+
+  if (!data.length) {
+    return (
+      <div
+        className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-5 flex items-center justify-center"
+        style={{ height: size + (title || subtitle ? 40 : 0) }}
+        role="img"
+        aria-label={ariaLabel}
+      >
+        <p className="text-slate text-[13px]">No data yet</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-5">
+    <div
+      className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-5 transition-shadow duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
+      role="img"
+      aria-label={ariaLabel}
+    >
       {(title || subtitle) && (
         <div className="mb-4">
           {title    && <p className="text-sm font-bold text-charcoal">{title}</p>}
@@ -89,7 +101,7 @@ export function DonutChart({
               </Pie>
               <Tooltip
                 content={<ChartTooltip total={total} />}
-                wrapperStyle={{ fontFamily: FONT }}
+                wrapperStyle={{ fontFamily: CHART_FONT }}
               />
             </PieChart>
           </ResponsiveContainer>

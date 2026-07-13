@@ -31,7 +31,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const BASE =
   'inline-flex items-center justify-center gap-[6px] font-medium cursor-pointer ' +
   'transition-[background-color,border-color,color,opacity,box-shadow,transform] duration-[160ms] ease-out whitespace-nowrap outline-none select-none shrink-0 ' +
-  'no-underline leading-[1.4] active:scale-[0.98] ' +
+  'no-underline leading-[1.4] active:scale-[0.98] enabled:hover:-translate-y-px active:translate-y-0 ' +
   'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50';
 
 const SIZES: Record<ButtonSize, string> = {

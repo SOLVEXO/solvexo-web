@@ -6,7 +6,7 @@ import {
   BadgeCheck, RotateCcw, Loader2, Ban, Undo2,
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { Card, EmptyState, Modal, Textarea, Button } from '@/components/comman/ui';
+import { Card, EmptyState, Modal, Textarea, Button, SkeletonBox } from '@/components/comman/ui';
 import {
   apiGetMyOrders, apiCancelOrder, apiRequestReturn, apiGetDownloadLink,
   type OrderSummary, type OrderStatus, type OrderLineItem,
@@ -523,7 +523,11 @@ export function OrdersTab() {
 
       {/* Content */}
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={20} className="animate-spin text-brand-orange" /></div>
+        <div className="p-5 flex flex-col gap-3">
+          {[1, 2, 3].map(i => (
+            <SkeletonBox key={i} height={78} rounded="12px" />
+          ))}
+        </div>
       ) : error ? (
         <p className="text-[13px] text-error text-center py-10">{error}</p>
       ) : orders.length === 0 ? (

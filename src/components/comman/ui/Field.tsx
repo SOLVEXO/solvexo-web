@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { cloneElement, isValidElement, useId, type ReactNode, type ReactElement } from 'react';
 import { clsx } from 'clsx';
 
 interface FieldProps {
@@ -11,18 +11,31 @@ interface FieldProps {
 }
 
 export function Field({ label, required, hint, error, className, children }: FieldProps) {
+  const generatedId = useId();
+  const descId       = useId();
+  const hasDescription = !!(hint || error);
+  const existingId = isValidElement(children) ? (children.props as { id?: string }).id : undefined;
+  const finalId    = existingId ?? generatedId;
+
+  const control = isValidElement(children)
+    ? cloneElement(children as ReactElement<{ id?: string; 'aria-describedby'?: string }>, {
+        id: finalId,
+        ...(hasDescription ? { 'aria-describedby': descId } : {}),
+      })
+    : children;
+
   return (
     <div className={clsx('mb-[14px]', className)}>
-      <label className="block text-[12px] font-medium text-charcoal mb-[5px]">
+      <label htmlFor={finalId} className="block text-[12px] font-medium text-charcoal mb-[5px]">
         {label}
         {required && <span className="text-brand-orange ml-[2px]"> *</span>}
       </label>
-      {children}
+      {control}
       {hint && !error && (
-        <p className="mt-1 text-[11px] text-slate">{hint}</p>
+        <p id={descId} className="mt-1 text-[11px] text-slate">{hint}</p>
       )}
       {error && (
-        <p className="mt-1 text-[11px] text-error">{error}</p>
+        <p id={descId} className="mt-1 text-[11px] text-error">{error}</p>
       )}
     </div>
   );

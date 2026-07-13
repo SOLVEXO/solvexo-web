@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Save, Store, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import { apiUpdateStore, type ProductType } from '@/api/services/store';
+import { apiUpdateStore, apiSetCustomDomain, apiSetWhiteLabel, type ProductType } from '@/api/services/store';
+import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { ImageUpload } from '@/components/comman/ui';
+import { Button } from '@/components/comman/ui/Button';
 
 const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   physical_products: 'Physical Products',
@@ -46,6 +48,90 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inputCls = "w-full px-3 py-[9px] rounded-lg text-[13px] border border-bone bg-bone text-charcoal outline-none box-border";
+
+// ── Custom Domain & White Label ─────────────────────────────────────────────
+function DomainWhiteLabelCard({ storeId, store, refetch }: { storeId: string; store: { customDomain: string | null; whiteLabelEnabled: boolean } | null; refetch: () => void }) {
+  const [entitlements, setEntitlements] = useState<EntitlementsSummary | null>(null);
+  const [domain, setDomain] = useState('');
+  const [savingDomain, setSavingDomain] = useState(false);
+  const [savingWhiteLabel, setSavingWhiteLabel] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  useEffect(() => {
+    apiGetStoreEntitlements(storeId).then(res => setEntitlements(res.data)).catch(() => {});
+  }, [storeId]);
+
+  useEffect(() => { setDomain(store?.customDomain ?? ''); }, [store?.customDomain]);
+
+  const domainFeature = entitlements?.customDomainAllowed as { allowed: boolean; requiredPlan: string | null } | undefined;
+  const whiteLabelFeature = entitlements?.whiteLabelAllowed as { allowed: boolean; requiredPlan: string | null } | undefined;
+
+  async function saveDomain() {
+    setSavingDomain(true); setMsg('');
+    try {
+      await apiSetCustomDomain(storeId, domain.trim() || null);
+      refetch();
+      setMsg('Custom domain updated.');
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : 'Failed to update domain.');
+    } finally {
+      setSavingDomain(false);
+    }
+  }
+
+  async function toggleWhiteLabel() {
+    setSavingWhiteLabel(true); setMsg('');
+    try {
+      await apiSetWhiteLabel(storeId, !store?.whiteLabelEnabled);
+      refetch();
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : 'Failed to update white-label setting.');
+    } finally {
+      setSavingWhiteLabel(false);
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-xl p-6 border border-bone">
+      <div className="flex items-center gap-2 mb-5">
+        <div className="w-[30px] h-[30px] rounded-lg bg-brand-pale-orange flex items-center justify-center">
+          <Globe size={15} className="text-brand-orange" />
+        </div>
+        <p className="text-[14px] font-semibold text-charcoal">Custom Domain & White Label</p>
+      </div>
+
+      {msg && <p className="text-[12px] text-slate mb-3">{msg}</p>}
+
+      <Field label="Custom Domain">
+        {domainFeature && !domainFeature.allowed ? (
+          <div className="flex items-center gap-2 text-[12px] text-slate bg-[#F3F2EC] rounded-lg px-3 py-2.5">
+            <Lock size={13} />
+            Requires the {domainFeature.requiredPlan ?? 'a higher'} plan.
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input value={domain} onChange={e => setDomain(e.target.value)} placeholder="shop.yourbrand.com" className={inputCls} />
+            <Button size="sm" loading={savingDomain} onClick={saveDomain}>Save</Button>
+          </div>
+        )}
+      </Field>
+
+      <Field label="White-Label Branding">
+        {whiteLabelFeature && !whiteLabelFeature.allowed ? (
+          <div className="flex items-center gap-2 text-[12px] text-slate bg-[#F3F2EC] rounded-lg px-3 py-2.5">
+            <Lock size={13} />
+            Requires the {whiteLabelFeature.requiredPlan ?? 'a higher'} plan.
+          </div>
+        ) : (
+          <label className="flex items-center gap-2.5 text-[12.5px] text-graphite cursor-pointer">
+            <input type="checkbox" checked={!!store?.whiteLabelEnabled} disabled={savingWhiteLabel} onChange={toggleWhiteLabel} />
+            Hide Solvexo branding on this store
+          </label>
+        )}
+      </Field>
+    </div>
+  );
+}
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function StoreSettings() {
@@ -250,6 +336,8 @@ export default function StoreSettings() {
                 ))}
               </div>
             </div>
+
+            {storeId && <DomainWhiteLabelCard storeId={storeId} store={store ? { customDomain: store.customDomain, whiteLabelEnabled: store.whiteLabelEnabled } : null} refetch={refetch} />}
           </div>
         </div>
       )}

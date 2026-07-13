@@ -7,13 +7,16 @@ import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLa
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { Input, Textarea, Select } from '@/components/comman/ui/Input';
+import { SkeletonBox } from '@/components/comman/ui';
 import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
 import {
   apiListPlans, apiCreatePlan, apiUpdatePlan, apiArchivePlan, apiEstimatePlanHealth,
   apiGetSubscriptionDashboard, apiExportSubscribersCsv,
   apiListStoreSubscribers, apiPauseSubscriber, apiResumeSubscriber, apiCancelSubscriber,
+  apiGetStoreSubscriberById, apiRefundSubscriberInvoice, apiGetAdvancedAnalytics,
   type SellerPlan, type SellerSubscriber, type DashboardData, type SubscriptionStatus,
-  type PlanBenefit, type BenefitType, type PlanHealthEstimate,
+  type PlanBenefit, type BenefitType, type PlanHealthEstimate, type SubscriptionInvoice,
+  type AdvancedSellerAnalytics,
 } from '@/api/services/subscriptions';
 
 // ── Benefit type menu ─────────────────────────────────────────────────────────
@@ -77,7 +80,7 @@ function BenefitEditor({ benefit, onChange, onRemove, categories }: {
           <menuEntry.Icon size={14} className="text-brand-orange" />
           <span className="text-[12.5px] font-semibold text-charcoal">{menuEntry.label}</span>
         </div>
-        <button onClick={onRemove} className="text-slate hover:text-error bg-transparent border-none cursor-pointer"><Trash2 size={13} /></button>
+        <button onClick={onRemove} className="text-slate hover:text-error bg-transparent border-none cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 rounded-sm"><Trash2 size={13} /></button>
       </div>
 
       {benefit.type === 'discount' && (
@@ -273,6 +276,70 @@ function PlanFormModal({ storeId, plan, onClose, onSaved }: {
   );
 }
 
+// ── Subscriber detail modal ───────────────────────────────────────────────────
+function SubscriberDetailModal({ storeId, subId, onClose }: { storeId: string; subId: string; onClose: () => void }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [refundingId, setRefundingId] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    apiGetStoreSubscriberById(storeId, subId).then(res => setData(res.data)).finally(() => setLoading(false));
+  }, [storeId, subId]);
+  useEffect(load, [load]);
+
+  async function refund(invoice: SubscriptionInvoice) {
+    if (!window.confirm(`Refund invoice ${invoice.invoiceNumber} ($${invoice.amountUSD.toFixed(2)})?`)) return;
+    setRefundingId(invoice._id);
+    try {
+      await apiRefundSubscriberInvoice(storeId, subId, invoice._id);
+      load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Refund failed.');
+    } finally {
+      setRefundingId(null);
+    }
+  }
+
+  return (
+    <Modal title="Subscriber Detail" width={560} onClose={onClose}>
+      {loading || !data ? (
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: 5 }).map((_, i) => <SkeletonBox key={i} height={30} rounded="6px" />)}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-2 text-[12px]">
+            <div><p className="text-slate">Customer</p><p className="font-semibold text-charcoal">{data.customer?.name} ({data.customer?.email})</p></div>
+            <div><p className="text-slate">Plan</p><p className="font-semibold text-charcoal">{data.plan?.name ?? '—'}</p></div>
+            <div><p className="text-slate">Status</p><p className="font-semibold text-charcoal capitalize">{data.status}</p></div>
+            <div><p className="text-slate">Started</p><p className="font-semibold text-charcoal">{new Date(data.startedAt).toLocaleDateString()}</p></div>
+            <div><p className="text-slate">Total Paid</p><p className="font-semibold text-charcoal">${data.totalPaidUSD.toFixed(2)}</p></div>
+            <div><p className="text-slate">Next Billing</p><p className="font-semibold text-charcoal">{new Date(data.nextBillingDate).toLocaleDateString()}</p></div>
+          </div>
+          <div>
+            <p className="text-[12px] font-semibold text-charcoal mb-2">Invoices</p>
+            <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto">
+              {(data.invoices ?? []).map((inv: SubscriptionInvoice) => (
+                <div key={inv._id} className="flex items-center justify-between text-[12px] px-2.5 py-1.5 rounded bg-cream">
+                  <span className="text-slate">{inv.invoiceNumber} · {inv.status} · ${inv.amountUSD.toFixed(2)}</span>
+                  {['paid', 'partially_refunded'].includes(inv.status) && (
+                    <button disabled={refundingId === inv._id} onClick={() => refund(inv)}
+                      className="px-2 py-[3px] bg-white border border-bone rounded-[5px] text-[11px] text-[#C13030] cursor-pointer disabled:opacity-50">
+                      {refundingId === inv._id ? 'Refunding…' : 'Refund'}
+                    </button>
+                  )}
+                </div>
+              ))}
+              {(data.invoices ?? []).length === 0 && <p className="text-[12px] text-slate">No invoices yet.</p>}
+            </div>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 // ── Config ────────────────────────────────────────────────────────────────────
 const SUB_TABS: { id: SubscriptionStatus | 'all'; label: string }[] = [
   { id: 'all', label: 'All' }, { id: 'active', label: 'Active' },
@@ -301,6 +368,8 @@ export function StoreSubscriptions() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [cancelReasonFor, setCancelReasonFor] = useState<SellerSubscriber | null>(null);
   const [cancelReasonText, setCancelReasonText] = useState('');
+  const [viewingSubId, setViewingSubId] = useState<string | null>(null);
+  const [advanced, setAdvanced] = useState<AdvancedSellerAnalytics | null>(null);
 
   const load = useCallback(() => {
     if (!storeId) return;
@@ -322,6 +391,11 @@ export function StoreSubscriptions() {
   }, [storeId, page, statusTab]);
 
   useEffect(load, [load]);
+
+  useEffect(() => {
+    if (!storeId) return;
+    apiGetAdvancedAnalytics(storeId).then(res => setAdvanced(res.data)).catch(() => {});
+  }, [storeId]);
 
   async function handleArchive(plan: SellerPlan) {
     if (!window.confirm(`Archive "${plan.name}"?`)) return;
@@ -385,7 +459,7 @@ export function StoreSubscriptions() {
           {(loading && !dashboard) ? Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="bg-white border border-bone rounded-[10px] px-5 py-4 h-[84px] animate-pulse" />
           )) : metrics.map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
               <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
             </div>
@@ -394,7 +468,7 @@ export function StoreSubscriptions() {
 
         {/* Subscriber economics — proves the feature's value with real data */}
         {dashboard?.subscriberEconomics && (
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+          <div className="bg-white border border-bone rounded-[10px] shadow-xs px-5 py-4">
             <p className="text-[13px] font-bold text-carbon mb-3">Subscribers vs. Regular Customers</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
@@ -423,7 +497,7 @@ export function StoreSubscriptions() {
           {plans.map(plan => {
             const hs = plan.healthEstimate ? HEALTH_STYLE[plan.healthEstimate.health] : null;
             return (
-              <div key={plan._id} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5 flex flex-col">
+              <div key={plan._id} className="bg-white border border-bone rounded-[10px] shadow-xs px-[22px] py-5 flex flex-col transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-[1px]">
                 <div className="flex items-start justify-between mb-1 gap-2">
                   <p className="text-[15px] font-bold text-carbon">{plan.name}</p>
                   {plan.status === 'suspended' && <span className="text-[10px] font-bold px-[8px] py-[2px] rounded-full bg-[#FDECEA] text-[#C0392B] shrink-0">Suspended by admin</span>}
@@ -450,11 +524,11 @@ export function StoreSubscriptions() {
                   <span className="text-xs font-bold text-[#2D8A4E]">${plan.monthlyRecurringRevenueUSD.toFixed(2)}/mo</span>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setEditingPlan(plan)} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
+                  <button onClick={() => setEditingPlan(plan)} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
                     <Pencil size={12} /> Edit
                   </button>
                   {plan.status !== 'archived' && (
-                    <button onClick={() => handleArchive(plan)} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
+                    <button onClick={() => handleArchive(plan)} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
                       <Archive size={12} /> Archive
                     </button>
                   )}
@@ -468,13 +542,13 @@ export function StoreSubscriptions() {
         </div>
 
         {/* Subscribers */}
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="bg-white border border-bone rounded-[10px] shadow-xs overflow-hidden">
           <div className="flex items-center justify-between px-5 py-[14px] border-b border-bone flex-wrap gap-2">
             <p className="text-[15px] font-bold text-carbon">Subscribers</p>
             <div className="flex items-center gap-0.5 bg-[#F5F4EF] rounded-lg p-[3px]">
               {SUB_TABS.map(t => (
                 <button key={t.id} onClick={() => { setStatusTab(t.id); setPage(1); }}
-                  className="px-[14px] py-[5px] rounded-[6px] text-xs font-medium cursor-pointer border-none transition-all duration-[120ms]"
+                  className="px-[14px] py-[5px] rounded-[6px] text-xs font-medium cursor-pointer border-none transition-all duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
                   style={{ background: statusTab === t.id ? '#141413' : 'transparent', color: statusTab === t.id ? '#fff' : '#8C8A82' }}>
                   {t.label}
                 </button>
@@ -493,13 +567,32 @@ export function StoreSubscriptions() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={8} className="px-4 py-8 text-center"><Loader2 size={18} className="animate-spin text-brand-orange inline" /></td></tr>
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="border-b border-[#F0EEE6]">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-[10px]">
+                          <SkeletonBox width={30} height={30} rounded="9999px" />
+                          <div className="flex flex-col gap-1">
+                            <SkeletonBox height={13} width={90} />
+                            <SkeletonBox height={11} width={120} />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3"><SkeletonBox height={13} width={100} /></td>
+                      <td className="px-4 py-3"><SkeletonBox height={13} width={60} /></td>
+                      <td className="px-4 py-3"><SkeletonBox height={20} width={70} rounded="5px" /></td>
+                      <td className="px-4 py-3"><SkeletonBox height={13} width={70} /></td>
+                      <td className="px-4 py-3"><SkeletonBox height={13} width={70} /></td>
+                      <td className="px-4 py-3"><SkeletonBox height={13} width={60} /></td>
+                      <td className="px-4 py-3"><SkeletonBox height={26} width={60} rounded="6px" /></td>
+                    </tr>
+                  ))
                 ) : subs.length === 0 ? (
                   <tr><td colSpan={8} className="px-4 py-8 text-center text-[13px] text-slate">No subscribers in this view.</td></tr>
                 ) : subs.map(sub => {
                   const style = STATUS_STYLE[sub.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
                   return (
-                    <tr key={sub._id} className="border-b border-[#F0EEE6]">
+                    <tr key={sub._id} className="border-b border-[#F0EEE6] transition-colors duration-150 hover:bg-cream">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-[10px]">
                           <div className="w-[30px] h-[30px] rounded-full bg-[#F0EEE6] text-[10px] font-bold flex items-center justify-center shrink-0 text-[#5A5852]">
@@ -523,14 +616,15 @@ export function StoreSubscriptions() {
                       <td className="px-4 py-3 text-[13px] font-semibold text-carbon">${sub.totalPaidUSD.toFixed(2)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
+                          <button onClick={() => setViewingSubId(sub._id)} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">View</button>
                           {sub.status === 'active' && (
-                            <button disabled={busyId === sub._id} onClick={() => handleAction(sub, 'pause')} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer disabled:opacity-50">Pause</button>
+                            <button disabled={busyId === sub._id} onClick={() => handleAction(sub, 'pause')} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Pause</button>
                           )}
                           {sub.status === 'paused' && (
-                            <button disabled={busyId === sub._id} onClick={() => handleAction(sub, 'resume')} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer disabled:opacity-50">Resume</button>
+                            <button disabled={busyId === sub._id} onClick={() => handleAction(sub, 'resume')} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Resume</button>
                           )}
                           {(sub.status === 'active' || sub.status === 'paused' || sub.status === 'past_due') && (
-                            <button disabled={busyId === sub._id} onClick={() => setCancelReasonFor(sub)} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-[#C13030] cursor-pointer disabled:opacity-50">Cancel</button>
+                            <button disabled={busyId === sub._id} onClick={() => setCancelReasonFor(sub)} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-[#C13030] cursor-pointer transition-colors duration-150 hover:bg-error hover:text-white hover:border-error disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Cancel</button>
                           )}
                         </div>
                       </td>
@@ -543,16 +637,16 @@ export function StoreSubscriptions() {
 
           {subsTotal > 10 && (
             <div className="flex items-center justify-between px-5 py-3 border-t border-bone">
-              <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="text-[12px] text-graphite disabled:opacity-40 bg-transparent border-none cursor-pointer">Previous</button>
+              <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="text-[12px] text-graphite disabled:opacity-40 bg-transparent border-none cursor-pointer transition-opacity duration-150 hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 rounded-sm">Previous</button>
               <span className="text-[12px] text-slate">Page {page} of {Math.ceil(subsTotal / 10)}</span>
-              <button disabled={page >= Math.ceil(subsTotal / 10)} onClick={() => setPage(p => p + 1)} className="text-[12px] text-graphite disabled:opacity-40 bg-transparent border-none cursor-pointer">Next</button>
+              <button disabled={page >= Math.ceil(subsTotal / 10)} onClick={() => setPage(p => p + 1)} className="text-[12px] text-graphite disabled:opacity-40 bg-transparent border-none cursor-pointer transition-opacity duration-150 hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 rounded-sm">Next</button>
             </div>
           )}
         </div>
 
         {/* Cancellation reasons — churn insight */}
         {dashboard && dashboard.cancellationReasons.length > 0 && (
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+          <div className="bg-white border border-bone rounded-[10px] shadow-xs px-5 py-4">
             <p className="text-[13px] font-bold text-carbon mb-3">Why subscribers cancel</p>
             <div className="flex flex-col gap-2">
               {dashboard.cancellationReasons.map(r => (
@@ -564,7 +658,41 @@ export function StoreSubscriptions() {
             </div>
           </div>
         )}
+
+        {/* Advanced Analytics */}
+        {advanced && (
+          <div className="bg-white border border-bone rounded-[10px] shadow-xs px-5 py-4">
+            <p className="text-[13px] font-bold text-carbon mb-3">Advanced Analytics</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+              <div>
+                <p className="text-[10px] text-slate uppercase tracking-wide mb-1">Conversion Rate</p>
+                <p className="text-[18px] font-bold text-carbon">{advanced.conversionRatePercent}%</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate uppercase tracking-wide mb-1">30d Retention</p>
+                <p className="text-[18px] font-bold text-carbon">{advanced.retention30dPercent}%</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate uppercase tracking-wide mb-1">Realized LTV</p>
+                <p className="text-[18px] font-bold text-[#2D8A4E]">${advanced.realizedLtvUSD.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate uppercase tracking-wide mb-1">Upgrades / Downgrades</p>
+                <p className="text-[18px] font-bold text-carbon">{advanced.upgradeCount} / {advanced.downgradeCount}</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {advanced.recommendations.map((r, i) => (
+                <p key={i} className="text-[12px] text-graphite bg-cream rounded-md px-3 py-2">{r}</p>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {viewingSubId && (
+        <SubscriberDetailModal storeId={storeId} subId={viewingSubId} onClose={() => setViewingSubId(null)} />
+      )}
 
       {editingPlan && (
         <PlanFormModal

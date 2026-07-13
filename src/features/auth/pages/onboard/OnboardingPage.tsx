@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -58,11 +58,14 @@ function StepProgress({ current, maxReached, onStepClick }: { current: number; m
         return (
           <div key={n} className="flex items-center">
             <div
-              className={clsx('flex flex-col items-center', clickable ? 'cursor-pointer' : 'cursor-default')}
+              className={clsx(
+                'flex flex-col items-center transition-transform duration-200 ease-out',
+                clickable ? 'cursor-pointer hover:-translate-y-px' : 'cursor-default',
+              )}
               onClick={() => clickable && onStepClick(n)}
             >
               <div className={clsx(
-                'size-8 rounded-full flex items-center justify-center text-[13px] font-bold transition-all duration-300',
+                'size-8 rounded-full flex items-center justify-center text-[13px] font-bold transition-all duration-300 ease-out',
                 done    ? 'bg-success text-white'      : '',
                 active  ? 'bg-brand-orange text-white shadow-[0_0_0_4px_#FBECE4]' : '',
                 !done && !active ? 'bg-bone text-slate' : '',
@@ -70,7 +73,7 @@ function StepProgress({ current, maxReached, onStepClick }: { current: number; m
                 {done ? <Check size={12} /> : n}
               </div>
               <span className={clsx(
-                'mt-[6px] text-[10px] font-medium whitespace-nowrap',
+                'mt-[6px] text-[10px] font-medium whitespace-nowrap transition-colors duration-200',
                 active ? 'text-brand-orange' : done ? 'text-success' : 'text-slate',
               )}>
                 {label}
@@ -78,13 +81,43 @@ function StepProgress({ current, maxReached, onStepClick }: { current: number; m
             </div>
             {i < STEPS.length - 1 && (
               <div className={clsx(
-                'w-[60px] h-0.5 mb-4 mx-1 rounded-sm transition-all duration-300',
+                'w-[60px] h-0.5 mb-4 mx-1.5 rounded-sm transition-colors duration-300 ease-out',
                 n < maxReached ? 'bg-success' : 'bg-bone',
               )} />
             )}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// Fades/lifts a step's content in whenever `step` changes, for a smoother
+// transition between onboarding steps without a page-level animation library.
+function StepPane({ step, children }: { step: number; children: ReactNode }) {
+  const [prevStep, setPrevStep] = useState(step);
+  const [visible, setVisible] = useState(true);
+
+  // Reset the fade when `step` changes (adjusting state during render, per
+  // https://react.dev/learn/you-might-not-need-an-effect — avoids the extra
+  // render + effect cascade of doing this synchronously inside useEffect).
+  if (step !== prevStep) {
+    setPrevStep(step);
+    setVisible(false);
+  }
+
+  useEffect(() => {
+    if (visible) return;
+    const frame = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(frame);
+  }, [visible]);
+
+  return (
+    <div className={clsx(
+      'w-full flex justify-center transition-all duration-300 ease-out',
+      visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1',
+    )}>
+      {children}
     </div>
   );
 }
@@ -164,7 +197,7 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
           <label htmlFor="onboard-store-name" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Name <span className="text-brand-orange">*</span></label>
           <input id="onboard-store-name" placeholder="e.g. Creative Classroom Resources"
             value={form.storeName} onChange={e => setForm({ ...form, storeName: e.target.value })}
-            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white" />
+            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
           {form.storeName && (
             <p className="text-[11px] text-slate mt-[5px]">
               Your store URL: <span className="text-brand-orange">{form.storeName.toLowerCase().replace(/\s+/g, '-')}.solvexo.store</span>
@@ -176,7 +209,7 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
           <label htmlFor="onboard-category" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Category <span className="text-brand-orange">*</span></label>
           <select id="onboard-category" value={form.categoryId} onChange={e => handleCategoryChange(e.target.value)}
             disabled={categoriesLoading}
-            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white cursor-pointer disabled:opacity-60">
+            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white cursor-pointer disabled:opacity-60 transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
             <option value="">{categoriesLoading ? 'Loading categories...' : 'Select your main category...'}</option>
             {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
           </select>
@@ -186,7 +219,7 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
           <label htmlFor="onboard-description" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Description <span className="text-slate font-normal">(optional)</span></label>
           <textarea id="onboard-description" placeholder="Tell buyers what makes your store special..."
             rows={4} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
-            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white resize-y" />
+            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white resize-y transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
         </div>
 
         <Button variant="primary" size="lg" fullWidth onClick={() => canProceed && onNext()} disabled={!canProceed}>
@@ -212,14 +245,14 @@ function Step2({ form, setForm, onNext, onBack }: { form: StoreForm; setForm: (f
           return (
             <div key={selKey} onClick={() => setForm({ ...form, sellerType: t.id, sellerKey: selKey })}
               className={clsx(
-                'bg-white rounded-[14px] p-5 border-2 cursor-pointer transition-all duration-200',
-                isSelected ? 'border-brand-orange shadow-[0_0_0_4px_#FBECE4]' : 'border-bone',
+                'bg-white rounded-[14px] p-5 border-2 cursor-pointer transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card active:translate-y-0',
+                isSelected ? 'border-brand-orange shadow-[0_0_0_4px_#FBECE4]' : 'border-bone hover:border-slate/40',
               )}
             >
               <div className="flex justify-between items-start mb-3">
                 <t.Icon size={32} />
                 <div className={clsx(
-                  'size-5 rounded-full border-2 flex items-center justify-center shrink-0',
+                  'size-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors duration-200',
                   isSelected ? 'border-brand-orange bg-brand-orange' : 'border-bone bg-white',
                 )}>
                   {isSelected && <Check size={10} className="text-white" />}
@@ -264,12 +297,12 @@ function Step3({ form, setForm, onNext, onBack, loading, error }: {
           return (
             <div key={idx} onClick={() => toggle(t.id)}
               className={clsx(
-                'bg-white rounded-[14px] px-4 py-[18px] border-2 cursor-pointer transition-all duration-200 relative',
-                on ? 'border-brand-orange shadow-[0_0_0_4px_#FBECE4]' : 'border-bone',
+                'bg-white rounded-[14px] px-4 py-[18px] border-2 cursor-pointer transition-all duration-200 ease-out relative hover:-translate-y-0.5 hover:shadow-card active:translate-y-0',
+                on ? 'border-brand-orange shadow-[0_0_0_4px_#FBECE4]' : 'border-bone hover:border-slate/40',
               )}
             >
               {on && (
-                <div className="absolute top-[10px] right-[10px] size-5 rounded-full bg-brand-orange flex items-center justify-center">
+                <div className="absolute top-[10px] right-[10px] size-5 rounded-full bg-brand-orange flex items-center justify-center transition-transform duration-200">
                   <Check size={10} className="text-white" />
                 </div>
               )}
@@ -429,16 +462,18 @@ export function OnboardingPage() {
       </div>
 
       <div className="flex-1 flex items-start justify-center px-6 pt-8 pb-[60px]">
-        {step === 1 && <Step1 form={form} setForm={setForm} onNext={next} />}
-        {step === 2 && <Step2 form={form} setForm={setForm} onNext={next} onBack={back} />}
-        {step === 3 && (
-          <Step3
-            form={form} setForm={setForm}
-            onNext={handleStep3Next} onBack={back}
-            loading={createStore.loading} error={createStore.error}
-          />
-        )}
-        {step === 4 && <Step4 store={createStore.store} categoryName={form.categoryName} />}
+        <StepPane step={step}>
+          {step === 1 && <Step1 form={form} setForm={setForm} onNext={next} />}
+          {step === 2 && <Step2 form={form} setForm={setForm} onNext={next} onBack={back} />}
+          {step === 3 && (
+            <Step3
+              form={form} setForm={setForm}
+              onNext={handleStep3Next} onBack={back}
+              loading={createStore.loading} error={createStore.error}
+            />
+          )}
+          {step === 4 && <Step4 store={createStore.store} categoryName={form.categoryName} />}
+        </StepPane>
       </div>
     </div>
   );

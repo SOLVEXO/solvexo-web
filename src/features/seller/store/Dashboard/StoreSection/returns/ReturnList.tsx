@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { Modal, Textarea, Button } from '@/components/comman/ui';
+import { Modal, Textarea, Button, SkeletonBox } from '@/components/comman/ui';
 import {
   apiGetSellerReturns, apiReturnAction,
   type SellerReturnItem, type ReturnStatus,
@@ -152,7 +152,7 @@ export function StoreReturnList() {
             { label: 'Return Rate',    value: stats?.returnRate ?? '—' },
             { label: 'Total Refunded (30d)', value: stats ? `Rs ${stats.totalRefunded.toLocaleString()}` : '—' },
           ].map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
               <p className="text-[28px] font-bold text-carbon leading-[1.15]">{loading ? '—' : m.value}</p>
             </div>
@@ -160,7 +160,7 @@ export function StoreReturnList() {
         </div>
 
         {/* ── Return Policy Summary ── */}
-        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-[18px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-[18px] shadow-xs">
           <p className="text-[14px] font-semibold text-carbon mb-1.5">Return Policy Summary</p>
           <p className="text-[13px] text-slate leading-[1.6]">
             Physical: 30-day returns in original condition. Digital: Non-refundable unless defective. Damaged items: replacement or full refund.
@@ -180,11 +180,11 @@ export function StoreReturnList() {
 
         {/* ── Table card ── */}
         {!error && (
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+          <div className="bg-white border border-bone rounded-[10px] shadow-xs overflow-hidden">
 
             {/* Filters */}
             <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
-              <div className="flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white">
+              <div className="flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white transition-shadow duration-150 focus-within:ring-2 focus-within:ring-brand-orange/40 focus-within:border-brand-orange/50">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                 </svg>
@@ -199,12 +199,12 @@ export function StoreReturnList() {
               <select
                 value={status}
                 onChange={e => setStatus(e.target.value)}
-                className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer"
+                className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50"
               >
                 {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
 
-              <button onClick={refetch} className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[7px] hover:bg-bone shrink-0 ml-auto">
+              <button onClick={refetch} className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[7px] transition-colors duration-150 hover:bg-bone shrink-0 ml-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
                 <RefreshCw size={11} /> Refresh
               </button>
             </div>
@@ -223,7 +223,18 @@ export function StoreReturnList() {
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={8} className="px-4 py-[40px] text-center"><Loader2 size={18} className="animate-spin text-brand-orange inline" /></td></tr>
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #F0EEE6' }}>
+                        <td className="px-4 py-[13px]"><SkeletonBox height={13} width={70} /></td>
+                        <td className="px-4 py-[13px]"><SkeletonBox height={13} width={90} /></td>
+                        <td className="px-4 py-[13px]"><SkeletonBox height={13} width={120} /></td>
+                        <td className="px-4 py-[13px]"><SkeletonBox height={13} width={100} /></td>
+                        <td className="px-4 py-[13px]"><SkeletonBox height={13} width={60} /></td>
+                        <td className="px-4 py-[13px]"><SkeletonBox height={20} width={70} rounded="5px" /></td>
+                        <td className="px-4 py-[13px]"><SkeletonBox height={13} width={60} /></td>
+                        <td className="px-4 py-[13px]"><SkeletonBox height={26} width={70} rounded="6px" /></td>
+                      </tr>
+                    ))
                   ) : filtered.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="px-4 py-[40px] text-center text-[13px] text-slate">
@@ -235,10 +246,8 @@ export function StoreReturnList() {
                     return (
                       <tr
                         key={r.itemId}
-                        className="transition-[background] duration-[120ms]"
+                        className="transition-colors duration-150 hover:bg-cream"
                         style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                       >
                         <td className="px-4 py-[13px] whitespace-nowrap">
                           <span className="text-[13px] font-bold text-[#B95A3A]">{r.orderNumber}</span>
@@ -265,7 +274,7 @@ export function StoreReturnList() {
                           <button
                             onClick={() => setReviewing(r)}
                             disabled={r.returnStatus !== 'requested' && r.returnStatus !== ('partial_requested' as ReturnStatus)}
-                            className="px-[14px] py-1 bg-white border border-bone rounded-[6px] text-xs text-graphite cursor-pointer whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="px-[14px] py-1 bg-white border border-bone rounded-[6px] text-xs text-graphite cursor-pointer whitespace-nowrap transition-colors duration-150 hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
                           >
                             Review
                           </button>

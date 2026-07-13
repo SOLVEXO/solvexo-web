@@ -1,13 +1,15 @@
 import { type ReactNode, useState, useRef, useEffect, createContext, useContext } from 'react';
 import { ActiveStoreProvider, useActiveStore } from '@/contexts/ActiveStoreContext';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
+import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
+import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Store,
-  Settings, BarChart2, Truck, MessageSquare,
+  Settings, BarChart2,
   Bell, ChevronDown, List, Plus, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
@@ -39,25 +41,57 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'Workspace',
     items: [
       { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', path: '/seller/dashboard' },
-      {
-        id: 'my-store', Icon: Store, label: 'My Store',
-        children: [
-          { id: 'store-list',    Icon: List,  label: 'Store List',    path: '/seller/stores' },
-          { id: 'store-builder', Icon: Store, label: 'Store Builder', path: '/seller/store'  },
-        ],
-      },
+      { id: 'store-list',    Icon: List,  label: 'Store List',    path: '/seller/stores' },
+
+      // {
+      //   id: 'my-store', Icon: Store, label: 'My Store',
+      //   children: [
+      //     { id: 'store-list',    Icon: List,  label: 'Store List',    path: '/seller/stores' },
+      //     { id: 'store-builder', Icon: Store, label: 'Store Builder', path: '/seller/store'  },
+      //   ],
+      // },
     ],
   },
   {
     label: 'Operations',
     items: [
-      { id: 'analytics', Icon: BarChart2,     label: 'Analytics', path: '/seller/analytics' },
-      { id: 'shipping',  Icon: Truck,         label: 'Shipping',  path: '/seller/shipping'  },
-      { id: 'messages',  Icon: MessageSquare, label: 'Messages',  path: '/seller/messages'  },
-      { id: 'settings',  Icon: Settings,      label: 'Settings',  path: '/seller/settings'  },
+      { id: 'analytics', Icon: BarChart2, label: 'Analytics', path: '/seller/analytics' },
+      { id: 'settings',  Icon: Settings,  label: 'Settings',  path: '/seller/settings'  },
     ],
   },
 ];
+
+function isDropdownEntry(item: NavEntry): item is NavDropdown {
+  return 'children' in item;
+}
+
+function buildPaletteItems(navigate: (path: string) => void): CommandPaletteItem[] {
+  const result: CommandPaletteItem[] = [];
+  NAV_SECTIONS.forEach(section => {
+    section.items.forEach(item => {
+      if (isDropdownEntry(item)) {
+        item.children.forEach(child => {
+          result.push({
+            id:       child.id,
+            label:    child.label,
+            group:    section.label,
+            icon:     child.Icon,
+            onSelect: () => navigate(child.path),
+          });
+        });
+      } else {
+        result.push({
+          id:       item.id,
+          label:    item.label,
+          group:    section.label,
+          icon:     item.Icon,
+          onSelect: () => navigate(item.path),
+        });
+      }
+    });
+  });
+  return result;
+}
 
 // ── Store Switcher ────────────────────────────────────────────────────────────
 function SidebarStoreSwitcher() {
@@ -165,9 +199,12 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
   const { pathname } = useLocation();
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   const { profile, loading: profileLoading } = useGetProfile();
+  const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
 
   const isActive     = (path: string) => pathname === path || pathname.startsWith(path + '/');
   const toggleDropdown = (id: string) => setOpenDropdowns(prev => ({ ...prev, [id]: !prev[id] }));
+
+  const paletteItems = buildPaletteItems(navigate);
 
   const toggleBtn = (
     <button
@@ -176,6 +213,20 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
       className="size-7 rounded-md flex items-center justify-center shrink-0 text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
     >
       {open ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
+    </button>
+  );
+
+  const paletteHint = (
+    <button
+      type="button"
+      onClick={() => setPaletteOpen(true)}
+      title="Search (Ctrl+K)"
+      className={clsx(
+        'flex items-center gap-1 rounded-md border border-dark-active text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer shrink-0',
+        open ? 'px-[7px] py-[3px] text-[10px] font-semibold' : 'size-7 justify-center text-[9px] font-semibold',
+      )}
+    >
+      {open ? '⌘K' : 'K'}
     </button>
   );
 
@@ -209,10 +260,12 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
               <span className="text-[17px] font-bold text-white tracking-[-0.3px]">Solvex</span>
               <span className="text-[17px] font-bold text-brand-orange tracking-[-0.3px]">o</span>
             </div>
+            {paletteHint}
             {toggleBtn}
           </div>
         ) : (
-          <div className="pt-5 pb-4 flex justify-center shrink-0">
+          <div className="pt-5 pb-4 flex flex-col items-center gap-[6px] shrink-0">
+            {paletteHint}
             {toggleBtn}
           </div>
         )}
@@ -361,6 +414,8 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
           </div>
         </div>
       </aside>
+
+      <CommandPalette items={paletteItems} open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </>
   );
 }

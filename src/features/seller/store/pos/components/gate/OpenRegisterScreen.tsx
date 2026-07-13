@@ -81,9 +81,9 @@ export function OpenRegisterScreen({ storeId, employeeId, employeeName, onSucces
             No active registers found for this store. Ask the store owner to add one under POS Admin.
           </p>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="block text-[11px] text-pos-faint mb-1">Register</label>
+              <label className="block text-[11px] font-medium text-pos-faint mb-[6px]">Register</label>
               <div className="flex flex-col gap-[6px]">
                 {registers.map(r => (
                   <button
@@ -91,7 +91,8 @@ export function OpenRegisterScreen({ storeId, employeeId, employeeName, onSucces
                     type="button"
                     onClick={() => setRegisterId(r._id)}
                     className={clsx(
-                      'w-full text-left px-3 py-[9px] rounded-lg border text-[13px]',
+                      'w-full text-left px-[14px] py-[11px] rounded-lg border text-[13px]',
+                      'transition-transform duration-100 active:scale-[0.98]',
                       registerId === r._id
                         ? 'bg-brand-deep-orange border-brand-orange text-white'
                         : 'bg-carbon border-transparent text-pos-faint',
@@ -105,11 +106,11 @@ export function OpenRegisterScreen({ storeId, employeeId, employeeName, onSucces
 
             {shifts.length > 0 && (
               <div>
-                <label className="block text-[11px] text-pos-faint mb-1">Shift (optional)</label>
+                <label className="block text-[11px] font-medium text-pos-faint mb-[6px]">Shift (optional)</label>
                 <select
                   value={shiftId}
                   onChange={e => setShiftId(e.target.value)}
-                  className="w-full bg-carbon border border-carbon rounded-lg px-3 py-[9px] text-[13px] text-white outline-none box-border"
+                  className="w-full bg-carbon border border-carbon rounded-lg px-[14px] py-[11px] text-[13px] text-white outline-none box-border"
                 >
                   <option value="">No shift</option>
                   {shifts.map(s => (
@@ -120,13 +121,13 @@ export function OpenRegisterScreen({ storeId, employeeId, employeeName, onSucces
             )}
 
             <div>
-              <label className="block text-[11px] text-pos-faint mb-1">Opening cash</label>
+              <label className="block text-[11px] font-medium text-pos-faint mb-[6px]">Opening cash</label>
               <input
                 value={openingCash}
                 onChange={e => setOpeningCash(e.target.value)}
                 placeholder="0.00"
                 inputMode="decimal"
-                className="w-full bg-carbon border border-carbon rounded-lg px-3 py-[9px] text-[13px] text-white outline-none box-border"
+                className="w-full bg-carbon border border-carbon rounded-lg px-[14px] py-[11px] text-[13px] text-white outline-none box-border transition-shadow duration-150 focus:shadow-md"
               />
             </div>
 
@@ -139,7 +140,7 @@ export function OpenRegisterScreen({ storeId, employeeId, employeeName, onSucces
             <button
               type="submit"
               disabled={submitting}
-              className="mt-1 w-full bg-brand-orange border-0 rounded-lg py-[11px] text-[13px] font-bold text-white cursor-pointer disabled:opacity-50"
+              className="mt-1 w-full bg-brand-orange border-0 rounded-lg py-3 text-[13px] font-bold text-white cursor-pointer shadow-md transition-transform duration-100 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
             >
               {submitting ? 'Opening…' : 'Open Register & Start Shift'}
             </button>
@@ -148,7 +149,7 @@ export function OpenRegisterScreen({ storeId, employeeId, employeeName, onSucces
 
         <button
           onClick={onLogout}
-          className="w-full text-center mt-4 text-[11px] bg-transparent border-0 cursor-pointer text-pos-muted"
+          className="w-full text-center mt-5 text-[11px] bg-transparent border-0 cursor-pointer text-pos-muted py-1 transition-transform duration-100 active:scale-95"
         >
           ← Switch employee
         </button>

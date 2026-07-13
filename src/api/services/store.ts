@@ -35,6 +35,8 @@ export interface StoreData {
   enabledTools: string[];
   plan:         string;
   aiCredits:    number;
+  customDomain: string | null;
+  whiteLabelEnabled: boolean;
   status:       'active' | 'inactive';
   isDelete:     boolean;
   registers:    unknown[];
@@ -64,6 +66,16 @@ export function apiUpdateStore(payload: UpdateStorePayload) {
 /** GET /api/store/getStoreById/:id */
 export function apiGetStoreById(id: string) {
   return client.get<never, ApiResponse<StoreData>>(ENDPOINTS.STORE.GET_BY_ID(id));
+}
+
+/** PATCH /api/store/:storeId/custom-domain */
+export function apiSetCustomDomain(storeId: string, domain: string | null) {
+  return client.patch<never, ApiResponse<{ customDomain: string | null }>>(ENDPOINTS.STORE.CUSTOM_DOMAIN(storeId), { domain });
+}
+
+/** PATCH /api/store/:storeId/white-label */
+export function apiSetWhiteLabel(storeId: string, enabled: boolean) {
+  return client.patch<never, ApiResponse<{ whiteLabelEnabled: boolean }>>(ENDPOINTS.STORE.WHITE_LABEL(storeId), { enabled });
 }
 
 /** GET /api/store/my-stores */

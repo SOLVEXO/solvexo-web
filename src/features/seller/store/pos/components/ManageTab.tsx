@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import { EmployeesTab } from './manage/EmployeesTab';
+import { LocationsTab } from './manage/LocationsTab';
 import { RegistersTab } from './manage/RegistersTab';
 import { ShiftsTab } from './manage/ShiftsTab';
 import { SessionsTab } from './manage/SessionsTab';
@@ -8,10 +9,11 @@ import { SettingsTab } from './manage/SettingsTab';
 import { ReportsTab } from './manage/ReportsTab';
 import { AuditLogTab } from './manage/AuditLogTab';
 
-type ManageSection = 'employees' | 'registers' | 'shifts' | 'sessions' | 'settings' | 'reports' | 'audit';
+type ManageSection = 'employees' | 'locations' | 'registers' | 'shifts' | 'sessions' | 'settings' | 'reports' | 'audit';
 
 const SECTIONS: { id: ManageSection; label: string }[] = [
   { id: 'employees', label: 'Employees' },
+  { id: 'locations', label: 'Locations' },
   { id: 'registers', label: 'Registers' },
   { id: 'shifts',    label: 'Shifts' },
   { id: 'sessions',  label: 'Sessions' },
@@ -51,6 +53,7 @@ export function ManageTab({ storeId }: ManageTabProps) {
 
         <div className="px-3 sm:px-6 py-6">
           {section === 'employees' && <EmployeesTab storeId={storeId} />}
+          {section === 'locations' && <LocationsTab storeId={storeId} />}
           {section === 'registers' && <RegistersTab storeId={storeId} />}
           {section === 'shifts'    && <ShiftsTab storeId={storeId} />}
           {section === 'sessions'  && <SessionsTab storeId={storeId} />}

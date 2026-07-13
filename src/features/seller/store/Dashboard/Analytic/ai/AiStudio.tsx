@@ -20,7 +20,7 @@ const TOOLS: { id: AITool; Icon: LucideIcon; title: string; desc: string }[] = [
 ];
 
 // shared input / label class strings
-const inputCls = 'w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border';
+const inputCls = 'w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50';
 const labelCls = 'text-xs font-medium text-graphite mb-[6px] block';
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ export function StoreAIStudio() {
               <button
                 key={tool.id}
                 onClick={() => { setActiveAI(tool.id); setGenerated(false); }}
-                className="text-left px-5 py-[18px] rounded-[10px] cursor-pointer transition-[border-color,background] duration-150"
+                className="text-left px-5 py-[18px] rounded-[10px] cursor-pointer transition-[border-color,background] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
                 style={{
                   border: `2px solid ${active ? '#D97757' : '#E8E6DC'}`,
                   background: active ? '#FBECE4' : '#fff',
@@ -116,7 +116,7 @@ export function StoreAIStudio() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
           {/* LEFT: Input panel */}
-          <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
             <p className="text-sm font-bold text-charcoal mb-5 flex items-center gap-2">
               <activeTool.Icon size={15} /> {activeTool.title} — Input
             </p>
@@ -152,7 +152,7 @@ export function StoreAIStudio() {
                       <button
                         key={t}
                         onClick={() => setTone(t)}
-                        className="flex-1 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all duration-[0.12s]"
+                        className="flex-1 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all duration-[0.12s] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
                         style={{
                           border: `1px solid ${tone === t ? '#D97757' : '#E8E6DC'}`,
                           background: tone === t ? '#FBECE4' : '#fff',
@@ -237,14 +237,14 @@ export function StoreAIStudio() {
             {/* Generate button */}
             <button
               onClick={() => setGenerated(true)}
-              className="w-full mt-5 py-[13px] bg-brand-orange border-0 rounded-lg text-sm font-semibold text-white cursor-pointer flex items-center justify-center gap-[6px]"
+              className="w-full mt-5 py-[13px] bg-brand-orange border-0 rounded-lg text-sm font-semibold text-white cursor-pointer flex items-center justify-center gap-[6px] transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50"
             >
               <Sparkles size={14} /> Generate with AI (5 credits)
             </button>
           </div>
 
           {/* RIGHT: Output panel */}
-          <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
             <p className="text-sm font-bold text-charcoal mb-5 flex items-center gap-2">
               <Sparkles size={15} /> AI Output — Preview
             </p>
@@ -300,7 +300,7 @@ export function StoreAIStudio() {
                   >
                     Use This
                   </button>
-                  <button onClick={() => setGenerated(false)} className="px-[18px] py-[10px] bg-white border border-bone rounded-lg text-xs text-graphite cursor-pointer">
+                  <button onClick={() => setGenerated(false)} className="px-[18px] py-[10px] bg-white border border-bone rounded-lg text-xs text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
                     Regenerate
                   </button>
                   <button

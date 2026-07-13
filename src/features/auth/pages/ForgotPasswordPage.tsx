@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, KeyRound, ShieldCheck, Clock } from 'lucide-react';
+import { ArrowLeft, Mail, KeyRound, ShieldCheck, Clock, AlertTriangle } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useForgotPassword } from '@/hooks/auth/useForgotPassword';
 import { Button } from '@/components/comman/ui/Button';
@@ -67,9 +67,10 @@ export function ForgotPasswordPage() {
       </Button>
 
       {forgotPassword.error && (
-        <p className="text-[13px] text-error text-center mt-3">
-          {forgotPassword.error}
-        </p>
+        <div className="flex items-center justify-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
+          <AlertTriangle size={14} className="shrink-0" />
+          <span>{forgotPassword.error}</span>
+        </div>
       )}
 
       <button onClick={() => navigate('/login')}

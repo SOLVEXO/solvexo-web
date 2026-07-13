@@ -242,6 +242,61 @@ export function apiChangeMyPlan(id: string, newPlanId: string, newBillingInterva
   );
 }
 
+export interface SubscriptionTimelineEvent {
+  _id: string; action: string; description: string; actorRole: string; createdAt: string;
+}
+export function apiGetSubscriptionTimeline(id: string) {
+  return client.get<never, ApiResponse<SubscriptionTimelineEvent[]>>(ENDPOINTS.SUBSCRIPTIONS.MY_TIMELINE(id));
+}
+
+export function apiCreateSetupIntent() {
+  return client.post<never, ApiResponse<{ clientSecret: string }>>(ENDPOINTS.SUBSCRIPTIONS.MY_SETUP_INTENT);
+}
+
+export function apiCreateBillingPortalSession(returnUrl: string) {
+  return client.post<never, ApiResponse<{ url: string }>>(ENDPOINTS.SUBSCRIPTIONS.MY_BILLING_PORTAL, { returnUrl });
+}
+
+export interface BenefitsSummary {
+  subscribed: boolean;
+  planName?: string;
+  discount?: { scope: string; discountPercent: number; label: string | null } | null;
+  shipping?: { free: boolean; discountPercent?: number } | null;
+  loyaltyMultiplier?: number | null;
+  earlyAccessHours?: number | null;
+  hasPrioritySupport?: boolean;
+  hasPriorityBooking?: boolean;
+  credits?: Array<{ creditType: string; balance: number; totalGranted: number }>;
+}
+export function apiGetBenefitsSummary(storeId: string) {
+  return client.get<never, ApiResponse<BenefitsSummary>>(ENDPOINTS.SUBSCRIPTIONS.MY_BENEFITS(storeId));
+}
+
+export interface CreditWallet {
+  _id: string; customerId: string; storeId: string; creditType: 'download' | 'service';
+  balance: number; totalGranted: number; totalSpent: number;
+  store: { name: string; logo: string | null; slug: string } | null;
+}
+export function apiGetCreditWallets() {
+  return client.get<never, ApiResponse<CreditWallet[]>>(ENDPOINTS.SUBSCRIPTIONS.MY_CREDITS);
+}
+
+export function apiSpendCredit(storeId: string, creditType: 'download' | 'service', amount: number, reason: string) {
+  return client.post<never, ApiResponse<CreditWallet>>(ENDPOINTS.SUBSCRIPTIONS.MY_CREDITS_SPEND(storeId), { creditType, amount, reason });
+}
+
+export interface NotificationPreferences {
+  renewalReminders: boolean; paymentFailedAlerts: boolean; prorationReceipts: boolean;
+  cancellationConfirmations: boolean; planChangeUpdates: boolean; marketingTips: boolean;
+}
+export function apiGetNotificationPreferences() {
+  return client.get<never, ApiResponse<NotificationPreferences>>(ENDPOINTS.SUBSCRIPTIONS.MY_NOTIFICATION_PREFS);
+}
+
+export function apiUpdateNotificationPreferences(prefs: Partial<NotificationPreferences>) {
+  return client.patch<never, ApiResponse<NotificationPreferences>>(ENDPOINTS.SUBSCRIPTIONS.MY_NOTIFICATION_PREFS, prefs);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // SELLER (store-scoped)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -318,6 +373,24 @@ export function apiCancelSubscriber(storeId: string, id: string, atPeriodEnd: bo
   return client.patch<never, ApiResponse<Subscription>>(`${ENDPOINTS.SUBSCRIPTIONS.SUBSCRIBERS.CANCEL(storeId, id)}?atPeriodEnd=${atPeriodEnd}`, { reason });
 }
 
+export function apiRefundSubscriberInvoice(storeId: string, id: string, invoiceId: string, amountUSD?: number, reason?: string) {
+  return client.post<never, ApiResponse<SubscriptionInvoice>>(
+    ENDPOINTS.SUBSCRIPTIONS.SUBSCRIBERS.REFUND_INVOICE(storeId, id, invoiceId), { amountUSD, reason },
+  );
+}
+
+export interface AdvancedSellerAnalytics {
+  conversionRatePercent: number; retention30dPercent: number;
+  realizedLtvUSD: number; realizedLtvSampleSize: number;
+  activeAvgRevenueToDateUSD: number; activeSampleSize: number;
+  upgradeCount: number; downgradeCount: number;
+  recommendations: string[];
+}
+
+export function apiGetAdvancedAnalytics(storeId: string) {
+  return client.get<never, ApiResponse<AdvancedSellerAnalytics>>(ENDPOINTS.SUBSCRIPTIONS.ANALYTICS_ADVANCED(storeId));
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ADMIN
 // ═══════════════════════════════════════════════════════════════════════════
@@ -376,4 +449,45 @@ export function apiAdminGetSubscriptionPaymentAttempts(id: string, query: { page
   return client.get<never, ApiResponse<{ pagination: Pagination; attempts: PaymentAttempt[] }>>(
     `${ENDPOINTS.SUBSCRIPTIONS.ADMIN.SUB_PAYMENT_ATTEMPTS(id)}${qs(query)}`,
   );
+}
+
+export interface LtvData {
+  realizedLtvUSD: number; canceledSubscriptionsSampled: number;
+  activeAvgRevenueToDateUSD: number; activeSubscriptionsSampled: number; note: string;
+}
+export function apiAdminGetLtv() {
+  return client.get<never, ApiResponse<LtvData>>(ENDPOINTS.SUBSCRIPTIONS.ADMIN.LTV);
+}
+
+export interface RevenueBreakdown {
+  byStore: Array<{ storeId: string; storeName: string; sellerId: string | null; totalUSD: number; invoiceCount: number; sellerPayoutUSD: number; platformCommissionUSD: number }>;
+  byCountry: Array<{ country: string; totalUSD: number; invoiceCount: number }>;
+  byPaymentMethod: Array<{ paymentMethodType: string; totalUSD: number; invoiceCount: number }>;
+  note: string;
+}
+export function apiAdminGetRevenueBreakdown(query: { from?: string; to?: string } = {}) {
+  return client.get<never, ApiResponse<RevenueBreakdown>>(`${ENDPOINTS.SUBSCRIPTIONS.ADMIN.REVENUE_BREAKDOWN}${qs(query)}`);
+}
+
+export interface ChurnCohort { cohort: string; totalStarted: number; stillActive: number; retentionPercent: number }
+export function apiAdminGetChurnCohorts(query: { months?: number } = {}) {
+  return client.get<never, ApiResponse<ChurnCohort[]>>(`${ENDPOINTS.SUBSCRIPTIONS.ADMIN.CHURN_COHORTS}${qs(query)}`);
+}
+
+export function apiAdminRefundInvoice(invoiceId: string, amountUSD?: number, reason?: string) {
+  return client.post<never, ApiResponse<SubscriptionInvoice>>(ENDPOINTS.SUBSCRIPTIONS.ADMIN.INVOICE_REFUND(invoiceId), { amountUSD, reason });
+}
+
+export interface WebhookEvent {
+  _id: string; provider: string; providerEventId: string; type: string;
+  status: 'received' | 'processing' | 'processed' | 'failed' | 'ignored';
+  error: string | null; processingAttempts: number; processedAt: string | null; createdAt: string;
+}
+export function apiAdminGetWebhookHistory(query: { page?: number; limit?: number; status?: string; type?: string } = {}) {
+  return client.get<never, ApiResponse<{ pagination: Pagination; events: WebhookEvent[] }>>(
+    `${ENDPOINTS.SUBSCRIPTIONS.ADMIN.WEBHOOKS}${qs(query)}`,
+  );
+}
+export function apiAdminRetryWebhook(id: string) {
+  return client.post<never, ApiResponse<never>>(ENDPOINTS.SUBSCRIPTIONS.ADMIN.WEBHOOK_RETRY(id));
 }

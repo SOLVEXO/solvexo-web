@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import type { Message } from '@/api/services/messaging';
 import { ChatAvatar } from './ChatAvatar';
+import { Modal } from '@/components/comman/ui/Modal';
+import { Button } from '@/components/comman/ui/Button';
 
 interface MessageBubbleProps {
   message:          Message;
@@ -113,7 +115,7 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
       <button
         onClick={() => setOpen(o => !o)}
         className={clsx(
-          'opacity-0 group-hover:opacity-100 transition-opacity w-[18px] h-[18px] rounded-full flex items-center justify-center border-none cursor-pointer',
+          'opacity-0 group-hover:opacity-100 transition-opacity duration-150 w-[18px] h-[18px] rounded-full flex items-center justify-center border-none cursor-pointer',
           own ? 'bg-black/15 text-white hover:bg-black/25' : 'bg-black/8 text-charcoal hover:bg-black/15',
         )}
         title="Message options"
@@ -160,29 +162,19 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
 // ── Delete confirmation modal ─────────────────────────────────────────────────
 function DeleteModal({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200]" onClick={onCancel}>
-      <div
-        className="bg-white rounded-[16px] shadow-2xl px-6 py-5 w-full max-w-[280px] mx-4"
-        onClick={e => e.stopPropagation()}
-      >
-        <p className="text-[15px] font-bold text-charcoal mb-[6px]">Delete message?</p>
-        <p className="text-[13px] text-slate mb-5">This message will be deleted for everyone.</p>
-        <div className="flex gap-[8px]">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-[10px] rounded-[10px] border border-bone text-[13px] font-medium text-charcoal cursor-pointer bg-white hover:bg-cream"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-[10px] rounded-[10px] border-none text-[13px] font-medium text-white bg-red-500 cursor-pointer hover:bg-red-600"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
+    <Modal
+      title="Delete message?"
+      onClose={onCancel}
+      width={280}
+      footer={
+        <>
+          <Button variant="secondary" size="sm" onClick={onCancel} className="flex-1">Cancel</Button>
+          <Button variant="danger" size="sm" onClick={onConfirm} className="flex-1">Delete</Button>
+        </>
+      }
+    >
+      <p className="text-[13px] text-slate">This message will be deleted for everyone.</p>
+    </Modal>
   );
 }
 
@@ -221,7 +213,10 @@ export function MessageBubble({
         />
       )}
 
-      <div className={clsx('group flex w-full items-end gap-[6px] mb-[2px]', own ? 'justify-end' : 'justify-start')}>
+      <div className={clsx(
+        'group flex w-full items-end gap-[6px] mb-[2px] transition-all duration-300 ease-out starting:opacity-0 starting:translate-y-1',
+        own ? 'justify-end' : 'justify-start',
+      )}>
         {/* Left avatar gutter */}
         {!own && (
           <div className="w-7 shrink-0 self-end">

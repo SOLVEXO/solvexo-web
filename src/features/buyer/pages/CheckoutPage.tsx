@@ -7,6 +7,7 @@ import { apiGetMyAddresses, type Address } from '@/api/services/address';
 import { apiCreateCheckout, type Checkout, type CheckoutSummary, type SubscriptionSavingsHint } from '@/api/services/checkout';
 import { apiPlaceCodOrder, apiPlaceOrder } from '@/api/services/payment';
 import { Button } from '@/components/comman/ui/Button';
+import { SkeletonBox } from '@/components/comman/ui';
 import {
   ArrowLeft, MapPin, Truck, CreditCard, CheckCircle2,
   ChevronRight, Loader2, AlertCircle, PackageCheck,
@@ -263,9 +264,10 @@ export function CheckoutPage() {
               {/* Body */}
               <div className="p-5">
                 {creatingCheckout ? (
-                  <div className="flex flex-col items-center gap-3 py-8">
-                    <Loader2 size={24} className="animate-spin text-brand-orange" />
-                    <p className="text-[13px] text-slate">Preparing your order…</p>
+                  <div className="flex flex-col gap-4">
+                    <SkeletonBox height={40} rounded="8px" />
+                    <SkeletonBox height={14} width="70%" rounded="4px" />
+                    <SkeletonBox height={48} rounded="12px" />
                   </div>
                 ) : checkoutError ? (
                   <div className="flex items-start gap-2 text-[12px] text-[#C13030] bg-[#FFF0F0] border border-[#FECACA] rounded-[8px] px-3 py-2">
@@ -382,8 +384,9 @@ export function CheckoutPage() {
               {step === 1 && (
                 <div className="p-5">
                   {addrLoading ? (
-                    <div className="flex items-center gap-2 text-[13px] text-slate">
-                      <Loader2 size={14} className="animate-spin" /> Loading addresses…
+                    <div className="flex flex-col gap-4">
+                      <SkeletonBox height={54} rounded="10px" />
+                      <SkeletonBox height={32} width={180} rounded="8px" />
                     </div>
                   ) : addresses.length === 0 ? (
                     <div className="flex flex-col gap-3">
@@ -525,8 +528,9 @@ export function CheckoutPage() {
               {step === 2 && (
                 <div className="p-5">
                   {zonesLoading ? (
-                    <div className="flex items-center gap-2 text-[13px] text-slate">
-                      <Loader2 size={14} className="animate-spin" /> Loading shipping options…
+                    <div className="flex flex-col gap-4">
+                      <SkeletonBox height={54} rounded="10px" />
+                      <SkeletonBox height={32} width={180} rounded="8px" />
                     </div>
                   ) : (
                     <div className="flex flex-col gap-4">

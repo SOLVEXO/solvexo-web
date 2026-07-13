@@ -50,7 +50,10 @@ export function SellerMessages() {
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const { conversation, pin, mute, archive, restore, remove } = useConversation(activeId);
-  const { messages, loading: msgLoading, sending, send, edit, remove: removeMessage, markSeen, hasMore, loadMore } = useMessages(activeId);
+  const {
+    messages, loading: msgLoading, sending, send, edit, remove: removeMessage, markSeen, hasMore, loadMore,
+    otherOnline, otherTyping, sendTyping,
+  } = useMessages(activeId);
   const { block, unblock, report } = useModeration();
 
   const [blockedBuyerId, setBlockedBuyerId] = useState<string | null>(null);
@@ -142,7 +145,7 @@ export function SellerMessages() {
           open={!!active}
           headerName={active ? (active.buyer?.name ?? `Buyer #${active.buyerId.slice(-6).toUpperCase()}`) : ''}
           headerImage={active?.buyer?.profileImage}
-          headerSubtitle={active ? (active.isArchived ? 'Archived' : active.isMuted ? 'Muted' : 'Active buyer') : undefined}
+          headerSubtitle={active ? (active.isArchived ? 'Archived' : active.isMuted ? 'Muted' : undefined) : undefined}
           menuItems={menuItems}
           onBack={() => setActiveId(null)}
           messages={messages}
@@ -157,6 +160,10 @@ export function SellerMessages() {
           onUpload={file => void handleUpload(file)}
           onEditMessage={(id, text) => void edit(id, text)}
           onDeleteMessage={id => void removeMessage(id)}
+          otherOnline={otherOnline}
+          otherTyping={otherTyping}
+          onTyping={sendTyping}
+          conversationId={activeId}
         />
       </div>
     </>

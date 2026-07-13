@@ -4,11 +4,13 @@ import { clsx } from 'clsx';
 import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, FolderTree, RefreshCw,
-  BarChart3,
+  BarChart3, Layers,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
+import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
+import { CommandPalette } from '@/components/comman/ui/CommandPalette';
 
 interface AdminNavItem {
   id:    string;
@@ -26,6 +28,7 @@ const ADMIN_NAV: AdminNavItem[] = [
   { id: 'marketplace',   Icon: Store,           label: 'Marketplace',     path: '/admin/marketplace'   },
   { id: 'categories',    Icon: FolderTree,      label: 'Categories',      path: '/admin/categories'    },
   { id: 'subscriptions', Icon: RefreshCw,       label: 'Subscriptions',   path: '/admin/subscriptions' },
+  { id: 'platform-plans',Icon: Layers,          label: 'Platform Plans',  path: '/admin/platform-plans' },
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
   { id: 'banners',       Icon: ImageIcon,       label: 'Banners',         path: '/admin/banners'       },
   { id: 'faqs',          Icon: HelpCircle,      label: 'FAQs',            path: '/admin/faqs'          },
@@ -34,23 +37,55 @@ const ADMIN_NAV: AdminNavItem[] = [
   { id: 'settings',      Icon: UserCog,         label: 'My Settings',     path: '/admin/settings'      },
 ];
 
+// Purely visual grouping for the sidebar — does not affect routes, order, or
+// which items exist. Every id above must appear in exactly one group.
+const NAV_GROUPS: { label: string; ids: AdminNavItem['id'][] }[] = [
+  { label: 'Overview', ids: ['overview', 'analytics'] },
+  { label: 'Community', ids: ['users', 'moderation', 'messages'] },
+  { label: 'Commerce',  ids: ['marketplace', 'categories', 'subscriptions', 'finance'] },
+  { label: 'Content',   ids: ['banners', 'faqs', 'announcements'] },
+  { label: 'Platform',  ids: ['config', 'settings'] },
+];
+
 interface AdminSidebarProps { open: boolean; onToggle: () => void; onClose: () => void; }
 
 function AdminSidebar({ open, onToggle, onClose }: AdminSidebarProps) {
   const navigate     = useNavigate();
   const { pathname } = useLocation();
   const { profile, loading: profileLoading } = useGetProfile();
+  const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
 
   const isActive = (path: string) =>
     path === '/admin' ? pathname === '/admin' : pathname.startsWith(path);
+
+  const paletteItems = ADMIN_NAV.map(item => ({
+    id:       item.id,
+    label:    item.label,
+    icon:     item.Icon,
+    onSelect: () => navigate(item.path),
+  }));
 
   const toggleBtn = (
     <button
       onClick={onToggle}
       title={open ? 'Collapse sidebar' : 'Expand sidebar'}
-      className="size-7 rounded-md flex items-center justify-center shrink-0 text-pos-muted hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
+      className="size-7 rounded-md flex items-center justify-center shrink-0 text-pos-muted hover:text-white hover:bg-dark-active transition-colors duration-150 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-error/40"
     >
       {open ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
+    </button>
+  );
+
+  const paletteHint = (
+    <button
+      type="button"
+      onClick={() => setPaletteOpen(true)}
+      title="Search (Ctrl+K)"
+      className={clsx(
+        'flex items-center gap-1 rounded-md border border-dark-active text-pos-muted hover:text-white hover:bg-dark-active transition-colors duration-150 cursor-pointer shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-error/40',
+        open ? 'px-[7px] py-[3px] text-[10px] font-semibold' : 'size-7 justify-center text-[9px] font-semibold',
+      )}
+    >
+      {open ? '⌘K' : 'K'}
     </button>
   );
 
@@ -87,6 +122,7 @@ function AdminSidebar({ open, onToggle, onClose }: AdminSidebarProps) {
                 <p className="text-[13px] font-bold text-white leading-[1.3]">Solvexo Admin</p>
                 <p className="text-[10px] text-pos-muted leading-[1.3]">Super Admin Panel</p>
               </div>
+              {paletteHint}
               {toggleBtn}
             </div>
 
@@ -120,52 +156,71 @@ function AdminSidebar({ open, onToggle, onClose }: AdminSidebarProps) {
             <div className="size-[30px] rounded-md bg-error flex items-center justify-center shrink-0">
               <Shield size={15} className="text-white" />
             </div>
+            {paletteHint}
             {toggleBtn}
           </div>
         )}
 
         {/* Nav */}
         <nav className={clsx('flex-1 overflow-y-auto', open ? 'px-3' : 'px-[10px] pt-2')}>
-          {ADMIN_NAV.map(item => {
-            const active = isActive(item.path);
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => navigate(item.path)}
-                title={!open ? item.label : undefined}
-                aria-label={item.label}
-                aria-current={active ? 'page' : undefined}
-                className={clsx(
-                  'w-full flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 border-none text-left',
-                  'cursor-pointer transition-colors duration-150',
-                  !open && 'lg:justify-center lg:px-0',
-                  active ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
-                )}
-              >
-                <item.Icon
-                  size={15}
-                  className={clsx(
-                    'shrink-0',
-                    active ? 'text-error opacity-100' : 'text-pos-faint opacity-40',
-                  )}
-                />
-                {open && (
-                  <>
-                    <span className={clsx(
-                      'text-[12px] flex-1',
-                      active ? 'font-semibold text-white' : 'font-normal text-pos-faint',
-                    )}>
-                      {item.label}
-                    </span>
-                    {active && <div className="w-[3px] h-3 rounded-[2px] bg-error" />}
-                  </>
-                )}
-              </button>
-            );
-          })}
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={group.label} className={gi > 0 ? 'mt-2' : undefined}>
+              {open ? (
+                <p className="px-[10px] pt-2 pb-[5px] text-[10px] font-semibold text-pos-faint/70 uppercase tracking-[0.08em] select-none">
+                  {group.label}
+                </p>
+              ) : gi > 0 ? (
+                <div className="mx-2 mb-2 border-t border-dark-active" />
+              ) : null}
+
+              {group.ids.map(id => {
+                const item = ADMIN_NAV.find(n => n.id === id);
+                if (!item) return null;
+                const active = isActive(item.path);
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => navigate(item.path)}
+                    title={!open ? item.label : undefined}
+                    aria-label={item.label}
+                    aria-current={active ? 'page' : undefined}
+                    className={clsx(
+                      'w-full flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 border-none text-left',
+                      'cursor-pointer transition-colors duration-150 outline-none',
+                      'focus-visible:ring-2 focus-visible:ring-error/40',
+                      'active:scale-[0.98]',
+                      !open && 'lg:justify-center lg:px-0',
+                      active ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
+                    )}
+                  >
+                    <item.Icon
+                      size={15}
+                      className={clsx(
+                        'shrink-0 transition-opacity duration-150',
+                        active ? 'text-error opacity-100' : 'text-pos-faint opacity-40',
+                      )}
+                    />
+                    {open && (
+                      <>
+                        <span className={clsx(
+                          'text-[12px] flex-1',
+                          active ? 'font-semibold text-white' : 'font-normal text-pos-faint',
+                        )}>
+                          {item.label}
+                        </span>
+                        {active && <div className="w-[3px] h-3 rounded-[2px] bg-error" />}
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </nav>
       </aside>
+
+      <CommandPalette items={paletteItems} open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </>
   );
 }
@@ -201,7 +256,7 @@ export function AdminLayout() {
           <button
             onClick={toggle}
             aria-label="Toggle sidebar"
-            className="size-8 rounded-md flex items-center justify-center text-pos-muted hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
+            className="size-8 rounded-md flex items-center justify-center text-pos-muted hover:text-white hover:bg-dark-active transition-colors duration-150 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-error/40"
           >
             <PanelLeftOpen size={17} />
           </button>

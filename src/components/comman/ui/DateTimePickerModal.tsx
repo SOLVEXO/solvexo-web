@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { X, ChevronLeft, ChevronRight, CalendarClock } from 'lucide-react';
+import { useFocusTrap } from './useFocusTrap';
 
 const MONTHS    = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const WEEK_DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -26,12 +27,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
   const titleId   = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    dialogRef.current?.focus();
-    const onKeyDown = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+  useFocusTrap(dialogRef, onClose);
 
   const init = value ? new Date(value) : null;
   const now  = new Date();

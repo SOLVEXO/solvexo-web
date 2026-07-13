@@ -41,7 +41,7 @@ function OTPInput({ values, onChange }: { values: string[]; onChange: (i: number
 
   return (
     <div>
-      <div role="group" aria-label="6-digit verification code" className="flex gap-[10px] justify-center mb-2">
+      <div role="group" aria-label="6-digit verification code" className="flex gap-[10px] sm:gap-3 justify-center mb-3">
         {values.map((val, i) => (
           <input key={i}
             ref={el => { refs.current[i] = el; }}
@@ -51,8 +51,10 @@ function OTPInput({ values, onChange }: { values: string[]; onChange: (i: number
             onKeyDown={e => handleKeyDown(i, e)}
             onPaste={handlePaste}
             className={[
-              'w-10 h-12 sm:w-[52px] sm:h-14 text-center text-[18px] sm:text-[22px] font-bold rounded-[10px] border-2 text-carbon outline-none transition-all duration-150 cursor-text',
-              val ? 'border-brand-orange bg-brand-pale-orange' : 'border-bone bg-white',
+              'w-10 h-12 sm:w-[52px] sm:h-14 text-center text-[18px] sm:text-[22px] font-bold rounded-[10px] border-2 text-carbon outline-none cursor-text',
+              'transition-[border-color,background-color,box-shadow,transform] duration-150 ease-out',
+              'focus:ring-4 focus:ring-brand-orange/10 focus:scale-[1.03]',
+              val ? 'border-brand-orange bg-brand-pale-orange' : 'border-bone bg-white hover:border-slate/40',
             ].join(' ')}
           />
         ))}

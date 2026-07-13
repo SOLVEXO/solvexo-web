@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useId, useRef, type ReactNode } from 'react';
+import { useFocusTrap } from './useFocusTrap';
 
 export interface ModalProps {
   title:    string;
@@ -13,12 +14,7 @@ export function Modal({ title, onClose, children, footer, width = 440 }: ModalPr
   const titleId  = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    dialogRef.current?.focus();
-    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+  useFocusTrap(dialogRef, onClose);
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">

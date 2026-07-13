@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, ImageOff, Loader2 } from 'lucide-react';
+import { RefreshCw, ImageOff } from 'lucide-react';
 import {
   Card, EmptyState, SkeletonBox, Table, type TableColumn,
   ActionMenu, type ActionMenuItem, Badge,
@@ -10,8 +10,17 @@ import { Modal } from '@/components/comman/ui/Modal';
 import {
   apiGetMySubscriptions, apiGetMySubscriptionById, apiPauseMySubscription, apiResumeMySubscription,
   apiCancelMySubscription, apiChangeMyPlan, apiBrowseStorePlans,
+  apiGetSubscriptionTimeline, apiCreateBillingPortalSession, apiGetBenefitsSummary,
+  apiGetCreditWallets, apiSpendCredit, apiGetNotificationPreferences, apiUpdateNotificationPreferences,
   type Subscription, type BuyerPlan, type SubscriptionInvoice, type BillingInterval,
+  type SubscriptionTimelineEvent, type BenefitsSummary, type CreditWallet, type NotificationPreferences,
 } from '@/api/services/subscriptions';
+
+const NOTIF_LABELS: Record<keyof NotificationPreferences, string> = {
+  renewalReminders: 'Renewal reminders', paymentFailedAlerts: 'Payment failed alerts',
+  prorationReceipts: 'Plan change receipts', cancellationConfirmations: 'Cancellation confirmations',
+  planChangeUpdates: 'Plan change updates', marketingTips: 'Tips & marketing emails',
+};
 
 type EnrichedSub = Subscription & {
   store: { _id: string; name: string; logo: string | null; slug: string } | null;
@@ -34,13 +43,23 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
   const [plans, setPlans] = useState<BuyerPlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [selectedInterval, setSelectedInterval] = useState<BillingInterval>('monthly');
+  const [benefits, setBenefits] = useState<BenefitsSummary | null>(null);
+  const [timeline, setTimeline] = useState<SubscriptionTimelineEvent[] | null>(null);
+  const [loadingTimeline, setLoadingTimeline] = useState(false);
 
   useEffect(() => {
     apiGetMySubscriptionById(sub._id)
       .then(res => setInvoices(res.data.invoices))
       .catch(() => {})
       .finally(() => setLoadingInvoices(false));
-  }, [sub._id]);
+    if (sub.store) apiGetBenefitsSummary(sub.store._id).then(res => setBenefits(res.data)).catch(() => {});
+  }, [sub._id, sub.store]);
+
+  function toggleTimeline() {
+    if (timeline) { setTimeline(null); return; }
+    setLoadingTimeline(true);
+    apiGetSubscriptionTimeline(sub._id).then(res => setTimeline(res.data)).finally(() => setLoadingTimeline(false));
+  }
 
   async function openChangePlan() {
     setChangingPlan(true);
@@ -101,16 +120,44 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
           )}
         </div>
 
+        {benefits?.subscribed && (
+          <div className="border border-bone rounded-lg p-3 flex flex-col gap-1.5">
+            <p className="text-[12px] font-semibold text-charcoal mb-0.5">Your Benefits</p>
+            {benefits.discount && <p className="text-[12px] text-graphite">• {benefits.discount.discountPercent}% off {benefits.discount.scope === 'store' ? 'storewide' : 'selected items'}</p>}
+            {benefits.shipping?.free && <p className="text-[12px] text-graphite">• Free shipping</p>}
+            {benefits.loyaltyMultiplier && benefits.loyaltyMultiplier > 1 && <p className="text-[12px] text-graphite">• {benefits.loyaltyMultiplier}x loyalty points</p>}
+            {benefits.earlyAccessHours ? <p className="text-[12px] text-graphite">• {benefits.earlyAccessHours}h early access to new arrivals</p> : null}
+            {benefits.hasPrioritySupport && <p className="text-[12px] text-graphite">• Priority support</p>}
+            {benefits.hasPriorityBooking && <p className="text-[12px] text-graphite">• Priority booking</p>}
+          </div>
+        )}
+
         {!changingPlan ? (
           <div className="flex flex-wrap gap-2">
             {sub.status === 'active' && <Button size="sm" variant="outline" onClick={() => handle('pause')} disabled={busy}>Pause</Button>}
             {sub.status === 'paused' && <Button size="sm" variant="outline" onClick={() => handle('resume')} disabled={busy}>Resume</Button>}
             {sub.status === 'active' && <Button size="sm" variant="outline" onClick={openChangePlan} disabled={busy}>Change Plan</Button>}
+            <Button size="sm" variant="outline" onClick={toggleTimeline} loading={loadingTimeline}>{timeline ? 'Hide Timeline' : 'View Timeline'}</Button>
             {(sub.status === 'active' || sub.status === 'paused' || sub.status === 'past_due') && (
               <Button size="sm" variant="danger" onClick={() => handle('cancel')} disabled={busy}>Cancel Subscription</Button>
             )}
           </div>
-        ) : (
+        ) : null}
+
+        {timeline && (
+          <div className="flex flex-col gap-1.5 max-h-[160px] overflow-y-auto">
+            {timeline.length === 0 ? (
+              <p className="text-[12px] text-slate">No history recorded.</p>
+            ) : timeline.map(ev => (
+              <div key={ev._id} className="text-[12px] px-2 py-1.5 rounded bg-cream">
+                <span className="text-charcoal">{ev.description}</span>
+                <span className="text-slate ml-1.5">· {new Date(ev.createdAt).toLocaleDateString()}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {changingPlan && (
           <div className="border border-bone rounded-lg p-3 flex flex-col gap-3">
             <p className="text-[12px] font-semibold text-charcoal">Choose a new plan</p>
             {plans.length === 0 ? (
@@ -143,7 +190,11 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
         <div>
           <p className="text-[12px] font-semibold text-charcoal mb-2">Invoices</p>
           {loadingInvoices ? (
-            <Loader2 size={16} className="animate-spin text-brand-orange" />
+            <div className="flex flex-col gap-1.5">
+              {[1, 2, 3].map(i => (
+                <SkeletonBox key={i} height={28} rounded="6px" />
+              ))}
+            </div>
           ) : invoices.length === 0 ? (
             <p className="text-[12px] text-slate">No invoices yet.</p>
           ) : (
@@ -164,6 +215,92 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
   );
 }
 
+function CreditsPanel() {
+  const [wallets, setWallets] = useState<CreditWallet[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [spendingId, setSpendingId] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    apiGetCreditWallets().then(res => setWallets(res.data)).finally(() => setLoading(false));
+  }, []);
+  useEffect(load, [load]);
+
+  async function handleSpend(w: CreditWallet) {
+    const amountStr = window.prompt(`Spend how many ${w.creditType} credits? (balance: ${w.balance})`, '1');
+    if (!amountStr) return;
+    const amount = parseInt(amountStr, 10);
+    if (!amount || amount <= 0) return;
+    setSpendingId(w._id);
+    try {
+      await apiSpendCredit(w.storeId, w.creditType, amount, 'Redeemed from My Subscriptions');
+      load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to spend credit.');
+    } finally {
+      setSpendingId(null);
+    }
+  }
+
+  if (loading) return null;
+  if (wallets.length === 0) return null;
+
+  return (
+    <Card padding="none">
+      <div className="px-5 py-4 border-b border-bone">
+        <p className="text-[14px] font-bold text-charcoal">My Credits</p>
+      </div>
+      <div className="flex flex-col p-5 gap-2.5">
+        {wallets.map(w => (
+          <div key={w._id} className="flex items-center justify-between text-[13px] bg-cream rounded-lg px-3.5 py-2.5">
+            <div>
+              <p className="font-semibold text-charcoal">{w.store?.name ?? 'Store'} — {w.creditType} credits</p>
+              <p className="text-[11px] text-slate">{w.balance} available of {w.totalGranted} granted</p>
+            </div>
+            <Button size="xs" variant="outline" disabled={w.balance <= 0 || spendingId === w._id} onClick={() => handleSpend(w)}>
+              {spendingId === w._id ? 'Spending…' : 'Use Credit'}
+            </Button>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function NotificationPreferencesPanel() {
+  const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { apiGetNotificationPreferences().then(res => setPrefs(res.data)); }, []);
+
+  async function toggle(key: keyof NotificationPreferences) {
+    if (!prefs) return;
+    const next = { ...prefs, [key]: !prefs[key] };
+    setPrefs(next);
+    setSaving(true);
+    try { await apiUpdateNotificationPreferences({ [key]: next[key] }); }
+    finally { setSaving(false); }
+  }
+
+  if (!prefs) return null;
+
+  return (
+    <Card padding="none">
+      <div className="px-5 py-4 border-b border-bone">
+        <p className="text-[14px] font-bold text-charcoal">Subscription Notifications</p>
+      </div>
+      <div className="flex flex-col p-5 gap-2">
+        {(Object.keys(NOTIF_LABELS) as Array<keyof NotificationPreferences>).map(key => (
+          <label key={key} className="flex items-center justify-between text-[13px] text-graphite cursor-pointer py-1">
+            {NOTIF_LABELS[key]}
+            <input type="checkbox" checked={prefs[key]} disabled={saving} onChange={() => toggle(key)} />
+          </label>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 export function SubscriptionsTab() {
   const navigate = useNavigate();
   const [subs, setSubs] = useState<EnrichedSub[]>([]);
@@ -172,6 +309,19 @@ export function SubscriptionsTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [managing, setManaging] = useState<EnrichedSub | null>(null);
+  const [openingPortal, setOpeningPortal] = useState(false);
+
+  async function handleManageBilling() {
+    setOpeningPortal(true);
+    try {
+      const res = await apiCreateBillingPortalSession(window.location.href);
+      window.location.href = res.data.url;
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Billing portal is unavailable right now.');
+    } finally {
+      setOpeningPortal(false);
+    }
+  }
 
   const load = useCallback(() => {
     setLoading(true);
@@ -212,15 +362,19 @@ export function SubscriptionsTab() {
   ];
 
   return (
+    <div className="flex flex-col gap-4">
     <Card padding="none">
-      <div className="px-5 pt-5 pb-4 border-b border-bone flex items-end justify-between">
+      <div className="px-5 pt-5 pb-4 border-b border-bone flex items-end justify-between flex-wrap gap-3">
         <div>
           <p className="text-[11px] text-slate mb-[3px]">Account / My Subscriptions</p>
           <h1 className="text-[22px] font-bold text-charcoal leading-none">My Subscriptions</h1>
         </div>
-        <div className="text-right pb-[2px]">
-          <p className="text-[13px] font-semibold text-charcoal leading-tight">Total</p>
-          <p className="text-[11px] text-slate mt-[2px]">{total} subscription{total !== 1 ? 's' : ''}</p>
+        <div className="flex items-center gap-4">
+          <Button size="sm" variant="outline" loading={openingPortal} onClick={handleManageBilling}>Manage Billing</Button>
+          <div className="text-right">
+            <p className="text-[13px] font-semibold text-charcoal leading-tight">Total</p>
+            <p className="text-[11px] text-slate mt-[2px]">{total} subscription{total !== 1 ? 's' : ''}</p>
+          </div>
         </div>
       </div>
 
@@ -246,5 +400,8 @@ export function SubscriptionsTab() {
         />
       )}
     </Card>
+    <CreditsPanel />
+    <NotificationPreferencesPanel />
+    </div>
   );
 }

@@ -21,7 +21,7 @@ const DEFAULT_FLAGS: ToggleItem[] = [
 function ToggleSwitch({ enabled, onToggle, disabled }: { enabled: boolean; onToggle: () => void; disabled?: boolean }) {
   return (
     <button onClick={onToggle} disabled={disabled} title={disabled ? 'Not connected to a backend yet' : undefined}
-      className={`relative w-10 h-[22px] bg-transparent border-none flex-shrink-0 p-0 ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
+      className={`relative w-10 h-[22px] bg-transparent border-none flex-shrink-0 p-0 rounded-full outline-none transition-transform duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50 ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-[0.94]'}`}>
       <div className="w-full h-full rounded-[11px] transition-colors duration-200"
         style={{ background: enabled ? '#D97757' : '#E8E6DC' }} />
       <div className="absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-[left] duration-200"
@@ -57,7 +57,7 @@ export function AdminConfig() {
 
       {/* ── Maintenance Mode ── */}
       <div
-        className="bg-white rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
+        className="bg-white rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-[border-color] duration-200"
         style={{ border: maintenance ? '2px solid #C13030' : '1px solid #E8E6DC' }}
       >
         <div className="flex items-center justify-between gap-4">
@@ -73,7 +73,7 @@ export function AdminConfig() {
           <div className="mt-4">
             <label className="text-[12px] font-medium text-graphite mb-[5px] block">Maintenance Message</label>
             <input placeholder="We are back soon! Scheduled maintenance until 4:00 AM UTC." value={maintenanceMsg} onChange={e => setMaintenanceMsg(e.target.value)}
-              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
             <p className="text-[11px] mt-2 font-semibold text-[#C13030] flex items-center gap-1">
               <AlertTriangle size={11} /> Maintenance mode is ON — users cannot access the platform.
             </p>
@@ -91,7 +91,7 @@ export function AdminConfig() {
             {flags.map((flag, i) => (
               <div key={flag.id}>
                 {i > 0 && <div className="h-px bg-[#F0EEE6] my-[10px]" />}
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between gap-3 -mx-2 px-2 py-[3px] rounded-md transition-colors duration-150 hover:bg-cream/60">
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-medium text-charcoal">{flag.label}</p>
                     <p className="text-[11px] text-slate">{flag.desc}</p>
@@ -113,12 +113,12 @@ export function AdminConfig() {
               <div>
                 <label className="text-[12px] font-medium text-graphite mb-[5px] block">Monthly Credit Limit (per seller)</label>
                 <input type="number" value={aiCredits} onChange={e => setAiCredits(e.target.value)}
-                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
               </div>
               <div>
                 <label className="text-[12px] font-medium text-graphite mb-[5px] block">AI Model</label>
                 <select value={aiModel} onChange={e => setAiModel(e.target.value)}
-                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border cursor-pointer">
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
                   <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
                   <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
                   <option value="claude-opus-4">Claude Opus 4</option>
@@ -143,21 +143,21 @@ export function AdminConfig() {
               <div>
                 <label className="text-[12px] font-medium text-graphite mb-[5px] block">From Name</label>
                 <input value={fromName} onChange={e => setFromName(e.target.value)}
-                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
               </div>
               <div>
                 <label className="text-[12px] font-medium text-graphite mb-[5px] block">From Email</label>
                 <input type="email" value={fromEmail} onChange={e => setFromEmail(e.target.value)}
-                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
               </div>
               <div>
                 <label className="text-[12px] font-medium text-graphite mb-[5px] block">Reply-To Email</label>
                 <input type="email" value={replyTo} onChange={e => setReplyTo(e.target.value)}
-                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                  className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
               </div>
               <div>
                 <label className="text-[12px] font-medium text-graphite mb-[5px] block">Email Provider</label>
-                <select className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border cursor-pointer">
+                <select className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
                   <option>SendGrid</option>
                   <option>Mailgun</option>
                   <option>AWS SES</option>

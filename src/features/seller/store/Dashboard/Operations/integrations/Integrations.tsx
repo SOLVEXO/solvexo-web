@@ -49,7 +49,7 @@ export function StoreIntegrations() {
         title="Apps & Integrations"
         subtitle="Connect your favorite tools and extend Solvexo's power."
         actions={
-          <div className="flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white">
+          <div className="flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white transition-shadow duration-150 focus-within:ring-2 focus-within:ring-brand-orange/40 focus-within:border-brand-orange/50">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
@@ -70,7 +70,7 @@ export function StoreIntegrations() {
         {/* Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
               <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
               <p className="text-xs text-slate mt-1">{m.sub}</p>
@@ -82,7 +82,7 @@ export function StoreIntegrations() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab('connected')}
-            className="px-4 py-[7px] rounded-[20px] text-[13px] font-medium cursor-pointer border-none transition-all duration-[120ms] flex items-center gap-[5px]"
+            className="px-4 py-[7px] rounded-[20px] text-[13px] font-medium cursor-pointer border-none transition-all duration-[120ms] flex items-center gap-[5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
             style={{
               background: activeTab === 'connected' ? '#141413' : '#fff',
               color:      activeTab === 'connected' ? '#fff'    : '#4A4945',
@@ -93,7 +93,7 @@ export function StoreIntegrations() {
           </button>
           <button
             onClick={() => setActiveTab('available')}
-            className="px-4 py-[7px] rounded-[20px] text-[13px] font-medium cursor-pointer border-none transition-all duration-[120ms]"
+            className="px-4 py-[7px] rounded-[20px] text-[13px] font-medium cursor-pointer border-none transition-all duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
             style={{
               background: activeTab === 'available' ? '#141413' : '#fff',
               color:      activeTab === 'available' ? '#fff'    : '#4A4945',
@@ -108,7 +108,7 @@ export function StoreIntegrations() {
         {activeTab === 'connected' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredApps.map(app => (
-              <div key={app.id} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5 relative">
+              <div key={app.id} className="bg-white border border-bone rounded-[10px] shadow-xs px-[22px] py-5 relative transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-[1px]">
                 <div className="absolute top-4 right-4">
                   <span className="px-[9px] py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C] flex items-center gap-1">
                     <Check size={10} /> Connected
@@ -147,7 +147,7 @@ export function StoreIntegrations() {
         )}
 
         {/* Developer Tools */}
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5 mt-1">
+        <div className="bg-white border border-bone rounded-[10px] shadow-xs px-[22px] py-5 mt-1">
           <p className="text-[15px] font-bold text-carbon mb-5">Developer Tools — API &amp; Webhooks</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
             <div>
@@ -181,7 +181,7 @@ export function StoreIntegrations() {
                   placeholder="https://your-app.com/webhooks/solvexo"
                   value={webhookUrl}
                   onChange={e => setWebhookUrl(e.target.value)}
-                  className="flex-1 px-3 py-[9px] text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none"
+                  className="flex-1 px-3 py-[9px] text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50"
                 />
                 <button
                   disabled

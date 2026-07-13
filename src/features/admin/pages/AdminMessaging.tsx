@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { X, Loader2, MessageSquare, Flag, Paperclip } from 'lucide-react';
-import { useAdminConversations, useAdminReports } from '@/hooks/messaging/useAdminMessaging';
+import { X, MessageSquare, Flag, Paperclip, Inbox, FlagOff } from 'lucide-react';
+import { useAdminConversations, useAdminReports, useAdminConversationDetail } from '@/hooks/messaging/useAdminMessaging';
 import { useMessages } from '@/hooks/messaging/useMessages';
 import type { ReportStatus, TargetType } from '@/api/services/messaging';
+import { EmptyState } from '@/components/comman/ui/EmptyState';
+import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 
 type MainTab = 'conversations' | 'reports';
 
@@ -12,19 +14,33 @@ function fmt(iso?: string) { return iso ? new Date(iso).toLocaleString() : '—'
 // ── Conversation detail drawer (read-only thread view) ─────────────────────────
 function ConversationDrawer({ conversationId, onClose }: { conversationId: string; onClose: () => void }) {
   const { messages, loading } = useMessages(conversationId);
+  const { conversation } = useAdminConversationDetail(conversationId);
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative w-[420px] max-w-[92vw] h-full bg-white shadow-2xl flex flex-col">
         <div className="px-5 py-4 border-b border-bone flex items-center justify-between shrink-0">
-          <p className="text-[14px] font-bold text-charcoal">Conversation · {conversationId.slice(-6).toUpperCase()}</p>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-full bg-bone border-none cursor-pointer">
+          <div>
+            <p className="text-[14px] font-bold text-charcoal">{conversation?.buyer?.name ?? 'Conversation'} · {conversation?.store?.name ?? conversationId.slice(-6).toUpperCase()}</p>
+            {conversation?.buyer?.email && <p className="text-[11px] text-slate">{conversation.buyer.email}</p>}
+          </div>
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-full bg-bone border-none cursor-pointer outline-none transition-colors duration-150 hover:bg-slate/20 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
             <X size={13} className="text-charcoal" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {loading ? (
-            <div className="flex justify-center pt-8"><Loader2 size={18} className="animate-spin text-brand-orange" /></div>
+            <div className="flex flex-col gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="border border-bone rounded-[9px] px-3 py-[10px] flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <SkeletonBox height={10} width={90} />
+                    <SkeletonBox height={9} width={50} />
+                  </div>
+                  <SkeletonBox height={13} width={i % 2 === 0 ? '80%' : '60%'} />
+                </div>
+              ))}
+            </div>
           ) : messages.length === 0 ? (
             <p className="text-[13px] text-slate text-center pt-8">No messages in this conversation.</p>
           ) : (
@@ -70,16 +86,16 @@ function ConversationsPanel() {
   return (
     <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
       <div className="px-5 py-[14px] border-b border-bone flex gap-[10px] items-center flex-wrap">
-        <input placeholder="Store ID"  value={filters.storeId}  onChange={e => setFilters(f => ({ ...f, storeId: e.target.value }))}  className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none w-[160px]" />
-        <input placeholder="Buyer ID"  value={filters.buyerId}  onChange={e => setFilters(f => ({ ...f, buyerId: e.target.value }))}  className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none w-[160px]" />
-        <input placeholder="Seller ID" value={filters.sellerId} onChange={e => setFilters(f => ({ ...f, sellerId: e.target.value }))} className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none w-[160px]" />
+        <input placeholder="Store ID"  value={filters.storeId}  onChange={e => setFilters(f => ({ ...f, storeId: e.target.value }))}  className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none w-[160px] transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
+        <input placeholder="Buyer ID"  value={filters.buyerId}  onChange={e => setFilters(f => ({ ...f, buyerId: e.target.value }))}  className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none w-[160px] transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
+        <input placeholder="Seller ID" value={filters.sellerId} onChange={e => setFilters(f => ({ ...f, sellerId: e.target.value }))} className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none w-[160px] transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
         <select value={filters.isArchived} onChange={e => setFilters(f => ({ ...f, isArchived: e.target.value }))}
-          className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer">
+          className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
           <option value="">All statuses</option>
           <option value="false">Active</option>
           <option value="true">Archived</option>
         </select>
-        <button onClick={refetch} className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-cream cursor-pointer">Apply</button>
+        <button onClick={refetch} className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-cream cursor-pointer outline-none transition-colors duration-150 hover:bg-bone focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">Apply</button>
       </div>
 
       <div className="overflow-x-auto">
@@ -93,13 +109,19 @@ function ConversationsPanel() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center"><Loader2 size={18} className="animate-spin text-brand-orange inline" /></td></tr>
+              Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i} className="border-b border-[#F0EEE6]">
+                  <td className="px-4 py-3" colSpan={7}><SkeletonBox className="h-5 w-full" /></td>
+                </tr>
+              ))
             ) : error ? (
               <tr><td colSpan={7} className="px-4 py-6 text-center text-[13px] text-error">{error}</td></tr>
             ) : conversations.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-[13px] text-slate">No conversations found.</td></tr>
+              <tr><td colSpan={7}>
+                <EmptyState icon={<Inbox size={28} className="text-slate" />} title="No conversations found" description="Try adjusting the filters above." />
+              </td></tr>
             ) : conversations.map(c => (
-              <tr key={c._id} className="border-b border-[#F0EEE6]">
+              <tr key={c._id} className="border-b border-[#F0EEE6] transition-colors duration-150 hover:bg-cream">
                 <td className="px-4 py-3 text-[13px] font-bold text-[#B95A3A] whitespace-nowrap">{c._id.slice(-8).toUpperCase()}</td>
                 <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{c.storeId?.slice(-8) ?? '—'}</td>
                 <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{c.buyerId?.slice(-8) ?? '—'}</td>
@@ -112,7 +134,7 @@ function ConversationsPanel() {
                 </td>
                 <td className="px-4 py-3 text-[13px] text-slate whitespace-nowrap">{fmt(c.updatedAt)}</td>
                 <td className="px-4 py-3">
-                  <button onClick={() => setViewingId(c._id)} className="px-[10px] py-1 rounded-[6px] text-[11px] font-medium text-white border-none cursor-pointer bg-[#1A72C2] flex items-center gap-1">
+                  <button onClick={() => setViewingId(c._id)} className="px-[10px] py-1 rounded-[6px] text-[11px] font-medium text-white border-none cursor-pointer bg-[#1A72C2] flex items-center gap-1 outline-none transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
                     <MessageSquare size={11} /> View
                   </button>
                 </td>
@@ -145,11 +167,11 @@ function ReportsPanel() {
     <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
       <div className="px-5 py-[14px] border-b border-bone flex gap-[10px] items-center flex-wrap">
         <select value={status} onChange={e => { setStatus(e.target.value as ReportStatus | ''); setPage(1); }}
-          className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer">
+          className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
           {STATUS_OPTS.map(o => <option key={o} value={o}>{o ? o[0].toUpperCase() + o.slice(1) : 'All Statuses'}</option>)}
         </select>
         <select value={targetType} onChange={e => { setTargetType(e.target.value as TargetType | ''); setPage(1); }}
-          className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer">
+          className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
           {TARGET_OPTS.map(o => <option key={o} value={o}>{o ? o[0].toUpperCase() + o.slice(1) : 'All Types'}</option>)}
         </select>
       </div>
@@ -165,13 +187,19 @@ function ReportsPanel() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center"><Loader2 size={18} className="animate-spin text-brand-orange inline" /></td></tr>
+              Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i} className="border-b border-[#F0EEE6]">
+                  <td className="px-4 py-3" colSpan={7}><SkeletonBox className="h-5 w-full" /></td>
+                </tr>
+              ))
             ) : error ? (
               <tr><td colSpan={7} className="px-4 py-6 text-center text-[13px] text-error">{error}</td></tr>
             ) : reports.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-[13px] text-slate">No reports found.</td></tr>
+              <tr><td colSpan={7}>
+                <EmptyState icon={<FlagOff size={28} className="text-slate" />} title="No reports found" description="Try adjusting the filters above." />
+              </td></tr>
             ) : reports.map(r => (
-              <tr key={r._id} className="border-b border-[#F0EEE6]">
+              <tr key={r._id} className="border-b border-[#F0EEE6] transition-colors duration-150 hover:bg-cream">
                 <td className="px-4 py-3 text-[13px] font-bold text-[#B95A3A] whitespace-nowrap flex items-center gap-1"><Flag size={11} /> {r._id.slice(-8).toUpperCase()}</td>
                 <td className="px-4 py-3 text-[13px] text-graphite capitalize whitespace-nowrap">{r.targetType}</td>
                 <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{r.targetId.slice(-8)}</td>
@@ -195,10 +223,10 @@ function ReportsPanel() {
 
       <div className="px-5 py-3 border-t border-bone flex items-center justify-end gap-2">
         <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-          className="px-3 py-[6px] rounded-lg border border-bone text-[12px] bg-white cursor-pointer disabled:opacity-50">Prev</button>
+          className="px-3 py-[6px] rounded-lg border border-bone text-[12px] bg-white cursor-pointer outline-none transition-colors duration-150 hover:enabled:bg-cream disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">Prev</button>
         <span className="text-[12px] text-slate">Page {page}</span>
         <button onClick={() => setPage(p => p + 1)} disabled={reports.length < 30}
-          className="px-3 py-[6px] rounded-lg border border-bone text-[12px] bg-white cursor-pointer disabled:opacity-50">Next</button>
+          className="px-3 py-[6px] rounded-lg border border-bone text-[12px] bg-white cursor-pointer outline-none transition-colors duration-150 hover:enabled:bg-cream disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">Next</button>
       </div>
     </div>
   );
@@ -222,7 +250,7 @@ export function AdminMessaging() {
             <button
               key={t}
               onClick={() => setTab(t)}
-              className="px-4 py-[8px] rounded-lg text-[13px] font-semibold border cursor-pointer capitalize"
+              className="px-4 py-[8px] rounded-lg text-[13px] font-semibold border cursor-pointer capitalize outline-none transition-[opacity,transform] duration-150 hover:opacity-90 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50"
               style={{
                 background: tab === t ? '#FBECE4' : '#fff',
                 color:      tab === t ? '#B95A3A' : '#4A4945',

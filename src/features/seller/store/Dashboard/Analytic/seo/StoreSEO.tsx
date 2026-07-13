@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { Sparkles, Check, X } from 'lucide-react';
@@ -56,7 +57,7 @@ export function StoreSEO() {
 
   const scoreColor = selected.score >= 80 ? '#2D8A4E' : selected.score >= 60 ? '#C08B1E' : '#C13030';
 
-  const inputCls = "w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border";
+  const inputCls = "w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50";
   const labelCls = "text-xs font-medium text-graphite mb-[5px] block";
 
   return (
@@ -91,7 +92,7 @@ export function StoreSEO() {
         {/* ── Metrics ── */}
         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
               <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
               {m.trend && (
@@ -111,7 +112,7 @@ export function StoreSEO() {
           <div className="w-[240px] shrink-0 flex flex-col gap-[14px]">
 
             {/* Product list */}
-            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+            <div className="bg-white border border-bone rounded-[10px] shadow-xs overflow-hidden">
               <div className="px-4 py-[11px] border-b border-[#F0EEE6]">
                 <p className="text-[13px] font-semibold text-carbon">All Products</p>
               </div>
@@ -123,13 +124,14 @@ export function StoreSEO() {
                   <div
                     key={p.id}
                     onClick={() => setSelectedId(p.id)}
-                    className="px-4 py-3 cursor-pointer transition-[background] duration-[120ms]"
+                    className={clsx(
+                      'px-4 py-3 cursor-pointer transition-colors duration-150',
+                      selectedId !== p.id && 'hover:bg-[#FAF9F5]',
+                    )}
                     style={{
                       background: selectedId === p.id ? '#FBECE4' : 'transparent',
                       borderBottom: i < PRODUCTS.length - 1 ? '1px solid #F0EEE6' : 'none',
                     }}
-                    onMouseEnter={e => { if (selectedId !== p.id) e.currentTarget.style.background = '#FAF9F5'; }}
-                    onMouseLeave={e => { if (selectedId !== p.id) e.currentTarget.style.background = 'transparent'; }}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[13px] font-medium text-carbon leading-[1.3]">{p.name}</span>
@@ -149,7 +151,7 @@ export function StoreSEO() {
             </div>
 
             {/* Store-level SEO */}
-            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
+            <div className="bg-white border border-bone rounded-[10px] shadow-xs px-[18px] py-4">
               <p className="text-[13px] font-semibold text-carbon mb-[14px]">Store-level SEO</p>
               <div className="flex flex-col gap-3">
                 <div>
@@ -176,7 +178,7 @@ export function StoreSEO() {
           <div className="flex-1 min-w-0 flex flex-col gap-[14px]">
 
             {/* Score + Tags */}
-            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-[18px]">
+            <div className="bg-white border border-bone rounded-[10px] shadow-xs px-5 py-[18px]">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <ScoreCircle score={selected.score} />
@@ -210,7 +212,7 @@ export function StoreSEO() {
             </div>
 
             {/* Search Preview */}
-            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+            <div className="bg-white border border-bone rounded-[10px] shadow-xs px-5 py-4">
               <p className="text-[13px] font-semibold text-carbon mb-3">Search Preview</p>
               <p className="text-[15px] font-medium text-[#1A72C2] cursor-pointer mb-[3px] leading-[1.4]">
                 Grade 5 Math Bundle — Printable Worksheets for Grade 5
@@ -224,7 +226,7 @@ export function StoreSEO() {
             </div>
 
             {/* SEO Fields */}
-            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-[18px]">
+            <div className="bg-white border border-bone rounded-[10px] shadow-xs px-5 py-[18px]">
               <div className="flex flex-col gap-[14px]">
                 {/* SEO Title */}
                 <div>
@@ -256,7 +258,7 @@ export function StoreSEO() {
             </div>
 
             {/* Technical SEO Checklist */}
-            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+            <div className="bg-white border border-bone rounded-[10px] shadow-xs px-5 py-4">
               <p className="text-[13px] font-semibold text-carbon mb-3">Technical SEO Checklist</p>
               <div className="flex flex-col gap-2">
                 {SEO_CHECKS.map(item => (

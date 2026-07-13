@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Plus, Loader2, ChevronRight, FolderTree, Tag } from 'lucide-react';
+import { Plus, ChevronRight, FolderTree, Tag } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { apiGetCategoryTree, apiAddCategory, type CategoryNode } from '@/api/services/categories';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Input, Textarea, Select } from '@/components/comman/ui/Input';
+import { EmptyState } from '@/components/comman/ui/EmptyState';
+import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 
 // ── Add Category modal ───────────────────────────────────────────────────────
 // Admins can create either a main category (no parent) or a subcategory under
@@ -77,7 +79,7 @@ function CategoryRow({ node, depth }: { node: CategoryNode; depth: number }) {
   return (
     <div>
       <div
-        className="flex items-center gap-2 px-4 py-[10px] border-b border-[#F0EEE6] hover:bg-cream cursor-pointer"
+        className="flex items-center gap-2 px-4 py-[10px] border-b border-[#F0EEE6] hover:bg-cream cursor-pointer transition-colors duration-150"
         style={{ paddingLeft: 16 + depth * 24 }}
         onClick={() => hasChildren && setExpanded(e => !e)}
       >
@@ -142,14 +144,17 @@ export function AdminCategories() {
       <div className="px-7 pt-5 pb-8">
         <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
           {loading ? (
-            <div className="px-4 py-10 text-center"><Loader2 size={18} className="animate-spin text-brand-orange inline" /></div>
+            <div className="px-4 py-4 flex flex-col gap-3">
+              {Array.from({ length: 4 }).map((_, i) => <SkeletonBox key={i} className="h-6 w-full" />)}
+            </div>
           ) : error ? (
             <p className="px-4 py-6 text-center text-[13px] text-error">{error}</p>
           ) : tree.length === 0 ? (
-            <div className="px-4 py-10 text-center text-[13px] text-slate flex flex-col items-center gap-2">
-              <FolderTree size={22} className="text-slate" />
-              No categories yet. Create the first main category to get started.
-            </div>
+            <EmptyState
+              icon={<FolderTree size={28} className="text-slate" />}
+              title="No categories yet"
+              description="Create the first main category to get started."
+            />
           ) : (
             tree.map(cat => <CategoryRow key={cat._id} node={cat} depth={0} />)
           )}

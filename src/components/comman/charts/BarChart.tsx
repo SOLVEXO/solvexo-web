@@ -2,10 +2,7 @@ import {
   BarChart as RechartsBar, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
-
-const FONT = "'Poppins', sans-serif";
-const TICK = { fontSize: 11, fill: '#8C8A82', fontFamily: FONT };
-const GRID = { stroke: '#E8E6DC', strokeDasharray: '4 4' };
+import { CHART_TICK, CHART_GRID, CHART_DEFAULT_COLOR } from './chartTheme';
 
 interface TooltipPayload { value: number }
 interface CustomTooltipProps {
@@ -47,7 +44,7 @@ export function BarChart({
   title,
   subtitle,
   height = 220,
-  color = '#D97757',
+  color = CHART_DEFAULT_COLOR,
   valuePrefix = '',
   valueSuffix = '',
   maxBarSize = 40,
@@ -56,9 +53,27 @@ export function BarChart({
   const defaultYFmt = (v: number) =>
     v >= 1000 ? `${valuePrefix}${(v / 1000).toFixed(0)}k` : `${valuePrefix}${v}`;
   const yFmt = yTickFormatter ?? defaultYFmt;
+  const ariaLabel = title ? `${title} chart` : 'Chart';
+
+  if (!data.length) {
+    return (
+      <div
+        className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex items-center justify-center"
+        style={{ height: height + (title || subtitle ? 56 : 0) }}
+        role="img"
+        aria-label={ariaLabel}
+      >
+        <p className="text-slate text-[13px]">No data yet</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div
+      className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-shadow duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
+      role="img"
+      aria-label={ariaLabel}
+    >
       {(title || subtitle) && (
         <div className="px-5 pt-4 pb-2">
           {title    && <p className="text-sm font-bold text-charcoal">{title}</p>}
@@ -67,9 +82,9 @@ export function BarChart({
       )}
       <ResponsiveContainer width="100%" height={height}>
         <RechartsBar data={data} margin={{ top: 4, right: 20, left: 0, bottom: 0 }}>
-          <CartesianGrid {...GRID} vertical={false} />
-          <XAxis dataKey={xKey}  tick={TICK} axisLine={false} tickLine={false} />
-          <YAxis tick={TICK} axisLine={false} tickLine={false} tickFormatter={yFmt} width={40} />
+          <CartesianGrid {...CHART_GRID} vertical={false} />
+          <XAxis dataKey={xKey}  tick={CHART_TICK} axisLine={false} tickLine={false} />
+          <YAxis tick={CHART_TICK} axisLine={false} tickLine={false} tickFormatter={yFmt} width={40} />
           <Tooltip content={<ChartTooltip valuePrefix={valuePrefix} valueSuffix={valueSuffix} />} />
           <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} maxBarSize={maxBarSize} />
         </RechartsBar>

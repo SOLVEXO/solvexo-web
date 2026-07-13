@@ -50,6 +50,7 @@ export { ActionMenu }                        from './ActionMenu';
 export type { ActionMenuItem }               from './ActionMenu';
 
 export type { TablePagination }              from './Table';
+export type { TableSort }                    from './Table';
 
 export { ImageUpload, FileUpload }           from './Upload';
 export type { PrivateUploadData }            from './Upload';

@@ -5,7 +5,7 @@ import { useLogin } from '@/hooks/auth/useLogin';
 import { Button } from '@/components/comman/ui/Button';
 import { Input } from '@/components/comman/ui/Input';
 import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
-import { Eye, EyeOff, Globe, Smartphone, Share2, ShieldCheck, Sparkles, Zap } from 'lucide-react';
+import { Eye, EyeOff, Globe, Smartphone, Share2, ShieldCheck, Sparkles, Zap, AlertTriangle } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import type { AppRole } from '@/api/services/auth';
@@ -126,8 +126,9 @@ export function LoginPage() {
       </Button>
 
       {login.error && (
-        <div className="bg-error-bg rounded-lg px-[14px] py-[10px] mt-3 text-[13px] text-error text-center">
-          {login.error}
+        <div className="flex items-center justify-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
+          <AlertTriangle size={14} className="shrink-0" />
+          <span>{login.error}</span>
         </div>
       )}
 

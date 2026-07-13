@@ -63,6 +63,7 @@ const StoreProductDetail = lazy(() => import('@/features/seller/store/Dashboard/
 const StoreCustomerList  = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomerList'));
 const StoreSettings      = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreSettings'));
 const StoreCategories    = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCategories'));
+const StorePlanBilling   = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
 const StoreOrderList     = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList'),        'StoreOrderList'));
 const StoreReturnList    = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/returns/ReturnList'),      'StoreReturnList'));
 const StoreAnalytics     = lazy(() => named(import('@/features/seller/store/Dashboard/Analytic/analytics/Analytics'),        'StoreAnalytics'));
@@ -87,6 +88,7 @@ const AdminMessaging     = lazy(() => named(import('@/features/admin/pages/Admin
 const AdminMarketplace   = lazy(() => named(import('@/features/admin/pages/AdminMarketplace'),                  'AdminMarketplace'));
 const AdminCategories    = lazy(() => named(import('@/features/admin/pages/AdminCategories'),                    'AdminCategories'));
 const AdminSubscriptions = lazy(() => named(import('@/features/admin/pages/AdminSubscriptions'),                 'AdminSubscriptions'));
+const AdminPlatformPlans = lazy(() => named(import('@/features/admin/pages/AdminPlatformPlans'),                 'AdminPlatformPlans'));
 const AdminFinance       = lazy(() => named(import('@/features/admin/pages/AdminFinance'),                      'AdminFinance'));
 const AdminAnnouncements = lazy(() => named(import('@/features/admin/pages/AdminAnnouncements'),                'AdminAnnouncements'));
 const AdminBanners       = lazy(() => named(import('@/features/admin/pages/AdminBanners'),                       'AdminBanners'));
@@ -148,8 +150,6 @@ export const router = createBrowserRouter([
           { index: true,           element: <Navigate to="/seller/dashboard" replace /> },
           { path: 'dashboard',     element: <SellerDashboard /> },
           { path: 'analytics',     element: <SellerAnalytics /> },
-          { path: 'shipping',      element: <SellerShipping /> },
-          { path: 'messages',      element: <SellerMessages /> },
           { path: 'stores',        element: <SellerStoreList /> },
           { path: 'store',         element: <StoreBuilder /> },
           { path: 'settings',      element: <SellerSettings /> },
@@ -173,6 +173,7 @@ export const router = createBrowserRouter([
           { path: 'analytics',                        element: <StoreAnalytics /> },
           { path: 'settings',                         element: <StoreSettings /> },
           { path: 'categories',                       element: <StoreCategories /> },
+          { path: 'plan-billing',                     element: <StorePlanBilling /> },
           { path: 'storebuilder',                     element: <StoreBuilder /> },
           { path: 'returns',                          element: <StoreReturnList /> },
           { path: 'seo',                              element: <StoreSEO /> },
@@ -205,6 +206,7 @@ export const router = createBrowserRouter([
           { path: 'marketplace',  element: <AdminMarketplace /> },
           { path: 'categories',   element: <AdminCategories /> },
           { path: 'subscriptions',element: <AdminSubscriptions /> },
+          { path: 'platform-plans',element: <AdminPlatformPlans /> },
           { path: 'finance',      element: <RequireRole role="admin"><AdminFinance /></RequireRole> },
           { path: 'announcements',element: <AdminAnnouncements /> },
           { path: 'banners',      element: <AdminBanners /> },

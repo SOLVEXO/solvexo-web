@@ -104,3 +104,36 @@
 /* ── Hidden scrollbar utility ── */
 .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* ── Fire button variant — solid dotted fill at rest, breaks apart into dashed dots on hover ──
+   Declared outside any @layer so it wins over Button's BASE transition utilities
+   (same layering trick already used by the utilities above) without editing BASE. */
+.btn-fire {
+  background-image: radial-gradient(var(--color-brand-orange) 40%, transparent 40%);
+  background-size: 0.1em 0.1em;
+  background-position: 0 0;
+  transition:
+    background-color 160ms ease-out, border-color 160ms ease-out, color 160ms ease-out,
+    opacity 160ms ease-out, box-shadow 160ms ease-out, transform 160ms ease-out,
+    background-size 500ms ease-out;
+}
+.btn-fire:hover {
+  background-size: 1.2em 1.2em;
+}
+
+/* ── POS Motion Utilities (structure only — no color) ── */
+@keyframes pos-overlay-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pos-panel-enter {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes pos-item-enter {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pos-overlay-enter { animation: pos-overlay-fade-in 180ms var(--ease-out); }
+.pos-panel-enter { animation: pos-panel-enter 220ms var(--ease-out); }
+.pos-item-enter { animation: pos-item-enter 180ms var(--ease-out); }

@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react';
-import { ShieldCheck, Pencil, Trash2, Star } from 'lucide-react';
-import { StarRating, Button } from '@/components/comman/ui';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ShieldCheck, Pencil, Trash2, Star, ThumbsUp, ImageIcon, ChevronLeft, ChevronRight, X, Store,
+} from 'lucide-react';
+import { StarRating, Button, Badge, EmptyState, SkeletonBox, Pagination, FilterDropdown } from '@/components/comman/ui';
+import { useFocusTrap } from '@/components/comman/ui/useFocusTrap';
 import { TokenStorage } from '@/api/services/auth';
-import { apiGetProductReviews, apiDeleteReview, type ProductReviewEntry, type ProductReviewStats } from '@/api/services/rating';
+import { apiGetProductReviews, apiDeleteReview, apiToggleReviewHelpful, type ProductReviewEntry, type ProductReviewStats } from '@/api/services/rating';
 import { ReviewFormModal } from '../components/ReviewFormModal';
 
 const AVATAR_PALETTE = [
@@ -26,39 +29,358 @@ function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-interface ProductReviewsSectionProps {
-  productId: string;
+type SortOption = 'recent' | 'highest' | 'lowest';
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: 'recent', label: 'Most Recent' },
+  { value: 'highest', label: 'Highest Rated' },
+  { value: 'lowest', label: 'Lowest Rated' },
+];
+
+const PAGE_SIZE = 10;
+// Fetched once per product and then filtered/sorted/paginated entirely client-side.
+const FETCH_LIMIT = 100;
+
+// ── Fullscreen image lightbox ──────────────────────────────────────────────────
+function ReviewLightbox({ images, startIndex, onClose }: { images: string[]; startIndex: number; onClose: () => void }) {
+  const [index, setIndex] = useState(startIndex);
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, onClose);
+
+  const go = (delta: number) => setIndex(i => (i + delta + images.length) % images.length);
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div ref={containerRef} role="dialog" aria-modal="true" tabIndex={-1} className="relative w-full max-w-3xl outline-none">
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute -top-11 right-0 w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 text-white border-0 cursor-pointer hover:bg-white/20 transition-colors"
+        >
+          <X size={18} />
+        </button>
+        <img src={images[index]} alt="" className="w-full max-h-[78vh] object-contain rounded-xl" />
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={() => go(-1)}
+              aria-label="Previous image"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white flex items-center justify-center border-0 cursor-pointer hover:bg-cream transition-colors"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              onClick={() => go(1)}
+              aria-label="Next image"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white flex items-center justify-center border-0 cursor-pointer hover:bg-cream transition-colors"
+            >
+              <ChevronRight size={18} />
+            </button>
+            <p className="text-center text-[12px] text-white mt-3">{index + 1} / {images.length}</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
-export function ProductReviewsSection({ productId }: ProductReviewsSectionProps) {
-  const [reviews, setReviews]   = useState<ProductReviewEntry[]>([]);
-  const [stats, setStats]       = useState<ProductReviewStats | null>(null);
-  const [page, setPage]         = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+// ── Review photo strip ──────────────────────────────────────────────────────────
+function ReviewPhotoStrip({ media, onOpen }: { media: string[]; onOpen: (index: number) => void }) {
+  const VISIBLE = 4;
+  const shown = media.slice(0, VISIBLE);
+  const remaining = media.length - VISIBLE;
+
+  return (
+    <div className="flex gap-2 mt-3 flex-wrap">
+      {shown.map((url, i) => {
+        const isLastVisible = i === VISIBLE - 1 && remaining > 0;
+        return (
+          <button
+            key={i}
+            onClick={() => onOpen(i)}
+            className="relative w-[72px] h-[72px] sm:w-[86px] sm:h-[86px] rounded-lg overflow-hidden border border-bone cursor-pointer p-0 hover:opacity-85 transition-opacity"
+          >
+            <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
+            {isLastVisible && (
+              <span className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[13px] font-semibold">
+                +{remaining}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Rating summary hero: average score + distribution bars + photo/clear filters ──
+interface RatingSummaryCardProps {
+  stats: ProductReviewStats;
+  ratingFilter: number | null;
+  withPhotosOnly: boolean;
+  hasPhotoReviews: boolean;
+  filtersActive: boolean;
+  onSelectRating: (star: number) => void;
+  onToggleWithPhotos: () => void;
+  onClearFilters: () => void;
+}
+function RatingSummaryCard({
+  stats, ratingFilter, withPhotosOnly, hasPhotoReviews, filtersActive, onSelectRating, onToggleWithPhotos, onClearFilters,
+}: RatingSummaryCardProps) {
+  return (
+    <div className="rounded-2xl bg-white border border-bone shadow-sm p-5 sm:p-6 mb-6">
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
+        <div className="flex flex-row lg:flex-col items-center lg:items-start gap-4 lg:gap-2 shrink-0 lg:w-[170px]">
+          <p className="text-[48px] sm:text-[64px] font-black text-carbon leading-none tracking-tight">
+            {stats.averageRating.toFixed(1)}
+          </p>
+          <div className="flex flex-col items-start gap-1">
+            <StarRating value={stats.averageRating} size={18} />
+            <p className="text-[12px] text-slate">{stats.totalReviews} review{stats.totalReviews !== 1 ? 's' : ''}</p>
+          </div>
+        </div>
+
+        <div className="flex-1 flex flex-col gap-[7px] min-w-0 lg:border-l lg:border-bone lg:pl-8">
+          {(['5', '4', '3', '2', '1'] as const).map(star => {
+            const count = stats.ratingBreakdown[star] ?? 0;
+            const pct = stats.totalReviews > 0 ? Math.round((count / stats.totalReviews) * 100) : 0;
+            const active = ratingFilter === Number(star);
+            return (
+              <button
+                key={star}
+                onClick={() => onSelectRating(Number(star))}
+                className="flex items-center gap-2 bg-transparent border-0 cursor-pointer p-0 group"
+              >
+                <span className={`text-[12px] w-9 text-left shrink-0 ${active ? 'font-bold text-brand-orange' : 'text-graphite'}`}>{star} ★</span>
+                <div className="flex-1 h-2 rounded-full bg-[#eee9df] overflow-hidden shadow-inner">
+                  <div
+                    className={`h-full rounded-full transition-[width] duration-300 ${active ? 'bg-gradient-to-r from-brand-orange to-[#F59E0B]' : 'bg-[#D9D6CC] group-hover:bg-brand-orange/60'}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className="text-[11px] text-slate w-7 text-right shrink-0">{count}</span>
+              </button>
+            );
+          })}
+          {hasPhotoReviews && (
+            <button
+              onClick={onToggleWithPhotos}
+              className={`inline-flex items-center gap-[6px] self-start text-[12px] font-semibold rounded-lg px-[10px] py-[5px] border cursor-pointer transition-colors mt-1 ${withPhotosOnly
+                  ? 'bg-brand-pale-orange text-brand-deep-orange border-transparent'
+                  : 'bg-white text-slate border-bone hover:bg-cream'
+                }`}
+            >
+              <ImageIcon size={12} /> With Photos
+            </button>
+          )}
+          {filtersActive && (
+            <button
+              onClick={onClearFilters}
+              className="self-start text-[12px] font-semibold text-brand-orange bg-transparent border-0 cursor-pointer mt-1 hover:opacity-75"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Toolbar: write-a-review action + sort control ────────────────────────────────
+interface ReviewsToolbarProps {
+  canWriteReview: boolean;
+  hasReviews: boolean;
+  sortBy: SortOption;
+  onWriteReview: () => void;
+  onChangeSort: (value: string) => void;
+}
+function ReviewsToolbar({ canWriteReview, hasReviews, sortBy, onWriteReview, onChangeSort }: ReviewsToolbarProps) {
+  return (
+    <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
+      <div>
+        {canWriteReview && (
+          <Button variant="outline" size="sm" icon={<Pencil size={13} />} onClick={onWriteReview}>
+            Write a Review
+          </Button>
+        )}
+      </div>
+      {hasReviews && (
+        <div className="flex items-center gap-2">
+          <span className="text-[12px] text-slate">Sort by</span>
+          <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={onChangeSort} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Single review card ───────────────────────────────────────────────────────────
+interface ReviewCardProps {
+  review: ProductReviewEntry;
+  storeName?: string | null;
+  onToggleHelpful: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onOpenPhoto: (index: number) => void;
+}
+function ReviewCard({ review: r, storeName, onToggleHelpful, onEdit, onDelete, onOpenPhoto }: ReviewCardProps) {
+  const av = avatarStyle(r.customerName);
+  const initials = r.isOwn ? 'Y' : r.customerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+  return (
+    <div className={`rounded-2xl p-4 sm:p-5 bg-white border shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow ${r.isOwn ? 'bg-brand-pale-orange/40 border-brand-orange/30' : 'border-bone'
+      }`}>
+      <div className="flex items-start justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: av.bg, color: av.color }}>
+            {initials}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[13px] font-bold text-carbon">{r.customerName}</span>
+              {r.isVerifiedPurchase && (
+                <Badge color="green" size="sm">
+                  <ShieldCheck size={11} />
+                  Verified Purchase
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-[3px]">
+              {r.rating != null && <StarRating value={r.rating} size={12} />}
+              <span className="text-[11px] text-slate">{timeAgo(r.createdAt)}</span>
+            </div>
+          </div>
+        </div>
+
+        {r.isOwn && (
+          <div className="flex gap-1 shrink-0">
+            <button onClick={onEdit} title="Edit your review" className="w-7 h-7 flex items-center justify-center rounded-lg border border-bone bg-white text-slate cursor-pointer hover:bg-cream transition-colors">
+              <Pencil size={12} />
+            </button>
+            <button onClick={onDelete} title="Delete your review" className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#F5C6C2] bg-error-bg text-error cursor-pointer hover:bg-error hover:text-white transition-colors">
+              <Trash2 size={12} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {r.comments.length > 0 && (
+        <div className="mt-3">
+          {r.comments.map((c, i) => (
+            <p key={i} className="text-[13px] text-graphite leading-[1.6] mb-1">{c.text}</p>
+          ))}
+        </div>
+      )}
+
+      {r.media.length > 0 && (
+        <ReviewPhotoStrip media={r.media} onOpen={onOpenPhoto} />
+      )}
+
+      {r.sellerReply && (
+        <div className="mt-3 ml-2 pl-3 border-l-[3px] border-brand-orange/30">
+          <div className="flex items-center gap-[6px] mb-1">
+            <div className="w-5 h-5 rounded-full bg-bone flex items-center justify-center shrink-0">
+              <Store size={11} className="text-graphite" />
+            </div>
+            <p className="text-[11px] font-semibold text-brand-orange">
+              Response from {storeName || 'the Seller'}
+            </p>
+          </div>
+          <p className="text-[12px] text-graphite leading-[1.5]">{r.sellerReply.text}</p>
+        </div>
+      )}
+
+      <div className="flex items-center justify-end mt-3 pt-3 border-t border-bone">
+        <button
+          onClick={onToggleHelpful}
+          className={`flex items-center gap-[6px] text-[11px] font-medium px-[10px] py-[5px] rounded-lg border cursor-pointer transition-colors ${r.helpfulByMe
+              ? 'bg-brand-pale-orange text-brand-deep-orange border-transparent'
+              : 'bg-transparent text-slate border-bone hover:bg-cream'
+            }`}
+        >
+          <ThumbsUp size={11} className={r.helpfulByMe ? 'fill-brand-deep-orange' : ''} />
+          Helpful{r.helpfulCount > 0 ? ` · ${r.helpfulCount}` : ''}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface ProductReviewsSectionProps {
+  productId: string;
+  storeName?: string | null;
+}
+
+export function ProductReviewsSection({ productId, storeName }: ProductReviewsSectionProps) {
+  const [allReviews, setAllReviews] = useState<ProductReviewEntry[]>([]);
+  const [stats, setStats] = useState<ProductReviewStats | null>(null);
+  const [page, setPage] = useState(1);
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [withPhotosOnly, setWithPhotosOnly] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [showWrite, setShowWrite] = useState(false);
   const [editingReview, setEditingReview] = useState<ProductReviewEntry | null>(null);
+  const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
 
   const isLoggedIn = TokenStorage.isLoggedIn();
-  const hasOwnReview = reviews.some(r => r.isOwn);
+  const hasOwnReview = allReviews.some(r => r.isOwn);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    apiGetProductReviews(productId, { page, rating: ratingFilter ?? undefined })
+    // Fetched once (a generous batch) per product; rating/sort/photo filtering and
+    // pagination below all happen client-side against this already-fetched set.
+    apiGetProductReviews(productId, { limit: FETCH_LIMIT })
       .then(res => {
         if (cancelled) return;
-        setReviews(res.data.reviews);
+        setAllReviews(res.data.reviews);
         setStats(res.data.stats);
-        setTotalPages(res.data.pagination.totalPages);
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load reviews.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [productId, page, ratingFilter, refreshKey]);
+  }, [productId, refreshKey]);
+
+  const hasPhotoReviews = useMemo(() => allReviews.some(r => r.media.length > 0), [allReviews]);
+
+  const filteredSorted = useMemo(() => {
+    let list = allReviews;
+    if (ratingFilter) list = list.filter(r => r.rating === ratingFilter);
+    if (withPhotosOnly) list = list.filter(r => r.media.length > 0);
+    return [...list].sort((a, b) => {
+      if (sortBy === 'highest') return (b.rating ?? 0) - (a.rating ?? 0);
+      if (sortBy === 'lowest') return (a.rating ?? 0) - (b.rating ?? 0);
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [allReviews, ratingFilter, withPhotosOnly, sortBy]);
+
+  const pageItems = filteredSorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const filtersActive = ratingFilter !== null || withPhotosOnly;
+
+  function selectRating(star: number) {
+    setRatingFilter(prev => (prev === star ? null : star));
+    setPage(1);
+  }
+
+  function toggleWithPhotos() {
+    setWithPhotosOnly(v => !v);
+    setPage(1);
+  }
+
+  function changeSort(v: string) {
+    setSortBy(v as SortOption);
+    setPage(1);
+  }
+
+  function clearFilters() {
+    setRatingFilter(null);
+    setWithPhotosOnly(false);
+    setPage(1);
+  }
 
   async function handleDelete(review: ProductReviewEntry) {
     if (!window.confirm('Delete your review? This cannot be undone.')) return;
@@ -70,157 +392,105 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
     }
   }
 
+  async function toggleHelpful(reviewId: string) {
+    if (!isLoggedIn) return;
+    // Optimistic update — flip immediately, roll back only if the request fails.
+    setAllReviews(prev => prev.map(r => r.reviewId === reviewId
+      ? { ...r, helpfulByMe: !r.helpfulByMe, helpfulCount: r.helpfulCount + (r.helpfulByMe ? -1 : 1) }
+      : r));
+    try {
+      const res = await apiToggleReviewHelpful(reviewId);
+      setAllReviews(prev => prev.map(r => r.reviewId === reviewId
+        ? { ...r, helpfulByMe: res.data.helpfulByMe, helpfulCount: res.data.helpfulCount }
+        : r));
+    } catch {
+      setAllReviews(prev => prev.map(r => r.reviewId === reviewId
+        ? { ...r, helpfulByMe: !r.helpfulByMe, helpfulCount: r.helpfulCount + (r.helpfulByMe ? -1 : 1) }
+        : r));
+    }
+  }
+
   const hasReviews = !!stats && stats.totalReviews > 0;
 
   return (
     <div>
-      <div className="text-[15px] font-bold text-carbon mb-4">
-        Ratings &amp; Reviews
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
+        <div>
+          <h2 className="text-[20px] font-bold text-carbon">
+            Ratings & Reviews
+          </h2>
+          <p className="text-[12px] text-slate mt-1">
+            Verified customer feedback and product experiences
+          </p>
+        </div>
+
+        {hasReviews && (
+          <Badge color="green" size="md">
+            <ShieldCheck size={13} />
+            {stats!.totalReviews} Verified Reviews
+          </Badge>
+        )}
       </div>
 
-      {/* Summary */}
       {hasReviews && (
-        <div className="flex flex-col sm:flex-row gap-6 mb-5 pb-5 border-b border-bone">
-          <div className="flex flex-col items-center sm:items-start shrink-0 sm:w-[140px]">
-            <p className="text-[40px] font-extrabold text-carbon leading-none">{stats!.averageRating.toFixed(1)}</p>
-            <StarRating value={stats!.averageRating} size={16} className="my-[6px]" />
-            <p className="text-[12px] text-slate">{stats!.totalReviews} review{stats!.totalReviews !== 1 ? 's' : ''}</p>
-          </div>
-
-          <div className="flex-1 flex flex-col gap-[6px] min-w-0">
-            {(['5', '4', '3', '2', '1'] as const).map(star => {
-              const count = stats!.ratingBreakdown[star] ?? 0;
-              const pct = stats!.totalReviews > 0 ? Math.round((count / stats!.totalReviews) * 100) : 0;
-              const active = ratingFilter === Number(star);
-              return (
-                <button
-                  key={star}
-                  onClick={() => { setRatingFilter(active ? null : Number(star)); setPage(1); }}
-                  className="flex items-center gap-2 bg-transparent border-0 cursor-pointer p-0 group"
-                >
-                  <span className={`text-[12px] w-9 text-left shrink-0 ${active ? 'font-bold text-brand-orange' : 'text-graphite'}`}>{star} ★</span>
-                  <div className="flex-1 h-[7px] rounded-full bg-bone overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-[width] duration-300 ${active ? 'bg-brand-orange' : 'bg-[#D9D6CC] group-hover:bg-brand-orange/60'}`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <span className="text-[11px] text-slate w-7 text-right shrink-0">{count}</span>
-                </button>
-              );
-            })}
-            {ratingFilter && (
-              <button onClick={() => { setRatingFilter(null); setPage(1); }} className="self-start text-[11px] text-brand-orange bg-transparent border-0 cursor-pointer mt-1 p-0">
-                Clear filter
-              </button>
-            )}
-          </div>
-        </div>
+        <RatingSummaryCard
+          stats={stats!}
+          ratingFilter={ratingFilter}
+          withPhotosOnly={withPhotosOnly}
+          hasPhotoReviews={hasPhotoReviews}
+          filtersActive={filtersActive}
+          onSelectRating={selectRating}
+          onToggleWithPhotos={toggleWithPhotos}
+          onClearFilters={clearFilters}
+        />
       )}
 
-      {/* Write / manage own review */}
-      {isLoggedIn && !hasOwnReview && (
-        <Button variant="outline" size="sm" icon={<Pencil size={13} />} onClick={() => setShowWrite(true)} className="mb-5">
-          Write a Review
-        </Button>
-      )}
+      <ReviewsToolbar
+        canWriteReview={isLoggedIn && !hasOwnReview}
+        hasReviews={hasReviews}
+        sortBy={sortBy}
+        onWriteReview={() => setShowWrite(true)}
+        onChangeSort={changeSort}
+      />
 
       {loading ? (
         <div className="flex flex-col gap-3">
-          {[1, 2].map(i => <div key={i} className="animate-pulse h-[90px] rounded-xl bg-bone" />)}
+          {[1, 2].map(i => <SkeletonBox key={i} height={90} rounded="12px" />)}
         </div>
       ) : error ? (
         <p className="text-[13px] text-error">{error}</p>
       ) : !hasReviews ? (
-        <div className="text-center py-8">
-          <Star size={28} className="text-bone mx-auto mb-2" />
-          <p className="text-[13px] text-slate">No reviews yet. Be the first to buy and review!</p>
+        <EmptyState
+          icon={<Star size={26} className="text-brand-orange opacity-55" />}
+          title="Be the first to review this product"
+          description="Your feedback helps other customers make better decisions."
+        />
+      ) : filteredSorted.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-4">
+          <p className="text-[13px] text-slate">No reviews match your filters.</p>
+          <button onClick={clearFilters} className="text-[12px] font-medium text-brand-orange bg-transparent border-0 cursor-pointer hover:opacity-75">
+            Clear filters
+          </button>
         </div>
-      ) : reviews.length === 0 ? (
-        <p className="text-[13px] text-slate py-4">No {ratingFilter}-star reviews.</p>
       ) : (
-        <div className="flex flex-col gap-5">
-          {reviews.map(r => {
-            const av = avatarStyle(r.customerName);
-            const initials = r.isOwn ? 'Y' : r.customerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-            return (
-              <div key={r.reviewId} className={`rounded-xl p-4 ${r.isOwn ? 'bg-brand-pale-orange/40 border border-brand-orange/30' : 'border border-bone'}`}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full text-[11px] font-bold flex items-center justify-center shrink-0" style={{ background: av.bg, color: av.color }}>
-                      {initials}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[13px] font-bold text-carbon">{r.customerName}</span>
-                        {r.isVerifiedPurchase && (
-                          <span className="flex items-center gap-1 text-[10px] font-semibold text-success bg-success-bg px-[7px] py-[2px] rounded-full">
-                            <ShieldCheck size={10} /> Verified Purchase
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-[3px]">
-                        {r.rating != null && <StarRating value={r.rating} size={12} />}
-                        <span className="text-[11px] text-slate">{timeAgo(r.createdAt)}</span>
-                      </div>
-                    </div>
-                  </div>
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4">
+            {pageItems.map(r => (
+              <ReviewCard
+                key={r.reviewId}
+                review={r}
+                storeName={storeName}
+                onToggleHelpful={() => toggleHelpful(r.reviewId)}
+                onEdit={() => setEditingReview(r)}
+                onDelete={() => handleDelete(r)}
+                onOpenPhoto={i => setLightbox({ images: r.media, index: i })}
+              />
+            ))}
+          </div>
 
-                  {r.isOwn && (
-                    <div className="flex gap-1 shrink-0">
-                      <button onClick={() => setEditingReview(r)} title="Edit your review" className="w-7 h-7 flex items-center justify-center rounded-lg border border-bone bg-white text-slate cursor-pointer">
-                        <Pencil size={12} />
-                      </button>
-                      <button onClick={() => handleDelete(r)} title="Delete your review" className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#F5C6C2] bg-error-bg text-error cursor-pointer">
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {r.comments.length > 0 && (
-                  <div className="mt-3">
-                    {r.comments.map((c, i) => (
-                      <p key={i} className="text-[13px] text-graphite leading-[1.6] mb-1">{c.text}</p>
-                    ))}
-                  </div>
-                )}
-
-                {r.media.length > 0 && (
-                  <div className="flex gap-2 mt-3 flex-wrap">
-                    {r.media.map((url, i) => (
-                      <img loading="lazy" decoding="async" key={i} src={url} alt="" className="w-16 h-16 rounded-lg object-cover border border-bone" />
-                    ))}
-                  </div>
-                )}
-
-                {r.sellerReply && (
-                  <div className="bg-white border border-bone rounded-lg px-3 py-[10px] mt-3">
-                    <p className="text-[11px] font-semibold text-brand-orange mb-1">Reply from the seller</p>
-                    <p className="text-[12px] text-graphite leading-[1.5]">{r.sellerReply.text}</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-3 pt-1">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className="px-3 py-1 rounded-lg border border-bone text-[11px] cursor-pointer disabled:opacity-30"
-              >
-                Prev
-              </button>
-              <span className="text-[11px] text-slate">Page {page} of {totalPages}</span>
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className="px-3 py-1 rounded-lg border border-bone text-[11px] cursor-pointer disabled:opacity-30"
-              >
-                Next
-              </button>
+          {filteredSorted.length > PAGE_SIZE && (
+            <div className="flex items-center justify-center pt-1">
+              <Pagination page={page} total={filteredSorted.length} perPage={PAGE_SIZE} onChange={setPage} />
             </div>
           )}
         </div>
@@ -231,7 +501,7 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
           mode="create"
           productId={productId}
           onClose={() => setShowWrite(false)}
-          onSaved={() => { setShowWrite(false); setPage(1); setRatingFilter(null); setRefreshKey(k => k + 1); }}
+          onSaved={() => { setShowWrite(false); setPage(1); clearFilters(); setRefreshKey(k => k + 1); }}
         />
       )}
 
@@ -244,6 +514,14 @@ export function ProductReviewsSection({ productId }: ProductReviewsSectionProps)
           initialMedia={editingReview.media}
           onClose={() => setEditingReview(null)}
           onSaved={() => { setEditingReview(null); setRefreshKey(k => k + 1); }}
+        />
+      )}
+
+      {lightbox && (
+        <ReviewLightbox
+          images={lightbox.images}
+          startIndex={lightbox.index}
+          onClose={() => setLightbox(null)}
         />
       )}
     </div>

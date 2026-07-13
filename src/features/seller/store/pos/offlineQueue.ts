@@ -29,12 +29,13 @@ function openDb(): Promise<IDBDatabase> {
 }
 
 export async function enqueueSale(payload: CreateSalePayload): Promise<void> {
-  if (!payload.idempotencyKey) throw new Error('Cannot queue a sale without an idempotencyKey.');
+  const idempotencyKey = payload.idempotencyKey;
+  if (!idempotencyKey) throw new Error('Cannot queue a sale without an idempotencyKey.');
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     tx.objectStore(STORE_NAME).put({
-      idempotencyKey: payload.idempotencyKey,
+      idempotencyKey,
       payload,
       queuedAt: new Date().toISOString(),
     } satisfies QueuedSale);

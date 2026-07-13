@@ -8,7 +8,8 @@ import {
   type ActivityLogEntry, type ActivityCategory, type ActivityLogStats,
 } from '@/api/services/activityLog';
 import { timeAgo } from '@/utils/timeAgo';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Activity as ActivityIcon } from 'lucide-react';
+import { EmptyState, SkeletonBox } from '@/components/comman/ui';
 
 type FilterCategory = 'all' | ActivityCategory;
 const PAGE_SIZE = 10;
@@ -110,7 +111,7 @@ export function StoreActivity() {
         actions={
           <button
             onClick={() => { apiExportActivityLog(storeId, store?.name ?? 'store').catch(() => {}); }}
-            className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer"
+            className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
           >
             Export Log
           </button>
@@ -121,7 +122,7 @@ export function StoreActivity() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
               <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
               {m.sub && <p className="text-xs text-slate mt-1">{m.sub}</p>}
@@ -132,7 +133,7 @@ export function StoreActivity() {
         <div className="grid grid-cols-[240px_1fr] gap-4">
 
           {/* LEFT: Filters */}
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+          <div className="bg-white border border-bone rounded-[10px] shadow-xs overflow-hidden">
             <div className="px-4 py-3 border-b border-bone">
               <p className="text-[13px] font-semibold text-carbon">Filter by Type</p>
             </div>
@@ -142,7 +143,7 @@ export function StoreActivity() {
                 <button
                   key={cat.id}
                   onClick={() => { setCategory(cat.id); setPage(1); }}
-                  className="w-full flex items-center px-4 py-[10px] border-b border-[#F0EEE6] cursor-pointer border-none text-left"
+                  className="w-full flex items-center px-4 py-[10px] border-b border-[#F0EEE6] cursor-pointer border-none text-left transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-orange/50"
                   style={{ background: isActive ? '#FBECE4' : 'transparent', borderLeft: isActive ? '3px solid #D97757' : '3px solid transparent' }}
                 >
                   <span className="text-[13px]" style={{ fontWeight: isActive ? 600 : 400, color: isActive ? '#B95A3A' : '#4A4945' }}>
@@ -157,7 +158,7 @@ export function StoreActivity() {
               <select
                 value={dateRange}
                 onChange={e => { setDateRange(e.target.value); setPage(1); }}
-                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
+                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50"
               >
                 <option value="last7">Last 7 days</option>
                 <option value="last30">Last 30 days</option>
@@ -168,9 +169,9 @@ export function StoreActivity() {
           </div>
 
           {/* RIGHT: Feed */}
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+          <div className="bg-white border border-bone rounded-[10px] shadow-xs overflow-hidden">
             <div className="flex items-center gap-[10px] px-4 py-3 border-b border-bone">
-              <div className="flex-1 flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white">
+              <div className="flex-1 flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white transition-shadow duration-150 focus-within:ring-2 focus-within:ring-brand-orange/40 focus-within:border-brand-orange/50">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input
                   placeholder="Search activity..."
@@ -186,11 +187,25 @@ export function StoreActivity() {
             </div>
 
             {loading ? (
-              <div className="p-4 text-xs text-slate">Loading…</div>
+              <div className="p-4 flex flex-col gap-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <SkeletonBox width={30} height={30} rounded="999px" />
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <SkeletonBox width="30%" height={12} />
+                      <SkeletonBox width="55%" height={11} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : error ? (
               <div className="p-4 text-xs text-error">{error}</div>
             ) : logs.length === 0 ? (
-              <div className="p-8 text-center text-xs text-slate">No activity in this range yet.</div>
+              <EmptyState
+                icon={<ActivityIcon size={28} className="text-brand-orange opacity-55" />}
+                title="No activity in this range yet"
+                description="Actions taken by you and your team will show up here."
+              />
             ) : (
               logs.map((item, i) => {
                 const isMe = !!me && item.actorId === me.id;
@@ -200,7 +215,7 @@ export function StoreActivity() {
                 const cs = item.isSecurityAlert ? { bg: '#FDECEA', color: '#C0392B' } : (categoryStyle[item.category] ?? { bg: '#F0EEE6', color: '#5A5852' });
                 const catLabel = item.isSecurityAlert ? 'Security Alert' : item.category.charAt(0).toUpperCase() + item.category.slice(1);
                 return (
-                  <div key={item._id} className="px-4 py-[14px]" style={{ borderBottom: i < logs.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
+                  <div key={item._id} className="px-4 py-[14px] transition-colors duration-150 hover:bg-cream" style={{ borderBottom: i < logs.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
                     <div className="flex items-center gap-2 mb-1.5">
                       <div className="w-[30px] h-[30px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0 bg-[#F0EEE6] text-[#5A5852]">
                         {initialsOf(actorName)}
@@ -221,11 +236,11 @@ export function StoreActivity() {
             <div className="px-4 py-3 flex items-center justify-between border-t border-bone">
               <span className="text-xs text-slate">Showing {logs.length} of {total.toLocaleString()} events</span>
               <div className="flex items-center gap-2">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="w-7 h-7 rounded-[6px] border border-bone flex items-center justify-center cursor-pointer disabled:opacity-30 bg-transparent">
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="w-7 h-7 rounded-[6px] border border-bone flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-30 bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
                   <ChevronLeft size={14} />
                 </button>
                 <span className="text-xs text-slate">Page {page} of {totalPages}</span>
-                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="w-7 h-7 rounded-[6px] border border-bone flex items-center justify-center cursor-pointer disabled:opacity-30 bg-transparent">
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="w-7 h-7 rounded-[6px] border border-bone flex items-center justify-center cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-30 bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
                   <ChevronRight size={14} />
                 </button>
               </div>

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
-import { apiGetMyStores, type MyStoreItem } from '@/api/services/store';
+import { type MyStoreItem } from '@/api/services/store';
+import { useMyStores } from '@/hooks/store/useMyStores';
 
 const STORAGE_KEY = 'solvexo_active_store';
 
@@ -14,28 +15,21 @@ interface ActiveStoreContextValue {
 const Ctx = createContext<ActiveStoreContextValue | null>(null);
 
 export function ActiveStoreProvider({ children }: { children: ReactNode }) {
-  const [stores,        setStores]        = useState<MyStoreItem[]>([]);
+  const { stores, loading } = useMyStores();
   const [activeStoreId, setActiveStoreId] = useState<string>(
     () => localStorage.getItem(STORAGE_KEY) ?? 'all'
   );
-  const [loading, setLoading] = useState(true);
 
+  // Once the shared store list resolves, drop a stale persisted store id
+  // (e.g. a store that was deleted, or belongs to a stale cached session).
   useEffect(() => {
-    let cancelled = false;
-    apiGetMyStores()
-      .then(res => {
-        if (cancelled) return;
-        setStores(res.data);
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved && saved !== 'all' && !res.data.find(s => s._id === saved)) {
-          setActiveStoreId('all');
-          localStorage.removeItem(STORAGE_KEY);
-        }
-      })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, []);
+    if (loading) return;
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && saved !== 'all' && !stores.find(s => s._id === saved)) {
+      setActiveStoreId('all');
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [loading, stores]);
 
   const switchStore = useCallback((id: string) => {
     setActiveStoreId(id);

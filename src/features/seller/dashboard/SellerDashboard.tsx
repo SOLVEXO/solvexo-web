@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/comman/ui/Badge';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useMyStores } from '@/hooks/store/useMyStores';
+import { apiGetSellerPlatformOverview } from '@/api/services/platformPlans';
 import {
   apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsTopProducts,
   type SellerOverviewData, type RevenuePoint, type TopProductRow,
@@ -126,6 +127,45 @@ function MyStoreCard({ stores, loading, error }: { stores: MyStore[]; loading: b
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ── Platform Billing widget ──────────────────────────────────────────────────
+interface PlatformOverviewStore { storeId: string; storeName: string; planName: string; status: string; amountUSD: number }
+
+function PlatformBillingCard() {
+  const navigate = useNavigate();
+  const [stores, setStores] = useState<PlatformOverviewStore[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    apiGetSellerPlatformOverview().then(res => setStores(res.data.stores)).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="bg-white border border-bone rounded-[10px] h-[120px] animate-pulse" />;
+  if (stores.length === 0) return null;
+
+  const totalUSD = stores.reduce((s, r) => s + r.amountUSD, 0);
+
+  return (
+    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+      <div className="px-[18px] pt-4 pb-2 flex items-center justify-between">
+        <p className="text-sm font-bold text-charcoal">Platform Billing</p>
+        <span className="text-[11px] text-slate">${totalUSD.toFixed(2)}/mo total</span>
+      </div>
+      <div className="px-2 pb-2">
+        {stores.map(s => (
+          <button key={s.storeId} onClick={() => navigate(`/seller/store/${s.storeId}/plan-billing`)}
+            className="w-full flex items-center justify-between gap-3 px-[10px] py-[10px] bg-transparent border-0 cursor-pointer text-left hover:bg-cream rounded-md">
+            <div>
+              <p className="text-[13px] font-medium text-charcoal">{s.storeName}</p>
+              <p className="text-[11px] text-slate">{s.planName} — {s.status}</p>
+            </div>
+            <span className="text-[12px] font-semibold text-carbon">${s.amountUSD.toFixed(2)}/mo</span>
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -280,6 +320,8 @@ export function SellerDashboard() {
           />
           <MyStoreCard stores={stores} loading={storesLoading} error={storesError} />
         </div>
+
+        {hasStore && <PlatformBillingCard />}
 
         {/* ── Row 3: Top Products + Recent Orders ── */}
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">

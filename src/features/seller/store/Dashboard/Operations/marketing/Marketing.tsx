@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Gift, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { EmptyState, SkeletonBox } from '@/components/comman/ui';
 import {
   apiGetCoupons, apiCreateCoupon, apiUpdateCoupon, apiDeleteCoupon,
   type Coupon, type DiscountType,
@@ -32,6 +33,8 @@ const statusStyle: Record<string, { bg: string; color: string }> = {
 };
 
 const emptyForm = { code: '', discountType: '' as DiscountType | '', value: '', minOrder: '', usageLimit: '', expiryDate: '' };
+
+const INPUT_CLS = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50';
 
 export function StoreMarketing() {
   usePageTitle('Marketing');
@@ -110,11 +113,11 @@ export function StoreMarketing() {
 
         {/* Metrics — coupon numbers are real; email/cart features below have no backend yet */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
             <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Active Coupons</p>
             <p className="text-[28px] font-bold text-carbon leading-[1.15]">{activeCount}</p>
           </div>
-          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
             <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Total Redemptions</p>
             <p className="text-[28px] font-bold text-carbon leading-[1.15]">{totalRedemptions}</p>
           </div>
@@ -124,7 +127,7 @@ export function StoreMarketing() {
         <div className="flex items-center gap-0.5 border-b border-bone">
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium cursor-pointer border-none bg-transparent -mb-px"
+              className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium cursor-pointer border-none bg-transparent -mb-px transition-colors duration-150 hover:text-brand-orange rounded-t-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
               style={{ borderBottom: `2px solid ${tab === t.id ? '#D97757' : 'transparent'}`, color: tab === t.id ? '#D97757' : '#8C8A82' }}
             >
               <t.Icon size={14} /> {t.label}
@@ -138,15 +141,27 @@ export function StoreMarketing() {
             <p className="text-[15px] font-bold text-carbon">Active Coupons</p>
 
             {loading ? (
-              <p className="text-xs text-slate">Loading…</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs flex flex-col gap-3">
+                    <SkeletonBox width="45%" height={26} rounded="8px" />
+                    <SkeletonBox width="60%" height={16} />
+                    <SkeletonBox width="100%" height={40} rounded="6px" />
+                  </div>
+                ))}
+              </div>
             ) : error ? (
               <p className="text-xs text-error">{error}</p>
             ) : coupons.length === 0 ? (
-              <p className="text-xs text-slate italic">No coupons yet — create one below.</p>
+              <EmptyState
+                icon={<TagIcon size={28} className="text-brand-orange opacity-55" />}
+                title="No coupons yet"
+                description="Create your first coupon using the form below."
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {coupons.map(coupon => (
-                  <div key={coupon._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                  <div key={coupon._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-[1px]">
                     <div className="flex items-center justify-between mb-3">
                       <div className="px-3 py-[5px] rounded-lg border-2 border-dashed border-brand-orange font-mono text-[13px] font-bold text-[#B95A3A] bg-brand-pale-orange">
                         {coupon.code}
@@ -172,9 +187,9 @@ export function StoreMarketing() {
                       </tbody>
                     </table>
                     <div className="flex gap-2">
-                      <button onClick={() => startEdit(coupon)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">Edit</button>
-                      <button onClick={() => togglePause(coupon)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">{coupon.isActive ? 'Pause' : 'Activate'}</button>
-                      <button onClick={() => handleDelete(coupon._id)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-error cursor-pointer">Delete</button>
+                      <button onClick={() => startEdit(coupon)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Edit</button>
+                      <button onClick={() => togglePause(coupon)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">{coupon.isActive ? 'Pause' : 'Activate'}</button>
+                      <button onClick={() => handleDelete(coupon._id)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-error cursor-pointer transition-colors duration-150 hover:bg-error hover:text-white hover:border-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Delete</button>
                     </div>
                   </div>
                 ))}
@@ -182,18 +197,18 @@ export function StoreMarketing() {
             )}
 
             {/* Create / Edit coupon form */}
-            <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
               <p className="text-sm font-bold text-carbon mb-4">{editingId ? 'Edit Coupon' : 'Create New Coupon'}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mb-4">
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Coupon Code</label>
                   <input placeholder="e.g. SAVE20" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
-                    className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                    className={INPUT_CLS} />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Discount Type</label>
                   <select value={form.discountType} onChange={e => setForm(f => ({ ...f, discountType: e.target.value as DiscountType }))}
-                    className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white cursor-pointer box-border">
+                    className={`${INPUT_CLS} cursor-pointer`}>
                     <option value="">Select type…</option>
                     <option value="percentage">Percentage Off</option>
                     <option value="fixed">Fixed Amount Off</option>
@@ -202,30 +217,30 @@ export function StoreMarketing() {
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Value</label>
                   <input placeholder="e.g. 20 or 10.00" value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))}
-                    className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                    className={INPUT_CLS} />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Minimum Order ($)</label>
                   <input placeholder="0.00" value={form.minOrder} onChange={e => setForm(f => ({ ...f, minOrder: e.target.value }))}
-                    className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                    className={INPUT_CLS} />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Usage Limit</label>
                   <input placeholder="Leave blank for unlimited" value={form.usageLimit} onChange={e => setForm(f => ({ ...f, usageLimit: e.target.value }))}
-                    className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                    className={INPUT_CLS} />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Expiry Date</label>
                   <input type="date" value={form.expiryDate} onChange={e => setForm(f => ({ ...f, expiryDate: e.target.value }))}
-                    className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                    className={INPUT_CLS} />
                 </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={handleSubmit} className="px-6 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer">
+                <button onClick={handleSubmit} className="px-6 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
                   {editingId ? 'Update Coupon' : 'Create Coupon'}
                 </button>
                 {editingId && (
-                  <button onClick={() => { setEditingId(null); setForm(emptyForm); }} className="px-6 py-2.5 bg-white border border-bone rounded-lg text-[13px] font-medium text-graphite cursor-pointer">
+                  <button onClick={() => { setEditingId(null); setForm(emptyForm); }} className="px-6 py-2.5 bg-white border border-bone rounded-lg text-[13px] font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
                     Cancel
                   </button>
                 )}
@@ -239,7 +254,7 @@ export function StoreMarketing() {
           <div className="flex flex-col gap-5">
             <div className="flex items-center justify-between">
               <p className="text-[15px] font-bold text-carbon">Email Campaigns</p>
-              <button className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
+              <button className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
                 + New Campaign
               </button>
             </div>
@@ -247,7 +262,7 @@ export function StoreMarketing() {
               {CAMPAIGNS.map(campaign => {
                 const st = statusStyle[campaign.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
                 return (
-                  <div key={campaign.name} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                  <div key={campaign.name} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-[1px]">
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-sm font-semibold text-carbon">{campaign.name}</p>
                       <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold shrink-0 ml-2" style={{ background: st.bg, color: st.color }}>
@@ -266,8 +281,8 @@ export function StoreMarketing() {
                       </div>
                     )}
                     <div className="flex gap-2">
-                      <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">Edit</button>
-                      <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">View</button>
+                      <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Edit</button>
+                      <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">View</button>
                     </div>
                   </div>
                 );

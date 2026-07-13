@@ -58,17 +58,17 @@ export function AdminAnnouncements() {
           <div>
             <label className="text-[12px] font-medium text-graphite mb-[5px] block">Title</label>
             <input placeholder="Announcement title…" value={title} onChange={e => setTitle(e.target.value)}
-              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
           </div>
           <div>
             <label className="text-[12px] font-medium text-graphite mb-[5px] block">Message</label>
             <textarea rows={4} placeholder="Write your announcement message here…" value={body} onChange={e => setBody(e.target.value)}
-              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border resize-y leading-[1.6]" />
+              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border resize-y leading-[1.6] transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
           </div>
           <div className="max-w-[260px]">
             <label className="text-[12px] font-medium text-graphite mb-[5px] block">Audience</label>
             <select value={audience} onChange={e => setAudience(e.target.value)}
-              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border cursor-pointer">
+              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
               <option>All Users</option>
               <option>Sellers Only</option>
               <option>Buyers Only</option>
@@ -77,11 +77,11 @@ export function AdminAnnouncements() {
           </div>
           <div className="flex gap-[10px]">
             <button onClick={() => createEntry('Published')}
-              className="px-5 py-[9px] bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer">
+              className="px-5 py-[9px] bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer outline-none transition-[filter,transform] duration-150 hover:brightness-95 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
               Publish Now
             </button>
             <button onClick={() => createEntry('Draft')}
-              className="px-[18px] py-[9px] bg-white border border-bone rounded-lg text-[13px] font-medium text-graphite cursor-pointer">
+              className="px-[18px] py-[9px] bg-white border border-bone rounded-lg text-[13px] font-medium text-graphite cursor-pointer outline-none transition-[background-color,transform] duration-150 hover:bg-cream active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
               Save as Draft
             </button>
           </div>
@@ -99,10 +99,8 @@ export function AdminAnnouncements() {
             return (
               <div
                 key={ann.id}
-                className="px-5 py-[14px] transition-colors duration-[120ms]"
+                className="px-5 py-[14px] transition-colors duration-[120ms] hover:bg-[#FAF9F5]"
                 style={{ borderBottom: i < announcements.length - 1 ? '1px solid #F0EEE6' : 'none' }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
@@ -117,7 +115,7 @@ export function AdminAnnouncements() {
                   </div>
                   <div className="flex items-center gap-[10px] flex-shrink-0">
                     <button disabled title="Not connected to a backend yet" className="text-[12px] text-slate bg-transparent border-none opacity-40 cursor-not-allowed">Edit</button>
-                    <button onClick={() => remove(ann.id)} className="text-[12px] text-[#C13030] bg-transparent border-none cursor-pointer">Delete</button>
+                    <button onClick={() => remove(ann.id)} className="text-[12px] text-[#C13030] bg-transparent border-none cursor-pointer outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">Delete</button>
                   </div>
                 </div>
               </div>

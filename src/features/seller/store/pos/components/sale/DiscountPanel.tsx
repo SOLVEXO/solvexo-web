@@ -34,7 +34,8 @@ export function DiscountPanel({
             key={id}
             onClick={() => setDiscountType(id)}
             className={clsx(
-              'flex-1 py-[6px] text-center rounded-lg text-[11px] font-medium cursor-pointer border',
+              'flex-1 py-2 text-center rounded-lg text-[11px] font-medium cursor-pointer border',
+              'transition-transform duration-100 active:scale-95',
               discountType === id
                 ? 'bg-brand-deep-orange border-brand-orange text-white'
                 : 'bg-charcoal border-transparent text-pos-faint',
@@ -49,20 +50,20 @@ export function DiscountPanel({
         value={discountVal}
         onChange={e => setDiscountVal(e.target.value)}
         placeholder={discountType === 'pct' ? 'e.g. 10 (for 10%)' : 'e.g. 5.00'}
-        className="w-full bg-carbon border-0 rounded-lg px-3 py-[7px] text-[12px] text-white outline-none mb-2 box-border"
+        className="w-full bg-carbon border-0 rounded-lg px-3 py-[9px] text-[12px] text-white outline-none mb-2 box-border"
       />
 
       <div className="flex gap-2">
         <button
           onClick={applyDiscount}
-          className="flex-1 bg-brand-orange border-0 rounded-lg py-2 text-[12px] font-semibold text-white cursor-pointer"
+          className="flex-1 bg-brand-orange border-0 rounded-lg py-[10px] text-[12px] font-semibold text-white cursor-pointer transition-transform duration-100 active:scale-[0.97]"
         >
           Apply
         </button>
         {appliedDiscount && (
           <button
             onClick={() => { removeDiscount(); setPosView('charge'); }}
-            className="px-3 py-2 bg-carbon border-0 rounded-lg text-[12px] text-error cursor-pointer"
+            className="px-3 py-[10px] bg-carbon border-0 rounded-lg text-[12px] text-error cursor-pointer transition-transform duration-100 active:scale-95"
           >
             Remove
           </button>

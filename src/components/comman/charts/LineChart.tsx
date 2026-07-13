@@ -2,12 +2,7 @@ import {
   LineChart as RechartsLine, Line,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from 'recharts';
-
-const FONT = "'Poppins', sans-serif";
-const TICK = { fontSize: 11, fill: '#8C8A82', fontFamily: FONT };
-const GRID = { stroke: '#E8E6DC', strokeDasharray: '4 4' };
-
-const DEFAULT_COLORS = ['#D97757', '#2C2A28', '#8C8A82', '#2D8A4E'];
+import { CHART_FONT, CHART_TICK, CHART_GRID, CHART_COLORS } from './chartTheme';
 
 export interface LineSeries {
   dataKey: string;
@@ -70,9 +65,27 @@ export function LineChart({
   const defaultYFmt = (v: number) =>
     v >= 1000 ? `${valuePrefix}${(v / 1000).toFixed(0)}k` : `${valuePrefix}${v}`;
   const yFmt = yTickFormatter ?? defaultYFmt;
+  const ariaLabel = title ? `${title} chart` : 'Chart';
+
+  if (!data.length) {
+    return (
+      <div
+        className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex items-center justify-center"
+        style={{ height: height + (title || subtitle ? 56 : 0) }}
+        role="img"
+        aria-label={ariaLabel}
+      >
+        <p className="text-slate text-[13px]">No data yet</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div
+      className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-shadow duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
+      role="img"
+      aria-label={ariaLabel}
+    >
       {(title || subtitle) && (
         <div className="px-5 pt-4 pb-2">
           {title    && <p className="text-sm font-bold text-charcoal">{title}</p>}
@@ -81,15 +94,15 @@ export function LineChart({
       )}
       <ResponsiveContainer width="100%" height={height}>
         <RechartsLine data={data} margin={{ top: 4, right: 20, left: 0, bottom: showLegend ? 0 : 4 }}>
-          <CartesianGrid {...GRID} vertical={false} />
-          <XAxis dataKey={xKey} tick={TICK} axisLine={false} tickLine={false} />
-          <YAxis tick={TICK} axisLine={false} tickLine={false} tickFormatter={yFmt} width={46} />
+          <CartesianGrid {...CHART_GRID} vertical={false} />
+          <XAxis dataKey={xKey} tick={CHART_TICK} axisLine={false} tickLine={false} />
+          <YAxis tick={CHART_TICK} axisLine={false} tickLine={false} tickFormatter={yFmt} width={46} />
           <Tooltip content={<ChartTooltip valuePrefix={valuePrefix} valueSuffix={valueSuffix} />} />
           {showLegend && (
             <Legend
               iconType="circle"
               iconSize={8}
-              wrapperStyle={{ fontSize: 11, fontFamily: FONT, color: '#8C8A82', paddingTop: 8 }}
+              wrapperStyle={{ fontSize: 11, fontFamily: CHART_FONT, color: '#8C8A82', paddingTop: 8 }}
             />
           )}
           {lines.map((line, i) => (
@@ -98,7 +111,7 @@ export function LineChart({
               type="monotone"
               dataKey={line.dataKey}
               name={line.label}
-              stroke={line.color ?? DEFAULT_COLORS[i % DEFAULT_COLORS.length]}
+              stroke={line.color ?? CHART_COLORS[i % CHART_COLORS.length]}
               strokeWidth={2.5}
               dot={false}
               activeDot={{ r: 4, strokeWidth: 0 }}

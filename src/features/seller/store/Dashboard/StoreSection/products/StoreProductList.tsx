@@ -4,11 +4,11 @@ import {
   ShoppingBag, Plus, Package, Download,
   AlertCircle, RefreshCw, TrendingUp,
   CheckCircle2, AlertTriangle, XCircle,
-  Eye, Pencil,
+  Eye, Pencil, Trash2,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
-  Table,      type TableColumn,
+  Table,      type TableColumn, type TableSort,
   MetricCard,
   Badge,      StatusBadge,
   EmptyState,
@@ -60,6 +60,21 @@ export default function StoreProductList() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const isSearching = debouncedSearch.trim().length > 0;
 
+  const [sort, setSort] = useState<TableSort | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(new Set());
+
+  const handleSortChange = (key: string) => {
+    setSort(prev => (prev && prev.key === key)
+      ? { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
+      : { key, direction: 'asc' });
+  };
+
+  const handleBulkDelete = (keys: Set<string | number>) => {
+    // No bulk-delete product API exists yet — placeholder until one is added.
+    console.log('Delete selected products:', Array.from(keys));
+    setSelectedKeys(new Set());
+  };
+
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(id);
@@ -109,6 +124,17 @@ export default function StoreProductList() {
       )
     : products;
 
+  const sorted = sort
+    ? [...filtered].sort((a, b) => {
+        const av = a[sort.key as keyof InventoryProduct];
+        const bv = b[sort.key as keyof InventoryProduct];
+        const cmp = typeof av === 'number' && typeof bv === 'number'
+          ? av - bv
+          : String(av ?? '').localeCompare(String(bv ?? ''));
+        return sort.direction === 'asc' ? cmp : -cmp;
+      })
+    : filtered;
+
   // ── Table columns ──────────────────────────────────────────────────────────
   const columns: TableColumn<InventoryProduct>[] = [
     {
@@ -120,7 +146,7 @@ export default function StoreProductList() {
       ),
     },
     {
-      key: 'name', header: 'Product',
+      key: 'name', header: 'Product', sortable: true,
       render: p => <ProductCell p={p} />,
     },
     {
@@ -132,7 +158,7 @@ export default function StoreProductList() {
       ),
     },
     {
-      key: 'price', header: 'Price', align: 'right',
+      key: 'price', header: 'Price', align: 'right', sortable: true,
       render: p => (
         <span className="font-semibold text-charcoal">
           Rs {p.price.toLocaleString()}
@@ -140,7 +166,7 @@ export default function StoreProductList() {
       ),
     },
     {
-      key: 'stock', header: 'Stock', align: 'right',
+      key: 'stock', header: 'Stock', align: 'right', sortable: true,
       render: p => (
         <span className="text-[13px] text-carbon">
           {typeof p.stock === 'number' ? `${p.stock} units` : p.stock}
@@ -148,7 +174,7 @@ export default function StoreProductList() {
       ),
     },
     {
-      key: 'allTimeSales', header: 'Sales', align: 'right',
+      key: 'allTimeSales', header: 'Sales', align: 'right', sortable: true,
       render: p => (
         <div className="flex items-center justify-end gap-1 text-[12px] text-slate">
           <TrendingUp size={12} className="text-success shrink-0" />
@@ -182,7 +208,7 @@ export default function StoreProductList() {
         actions={
           <button
             onClick={goAdd}
-            className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-4 py-[9px] text-[13px] font-semibold cursor-pointer"
+            className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-4 py-[9px] text-[13px] font-semibold cursor-pointer transition-[background-color,box-shadow] duration-150 hover:bg-brand-deep-orange hover:shadow-[0_2px_8px_rgba(184,90,54,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-2"
           >
             <Plus size={15} /> Add Product
           </button>
@@ -226,7 +252,7 @@ export default function StoreProductList() {
             <span className="text-[13px] text-error flex-1">{error}</span>
             <button
               onClick={() => handleRetry()}
-              className="flex items-center gap-1 text-[12px] text-error font-semibold cursor-pointer"
+              className="flex items-center gap-1 text-[12px] text-error font-semibold cursor-pointer rounded-xs transition-opacity duration-150 hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-1"
             >
               <RefreshCw size={12} /> Retry
             </button>
@@ -248,7 +274,7 @@ export default function StoreProductList() {
                 />
                 <button
                   onClick={() => handleRetry()}
-                  className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[6px] hover:bg-bone shrink-0"
+                  className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[6px] transition-colors duration-150 hover:bg-bone shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-1"
                 >
                   <RefreshCw size={11} /> Refresh
                 </button>
@@ -257,9 +283,12 @@ export default function StoreProductList() {
 
             {/* Table or skeleton or empty */}
             {loading ? (
-              <div className="px-5 pb-5 flex flex-col gap-3">
+              <div>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4">
+                  <div
+                    key={i}
+                    className={`flex items-center gap-4 px-4 py-[13px]${i < 4 ? ' border-b border-[#F0EEE6]' : ''}`}
+                  >
                     <SkeletonBox width={32} height={32} rounded="8px" />
                     <SkeletonBox width="35%" height={13} />
                     <SkeletonBox width="10%" height={13} className="ml-auto" />
@@ -270,7 +299,7 @@ export default function StoreProductList() {
                   </div>
                 ))}
               </div>
-            ) : filtered.length === 0 ? (
+            ) : sorted.length === 0 ? (
               <EmptyState
                 icon={<ShoppingBag size={30} className="text-brand-orange opacity-55" />}
                 title={search ? 'No products match your search' : 'No products yet'}
@@ -280,8 +309,21 @@ export default function StoreProductList() {
             ) : (
               <Table
                 columns={columns}
-                data={filtered}
+                data={sorted}
                 keyExtractor={p => p.productId}
+                sort={sort ?? undefined}
+                onSortChange={handleSortChange}
+                selectable
+                selectedKeys={selectedKeys}
+                onSelectionChange={setSelectedKeys}
+                bulkActions={keys => (
+                  <button
+                    onClick={() => handleBulkDelete(keys)}
+                    className="flex items-center gap-1.5 text-[12px] font-semibold text-error border border-[#FECACA] rounded-[6px] px-2.5 py-[6px] cursor-pointer hover:bg-[#FFF0F0]"
+                  >
+                    <Trash2 size={12} /> Delete selected
+                  </button>
+                )}
                 pagination={isSearching ? undefined : {
                   page,
                   total:    totalProducts,

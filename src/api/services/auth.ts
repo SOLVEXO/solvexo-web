@@ -154,7 +154,7 @@ export interface EditProfilePayload {
 }
 
 export function apiEditProfile(payload: EditProfilePayload) {
-  return client.post<never, ApiResponse<ProfileData>>(ENDPOINTS.AUTH.EDIT_PROFILE, payload);
+  return client.patch<never, ApiResponse<ProfileData>>(ENDPOINTS.AUTH.EDIT_PROFILE, payload);
 }
 
 /** POST /auth/resend-otp — resends OTP to email during signup/forgot-password flow */

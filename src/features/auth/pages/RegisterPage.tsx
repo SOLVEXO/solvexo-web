@@ -6,7 +6,7 @@ import { Button }      from '@/components/comman/ui/Button';
 import { Input }       from '@/components/comman/ui/Input';
 import { RadioButton } from '@/components/comman/ui/RadioButton';
 import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
-import { Eye, EyeOff, ArrowRight, ShoppingBag, Store, TrendingUp } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, ShoppingBag, Store, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useForm }     from '@/hooks/useForm';
 import { registerSchema, type RegisterFormData } from '@/utils/validation/schemas';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
@@ -124,9 +124,10 @@ export function RegisterPage() {
       </Button>
 
       {register.error && (
-        <p className="text-[13px] text-error text-center mt-3">
-          {register.error}
-        </p>
+        <div className="flex items-center justify-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
+          <AlertTriangle size={14} className="shrink-0" />
+          <span>{register.error}</span>
+        </div>
       )}
 
       <p className="text-center text-[12px] text-slate mt-4">

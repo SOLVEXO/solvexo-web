@@ -4,6 +4,7 @@ import {
   apiPinConversation, apiMuteConversation, apiDeleteConversation,
   type Conversation,
 } from '@/api/services/messaging';
+import { acquireMessagingSocket, releaseMessagingSocket } from '@/api/messagingSocket';
 
 export function useConversation(id: string | null) {
   const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -23,6 +24,25 @@ export function useConversation(id: string | null) {
   }, [id]);
 
   useEffect(() => { refetch(); }, [refetch]);
+
+  // Join the conversation room so read receipts / unread resets / archive-pin-mute
+  // done from another tab or the other participant reflect here instantly.
+  useEffect(() => {
+    if (!id) return;
+    const socket = acquireMessagingSocket();
+
+    function handleUpdate(updated: Conversation) {
+      if (updated._id === id) setConversation(prev => prev ? { ...prev, ...updated } : updated);
+    }
+
+    socket.emit('join-conversation', id);
+    socket.on('conversation:update', handleUpdate);
+    return () => {
+      socket.emit('leave-conversation', id);
+      socket.off('conversation:update', handleUpdate);
+      releaseMessagingSocket();
+    };
+  }, [id]);
 
   async function runAction<T>(action: () => Promise<T>) {
     setActing(true);
