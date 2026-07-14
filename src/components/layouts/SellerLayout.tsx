@@ -10,7 +10,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Store,
   Settings, BarChart2,
-  Bell, ChevronDown, List, Plus, PanelLeftClose, PanelLeftOpen,
+  Bell, ChevronDown, Plus, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 
@@ -41,7 +41,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'Workspace',
     items: [
       { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', path: '/seller/dashboard' },
-      { id: 'store-list',    Icon: List,  label: 'Store List',    path: '/seller/stores' },
+      { id: 'store-list',    Icon: Store,  label: 'My Stores',    path: '/seller/stores' },
 
       // {
       //   id: 'my-store', Icon: Store, label: 'My Store',

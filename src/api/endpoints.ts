@@ -462,6 +462,136 @@ export const ENDPOINTS = {
     },
   },
 
+  // ── SEO (Admin/Platform + Seller/Store) ──────────────────────────────────
+  SEO: {
+    ADMIN: {
+      GET_SETTINGS:   '/api/admin/seo/settings',
+      UPDATE_SETTINGS:'/api/admin/seo/settings',
+      RULES: {
+        LIST:   '/api/admin/seo/rules',
+        CREATE: '/api/admin/seo/rules',
+        UPDATE: (code: string) => `/api/admin/seo/rules/${code}`,
+        DELETE: (code: string) => `/api/admin/seo/rules/${code}`,
+      },
+      LANDING_PAGES: {
+        LIST:      '/api/admin/seo/landing-pages',
+        CREATE:    '/api/admin/seo/landing-pages',
+        GET_BY_ID: (id: string) => `/api/admin/seo/landing-pages/${id}`,
+        UPDATE:    (id: string) => `/api/admin/seo/landing-pages/${id}`,
+        DELETE:    (id: string) => `/api/admin/seo/landing-pages/${id}`,
+      },
+      CATEGORY: {
+        GET_SEO:    (id: string) => `/api/admin/seo/categories/${id}`,
+        UPDATE_SEO: (id: string) => `/api/admin/seo/categories/${id}`,
+      },
+      FAQ: {
+        GET_SEO:    (id: string) => `/api/admin/seo/faqs/${id}`,
+        UPDATE_SEO: (id: string) => `/api/admin/seo/faqs/${id}`,
+      },
+      SITEMAP: {
+        STATUS:     '/api/admin/seo/sitemap/status',
+        REGENERATE: '/api/admin/seo/sitemap/regenerate',
+      },
+      REDIRECTS: {
+        LIST:   '/api/admin/seo/redirects',
+        CREATE: '/api/admin/seo/redirects',
+        UPDATE: (id: string) => `/api/admin/seo/redirects/${id}`,
+        DELETE: (id: string) => `/api/admin/seo/redirects/${id}`,
+      },
+      CANONICAL_RULES: {
+        LIST:   '/api/admin/seo/canonical-rules',
+        CREATE: '/api/admin/seo/canonical-rules',
+        UPDATE: (id: string) => `/api/admin/seo/canonical-rules/${id}`,
+        DELETE: (id: string) => `/api/admin/seo/canonical-rules/${id}`,
+      },
+      INTEGRATIONS: {
+        LIST:            '/api/admin/seo/integrations',
+        AUTHORIZE_URL:   (provider: string) => `/api/admin/seo/integrations/${provider}/authorize-url`,
+        CONNECT:         (provider: string) => `/api/admin/seo/integrations/${provider}/connect`,
+        DISCONNECT:      (provider: string) => `/api/admin/seo/integrations/${provider}`,
+        SYNC:            (provider: string) => `/api/admin/seo/integrations/${provider}/sync`,
+      },
+      MONITORING: {
+        CRAWL_LOGS:              '/api/admin/seo/monitoring/crawl-logs',
+        CRAWL_STATS:             '/api/admin/seo/monitoring/crawl-stats',
+        INDEX_SNAPSHOTS:         '/api/admin/seo/monitoring/index-snapshots',
+        REFRESH_INDEX_SNAPSHOTS: '/api/admin/seo/monitoring/index-snapshots/refresh',
+        CWV:                     '/api/admin/seo/monitoring/cwv',
+        REFRESH_CWV:             '/api/admin/seo/monitoring/cwv/refresh',
+      },
+      ANALYTICS: {
+        OVERVIEW:           '/api/admin/seo/analytics/overview',
+        SEARCH_PERFORMANCE: '/api/admin/seo/analytics/search-performance',
+        ORGANIC_TRAFFIC:    '/api/admin/seo/analytics/organic-traffic',
+      },
+    },
+
+    SELLER: {
+      DASHBOARD:          (storeId: string) => `/api/store/${storeId}/seo/dashboard`,
+      GET_STORE_SEO:      (storeId: string) => `/api/store/${storeId}/seo/store`,
+      UPDATE_STORE_SEO:   (storeId: string) => `/api/store/${storeId}/seo/store`,
+      GET_CHECKLIST:      (storeId: string) => `/api/store/${storeId}/seo/store/checklist`,
+      UPDATE_CHECKLIST:   (storeId: string) => `/api/store/${storeId}/seo/store/checklist`,
+
+      PRODUCTS: {
+        LIST:               (storeId: string) => `/api/store/${storeId}/seo/products`,
+        GET_BY_ID:          (storeId: string, productId: string) => `/api/store/${storeId}/seo/products/${productId}`,
+        UPDATE:             (storeId: string, productId: string) => `/api/store/${storeId}/seo/products/${productId}`,
+        BULK_APPLY_TEMPLATE:(storeId: string) => `/api/store/${storeId}/seo/products/bulk-apply-template`,
+        EXPORT:             (storeId: string) => `/api/store/${storeId}/seo/products/export`,
+      },
+
+      CONTENT: {
+        CATEGORIES:  (storeId: string) => `/api/store/${storeId}/seo/content/categories`,
+        GET_PAGE:    (storeId: string, pageId: string) => `/api/store/${storeId}/seo/content/pages/${pageId}`,
+        UPDATE_PAGE: (storeId: string, pageId: string) => `/api/store/${storeId}/seo/content/pages/${pageId}`,
+      },
+
+      PREVIEW: {
+        SCHEMA: (storeId: string, entityType: string, entityId: string) => `/api/store/${storeId}/seo/preview/schema/${entityType}/${entityId}`,
+        SOCIAL: (storeId: string, entityType: string, entityId: string) => `/api/store/${storeId}/seo/preview/social/${entityType}/${entityId}`,
+      },
+
+      AUDIT: {
+        RUN:     (storeId: string) => `/api/store/${storeId}/seo/audit/run`,
+        LATEST:  (storeId: string) => `/api/store/${storeId}/seo/audit/latest`,
+        HISTORY: (storeId: string) => `/api/store/${storeId}/seo/audit/history`,
+      },
+
+      AI: {
+        GENERATE:      (storeId: string) => `/api/store/${storeId}/seo/ai/generate`,
+        GENERATE_BULK: (storeId: string) => `/api/store/${storeId}/seo/ai/generate-bulk`,
+        SUGGESTIONS:   (storeId: string) => `/api/store/${storeId}/seo/ai/suggestions`,
+      },
+
+      REDIRECTS: {
+        LIST:   (storeId: string) => `/api/store/${storeId}/seo/redirects`,
+        CREATE: (storeId: string) => `/api/store/${storeId}/seo/redirects`,
+        UPDATE: (storeId: string, id: string) => `/api/store/${storeId}/seo/redirects/${id}`,
+        DELETE: (storeId: string, id: string) => `/api/store/${storeId}/seo/redirects/${id}`,
+      },
+
+      CANONICAL_RULES: {
+        LIST:   (storeId: string) => `/api/store/${storeId}/seo/canonical-rules`,
+        CREATE: (storeId: string) => `/api/store/${storeId}/seo/canonical-rules`,
+        UPDATE: (storeId: string, id: string) => `/api/store/${storeId}/seo/canonical-rules/${id}`,
+        DELETE: (storeId: string, id: string) => `/api/store/${storeId}/seo/canonical-rules/${id}`,
+      },
+
+      INTEGRATIONS: {
+        LIST:          (storeId: string) => `/api/store/${storeId}/seo/integrations`,
+        AUTHORIZE_URL: (storeId: string, provider: string) => `/api/store/${storeId}/seo/integrations/${provider}/authorize-url`,
+        CONNECT:       (storeId: string, provider: string) => `/api/store/${storeId}/seo/integrations/${provider}/connect`,
+        DISCONNECT:    (storeId: string, provider: string) => `/api/store/${storeId}/seo/integrations/${provider}`,
+      },
+
+      ANALYTICS: {
+        SEARCH_PERFORMANCE: (storeId: string) => `/api/store/${storeId}/seo/analytics/search-performance`,
+        ORGANIC_TRAFFIC:    (storeId: string) => `/api/store/${storeId}/seo/analytics/organic-traffic`,
+      },
+    },
+  },
+
   RATING: {
     ADD_REVIEW:      '/api/rating/add-review',
     MY_REVIEWS:      '/api/rating/my-reviews',

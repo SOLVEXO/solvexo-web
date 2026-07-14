@@ -95,6 +95,7 @@ const AdminBanners       = lazy(() => named(import('@/features/admin/pages/Admin
 const AdminFaqs          = lazy(() => named(import('@/features/admin/pages/AdminFaqs'),                          'AdminFaqs'));
 const AdminConfig        = lazy(() => named(import('@/features/admin/pages/AdminConfig'),                       'AdminConfig'));
 const AdminSettings      = lazy(() => named(import('@/features/admin/pages/settings/AdminSettings'),           'AdminSettings'));
+const AdminSEO           = lazy(() => named(import('@/features/admin/pages/AdminSEO'),                          'AdminSEO'));
 
 // ── Router ────────────────────────────────────────────────────────────────────
 export const router = createBrowserRouter([
@@ -213,6 +214,7 @@ export const router = createBrowserRouter([
           { path: 'faqs',         element: <AdminFaqs /> },
           { path: 'config',       element: <AdminConfig /> },
           { path: 'settings',     element: <AdminSettings /> },
+          { path: 'seo',          element: <RequireRole role="admin"><AdminSEO /></RequireRole> },
         ],
       },
 
