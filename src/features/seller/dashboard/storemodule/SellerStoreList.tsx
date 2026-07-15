@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Store, Plus, Eye, Pencil, AlertCircle } from 'lucide-react';
+import { Store, Plus, Eye, Pencil, AlertCircle, Package, DollarSign } from 'lucide-react';
 import { Button } from '@/components/comman/ui/Button';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useMyStores } from '@/hooks/store/useMyStores';
@@ -13,6 +13,7 @@ import {
   EmptyState,
   Card,
   SkeletonBox,
+  MetricCard,
 } from '@/components/comman/ui';
 import type { MyStoreItem } from '@/api/services/store';
 
@@ -33,7 +34,7 @@ function StoreCell({ store }: { store: MyStoreItem }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function SellerStoreList() {
   const navigate = useNavigate();
-  const { stores, loading, error } = useMyStores();
+  const { stores, summary, loading, error } = useMyStores();
   usePageTitle('My Stores');
 
   const PER_PAGE = 10;
@@ -64,6 +65,14 @@ export function SellerStoreList() {
     {
       key: 'plan', header: 'Plan',
       render: s => <span className="text-slate">{s.plan ?? 'Starter'}</span>,
+    },
+    {
+      key: 'productCount', header: 'Products', align: 'right',
+      render: s => <span className="font-semibold text-charcoal">{s.productCount.toLocaleString()}</span>,
+    },
+    {
+      key: 'totalSalesUSD', header: 'Revenue', align: 'right',
+      render: s => <span className="font-semibold text-charcoal">${s.totalSalesUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
     },
     {
       key: 'aiCredits', header: 'AI Credits', align: 'right',
@@ -106,7 +115,19 @@ export function SellerStoreList() {
         }
       />
 
-      <div className="px-7 py-6">
+      <div className="px-7 py-6 flex flex-col gap-5">
+
+        {/* Summary */}
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+          <MetricCard label="Total Stores" value={summary.storeCount} icon={<Store size={16} />} loading={loading} />
+          <MetricCard label="Total Products" value={summary.totalProducts.toLocaleString()} icon={<Package size={16} />} loading={loading} />
+          <MetricCard
+            label="Total Revenue"
+            value={`$${summary.totalRevenueUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            icon={<DollarSign size={16} />}
+            loading={loading}
+          />
+        </div>
 
         {/* Error */}
         {error && (

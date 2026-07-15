@@ -462,6 +462,36 @@ export const ENDPOINTS = {
     },
   },
 
+  // ── AI STUDIO (seller-only) ───────────────────────────────────────────────
+  AI_STUDIO: {
+    CREDITS:            (storeId: string) => `/api/ai-studio/${storeId}/credits`,
+    GENERATIONS:        (storeId: string) => `/api/ai-studio/${storeId}/generations`,
+    GENERATION_BY_ID:   (storeId: string, id: string) => `/api/ai-studio/${storeId}/generations/${id}`,
+    ACCEPT_GENERATION:  (storeId: string, id: string) => `/api/ai-studio/${storeId}/generations/${id}/accept`,
+    LISTING_WRITER:     (storeId: string) => `/api/ai-studio/${storeId}/listing-writer/generate`,
+    SEO_BOOSTER:        (storeId: string) => `/api/ai-studio/${storeId}/seo-booster/generate`,
+    EMAIL_CAMPAIGNS:    (storeId: string) => `/api/ai-studio/${storeId}/email-campaigns/generate`,
+    WORKSHEET_BUILDER:  (storeId: string) => `/api/ai-studio/${storeId}/worksheet-builder/generate`,
+    PRICE_OPTIMIZER:    (storeId: string) => `/api/ai-studio/${storeId}/price-optimizer/generate`,
+    IMAGE_ENHANCER:     (storeId: string) => `/api/ai-studio/${storeId}/image-enhancer/generate`,
+    IMAGE_ENHANCER_JOB: (storeId: string, jobId: string) => `/api/ai-studio/${storeId}/image-enhancer/jobs/${jobId}`,
+  },
+
+  // ── ADMIN AI STUDIO (oversight + platform-scope generation) ──────────────
+  ADMIN_AI_STUDIO: {
+    OVERVIEW:               '/api/admin/ai-studio/overview',
+    GENERATIONS:            '/api/admin/ai-studio/generations',
+    GENERATION_BY_ID:       (id: string) => `/api/admin/ai-studio/generations/${id}`,
+    WALLETS:                '/api/admin/ai-studio/wallets',
+    WALLET_LEDGER:          (storeId: string) => `/api/admin/ai-studio/wallets/${storeId}/ledger`,
+    ADJUST_WALLET:          (storeId: string) => `/api/admin/ai-studio/wallets/${storeId}/adjust`,
+    TRANSACTIONS:           '/api/admin/ai-studio/transactions',
+    PLATFORM_SEO_BOOSTER:   '/api/admin/ai-studio/platform/seo-booster/generate',
+    PLATFORM_EMAIL:         '/api/admin/ai-studio/platform/email-campaigns/generate',
+    PLATFORM_IMAGE:         '/api/admin/ai-studio/platform/image-enhancer/generate',
+    PLATFORM_IMAGE_JOB:     (jobId: string) => `/api/admin/ai-studio/platform/image-enhancer/jobs/${jobId}`,
+  },
+
   // ── SEO (Admin/Platform + Seller/Store) ──────────────────────────────────
   SEO: {
     ADMIN: {

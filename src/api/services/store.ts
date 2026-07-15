@@ -46,12 +46,22 @@ export interface StoreData {
 }
 
 export interface MyStoreItem extends StoreData {
-  sellerName:  string;
-  sellerEmail: string;
+  sellerName:    string;
+  sellerEmail:   string;
+  /** Active, non-deleted product count for this store. */
+  productCount:  number;
+  /** All-time net revenue (gross minus refunds) across non-cancelled orders. */
+  totalSalesUSD: number;
+}
+
+export interface MyStoresSummary {
+  storeCount:      number;
+  totalProducts:   number;
+  totalRevenueUSD: number;
 }
 
 interface ApiResponse<T>      { success: boolean; message?: string; data: T }
-interface MyStoresResponse    { success: boolean; count: number; data: MyStoreItem[] }
+interface MyStoresResponse    { success: boolean; count: number; summary: MyStoresSummary; data: MyStoreItem[] }
 
 /** POST /api/store/create-store */
 export function apiCreateStore(payload: CreateStorePayload) {

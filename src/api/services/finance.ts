@@ -147,7 +147,7 @@ export interface TaxReport {
   generatedAt:      string | null;
 }
 
-interface Paginated<T> { total: number; page: number; limit: number; pages: number }
+interface Paginated { total: number; page: number; limit: number; pages: number }
 
 function qs(params: Record<string, any>) {
   const p = new URLSearchParams();
@@ -163,7 +163,7 @@ export function apiGetFinanceDashboard(storeId: string) {
 
 // ── Transactions ──────────────────────────────────────────────────────────────
 export function apiGetFinanceTransactions(storeId: string, query: TransactionsQuery = {}) {
-  return client.get<never, Paginated<Transaction> & { transactions: Transaction[] }>(
+  return client.get<never, Paginated & { transactions: Transaction[] }>(
     `${ENDPOINTS.FINANCE.SELLER.TRANSACTIONS(storeId)}${qs(query)}`,
   );
 }
@@ -185,7 +185,7 @@ export function apiRequestPayout(storeId: string, amount: number, payoutMethodId
 }
 
 export function apiGetPayouts(storeId: string, query: { page?: number; limit?: number; status?: PayoutStatus } = {}) {
-  return client.get<never, Paginated<Payout> & { payouts: Payout[] }>(`${ENDPOINTS.FINANCE.SELLER.PAYOUTS(storeId)}${qs(query)}`);
+  return client.get<never, Paginated & { payouts: Payout[] }>(`${ENDPOINTS.FINANCE.SELLER.PAYOUTS(storeId)}${qs(query)}`);
 }
 
 export function apiGetPayoutById(storeId: string, payoutId: string) {

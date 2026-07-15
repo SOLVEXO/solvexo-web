@@ -76,7 +76,7 @@ const StoreMarketing     = lazy(() => named(import('@/features/seller/store/Dash
 const StoreLoyalty       = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/loyalty/Loyalty'),          'StoreLoyalty'));
 const StoreSubscriptions = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/subscriptions/Subscriptions'), 'StoreSubscriptions'));
 const StoreIntegrations  = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/integrations/Integrations'),'StoreIntegrations'));
-const StoreActivity      = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/activity/Activity'),        'StoreActivity'));
+const StoreActivity      = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/activity/activity'),        'StoreActivity'));
 const StoreFollowers     = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/followers/StoreFollowers'), 'StoreFollowers'));
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
@@ -96,6 +96,7 @@ const AdminFaqs          = lazy(() => named(import('@/features/admin/pages/Admin
 const AdminConfig        = lazy(() => named(import('@/features/admin/pages/AdminConfig'),                       'AdminConfig'));
 const AdminSettings      = lazy(() => named(import('@/features/admin/pages/settings/AdminSettings'),           'AdminSettings'));
 const AdminSEO           = lazy(() => named(import('@/features/admin/pages/AdminSEO'),                          'AdminSEO'));
+const AdminAiStudio      = lazy(() => named(import('@/features/admin/pages/AdminAiStudio'),                     'AdminAiStudio'));
 
 // ── Router ────────────────────────────────────────────────────────────────────
 export const router = createBrowserRouter([
@@ -215,6 +216,7 @@ export const router = createBrowserRouter([
           { path: 'config',       element: <AdminConfig /> },
           { path: 'settings',     element: <AdminSettings /> },
           { path: 'seo',          element: <RequireRole role="admin"><AdminSEO /></RequireRole> },
+          { path: 'ai-studio',    element: <RequireRole role="admin"><AdminAiStudio /></RequireRole> },
         ],
       },
 

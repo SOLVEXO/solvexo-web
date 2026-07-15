@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, FolderTree, RefreshCw,
-  BarChart3, Layers, Search,
+  BarChart3, Layers, Search, Sparkles,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -31,6 +31,7 @@ const ADMIN_NAV: AdminNavItem[] = [
   { id: 'platform-plans',Icon: Layers,          label: 'Platform Plans',  path: '/admin/platform-plans' },
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
   { id: 'seo',           Icon: Search,          label: 'SEO',             path: '/admin/seo'           },
+  { id: 'ai-studio',     Icon: Sparkles,        label: 'AI Studio',       path: '/admin/ai-studio'     },
   { id: 'banners',       Icon: ImageIcon,       label: 'Banners',         path: '/admin/banners'       },
   { id: 'faqs',          Icon: HelpCircle,      label: 'FAQs',            path: '/admin/faqs'          },
   { id: 'announcements', Icon: Bell,            label: 'Announcements',   path: '/admin/announcements' },
@@ -43,7 +44,7 @@ const ADMIN_NAV: AdminNavItem[] = [
 const NAV_GROUPS: { label: string; ids: AdminNavItem['id'][] }[] = [
   { label: 'Overview', ids: ['overview', 'analytics'] },
   { label: 'Community', ids: ['users', 'moderation', 'messages'] },
-  { label: 'Commerce',  ids: ['marketplace', 'categories', 'subscriptions', 'finance', 'seo'] },
+  { label: 'Commerce',  ids: ['marketplace', 'categories', 'subscriptions', 'finance', 'seo', 'ai-studio'] },
   { label: 'Content',   ids: ['banners', 'faqs', 'announcements'] },
   { label: 'Platform',  ids: ['config', 'settings'] },
 ];
@@ -112,48 +113,21 @@ function AdminSidebar({ open, onToggle, onClose }: AdminSidebarProps) {
           : '-translate-x-full lg:translate-x-0 lg:w-[60px]',
       )}>
 
-        {/* Header */}
+        {/* Header: logo + toggle (mirrors StoreLayout/SellerLayout header) */}
         {open ? (
-          <div className="p-5 pb-4 shrink-0">
-            <div className="flex items-center gap-[10px] mb-2">
-              <div className="size-[30px] rounded-md bg-error flex items-center justify-center shrink-0">
-                <Shield size={15} className="text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-bold text-white leading-[1.3]">Solvexo Admin</p>
-                <p className="text-[10px] text-pos-muted leading-[1.3]">Super Admin Panel</p>
-              </div>
-              {paletteHint}
-              {toggleBtn}
+          <div className="px-5 pt-5 pb-4 shrink-0 flex items-center gap-[9px]">
+            <div className="size-[30px] rounded-md bg-error flex items-center justify-center shrink-0">
+              <Shield size={15} className="text-white" />
             </div>
-
-            <div className="bg-admin-surface rounded-sm px-[10px] py-[6px]">
-              {profileLoading ? (
-                <div className="animate-pulse w-[140px] h-[10px] rounded-[3px] bg-charcoal" />
-              ) : (
-                <>
-                  <span className="text-[10px] text-pos-muted">Logged in as: </span>
-                  <span className="text-[10px] font-semibold text-white">{profile?.email ?? '—'}</span>
-                </>
-              )}
+            <div className="flex items-center flex-1 min-w-0">
+              <span className="text-[17px] font-bold text-white tracking-[-0.3px]">Solvexo</span>
+              <span className="text-[17px] font-bold text-error tracking-[-0.3px]">&nbsp;Admin</span>
             </div>
-
-            {!profileLoading && profile && (
-              <div className="flex items-center gap-2 mt-2">
-                <div className="size-[26px] rounded-full shrink-0 bg-error flex items-center justify-center overflow-hidden text-[9px] font-bold text-white">
-                  {profile.profileImage
-                    ? <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
-                    : profile.name.slice(0, 2).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-semibold text-white truncate">{profile.name}</p>
-                  <p className="text-[9px] text-pos-muted capitalize">{profile.role}</p>
-                </div>
-              </div>
-            )}
+            {paletteHint}
+            {toggleBtn}
           </div>
         ) : (
-          <div className="pt-5 pb-4 flex flex-col items-center gap-3 shrink-0">
+          <div className="pt-5 pb-4 flex flex-col items-center gap-[6px] shrink-0">
             <div className="size-[30px] rounded-md bg-error flex items-center justify-center shrink-0">
               <Shield size={15} className="text-white" />
             </div>
@@ -219,6 +193,34 @@ function AdminSidebar({ open, onToggle, onClose }: AdminSidebarProps) {
             </div>
           ))}
         </nav>
+
+        {/* User footer (mirrors StoreLayout/SellerLayout's bottom profile card) */}
+        <div className="px-4 py-3 border-t border-dark-active shrink-0">
+          <div className={clsx('flex items-center gap-2', !open && 'justify-center')}>
+            <div className="size-7 rounded-full shrink-0 bg-error flex items-center justify-center overflow-hidden text-[10px] font-bold text-white">
+              {profileLoading
+                ? <div className="animate-pulse w-full h-full bg-charcoal" />
+                : profile?.profileImage
+                  ? <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                  : (profile?.name?.slice(0, 2).toUpperCase() ?? 'AD')}
+            </div>
+            {open && (
+              <div className="flex-1 min-w-0">
+                {profileLoading ? (
+                  <>
+                    <div className="animate-pulse w-20 h-[11px] rounded-[3px] bg-charcoal mb-1" />
+                    <div className="animate-pulse w-[110px] h-[9px] rounded-[3px] bg-charcoal" />
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[12px] font-semibold text-white leading-[1.3] truncate">{profile?.name ?? 'Admin'}</p>
+                    <p className="text-[10px] text-pos-muted leading-[1.3] truncate">{profile?.email ?? '—'}</p>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </aside>
 
       <CommandPalette items={paletteItems} open={paletteOpen} onClose={() => setPaletteOpen(false)} />
