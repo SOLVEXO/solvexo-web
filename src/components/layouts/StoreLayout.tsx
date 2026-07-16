@@ -13,6 +13,7 @@ import {
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
+import { NotificationBell } from '@/components/comman/ui';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
@@ -374,12 +375,7 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
       </div>
       <div className="flex items-center gap-[10px]">
         {actions}
-        <button
-          aria-label="Notifications"
-          className="size-[34px] rounded-md bg-brand-pale-orange flex items-center justify-center cursor-pointer shrink-0 border-none hover:opacity-80 transition-opacity"
-        >
-          <Bell size={16} className="text-brand-orange" />
-        </button>
+        <NotificationBell />
       </div>
     </div>
   );

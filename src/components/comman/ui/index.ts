@@ -64,3 +64,7 @@ export type { ModalProps }                   from './Modal';
 export { StarRating }                        from './StarRating';
 
 export { ComingSoonBanner }                  from './ComingSoonBanner';
+
+export { SocialLoginModal }                  from './SocialLoginModal';
+export { NotificationBell }                  from './NotificationBell';
+export { NotificationsPanel }                 from './NotificationsPanel';

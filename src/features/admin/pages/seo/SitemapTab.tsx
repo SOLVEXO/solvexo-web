@@ -1,4 +1,4 @@
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Map } from 'lucide-react';
 import { Card } from '@/components/comman/ui/Card';
 import { Button } from '@/components/comman/ui/Button';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
@@ -10,8 +10,6 @@ import type { SitemapChunk } from '@/api/services/seo/admin/sitemap.service';
 export function SitemapTab() {
   const { data, loading, error, refetch } = useSeoSitemapStatus();
   const { regenerate, submitting } = useRegenerateSeoSitemap();
-
-  if (error) return <AnalyticsErrorState message={error} onRetry={refetch} />;
 
   const handleRegenerate = async () => {
     const ok = await regenerate();
@@ -44,12 +42,19 @@ export function SitemapTab() {
         </Button>
       </div>
 
-      <Card padding="none">
-        <Table columns={columns} data={data?.chunks ?? []} keyExtractor={(r, i) => `${r.type}-${r.storeId ?? 'platform'}-${r.chunkIndex}-${i}`} />
-        {!loading && (data?.chunks ?? []).length === 0 && (
-          <div className="px-5 py-10 text-center text-[12px] text-slate">No sitemap chunks generated yet.</div>
-        )}
-      </Card>
+      {error ? (
+        <AnalyticsErrorState message={error} onRetry={refetch} />
+      ) : (
+        <Card padding="none">
+          <Table
+            columns={columns}
+            data={data?.chunks ?? []}
+            keyExtractor={(r, i) => `${r.type}-${r.storeId ?? 'platform'}-${r.chunkIndex}-${i}`}
+            loading={loading}
+            emptyState={{ icon: <Map size={28} className="text-slate/50" />, title: 'No sitemap chunks generated yet' }}
+          />
+        </Card>
+      )}
     </div>
   );
 }

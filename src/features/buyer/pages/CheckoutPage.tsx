@@ -10,10 +10,11 @@ import { Button } from '@/components/comman/ui/Button';
 import { SkeletonBox } from '@/components/comman/ui';
 import {
   ArrowLeft, MapPin, Truck, CreditCard, CheckCircle2,
-  ChevronRight, Loader2, AlertCircle, PackageCheck,
+  ChevronRight, AlertCircle, PackageCheck,
   Banknote, ShieldCheck, ArrowDownCircle, Download,
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { currencySymbol } from '@/utils/currency';
 
 // ── Logo ──────────────────────────────────────────────────────────────────────
 function SolvexoIcon({ size = 28 }: { size?: number }) {
@@ -270,7 +271,7 @@ export function CheckoutPage() {
                     <SkeletonBox height={48} rounded="12px" />
                   </div>
                 ) : checkoutError ? (
-                  <div className="flex items-start gap-2 text-[12px] text-[#C13030] bg-[#FFF0F0] border border-[#FECACA] rounded-[8px] px-3 py-2">
+                  <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2">
                     <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
                     {checkoutError}
                   </div>
@@ -289,7 +290,7 @@ export function CheckoutPage() {
                     </div>
 
                     {placeError && (
-                      <div className="flex items-start gap-2 text-[12px] text-[#C13030] bg-[#FFF0F0] border border-[#FECACA] rounded-[8px] px-3 py-2 mb-4">
+                      <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2 mb-4">
                         <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
                         {placeError}
                       </div>
@@ -297,14 +298,13 @@ export function CheckoutPage() {
 
                     <Button
                       variant="primary" size="lg"
-                      disabled={!checkout || placing}
+                      disabled={!checkout}
+                      loading={placing}
+                      icon={!placing && <PackageCheck size={16} />}
                       onClick={handlePlaceOrder}
                       className="gap-2 w-full justify-center"
                     >
-                      {placing
-                        ? <><Loader2 size={15} className="animate-spin" /> Placing Order…</>
-                        : <><PackageCheck size={16} /> Place Order</>
-                      }
+                      {placing ? 'Placing Order…' : 'Place Order'}
                     </Button>
                   </>
                 )}
@@ -555,7 +555,7 @@ export function CheckoutPage() {
                                 </p>
                               </div>
                               <span className="text-[13px] font-bold text-carbon ml-4 flex-shrink-0">
-                                Rs. {selectedZone.shippingPrice.toLocaleString()}
+                                {currencySymbol(checkout?.currency)} {selectedZone.shippingPrice.toLocaleString()}
                               </span>
                             </div>
                           ) : (
@@ -567,7 +567,11 @@ export function CheckoutPage() {
                         {/* Dropdown list */}
                         {shippingDropOpen && (
                           <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-bone rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.10)] z-20 overflow-hidden">
-                            {(matchingZones.length > 0 ? matchingZones : zones).map((zone, i) => (
+                            {(matchingZones.length > 0 ? matchingZones : zones).length === 0 ? (
+                              <div className="px-4 py-4 text-[13px] text-slate text-center">
+                                No shipping methods available for this address yet.
+                              </div>
+                            ) : (matchingZones.length > 0 ? matchingZones : zones).map((zone, i) => (
                               <button
                                 key={zone._id}
                                 type="button"
@@ -595,7 +599,7 @@ export function CheckoutPage() {
                                   </p>
                                 </div>
                                 <span className="text-[13px] font-bold text-carbon flex-shrink-0">
-                                  Rs. {zone.shippingPrice.toLocaleString()}
+                                  {currencySymbol(checkout?.currency)} {zone.shippingPrice.toLocaleString()}
                                 </span>
                               </button>
                             ))}
@@ -604,7 +608,7 @@ export function CheckoutPage() {
                       </div>
 
                       {checkoutError && (
-                        <div className="flex items-start gap-2 text-[12px] text-[#C13030] bg-[#FFF0F0] border border-[#FECACA] rounded-[8px] px-3 py-2">
+                        <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2">
                           <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
                           {checkoutError}
                         </div>
@@ -613,14 +617,13 @@ export function CheckoutPage() {
                       <div>
                         <Button
                           variant="primary" size="sm"
-                          disabled={!selectedZoneId || creatingCheckout}
+                          disabled={!selectedZoneId}
+                          loading={creatingCheckout}
+                          iconRight={!creatingCheckout && <ChevronRight size={14} />}
                           onClick={handleContinueToPayment}
                           className="gap-1"
                         >
-                          {creatingCheckout
-                            ? <><Loader2 size={13} className="animate-spin" /> Creating checkout…</>
-                            : <>Continue to Payment <ChevronRight size={14} /></>
-                          }
+                          {creatingCheckout ? 'Creating checkout…' : 'Continue to Payment'}
                         </Button>
                       </div>
                     </div>
@@ -632,7 +635,7 @@ export function CheckoutPage() {
                 <div className="px-5 py-3 text-[13px] text-carbon">
                   <span className="font-medium">{selectedZone.city}, {selectedZone.province}</span>
                   {' — '}
-                  Rs. {selectedZone.shippingPrice.toLocaleString()} · {selectedZone.estimatedDeliveryTime}
+                  {currencySymbol(checkout?.currency)} {selectedZone.shippingPrice.toLocaleString()} · {selectedZone.estimatedDeliveryTime}
                 </div>
               )}
             </div>
@@ -700,7 +703,7 @@ export function CheckoutPage() {
                   </div>
 
                   {placeError && (
-                    <div className="flex items-start gap-2 text-[12px] text-[#C13030] bg-[#FFF0F0] border border-[#FECACA] rounded-[8px] px-3 py-2 mb-4">
+                    <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2 mb-4">
                       <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
                       {placeError}
                     </div>
@@ -708,14 +711,13 @@ export function CheckoutPage() {
 
                   <Button
                     variant="primary" size="lg"
-                    disabled={!selectedMethod || placing}
+                    disabled={!selectedMethod}
+                    loading={placing}
+                    icon={!placing && <PackageCheck size={16} />}
                     onClick={handlePlaceOrder}
                     className="gap-2 w-full justify-center"
                   >
-                    {placing
-                      ? <><Loader2 size={15} className="animate-spin" /> Placing Order…</>
-                      : <><PackageCheck size={16} /> Place Order</>
-                    }
+                    {placing ? 'Placing Order…' : 'Place Order'}
                   </Button>
                 </div>
               )}
@@ -730,7 +732,7 @@ export function CheckoutPage() {
 
             {/* Items — filtered to current cartType only */}
             <div className="flex flex-col gap-2 mb-5">
-              {checkout
+              {(() => { const cur = currencySymbol(checkout?.currency); return checkout
                 ? filteredCheckoutItems.map(item => (
                   <div key={item.variantId} className="flex justify-between text-[12px]">
                     <span className="text-carbon truncate max-w-[150px]">
@@ -738,7 +740,7 @@ export function CheckoutPage() {
                       <span className="text-slate ml-1">×{item.quantity}</span>
                     </span>
                     <span className="font-medium text-carbon flex-shrink-0">
-                      Rs. {item.totalPrice.toLocaleString()}
+                      {cur} {item.totalPrice.toLocaleString()}
                     </span>
                   </div>
                 ))
@@ -752,12 +754,12 @@ export function CheckoutPage() {
                         <span className="text-slate ml-1">×{item.quantity}</span>
                       </span>
                       <span className="font-medium text-carbon flex-shrink-0">
-                        Rs. {ttl.toLocaleString()}
+                        {cur} {ttl.toLocaleString()}
                       </span>
                     </div>
                   );
                 })
-              }
+              })()}
             </div>
 
             <div className="h-px bg-bone mb-4" />
@@ -765,13 +767,13 @@ export function CheckoutPage() {
             <div className="flex flex-col gap-3 mb-5">
               <div className="flex justify-between text-[13px]">
                 <span className="text-slate">Subtotal</span>
-                <span className="font-semibold text-carbon">Rs. {filteredSubtotal.toLocaleString()}</span>
+                <span className="font-semibold text-carbon">{currencySymbol(checkout?.currency)} {filteredSubtotal.toLocaleString()}</span>
               </div>
               {!isDigital && (
                 <div className="flex justify-between text-[13px]">
                   <span className="text-slate">Shipping</span>
                   {selectedZone || summary
-                    ? <span className="font-semibold text-carbon">Rs. {shipping.toLocaleString()}</span>
+                    ? <span className="font-semibold text-carbon">{currencySymbol(checkout?.currency)} {shipping.toLocaleString()}</span>
                     : <span className="text-success font-medium">Select method</span>
                   }
                 </div>
@@ -779,7 +781,7 @@ export function CheckoutPage() {
               {tax > 0 && (
                 <div className="flex justify-between text-[13px]">
                   <span className="text-slate">Tax</span>
-                  <span className="font-semibold text-carbon">Rs. {tax.toLocaleString()}</span>
+                  <span className="font-semibold text-carbon">{currencySymbol(checkout?.currency)} {tax.toLocaleString()}</span>
                 </div>
               )}
               {!!summary?.subscriberSavingsUSD && summary.subscriberSavingsUSD > 0 && (
@@ -794,7 +796,7 @@ export function CheckoutPage() {
 
             <div className="flex justify-between text-[16px] font-bold">
               <span className="text-carbon">Total</span>
-              <span className="text-carbon">Rs. {total.toLocaleString()}</span>
+              <span className="text-carbon">{currencySymbol(checkout?.currency)} {total.toLocaleString()}</span>
             </div>
 
             {checkout && (

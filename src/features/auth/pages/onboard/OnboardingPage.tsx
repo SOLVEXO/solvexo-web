@@ -9,7 +9,7 @@ import {
   Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
   Package, Download, Calendar, Repeat, MonitorSmartphone,
   Sparkles, User, CreditCard, Plus, Wrench, ShoppingCart,
-  ArrowRight, ArrowLeft, Check, AlertTriangle, Loader, Loader2,
+  ArrowRight, ArrowLeft, Check, AlertTriangle, Loader2,
 } from 'lucide-react';
 import { useUpload } from '@/hooks/upload/useUpload';
 import type { SellerType, ProductType, StoreData } from '@/api/services/store';
@@ -344,9 +344,10 @@ function Step3({ form, setForm, onNext, onBack, loading, error }: {
         </Button>
         <Button variant="primary" size="lg" className="flex-1 justify-center"
           onClick={() => form.productTypes.length > 0 && onNext()}
-          disabled={form.productTypes.length === 0 || loading}>
+          disabled={form.productTypes.length === 0}
+          loading={loading}>
           {loading
-            ? <span className="flex items-center gap-2 justify-center"><Loader size={14} /> Creating your store...</span>
+            ? 'Creating your store...'
             : form.productTypes.length > 0
               ? <span>Create Store <ArrowRight size={14} className="inline align-middle ml-1" /></span>
               : 'Select at least one'}

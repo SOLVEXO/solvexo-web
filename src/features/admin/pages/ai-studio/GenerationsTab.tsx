@@ -9,6 +9,7 @@ import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErro
 import { useAdminAiGenerations, useAdminAiGeneration } from '@/hooks/admin/useAdminAiStudio';
 import type { AdminGenerationRow, AiGenerationScope } from '@/api/services/adminAiStudio';
 import type { AiToolType } from '@/api/services/aiStudio';
+import { Sparkles } from 'lucide-react';
 
 const TOOL_OPTIONS: { value: AiToolType | ''; label: string }[] = [
   { value: '', label: 'All tools' },
@@ -37,8 +38,6 @@ export function GenerationsTab() {
     status: status || undefined,
     storeId: storeId || undefined,
   });
-
-  if (error) return <AnalyticsErrorState message={error} onRetry={refetch} />;
 
   const columns: TableColumn<AdminGenerationRow>[] = [
     { key: 'toolType', header: 'Tool', render: r => TOOL_OPTIONS.find(t => t.value === r.toolType)?.label ?? r.toolType },
@@ -80,18 +79,24 @@ export function GenerationsTab() {
       </Card>
 
       <Card padding="none">
-        <Table
-          columns={columns}
-          data={data?.items ?? []}
-          keyExtractor={r => r._id}
-          onRowClick={r => setSelectedId(r._id)}
-          pagination={data ? {
-            page: data.page, total: data.total, perPage: data.limit, onChange: setPage, label: 'generations',
-          } : undefined}
-        />
-        {loading && <div className="px-5 py-6 text-center text-[12px] text-slate">Loading…</div>}
-        {!loading && (data?.items ?? []).length === 0 && (
-          <div className="px-5 py-10 text-center text-[12px] text-slate">No generations match these filters.</div>
+        {error ? (
+          <div className="p-5"><AnalyticsErrorState message={error} onRetry={refetch} /></div>
+        ) : (
+          <Table
+            columns={columns}
+            data={data?.items ?? []}
+            keyExtractor={r => r._id}
+            onRowClick={r => setSelectedId(r._id)}
+            loading={loading}
+            emptyState={{
+              icon: <Sparkles size={28} className="text-slate/50" />,
+              title: 'No generations found',
+              description: 'No AI Studio generations match these filters.',
+            }}
+            pagination={data ? {
+              page: data.page, total: data.total, perPage: data.limit, onChange: setPage, label: 'generations',
+            } : undefined}
+          />
         )}
       </Card>
 

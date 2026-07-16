@@ -165,13 +165,15 @@ export function PricingPage() {
         </p>
 
         {/* Billing toggle — pill selector style (exact reference) */}
-        <div className="inline-flex bg-bone rounded-[10px] p-1 mb-12">
+        <div className="inline-flex bg-bone rounded-[10px] p-1 mb-12" role="group" aria-label="Billing interval">
           {(['monthly', 'annual'] as const).map(b => (
-            <div
+            <button
               key={b}
+              type="button"
               onClick={() => setBilling(b)}
+              aria-pressed={billing === b}
               className={clsx(
-                'px-6 py-2 rounded-lg cursor-pointer flex items-center gap-[6px] transition-all duration-200',
+                'px-6 py-2 rounded-lg cursor-pointer flex items-center gap-[6px] transition-all duration-200 border-0',
                 billing === b ? 'bg-white shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent',
               )}
             >
@@ -181,7 +183,7 @@ export function PricingPage() {
               {b === 'annual' && (
                 <span className="text-[10px] font-semibold text-success">Save 20%</span>
               )}
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -242,7 +244,9 @@ export function PricingPage() {
 
               {/* CTA Button */}
               <button
-                onClick={() => navigate('/onboarding')}
+                onClick={() => plan.monthly === null
+                  ? (window.location.href = 'mailto:support@solvexo.com?subject=Enterprise%20Plan%20Inquiry')
+                  : navigate('/onboarding')}
                 className={clsx(
                   'w-full py-[10px] rounded-lg text-[13px] font-semibold cursor-pointer mb-6 flex justify-center transition-all duration-[180ms] border',
                   isPro ? 'border-brand-orange bg-brand-orange text-white' : 'border-bone bg-transparent text-charcoal',

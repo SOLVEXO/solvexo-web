@@ -10,6 +10,7 @@ import type { AdminFinanceParams, RefundByStoreRow, TaxReportRow } from '@/api/s
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { ChartCardSkeleton, TableCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
 import { formatCurrency } from '@/components/comman/analytics/format';
+import { Undo2, FileText } from 'lucide-react';
 
 export function FinanceReportsTab({ params }: { params: AdminFinanceParams }) {
   const refunds = useAdminRefundReport(params);
@@ -76,12 +77,16 @@ export function FinanceReportsTab({ params }: { params: AdminFinanceParams }) {
           <p className="text-[14px] font-bold text-charcoal">Refund Report</p>
           {refunds.data?.note && <p className="text-[12px] text-slate">{refunds.data.note}</p>}
         </div>
-        {refunds.loading ? (
-          <div className="px-5 pb-5"><TableCardSkeleton /></div>
-        ) : refunds.error ? (
+        {refunds.error ? (
           <div className="px-5 pb-5"><AnalyticsErrorState message={refunds.error} onRetry={refunds.refetch} /></div>
         ) : (
-          <Table columns={refundColumns} data={refunds.data?.byStore ?? []} keyExtractor={(r) => r.storeId} />
+          <Table
+            columns={refundColumns}
+            data={refunds.data?.byStore ?? []}
+            keyExtractor={(r) => r.storeId}
+            loading={refunds.loading}
+            emptyState={{ icon: <Undo2 size={28} className="text-slate/50" />, title: 'No refunds', description: 'No refund activity for this period.' }}
+          />
         )}
       </div>
 
@@ -91,12 +96,16 @@ export function FinanceReportsTab({ params }: { params: AdminFinanceParams }) {
           <p className="text-[14px] font-bold text-charcoal">Tax Reports</p>
           <p className="text-[12px] text-slate">Generated per-store by sellers (Finance → Tax Reports).</p>
         </div>
-        {taxReports.loading ? (
-          <div className="px-5 pb-5"><TableCardSkeleton /></div>
-        ) : taxReports.error ? (
+        {taxReports.error ? (
           <div className="px-5 pb-5"><AnalyticsErrorState message={taxReports.error} onRetry={taxReports.refetch} /></div>
         ) : (
-          <Table columns={taxColumns} data={taxReports.data ?? []} keyExtractor={(r) => r._id} />
+          <Table
+            columns={taxColumns}
+            data={taxReports.data ?? []}
+            keyExtractor={(r) => r._id}
+            loading={taxReports.loading}
+            emptyState={{ icon: <FileText size={28} className="text-slate/50" />, title: 'No tax reports', description: 'Sellers haven\u2019t generated any tax reports yet.' }}
+          />
         )}
       </div>
     </div>

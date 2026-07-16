@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
@@ -8,6 +8,7 @@ import {
 import type { PlacedOrder, OrderItem, OrderDeliveryAddress } from '@/api/services/payment';
 import { apiGetDownloadUrl } from '@/api/services/orders';
 import { clsx } from 'clsx';
+import { Button } from '@/components/comman/ui/Button';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Logo
@@ -96,7 +97,7 @@ function OrderItemRow({ item, orderId }: { item: OrderItem; orderId: string }) {
         </div>
       </div>
       <div className="flex flex-col items-end gap-1.5 shrink-0">
-        <p className="text-[13px] font-bold text-charcoal">Rs {item.totalPrice.toLocaleString()}</p>
+        <p className="text-[13px] font-bold text-charcoal">${item.totalPrice.toLocaleString()}</p>
         {isDigital && item.productId && (
           <DownloadBtn orderId={orderId} productId={item.productId} />
         )}
@@ -220,7 +221,7 @@ function OrderCard({ order }: { order: PlacedOrder }) {
           <span className={clsx(
             'px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide',
             order.orderStatus === 'completed' ? 'bg-[#E3F4EA] text-[#1A6B35]'
-            : order.orderStatus === 'cancelled' ? 'bg-[#FFF0F0] text-error'
+            : order.orderStatus === 'cancelled' ? 'bg-error-bg text-error'
             : 'bg-[#FFF4DC] text-[#B36200]',
           )}>
             {order.orderStatus}
@@ -248,19 +249,19 @@ function OrderCard({ order }: { order: PlacedOrder }) {
         <div className="flex flex-col gap-2">
           <div className="flex justify-between text-[12px]">
             <span className="text-slate">Subtotal</span>
-            <span className="font-medium text-charcoal">Rs {order.summary.subtotal.toLocaleString()}</span>
+            <span className="font-medium text-charcoal">${order.summary.subtotal.toLocaleString()}</span>
           </div>
           {!allDigital && (
             <div className="flex justify-between text-[12px]">
               <span className="text-slate">Shipping</span>
               <span className="font-medium text-charcoal">
-                {order.summary.shipping === 0 ? 'Free' : `Rs ${order.summary.shipping.toLocaleString()}`}
+                {order.summary.shipping === 0 ? 'Free' : `$${order.summary.shipping.toLocaleString()}`}
               </span>
             </div>
           )}
           <div className="flex justify-between text-[14px] font-bold pt-2 border-t border-bone">
             <span className="text-charcoal">Total</span>
-            <span className="text-charcoal">Rs {order.summary.total.toLocaleString()}</span>
+            <span className="text-charcoal">${order.summary.total.toLocaleString()}</span>
           </div>
         </div>
       </footer>
@@ -355,29 +356,33 @@ function SummaryPanel({ orders, navigate }: { orders: PlacedOrder[]; navigate: (
               <p className="text-[11px] font-bold text-brand-deep-orange font-mono leading-tight">{order.orderNumber}</p>
               <p className="text-[10px] text-slate mt-[1px]">{order.items.length} item{order.items.length !== 1 ? 's' : ''}</p>
             </div>
-            <p className="text-[12px] font-semibold text-charcoal shrink-0">Rs {order.summary.total.toLocaleString()}</p>
+            <p className="text-[12px] font-semibold text-charcoal shrink-0">${order.summary.total.toLocaleString()}</p>
           </div>
         ))}
       </div>
 
       <div className="px-5 py-4 flex justify-between items-center border-b border-bone">
         <span className="text-[13px] font-bold text-charcoal">Grand Total</span>
-        <span className="text-[15px] font-bold text-carbon">Rs {grandTotal.toLocaleString()}</span>
+        <span className="text-[15px] font-bold text-carbon">${grandTotal.toLocaleString()}</span>
       </div>
 
       <div className="px-5 py-4 flex flex-col gap-2">
-        <button
+        <Button
+          variant="primary" fullWidth
+          className="justify-center! px-4! py-[11px]! rounded-[10px]!"
+          icon={<ShoppingBag size={14} />}
           onClick={() => navigate('/marketplace')}
-          className="w-full flex items-center justify-center gap-2 bg-brand-orange text-white rounded-[10px] px-4 py-[11px] text-[13px] font-semibold border-none cursor-pointer"
         >
-          <ShoppingBag size={14} /> Continue Shopping
-        </button>
-        <button
+          Continue Shopping
+        </Button>
+        <Button
+          variant="outline" fullWidth
+          className="justify-center! px-4! py-[11px]! rounded-[10px]!"
+          iconRight={<ArrowRight size={13} />}
           onClick={() => navigate('/')}
-          className="w-full flex items-center justify-center gap-2 bg-cream text-charcoal border border-bone rounded-[10px] px-4 py-[11px] text-[13px] font-medium cursor-pointer"
         >
-          Back to Home <ArrowRight size={13} />
-        </button>
+          Back to Home
+        </Button>
       </div>
 
     </aside>
@@ -393,8 +398,11 @@ export function OrderSuccessPage() {
   const location = useLocation();
   const orders   = (location.state as { orders: PlacedOrder[] } | null)?.orders ?? [];
 
+  useEffect(() => {
+    if (orders.length === 0) navigate('/marketplace', { replace: true });
+  }, [orders.length, navigate]);
+
   if (orders.length === 0) {
-    navigate('/marketplace', { replace: true });
     return null;
   }
 

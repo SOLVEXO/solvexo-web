@@ -93,7 +93,7 @@ export function CartPage() {
 
         {/* ── Error banner ── */}
         {error && (
-          <div className="mb-4 flex items-center justify-between gap-3 rounded-[10px] border border-[#FECACA] bg-[#FFF0F0] px-4 py-3">
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-[10px] border border-[#FECACA] bg-error-bg px-4 py-3">
             <span className="text-[13px] text-error">{error}</span>
             <button
               onClick={clearError}
@@ -194,7 +194,7 @@ export function CartPage() {
                         )}
                       </div>
                       <p className="text-[12px] text-slate mb-3">
-                        Rs {price.toLocaleString()} each
+                        ${price.toLocaleString()} each
                       </p>
 
                       {/* Qty controls */}
@@ -229,22 +229,21 @@ export function CartPage() {
                           <Plus size={12} />
                         </button>
 
-                        <button
+                        <Button
+                          variant="danger" size="xs"
+                          className="ml-2!"
                           onClick={() => handleRemove(item.productId, key)}
-                          disabled={isRemoving}
-                          className="ml-2 px-[10px] py-[5px] rounded-[6px] border border-[#FECACA] bg-[#FFF0F0] cursor-pointer flex items-center gap-1 text-[11px] text-[#C13030] font-medium"
+                          loading={isRemoving}
+                          icon={!isRemoving && <Trash2 size={11} />}
                         >
-                          {isRemoving
-                            ? <Loader2 size={11} className="animate-spin" />
-                            : <Trash2 size={11} />}
                           Remove
-                        </button>
+                        </Button>
                       </div>
                     </div>
 
                     {/* Line total */}
                     <p className="font-bold text-[15px] text-carbon shrink-0">
-                      Rs {lineTotal.toLocaleString()}
+                      ${lineTotal.toLocaleString()}
                     </p>
                   </div>
                 );
@@ -253,17 +252,14 @@ export function CartPage() {
               {/* Footer: clear cart */}
               {!loading && items.length > 0 && (
                 <div className="px-5 py-3 border-t border-bone flex justify-end">
-                  <button
+                  <Button
+                    variant="outline" size="xs"
                     onClick={handleClear}
-                    disabled={clearing}
-                    className={clsx(
-                      'flex items-center gap-[6px] px-[14px] py-[6px] rounded-lg text-[12px] border border-bone bg-cream text-slate transition-colors',
-                      clearing ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-[#c5c4bc]',
-                    )}
+                    loading={clearing}
+                    icon={!clearing && <Trash2 size={12} />}
                   >
-                    {clearing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                     Clear Cart
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -284,7 +280,7 @@ export function CartPage() {
                           {item.name}
                           <span className="text-slate ml-1">×{item.quantity}</span>
                         </span>
-                        <span className="font-medium text-carbon shrink-0">Rs {ttl.toLocaleString()}</span>
+                        <span className="font-medium text-carbon shrink-0">${ttl.toLocaleString()}</span>
                       </div>
                     );
                   })}
@@ -296,7 +292,7 @@ export function CartPage() {
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-[13px]">
                   <span className="text-slate">Subtotal ({cartCount} items)</span>
-                  <span className="font-semibold text-carbon">Rs {(cart?.totalPrice ?? 0).toLocaleString()}</span>
+                  <span className="font-semibold text-carbon">${(cart?.totalPrice ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-[13px]">
                   <span className="text-slate">Shipping</span>
@@ -308,7 +304,7 @@ export function CartPage() {
 
               <div className="flex justify-between text-[16px] font-bold">
                 <span className="text-carbon">Total</span>
-                <span className="text-carbon">Rs {(cart?.totalPrice ?? 0).toLocaleString()}</span>
+                <span className="text-carbon">${(cart?.totalPrice ?? 0).toLocaleString()}</span>
               </div>
 
               {/* ── Checkout Buttons ── */}
@@ -316,20 +312,22 @@ export function CartPage() {
 
                 {/* Case 1: type not known from API → single general button */}
                 {!typeKnown && (
-                  <button
+                  <Button
+                    variant="primary" fullWidth
+                    className="justify-center! px-5! py-[11px]! rounded-xl!"
                     onClick={() => navigate('/checkout', { state: { cartType: 'physical' } })}
-                    className="w-full flex items-center justify-center gap-2 bg-brand-orange text-white rounded-xl px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer transition-[background-color,box-shadow] hover:bg-brand-deep-orange shadow-[0_1px_2px_rgba(184,90,54,0.15)] hover:shadow-[0_2px_8px_rgba(184,90,54,0.25)]"
                   >
                     <Package size={15} /> Proceed to Checkout
                     <ChevronRight size={14} className="ml-auto" />
-                  </button>
+                  </Button>
                 )}
 
                 {/* Physical button */}
                 {hasPhysical && (
-                  <button
+                  <Button
+                    variant="primary" fullWidth
+                    className="justify-between! px-5! py-[11px]! rounded-xl!"
                     onClick={() => navigate('/checkout', { state: { cartType: 'physical' } })}
-                    className="w-full flex items-center justify-between gap-2 bg-brand-orange text-white rounded-xl px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer transition-[background-color,box-shadow] hover:bg-brand-deep-orange shadow-[0_1px_2px_rgba(184,90,54,0.15)] hover:shadow-[0_2px_8px_rgba(184,90,54,0.25)]"
                   >
                     <span className="flex items-center gap-2">
                       <Package size={15} />
@@ -339,19 +337,20 @@ export function CartPage() {
                       {physicalCount} item{physicalCount !== 1 ? 's' : ''}
                       <ChevronRight size={13} />
                     </span>
-                  </button>
+                  </Button>
                 )}
 
                 {/* Digital button */}
                 {hasDigital && (
-                  <button
-                    onClick={() => navigate('/checkout', { state: { cartType: 'digital' } })}
+                  <Button
+                    fullWidth
                     className={clsx(
-                      'w-full flex items-center justify-between gap-2 rounded-xl px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer transition-[background-color,box-shadow]',
+                      'justify-between! px-5! py-[11px]! rounded-xl! border-0!',
                       hasPhysical
-                        ? 'bg-[#3851D1] text-white hover:bg-[#2E42B0]'
-                        : 'bg-brand-orange text-white hover:bg-brand-deep-orange',
+                        ? 'bg-[#3851D1]! text-white! hover:bg-[#2E42B0]!'
+                        : 'bg-brand-orange! text-white! hover:bg-brand-deep-orange!',
                     )}
+                    onClick={() => navigate('/checkout', { state: { cartType: 'digital' } })}
                   >
                     <span className="flex items-center gap-2">
                       <Download size={15} />
@@ -361,7 +360,7 @@ export function CartPage() {
                       {digitalCount} item{digitalCount !== 1 ? 's' : ''}
                       <ChevronRight size={13} />
                     </span>
-                  </button>
+                  </Button>
                 )}
 
               </div>

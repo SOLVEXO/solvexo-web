@@ -25,7 +25,9 @@ const DEFAULT_LIMITS: PlatformPlanLimits = {
   apiWebhooksAllowed: false, dedicatedAccountManager: false, prioritySupport: false, marketplaceFeaturedBadge: false,
 };
 
-const BOOL_FLAGS: { key: keyof PlatformPlanLimits; label: string }[] = [
+type BooleanKeys<T> = { [K in keyof T]-?: NonNullable<T[K]> extends boolean ? K : never }[keyof T];
+
+const BOOL_FLAGS: { key: BooleanKeys<PlatformPlanLimits>; label: string }[] = [
   { key: 'customDomainAllowed', label: 'Custom domain' },
   { key: 'whiteLabelAllowed', label: 'White label' },
   { key: 'loyaltyProgramAllowed', label: 'Loyalty program' },
@@ -48,7 +50,7 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
   const [isFree, setIsFree] = useState(p?.isFree ?? false);
   const [monthlyPrice, setMonthlyPrice] = useState(p?.monthlyPriceUSD != null ? String(p.monthlyPriceUSD) : '');
   const [yearlyPrice, setYearlyPrice] = useState(p?.yearlyPriceUSD != null ? String(p.yearlyPriceUSD) : '');
-  const [trialDays, setTrialDays] = useState(p ? String((p as any).trialDays ?? 0) : '0');
+  const [trialDays, setTrialDays] = useState(p ? String(p.trialDays ?? 0) : '0');
   const [featuresText, setFeaturesText] = useState(p?.featureBullets.join('\n') ?? '');
   const [limits, setLimits] = useState<PlatformPlanLimits>(p?.limits ?? DEFAULT_LIMITS);
   const [saving, setSaving] = useState(false);
@@ -109,7 +111,7 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
             {BOOL_FLAGS.map(f => {
               const active = !!limits[f.key];
               return (
-                <button key={f.key} type="button" onClick={() => setLimit(f.key, !active as any)}
+                <button key={f.key} type="button" onClick={() => setLimit(f.key, !active)}
                   className="px-2.5 py-1 rounded-full text-[11px] font-medium border cursor-pointer"
                   style={{ background: active ? '#D97757' : '#fff', color: active ? '#fff' : '#5A5852', borderColor: active ? '#D97757' : '#E8E6DC' }}>
                   {f.label}
@@ -128,20 +130,36 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
 function SubscribersModal({ plan, onClose }: { plan: PlatformPlan; onClose: () => void }) {
   const [subs, setSubs] = useState<StorePlatformSubscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refunding, setRefunding] = useState(false);
+  const [invoiceId, setInvoiceId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [refundBusy, setRefundBusy] = useState(false);
+  const [refundError, setRefundError] = useState('');
+  const [refundSuccess, setRefundSuccess] = useState(false);
 
   useEffect(() => {
     apiAdminGetPlatformPlanSubscribers(plan._id, { limit: 50 }).then(res => setSubs(res.data.subscribers)).finally(() => setLoading(false));
   }, [plan._id]);
 
-  async function refund() {
-    const invoiceId = window.prompt('Invoice ID to refund:');
-    if (!invoiceId) return;
-    const amountStr = window.prompt('Amount to refund (leave blank for full remaining amount):');
+  function openRefund() {
+    setInvoiceId('');
+    setAmount('');
+    setRefundError('');
+    setRefundSuccess(false);
+    setRefunding(true);
+  }
+
+  async function submitRefund() {
+    if (!invoiceId.trim()) { setRefundError('Invoice ID is required.'); return; }
+    setRefundBusy(true);
+    setRefundError('');
     try {
-      await apiAdminRefundPlatformInvoice(invoiceId, amountStr ? parseFloat(amountStr) : undefined);
-      alert('Refund processed.');
+      await apiAdminRefundPlatformInvoice(invoiceId.trim(), amount.trim() ? parseFloat(amount.trim()) : undefined);
+      setRefundSuccess(true);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Refund failed.');
+      setRefundError(err instanceof Error ? err.message : 'Refund failed.');
+    } finally {
+      setRefundBusy(false);
     }
   }
 
@@ -159,10 +177,35 @@ function SubscribersModal({ plan, onClose }: { plan: PlatformPlan; onClose: () =
                 <p className="font-semibold text-charcoal">Store {s.storeId.slice(-6).toUpperCase()}</p>
                 <p className="text-[11px] text-slate">{s.billingInterval} — ${s.amountUSD.toFixed(2)} — {s.status}</p>
               </div>
-              <button onClick={refund} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-[#C13030] cursor-pointer">Refund…</button>
+              <button onClick={openRefund} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-error cursor-pointer">Refund…</button>
             </div>
           ))}
         </div>
+      )}
+
+      {refunding && (
+        <Modal
+          title="Refund Invoice"
+          onClose={() => setRefunding(false)}
+          footer={refundSuccess ? (
+            <Button onClick={() => setRefunding(false)}>Done</Button>
+          ) : (
+            <>
+              <Button variant="ghost" onClick={() => setRefunding(false)} disabled={refundBusy}>Cancel</Button>
+              <Button variant="danger" onClick={submitRefund} loading={refundBusy}>Refund</Button>
+            </>
+          )}
+        >
+          {refundSuccess ? (
+            <p className="text-[13px] text-success">Refund processed.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <Input label="Invoice ID" value={invoiceId} onChange={e => setInvoiceId(e.target.value)} placeholder="Paste the invoice ID to refund" />
+              <Input label="Amount (USD)" type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Leave blank for full remaining amount" />
+              {refundError && <p className="text-[12px] text-error">{refundError}</p>}
+            </div>
+          )}
+        </Modal>
       )}
     </Modal>
   );
@@ -227,11 +270,25 @@ export function AdminPlatformPlans() {
   }, []);
   useEffect(load, [load]);
 
-  async function handleArchive(plan: PlatformPlan) {
-    if (!window.confirm(`Archive "${plan.name}"?`)) return;
-    try { await apiAdminArchivePlatformPlan(plan._id); load(); }
-    catch (err) {
-      if (err instanceof Error && window.confirm(`${err.message}\n\nArchive anyway?`)) { await apiAdminArchivePlatformPlan(plan._id, true); load(); }
+  const [archiving, setArchiving] = useState<PlatformPlan | null>(null);
+  const [archiveError, setArchiveError] = useState('');
+  const [archiveForceNeeded, setArchiveForceNeeded] = useState(false);
+  const [archiveBusy, setArchiveBusy] = useState(false);
+
+  async function handleArchive(force = false) {
+    if (!archiving) return;
+    setArchiveBusy(true);
+    setArchiveError('');
+    try {
+      await apiAdminArchivePlatformPlan(archiving._id, force);
+      setArchiving(null);
+      setArchiveForceNeeded(false);
+      load();
+    } catch (err) {
+      setArchiveError(err instanceof Error ? err.message : 'Failed to archive plan.');
+      setArchiveForceNeeded(true);
+    } finally {
+      setArchiveBusy(false);
     }
   }
 
@@ -313,7 +370,7 @@ export function AdminPlatformPlans() {
                 <div className="flex gap-2">
                   <button onClick={() => setEditing(plan)} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer"><Pencil size={12} /> Edit</button>
                   <button onClick={() => setViewingSubscribersFor(plan)} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer"><Eye size={12} /> Subscribers</button>
-                  {plan.status !== 'archived' && <button onClick={() => handleArchive(plan)} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer"><Archive size={12} /> Archive</button>}
+                  {plan.status !== 'archived' && <button onClick={() => { setArchiving(plan); setArchiveError(''); setArchiveForceNeeded(false); }} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer"><Archive size={12} /> Archive</button>}
                 </div>
               </div>
             ))}
@@ -324,6 +381,30 @@ export function AdminPlatformPlans() {
 
       {editing && <PlanFormModal plan={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
       {viewingSubscribersFor && <SubscribersModal plan={viewingSubscribersFor} onClose={() => setViewingSubscribersFor(null)} />}
+
+      {archiving && (
+        <Modal
+          title="Archive Plan"
+          onClose={() => setArchiving(null)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setArchiving(null)} disabled={archiveBusy}>Cancel</Button>
+              <Button variant="danger" onClick={() => handleArchive(archiveForceNeeded)} loading={archiveBusy}>
+                {archiveForceNeeded ? 'Archive Anyway' : 'Archive'}
+              </Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-charcoal leading-[1.6]">
+            Archive "<strong>{archiving.name}</strong>"?
+          </p>
+          {archiveError && (
+            <p className="text-[12px] text-error mt-2">
+              {archiveError}{archiveForceNeeded ? ' Choose "Archive Anyway" to proceed regardless.' : ''}
+            </p>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }

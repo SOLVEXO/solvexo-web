@@ -60,8 +60,9 @@ function DailySection({ storeId }: { storeId: string }) {
 
   async function handleExport() {
     setExporting(true);
+    setError('');
     try { await apiExportDailyReportCsv(storeId, { date }); }
-    catch (err) { alert(err instanceof Error ? err.message : 'Failed to export CSV.'); }
+    catch (err) { setError(err instanceof Error ? err.message : 'Failed to export CSV.'); }
     finally { setExporting(false); }
   }
 

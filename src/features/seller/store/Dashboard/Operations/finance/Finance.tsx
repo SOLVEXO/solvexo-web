@@ -260,6 +260,9 @@ export function StoreFinance() {
   const [payoutModal, setPayoutModal] = useState(false);
   const [scheduleModal, setScheduleModal] = useState(false);
   const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
+  const [deletingMethodId, setDeletingMethodId] = useState<string | null>(null);
+  const [deleteMethodBusy, setDeleteMethodBusy] = useState(false);
+  const [deleteMethodError, setDeleteMethodError] = useState('');
 
   const loadCore = useCallback(() => {
     if (!storeId) return;
@@ -319,14 +322,19 @@ export function StoreFinance() {
     setMethods(m);
   }
 
-  async function handleDeleteMethod(methodId: string) {
-    if (!window.confirm('Delete this payout method?')) return;
+  async function confirmDeleteMethod() {
+    if (!deletingMethodId) return;
+    setDeleteMethodBusy(true);
+    setDeleteMethodError('');
     try {
-      await apiDeletePayoutMethod(storeId, methodId);
+      await apiDeletePayoutMethod(storeId, deletingMethodId);
       const m = await apiGetPayoutMethods(storeId);
       setMethods(m);
+      setDeletingMethodId(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete payout method.');
+      setDeleteMethodError(err instanceof Error ? err.message : 'Failed to delete payout method.');
+    } finally {
+      setDeleteMethodBusy(false);
     }
   }
 
@@ -514,7 +522,7 @@ export function StoreFinance() {
                         <button onClick={() => setEditingMethod(m)} className="text-[10px] text-slate hover:text-brand-orange cursor-pointer bg-transparent border-none">
                           Edit
                         </button>
-                        <button onClick={() => handleDeleteMethod(m._id)} className="text-slate hover:text-error cursor-pointer bg-transparent border-none">
+                        <button onClick={() => { setDeletingMethodId(m._id); setDeleteMethodError(''); }} className="text-slate hover:text-error cursor-pointer bg-transparent border-none">
                           <X size={12} />
                         </button>
                       </div>
@@ -640,6 +648,17 @@ export function StoreFinance() {
       )}
       {selectedPayoutId && (
         <PayoutDetailModal storeId={storeId} payoutId={selectedPayoutId} onClose={() => setSelectedPayoutId(null)} />
+      )}
+      {deletingMethodId && (
+        <Modal title="Delete Payout Method" onClose={() => setDeletingMethodId(null)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeletingMethodId(null)} disabled={deleteMethodBusy}>Cancel</Button>
+            <Button variant="danger" onClick={confirmDeleteMethod} loading={deleteMethodBusy}>Delete</Button>
+          </>
+        }>
+          <p className="text-[13px] text-charcoal">Delete this payout method? This cannot be undone.</p>
+          {deleteMethodError && <p className="text-[12px] text-error mt-2">{deleteMethodError}</p>}
+        </Modal>
       )}
     </>
   );

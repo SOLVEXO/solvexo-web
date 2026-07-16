@@ -31,6 +31,9 @@ export function EmployeesTab({ storeId }: EmployeesTabProps) {
 
   const [editing, setEditing]         = useState<PosEmployee | 'new' | null>(null);
   const [resettingPin, setResettingPin] = useState<PosEmployee | null>(null);
+  const [deactivating, setDeactivating] = useState<PosEmployee | null>(null);
+  const [deactivateBusy, setDeactivateBusy] = useState(false);
+  const [deactivateError, setDeactivateError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -45,13 +48,18 @@ export function EmployeesTab({ storeId }: EmployeesTabProps) {
 
   function reload() { setRefreshKey(k => k + 1); }
 
-  async function handleDeactivate(emp: PosEmployee) {
-    if (!window.confirm(`Deactivate ${emp.name}? They will no longer be able to log in.`)) return;
+  async function confirmDeactivate() {
+    if (!deactivating) return;
+    setDeactivateBusy(true);
+    setDeactivateError('');
     try {
-      await apiRemoveEmployee(storeId, emp._id);
+      await apiRemoveEmployee(storeId, deactivating._id);
+      setDeactivating(null);
       reload();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to deactivate employee.');
+      setDeactivateError(err instanceof Error ? err.message : 'Failed to deactivate employee.');
+    } finally {
+      setDeactivateBusy(false);
     }
   }
 
@@ -89,7 +97,7 @@ export function EmployeesTab({ storeId }: EmployeesTabProps) {
                   <button onClick={() => setResettingPin(e)} className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-pos-faint flex items-center gap-1">
                     <KeyRound size={11} /> PIN
                   </button>
-                  <button onClick={() => handleDeactivate(e)} className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-error">
+                  <button onClick={() => { setDeactivating(e); setDeactivateError(''); }} className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-error">
                     Deactivate
                   </button>
                 </div>
@@ -116,6 +124,20 @@ export function EmployeesTab({ storeId }: EmployeesTabProps) {
           onClose={() => setResettingPin(null)}
           onDone={() => setResettingPin(null)}
         />
+      )}
+
+      {deactivating && (
+        <DarkModal title="Deactivate Employee" width={400} onClose={() => setDeactivating(null)} footer={
+          <>
+            <DarkButton variant="outline" onClick={() => setDeactivating(null)} disabled={deactivateBusy}>Cancel</DarkButton>
+            <DarkButton variant="danger" onClick={confirmDeactivate} loading={deactivateBusy}>Deactivate</DarkButton>
+          </>
+        }>
+          <p className="text-[13px] text-pos-muted">
+            Deactivate <strong className="text-white">{deactivating.name}</strong>? They will no longer be able to log in.
+          </p>
+          {deactivateError && <p className="text-[12px] text-error mt-2">{deactivateError}</p>}
+        </DarkModal>
       )}
     </div>
   );

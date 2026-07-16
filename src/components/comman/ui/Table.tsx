@@ -1,7 +1,9 @@
 import { type ReactNode } from 'react';
 import { clsx } from 'clsx';
-import { ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, ArrowUpDown, Inbox } from 'lucide-react';
 import { Pagination } from './Pagination';
+import { SkeletonBox } from './SkeletonBox';
+import { EmptyState } from './EmptyState';
 
 export interface TableColumn<T = Record<string, unknown>> {
   key:       string;
@@ -25,6 +27,13 @@ export interface TableSort {
   direction: 'asc' | 'desc';
 }
 
+interface EmptyStateConfig {
+  icon?:        ReactNode;
+  title:        string;
+  description?: string;
+  action?:      { label: string; onClick: () => void; icon?: ReactNode };
+}
+
 interface TableProps<T = Record<string, unknown>> {
   columns:           TableColumn<T>[];
   data:              T[];
@@ -38,6 +47,15 @@ interface TableProps<T = Record<string, unknown>> {
   selectedKeys?:     Set<string | number>;
   onSelectionChange?: (keys: Set<string | number>) => void;
   bulkActions?:      (selectedKeys: Set<string | number>) => ReactNode;
+  /** When true, renders skeleton rows in place of data. */
+  loading?:          boolean;
+  /** Number of skeleton rows to render while loading. Defaults to 5. */
+  loadingRows?:      number;
+  /**
+   * Empty-state content shown when `data` is empty and `loading` is false.
+   * Pass `false` to opt out and render a bare empty table instead.
+   */
+  emptyState?:       EmptyStateConfig | false;
 }
 
 const TH =
@@ -47,6 +65,7 @@ const TH =
 export function Table<T = Record<string, unknown>>({
   columns, data, keyExtractor, onRowClick, pagination, className,
   sort, onSortChange, selectable, selectedKeys, onSelectionChange, bulkActions,
+  loading = false, loadingRows = 5, emptyState,
 }: TableProps<T>) {
   const perPage    = pagination?.perPage ?? 10;
   const start      = pagination ? (pagination.page - 1) * perPage + 1 : 1;
@@ -137,7 +156,34 @@ export function Table<T = Record<string, unknown>>({
             </tr>
           </thead>
           <tbody>
-            {data.map((row, i) => {
+            {loading ? (
+              Array.from({ length: loadingRows }).map((_, i) => (
+                <tr key={`skeleton-${i}`} className={clsx(i < loadingRows - 1 && 'border-b border-[#F0EEE6]')}>
+                  {selectable && (
+                    <td className="px-4 py-[13px]"><SkeletonBox width={16} height={16} rounded="4px" /></td>
+                  )}
+                  {columns.map(col => (
+                    <td key={col.key} className="px-4 py-[13px]">
+                      <SkeletonBox height={14} rounded="4px" className="w-full max-w-[160px]" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : data.length === 0 ? (
+              emptyState !== false && (
+                <tr>
+                  <td colSpan={columns.length + (selectable ? 1 : 0)}>
+                    <EmptyState
+                      icon={emptyState?.icon ?? <Inbox size={28} className="text-slate/50" />}
+                      title={emptyState?.title ?? 'No data yet'}
+                      description={emptyState?.description ?? 'Nothing to show here right now.'}
+                      action={emptyState?.action}
+                    />
+                  </td>
+                </tr>
+              )
+            ) : (
+              data.map((row, i) => {
               const rowKey = keyExtractor(row, i);
               return (
                 <tr
@@ -176,13 +222,14 @@ export function Table<T = Record<string, unknown>>({
                   ))}
                 </tr>
               );
-            })}
+            })
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Pagination footer */}
-      {pagination && pagination.total > 0 && (
+      {!loading && data.length > 0 && pagination && pagination.total > 0 && (
         <div className="px-5 py-3 border-t border-bone flex items-center justify-between gap-4">
           <span className="text-[12px] text-slate whitespace-nowrap">
             Showing {start}–{end} of {pagination.total.toLocaleString()} {label}

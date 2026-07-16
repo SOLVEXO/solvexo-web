@@ -3,8 +3,8 @@ import { SearchInput, FilterDropdown, Table, type TableColumn } from '@/componen
 import { useAdminSellerBalances } from '@/hooks/admin/useAdminFinance';
 import type { SellerBalanceRow, SellerBalancesParams } from '@/api/services/finance/adminFinance';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
-import { TableCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
 import { formatCurrency } from '@/components/comman/analytics/format';
+import { Users } from 'lucide-react';
 import { SellerFinancialDetailsModal } from '../../components/finance/SellerFinancialDetailsModal';
 
 const SORT_OPTIONS = [
@@ -47,9 +47,7 @@ export function FinanceSellersTab() {
           <p className="text-[14px] font-bold text-charcoal">Seller Balances</p>
           <p className="text-[12px] text-slate">Click a row to view full financial details, transaction history, and issue a manual payout.</p>
         </div>
-        {balances.loading ? (
-          <div className="px-5 pb-5"><TableCardSkeleton /></div>
-        ) : balances.error ? (
+        {balances.error ? (
           <div className="px-5 pb-5"><AnalyticsErrorState message={balances.error} onRetry={balances.refetch} /></div>
         ) : (
           <Table
@@ -57,6 +55,12 @@ export function FinanceSellersTab() {
             data={balances.data?.sellers ?? []}
             keyExtractor={(r) => r.storeId}
             onRowClick={(r) => setSelectedStoreId(r.storeId)}
+            loading={balances.loading}
+            emptyState={{
+              icon: <Users size={28} className="text-slate/50" />,
+              title: 'No sellers yet',
+              description: 'Seller balances will show up here once stores start selling.',
+            }}
             pagination={{
               page,
               total: balances.data?.pagination.total ?? 0,

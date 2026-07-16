@@ -5,6 +5,7 @@ import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import {
   StarRating, EmptyState, SkeletonBox, Card, Badge,
   Table, type TableColumn, ActionMenu, type ActionMenuItem,
+  Modal, Button,
 } from '@/components/comman/ui';
 import { Star, Flag, MessageSquare, Trash2, ImageIcon } from 'lucide-react';
 import {
@@ -37,6 +38,9 @@ export function StoreReviews() {
 
   const [replyingTo, setReplyingTo] = useState<StoreReviewEntry | null>(null);
   const [editingReplyOf, setEditingReplyOf] = useState<StoreReviewEntry | null>(null);
+  const [actionError, setActionError] = useState('');
+  const [deletingReview, setDeletingReview] = useState<StoreReviewEntry | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,19 +68,30 @@ export function StoreReviews() {
   });
 
   async function handleFlag(r: StoreReviewEntry) {
+    setActionError('');
     try { await apiFlagReview(r.reviewId); reload(); }
-    catch (err) { alert(err instanceof Error ? err.message : 'Failed to flag review.'); }
+    catch (err) { setActionError(err instanceof Error ? err.message : 'Failed to flag review.'); }
   }
 
   async function handleUnflag(r: StoreReviewEntry) {
+    setActionError('');
     try { await apiUnflagReview(r.reviewId); reload(); }
-    catch (err) { alert(err instanceof Error ? err.message : 'Failed to unflag review.'); }
+    catch (err) { setActionError(err instanceof Error ? err.message : 'Failed to unflag review.'); }
   }
 
-  async function handleModerateDelete(r: StoreReviewEntry) {
-    if (!window.confirm('Remove this review permanently? This cannot be undone.')) return;
-    try { await apiModerateDeleteReview(r.reviewId); reload(); }
-    catch (err) { alert(err instanceof Error ? err.message : 'Failed to remove review.'); }
+  async function confirmModerateDelete() {
+    if (!deletingReview) return;
+    setDeleteBusy(true);
+    setActionError('');
+    try {
+      await apiModerateDeleteReview(deletingReview.reviewId);
+      setDeletingReview(null);
+      reload();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to remove review.');
+    } finally {
+      setDeleteBusy(false);
+    }
   }
 
   const columns: TableColumn<StoreReviewEntry>[] = [
@@ -145,14 +160,14 @@ export function StoreReviews() {
               r.isFlagged
                 ? { label: 'Unflag', onClick: () => handleUnflag(r) }
                 : { label: 'Flag Review', icon: <Flag size={13} />, onClick: () => handleFlag(r) },
-              { label: 'Remove', icon: <Trash2 size={13} />, danger: true, onClick: () => handleModerateDelete(r) },
+              { label: 'Remove', icon: <Trash2 size={13} />, danger: true, onClick: () => { setDeletingReview(r); setActionError(''); } },
             ]
           : [
               { label: 'Reply', icon: <MessageSquare size={13} />, onClick: () => setReplyingTo(r) },
               r.isFlagged
                 ? { label: 'Unflag', onClick: () => handleUnflag(r) }
                 : { label: 'Flag Review', icon: <Flag size={13} />, onClick: () => handleFlag(r) },
-              { label: 'Remove', icon: <Trash2 size={13} />, danger: true, onClick: () => handleModerateDelete(r) },
+              { label: 'Remove', icon: <Trash2 size={13} />, danger: true, onClick: () => { setDeletingReview(r); setActionError(''); } },
             ];
         return <ActionMenu items={items} />;
       },
@@ -167,6 +182,13 @@ export function StoreReviews() {
       />
 
       <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
+
+        {actionError && (
+          <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-[#FECACA] rounded-lg px-3 py-2">
+            <span>{actionError}</span>
+            <button onClick={() => setActionError('')} className="text-[11px] font-semibold text-error bg-transparent border-none cursor-pointer shrink-0">Dismiss</button>
+          </div>
+        )}
 
         {/* ── Top 2-col ── */}
         <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4">
@@ -291,6 +313,20 @@ export function StoreReviews() {
           onClose={() => setEditingReplyOf(null)}
           onSubmit={async text => { await apiEditReply(editingReplyOf.reviewId, text); setEditingReplyOf(null); reload(); }}
         />
+      )}
+
+      {deletingReview && (
+        <Modal title="Remove Review" onClose={() => setDeletingReview(null)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeletingReview(null)} disabled={deleteBusy}>Cancel</Button>
+            <Button variant="danger" onClick={confirmModerateDelete} loading={deleteBusy}>Remove Review</Button>
+          </>
+        }>
+          <p className="text-[13px] text-charcoal leading-[1.6]">
+            Remove this review from <strong>{deletingReview.customer.name}</strong> permanently? This cannot be undone.
+          </p>
+          {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
+        </Modal>
       )}
     </>
   );

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
-import { MapPin, Truck, Tag, Home } from 'lucide-react';
+import { MapPin, Truck, Tag, Home, AlertCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useShippingZones } from '@/hooks/shipping/useShippingZones';
+import { Button, SkeletonBox, EmptyState } from '@/components/comman/ui';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const TABS: { id: string; Icon: LucideIcon; label: string }[] = [
@@ -12,72 +14,39 @@ const TABS: { id: string; Icon: LucideIcon; label: string }[] = [
   { id: 'local',    Icon: Home,   label: 'Local Delivery'     },
 ];
 
-const ZONES = [
-  {
-    name: 'United States (Domestic)', coverage: 'All 50 states • USPS, UPS, FedEx',
-    services: [
-      { name: 'Standard',  days: '5–7 days', price: '$4.99'  },
-      { name: 'Expedited', days: '2–3 days', price: '$12.99' },
-      { name: 'Overnight', days: '1 day',    price: '$24.99' },
-    ],
-  },
-  {
-    name: 'Canada', coverage: 'All provinces • Canada Post, UPS',
-    services: [
-      { name: 'Standard',  days: '7–14 days', price: '$9.99'  },
-      { name: 'Expedited', days: '3–5 days',  price: '$18.99' },
-    ],
-  },
-  {
-    name: 'Europe', coverage: 'EU + UK • DHL, Royal Mail',
-    services: [
-      { name: 'Standard',  days: '10–21 days', price: '$14.99' },
-    ],
-  },
-  {
-    name: 'Rest of World', coverage: 'All other countries • DHL, USPS Priority Mail Intl.',
-    services: [
-      { name: 'Standard',  days: '14–30 days', price: '$19.99' },
-    ],
-  },
-];
-
-const metrics = [
-  { label: 'Active Zones',      value: '4',     trend: null,                 sub: 'Domestic + International', trendUp: false },
-  { label: 'Labels Printed',    value: '142',   trend: 'This month',         sub: null,                       trendUp: true  },
-  { label: 'Avg Shipping Cost', value: '$6.40', trend: '-$0.80 vs last month', sub: null,                     trendUp: true  },
-  { label: 'On-Time Delivery',  value: '96%',   trend: 'Excellent',          sub: null,                       trendUp: true  },
-] as const;
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerShipping() {
   usePageTitle('Shipping');
   const [activeTab, setActiveTab] = useState('zones');
+  const { zones, loading, error, refetch } = useShippingZones();
 
   return (
     <>
       <SellerPageHeader
         title="Shipping"
-        subtitle="Configure zones, carriers, labels, and delivery options."
+        subtitle="Platform-wide shipping zones and rates used at checkout."
         actions={
-          <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
+          <Button variant="primary" size="sm" disabled title="Per-seller shipping zones aren't available yet — zones shown are platform-wide.">
             + Add Shipping Zone
-          </button>
+          </Button>
         }
       />
 
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* ── Metrics ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
-              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
-              <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
-              {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
-              {m.sub   && <p className="text-xs text-slate mt-1">{m.sub}</p>}
-            </div>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Active Zones</p>
+            <p className="text-[28px] font-bold text-carbon leading-[1.15]">{loading ? '—' : zones.filter(z => z.status === 'active').length}</p>
+            <p className="text-xs text-slate mt-1">Platform-wide, used at checkout</p>
+          </div>
+          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4 flex items-center gap-2">
+            <AlertCircle size={16} className="text-slate shrink-0" />
+            <p className="text-xs text-slate leading-[1.5]">
+              Per-seller shipping analytics (labels printed, on-time delivery) aren't available yet.
+            </p>
+          </div>
         </div>
 
         {/* ── Tab bar ── */}
@@ -103,41 +72,37 @@ export function SellerShipping() {
 
         {/* ── Zones Tab ── */}
         {activeTab === 'zones' && (
-          <div className="flex flex-col gap-3.5">
-            {ZONES.map(zone => (
-              <div key={zone.name} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-[18px]">
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div>
-                    <p className="text-sm font-semibold text-carbon mb-[3px]">{zone.name}</p>
-                    <p className="text-xs text-slate">{zone.coverage}</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button className="px-3 py-[5px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer">
-                      Edit
-                    </button>
-                    <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C]">
-                      Active
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2.5">
-                  {zone.services.map(svc => (
-                    <div
-                      key={svc.name}
-                      className="inline-flex flex-col items-start px-3.5 py-2.5 border border-bone rounded-[9px] bg-cream cursor-pointer transition-[border-color] duration-[120ms]"
-                      onMouseEnter={e => (e.currentTarget.style.borderColor = '#D97757')}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = '#E8E6DC')}
-                    >
-                      <span className="text-xs font-semibold text-graphite leading-[1.3]">{svc.name}</span>
-                      <span className="text-[11px] text-slate mb-[5px]">{svc.days}</span>
-                      <span className="text-sm font-bold text-brand-orange">{svc.price}</span>
+          loading ? (
+            <div className="flex flex-col gap-3.5">
+              {[1, 2, 3].map(i => <SkeletonBox key={i} height={90} rounded="10px" />)}
+            </div>
+          ) : error ? (
+            <div className="bg-white border border-bone rounded-[10px] px-5 py-8 text-center">
+              <p className="text-[13px] text-error mb-3">{error}</p>
+              <Button variant="outline" size="sm" onClick={refetch}>Try again</Button>
+            </div>
+          ) : zones.length === 0 ? (
+            <EmptyState icon={<MapPin size={28} className="text-slate/50" />} title="No shipping zones configured" description="Platform shipping zones will appear here once configured." />
+          ) : (
+            <div className="flex flex-col gap-3.5">
+              {zones.map(zone => (
+                <div key={zone._id} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-[18px]">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-carbon mb-[3px]">{zone.city}, {zone.province}</p>
+                      <p className="text-xs text-slate">{zone.country} · Est. delivery {zone.estimatedDeliveryTime}</p>
                     </div>
-                  ))}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm font-bold text-brand-orange">${zone.shippingPrice.toLocaleString()}</span>
+                      <span className={`px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold ${zone.status === 'active' ? 'bg-[#E3F4EA] text-[#1E7A3C]' : 'bg-bone text-slate'}`}>
+                        {zone.status === 'active' ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )
         )}
 
         {/* ── Placeholder Tabs ── */}

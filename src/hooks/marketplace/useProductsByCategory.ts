@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiGetAllProducts, type MarketplaceProduct } from '@/api/services/marketplace';
 
 export function useProductsByCategory(page = 1, limit = 10, categoryId?: string) {
@@ -6,6 +6,9 @@ export function useProductsByCategory(page = 1, limit = 10, categoryId?: string)
   const [total,    setTotal]    = useState(0);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const refetch = useCallback(() => setReloadKey(k => k + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,7 +26,7 @@ export function useProductsByCategory(page = 1, limit = 10, categoryId?: string)
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [page, limit, categoryId]);
+  }, [page, limit, categoryId, reloadKey]);
 
-  return { products, total, loading, error };
+  return { products, total, loading, error, refetch };
 }

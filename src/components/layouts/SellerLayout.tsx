@@ -13,6 +13,7 @@ import {
   Bell, ChevronDown, Plus, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
+import { NotificationBell } from '@/components/comman/ui';
 
 // ── Sidebar context (lets SellerPageHeader consume the toggle) ────────────────
 const SellerSidebarCtx = createContext<{ toggle: () => void }>({ toggle: () => {} });
@@ -446,12 +447,7 @@ export function SellerPageHeader({ title, subtitle, actions }: SellerPageHeaderP
       </div>
       <div className="flex items-center gap-[10px]">
         {actions}
-        <button
-          aria-label="Notifications"
-          className="size-[34px] rounded-md bg-brand-pale-orange flex items-center justify-center cursor-pointer shrink-0 border-none hover:opacity-80 transition-opacity"
-        >
-          <Bell size={16} className="text-brand-orange" />
-        </button>
+        <NotificationBell />
       </div>
     </div>
   );

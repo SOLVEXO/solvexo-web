@@ -72,6 +72,9 @@ export function AdminFaqs() {
   const { faqs, stats, loading, error, refetch } = useAdminFaqs();
   const [categoryFilter, setCategoryFilter] = useState('');
   const [editing, setEditing] = useState<Faq | 'new' | null>(null);
+  const [deleting, setDeleting] = useState<Faq | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [actionError, setActionError] = useState('');
 
   const categories = useMemo(() => Array.from(new Set(faqs.map(f => f.category))).sort(), [faqs]);
   const filtered = useMemo(
@@ -80,21 +83,27 @@ export function AdminFaqs() {
   );
 
   async function handleToggle(faq: Faq) {
+    setActionError('');
     try {
       await apiToggleFaq(faq._id);
       refetch();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to toggle FAQ.');
+      setActionError(err instanceof Error ? err.message : 'Failed to toggle FAQ.');
     }
   }
 
-  async function handleDelete(faq: Faq) {
-    if (!window.confirm(`Delete "${faq.question}"? This cannot be undone.`)) return;
+  async function handleDelete() {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setActionError('');
     try {
-      await apiDeleteFaq(faq._id);
+      await apiDeleteFaq(deleting._id);
+      setDeleting(null);
       refetch();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete FAQ.');
+      setActionError(err instanceof Error ? err.message : 'Failed to delete FAQ.');
+    } finally {
+      setDeleteBusy(false);
     }
   }
 
@@ -109,6 +118,11 @@ export function AdminFaqs() {
       </div>
 
       <div className="px-7 pt-5 pb-8 flex flex-col gap-4">
+        {actionError && (
+          <div className="bg-error-bg border border-[#FECACA] rounded-lg px-4 py-2.5 text-[12.5px] text-error">
+            {actionError}
+          </div>
+        )}
         <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
           <div className="px-5 py-[14px] border-b border-bone flex items-center gap-[10px] flex-wrap">
             <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
@@ -160,7 +174,7 @@ export function AdminFaqs() {
                           <Pencil size={11} /> Edit
                         </button>
                         <span className="text-bone text-[13px]">|</span>
-                        <button onClick={() => handleDelete(f)} className="text-[12px] font-medium text-[#C13030] bg-transparent border-none cursor-pointer flex items-center gap-1 outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
+                        <button onClick={() => { setDeleting(f); setActionError(''); }} className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer flex items-center gap-1 outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
                           <Trash2 size={11} /> Delete
                         </button>
                       </div>
@@ -179,6 +193,24 @@ export function AdminFaqs() {
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); refetch(); }}
         />
+      )}
+
+      {deleting && (
+        <Modal
+          title="Delete FAQ"
+          onClose={() => setDeleting(null)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setDeleting(null)}>Cancel</Button>
+              <Button variant="danger" onClick={handleDelete} loading={deleteBusy}>Delete FAQ</Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-charcoal leading-[1.6]">
+            Delete "<strong>{deleting.question}</strong>"? This cannot be undone.
+          </p>
+          {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
+        </Modal>
       )}
     </div>
   );

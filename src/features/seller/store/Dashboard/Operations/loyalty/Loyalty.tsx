@@ -604,7 +604,7 @@ function AwardPointsModal({ storeId, member, onClose }: { storeId: string; membe
         </div>
         <div>
           <label className="text-xs font-medium text-graphite mb-[5px] block">Reason</label>
-          <select value={type} onChange={e => setType(e.target.value as any)}
+          <select value={type} onChange={e => setType(e.target.value as 'referral' | 'birthday' | 'adjustment')}
             className={`${INPUT_CLS} cursor-pointer`}>
             <option value="birthday">Birthday bonus</option>
             <option value="referral">Referral bonus</option>

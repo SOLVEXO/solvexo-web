@@ -163,7 +163,7 @@ export function AdminUsers() {
                       <div className="flex items-center gap-2">
                         <button disabled title="Not connected to a backend yet" className="text-[12px] font-medium text-[#1A72C2] bg-transparent border-none opacity-40 cursor-not-allowed">View</button>
                         <span className="text-bone text-[13px]">|</span>
-                        <button disabled title="Not connected to a backend yet" className="text-[12px] font-medium text-[#C13030] bg-transparent border-none opacity-40 cursor-not-allowed">
+                        <button disabled title="Not connected to a backend yet" className="text-[12px] font-medium text-error bg-transparent border-none opacity-40 cursor-not-allowed">
                           {u.status === 'Suspended' ? 'Unsuspend' : 'Suspend'}
                         </button>
                       </div>

@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { useGetProfile } from '@/hooks/auth/useGetProfile';
+import { useGetProfile, invalidateProfileCache } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
+import { apiDeleteAccount } from '@/api/services/users';
+import { TokenStorage } from '@/api/services/auth';
+import { Modal, Button } from '@/components/comman/ui';
 import {
   User, KeyRound, ShieldCheck, Bell, Store, Search, CreditCard,
   Package, Receipt, Users, Lock, DollarSign, ArrowDownToLine,
@@ -64,14 +68,33 @@ const SETTINGS_NAV: { group: string; isDanger?: boolean; items: { id: SettingSec
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerSettings() {
   usePageTitle('Settings');
+  const navigate = useNavigate();
   const [active,    setActive]    = useState<SettingSection>('profile');
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
   const [phone,     setPhone]     = useState('');
   const [address,   setAddress]   = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const { profile, loading: profileLoading } = useGetProfile();
   const { execute: editProfile, loading: saving, error: saveError, success: saved } = useEditProfile();
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await apiDeleteAccount();
+      TokenStorage.clear();
+      invalidateProfileCache();
+      navigate('/login');
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete account.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (!profile) return;
@@ -136,14 +159,22 @@ export function SellerSettings() {
                             ? <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
                             : (profile?.name?.slice(0, 2).toUpperCase() ?? 'ME')}
                         </div>
-                        <button className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-brand-orange border-none flex items-center justify-center cursor-pointer">
+                        <button
+                          disabled
+                          title="Profile photo upload isn't available yet — the edit-profile endpoint doesn't accept an image field."
+                          className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-brand-orange border-none flex items-center justify-center cursor-not-allowed opacity-60"
+                        >
                           <Camera size={12} className="text-white" />
                         </button>
                       </div>
                       <div>
                         <p className="text-[13px] font-semibold text-carbon mb-[3px]">Profile Photo</p>
                         <p className="text-xs text-slate mb-2">JPG, PNG — max 2 MB</p>
-                        <button className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-xs text-slate cursor-pointer">
+                        <button
+                          disabled
+                          title="Profile photo upload isn't available yet."
+                          className="px-[14px] py-[5px] bg-white border border-bone rounded-[7px] text-xs text-slate cursor-not-allowed opacity-60"
+                        >
                           Upload Photo
                         </button>
                       </div>
@@ -264,7 +295,10 @@ export function SellerSettings() {
                       : 'Settings for this section are coming soon.'}
                   </p>
                   {active === 'delete-account' && (
-                    <button className="mt-4 px-[18px] py-2 bg-[#FDECEA] border border-[#F5C6C2] rounded-lg text-[13px] font-semibold text-[#C0392B] cursor-pointer">
+                    <button
+                      onClick={() => { setShowDeleteConfirm(true); setDeleteError(''); }}
+                      className="mt-4 px-[18px] py-2 bg-[#FDECEA] border border-[#F5C6C2] rounded-lg text-[13px] font-semibold text-[#C0392B] cursor-pointer"
+                    >
                       Delete My Account
                     </button>
                   )}
@@ -312,6 +346,21 @@ export function SellerSettings() {
 
         </div>
       </div>
+
+      {showDeleteConfirm && (
+        <Modal title="Delete your account?" onClose={() => setShowDeleteConfirm(false)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>Cancel</Button>
+            <Button variant="danger" onClick={handleDeleteAccount} loading={deleting}>Delete Account</Button>
+          </>
+        }>
+          <p className="text-[13px] text-slate">
+            This deactivates your seller account and signs you out immediately. Your stores and listings will no
+            longer be visible to buyers. You'll need to contact support to reactivate it.
+          </p>
+          {deleteError && <p className="text-[12px] text-error mt-2">{deleteError}</p>}
+        </Modal>
+      )}
     </>
   );
 }

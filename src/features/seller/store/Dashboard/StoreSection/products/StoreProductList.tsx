@@ -69,12 +69,6 @@ export default function StoreProductList() {
       : { key, direction: 'asc' });
   };
 
-  const handleBulkDelete = (keys: Set<string | number>) => {
-    // No bulk-delete product API exists yet — placeholder until one is added.
-    console.log('Delete selected products:', Array.from(keys));
-    setSelectedKeys(new Set());
-  };
-
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(id);
@@ -161,7 +155,7 @@ export default function StoreProductList() {
       key: 'price', header: 'Price', align: 'right', sortable: true,
       render: p => (
         <span className="font-semibold text-charcoal">
-          Rs {p.price.toLocaleString()}
+          ${p.price.toLocaleString()}
         </span>
       ),
     },
@@ -247,7 +241,7 @@ export default function StoreProductList() {
 
         {/* ── Error ──────────────────────────────────────────────────── */}
         {error && (
-          <div className="bg-[#FFF0F0] border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
+          <div className="bg-error-bg border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
             <AlertCircle size={16} className="text-error shrink-0" />
             <span className="text-[13px] text-error flex-1">{error}</span>
             <button
@@ -318,10 +312,11 @@ export default function StoreProductList() {
                 onSelectionChange={setSelectedKeys}
                 bulkActions={keys => (
                   <button
-                    onClick={() => handleBulkDelete(keys)}
-                    className="flex items-center gap-1.5 text-[12px] font-semibold text-error border border-[#FECACA] rounded-[6px] px-2.5 py-[6px] cursor-pointer hover:bg-[#FFF0F0]"
+                    disabled
+                    title="Bulk delete isn't available yet — delete products individually from the row menu."
+                    className="flex items-center gap-1.5 text-[12px] font-semibold text-error border border-[#FECACA] rounded-[6px] px-2.5 py-[6px] opacity-50 cursor-not-allowed"
                   >
-                    <Trash2 size={12} /> Delete selected
+                    <Trash2 size={12} /> Delete selected ({keys.size})
                   </button>
                 )}
                 pagination={isSearching ? undefined : {

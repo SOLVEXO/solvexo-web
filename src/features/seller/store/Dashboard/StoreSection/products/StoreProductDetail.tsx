@@ -197,9 +197,9 @@ export default function StoreProductDetail() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-[24px] font-bold text-brand-orange">Rs {v.price.toLocaleString()}</p>
+                  <p className="text-[24px] font-bold text-brand-orange">${v.price.toLocaleString()}</p>
                   {v.compareAtPrice != null && (
-                    <p className="text-[12px] text-slate line-through mt-0.5">Rs {v.compareAtPrice.toLocaleString()}</p>
+                    <p className="text-[12px] text-slate line-through mt-0.5">${v.compareAtPrice.toLocaleString()}</p>
                   )}
                   {discountPct !== null && (
                     <span className="inline-block text-[11px] font-bold text-[#1E7A3C] bg-[#E3F4EA] px-2 py-0.5 rounded-[5px] mt-1">{discountPct}% OFF</span>
@@ -264,11 +264,11 @@ export default function StoreProductDetail() {
             {/* Pricing */}
             <Card title="Pricing" icon={Tag}>
               <InfoRow label="Selling Price" value={
-                <span className="font-bold text-charcoal">Rs {v.price.toLocaleString()}</span>
+                <span className="font-bold text-charcoal">${v.price.toLocaleString()}</span>
               } />
               <InfoRow label="Compare At Price" value={
                 v.compareAtPrice != null
-                  ? <span className="line-through text-slate">Rs {v.compareAtPrice.toLocaleString()}</span>
+                  ? <span className="line-through text-slate">${v.compareAtPrice.toLocaleString()}</span>
                   : '—'
               } />
               {discountPct !== null && (

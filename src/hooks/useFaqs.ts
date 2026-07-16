@@ -17,7 +17,7 @@ export function useFaqs(category?: string, query?: string) {
 
   useEffect(() => { refetch(); }, [refetch]);
 
-  return { faqs, loading, error };
+  return { faqs, loading, error, refetch };
 }
 
 export function useFaqCategories() {

@@ -8,6 +8,7 @@ import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErro
 import { useAdminAiTransactions } from '@/hooks/admin/useAdminAiStudio';
 import type { AdminTransactionRow } from '@/api/services/adminAiStudio';
 import type { AiToolType } from '@/api/services/aiStudio';
+import { Receipt } from 'lucide-react';
 
 const STATUS_COLOR = { held: 'yellow', captured: 'green', refunded: 'gray' } as const;
 
@@ -23,8 +24,6 @@ export function TransactionsTab() {
     toolUsed: toolUsed || undefined,
     status: status || undefined,
   });
-
-  if (error) return <AnalyticsErrorState message={error} onRetry={refetch} />;
 
   const columns: TableColumn<AdminTransactionRow>[] = [
     { key: 'storeId', header: 'Store ID' },
@@ -65,17 +64,23 @@ export function TransactionsTab() {
       </Card>
 
       <Card padding="none">
-        <Table
-          columns={columns}
-          data={data?.items ?? []}
-          keyExtractor={r => r._id}
-          pagination={data ? {
-            page: data.page, total: data.total, perPage: data.limit, onChange: setPage, label: 'transactions',
-          } : undefined}
-        />
-        {loading && <div className="px-5 py-6 text-center text-[12px] text-slate">Loading…</div>}
-        {!loading && (data?.items ?? []).length === 0 && (
-          <div className="px-5 py-10 text-center text-[12px] text-slate">No transactions match these filters.</div>
+        {error ? (
+          <div className="p-5"><AnalyticsErrorState message={error} onRetry={refetch} /></div>
+        ) : (
+          <Table
+            columns={columns}
+            data={data?.items ?? []}
+            keyExtractor={r => r._id}
+            loading={loading}
+            emptyState={{
+              icon: <Receipt size={28} className="text-slate/50" />,
+              title: 'No transactions found',
+              description: 'No AI credit transactions match these filters.',
+            }}
+            pagination={data ? {
+              page: data.page, total: data.total, perPage: data.limit, onChange: setPage, label: 'transactions',
+            } : undefined}
+          />
         )}
       </Card>
     </div>

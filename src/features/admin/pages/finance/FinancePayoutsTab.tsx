@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { FilterDropdown, Table, Button, Input, Modal, type TableColumn } from '@/components/comman/ui';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Wallet } from 'lucide-react';
 import { useAdminPayoutQueue, useAdminPayoutActions, useAdminProcessClearing } from '@/hooks/admin/useAdminFinance';
 import type { PayoutRow } from '@/api/services/finance/adminFinance';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
-import { TableCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
 import { formatCurrency, formatDate } from '@/components/comman/analytics/format';
 import { FinanceStatusBadge } from '../../components/finance/FinanceStatusBadge';
 
@@ -83,15 +82,19 @@ export function FinancePayoutsTab() {
       )}
       {(error || clearing.error) && <p className="text-[12px] text-error">{error || clearing.error}</p>}
 
-      {queue.loading ? (
-        <TableCardSkeleton />
-      ) : queue.error ? (
+      {queue.error ? (
         <AnalyticsErrorState message={queue.error} onRetry={queue.refetch} />
       ) : (
         <Table
           columns={columns}
           data={queue.data?.payouts ?? []}
           keyExtractor={(p) => p._id}
+          loading={queue.loading}
+          emptyState={{
+            icon: <Wallet size={28} className="text-slate/50" />,
+            title: 'No payouts yet',
+            description: 'Payout requests from sellers will appear here.',
+          }}
           pagination={{ page, total: queue.data?.total ?? 0, perPage: 15, onChange: setPage, label: 'payouts' }}
         />
       )}

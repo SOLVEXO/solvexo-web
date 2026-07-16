@@ -236,6 +236,8 @@ export function EducationMarketplace() {
                   <Button
                     variant="secondary"
                     size="sm"
+                    disabled
+                    title="Not connected to a backend yet"
                     onClick={e => e.stopPropagation()}
                     className="inline-flex"
                   >

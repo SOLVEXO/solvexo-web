@@ -14,6 +14,10 @@ export function ShiftsTab({ storeId }: ShiftsTabProps) {
   const [error, setError]     = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [editing, setEditing] = useState<PosShift | 'new' | null>(null);
+  const [deleting, setDeleting] = useState<PosShift | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteNeedsForce, setDeleteNeedsForce] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -27,18 +31,21 @@ export function ShiftsTab({ storeId }: ShiftsTabProps) {
 
   function reload() { setRefreshKey(k => k + 1); }
 
-  async function handleDelete(shift: PosShift) {
-    if (!window.confirm(`Delete shift "${shift.name}"?`)) return;
+  async function submitDelete(force = false) {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setDeleteError('');
     try {
-      await apiDeleteShift(storeId, shift._id);
+      await apiDeleteShift(storeId, deleting._id, force);
+      setDeleting(null);
+      setDeleteNeedsForce(false);
       reload();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to delete shift.';
-      if (msg.toLowerCase().includes('force=true') && window.confirm(`${msg}\n\nRemove it from those employees and delete anyway?`)) {
-        try { await apiDeleteShift(storeId, shift._id, true); reload(); } catch (e2) { alert(e2 instanceof Error ? e2.message : msg); }
-      } else {
-        alert(msg);
-      }
+      setDeleteError(msg);
+      setDeleteNeedsForce(msg.toLowerCase().includes('force=true'));
+    } finally {
+      setDeleteBusy(false);
     }
   }
 
@@ -73,7 +80,7 @@ export function ShiftsTab({ storeId }: ShiftsTabProps) {
                   <button onClick={() => setEditing(s)} className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-pos-faint">
                     Edit
                   </button>
-                  <button onClick={() => handleDelete(s)} className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-error">
+                  <button onClick={() => { setDeleting(s); setDeleteError(''); setDeleteNeedsForce(false); }} className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-error">
                     Delete
                   </button>
                 </div>
@@ -90,6 +97,22 @@ export function ShiftsTab({ storeId }: ShiftsTabProps) {
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); reload(); }}
         />
+      )}
+
+      {deleting && (
+        <DarkModal title="Delete Shift" width={420} onClose={() => setDeleting(null)} footer={
+          <>
+            <DarkButton variant="outline" onClick={() => setDeleting(null)} disabled={deleteBusy}>Cancel</DarkButton>
+            <DarkButton variant="danger" onClick={() => submitDelete(deleteNeedsForce)} loading={deleteBusy}>
+              {deleteNeedsForce ? 'Remove & Delete Anyway' : 'Delete Shift'}
+            </DarkButton>
+          </>
+        }>
+          <p className="text-[13px] text-pos-muted">
+            Delete shift <strong className="text-white">"{deleting.name}"</strong>?
+          </p>
+          {deleteError && <p className="text-[12px] text-error mt-2">{deleteError}</p>}
+        </DarkModal>
       )}
     </div>
   );

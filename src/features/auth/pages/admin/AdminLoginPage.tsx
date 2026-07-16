@@ -121,18 +121,15 @@ export function AdminLoginPage() {
             }
           />
           <div className="flex justify-end mt-2">
-            <button
-              onClick={() => navigate('/forgot-password')}
-              className="text-[12px] text-brand-orange font-medium bg-transparent border-none cursor-pointer hover:opacity-75"
-            >
+            <Button variant="link" size="sm" onClick={() => navigate('/forgot-password')}>
               Forgot password?
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
-      <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={loading} className="mt-6">
-        {loading ? 'Signing in...' : 'Sign In'}
+      <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} loading={loading} className="mt-6">
+        Sign In
       </Button>
 
       {apiError && (

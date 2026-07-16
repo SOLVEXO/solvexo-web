@@ -150,7 +150,7 @@ export function AdminMarketplace() {
                           {p.featured ? 'Unfeature' : 'Feature'}
                         </button>
                         <span className="text-bone text-[13px]">|</span>
-                        <button disabled title="Not connected to a backend yet" className="text-[11px] font-medium text-[#C13030] bg-transparent border-none opacity-40 cursor-not-allowed">
+                        <button disabled title="Not connected to a backend yet" className="text-[11px] font-medium text-error bg-transparent border-none opacity-40 cursor-not-allowed">
                           Remove
                         </button>
                       </div>

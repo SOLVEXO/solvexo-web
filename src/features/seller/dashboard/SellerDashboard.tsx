@@ -8,6 +8,7 @@ import type { TableColumn } from '@/components/comman/ui/Table';
 import { Avatar } from '@/components/comman/ui/Avatar';
 import { StatusBadge } from '@/components/comman/ui/Badge';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
+import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useMyStores } from '@/hooks/store/useMyStores';
 import { apiGetSellerPlatformOverview } from '@/api/services/platformPlans';
@@ -49,12 +50,29 @@ function MyStoreCardSkeleton() {
 
 interface MyStore { _id: string; name: string; slug: string; status: string; logo?: string | null }
 
-function MyStoreCard({ stores, loading, error }: { stores: MyStore[]; loading: boolean; error: string }) {
+function MyStoreCard({ stores, loading, error, onRetry }: { stores: MyStore[]; loading: boolean; error: string; onRetry: () => void }) {
   const navigate = useNavigate();
 
   if (loading) return <MyStoreCardSkeleton />;
 
-  if (error || stores.length === 0) {
+  if (error) {
+    return (
+      <div className="bg-white border border-bone rounded-[10px] px-5 py-8 shadow-[0_1px_4px_rgba(0,0,0,0.04)] text-center">
+        <div className="w-[52px] h-[52px] rounded-xl bg-error-bg flex items-center justify-center mx-auto mb-[14px]">
+          <AlertCircle size={24} className="text-error" />
+        </div>
+        <h3 className="text-[15px] font-bold text-charcoal mb-[6px]">
+          Couldn't load your stores
+        </h3>
+        <p className="text-xs text-slate leading-[1.5] mb-4">
+          {error}
+        </p>
+        <Button variant="outline" size="sm" onClick={onRetry}>Try Again</Button>
+      </div>
+    );
+  }
+
+  if (stores.length === 0) {
     return (
       <div className="bg-white border border-bone rounded-[10px] px-5 py-8 shadow-[0_1px_4px_rgba(0,0,0,0.04)] text-center">
         <div className="w-[52px] h-[52px] rounded-xl bg-brand-pale-orange flex items-center justify-center mx-auto mb-[14px]">
@@ -205,7 +223,7 @@ export function SellerDashboard() {
   const navigate = useNavigate();
   const subtitle = "Welcome back — Here's your store overview.";
 
-  const { stores, loading: storesLoading, error: storesError } = useMyStores();
+  const { stores, loading: storesLoading, error: storesError, refetch: refetchStores } = useMyStores();
   const storeId = stores[0]?._id ?? null;
 
   const [overview, setOverview]       = useState<SellerOverviewData | null>(null);
@@ -240,10 +258,10 @@ export function SellerDashboard() {
   }, [storeId, storesLoading]);
 
   const metrics = overview ? [
-    { label: 'Revenue (7 days)',  value: formatCurrency(overview.totalRevenue), trend: overview.totalRevenueChangePercent != null ? formatPercent(overview.totalRevenueChangePercent, { signed: true }) : null, sub: null },
-    { label: 'Orders (7 days)',   value: formatNumber(overview.totalOrders),    trend: overview.totalOrdersChange ? formatPercent(overview.totalOrdersChange, { signed: true }) : null, sub: null },
-    { label: 'Avg Order Value',   value: formatCurrency(overview.avgOrderValue), trend: overview.avgOrderValueChangePercent != null ? formatPercent(overview.avgOrderValueChangePercent, { signed: true }) : null, sub: null },
-    { label: 'Repeat Buyers',     value: formatPercent(overview.repeatBuyerPercent), trend: null, sub: overview.repeatBuyerTrend === 'improving' ? 'Improving' : overview.repeatBuyerTrend === 'declining' ? 'Declining' : 'Steady' },
+    { label: 'Revenue (7 days)',  value: formatCurrency(overview.totalRevenue), trend: overview.totalRevenueChangePercent != null ? formatPercent(overview.totalRevenueChangePercent, { signed: true }) : null, trendUp: (overview.totalRevenueChangePercent ?? 0) >= 0, sub: null },
+    { label: 'Orders (7 days)',   value: formatNumber(overview.totalOrders),    trend: overview.totalOrdersChange ? formatPercent(overview.totalOrdersChange, { signed: true }) : null, trendUp: (overview.totalOrdersChange ?? 0) >= 0, sub: null },
+    { label: 'Avg Order Value',   value: formatCurrency(overview.avgOrderValue), trend: overview.avgOrderValueChangePercent != null ? formatPercent(overview.avgOrderValueChangePercent, { signed: true }) : null, trendUp: (overview.avgOrderValueChangePercent ?? 0) >= 0, sub: null },
+    { label: 'Repeat Buyers',     value: formatPercent(overview.repeatBuyerPercent), trend: null, trendUp: true, sub: overview.repeatBuyerTrend === 'improving' ? 'Improving' : overview.repeatBuyerTrend === 'declining' ? 'Declining' : 'Steady' },
   ] : [];
 
   const chartData = revenueSeries.map(p => ({ day: formatBucketLabel(p.date, 'day'), sales: p.grossRevenue }));
@@ -271,38 +289,13 @@ export function SellerDashboard() {
         {/* ── Row 1: Metric Cards ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {(loading || storesLoading) ? (
-            Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-white border border-bone rounded-[10px] px-5 py-4">
-                <SkeletonBox className="h-3 w-24 mb-3" />
-                <SkeletonBox className="h-7 w-16" />
-              </div>
-            ))
+            Array.from({ length: 4 }).map((_, i) => <MetricCard key={i} label="" value="" loading />)
           ) : !hasStore ? (
             <div className="col-span-full bg-white border border-bone rounded-[10px] px-5 py-6 text-center text-[13px] text-slate">
               Create a store to see your revenue, orders, and product metrics here.
             </div>
           ) : metrics.map((m) => (
-            <div
-              key={m.label}
-              className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
-            >
-              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-[6px]">
-                {m.label}
-              </p>
-              <p className="text-[28px] font-bold text-charcoal leading-[1.15]">
-                {m.value}
-              </p>
-              {m.trend && (
-                <p className="text-xs text-[#2D8A4E] mt-[5px]">
-                  ▲ {m.trend}
-                </p>
-              )}
-              {m.sub && (
-                <p className="text-[11px] text-slate mt-0.5">
-                  {m.sub}
-                </p>
-              )}
-            </div>
+            <MetricCard key={m.label} label={m.label} value={m.value} trend={m.trend ?? undefined} trendUp={m.trendUp} sub={m.sub ?? undefined} />
           ))}
         </div>
 
@@ -318,7 +311,7 @@ export function SellerDashboard() {
             valuePrefix="$"
             yTickFormatter={v => `$${v.toLocaleString()}`}
           />
-          <MyStoreCard stores={stores} loading={storesLoading} error={storesError} />
+          <MyStoreCard stores={stores} loading={storesLoading} error={storesError} onRetry={refetchStores} />
         </div>
 
         {hasStore && <PlatformBillingCard />}
@@ -371,19 +364,15 @@ export function SellerDashboard() {
                 </button>
               )}
             </div>
-            {loading || storesLoading ? (
-              <div className="px-5 py-4 flex flex-col gap-2">
-                {Array.from({ length: 4 }).map((_, i) => <SkeletonBox key={i} className="h-8 w-full" />)}
-              </div>
-            ) : !hasStore || recentOrders.length === 0 ? (
-              <p className="px-5 py-4 text-[12.5px] text-slate">
-                {hasStore ? 'No orders yet.' : 'Create a store to see recent orders.'}
-              </p>
+            {!hasStore ? (
+              <p className="px-5 py-4 text-[12.5px] text-slate">Create a store to see recent orders.</p>
             ) : (
               <Table
                 columns={ORDER_COLUMNS}
                 data={recentOrders}
                 keyExtractor={row => row.orderId}
+                loading={loading || storesLoading}
+                emptyState={{ title: 'No orders yet', description: 'Orders will show up here once customers start buying.' }}
               />
             )}
           </div>

@@ -11,7 +11,7 @@ import { Card } from '@/components/comman/ui/Card';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import {
   ArrowRight, ArrowLeft, Package, Download, ClipboardList, CheckCircle,
-  Search, ShoppingCart, Star, Link2, Mail, Smartphone, ImageOff, Loader2, Heart,
+  Search, ShoppingCart, Star, Link2, Mail, Smartphone, ImageOff, Heart,
 } from 'lucide-react';
 import type { ProductVariant } from '@/api/services/marketplace';
 import { ProductReviewsSection } from './ProductReviews';
@@ -158,7 +158,7 @@ export function ProductDetail() {
   const { id = '' } = useParams<{ id: string }>();
   usePageTitle('Product Detail');
 
-  const { detail, loading, error } = useProductById(id);
+  const { detail, loading, error, refetch } = useProductById(id);
   const { cartCount, addToCart, adding } = useCartContext();
   const { wishlistCount, isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
 
@@ -235,8 +235,11 @@ export function ProductDetail() {
       {/* Error */}
       {!loading && error && (
         <div className="px-4 md:px-10 py-[60px] text-center">
-          <p className="text-[15px] text-[#C13030] mb-4">{error}</p>
-          <Button variant="secondary" onClick={() => navigate('/marketplace')}>Back to Marketplace</Button>
+          <p className="text-[15px] text-error mb-4">{error}</p>
+          <div className="flex items-center justify-center gap-2">
+            <Button variant="outline" onClick={refetch}>Try again</Button>
+            <Button variant="secondary" onClick={() => navigate('/marketplace')}>Back to Marketplace</Button>
+          </div>
         </div>
       )}
 
@@ -298,7 +301,6 @@ export function ProductDetail() {
 
               <div className="h-px bg-bone my-4" />
 
-              {/* Seller */}
               {/* Seller */}
               <div className="text-[15px] font-bold text-carbon mb-[14px]">
                 About the Seller
@@ -402,20 +404,25 @@ export function ProductDetail() {
                     <Button
                       variant="primary" size="lg" fullWidth
                       className="justify-center"
+                      disabled={(activeVariant?.stock ?? 0) <= 0}
+                      loading={adding === activeVariant?._id}
                       onClick={async () => {
                         if (!product || !activeVariant) return;
                         await addToCart(product._id, activeVariant._id, product.productType ?? product.type ?? 'physical');
                         navigate('/cart');
                       }}
                     >
-                      Buy Now <ArrowRight size={14} className="inline align-middle ml-[6px]" />
-                      {activeVariant ? ` $${activeVariant.price.toLocaleString()}` : ''}
+                      {(activeVariant?.stock ?? 0) <= 0
+                        ? 'Out of Stock'
+                        : <>Buy Now <ArrowRight size={14} className="inline align-middle ml-[6px]" />{activeVariant ? ` $${activeVariant.price.toLocaleString()}` : ''}</>}
                     </Button>
 
                     <div className="flex gap-2">
                       <Button
                         variant="secondary" size="md" fullWidth
                         className="justify-center flex-1"
+                        disabled={(activeVariant?.stock ?? 0) <= 0}
+                        loading={adding === activeVariant?._id}
                         onClick={async () => {
                           if (!product || !activeVariant) return;
                           await addToCart(product._id, activeVariant._id, product.productType ?? product.type ?? 'physical');
@@ -423,8 +430,8 @@ export function ProductDetail() {
                           setTimeout(() => setAddedFeedback(false), 2000);
                         }}
                       >
-                        {adding === activeVariant?._id
-                          ? <><Loader2 size={13} className="animate-spin" /> Adding…</>
+                        {(activeVariant?.stock ?? 0) <= 0
+                          ? 'Out of Stock'
                           : addedFeedback
                             ? '✓ Added to Cart'
                             : 'Add to Cart'
@@ -513,14 +520,15 @@ export function ProductDetail() {
             size="md"
             className="justify-center flex-1 max-w-[220px]"
             disabled={(activeVariant.stock ?? 0) <= 0}
+            loading={adding === activeVariant._id}
             onClick={async () => {
               await addToCart(product._id, activeVariant._id, product.productType ?? product.type ?? 'physical');
               setAddedFeedback(true);
               setTimeout(() => setAddedFeedback(false), 2000);
             }}
           >
-            {adding === activeVariant._id
-              ? <><Loader2 size={13} className="animate-spin" /> Adding…</>
+            {(activeVariant.stock ?? 0) <= 0
+              ? 'Out of Stock'
               : addedFeedback
                 ? '✓ Added to Cart'
                 : <><ShoppingCart size={14} /> Add to Cart</>

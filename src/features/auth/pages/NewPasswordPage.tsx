@@ -124,8 +124,8 @@ export function NewPasswordPage() {
         <p className="text-[13px] text-slate text-center leading-[1.6] mb-6">
           Your password has been changed. You can now sign in.
         </p>
-        <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/login')}>
-          Sign In Now <ArrowRight size={14} className="inline align-middle ml-1" />
+        <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/login')} iconRight={<ArrowRight size={14} />}>
+          Sign In Now
         </Button>
       </AuthSplitLayout>
     );
@@ -193,10 +193,13 @@ export function NewPasswordPage() {
         </div>
       )}
 
-      <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={resetPassword.loading}>
-        {resetPassword.loading
-          ? 'Resetting...'
-          : <span>Reset Password <ArrowRight size={14} className="inline align-middle ml-1" /></span>}
+      <Button
+        variant="primary" size="lg" fullWidth
+        onClick={handleSubmit}
+        loading={resetPassword.loading}
+        iconRight={!resetPassword.loading && <ArrowRight size={14} />}
+      >
+        Reset Password
       </Button>
     </AuthSplitLayout>
   );

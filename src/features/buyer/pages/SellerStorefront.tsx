@@ -13,12 +13,13 @@ import {
   apiGetPublicStore, apiGetPublicStoreProducts,
   apiGetPublicStoreFilters,
   apiFollowStore, apiGetFollowStatus,
-  type PublicStoreData,
+  type PublicStoreData, type PublicStoreProduct, type PublicStoreProductsParams,
 } from '@/api/services/store';
 import { apiStartConversation } from '@/api/services/messaging';
 import { apiGetMyBalance, apiGetRewards, apiRedeemReward, type LoyaltyBalance, type Reward } from '@/api/services/loyalty';
-import { apiBrowseStorePlans, apiSubscribeToPlan, type BuyerPlan, type BillingInterval } from '@/api/services/subscriptions';
+import { apiBrowseStorePlans, apiSubscribeToPlan, type BuyerPlan, type BillingInterval, type PlanBenefit } from '@/api/services/subscriptions';
 import { Modal } from '@/components/comman/ui/Modal';
+import { TokenStorage } from '@/api/services/auth';
 
 // ── Builder config default (mirrors StoreBuilder DEFAULT) ─────────────────────
 const CFG_DEFAULT = {
@@ -118,11 +119,11 @@ export function SellerStorefront() {
   usePageTitle('Store');
 
   const [store,          setStore]         = useState<PublicStoreData | null>(null);
-  const [products,       setProducts]      = useState<any[]>([]);
+  const [products,       setProducts]      = useState<PublicStoreProduct[]>([]);
   const [total,          setTotal]         = useState(0);
   const [page,           setPage]          = useState(1);
   const [totalPages,     setTotalPages]    = useState(1);
-  const [sortBy,         setSortBy]        = useState('newest');
+  const [sortBy,         setSortBy]        = useState<NonNullable<PublicStoreProductsParams['sort']>>('newest');
   const [loadingStore,   setLoadingStore]  = useState(true);
   const [loadingProds,   setLoadingProds]  = useState(false);
   const [storeError,     setStoreError]    = useState('');
@@ -144,7 +145,7 @@ export function SellerStorefront() {
   const [subscribeError, setSubscribeError] = useState('');
   const [subscribedMsg,  setSubscribedMsg]  = useState('');
 
-  const isLoggedIn = !!localStorage.getItem('accessToken');
+  const isLoggedIn = TokenStorage.isLoggedIn();
 
   // Resolve config (real or default)
   const cfg = useMemo(() => getCfg(store?.builderConfig ?? null), [store?.builderConfig]);
@@ -211,7 +212,7 @@ export function SellerStorefront() {
     try {
       await apiSubscribeToPlan(plan._id, interval);
       setSubscribedMsg(`You're in! Welcome to ${plan.name} — member pricing is already live across the store.`);
-      if (store) apiGetPublicStoreProducts(store.storeId, { page, limit: 12, sort: sortBy as any, tag: activeTag !== 'all' ? activeTag : undefined })
+      if (store) apiGetPublicStoreProducts(store.storeId, { page, limit: 12, sort: sortBy, tag: activeTag !== 'all' ? activeTag : undefined })
         .then(res => setProducts(res.data.products)).catch(() => {});
     } catch (err) {
       setSubscribeError(err instanceof Error ? err.message : 'Failed to subscribe.');
@@ -221,7 +222,7 @@ export function SellerStorefront() {
   };
 
   // Human-readable bullets derived from structured benefits — not free text.
-  const benefitLabel = (b: any): string | null => {
+  const benefitLabel = (b: PlanBenefit): string | null => {
     switch (b.type) {
       case 'discount': {
         const scope = b.scope === 'store' ? 'storewide' : b.scope === 'category' ? 'on select categories' : 'on select products';
@@ -271,7 +272,7 @@ export function SellerStorefront() {
     if (!store) return;
     setLoadingProds(true);
     apiGetPublicStoreProducts(store.storeId, {
-      page, limit: 12, sort: sortBy as any,
+      page, limit: 12, sort: sortBy,
       tag: activeTag !== 'all' ? activeTag : undefined,
     })
       .then(res => {
@@ -529,7 +530,7 @@ export function SellerStorefront() {
           <FilterDropdown
             options={SORT_OPTIONS}
             value={sortBy}
-            onChange={v => { setSortBy(v); setPage(1); }}
+            onChange={v => { setSortBy(v as NonNullable<PublicStoreProductsParams['sort']>); setPage(1); }}
           />
         </div>
 
@@ -547,7 +548,7 @@ export function SellerStorefront() {
         ) : (
           <>
             <div className={clsx('grid gap-[10px] sm:gap-3 lg:gap-[14px]', colClass)}>
-              {products.map((p: any) => (
+              {products.map((p: PublicStoreProduct) => (
                 <Card key={p._id} padding="none" hover onClick={() => navigate(`/marketplace/${p._id}`)} className="overflow-hidden bg-white">
                   {/* Image */}
                   <div className="relative w-full h-[110px] sm:h-[150px] lg:h-[170px] bg-[#EAF4EE] flex items-center justify-center">
@@ -576,7 +577,7 @@ export function SellerStorefront() {
                     <p className="font-bold text-[11px] sm:text-[13px] mb-[3px] leading-[1.4] line-clamp-2" style={{ color: cfg.textColor }}>
                       {p.name}
                     </p>
-                    {cfg.showRatings && p.averageRating > 0 && <StarRating rating={p.averageRating} color={cfg.primaryColor} />}
+                    {cfg.showRatings && (p.averageRating ?? 0) > 0 && <StarRating rating={p.averageRating!} color={cfg.primaryColor} />}
                     {cfg.showPrice && p.subscriberPrice != null && (
                       <p className="text-[9px] sm:text-[10px] font-semibold mt-1" style={{ color: cfg.primaryColor }}>
                         Members save {p.discountPercent}%
@@ -586,17 +587,20 @@ export function SellerStorefront() {
                       {cfg.showPrice && (
                         <span className="flex items-baseline gap-[6px] shrink-0">
                           <span className="font-bold text-[12px] sm:text-[15px]" style={{ color: p.subscriberPrice != null ? cfg.primaryColor : cfg.textColor }}>
-                            PKR {p.subscriberPrice ?? p.defaultVariantPrice ?? '—'}
+                            ${(p.subscriberPrice ?? p.defaultVariantPrice ?? '—').toLocaleString()}
                           </span>
                           {p.subscriberPrice != null && (
                             <span className="text-[10px] sm:text-[11px] line-through opacity-60" style={{ color: cfg.textColor }}>
-                              {p.defaultVariantPrice}
+                              ${p.defaultVariantPrice?.toLocaleString()}
                             </span>
                           )}
                         </span>
                       )}
                       {cfg.showAddToCart && (
-                        <Button variant="secondary" size="sm" onClick={e => e.stopPropagation()} className="inline-flex">
+                        <Button
+                          variant="secondary" size="sm" className="inline-flex"
+                          onClick={e => { e.stopPropagation(); navigate(`/marketplace/${p._id}`); }}
+                        >
                           <ShoppingCart size={11} />
                           <span className="hidden lg:inline">Add to Cart</span>
                         </Button>

@@ -8,8 +8,9 @@ import {
 } from '@/hooks/admin/useAdminAnalytics';
 import type { BaseAnalyticsParams, SellerPerformanceRow, TopSellerRow } from '@/api/services/analytics/adminAnalytics';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
-import { ChartCardSkeleton, TableCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
+import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
 import { formatCurrency, formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
+import { Store } from 'lucide-react';
 
 const RANK_OPTIONS = [
   { value: 'desc', label: 'Top performers' },
@@ -79,12 +80,16 @@ export function SellersTab({ params }: { params: BaseAnalyticsParams }) {
             <FilterDropdown options={RANK_OPTIONS} value={order} onChange={v => setOrder(v as 'asc' | 'desc')} />
           </div>
         </div>
-        {topSellers.loading ? (
-          <div className="px-5 pb-5"><TableCardSkeleton /></div>
-        ) : topSellers.error ? (
+        {topSellers.error ? (
           <div className="px-5 pb-5"><AnalyticsErrorState message={topSellers.error} onRetry={topSellers.refetch} /></div>
         ) : (
-          <Table columns={topColumns} data={topSellers.data ?? []} keyExtractor={r => r.sellerId} />
+          <Table
+            columns={topColumns}
+            data={topSellers.data ?? []}
+            keyExtractor={r => r.sellerId}
+            loading={topSellers.loading}
+            emptyState={{ icon: <Store size={28} className="text-slate/50" />, title: 'No seller data yet' }}
+          />
         )}
       </div>
 
@@ -93,15 +98,15 @@ export function SellersTab({ params }: { params: BaseAnalyticsParams }) {
           <p className="text-[14px] font-bold text-charcoal">Seller Performance</p>
           <p className="text-[12px] text-slate">Full ranking across every seller on the platform.</p>
         </div>
-        {performance.loading ? (
-          <div className="px-5 pb-5"><TableCardSkeleton /></div>
-        ) : performance.error ? (
+        {performance.error ? (
           <div className="px-5 pb-5"><AnalyticsErrorState message={performance.error} onRetry={performance.refetch} /></div>
         ) : (
           <Table
             columns={performanceColumns}
             data={performance.data?.sellers ?? []}
             keyExtractor={r => r.sellerId}
+            loading={performance.loading}
+            emptyState={{ icon: <Store size={28} className="text-slate/50" />, title: 'No sellers yet' }}
             pagination={{
               page,
               total: performance.data?.pagination.total ?? 0,

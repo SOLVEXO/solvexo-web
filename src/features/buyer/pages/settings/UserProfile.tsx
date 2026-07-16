@@ -6,7 +6,7 @@ import {
   Check, Shield, ShoppingCart, ImageOff, Loader2, Star,
   Plus, Pencil, ArrowLeft, Home, Briefcase, Star as StarIcon,
   ChevronRight, Menu, X, MessageSquare, Ban, Flag, Trash2, RefreshCw,
-  type LucideIcon,
+  Bell, type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile, invalidateProfileCache } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
@@ -36,9 +36,10 @@ import { SubscriptionsTab } from '@/features/buyer/pages/MySubscriptionsPage';
 import { apiChangePassword, apiDeleteAccount } from '@/api/services/users';
 import { TokenStorage } from '@/api/services/auth';
 import { Modal } from '@/components/comman/ui/Modal';
+import { NotificationsPanel } from '@/components/comman/ui';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses' | 'messages' | 'reviews' | 'subscriptions';
+type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses' | 'messages' | 'reviews' | 'subscriptions' | 'notifications';
 
 const NAV_ITEMS: { id: Tab; label: string; Icon: LucideIcon }[] = [
   { id: 'profile',   label: 'My Profile', Icon: User          },
@@ -48,6 +49,7 @@ const NAV_ITEMS: { id: Tab; label: string; Icon: LucideIcon }[] = [
   { id: 'wishlist',  label: 'Wishlist',   Icon: Heart          },
   { id: 'addresses', label: 'Addresses',  Icon: MapPin         },
   { id: 'messages',  label: 'Messages',   Icon: MessageSquare  },
+  { id: 'notifications', label: 'Notifications', Icon: Bell    },
 ];
 
 const INPUT_CLS  = 'w-full py-[10px] px-[13px] text-[13px] border border-bone rounded-[9px] outline-none text-charcoal bg-white box-border';
@@ -228,6 +230,8 @@ function WishlistTab() {
   const { addToCart, adding } = useCartContext();
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [addingId,   setAddingId]   = useState<string | null>(null);
+  const [confirmingClear, setConfirmingClear] = useState(false);
+  const [clearError, setClearError] = useState('');
 
   const handleRemove = (productId: string, variantId: string) => {
     setRemovingId(variantId);
@@ -237,9 +241,14 @@ function WishlistTab() {
     setAddingId(variantId);
     addToCart(productId, variantId, type).finally(() => setAddingId(null));
   };
-  const handleClearAll = () => {
-    if (!window.confirm('Remove all items from your wishlist?')) return;
-    clearWishlist().catch(err => alert(err instanceof Error ? err.message : 'Failed to clear wishlist.'));
+  const handleClearAll = async () => {
+    setClearError('');
+    try {
+      await clearWishlist();
+      setConfirmingClear(false);
+    } catch (err) {
+      setClearError(err instanceof Error ? err.message : 'Failed to clear wishlist.');
+    }
   };
 
   if (wLoading) {
@@ -297,6 +306,7 @@ function WishlistTab() {
   }
 
   return (
+    <>
     <Card padding="none">
       {/* Header: title left, Saved Items right — single row */}
       <div className="px-5 pt-5 pb-4 border-b border-bone flex items-end justify-between">
@@ -310,11 +320,11 @@ function WishlistTab() {
             <p className="text-[11px] text-slate mt-[2px]">{wishlistCount} item{wishlistCount !== 1 ? 's' : ''}</p>
           </div>
           <button
-            onClick={handleClearAll}
+            onClick={() => { setConfirmingClear(true); setClearError(''); }}
             disabled={clearing}
             className="text-[11px] font-medium text-error bg-transparent border-none cursor-pointer disabled:opacity-50"
           >
-            {clearing ? 'Clearing…' : 'Clear All'}
+            Clear All
           </button>
         </div>
       </div>
@@ -431,6 +441,25 @@ function WishlistTab() {
         })}
       </div>
     </Card>
+
+    {confirmingClear && (
+      <Modal title="Clear your wishlist?" onClose={() => setConfirmingClear(false)} footer={
+        <>
+          <button onClick={() => setConfirmingClear(false)} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
+            Cancel
+          </button>
+          <button onClick={handleClearAll} disabled={clearing} className="px-4 py-2 bg-error border-none rounded-lg text-xs font-semibold text-white cursor-pointer disabled:opacity-50">
+            {clearing ? 'Clearing…' : 'Remove All'}
+          </button>
+        </>
+      }>
+        <p className="text-[13px] text-slate">
+          This removes all {wishlistCount} item{wishlistCount !== 1 ? 's' : ''} from your wishlist. This cannot be undone.
+        </p>
+        {clearError && <p className="text-[12px] text-error mt-2">{clearError}</p>}
+      </Modal>
+    )}
+    </>
   );
 }
 
@@ -549,27 +578,33 @@ function AddressTab() {
   };
 
   const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState('');
   const handleSetDefault = async (addressId: string) => {
     setSettingDefaultId(addressId);
+    setActionError('');
     try {
       await apiSetDefaultAddress(addressId);
       await refreshAddresses();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to set default address.');
+      setActionError(err instanceof Error ? err.message : 'Failed to set default address.');
     } finally {
       setSettingDefaultId(null);
     }
   };
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const handleDeleteAddress = async (addressId: string) => {
-    if (!window.confirm('Delete this address? This cannot be undone.')) return;
+  const [deleteTarget, setDeleteTarget] = useState<Address | null>(null);
+  const handleDeleteAddress = async () => {
+    if (!deleteTarget) return;
+    const addressId = deleteTarget._id;
     setDeletingId(addressId);
+    setActionError('');
     try {
       await apiDeleteAddress(addressId);
       await refreshAddresses();
+      setDeleteTarget(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete address.');
+      setActionError(err instanceof Error ? err.message : 'Failed to delete address.');
     } finally {
       setDeletingId(null);
     }
@@ -636,7 +671,7 @@ function AddressTab() {
             }]),
             {
               label: deletingId === a._id ? 'Deleting…' : 'Delete',
-              onClick: () => handleDeleteAddress(a._id),
+              onClick: () => { setDeleteTarget(a); setActionError(''); },
               icon: <Trash2 size={13} />,
               danger: true,
             },
@@ -678,6 +713,7 @@ function AddressTab() {
   }
 
   return (
+    <>
     <Card padding="none">
       <div className="px-5 pt-5 pb-4 flex items-end justify-between border-b border-bone">
         <div>
@@ -697,6 +733,12 @@ function AddressTab() {
           </button>
         </div>
       </div>
+
+      {actionError && (
+        <div className="px-5 pt-4">
+          <p className="text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-lg px-3 py-2">{actionError}</p>
+        </div>
+      )}
 
       {addrLoading ? (
         <div className="px-5 py-4 flex flex-col gap-3">
@@ -723,6 +765,25 @@ function AddressTab() {
         <Table columns={columns} data={addresses} keyExtractor={a => a._id} />
       )}
     </Card>
+
+    {deleteTarget && (
+      <Modal title="Delete this address?" onClose={() => setDeleteTarget(null)} footer={
+        <>
+          <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer">
+            Cancel
+          </button>
+          <button onClick={handleDeleteAddress} disabled={deletingId === deleteTarget._id} className="px-4 py-2 bg-error border-none rounded-lg text-xs font-semibold text-white cursor-pointer disabled:opacity-50">
+            {deletingId === deleteTarget._id ? 'Deleting…' : 'Delete Address'}
+          </button>
+        </>
+      }>
+        <p className="text-[13px] text-slate">
+          Delete the address for <strong>{deleteTarget.recipientName}</strong>? This cannot be undone.
+        </p>
+        {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
+      </Modal>
+    )}
+    </>
   );
 }
 
@@ -1161,8 +1222,23 @@ export function UserProfile() {
           {tab === 'subscriptions' && <SubscriptionsTab />}
           {tab === 'reviews'   && <ReviewsTab />}
           {tab === 'messages'  && <MessagesTab initialConversationId={initialConversationId} />}
+          {tab === 'notifications' && <NotificationsTab />}
         </main>
       </div>
+    </div>
+  );
+}
+
+function NotificationsTab() {
+  return (
+    <div className="flex flex-col gap-4">
+      <Card padding="none">
+        <div className="px-5 pt-5 pb-4 border-b border-bone">
+          <p className="text-[11px] text-slate mb-[3px]">Account / Notifications</p>
+          <h1 className="text-[22px] font-bold text-charcoal leading-none">Notifications</h1>
+        </div>
+      </Card>
+      <NotificationsPanel />
     </div>
   );
 }

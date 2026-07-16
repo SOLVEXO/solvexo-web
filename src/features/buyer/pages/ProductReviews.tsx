@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ShieldCheck, Pencil, Trash2, Star, ThumbsUp, ImageIcon, ChevronLeft, ChevronRight, X, Store,
+  ShieldCheck, Pencil, Trash2, Star, ThumbsUp, ImageIcon, ChevronLeft, ChevronRight, X, Store, AlertTriangle,
 } from 'lucide-react';
-import { StarRating, Button, Badge, EmptyState, SkeletonBox, Pagination, FilterDropdown } from '@/components/comman/ui';
+import { StarRating, Button, Badge, EmptyState, SkeletonBox, Pagination, FilterDropdown, Modal } from '@/components/comman/ui';
 import { useFocusTrap } from '@/components/comman/ui/useFocusTrap';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetProductReviews, apiDeleteReview, apiToggleReviewHelpful, type ProductReviewEntry, type ProductReviewStats } from '@/api/services/rating';
@@ -325,6 +325,9 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
   const [showWrite, setShowWrite] = useState(false);
   const [editingReview, setEditingReview] = useState<ProductReviewEntry | null>(null);
   const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
+  const [deleting, setDeleting] = useState<ProductReviewEntry | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const isLoggedIn = TokenStorage.isLoggedIn();
   const hasOwnReview = allReviews.some(r => r.isOwn);
@@ -382,13 +385,18 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
     setPage(1);
   }
 
-  async function handleDelete(review: ProductReviewEntry) {
-    if (!window.confirm('Delete your review? This cannot be undone.')) return;
+  async function confirmDelete() {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setDeleteError('');
     try {
-      await apiDeleteReview(review.reviewId);
+      await apiDeleteReview(deleting.reviewId);
+      setDeleting(null);
       setRefreshKey(k => k + 1);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete review.');
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete review.');
+    } finally {
+      setDeleteBusy(false);
     }
   }
 
@@ -482,7 +490,7 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
                 storeName={storeName}
                 onToggleHelpful={() => toggleHelpful(r.reviewId)}
                 onEdit={() => setEditingReview(r)}
-                onDelete={() => handleDelete(r)}
+                onDelete={() => { setDeleting(r); setDeleteError(''); }}
                 onOpenPhoto={i => setLightbox({ images: r.media, index: i })}
               />
             ))}
@@ -523,6 +531,29 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
           startIndex={lightbox.index}
           onClose={() => setLightbox(null)}
         />
+      )}
+
+      {deleting && (
+        <Modal
+          title="Delete Review"
+          onClose={() => setDeleting(null)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setDeleting(null)}>Cancel</Button>
+              <Button variant="danger" onClick={confirmDelete} loading={deleteBusy}>Delete Review</Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-charcoal leading-[1.6]">
+            Delete your review? This cannot be undone.
+          </p>
+          {deleteError && (
+            <div className="flex items-center gap-2 mt-3 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-lg px-3 py-2">
+              <AlertTriangle size={13} className="shrink-0" />
+              {deleteError}
+            </div>
+          )}
+        </Modal>
       )}
     </div>
   );

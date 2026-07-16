@@ -115,7 +115,7 @@ export function AdminAnnouncements() {
                   </div>
                   <div className="flex items-center gap-[10px] flex-shrink-0">
                     <button disabled title="Not connected to a backend yet" className="text-[12px] text-slate bg-transparent border-none opacity-40 cursor-not-allowed">Edit</button>
-                    <button onClick={() => remove(ann.id)} className="text-[12px] text-[#C13030] bg-transparent border-none cursor-pointer outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">Delete</button>
+                    <button onClick={() => remove(ann.id)} className="text-[12px] text-error bg-transparent border-none cursor-pointer outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">Delete</button>
                   </div>
                 </div>
               </div>

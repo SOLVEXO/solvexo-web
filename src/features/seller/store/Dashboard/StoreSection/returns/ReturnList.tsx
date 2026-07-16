@@ -78,7 +78,7 @@ function ReturnActionModal({
         <div>
           <p className="text-[13px] font-semibold text-charcoal">{item.productName}</p>
           <p className="text-[12px] text-slate mt-[2px]">Customer: {item.customer.name}</p>
-          <p className="text-[12px] text-slate">Amount: Rs {item.amount.toLocaleString()}</p>
+          <p className="text-[12px] text-slate">Amount: ${item.amount.toLocaleString()}</p>
         </div>
         <div className="bg-cream rounded-[9px] px-3 py-[10px]">
           <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.05em] mb-1">Customer's Reason</p>
@@ -150,7 +150,7 @@ export function StoreReturnList() {
           {[
             { label: 'Open Requests',  value: stats?.openRequests ?? 0 },
             { label: 'Return Rate',    value: stats?.returnRate ?? '—' },
-            { label: 'Total Refunded (30d)', value: stats ? `Rs ${stats.totalRefunded.toLocaleString()}` : '—' },
+            { label: 'Total Refunded (30d)', value: stats ? `$${stats.totalRefunded.toLocaleString()}` : '—' },
           ].map(m => (
             <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
@@ -169,7 +169,7 @@ export function StoreReturnList() {
 
         {/* Error */}
         {error && (
-          <div className="bg-[#FFF0F0] border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
+          <div className="bg-error-bg border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
             <AlertCircle size={16} className="text-error shrink-0" />
             <span className="text-[13px] text-error flex-1">{error}</span>
             <button onClick={refetch} className="flex items-center gap-1 text-[12px] text-error font-semibold cursor-pointer">
@@ -260,7 +260,7 @@ export function StoreReturnList() {
                           <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{r.returnReason}</span>
                         </td>
                         <td className="px-4 py-[13px] text-[13px] font-semibold text-carbon whitespace-nowrap">
-                          Rs {r.amount.toLocaleString()}
+                          ${r.amount.toLocaleString()}
                         </td>
                         <td className="px-4 py-[13px]">
                           <span className="inline-block px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold whitespace-nowrap capitalize" style={{ background: st.bg, color: st.color }}>

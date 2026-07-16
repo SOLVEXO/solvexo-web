@@ -11,9 +11,11 @@ interface MetricCardProps {
   sub?:     string;
   icon?:    ReactNode;
   loading?: boolean;
+  /** Overrides the default brand-orange icon background/foreground color. */
+  color?:   string;
 }
 
-export function MetricCard({ label, value, trend, trendUp, sub, icon, loading }: MetricCardProps) {
+export function MetricCard({ label, value, trend, trendUp, sub, icon, loading, color }: MetricCardProps) {
   if (loading) {
     return (
       <Card className="flex-1 min-w-[140px]">
@@ -28,7 +30,10 @@ export function MetricCard({ label, value, trend, trendUp, sub, icon, loading }:
     <Card className="flex-1 min-w-[140px]" padding="none">
       <div className="px-5 py-5">
         {icon && (
-          <div className="w-9 h-9 rounded-[10px] bg-brand-pale-orange flex items-center justify-center text-brand-orange mb-3">
+          <div
+            className={color ? 'w-9 h-9 rounded-[10px] flex items-center justify-center mb-3' : 'w-9 h-9 rounded-[10px] bg-brand-pale-orange flex items-center justify-center text-brand-orange mb-3'}
+            style={color ? { background: `${color}18`, color } : undefined}
+          >
             {icon}
           </div>
         )}

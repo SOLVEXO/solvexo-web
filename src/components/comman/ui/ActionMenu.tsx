@@ -4,10 +4,12 @@ import { MoreVertical } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export interface ActionMenuItem {
-  label:   string;
-  onClick: () => void;
-  icon?:   ReactNode;
-  danger?: boolean;
+  label:     string;
+  onClick:   () => void;
+  icon?:     ReactNode;
+  danger?:   boolean;
+  disabled?: boolean;
+  title?:    string;
 }
 
 interface ActionMenuProps {
@@ -69,12 +71,17 @@ function DropdownPortal({
           ref={el => { itemRefs.current[i] = el; }}
           type="button"
           role="menuitem"
-          onClick={e => { e.stopPropagation(); item.onClick(); onClose(); }}
+          disabled={item.disabled}
+          title={item.title}
+          aria-disabled={item.disabled}
+          onClick={e => { e.stopPropagation(); if (item.disabled) return; item.onClick(); onClose(); }}
           className={clsx(
-            'w-full flex items-center gap-2 px-4 py-[9px] text-[13px] font-medium text-left cursor-pointer transition-colors border-none bg-transparent',
-            item.danger
-              ? 'text-error hover:bg-error-bg'
-              : 'text-carbon hover:bg-cream',
+            'w-full flex items-center gap-2 px-4 py-[9px] text-[13px] font-medium text-left border-none bg-transparent transition-colors',
+            item.disabled
+              ? 'text-slate/60 cursor-not-allowed'
+              : item.danger
+                ? 'text-error hover:bg-error-bg cursor-pointer'
+                : 'text-carbon hover:bg-cream cursor-pointer',
           )}
         >
           {item.icon && <span className="shrink-0 opacity-70">{item.icon}</span>}

@@ -259,11 +259,15 @@ function StoreDetailModal({ storeId, onClose }: { storeId: string; onClose: () =
   );
 }
 
+type SubscriptionDetailData = Awaited<ReturnType<typeof apiAdminGetSubscriptionDetail>>['data'];
+
 // ── Subscription detail modal (dunning/retry drill-down) ─────────────────────
 function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: () => void }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<SubscriptionDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refundingId, setRefundingId] = useState<string | null>(null);
+  const [confirmingRefund, setConfirmingRefund] = useState<SubscriptionInvoice | null>(null);
+  const [refundError, setRefundError] = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
@@ -271,14 +275,16 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
   }, [subId]);
   useEffect(load, [load]);
 
-  async function refund(invoice: SubscriptionInvoice) {
-    if (!window.confirm(`Refund invoice ${invoice.invoiceNumber} ($${invoice.amountUSD.toFixed(2)})?`)) return;
-    setRefundingId(invoice._id);
+  async function refund() {
+    if (!confirmingRefund) return;
+    setRefundingId(confirmingRefund._id);
+    setRefundError('');
     try {
-      await apiAdminRefundInvoice(invoice._id);
+      await apiAdminRefundInvoice(confirmingRefund._id);
+      setConfirmingRefund(null);
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Refund failed.');
+      setRefundError(err instanceof Error ? err.message : 'Refund failed.');
     } finally {
       setRefundingId(null);
     }
@@ -330,9 +336,9 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
                 <div key={inv._id} className="flex items-center justify-between text-[12px] px-2.5 py-1.5 rounded bg-cream">
                   <span className="text-slate">{inv.invoiceNumber} · {inv.status} · ${inv.amountUSD.toFixed(2)}</span>
                   {['paid', 'partially_refunded'].includes(inv.status) && (
-                    <button disabled={refundingId === inv._id} onClick={() => refund(inv)}
-                      className="px-2 py-[3px] bg-white border border-bone rounded-[5px] text-[11px] text-[#C13030] cursor-pointer disabled:opacity-50">
-                      {refundingId === inv._id ? 'Refunding…' : 'Refund'}
+                    <button onClick={() => { setConfirmingRefund(inv); setRefundError(''); }}
+                      className="px-2 py-[3px] bg-white border border-bone rounded-[5px] text-[11px] text-error cursor-pointer">
+                      Refund
                     </button>
                   )}
                 </div>
@@ -341,6 +347,24 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
             </div>
           </div>
         </div>
+      )}
+
+      {confirmingRefund && (
+        <Modal
+          title="Refund Invoice"
+          onClose={() => setConfirmingRefund(null)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setConfirmingRefund(null)} disabled={refundingId === confirmingRefund._id}>Cancel</Button>
+              <Button variant="danger" onClick={refund} loading={refundingId === confirmingRefund._id}>Refund</Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-charcoal leading-[1.6]">
+            Refund invoice <strong>{confirmingRefund.invoiceNumber}</strong> for <strong>${confirmingRefund.amountUSD.toFixed(2)}</strong>?
+          </p>
+          {refundError && <p className="text-[12px] text-error mt-2">{refundError}</p>}
+        </Modal>
       )}
     </Modal>
   );

@@ -15,6 +15,7 @@ export const ENDPOINTS = {
   AUTH: {
     REGISTER: '/api/auth/register',
     LOGIN: '/api/auth/login',
+    SOCIAL_LOGIN: '/api/auth/social-login',
     VERIFY_OTP: '/api/auth/verifyOtp',
     FORGOT_PASSWORD: '/api/auth/forgot-password',
     RESET_PASSWORD: '/api/auth/reset-password',
@@ -22,6 +23,19 @@ export const ENDPOINTS = {
     GET_PROFILE: '/api/auth/getprofile',
     EDIT_PROFILE: '/api/auth/edit-profile',
     RESEND_OTP: '/api/auth/resend-otp',
+  },
+
+  // ── NOTIFICATIONS ──────────────────────────────────────────────────────────
+  NOTIFICATIONS: {
+    LIST: '/api/notifications',
+    UNREAD_COUNT: '/api/notifications/unread-count',
+    PREFERENCES: '/api/notifications/preferences',
+    UPDATE_PREFERENCES: '/api/notifications/preferences',
+    REGISTER_DEVICE_TOKEN: '/api/notifications/device-token',
+    REMOVE_DEVICE_TOKEN: '/api/notifications/device-token',
+    MARK_ALL_READ: '/api/notifications/read-all',
+    MARK_READ: (id: string) => `/api/notifications/${id}/read`,
+    REMOVE: (id: string) => `/api/notifications/${id}`,
   },
 
   // ── CATEGORIES ────────────────────────────────────────────────────────────

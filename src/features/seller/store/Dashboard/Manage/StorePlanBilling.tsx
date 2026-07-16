@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Check, Zap, Users, Package, Sparkles } from 'lucide-react';
+import { Check, Zap, Users, Package, Sparkles, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
@@ -27,7 +27,7 @@ const ADDON_LABELS: Record<AddonType, string> = {
   sms_notifications: 'SMS Notifications',
 };
 
-function UsageBar({ label, used, max, Icon }: { label: string; used: number; max: number; Icon: any }) {
+function UsageBar({ label, used, max, Icon }: { label: string; used: number; max: number; Icon: LucideIcon }) {
   const unlimited = max === -1;
   const pct = unlimited ? 0 : Math.min(100, (used / Math.max(1, max)) * 100);
   const near = !unlimited && pct >= 85;
@@ -58,6 +58,10 @@ export default function StorePlanBilling() {
   const [changingId, setChangingId] = useState<string | null>(null);
   const [interval, setInterval_] = useState<'monthly' | 'yearly'>('monthly');
   const [addonModal, setAddonModal] = useState(false);
+  const [confirmingPlan, setConfirmingPlan] = useState<PlatformPlan | null>(null);
+  const [cancelingAddon, setCancelingAddon] = useState<AddonPurchase | null>(null);
+  const [actionError, setActionError] = useState('');
+  const [addonBusy, setAddonBusy] = useState(false);
 
   const load = useCallback(() => {
     if (!storeId) return;
@@ -71,24 +75,48 @@ export default function StorePlanBilling() {
   }, [storeId]);
   useEffect(load, [load]);
 
-  async function handleChangePlan(plan: PlatformPlan) {
-    if (current?.platformPlanId === plan._id) return;
-    if (!window.confirm(`Switch to ${plan.name}?`)) return;
-    setChangingId(plan._id);
-    try { await apiChangePlatformPlan(storeId, plan._id, interval); load(); }
-    catch (err) { alert(err instanceof Error ? err.message : 'Failed to change plan.'); }
-    finally { setChangingId(null); }
+  async function submitChangePlan() {
+    if (!confirmingPlan) return;
+    setChangingId(confirmingPlan._id);
+    setActionError('');
+    try {
+      await apiChangePlatformPlan(storeId, confirmingPlan._id, interval);
+      setConfirmingPlan(null);
+      load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to change plan.');
+    } finally {
+      setChangingId(null);
+    }
   }
 
   async function handlePurchaseAddon(type: AddonType) {
-    try { await apiPurchaseAddon(storeId, type, 1); load(); }
-    catch (err) { alert(err instanceof Error ? err.message : 'Failed to purchase add-on.'); }
+    setAddonBusy(true);
+    setActionError('');
+    try {
+      await apiPurchaseAddon(storeId, type, 1);
+      setAddonModal(false);
+      load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to purchase add-on.');
+    } finally {
+      setAddonBusy(false);
+    }
   }
 
-  async function handleCancelAddon(addon: AddonPurchase) {
-    if (!window.confirm('Cancel this add-on?')) return;
-    try { await apiCancelAddon(storeId, addon._id); load(); }
-    catch (err) { alert(err instanceof Error ? err.message : 'Failed to cancel add-on.'); }
+  async function submitCancelAddon() {
+    if (!cancelingAddon) return;
+    setAddonBusy(true);
+    setActionError('');
+    try {
+      await apiCancelAddon(storeId, cancelingAddon._id);
+      setCancelingAddon(null);
+      load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to cancel add-on.');
+    } finally {
+      setAddonBusy(false);
+    }
   }
 
   if (loading && !current) {
@@ -116,6 +144,12 @@ export default function StorePlanBilling() {
 
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error">{error}</p>}
+        {actionError && (
+          <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-[#FECACA] rounded-lg px-3 py-2">
+            <span>{actionError}</span>
+            <button onClick={() => setActionError('')} className="text-[11px] font-semibold text-error bg-transparent border-none cursor-pointer shrink-0">Dismiss</button>
+          </div>
+        )}
 
         {entitlements && (
           <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
@@ -167,7 +201,7 @@ export default function StorePlanBilling() {
                     <li key={f} className="flex items-start gap-1.5 text-[12px] text-graphite"><Check size={12} className="text-brand-orange mt-[2px] shrink-0" />{f}</li>
                   ))}
                 </ul>
-                <Button size="sm" variant={isCurrent ? 'outline' : 'primary'} disabled={isCurrent || changingId === plan._id} loading={changingId === plan._id} onClick={() => handleChangePlan(plan)}>
+                <Button size="sm" variant={isCurrent ? 'outline' : 'primary'} disabled={isCurrent} loading={changingId === plan._id} onClick={() => { setConfirmingPlan(plan); setActionError(''); }}>
                   {isCurrent ? 'Current Plan' : 'Switch to this plan'}
                 </Button>
               </div>
@@ -190,7 +224,7 @@ export default function StorePlanBilling() {
                     <p className="text-[13px] font-medium text-carbon">{ADDON_LABELS[a.addonType]}</p>
                     <p className="text-[11px] text-slate">Qty {a.quantity} · ${a.amountUSD.toFixed(2)}/mo</p>
                   </div>
-                  <button onClick={() => handleCancelAddon(a)} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-[#C13030] cursor-pointer">Cancel</button>
+                  <button onClick={() => { setCancelingAddon(a); setActionError(''); }} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-error cursor-pointer">Cancel</button>
                 </div>
               ))}
             </div>
@@ -233,12 +267,44 @@ export default function StorePlanBilling() {
         <Modal title="Add an Add-on" width={420} onClose={() => setAddonModal(false)}>
           <div className="flex flex-col gap-2">
             {(Object.keys(ADDON_LABELS) as AddonType[]).map(type => (
-              <button key={type} onClick={() => { handlePurchaseAddon(type); setAddonModal(false); }}
-                className="text-left px-3.5 py-3 rounded-lg bg-cream border border-bone cursor-pointer hover:border-brand-orange/40">
+              <button key={type} disabled={addonBusy} onClick={() => handlePurchaseAddon(type)}
+                className="text-left px-3.5 py-3 rounded-lg bg-cream border border-bone cursor-pointer hover:border-brand-orange/40 disabled:opacity-50 disabled:cursor-wait">
                 <span className="text-[13px] font-medium text-charcoal">{ADDON_LABELS[type]}</span>
               </button>
             ))}
           </div>
+          {actionError && <p className="text-[12px] text-error mt-3">{actionError}</p>}
+        </Modal>
+      )}
+
+      {confirmingPlan && (
+        <Modal title="Switch Plan" width={420} onClose={() => setConfirmingPlan(null)}
+          footer={<>
+            <Button variant="outline" onClick={() => setConfirmingPlan(null)} disabled={changingId === confirmingPlan._id}>Cancel</Button>
+            <Button onClick={submitChangePlan} loading={changingId === confirmingPlan._id}>Switch Plan</Button>
+          </>}
+        >
+          <p className="text-[13px] text-charcoal">
+            Switch to <strong>{confirmingPlan.name}</strong>
+            {!confirmingPlan.isFree && !confirmingPlan.isCustomPricing && (
+              <> — ${interval === 'yearly' && confirmingPlan.yearlyPriceUSD != null ? confirmingPlan.yearlyPriceUSD : confirmingPlan.monthlyPriceUSD}/{interval === 'yearly' ? 'yr' : 'mo'}</>
+            )}?
+          </p>
+          {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
+        </Modal>
+      )}
+
+      {cancelingAddon && (
+        <Modal title="Cancel Add-on" width={420} onClose={() => setCancelingAddon(null)}
+          footer={<>
+            <Button variant="outline" onClick={() => setCancelingAddon(null)} disabled={addonBusy}>Back</Button>
+            <Button variant="danger" onClick={submitCancelAddon} loading={addonBusy}>Cancel Add-on</Button>
+          </>}
+        >
+          <p className="text-[13px] text-charcoal">
+            Cancel <strong>{ADDON_LABELS[cancelingAddon.addonType]}</strong>? This takes effect immediately.
+          </p>
+          {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
         </Modal>
       )}
     </>

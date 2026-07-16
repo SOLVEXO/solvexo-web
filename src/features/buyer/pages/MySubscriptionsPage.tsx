@@ -46,6 +46,7 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
   const [benefits, setBenefits] = useState<BenefitsSummary | null>(null);
   const [timeline, setTimeline] = useState<SubscriptionTimelineEvent[] | null>(null);
   const [loadingTimeline, setLoadingTimeline] = useState(false);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
 
   useEffect(() => {
     apiGetMySubscriptionById(sub._id)
@@ -83,19 +84,29 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
     }
   }
 
-  async function handle(action: 'pause' | 'resume' | 'cancel') {
+  async function handle(action: 'pause' | 'resume') {
     setBusy(true);
     setError('');
     try {
       if (action === 'pause') await apiPauseMySubscription(sub._id);
-      else if (action === 'resume') await apiResumeMySubscription(sub._id);
-      else {
-        const atPeriodEnd = window.confirm('Cancel at the end of your billing period? OK = at period end, Cancel = immediately.');
-        await apiCancelMySubscription(sub._id, atPeriodEnd);
-      }
+      else await apiResumeMySubscription(sub._id);
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Action failed.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmCancel(atPeriodEnd: boolean) {
+    setBusy(true);
+    setError('');
+    try {
+      await apiCancelMySubscription(sub._id, atPeriodEnd);
+      setConfirmingCancel(false);
+      onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to cancel subscription.');
     } finally {
       setBusy(false);
     }
@@ -139,7 +150,7 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
             {sub.status === 'active' && <Button size="sm" variant="outline" onClick={openChangePlan} disabled={busy}>Change Plan</Button>}
             <Button size="sm" variant="outline" onClick={toggleTimeline} loading={loadingTimeline}>{timeline ? 'Hide Timeline' : 'View Timeline'}</Button>
             {(sub.status === 'active' || sub.status === 'paused' || sub.status === 'past_due') && (
-              <Button size="sm" variant="danger" onClick={() => handle('cancel')} disabled={busy}>Cancel Subscription</Button>
+              <Button size="sm" variant="danger" onClick={() => setConfirmingCancel(true)} disabled={busy}>Cancel Subscription</Button>
             )}
           </div>
         ) : null}
@@ -211,6 +222,26 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
           )}
         </div>
       </div>
+
+      {confirmingCancel && (
+        <Modal
+          title="Cancel Subscription"
+          onClose={() => setConfirmingCancel(false)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setConfirmingCancel(false)} disabled={busy}>Keep Subscription</Button>
+              <Button variant="outline" onClick={() => confirmCancel(true)} loading={busy}>Cancel at Period End</Button>
+              <Button variant="danger" onClick={() => confirmCancel(false)} disabled={busy}>Cancel Immediately</Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-charcoal leading-[1.6]">
+            You can keep your benefits until <strong>{new Date(sub.nextBillingDate).toLocaleDateString()}</strong> by
+            cancelling at period end, or end access right away with an immediate cancellation.
+          </p>
+          {error && <p className="text-[12px] text-error mt-3">{error}</p>}
+        </Modal>
+      )}
     </Modal>
   );
 }
@@ -218,7 +249,10 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
 function CreditsPanel() {
   const [wallets, setWallets] = useState<CreditWallet[]>([]);
   const [loading, setLoading] = useState(true);
-  const [spendingId, setSpendingId] = useState<string | null>(null);
+  const [spending, setSpending] = useState<CreditWallet | null>(null);
+  const [spendAmount, setSpendAmount] = useState(1);
+  const [spendBusy, setSpendBusy] = useState(false);
+  const [spendError, setSpendError] = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
@@ -226,19 +260,24 @@ function CreditsPanel() {
   }, []);
   useEffect(load, [load]);
 
-  async function handleSpend(w: CreditWallet) {
-    const amountStr = window.prompt(`Spend how many ${w.creditType} credits? (balance: ${w.balance})`, '1');
-    if (!amountStr) return;
-    const amount = parseInt(amountStr, 10);
-    if (!amount || amount <= 0) return;
-    setSpendingId(w._id);
+  function openSpend(w: CreditWallet) {
+    setSpending(w);
+    setSpendAmount(1);
+    setSpendError('');
+  }
+
+  async function confirmSpend() {
+    if (!spending || spendAmount <= 0) return;
+    setSpendBusy(true);
+    setSpendError('');
     try {
-      await apiSpendCredit(w.storeId, w.creditType, amount, 'Redeemed from My Subscriptions');
+      await apiSpendCredit(spending.storeId, spending.creditType, spendAmount, 'Redeemed from My Subscriptions');
+      setSpending(null);
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to spend credit.');
+      setSpendError(err instanceof Error ? err.message : 'Failed to spend credit.');
     } finally {
-      setSpendingId(null);
+      setSpendBusy(false);
     }
   }
 
@@ -257,12 +296,41 @@ function CreditsPanel() {
               <p className="font-semibold text-charcoal">{w.store?.name ?? 'Store'} — {w.creditType} credits</p>
               <p className="text-[11px] text-slate">{w.balance} available of {w.totalGranted} granted</p>
             </div>
-            <Button size="xs" variant="outline" disabled={w.balance <= 0 || spendingId === w._id} onClick={() => handleSpend(w)}>
-              {spendingId === w._id ? 'Spending…' : 'Use Credit'}
+            <Button size="xs" variant="outline" disabled={w.balance <= 0} onClick={() => openSpend(w)}>
+              Use Credit
             </Button>
           </div>
         ))}
       </div>
+
+      {spending && (
+        <Modal
+          title="Use Credit"
+          onClose={() => setSpending(null)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setSpending(null)} disabled={spendBusy}>Cancel</Button>
+              <Button variant="primary" onClick={confirmSpend} loading={spendBusy} disabled={spendAmount <= 0 || spendAmount > spending.balance}>
+                Spend {spendAmount} Credit{spendAmount !== 1 ? 's' : ''}
+              </Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-slate mb-3">
+            {spending.store?.name ?? 'Store'} — {spending.balance} {spending.creditType} credit{spending.balance !== 1 ? 's' : ''} available
+          </p>
+          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">
+            How many credits would you like to spend?
+          </label>
+          <input
+            type="number" min={1} max={spending.balance}
+            value={spendAmount}
+            onChange={e => setSpendAmount(Math.max(1, Math.min(spending.balance, Number(e.target.value) || 1)))}
+            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
+          />
+          {spendError && <p className="text-[12px] text-error mt-2">{spendError}</p>}
+        </Modal>
+      )}
     </Card>
   );
 }
@@ -310,14 +378,16 @@ export function SubscriptionsTab() {
   const [error, setError] = useState('');
   const [managing, setManaging] = useState<EnrichedSub | null>(null);
   const [openingPortal, setOpeningPortal] = useState(false);
+  const [billingError, setBillingError] = useState('');
 
   async function handleManageBilling() {
     setOpeningPortal(true);
+    setBillingError('');
     try {
       const res = await apiCreateBillingPortalSession(window.location.href);
       window.location.href = res.data.url;
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Billing portal is unavailable right now.');
+      setBillingError(err instanceof Error ? err.message : 'Billing portal is unavailable right now.');
     } finally {
       setOpeningPortal(false);
     }
@@ -370,7 +440,10 @@ export function SubscriptionsTab() {
           <h1 className="text-[22px] font-bold text-charcoal leading-none">My Subscriptions</h1>
         </div>
         <div className="flex items-center gap-4">
-          <Button size="sm" variant="outline" loading={openingPortal} onClick={handleManageBilling}>Manage Billing</Button>
+          <div className="flex flex-col items-end gap-1">
+            <Button size="sm" variant="outline" loading={openingPortal} onClick={handleManageBilling}>Manage Billing</Button>
+            {billingError && <p className="text-[11px] text-error max-w-[220px] text-right">{billingError}</p>}
+          </div>
           <div className="text-right">
             <p className="text-[13px] font-semibold text-charcoal leading-tight">Total</p>
             <p className="text-[11px] text-slate mt-[2px]">{total} subscription{total !== 1 ? 's' : ''}</p>
@@ -381,7 +454,10 @@ export function SubscriptionsTab() {
       {loading ? (
         <div className="flex flex-col gap-2 p-5">{[1, 2, 3].map(i => <SkeletonBox key={i} height={56} rounded="8px" />)}</div>
       ) : error ? (
-        <p className="text-[13px] text-error p-5">{error}</p>
+        <div className="flex flex-col items-center gap-3 py-10">
+          <p className="text-[13px] text-error text-center">{error}</p>
+          <Button variant="outline" size="sm" onClick={load}>Try again</Button>
+        </div>
       ) : subs.length === 0 ? (
         <EmptyState
           icon={<RefreshCw size={28} className="text-brand-orange opacity-55" />}

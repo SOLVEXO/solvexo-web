@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, ShoppingBag, Package, Users,
@@ -9,6 +9,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { AreaChart } from '@/components/comman/charts';
+import { MetricCard } from '@/components/comman/ui';
 import {
   apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime,
   type SellerOverviewData, type RevenuePoint,
@@ -26,6 +27,9 @@ function useStoreDashboardMetrics(storeId: string) {
   const [metrics, setMetrics] = useState<StoreMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const refetch = useCallback(() => setReloadKey(k => k + 1), []);
 
   useEffect(() => {
     if (!storeId) return;
@@ -48,9 +52,9 @@ function useStoreDashboardMetrics(storeId: string) {
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store metrics.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [storeId]);
+  }, [storeId, reloadKey]);
 
-  return { metrics, loading, error };
+  return { metrics, loading, error, refetch };
 }
 
 // ── Badge style maps ───────────────────────────────────────────────────────────
@@ -64,30 +68,6 @@ const typeStyles: Record<string, { bg: string; color: string }> = {
   seller:  { bg: '#EAF0FB', color: '#2156A8' },
   brand:   { bg: '#F5F0FF', color: '#7C3AED' },
 };
-
-// ── Metric Card ───────────────────────────────────────────────────────────────
-interface MetricCardProps {
-  label: string;
-  value: string;
-  sub:   string;
-  Icon:  LucideIcon;
-  color: string;
-}
-function MetricCard({ label, value, sub, Icon, color }: MetricCardProps) {
-  return (
-    <div className="bg-white rounded-[10px] border border-bone shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-[18px]">
-      <div
-        className="w-9 h-9 rounded-[8px] flex items-center justify-center mb-[14px]"
-        style={{ background: color + '18' }}
-      >
-        <Icon size={16} style={{ color }} />
-      </div>
-      <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-[6px]">{label}</p>
-      <p className="text-[26px] font-bold text-charcoal leading-[1.2]">{value}</p>
-      <p className="text-[11px] text-slate mt-[5px]">{sub}</p>
-    </div>
-  );
-}
 
 // ── Store Info Card ───────────────────────────────────────────────────────────
 function StoreInfoCard() {
@@ -296,7 +276,7 @@ function DashSkeleton() {
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function StoreDashboard() {
   const { store, storeId, loading } = useStoreWorkspace();
-  const { metrics, loading: metricsLoading, error: metricsError } = useStoreDashboardMetrics(storeId);
+  const { metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useStoreDashboardMetrics(storeId);
 
   const subtitle = store
     ? `${store.sellerType ?? 'Seller'} · ${store.plan ?? ''} plan`
@@ -332,26 +312,31 @@ export default function StoreDashboard() {
         <div className="px-7 py-6 flex flex-col gap-5">
 
           {metricsError && (
-            <p className="px-4 py-3 rounded-[10px] bg-error-bg text-error text-[12.5px]">{metricsError}</p>
+            <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-[10px] bg-error-bg text-error text-[12.5px]">
+              <span>{metricsError}</span>
+              <button onClick={refetchMetrics} className="font-semibold underline bg-transparent border-none cursor-pointer text-error shrink-0">
+                Try again
+              </button>
+            </div>
           )}
 
           {/* Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
               label="Revenue (30 days)" value={formatCurrency(metrics?.overview.totalRevenue ?? 0)}
-              sub={metrics?.overview.totalRevenue ? 'vs previous period' : 'No sales yet'} Icon={TrendingUp} color="#D97757"
+              sub={metrics?.overview.totalRevenue ? 'vs previous period' : 'No sales yet'} icon={<TrendingUp size={16} />} color="#D97757"
             />
             <MetricCard
               label="Orders (30 days)" value={formatNumber(metrics?.overview.totalOrders ?? 0)}
-              sub={metrics?.overview.totalOrders ? `${formatNumber(metrics.overview.cancelledOrders)} cancelled` : 'No orders yet'} Icon={Package} color="#8B5CF6"
+              sub={metrics?.overview.totalOrders ? `${formatNumber(metrics.overview.cancelledOrders)} cancelled` : 'No orders yet'} icon={<Package size={16} />} color="#8B5CF6"
             />
             <MetricCard
               label="Active Products" value={formatNumber(metrics?.totalProducts ?? 0)}
-              sub={metrics?.totalProducts ? 'In your catalog' : 'Add your first product'} Icon={ShoppingBag} color="#0EA5E9"
+              sub={metrics?.totalProducts ? 'In your catalog' : 'Add your first product'} icon={<ShoppingBag size={16} />} color="#0EA5E9"
             />
             <MetricCard
               label="Customers (30 days)" value={formatNumber(totalCustomers)}
-              sub={totalCustomers ? `${formatNumber(metrics?.overview.newCustomersCount ?? 0)} new` : 'No customers yet'} Icon={Users} color="#22C55E"
+              sub={totalCustomers ? `${formatNumber(metrics?.overview.newCustomersCount ?? 0)} new` : 'No customers yet'} icon={<Users size={16} />} color="#22C55E"
             />
           </div>
 

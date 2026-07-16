@@ -3,8 +3,9 @@ import { DonutChart } from '@/components/comman/charts';
 import { useAdminAnalyticsPaymentBreakdown } from '@/hooks/admin/useAdminAnalytics';
 import type { BaseAnalyticsParams, PaymentMethodRow } from '@/api/services/analytics/adminAnalytics';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
-import { ChartCardSkeleton, TableCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
+import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
 import { formatCurrency } from '@/components/comman/analytics/format';
+import { CreditCard } from 'lucide-react';
 
 export function PaymentsTab({ params }: { params: BaseAnalyticsParams }) {
   const payments = useAdminAnalyticsPaymentBreakdown(params);
@@ -42,11 +43,13 @@ export function PaymentsTab({ params }: { params: BaseAnalyticsParams }) {
           <div className="px-5 pt-4 pb-3">
             <p className="text-[14px] font-bold text-charcoal">Payment Method Breakdown</p>
           </div>
-          {payments.loading ? (
-            <div className="px-5 pb-5"><TableCardSkeleton rows={3} /></div>
-          ) : (
-            <Table columns={methodColumns} data={d?.methodBreakdown ?? []} keyExtractor={r => r.paymentType} />
-          )}
+          <Table
+            columns={methodColumns}
+            data={d?.methodBreakdown ?? []}
+            keyExtractor={r => r.paymentType}
+            loading={payments.loading}
+            emptyState={{ icon: <CreditCard size={28} className="text-slate/50" />, title: 'No payment data yet' }}
+          />
         </div>
       </div>
 

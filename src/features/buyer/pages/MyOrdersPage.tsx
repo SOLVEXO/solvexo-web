@@ -11,6 +11,7 @@ import {
   apiGetMyOrders, apiCancelOrder, apiRequestReturn, apiGetDownloadLink,
   type OrderSummary, type OrderStatus, type OrderLineItem,
 } from '@/api/services/orders';
+import { currencySymbol } from '@/utils/currency';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Status config
@@ -191,7 +192,7 @@ function OrderTimeline({ status }: { status: OrderStatus }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // OrderItemRow
 // ─────────────────────────────────────────────────────────────────────────────
-function OrderItemRow({ item, orderId }: { item: OrderLineItem; orderId: string }) {
+function OrderItemRow({ item, orderId, currency }: { item: OrderLineItem; orderId: string; currency: string }) {
   const isDigital = item.type === 'digital';
   return (
     <div className="flex items-center justify-between gap-3 py-3 border-b border-bone last:border-0">
@@ -221,7 +222,7 @@ function OrderItemRow({ item, orderId }: { item: OrderLineItem; orderId: string 
         </div>
       </div>
       <div className="flex flex-col items-end gap-1.5 shrink-0">
-        <p className="text-[12px] font-bold text-charcoal">Rs {item.totalPrice.toLocaleString()}</p>
+        <p className="text-[12px] font-bold text-charcoal">{currencySymbol(currency)} {item.totalPrice.toLocaleString()}</p>
         {isDigital && item.productId && (
           <DownloadBtn orderId={orderId} productId={item.productId} />
         )}
@@ -320,7 +321,7 @@ function OrderCard({ order, onChanged }: { order: OrderSummary; onChanged: () =>
         <div className="flex items-center gap-3 shrink-0">
           <div className="text-right">
             <p className="text-[10px] text-slate mb-[1px]">Total</p>
-            <p className="text-[14px] font-bold text-carbon">Rs {order.totalAmount.toLocaleString()}</p>
+            <p className="text-[14px] font-bold text-carbon">{currencySymbol(order.currency)} {order.totalAmount.toLocaleString()}</p>
           </div>
           <div className={clsx(
             'w-7 h-7 rounded-full flex items-center justify-center bg-cream border border-bone transition-transform',
@@ -342,7 +343,7 @@ function OrderCard({ order, onChanged }: { order: OrderSummary; onChanged: () =>
               <p className="text-[10px] font-bold text-slate uppercase tracking-[0.07em]">Items ({items.length})</p>
             </div>
             {items.map((item, i) => (
-              <OrderItemRow key={item.itemId ?? i} item={item} orderId={order.orderId} />
+              <OrderItemRow key={item.itemId ?? i} item={item} orderId={order.orderId} currency={order.currency} />
             ))}
           </div>
 
@@ -378,19 +379,19 @@ function OrderCard({ order, onChanged }: { order: OrderSummary; onChanged: () =>
           <div className="px-4 md:px-5 py-3 bg-cream border-t border-bone flex flex-col gap-[6px]">
             <div className="flex justify-between text-[11px]">
               <span className="text-slate">Subtotal</span>
-              <span className="font-medium text-charcoal">Rs {order.subtotal.toLocaleString()}</span>
+              <span className="font-medium text-charcoal">{currencySymbol(order.currency)} {order.subtotal.toLocaleString()}</span>
             </div>
             {!allDigital && (
               <div className="flex justify-between text-[11px]">
                 <span className="text-slate">Shipping</span>
                 <span className="font-medium text-charcoal">
-                  {order.shippingFee === 0 ? 'Free' : `Rs ${order.shippingFee.toLocaleString()}`}
+                  {order.shippingFee === 0 ? 'Free' : `${currencySymbol(order.currency)} ${order.shippingFee.toLocaleString()}`}
                 </span>
               </div>
             )}
             <div className="flex justify-between text-[13px] font-bold pt-2 border-t border-bone">
               <span className="text-charcoal">Total</span>
-              <span className="text-carbon">Rs {order.totalAmount.toLocaleString()}</span>
+              <span className="text-carbon">{currencySymbol(order.currency)} {order.totalAmount.toLocaleString()}</span>
             </div>
           </div>
 
@@ -529,7 +530,10 @@ export function OrdersTab() {
           ))}
         </div>
       ) : error ? (
-        <p className="text-[13px] text-error text-center py-10">{error}</p>
+        <div className="flex flex-col items-center gap-3 py-10">
+          <p className="text-[13px] text-error text-center">{error}</p>
+          <Button variant="outline" size="sm" onClick={refetch}>Try again</Button>
+        </div>
       ) : orders.length === 0 ? (
         <EmptyState
           icon={<ShoppingBag size={28} className="text-brand-orange opacity-55" />}
@@ -551,14 +555,14 @@ export function OrdersTab() {
             <OrderCard key={order.orderId} order={order} onChanged={refetch} />
           ))}
           {activeFilter === 'all' && hasMore && (
-            <button
+            <Button
+              variant="outline" size="sm"
+              className="self-center mt-2 rounded-full!"
               onClick={loadMore}
-              disabled={loadingMore}
-              className="self-center mt-2 flex items-center gap-2 px-4 py-2 rounded-full border border-bone text-[12px] font-semibold text-charcoal cursor-pointer hover:bg-cream disabled:opacity-60 disabled:cursor-wait"
+              loading={loadingMore}
             >
-              {loadingMore && <Loader2 size={13} className="animate-spin" />}
               {loadingMore ? 'Loading…' : `Load more orders (${totalOrders - orders.length} remaining)`}
-            </button>
+            </Button>
           )}
         </div>
       )}

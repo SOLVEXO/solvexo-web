@@ -62,8 +62,8 @@ export function ForgotPasswordPage() {
         />
       </div>
 
-      <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={forgotPassword.loading}>
-        {forgotPassword.loading ? 'Sending...' : 'Send Reset Code'}
+      <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} loading={forgotPassword.loading}>
+        Send Reset Code
       </Button>
 
       {forgotPassword.error && (
@@ -73,10 +73,16 @@ export function ForgotPasswordPage() {
         </div>
       )}
 
-      <button onClick={() => navigate('/login')}
-        className="w-full flex items-center justify-center gap-1.5 text-[12px] text-slate bg-transparent border-none cursor-pointer mt-6 hover:text-charcoal transition-colors">
-        <ArrowLeft size={13} /> Back to Sign In
-      </button>
+      <Button
+        variant="ghost"
+        size="sm"
+        fullWidth
+        icon={<ArrowLeft size={13} />}
+        onClick={() => navigate('/login')}
+        className="mt-6 text-slate!"
+      >
+        Back to Sign In
+      </Button>
     </AuthSplitLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Bot, LayoutGrid, Gauge } from 'lucide-react';
 import { Card } from '@/components/comman/ui/Card';
 import { Button } from '@/components/comman/ui/Button';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
@@ -17,8 +17,6 @@ export function MonitoringTab() {
   const { data: indexSnapshots, loading: indexLoading, refetch: refetchIndex } = useSeoIndexSnapshots();
   const { data: cwv, loading: cwvLoading, refetch: refetchCwv } = useSeoCwv();
   const { refreshIndexSnapshots, refreshCwv, submitting } = useSeoMonitoringActions();
-
-  if (error) return <AnalyticsErrorState message={error} onRetry={refetchLogs} />;
 
   const handleRefreshIndex = async () => {
     if (await refreshIndexSnapshots()) setTimeout(refetchIndex, 1000);
@@ -62,21 +60,23 @@ export function MonitoringTab() {
         <div className="px-5 py-3 border-b border-bone">
           <p className="text-[13px] font-semibold text-carbon">Crawl Logs</p>
         </div>
-        <Table
-          columns={crawlColumns}
-          data={logs?.items ?? []}
-          keyExtractor={r => r._id}
-          pagination={logs ? {
-            page: logs.pagination.page,
-            total: logs.pagination.total,
-            perPage: logs.pagination.limit,
-            onChange: setPage,
-            label: 'crawl hits',
-          } : undefined}
-        />
-        {logsLoading && <div className="px-5 py-6 text-center text-[12px] text-slate">Loading…</div>}
-        {!logsLoading && (logs?.items ?? []).length === 0 && (
-          <div className="px-5 py-10 text-center text-[12px] text-slate">No crawl activity logged yet.</div>
+        {error ? (
+          <div className="p-5"><AnalyticsErrorState message={error} onRetry={refetchLogs} /></div>
+        ) : (
+          <Table
+            columns={crawlColumns}
+            data={logs?.items ?? []}
+            keyExtractor={r => r._id}
+            loading={logsLoading}
+            emptyState={{ icon: <Bot size={28} className="text-slate/50" />, title: 'No crawl activity logged yet' }}
+            pagination={logs ? {
+              page: logs.pagination.page,
+              total: logs.pagination.total,
+              perPage: logs.pagination.limit,
+              onChange: setPage,
+              label: 'crawl hits',
+            } : undefined}
+          />
         )}
       </Card>
 
@@ -85,10 +85,13 @@ export function MonitoringTab() {
           <p className="text-[13px] font-semibold text-carbon">Index Coverage Snapshots</p>
           <Button variant="outline" size="xs" icon={<RefreshCw size={11} />} loading={submitting} onClick={handleRefreshIndex}>Refresh</Button>
         </div>
-        <Table columns={indexColumns} data={indexSnapshots ?? []} keyExtractor={r => r._id} />
-        {!indexLoading && (indexSnapshots ?? []).length === 0 && (
-          <div className="px-5 py-10 text-center text-[12px] text-slate">No index snapshots yet.</div>
-        )}
+        <Table
+          columns={indexColumns}
+          data={indexSnapshots ?? []}
+          keyExtractor={r => r._id}
+          loading={indexLoading}
+          emptyState={{ icon: <LayoutGrid size={28} className="text-slate/50" />, title: 'No index snapshots yet' }}
+        />
       </Card>
 
       <Card padding="none">
@@ -96,10 +99,13 @@ export function MonitoringTab() {
           <p className="text-[13px] font-semibold text-carbon">Core Web Vitals</p>
           <Button variant="outline" size="xs" icon={<RefreshCw size={11} />} loading={submitting} onClick={handleRefreshCwv}>Refresh</Button>
         </div>
-        <Table columns={cwvColumns} data={cwv ?? []} keyExtractor={r => r._id} />
-        {!cwvLoading && (cwv ?? []).length === 0 && (
-          <div className="px-5 py-10 text-center text-[12px] text-slate">No Core Web Vitals data yet.</div>
-        )}
+        <Table
+          columns={cwvColumns}
+          data={cwv ?? []}
+          keyExtractor={r => r._id}
+          loading={cwvLoading}
+          emptyState={{ icon: <Gauge size={28} className="text-slate/50" />, title: 'No Core Web Vitals data yet' }}
+        />
       </Card>
     </div>
   );

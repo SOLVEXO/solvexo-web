@@ -113,16 +113,15 @@ export function LoginPage() {
             }
           />
           <div className="flex justify-end mt-2">
-            <button onClick={() => navigate('/forgot-password')}
-              className="text-[12px] text-brand-orange font-medium bg-transparent border-none cursor-pointer hover:opacity-75">
+            <Button variant="link" size="sm" onClick={() => navigate('/forgot-password')}>
               Forgot password?
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
-      <Button variant="primary" size="md" fullWidth onClick={handleSubmit} disabled={login.loading} className="mt-4">
-        {login.loading ? 'Signing in...' : 'Sign In'}
+      <Button variant="primary" size="md" fullWidth onClick={handleSubmit} loading={login.loading} className="mt-4">
+        Sign In
       </Button>
 
       {login.error && (
@@ -150,10 +149,9 @@ export function LoginPage() {
 
       <p className="text-center text-[12px] text-slate">
         Don't have an account?{' '}
-        <button onClick={() => navigate('/register')}
-          className="text-brand-orange font-semibold text-[12px] bg-transparent border-none cursor-pointer hover:opacity-75">
+        <Button variant="link" size="sm" onClick={() => navigate('/register')} className="font-semibold!">
           Register
-        </button>
+        </Button>
       </p>
     </AuthSplitLayout>
   );

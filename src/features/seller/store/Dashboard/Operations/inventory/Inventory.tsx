@@ -132,7 +132,7 @@ export function StoreInventory() {
     {
       key: 'price', header: 'Price', align: 'right',
       render: p => (
-        <span className="font-semibold text-charcoal">Rs {p.price.toLocaleString()}</span>
+        <span className="font-semibold text-charcoal">${p.price.toLocaleString()}</span>
       ),
     },
     {
@@ -219,7 +219,7 @@ export function StoreInventory() {
 
         {/* Error */}
         {error && (
-          <div className="bg-[#FFF0F0] border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
+          <div className="bg-error-bg border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
             <AlertCircle size={16} className="text-error shrink-0" />
             <span className="text-[13px] text-error flex-1">{error}</span>
             <button

@@ -34,7 +34,7 @@ function StoreCell({ store }: { store: MyStoreItem }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function SellerStoreList() {
   const navigate = useNavigate();
-  const { stores, summary, loading, error } = useMyStores();
+  const { stores, summary, loading, error, refetch } = useMyStores();
   usePageTitle('My Stores');
 
   const PER_PAGE = 10;
@@ -131,9 +131,12 @@ export function SellerStoreList() {
 
         {/* Error */}
         {error && (
-          <div className="bg-[#FFF0F0] border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3 mb-4">
-            <AlertCircle size={16} className="text-error shrink-0" />
-            <span className="text-[13px] text-error">{error}</span>
+          <div className="bg-error-bg border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle size={16} className="text-error shrink-0" />
+              <span className="text-[13px] text-error">{error}</span>
+            </div>
+            <Button variant="outline" size="xs" onClick={refetch}>Try again</Button>
           </div>
         )}
 

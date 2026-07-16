@@ -16,6 +16,10 @@ export function LocationsTab({ storeId }: LocationsTabProps) {
   const [error, setError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [editing, setEditing] = useState<StoreLocation | 'new' | null>(null);
+  const [archiving, setArchiving] = useState<StoreLocation | null>(null);
+  const [archiveBusy, setArchiveBusy] = useState(false);
+  const [archiveError, setArchiveError] = useState('');
+  const [archiveNeedsForce, setArchiveNeedsForce] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,16 +33,20 @@ export function LocationsTab({ storeId }: LocationsTabProps) {
 
   function reload() { setRefreshKey(k => k + 1); }
 
-  async function handleArchive(loc: StoreLocation) {
-    if (!window.confirm(`Archive branch "${loc.name}"?`)) return;
+  async function submitArchive(force = false) {
+    if (!archiving) return;
+    setArchiveBusy(true);
+    setArchiveError('');
     try {
-      await apiArchiveLocation(storeId, loc._id);
+      await apiArchiveLocation(storeId, archiving._id, force);
+      setArchiving(null);
+      setArchiveNeedsForce(false);
       reload();
     } catch (err) {
-      if (err instanceof Error && window.confirm(`${err.message}\n\nArchive anyway?`)) {
-        await apiArchiveLocation(storeId, loc._id, true);
-        reload();
-      }
+      setArchiveError(err instanceof Error ? err.message : 'Failed to archive location.');
+      setArchiveNeedsForce(true);
+    } finally {
+      setArchiveBusy(false);
     }
   }
 
@@ -90,7 +98,7 @@ export function LocationsTab({ storeId }: LocationsTabProps) {
                         Edit
                       </button>
                       {loc.status !== 'archived' && (
-                        <button onClick={() => handleArchive(loc)} className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-error">
+                        <button onClick={() => { setArchiving(loc); setArchiveError(''); setArchiveNeedsForce(false); }} className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-error">
                           Archive
                         </button>
                       )}
@@ -110,6 +118,22 @@ export function LocationsTab({ storeId }: LocationsTabProps) {
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); reload(); }}
         />
+      )}
+
+      {archiving && (
+        <DarkModal title="Archive Location" width={400} onClose={() => setArchiving(null)} footer={
+          <>
+            <DarkButton variant="outline" onClick={() => setArchiving(null)} disabled={archiveBusy}>Cancel</DarkButton>
+            <DarkButton variant="danger" onClick={() => submitArchive(archiveNeedsForce)} loading={archiveBusy}>
+              {archiveNeedsForce ? 'Archive Anyway' : 'Archive'}
+            </DarkButton>
+          </>
+        }>
+          <p className="text-[13px] text-pos-muted">
+            Archive branch <strong className="text-white">"{archiving.name}"</strong>?
+          </p>
+          {archiveError && <p className="text-[12px] text-error mt-2">{archiveError}</p>}
+        </DarkModal>
       )}
     </div>
   );

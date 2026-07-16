@@ -101,10 +101,9 @@ function ResendTimer({ email, role }: { email: string; role: AppRole }) {
   if (canResend) {
     return (
       <div className="flex flex-col items-center gap-1">
-        <button onClick={handleResend} disabled={sending}
-          className="text-[13px] text-brand-orange font-semibold bg-transparent border-none cursor-pointer disabled:opacity-50">
-          {sending ? 'Sending…' : 'Resend code'}
-        </button>
+        <Button variant="link" size="sm" onClick={handleResend} loading={sending} disabled={sending}>
+          Resend code
+        </Button>
         {error && <p className="text-[11px] text-error">{error}</p>}
       </div>
     );
@@ -163,8 +162,14 @@ export function VerifyOTPPage() {
         </div>
       )}
 
-      <Button variant="primary" size="lg" fullWidth onClick={handleVerify} disabled={otp.join('').length < 6 || verifyOtp.loading}>
-        {verifyOtp.loading ? 'Verifying...' : <span>Verify Code <ArrowRight size={14} className="inline align-middle ml-1" /></span>}
+      <Button
+        variant="primary" size="lg" fullWidth
+        onClick={handleVerify}
+        disabled={otp.join('').length < 6}
+        loading={verifyOtp.loading}
+        iconRight={!verifyOtp.loading && <ArrowRight size={14} />}
+      >
+        Verify Code
       </Button>
 
       <div className="flex items-center justify-center gap-[6px] mt-5">

@@ -148,7 +148,7 @@ export function StoreOrderList() {
       key: 'amount', header: 'Amount', align: 'right',
       render: o => (
         <span className="text-[13px] font-bold text-charcoal whitespace-nowrap">
-          Rs {o.amount.toLocaleString()}
+          ${o.amount.toLocaleString()}
         </span>
       ),
     },
@@ -183,7 +183,7 @@ export function StoreOrderList() {
               );
             })
             .catch((err: unknown) => {
-              alert(err instanceof Error ? err.message : 'Failed to update status.');
+              setError(err instanceof Error ? err.message : 'Failed to update status.');
             })
             .finally(() => setUpdatingStatusId(null));
         };
@@ -192,7 +192,7 @@ export function StoreOrderList() {
           <ActionMenu
             align="right"
             items={[
-              { label: 'View Order', onClick: () => {}, icon: <Eye size={13} /> },
+              { label: 'View Order', onClick: () => {}, icon: <Eye size={13} />, disabled: true, title: 'Order detail view is not available yet' },
               ...(!o.isPaid ? [{
                 label: markingPaidId === o.orderId ? 'Marking…' : 'Mark as Paid',
                 icon: <CheckCheck size={13} />,
@@ -203,7 +203,7 @@ export function StoreOrderList() {
                     .then(() => setOrders(prev =>
                       prev.map(x => x.orderId === o.orderId ? { ...x, isPaid: true } : x)
                     ))
-                    .catch((err: unknown) => alert(err instanceof Error ? err.message : 'Failed to mark as paid.'))
+                    .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to mark as paid.'))
                     .finally(() => setMarkingPaidId(null));
                 },
               }] : []),
@@ -252,7 +252,7 @@ export function StoreOrderList() {
           />
           <MetricCard
             label="Revenue"
-            value={stats ? `Rs ${stats.revenue.toLocaleString()}` : 0}
+            value={stats ? `$${stats.revenue.toLocaleString()}` : 0}
             icon={<DollarSign size={16} />}
             loading={loading && !stats}
           />
@@ -264,7 +264,7 @@ export function StoreOrderList() {
           />
           <MetricCard
             label="Avg. Order"
-            value={stats ? `Rs ${stats.avgOrder.toLocaleString()}` : 0}
+            value={stats ? `$${stats.avgOrder.toLocaleString()}` : 0}
             icon={<TrendingUp size={16} />}
             loading={loading && !stats}
           />
@@ -272,7 +272,7 @@ export function StoreOrderList() {
 
         {/* Error */}
         {error && (
-          <div className="bg-[#FFF0F0] border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
+          <div className="bg-error-bg border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
             <AlertCircle size={16} className="text-error shrink-0" />
             <span className="text-[13px] text-error flex-1">{error}</span>
             <button

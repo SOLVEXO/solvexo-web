@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, ImageOff, Pencil, Trash2 } from 'lucide-react';
+import { Star, ImageOff, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import {
   Card, EmptyState, StarRating, SkeletonBox,
   Table, type TableColumn, ActionMenu, type ActionMenuItem,
+  Modal, Button,
 } from '@/components/comman/ui';
 import { apiGetMyReviews, apiDeleteReview, type MyReviewEntry } from '@/api/services/rating';
 import { ReviewFormModal } from '@/features/buyer/components/ReviewFormModal';
@@ -19,6 +20,9 @@ export function ReviewsTab() {
   const [error, setError]     = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [editing, setEditing] = useState<MyReviewEntry | null>(null);
+  const [deleting, setDeleting] = useState<MyReviewEntry | null>(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,13 +38,18 @@ export function ReviewsTab() {
     return () => { cancelled = true; };
   }, [page, refreshKey]);
 
-  async function handleDelete(review: MyReviewEntry) {
-    if (!window.confirm('Delete this review? This cannot be undone.')) return;
+  async function confirmDelete() {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setDeleteError('');
     try {
-      await apiDeleteReview(review.reviewId);
+      await apiDeleteReview(deleting.reviewId);
+      setDeleting(null);
       setRefreshKey(k => k + 1);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete review.');
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete review.');
+    } finally {
+      setDeleteBusy(false);
     }
   }
 
@@ -94,7 +103,7 @@ export function ReviewsTab() {
       render: r => {
         const items: ActionMenuItem[] = [
           { label: 'Edit', icon: <Pencil size={13} />, onClick: () => setEditing(r) },
-          { label: 'Delete', icon: <Trash2 size={13} />, danger: true, onClick: () => handleDelete(r) },
+          { label: 'Delete', icon: <Trash2 size={13} />, danger: true, onClick: () => { setDeleting(r); setDeleteError(''); } },
         ];
         return <ActionMenu items={items} />;
       },
@@ -120,7 +129,10 @@ export function ReviewsTab() {
           {[1, 2, 3].map(i => <SkeletonBox key={i} height={56} rounded="8px" />)}
         </div>
       ) : error ? (
-        <p className="text-[13px] text-error p-5">{error}</p>
+        <div className="flex flex-col items-center gap-3 py-10">
+          <p className="text-[13px] text-error text-center">{error}</p>
+          <Button variant="outline" size="sm" onClick={() => setRefreshKey(k => k + 1)}>Try again</Button>
+        </div>
       ) : reviews.length === 0 ? (
         <EmptyState
           icon={<Star size={28} className="text-brand-orange opacity-55" />}
@@ -146,6 +158,29 @@ export function ReviewsTab() {
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); setRefreshKey(k => k + 1); }}
         />
+      )}
+
+      {deleting && (
+        <Modal
+          title="Delete Review"
+          onClose={() => setDeleting(null)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setDeleting(null)}>Cancel</Button>
+              <Button variant="danger" onClick={confirmDelete} loading={deleteBusy}>Delete Review</Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-charcoal leading-[1.6]">
+            Delete your review for <strong>{deleting.product?.name ?? 'this product'}</strong>? This cannot be undone.
+          </p>
+          {deleteError && (
+            <div className="flex items-center gap-2 mt-3 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-lg px-3 py-2">
+              <AlertTriangle size={13} className="shrink-0" />
+              {deleteError}
+            </div>
+          )}
+        </Modal>
       )}
     </Card>
   );

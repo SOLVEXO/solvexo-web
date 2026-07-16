@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FilterDropdown, Table, Badge, EmptyState, type TableColumn } from '@/components/comman/ui';
 import { DonutChart } from '@/components/comman/charts';
-import { PackageX } from 'lucide-react';
+import { PackageX, Package } from 'lucide-react';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import {
   useAdminAnalyticsTopProducts,
@@ -79,12 +79,16 @@ export function ProductsTab({ params }: { params: BaseAnalyticsParams }) {
           <div className="px-5 pt-4 pb-3">
             <p className="text-[14px] font-bold text-charcoal">Top Products</p>
           </div>
-          {topProducts.loading ? (
-            <div className="px-5 pb-5"><TableCardSkeleton /></div>
-          ) : topProducts.error ? (
+          {topProducts.error ? (
             <div className="px-5 pb-5"><AnalyticsErrorState message={topProducts.error} onRetry={topProducts.refetch} /></div>
           ) : (
-            <Table columns={productColumns} data={topProducts.data ?? []} keyExtractor={r => r.productId} />
+            <Table
+              columns={productColumns}
+              data={topProducts.data ?? []}
+              keyExtractor={r => r.productId}
+              loading={topProducts.loading}
+              emptyState={{ icon: <Package size={28} className="text-slate/50" />, title: 'No product data yet' }}
+            />
           )}
         </div>
 
@@ -105,15 +109,15 @@ export function ProductsTab({ params }: { params: BaseAnalyticsParams }) {
           <p className="text-[14px] font-bold text-charcoal">Product Performance</p>
           <p className="text-[12px] text-slate">Every listed product platform-wide, ranked by revenue.</p>
         </div>
-        {performance.loading ? (
-          <div className="px-5 pb-5"><TableCardSkeleton /></div>
-        ) : performance.error ? (
+        {performance.error ? (
           <div className="px-5 pb-5"><AnalyticsErrorState message={performance.error} onRetry={performance.refetch} /></div>
         ) : (
           <Table
             columns={performanceColumns}
             data={performance.data?.products ?? []}
             keyExtractor={r => r.productId}
+            loading={performance.loading}
+            emptyState={{ icon: <Package size={28} className="text-slate/50" />, title: 'No products yet' }}
             pagination={{
               page,
               total: performance.data?.pagination.total ?? 0,

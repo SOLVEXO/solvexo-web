@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Gift, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { EmptyState, SkeletonBox } from '@/components/comman/ui';
+import { EmptyState, SkeletonBox, Modal, Button } from '@/components/comman/ui';
 import {
   apiGetCoupons, apiCreateCoupon, apiUpdateCoupon, apiDeleteCoupon,
   type Coupon, type DiscountType,
@@ -68,13 +68,22 @@ export function StoreMarketing() {
     });
   }
 
+  const [deletingCoupon, setDeletingCoupon] = useState<Coupon | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+
   async function togglePause(c: Coupon) {
-    const res = await apiUpdateCoupon(storeId, c._id, { isActive: !c.isActive });
-    setCoupons(prev => prev.map(x => x._id === c._id ? res.data : x));
+    setError('');
+    try {
+      const res = await apiUpdateCoupon(storeId, c._id, { isActive: !c.isActive });
+      setCoupons(prev => prev.map(x => x._id === c._id ? res.data : x));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update coupon.');
+    }
   }
 
   async function handleSubmit() {
     if (!form.code || !form.discountType || !form.value) return;
+    setError('');
     const payload = {
       code: form.code,
       discountType: form.discountType as DiscountType,
@@ -83,20 +92,34 @@ export function StoreMarketing() {
       usageLimit: form.usageLimit ? Number(form.usageLimit) : undefined,
       expiresAt: form.expiryDate || undefined,
     };
-    if (editingId) {
-      const res = await apiUpdateCoupon(storeId, editingId, payload);
-      setCoupons(prev => prev.map(c => c._id === editingId ? res.data : c));
-    } else {
-      const res = await apiCreateCoupon(storeId, payload);
-      setCoupons(prev => [res.data, ...prev]);
+    try {
+      if (editingId) {
+        const res = await apiUpdateCoupon(storeId, editingId, payload);
+        setCoupons(prev => prev.map(c => c._id === editingId ? res.data : c));
+      } else {
+        const res = await apiCreateCoupon(storeId, payload);
+        setCoupons(prev => [res.data, ...prev]);
+      }
+      setEditingId(null);
+      setForm(emptyForm);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save coupon.');
     }
-    setEditingId(null);
-    setForm(emptyForm);
   }
 
-  async function handleDelete(id: string) {
-    await apiDeleteCoupon(storeId, id);
-    setCoupons(prev => prev.filter(c => c._id !== id));
+  async function confirmDelete() {
+    if (!deletingCoupon) return;
+    setDeleteBusy(true);
+    setError('');
+    try {
+      await apiDeleteCoupon(storeId, deletingCoupon._id);
+      setCoupons(prev => prev.filter(c => c._id !== deletingCoupon._id));
+      setDeletingCoupon(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete coupon.');
+    } finally {
+      setDeleteBusy(false);
+    }
   }
 
   const activeCount = coupons.filter(c => c.isActive).length;
@@ -189,7 +212,7 @@ export function StoreMarketing() {
                     <div className="flex gap-2">
                       <button onClick={() => startEdit(coupon)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Edit</button>
                       <button onClick={() => togglePause(coupon)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">{coupon.isActive ? 'Pause' : 'Activate'}</button>
-                      <button onClick={() => handleDelete(coupon._id)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-error cursor-pointer transition-colors duration-150 hover:bg-error hover:text-white hover:border-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Delete</button>
+                      <button onClick={() => setDeletingCoupon(coupon)} className="flex-1 py-[7px] bg-white border border-bone rounded-[7px] text-xs text-error cursor-pointer transition-colors duration-150 hover:bg-error hover:text-white hover:border-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Delete</button>
                     </div>
                   </div>
                 ))}
@@ -307,6 +330,20 @@ export function StoreMarketing() {
         )}
 
       </div>
+
+      {deletingCoupon && (
+        <Modal title="Delete Coupon" onClose={() => setDeletingCoupon(null)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeletingCoupon(null)} disabled={deleteBusy}>Cancel</Button>
+            <Button variant="danger" onClick={confirmDelete} loading={deleteBusy}>Delete Coupon</Button>
+          </>
+        }>
+          <p className="text-[13px] text-charcoal">
+            Delete coupon <strong>{deletingCoupon.code}</strong>? {deletingCoupon.usageCount > 0 && `It has been redeemed ${deletingCoupon.usageCount} time${deletingCoupon.usageCount !== 1 ? 's' : ''}. `}This cannot be undone.
+          </p>
+          {error && <p className="text-[12px] text-error mt-2">{error}</p>}
+        </Modal>
+      )}
     </>
   );
 }

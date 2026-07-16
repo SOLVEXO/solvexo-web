@@ -165,3 +165,18 @@ export function apiResendOtp(payload: ResendOtpPayload) {
   return client.post<never, ApiResponse<ResendOtpData>>(ENDPOINTS.AUTH.RESEND_OTP, payload);
 }
 
+/** POST /auth/social-login — signs in user using social credentials */
+export interface SocialLoginPayload {
+  authProvider: 'google' | 'facebook' | 'apple';
+  socialId:     string;
+  userName:     string;
+  email:        string;
+  image?:       string;
+  fcmToken?:    string;
+  token?:       string;
+}
+
+export function apiSocialLogin(payload: SocialLoginPayload) {
+  return client.post<never, ApiResponse<LoginData>>(ENDPOINTS.AUTH.SOCIAL_LOGIN, payload);
+}
+

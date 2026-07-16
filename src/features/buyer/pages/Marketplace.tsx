@@ -373,7 +373,7 @@ export function Marketplace() {
   };
 
   const LIMIT = 20;
-  const { products, total, loading, error } = useProductsByCategory(page, LIMIT, selectedCategory || undefined);
+  const { products, total, loading, error, refetch } = useProductsByCategory(page, LIMIT, selectedCategory || undefined);
   const { cartCount, addToCart, adding }    = useCartContext();
   const { wishlistCount, isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
   const { banners } = useBanners();
@@ -650,8 +650,9 @@ export function Marketplace() {
             </p>
 
             {error && !loading && (
-              <div className="p-6 text-center bg-[#FFF3F0] rounded-[12px] border border-[#FECACA] text-[#C13030] text-[13px]">
-                {error}
+              <div className="p-6 flex flex-col items-center gap-3 text-center bg-error-bg rounded-[12px] border border-[#FECACA] text-error text-[13px]">
+                <span>{error}</span>
+                <Button variant="outline" size="sm" onClick={refetch}>Try again</Button>
               </div>
             )}
 

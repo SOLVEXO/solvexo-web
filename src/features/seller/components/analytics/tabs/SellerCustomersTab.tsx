@@ -1,10 +1,10 @@
-import { MetricCard, Table, EmptyState, type TableColumn } from '@/components/comman/ui';
+import { MetricCard, Table, type TableColumn } from '@/components/comman/ui';
 import { LineChart } from '@/components/comman/charts';
-import { Users } from 'lucide-react';
+import { Users, MapPin } from 'lucide-react';
 import { useSellerAnalyticsCustomers } from '@/hooks/seller/useSellerAnalytics';
 import type { SellerAnalyticsParams, GeoBreakdownRow, TopCustomerRow } from '@/api/services/analytics/analytics';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
-import { ChartCardSkeleton, TableCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
+import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
 import { formatCurrency, formatBucketLabel } from '@/components/comman/analytics/format';
 
 export function SellerCustomersTab({ params }: { params: SellerAnalyticsParams }) {
@@ -54,13 +54,17 @@ export function SellerCustomersTab({ params }: { params: SellerAnalyticsParams }
           <div className="px-5 pt-4 pb-3">
             <p className="text-[14px] font-bold text-charcoal">Top Customers by Lifetime Value</p>
           </div>
-          {customers.loading ? (
-            <div className="px-5 pb-5"><TableCardSkeleton /></div>
-          ) : d && d.topCustomersByLtv.length > 0 ? (
-            <Table columns={ltvColumns} data={d.topCustomersByLtv} keyExtractor={r => r.userId} />
-          ) : (
-            <EmptyState icon={<Users size={28} className="text-slate" />} title="No customer activity yet" description="No non-cancelled orders were placed in this period." />
-          )}
+          <Table
+            columns={ltvColumns}
+            data={d?.topCustomersByLtv ?? []}
+            keyExtractor={r => r.userId}
+            loading={customers.loading}
+            emptyState={{
+              icon: <Users size={28} className="text-slate/50" />,
+              title: 'No customer activity yet',
+              description: 'No non-cancelled orders were placed in this period.',
+            }}
+          />
         </div>
 
         <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
@@ -68,13 +72,17 @@ export function SellerCustomersTab({ params }: { params: SellerAnalyticsParams }
             <p className="text-[14px] font-bold text-charcoal">Geographic Distribution</p>
             <p className="text-[12px] text-slate">Physical orders only — digital orders have no shipping address.</p>
           </div>
-          {customers.loading ? (
-            <div className="px-5 pb-5"><TableCardSkeleton /></div>
-          ) : d && d.geographicBreakdown.length > 0 ? (
-            <Table columns={geoColumns} data={d.geographicBreakdown} keyExtractor={r => r.state} />
-          ) : (
-            <EmptyState icon={<Users size={28} className="text-slate" />} title="No geographic data" description="No physical orders with shipping addresses were placed in this period." />
-          )}
+          <Table
+            columns={geoColumns}
+            data={d?.geographicBreakdown ?? []}
+            keyExtractor={r => r.state}
+            loading={customers.loading}
+            emptyState={{
+              icon: <MapPin size={28} className="text-slate/50" />,
+              title: 'No geographic data',
+              description: 'No physical orders with shipping addresses were placed in this period.',
+            }}
+          />
         </div>
       </div>
     </div>

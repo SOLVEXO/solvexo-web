@@ -97,7 +97,12 @@ export function ForSellersPage() {
                 <s.Icon size={36} className="block mb-4 text-brand-orange" />
                 <p className="text-[17px] font-bold text-carbon mb-2">{s.title}</p>
                 <p className="text-[13px] text-slate leading-[1.7] mb-5">{s.desc}</p>
-                <Button variant="secondary" size="sm" onClick={() => navigate('/onboarding')}>
+                <Button
+                  variant="secondary" size="sm"
+                  onClick={() => s.cta === 'Contact Us'
+                    ? (window.location.href = 'mailto:support@solvexo.com?subject=Institutional%20Account%20Inquiry')
+                    : navigate('/onboarding')}
+                >
                   {s.cta} <ArrowRight size={14} className="inline align-middle ml-1" />
                 </Button>
               </div>

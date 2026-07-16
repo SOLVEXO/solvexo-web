@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Loader2, Plus, Pencil, Archive, Download, Users, TrendingUp, RefreshCw,
   Trash2, AlertTriangle, CheckCircle2, Tag, Truck, Clock, Star, Gift, Headset, CalendarClock,
+  type LucideIcon,
 } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Modal } from '@/components/comman/ui/Modal';
@@ -20,7 +21,7 @@ import {
 } from '@/api/services/subscriptions';
 
 // ── Benefit type menu ─────────────────────────────────────────────────────────
-const BENEFIT_MENU: { type: BenefitType; label: string; Icon: any; desc: string }[] = [
+const BENEFIT_MENU: { type: BenefitType; label: string; Icon: LucideIcon; desc: string }[] = [
   { type: 'discount',           label: 'Discount',            Icon: Tag,          desc: 'Member pricing storewide, by category, or per product' },
   { type: 'shipping',           label: 'Shipping',             Icon: Truck,        desc: 'Free or discounted shipping for members' },
   { type: 'early_access',       label: 'Early Access',         Icon: Clock,        desc: 'Members see new arrivals first' },
@@ -59,7 +60,7 @@ function benefitSummary(b: PlanBenefit): string {
   }
 }
 
-const HEALTH_STYLE: Record<string, { bg: string; color: string; Icon: any }> = {
+const HEALTH_STYLE: Record<string, { bg: string; color: string; Icon: LucideIcon }> = {
   healthy: { bg: '#E3F4EA', color: '#1E7A3C', Icon: CheckCircle2 },
   warning: { bg: '#FFF4DC', color: '#B36200', Icon: AlertTriangle },
   risky:   { bg: '#FDECEA', color: '#C0392B', Icon: AlertTriangle },
@@ -86,7 +87,7 @@ function BenefitEditor({ benefit, onChange, onRemove, categories }: {
       {benefit.type === 'discount' && (
         <>
           <div className="grid grid-cols-2 gap-2">
-            <Select label="Applies to" value={benefit.scope ?? 'store'} onChange={e => set('scope', e.target.value as any)}>
+            <Select label="Applies to" value={benefit.scope ?? 'store'} onChange={e => set('scope', e.target.value as PlanBenefit['scope'])}>
               <option value="store">Entire store</option>
               <option value="category">Selected categories</option>
               <option value="product">Selected products</option>
@@ -126,7 +127,7 @@ function BenefitEditor({ benefit, onChange, onRemove, categories }: {
 
       {benefit.type === 'shipping' && (
         <>
-          <Select label="Type" value={benefit.shippingType ?? 'free'} onChange={e => set('shippingType', e.target.value as any)}>
+          <Select label="Type" value={benefit.shippingType ?? 'free'} onChange={e => set('shippingType', e.target.value as PlanBenefit['shippingType'])}>
             <option value="free">Free shipping</option>
             <option value="discounted">Discounted shipping</option>
           </Select>
@@ -148,7 +149,7 @@ function BenefitEditor({ benefit, onChange, onRemove, categories }: {
       {benefit.type === 'credits' && (
         <div className="grid grid-cols-2 gap-2">
           <Input label="Credits per cycle" type="number" min={0} value={benefit.creditsPerCycle ?? ''} onChange={e => set('creditsPerCycle', Number(e.target.value))} />
-          <Select label="Credit type" value={benefit.creditType ?? 'download'} onChange={e => set('creditType', e.target.value as any)}>
+          <Select label="Credit type" value={benefit.creditType ?? 'download'} onChange={e => set('creditType', e.target.value as PlanBenefit['creditType'])}>
             <option value="download">Download</option>
             <option value="service">Service</option>
           </Select>
@@ -276,11 +277,14 @@ function PlanFormModal({ storeId, plan, onClose, onSaved }: {
   );
 }
 
-// ── Subscriber detail modal ───────────────────────────────────────────────────
+type SubscriberDetail = NonNullable<Awaited<ReturnType<typeof apiGetStoreSubscriberById>>['data']>;
+
 function SubscriberDetailModal({ storeId, subId, onClose }: { storeId: string; subId: string; onClose: () => void }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<SubscriberDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [refundingId, setRefundingId] = useState<string | null>(null);
+  const [confirmingRefund, setConfirmingRefund] = useState<SubscriptionInvoice | null>(null);
+  const [refundError, setRefundError] = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
@@ -288,14 +292,16 @@ function SubscriberDetailModal({ storeId, subId, onClose }: { storeId: string; s
   }, [storeId, subId]);
   useEffect(load, [load]);
 
-  async function refund(invoice: SubscriptionInvoice) {
-    if (!window.confirm(`Refund invoice ${invoice.invoiceNumber} ($${invoice.amountUSD.toFixed(2)})?`)) return;
-    setRefundingId(invoice._id);
+  async function confirmRefund() {
+    if (!confirmingRefund) return;
+    setRefundingId(confirmingRefund._id);
+    setRefundError('');
     try {
-      await apiRefundSubscriberInvoice(storeId, subId, invoice._id);
+      await apiRefundSubscriberInvoice(storeId, subId, confirmingRefund._id);
+      setConfirmingRefund(null);
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Refund failed.');
+      setRefundError(err instanceof Error ? err.message : 'Refund failed.');
     } finally {
       setRefundingId(null);
     }
@@ -324,8 +330,8 @@ function SubscriberDetailModal({ storeId, subId, onClose }: { storeId: string; s
                 <div key={inv._id} className="flex items-center justify-between text-[12px] px-2.5 py-1.5 rounded bg-cream">
                   <span className="text-slate">{inv.invoiceNumber} · {inv.status} · ${inv.amountUSD.toFixed(2)}</span>
                   {['paid', 'partially_refunded'].includes(inv.status) && (
-                    <button disabled={refundingId === inv._id} onClick={() => refund(inv)}
-                      className="px-2 py-[3px] bg-white border border-bone rounded-[5px] text-[11px] text-[#C13030] cursor-pointer disabled:opacity-50">
+                    <button disabled={refundingId === inv._id} onClick={() => { setConfirmingRefund(inv); setRefundError(''); }}
+                      className="px-2 py-[3px] bg-white border border-bone rounded-[5px] text-[11px] text-error cursor-pointer disabled:opacity-50">
                       {refundingId === inv._id ? 'Refunding…' : 'Refund'}
                     </button>
                   )}
@@ -335,6 +341,25 @@ function SubscriberDetailModal({ storeId, subId, onClose }: { storeId: string; s
             </div>
           </div>
         </div>
+      )}
+
+      {confirmingRefund && (
+        <Modal
+          title="Refund Invoice"
+          onClose={() => setConfirmingRefund(null)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setConfirmingRefund(null)} disabled={refundingId === confirmingRefund._id}>Cancel</Button>
+              <Button variant="danger" onClick={confirmRefund} loading={refundingId === confirmingRefund._id}>Refund</Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-charcoal">
+            Refund invoice <strong>{confirmingRefund.invoiceNumber}</strong> (${confirmingRefund.amountUSD.toFixed(2)})?
+            This cannot be undone.
+          </p>
+          {refundError && <p className="text-[12px] text-error mt-2">{refundError}</p>}
+        </Modal>
       )}
     </Modal>
   );
@@ -366,8 +391,11 @@ export function StoreSubscriptions() {
   const [error, setError] = useState('');
   const [editingPlan, setEditingPlan] = useState<SellerPlan | 'new' | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState('');
   const [cancelReasonFor, setCancelReasonFor] = useState<SellerSubscriber | null>(null);
   const [cancelReasonText, setCancelReasonText] = useState('');
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(true);
+  const [cancelError, setCancelError] = useState('');
   const [viewingSubId, setViewingSubId] = useState<string | null>(null);
   const [advanced, setAdvanced] = useState<AdvancedSellerAnalytics | null>(null);
 
@@ -397,35 +425,55 @@ export function StoreSubscriptions() {
     apiGetAdvancedAnalytics(storeId).then(res => setAdvanced(res.data)).catch(() => {});
   }, [storeId]);
 
-  async function handleArchive(plan: SellerPlan) {
-    if (!window.confirm(`Archive "${plan.name}"?`)) return;
+  const [archivingPlan, setArchivingPlan] = useState<SellerPlan | null>(null);
+  const [archiveBusy, setArchiveBusy] = useState(false);
+  const [archiveError, setArchiveError] = useState('');
+  const [archiveNeedsForce, setArchiveNeedsForce] = useState(false);
+
+  async function submitArchive(force = false) {
+    if (!archivingPlan) return;
+    setArchiveBusy(true);
+    setArchiveError('');
     try {
-      await apiArchivePlan(storeId, plan._id);
+      await apiArchivePlan(storeId, archivingPlan._id, force);
+      setArchivingPlan(null);
+      setArchiveNeedsForce(false);
       load();
     } catch (err) {
-      if (err instanceof Error && window.confirm(`${err.message}\n\nArchive anyway?`)) {
-        await apiArchivePlan(storeId, plan._id, true);
-        load();
-      }
+      setArchiveError(err instanceof Error ? err.message : 'Failed to archive plan.');
+      setArchiveNeedsForce(true);
+    } finally {
+      setArchiveBusy(false);
     }
   }
 
-  async function handleAction(sub: SellerSubscriber, action: 'pause' | 'resume' | 'cancel', reason?: string) {
+  async function handleAction(sub: SellerSubscriber, action: 'pause' | 'resume') {
     setBusyId(sub._id);
+    setActionError('');
     try {
       if (action === 'pause') await apiPauseSubscriber(storeId, sub._id);
-      else if (action === 'resume') await apiResumeSubscriber(storeId, sub._id);
-      else {
-        const atPeriodEnd = window.confirm('Cancel at end of billing period? OK = at period end, Cancel = immediately.');
-        await apiCancelSubscriber(storeId, sub._id, atPeriodEnd, reason);
-      }
+      else await apiResumeSubscriber(storeId, sub._id);
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Action failed.');
+      setActionError(err instanceof Error ? err.message : 'Action failed.');
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function submitCancel() {
+    if (!cancelReasonFor) return;
+    setBusyId(cancelReasonFor._id);
+    setCancelError('');
+    try {
+      await apiCancelSubscriber(storeId, cancelReasonFor._id, cancelAtPeriodEnd, cancelReasonText);
       setCancelReasonFor(null);
       setCancelReasonText('');
+      load();
+    } catch (err) {
+      setCancelError(err instanceof Error ? err.message : 'Failed to cancel subscription.');
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -453,6 +501,12 @@ export function StoreSubscriptions() {
 
       <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error">{error}</p>}
+        {actionError && (
+          <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-[#FECACA] rounded-lg px-3 py-2">
+            <span>{actionError}</span>
+            <button onClick={() => setActionError('')} className="text-[11px] font-semibold text-error bg-transparent border-none cursor-pointer shrink-0">Dismiss</button>
+          </div>
+        )}
 
         {/* Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -528,7 +582,7 @@ export function StoreSubscriptions() {
                     <Pencil size={12} /> Edit
                   </button>
                   {plan.status !== 'archived' && (
-                    <button onClick={() => handleArchive(plan)} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
+                    <button onClick={() => { setArchivingPlan(plan); setArchiveError(''); setArchiveNeedsForce(false); }} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
                       <Archive size={12} /> Archive
                     </button>
                   )}
@@ -624,7 +678,7 @@ export function StoreSubscriptions() {
                             <button disabled={busyId === sub._id} onClick={() => handleAction(sub, 'resume')} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Resume</button>
                           )}
                           {(sub.status === 'active' || sub.status === 'paused' || sub.status === 'past_due') && (
-                            <button disabled={busyId === sub._id} onClick={() => setCancelReasonFor(sub)} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-[#C13030] cursor-pointer transition-colors duration-150 hover:bg-error hover:text-white hover:border-error disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Cancel</button>
+                            <button disabled={busyId === sub._id} onClick={() => setCancelReasonFor(sub)} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-error cursor-pointer transition-colors duration-150 hover:bg-error hover:text-white hover:border-error disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Cancel</button>
                           )}
                         </div>
                       </td>
@@ -703,20 +757,47 @@ export function StoreSubscriptions() {
         />
       )}
 
-      {cancelReasonFor && (
-        <Modal title="Cancel Subscription" width={420} onClose={() => setCancelReasonFor(null)}
+      {archivingPlan && (
+        <Modal title="Archive Plan" width={420} onClose={() => setArchivingPlan(null)}
           footer={<>
-            <Button variant="outline" onClick={() => setCancelReasonFor(null)}>Back</Button>
-            <Button variant="danger" loading={busyId === cancelReasonFor._id} onClick={() => handleAction(cancelReasonFor, 'cancel', cancelReasonText)}>
+            <Button variant="outline" onClick={() => setArchivingPlan(null)}>Back</Button>
+            <Button variant="danger" loading={archiveBusy} onClick={() => submitArchive(archiveNeedsForce)}>
+              {archiveNeedsForce ? 'Archive Anyway' : 'Archive Plan'}
+            </Button>
+          </>}
+        >
+          <p className="text-[13px] text-charcoal">
+            Archive <strong>"{archivingPlan.name}"</strong>? Existing subscribers keep their access; no new subscribers can join this plan.
+          </p>
+          {archiveError && <p className="text-[12px] text-error mt-2">{archiveError}</p>}
+        </Modal>
+      )}
+
+      {cancelReasonFor && (
+        <Modal title="Cancel Subscription" width={420} onClose={() => { setCancelReasonFor(null); setCancelError(''); }}
+          footer={<>
+            <Button variant="outline" onClick={() => { setCancelReasonFor(null); setCancelError(''); }}>Back</Button>
+            <Button variant="danger" loading={busyId === cancelReasonFor._id} onClick={submitCancel}>
               Cancel Subscription
             </Button>
           </>}
         >
+          <div className="flex flex-col gap-2 mb-4">
+            <label className="flex items-center gap-2 text-[13px] text-charcoal cursor-pointer">
+              <input type="radio" checked={cancelAtPeriodEnd} onChange={() => setCancelAtPeriodEnd(true)} className="accent-brand-orange" />
+              Cancel at end of billing period (member keeps access until then)
+            </label>
+            <label className="flex items-center gap-2 text-[13px] text-charcoal cursor-pointer">
+              <input type="radio" checked={!cancelAtPeriodEnd} onChange={() => setCancelAtPeriodEnd(false)} className="accent-brand-orange" />
+              Cancel immediately
+            </label>
+          </div>
           <Textarea
             label="Reason (optional, helps you track why members leave)" rows={3}
             placeholder="e.g. Customer said too expensive"
             value={cancelReasonText} onChange={e => setCancelReasonText(e.target.value)}
           />
+          {cancelError && <p className="text-[12px] text-error mt-2">{cancelError}</p>}
         </Modal>
       )}
     </>

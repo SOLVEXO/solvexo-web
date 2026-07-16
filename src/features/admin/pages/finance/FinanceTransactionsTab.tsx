@@ -3,8 +3,8 @@ import { FilterDropdown, Table, type TableColumn } from '@/components/comman/ui'
 import { useAdminPlatformTransactions } from '@/hooks/admin/useAdminFinance';
 import type { AdminFinanceParams, TransactionRow } from '@/api/services/finance/adminFinance';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
-import { TableCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
 import { formatCurrency, formatDate } from '@/components/comman/analytics/format';
+import { Receipt } from 'lucide-react';
 import { FinanceStatusBadge } from '../../components/finance/FinanceStatusBadge';
 
 const TYPE_OPTIONS = [
@@ -41,15 +41,19 @@ export function FinanceTransactionsTab({ params }: { params: AdminFinanceParams 
           <p className="text-[14px] font-bold text-charcoal">Platform Transactions</p>
           <p className="text-[12px] text-slate">Every ledger entry across every store.</p>
         </div>
-        {transactions.loading ? (
-          <div className="px-5 pb-5"><TableCardSkeleton /></div>
-        ) : transactions.error ? (
+        {transactions.error ? (
           <div className="px-5 pb-5"><AnalyticsErrorState message={transactions.error} onRetry={transactions.refetch} /></div>
         ) : (
           <Table
             columns={columns}
             data={transactions.data?.transactions ?? []}
             keyExtractor={(t) => t._id}
+            loading={transactions.loading}
+            emptyState={{
+              icon: <Receipt size={28} className="text-slate/50" />,
+              title: 'No transactions yet',
+              description: 'Platform transactions will show up here once activity starts.',
+            }}
             pagination={{ page, total: transactions.data?.total ?? 0, perPage: 20, onChange: setPage, label: 'transactions' }}
           />
         )}

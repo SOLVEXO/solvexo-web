@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { TokenStorage } from '@/api/services/auth';
+import { NotificationBell } from '@/components/comman/ui';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data
@@ -360,7 +361,14 @@ function ProfileAvatar() {
 // ─────────────────────────────────────────────────────────────────────────────
 function NavActions() {
   const navigate = useNavigate();
-  if (TokenStorage.isLoggedIn()) return <ProfileAvatar />;
+  if (TokenStorage.isLoggedIn()) {
+    return (
+      <div className="flex items-center gap-3">
+        <NotificationBell />
+        <ProfileAvatar />
+      </div>
+    );
+  }
   return (
     <>
       {/* Desktop: both buttons */}

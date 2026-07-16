@@ -12,6 +12,9 @@ export function RegistersTab({ storeId }: RegistersTabProps) {
   const [error, setError]         = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [editing, setEditing]     = useState<PosRegister | 'new' | null>(null);
+  const [removing, setRemoving]   = useState<PosRegister | null>(null);
+  const [removeBusy, setRemoveBusy] = useState(false);
+  const [removeError, setRemoveError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -25,13 +28,18 @@ export function RegistersTab({ storeId }: RegistersTabProps) {
 
   function reload() { setRefreshKey(k => k + 1); }
 
-  async function handleRemove(reg: PosRegister) {
-    if (!window.confirm(`Remove register "${reg.name}"? It must have no open session.`)) return;
+  async function confirmRemove() {
+    if (!removing) return;
+    setRemoveBusy(true);
+    setRemoveError('');
     try {
-      await apiRemoveRegister(storeId, reg._id);
+      await apiRemoveRegister(storeId, removing._id);
+      setRemoving(null);
       reload();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to remove register.');
+      setRemoveError(err instanceof Error ? err.message : 'Failed to remove register.');
+    } finally {
+      setRemoveBusy(false);
     }
   }
 
@@ -65,7 +73,7 @@ export function RegistersTab({ storeId }: RegistersTabProps) {
                   <button onClick={() => setEditing(r)} className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-pos-faint">
                     Edit
                   </button>
-                  <button onClick={() => handleRemove(r)} className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-error">
+                  <button onClick={() => { setRemoving(r); setRemoveError(''); }} className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-error">
                     Remove
                   </button>
                 </div>
@@ -82,6 +90,20 @@ export function RegistersTab({ storeId }: RegistersTabProps) {
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); reload(); }}
         />
+      )}
+
+      {removing && (
+        <DarkModal title="Remove Register" width={400} onClose={() => setRemoving(null)} footer={
+          <>
+            <DarkButton variant="outline" onClick={() => setRemoving(null)} disabled={removeBusy}>Cancel</DarkButton>
+            <DarkButton variant="danger" onClick={confirmRemove} loading={removeBusy}>Remove</DarkButton>
+          </>
+        }>
+          <p className="text-[13px] text-pos-muted">
+            Remove register <strong className="text-white">"{removing.name}"</strong>? It must have no open session.
+          </p>
+          {removeError && <p className="text-[12px] text-error mt-2">{removeError}</p>}
+        </DarkModal>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, FileStack } from 'lucide-react';
 import { Card } from '@/components/comman/ui/Card';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
@@ -20,8 +20,6 @@ export function LandingPagesTab() {
   const [slug, setSlug] = useState('');
   const [title, setTitle] = useState('');
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
-
-  if (error) return <AnalyticsErrorState message={error} onRetry={refetch} />;
 
   const openNew = () => { setSlug(''); setTitle(''); setStatus('draft'); setEditing('new'); };
   const openEdit = (row: LandingPageRow) => { setSlug(row.slug); setTitle(row.title); setStatus(row.status as 'draft' | 'published'); setEditing(row); };
@@ -63,21 +61,28 @@ export function LandingPagesTab() {
       </div>
 
       <Card padding="none">
-        <Table
-          columns={columns}
-          data={data?.items ?? []}
-          keyExtractor={r => r._id}
-          pagination={data ? {
-            page: data.pagination.page,
-            total: data.pagination.total,
-            perPage: data.pagination.limit,
-            onChange: setPage,
-            label: 'pages',
-          } : undefined}
-        />
-        {loading && <div className="px-5 py-6 text-center text-[12px] text-slate">Loading…</div>}
-        {!loading && (data?.items ?? []).length === 0 && (
-          <div className="px-5 py-10 text-center text-[12px] text-slate">No landing pages yet.</div>
+        {error ? (
+          <div className="p-5"><AnalyticsErrorState message={error} onRetry={refetch} /></div>
+        ) : (
+          <Table
+            columns={columns}
+            data={data?.items ?? []}
+            keyExtractor={r => r._id}
+            loading={loading}
+            emptyState={{
+              icon: <FileStack size={28} className="text-slate/50" />,
+              title: 'No landing pages yet',
+              description: 'Create your first SEO landing page to start driving organic traffic.',
+              action: { label: 'New Landing Page', icon: <Plus size={13} />, onClick: openNew },
+            }}
+            pagination={data ? {
+              page: data.pagination.page,
+              total: data.pagination.total,
+              perPage: data.pagination.limit,
+              onChange: setPage,
+              label: 'pages',
+            } : undefined}
+          />
         )}
       </Card>
 

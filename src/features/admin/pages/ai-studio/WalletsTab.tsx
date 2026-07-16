@@ -8,13 +8,12 @@ import { Table, type TableColumn } from '@/components/comman/ui/Table';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { useAdminAiWallets, useAdminAiWalletLedger, useAdjustAdminAiWallet } from '@/hooks/admin/useAdminAiStudio';
 import type { AdminWalletRow } from '@/api/services/adminAiStudio';
+import { Wallet } from 'lucide-react';
 
 export function WalletsTab() {
   const [page, setPage] = useState(1);
   const { data, loading, error, refetch } = useAdminAiWallets({ page, limit: 20 });
   const [selected, setSelected] = useState<AdminWalletRow | null>(null);
-
-  if (error) return <AnalyticsErrorState message={error} onRetry={refetch} />;
 
   const columns: TableColumn<AdminWalletRow>[] = [
     { key: 'store', header: 'Store', render: r => r.storeName ?? r.storeId },
@@ -30,17 +29,19 @@ export function WalletsTab() {
   return (
     <div className="flex flex-col gap-4">
       <Card padding="none">
-        <Table
-          columns={columns}
-          data={data?.items ?? []}
-          keyExtractor={r => r._id}
-          pagination={data ? {
-            page: data.page, total: data.total, perPage: data.limit, onChange: setPage, label: 'wallets',
-          } : undefined}
-        />
-        {loading && <div className="px-5 py-6 text-center text-[12px] text-slate">Loading…</div>}
-        {!loading && (data?.items ?? []).length === 0 && (
-          <div className="px-5 py-10 text-center text-[12px] text-slate">No AI credit wallets yet.</div>
+        {error ? (
+          <div className="p-5"><AnalyticsErrorState message={error} onRetry={refetch} /></div>
+        ) : (
+          <Table
+            columns={columns}
+            data={data?.items ?? []}
+            keyExtractor={r => r._id}
+            loading={loading}
+            emptyState={{ icon: <Wallet size={28} className="text-slate/50" />, title: 'No AI credit wallets yet' }}
+            pagination={data ? {
+              page: data.page, total: data.total, perPage: data.limit, onChange: setPage, label: 'wallets',
+            } : undefined}
+          />
         )}
       </Card>
 

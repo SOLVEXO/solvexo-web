@@ -92,14 +92,22 @@ export function AdminBanners() {
   usePageTitle('Banners');
   const { banners, loading, error, refetch } = useAdminBanners();
   const [editing, setEditing] = useState<Banner | 'new' | null>(null);
+  const [deleting, setDeleting] = useState<Banner | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
-  async function handleDelete(banner: Banner) {
-    if (!window.confirm('Delete this banner? This cannot be undone.')) return;
+  async function handleDelete() {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setDeleteError('');
     try {
-      await apiDeleteBanner(banner._id);
+      await apiDeleteBanner(deleting._id);
+      setDeleting(null);
       refetch();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete banner.');
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete banner.');
+    } finally {
+      setDeleteBusy(false);
     }
   }
 
@@ -165,7 +173,7 @@ export function AdminBanners() {
                     <button onClick={() => setEditing(b)} className="flex-1 px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-charcoal bg-cream border border-bone cursor-pointer flex items-center justify-center gap-1 outline-none transition-colors duration-150 hover:bg-bone focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
                       <Pencil size={11} /> Edit
                     </button>
-                    <button onClick={() => handleDelete(b)} className="flex-1 px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-error bg-error-bg border border-[#FECACA] cursor-pointer flex items-center justify-center gap-1 outline-none transition-colors duration-150 hover:bg-error hover:text-white focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
+                    <button onClick={() => { setDeleting(b); setDeleteError(''); }} className="flex-1 px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-error bg-error-bg border border-[#FECACA] cursor-pointer flex items-center justify-center gap-1 outline-none transition-colors duration-150 hover:bg-error hover:text-white focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
                       <Trash2 size={11} /> Delete
                     </button>
                   </div>
@@ -183,6 +191,24 @@ export function AdminBanners() {
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); refetch(); }}
         />
+      )}
+
+      {deleting && (
+        <Modal
+          title="Delete Banner"
+          onClose={() => setDeleting(null)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setDeleting(null)}>Cancel</Button>
+              <Button variant="danger" onClick={handleDelete} loading={deleteBusy}>Delete Banner</Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-charcoal leading-[1.6]">
+            Delete this banner? This cannot be undone.
+          </p>
+          {deleteError && <p className="text-[12px] text-error mt-2">{deleteError}</p>}
+        </Modal>
       )}
     </div>
   );

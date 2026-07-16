@@ -115,12 +115,14 @@ export function RegisterPage() {
         </div>
       </div>
 
-      <Button variant="primary" size="md" fullWidth onClick={handleSubmit} disabled={register.loading} className="mt-4">
-        {register.loading
-          ? 'Creating account...'
-          : values.role === 'seller'
-            ? <span className="inline-flex items-center gap-1">Create Seller Account <ArrowRight size={14} /></span>
-            : <span className="inline-flex items-center gap-1">Create Buyer Account <ArrowRight size={14} /></span>}
+      <Button
+        variant="primary" size="md" fullWidth
+        onClick={handleSubmit}
+        loading={register.loading}
+        iconRight={!register.loading && <ArrowRight size={14} />}
+        className="mt-4"
+      >
+        {values.role === 'seller' ? 'Create Seller Account' : 'Create Buyer Account'}
       </Button>
 
       {register.error && (
@@ -132,10 +134,9 @@ export function RegisterPage() {
 
       <p className="text-center text-[12px] text-slate mt-4">
         Already have an account?{' '}
-        <button onClick={() => navigate('/login')}
-          className="text-brand-orange font-semibold text-[12px] bg-transparent border-none cursor-pointer hover:opacity-75">
+        <Button variant="link" size="sm" onClick={() => navigate('/login')} className="font-semibold!">
           Sign In
-        </button>
+        </Button>
       </p>
     </AuthSplitLayout>
   );
