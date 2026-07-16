@@ -9,11 +9,12 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
-import { TabBar, Pagination, FilterDropdown } from '@/components/comman/ui';
+import { TabBar, Pagination, FilterDropdown, BuyerNavbar, AppDownloadBanner, Footer, TrustServiceStrip, MarketplaceAppPromo, FloatingAppWidget } from '@/components/comman/ui';
 import type { Tab } from '@/components/comman/ui';
 import {
   ShoppingCart, ShoppingBag, Star, Heart, ImageOff,
   Loader2, SlidersHorizontal, X, ChevronLeft, ChevronRight,
+  ShieldCheck, BadgeCheck, RefreshCcw, Flame, Clock, TrendingUp,
 } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
@@ -74,17 +75,6 @@ function BannerCarousel({ banners }: { banners: Banner[] }) {
   );
 }
 
-function SolvexoIcon({ size = 32 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="8" fill="#D97757"/>
-      <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-      <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7"/>
-      <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
-
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function ProductCardSkeleton() {
   return (
@@ -125,7 +115,7 @@ function ProductImage({ images, name, className }: { images: string[]; name: str
       loading="lazy"
       decoding="async"
       onError={() => setErrored(true)}
-      className={clsx('w-full object-cover block', className)}
+      className={clsx('w-full object-cover block transition-transform duration-500 ease-out group-hover:scale-[1.07]', className)}
     />
   );
 }
@@ -170,16 +160,31 @@ const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, i
   const vId         = defaultVariant?._id ?? '';
   const subscriberPrice = defaultVariant?.subscriberPrice;
   const discountPercent = defaultVariant?.discountPercent;
+  const pctOff = compareAt != null && lowestPrice != null && compareAt > lowestPrice
+    ? Math.round((1 - lowestPrice / compareAt) * 100)
+    : null;
+  // Stock tracking only applies to physical goods — digital products are always available.
+  const stock = isDigital ? Infinity : (defaultVariant?.stock ?? 0);
 
   return (
     <Card padding="none" hover onClick={() => onClick(product._id)} className="overflow-hidden">
-      {/* Image */}
-      <div className="relative">
+      {/* Image container */}
+      <div className="relative overflow-hidden group/img">
         <ProductImage
           images={product.images ?? []}
           name={product.name}
-          className="h-[130px] sm:h-[160px] lg:h-[180px]"
+          className="h-[130px] sm:h-[160px] lg:h-[180px] transition-transform duration-500 ease-out group-hover/img:scale-[1.07]"
         />
+
+        {/* Hover overlay — dark gradient + Quick View label */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(20,20,19,0.55)] via-[rgba(20,20,19,0.18)] to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 flex items-end justify-center pb-[10px] opacity-0 group-hover/img:opacity-100 translate-y-[6px] group-hover/img:translate-y-0 transition-all duration-300 pointer-events-none">
+          <span className="px-3 py-[4px] rounded-full bg-white/90 text-carbon text-[10.5px] font-semibold tracking-wide backdrop-blur-sm shadow-sm">
+            Quick View
+          </span>
+        </div>
+
+        {/* Wishlist button */}
         <button
           onClick={e => onToggleWishlist(e, product._id, vId)}
           disabled={isWishlisting}
@@ -195,14 +200,21 @@ const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, i
             className={clsx('transition-[color,fill] duration-150', isWishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')}
           />
         </button>
-        <span className={clsx(
-          'absolute top-[8px] left-[8px] px-[6px] py-[2px] rounded-[5px] text-[9px] sm:text-[10px] font-semibold border',
-          isDigital
-            ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
-            : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
-        )}>
-          {isDigital ? 'Digital' : 'Physical'}
-        </span>
+        <div className="absolute top-[8px] left-[8px] flex flex-col gap-[4px] items-start">
+          <span className={clsx(
+            'px-[6px] py-[2px] rounded-[5px] text-[9px] sm:text-[10px] font-semibold border',
+            isDigital
+              ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
+              : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
+          )}>
+            {isDigital ? 'Digital' : 'Physical'}
+          </span>
+          {pctOff != null && pctOff > 0 && (
+            <span className="px-[6px] py-[2px] rounded-[5px] text-[9px] sm:text-[10px] font-bold bg-[#E11D48] text-white shadow-sm">
+              -{pctOff}%
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Body */}
@@ -223,6 +235,11 @@ const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, i
         {subscriberPrice != null && (
           <p className="text-[9px] sm:text-[10px] font-semibold text-brand-orange mt-1">Members save {discountPercent}%</p>
         )}
+        {stock <= 0 ? (
+          <p className="text-[9px] sm:text-[10px] font-semibold text-error mt-1">Out of stock</p>
+        ) : stock <= 5 && (
+          <p className="text-[9px] sm:text-[10px] font-semibold text-amber-600 mt-1">Only {stock} left</p>
+        )}
         <div className="flex items-center justify-between mt-[8px] sm:mt-[10px]">
           <div className="flex items-baseline gap-[3px]">
             <span className={clsx('font-bold text-[13px] sm:text-[15px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
@@ -237,17 +254,78 @@ const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, i
           <Button
             variant="secondary"
             size="sm"
+            disabled={stock <= 0}
             onClick={e => onAddToCart(e, product._id, vId, product.productType ?? product.type ?? 'physical')}
             className="inline-flex shrink-0"
           >
             {isAdding ? <Loader2 size={11} className="animate-spin" /> : <ShoppingCart size={11} />}
-            <span className="hidden lg:inline">{isAdding ? 'Adding…' : 'Add to Cart'}</span>
+            <span className="hidden lg:inline">{stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}</span>
           </Button>
         </div>
       </div>
     </Card>
   );
 });
+
+// ── Countdown to local midnight — real, deterministic timer (not tied to a
+// fabricated campaign end-time); frames "today's deals" honestly. ──────────
+function msToMidnight() {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  return midnight.getTime() - now.getTime();
+}
+
+function useCountdownToMidnight() {
+  const [ms, setMs] = useState(msToMidnight);
+  useEffect(() => {
+    const id = setInterval(() => setMs(msToMidnight()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return {
+    h: pad(Math.floor(ms / 3_600_000)),
+    m: pad(Math.floor((ms % 3_600_000) / 60_000)),
+    s: pad(Math.floor((ms % 60_000) / 1000)),
+  };
+}
+
+// ── Compact rail card — shared shape for the Flash Sale / Top Picks rails ──────
+function RailCard({ product, onClick, badge }: {
+  product: MarketplaceProduct;
+  onClick: (id: string) => void;
+  badge?: React.ReactNode;
+}) {
+  const dv    = product.variants.find(v => v.isDefault) ?? product.variants[0];
+  const price = dv?.price ?? null;
+  return (
+    <button
+      onClick={() => onClick(product._id)}
+      className="shrink-0 w-[136px] sm:w-[152px] text-left bg-white rounded-xl border border-bone overflow-hidden cursor-pointer group transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_12px_28px_rgba(0,0,0,0.1)] hover:border-brand-orange/25"
+    >
+      <div className="relative">
+        <ProductImage
+          images={product.images ?? []}
+          name={product.name}
+          className="h-[100px] sm:h-[112px] transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+        />
+        {badge && <div className="absolute top-[6px] left-[6px]">{badge}</div>}
+      </div>
+      <div className="px-[10px] py-[9px]">
+        <p className="text-[11.5px] font-semibold text-carbon leading-tight line-clamp-2 mb-1">{product.name}</p>
+        <div className="flex items-center justify-between">
+          <span className="text-[12.5px] font-bold text-carbon">{price != null ? `$${price.toLocaleString()}` : '—'}</span>
+          {product.averageRating > 0 && (
+            <span className="flex items-center gap-[2px] text-[10px] text-slate">
+              <Star size={9} className="text-brand-orange fill-brand-orange" />
+              {product.averageRating.toFixed(1)}
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
 
 // ── Filter data ───────────────────────────────────────────────────────────────
 const FILTER_GROUPS = [
@@ -374,9 +452,31 @@ export function Marketplace() {
 
   const LIMIT = 20;
   const { products, total, loading, error, refetch } = useProductsByCategory(page, LIMIT, selectedCategory || undefined);
-  const { cartCount, addToCart, adding }    = useCartContext();
-  const { wishlistCount, isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
+  const { addToCart, adding }    = useCartContext();
+  const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
   const { banners } = useBanners();
+  const countdown = useCountdownToMidnight();
+
+  // Marketplace-wide pool (unfiltered by the user's current category/search) used to
+  // surface real, currently-active discounts and real purchase/rating signals —
+  // independent of whatever the shopper happens to be filtering by right now.
+  const { products: featuredPool } = useProductsByCategory(1, 24);
+
+  const flashDeals = featuredPool
+    .map(p => {
+      const dv = p.variants.find(v => v.isDefault) ?? p.variants[0];
+      const price = dv?.price ?? 0;
+      const compareAt = dv?.compareAtPrice ?? null;
+      const pct = compareAt != null && compareAt > price ? Math.round((1 - price / compareAt) * 100) : 0;
+      return { product: p, pct };
+    })
+    .filter(x => x.pct > 0)
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, 10);
+
+  const topPicks = [...featuredPool]
+    .sort((a, b) => (b.purchaseCount + b.averageRating * 10) - (a.purchaseCount + a.averageRating * 10))
+    .slice(0, 10);
 
   const totalPages        = Math.ceil(total / LIMIT) || 1;
   const activeFilterCount = filters.price.length + filters.type.length + filters.rating.length;
@@ -450,75 +550,16 @@ export function Marketplace() {
   return (
     <div className="min-h-screen bg-cream">
 
-      {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-bone shadow-xs">
-        <div className="h-[60px] flex items-center gap-3 px-4 sm:px-6 lg:px-10">
-
-          {/* Logo */}
-          <div className="flex items-center gap-[6px] shrink-0">
-            <SolvexoIcon size={28} />
-            <span className="font-bold text-[15px] text-carbon">Solvex</span>
-            <span className="font-bold text-[15px] text-brand-orange">o</span>
-            <span className="text-bone mx-1 hidden md:inline">|</span>
-            <span className="text-[13px] text-slate hidden md:inline">Marketplace</span>
-          </div>
-
-          {/* Search */}
-          <div className="flex-1 flex justify-center px-2 sm:px-4">
-            <input
-              value={searchInput}
-              onChange={e => setSearchInput(e.target.value)}
-              placeholder="Search marketplace..."
-              aria-label="Search marketplace"
-              className="w-full max-w-[240px] sm:max-w-[360px] lg:max-w-[480px] px-[14px] py-[9px] rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 transition-colors"
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Home + Sell — hidden on mobile; BottomNav handles navigation below md */}
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="hidden md:inline-flex">
-              Home
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => navigate('/onboarding')}
-              className="hidden md:inline-flex"
-            >
-              Sell on Solvexo
-            </Button>
-
-            {/* Wishlist */}
-            <button
-              onClick={() => navigate('/account/profile?tab=wishlist')}
-              aria-label={`Wishlist${wishlistCount > 0 ? ` (${wishlistCount} items)` : ''}`}
-              className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer shrink-0 transition-transform hover:scale-105"
-            >
-              <Heart size={16} className={wishlistCount > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'} />
-              {wishlistCount > 0 && (
-                <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
-                  {wishlistCount > 99 ? '99+' : wishlistCount}
-                </span>
-              )}
-            </button>
-
-            {/* Cart */}
-            <button
-              onClick={() => navigate('/cart')}
-              aria-label={`Cart${cartCount > 0 ? ` (${cartCount} items)` : ''}`}
-              className="relative w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer shrink-0 transition-transform hover:scale-105"
-            >
-              <ShoppingCart size={16} className="text-white" />
-              {cartCount > 0 && (
-                <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
-                  {cartCount > 99 ? '99+' : cartCount}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </nav>
+      <BuyerNavbar
+        contextLabel="Marketplace"
+        search={{
+          value: searchInput,
+          onChange: setSearchInput,
+          placeholder: 'Search marketplace...',
+          categories: categories.map(c => ({ id: c._id, name: c.name })),
+          onCategorySelect: handleCategoryChange,
+        }}
+      />
 
       {/* ── Hero ─ full-bleed banner with overlaid copy ─────────────────────── */}
       <div className="relative overflow-hidden h-[300px] sm:h-[360px] lg:h-[420px] border-b border-[#F5D5C2]">
@@ -564,12 +605,164 @@ export function Marketplace() {
             )}>
               Shop unique products from independent sellers, creators, and educators.
             </p>
-            <Button variant="primary" size="md">
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => document.getElementById('marketplace-grid')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               Shop Now <span className="ml-1">→</span>
             </Button>
+
+            {/* Trust indicators — real capability statements, not fabricated stats */}
+            <div className={clsx(
+              'flex flex-wrap items-center gap-x-4 gap-y-2 mt-5 text-[11px] font-medium',
+              banners.length > 0 ? 'text-white/80' : 'text-charcoal/70',
+            )}>
+              <span className="flex items-center gap-[5px]"><ShieldCheck size={13} className="text-brand-orange" /> Secure Checkout</span>
+              <span className="flex items-center gap-[5px]"><BadgeCheck size={13} className="text-brand-orange" /> Verified Sellers</span>
+              <span className="flex items-center gap-[5px]"><RefreshCcw size={13} className="text-brand-orange" /> Easy Returns</span>
+            </div>
           </div>
         </div>
+
+        {/* Compact app promotion — desktop only, top-right so it never collides with the carousel's own controls (bottom-right) or the hero copy (left) */}
+        <div className="hidden xl:block absolute right-6 lg:right-10 top-6 lg:top-8 z-[1]">
+          <MarketplaceAppPromo tone={banners.length > 0 ? 'dark' : 'light'} />
+        </div>
       </div>
+
+      {/* ── Flash Sale — real, currently-active discounts; countdown is a real timer to local midnight ── */}
+      {flashDeals.length > 0 && (
+        <div className="bg-white border-b border-bone">
+          <div className="px-4 sm:px-6 lg:px-10 py-5">
+            <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-[#FFF0F0] flex items-center justify-center shrink-0">
+                  <Flame size={16} className="text-[#E11D48]" />
+                </span>
+                <div>
+                  <p className="text-[14px] font-bold text-carbon leading-tight">Flash Sale</p>
+                  <p className="text-[10.5px] text-slate">Real discounts, live on the marketplace right now</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-[6px] rounded-full bg-cream border border-bone">
+                <Clock size={12} className="text-slate" />
+                <span className="text-[11px] font-semibold text-charcoal tabular-nums">
+                  {countdown.h}:{countdown.m}:{countdown.s}
+                </span>
+                <span className="text-[10px] text-slate">left today</span>
+              </div>
+            </div>
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+              {flashDeals.map(({ product, pct }) => (
+                <RailCard
+                  key={product._id}
+                  product={product}
+                  onClick={handleCardClick}
+                  badge={
+                    <span className="px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-[#E11D48] text-white shadow-sm">
+                      -{pct}%
+                    </span>
+                  }
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Top Picks — real purchase count + rating signal, not an ML claim ── */}
+      {topPicks.length > 0 && (
+        <div className="bg-white border-b border-bone">
+          <div className="px-4 sm:px-6 lg:px-10 py-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
+                <TrendingUp size={16} className="text-brand-orange" />
+              </span>
+              <div>
+                <p className="text-[14px] font-bold text-carbon leading-tight">Top Picks</p>
+                <p className="text-[10.5px] text-slate">Highest rated and most purchased on Solvexo</p>
+              </div>
+            </div>
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+              {topPicks.map(product => (
+                <RailCard
+                  key={product._id}
+                  product={product}
+                  onClick={handleCardClick}
+                  badge={product.purchaseCount > 0 ? (
+                    <span className="px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-carbon/80 text-white backdrop-blur-sm">
+                      {product.purchaseCount} sold
+                    </span>
+                  ) : undefined}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Trust & Service strip ────────────────────────────────────────────── */}
+      <TrustServiceStrip />
+
+      {/* ── Category navigation (real categories, admin-managed) ────────────── */}
+      {categories.length > 0 && (
+        <div className="bg-white border-b border-bone">
+          <div className="flex gap-5 sm:gap-6 px-4 sm:px-6 lg:px-10 py-5 overflow-x-auto scrollbar-hide">
+            <button
+              onClick={() => handleCategoryChange('')}
+              className="relative flex flex-col items-center gap-2 shrink-0 w-[72px] cursor-pointer bg-transparent border-none group pb-[3px]"
+            >
+              <div className={clsx(
+                'w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border-[1.5px] transition-all duration-200 ease-out',
+                'group-hover:-translate-y-[2px] group-hover:shadow-[0_8px_20px_rgba(184,90,54,0.14)]',
+                selectedCategory === '' ? 'border-brand-orange bg-brand-pale-orange shadow-[0_8px_20px_rgba(184,90,54,0.14)]' : 'border-bone bg-cream group-hover:border-brand-orange/40',
+              )}>
+                <ShoppingBag size={22} className={selectedCategory === '' ? 'text-brand-orange' : 'text-slate'} />
+              </div>
+              <span className={clsx(
+                'text-[11px] font-semibold text-center leading-tight transition-colors',
+                selectedCategory === '' ? 'text-brand-orange' : 'text-charcoal group-hover:text-brand-orange',
+              )}>
+                All
+              </span>
+              {selectedCategory === '' && (
+                <span className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-full bg-brand-orange" />
+              )}
+            </button>
+            {categories.map(cat => {
+              const active = selectedCategory === cat._id;
+              return (
+                <button
+                  key={cat._id}
+                  onClick={() => handleCategoryChange(cat._id)}
+                  className="relative flex flex-col items-center gap-2 shrink-0 w-[72px] cursor-pointer bg-transparent border-none group pb-[3px]"
+                >
+                  <div className={clsx(
+                    'w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden flex items-center justify-center border-[1.5px] transition-all duration-200 ease-out',
+                    'group-hover:-translate-y-[2px] group-hover:shadow-[0_8px_20px_rgba(184,90,54,0.14)]',
+                    active ? 'border-brand-orange bg-brand-pale-orange shadow-[0_8px_20px_rgba(184,90,54,0.14)]' : 'border-bone bg-cream group-hover:border-brand-orange/40',
+                  )}>
+                    {cat.image
+                      ? <img loading="lazy" decoding="async" src={cat.image} alt="" className="w-full h-full object-cover" />
+                      : <ShoppingBag size={22} className={active ? 'text-brand-orange' : 'text-slate'} />
+                    }
+                  </div>
+                  <span className={clsx(
+                    'text-[11px] font-semibold text-center leading-tight truncate w-full transition-colors',
+                    active ? 'text-brand-orange' : 'text-charcoal group-hover:text-brand-orange',
+                  )}>
+                    {cat.name}
+                  </span>
+                  {active && (
+                    <span className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-full bg-brand-orange" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Category Tabs ────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-bone overflow-x-auto scrollbar-hide">
@@ -657,7 +850,7 @@ export function Marketplace() {
             )}
 
             {/* Grid: 2-col mobile → 2-col sm → 3-col md (no sidebar) → 3-col lg → 4-col xl */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px]">
+            <div id="marketplace-grid" className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px] scroll-mt-[76px]">
               {loading
                 ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
                 : filtered.map(p => {
@@ -698,6 +891,13 @@ export function Marketplace() {
           </div>
         </div>
       </div>
+
+      {/* ── App download + footer ────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-6 lg:px-10 pb-8 pt-2">
+        <AppDownloadBanner />
+      </div>
+      <Footer />
+      <FloatingAppWidget />
 
       {/* ── Mobile filter bottom sheet ────────────────────────────────────────── */}
       <div

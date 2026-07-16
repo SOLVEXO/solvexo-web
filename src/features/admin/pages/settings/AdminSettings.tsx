@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
+import { NotificationsPanel } from '@/components/comman/ui';
 
 // ── Types & Nav ───────────────────────────────────────────────────────────────
 type Section = 'profile' | 'security' | 'two-factor' | 'notifications' | 'delete-account';
@@ -202,8 +203,13 @@ export function AdminSettings() {
               </div>
             )}
 
+            {/* Notifications section */}
+            {active === 'notifications' && (
+              <NotificationsPanel />
+            )}
+
             {/* Other sections */}
-            {active !== 'profile' && (
+            {active !== 'profile' && active !== 'notifications' && (
               <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
                 <div className="flex flex-col items-center justify-center py-[60px] text-center">
                   <div className="text-slate mb-[14px]">

@@ -3,6 +3,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
+import { AppDownloadBanner, Footer, HomeAppPromo, FloatingAppWidget } from '@/components/comman/ui';
 import {
   ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles,
 } from 'lucide-react';
@@ -43,7 +44,7 @@ export function Homepage() {
         <div className="absolute w-[260px] h-[260px] sm:w-[340px] sm:h-[340px] lg:w-[420px] lg:h-[420px] rounded-full bg-[#3A3633] -top-16 -right-16 pointer-events-none" />
         <div className="absolute w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] rounded-full bg-[#2E2B28] -bottom-10 right-[32%] pointer-events-none" />
 
-        <div className="relative z-[1] px-4 sm:px-6 lg:px-12 py-12 sm:py-16 lg:py-20">
+        <div className="relative z-[1] px-4 sm:px-6 lg:px-12 py-12 sm:py-16 lg:py-20 flex items-center justify-between gap-10">
           <div className="max-w-[520px]">
 
             {/* Badge */}
@@ -86,6 +87,11 @@ export function Homepage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Compact app promotion — desktop only, balances the hero without competing with the headline */}
+          <div className="hidden xl:block shrink-0">
+            <HomeAppPromo />
           </div>
         </div>
       </section>
@@ -167,6 +173,13 @@ export function Homepage() {
         </div>
       </section>
 
+      {/* ── App Download ─────────────────────────────────────────────────────────── */}
+      <section className="px-4 sm:px-6 lg:px-12 py-12 sm:py-14">
+        <AppDownloadBanner />
+      </section>
+
+      <Footer />
+      <FloatingAppWidget />
     </div>
   );
 }

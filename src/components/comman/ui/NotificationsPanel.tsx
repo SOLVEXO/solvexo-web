@@ -5,7 +5,7 @@ import { Card } from './Card';
 import { EmptyState } from './EmptyState';
 import { SkeletonBox } from './SkeletonBox';
 import {
-  Bell, Mail, Smartphone, Check, Trash2, ShieldAlert,
+  Bell, Mail, Smartphone, Check, Trash2,
   Clock, Package, MessageSquare, Star, Sparkles, Filter
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -38,7 +38,7 @@ export function NotificationsPanel() {
   const {
     notifications,
     unreadCount,
-    loading,
+    notificationsLoading,
     preferences,
     fetchNotifications,
     markAsRead,
@@ -49,37 +49,31 @@ export function NotificationsPanel() {
   } = useNotification();
 
   const [unreadOnly, setUnreadOnly] = useState(false);
-  const [prefSaving, setPrefSaving] = useState(false);
   const [prefError, setPrefError] = useState('');
   const [prefSuccess, setPrefSuccess] = useState(false);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
 
-  // Reload history and preferences on mount
   useEffect(() => {
     fetchNotifications(unreadOnly);
-    fetchPreferences();
-  }, [unreadOnly, fetchNotifications, fetchPreferences]);
+  }, [unreadOnly, fetchNotifications]);
+
+  useEffect(() => {
+    fetchPreferences().finally(() => setPrefsLoaded(true));
+  }, [fetchPreferences]);
 
   const handleTogglePref = async (key: string, value: boolean) => {
     setPrefError('');
     setPrefSuccess(false);
-    setPrefSaving(true);
     try {
-      if (key === 'pushEnabled' || key === 'emailEnabled') {
-        await updatePreferences({ [key]: value });
-      } else {
-        await updatePreferences({ [key]: value });
-      }
+      await updatePreferences({ [key]: value });
       setPrefSuccess(true);
       setTimeout(() => setPrefSuccess(false), 3000);
     } catch (err) {
       setPrefError(err instanceof Error ? err.message : 'Failed to update preferences');
-    } finally {
-      setPrefSaving(false);
     }
   };
 
-  const hasPrefs = preferences !== null;
-  const showPrefsLoading = loading && !hasPrefs;
+  const showPrefsLoading = !prefsLoaded && preferences === null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -136,7 +130,6 @@ export function NotificationsPanel() {
                   <Toggle
                     checked={preferences?.pushEnabled ?? true}
                     onChange={(v) => handleTogglePref('pushEnabled', v)}
-                    disabled={prefSaving}
                   />
                 </div>
 
@@ -155,7 +148,6 @@ export function NotificationsPanel() {
                   <Toggle
                     checked={preferences?.emailEnabled ?? true}
                     onChange={(v) => handleTogglePref('emailEnabled', v)}
-                    disabled={prefSaving}
                   />
                 </div>
               </div>
@@ -178,7 +170,6 @@ export function NotificationsPanel() {
                     size="sm"
                     checked={preferences?.prefs?.orders ?? true}
                     onChange={(v) => handleTogglePref('orders', v)}
-                    disabled={prefSaving}
                   />
                 </div>
 
@@ -196,7 +187,6 @@ export function NotificationsPanel() {
                     size="sm"
                     checked={preferences?.prefs?.messages ?? true}
                     onChange={(v) => handleTogglePref('messages', v)}
-                    disabled={prefSaving}
                   />
                 </div>
 
@@ -214,7 +204,6 @@ export function NotificationsPanel() {
                     size="sm"
                     checked={preferences?.prefs?.loyalty ?? true}
                     onChange={(v) => handleTogglePref('loyalty', v)}
-                    disabled={prefSaving}
                   />
                 </div>
 
@@ -232,7 +221,6 @@ export function NotificationsPanel() {
                     size="sm"
                     checked={preferences?.prefs?.subscriptions ?? true}
                     onChange={(v) => handleTogglePref('subscriptions', v)}
-                    disabled={prefSaving}
                   />
                 </div>
               </div>
@@ -272,7 +260,7 @@ export function NotificationsPanel() {
         </div>
 
         <div className="divide-y divide-[#F5F4EF]">
-          {loading && notifications.length === 0 ? (
+          {notificationsLoading && notifications.length === 0 ? (
             <div className="p-5 flex flex-col gap-4">
               {[1, 2, 3].map(i => (
                 <div key={i} className="flex gap-4">

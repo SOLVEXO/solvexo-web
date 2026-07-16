@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
+import { AuthAppPromo } from '@/components/comman/ui/AppPromoCard';
 
 interface AuthHighlight {
   Icon: LucideIcon;
@@ -16,6 +17,8 @@ interface AuthSplitLayoutProps {
   highlights?:     AuthHighlight[];
   accentIconClass?: string;
   maxWidth?:       string;
+  /** Shows the compact app-download card on the branding panel — Login/Register only. */
+  showAppPromo?:   boolean;
   children:        ReactNode;
 }
 
@@ -37,6 +40,7 @@ export function AuthSplitLayout({
   highlights = [],
   accentIconClass = 'text-white',
   maxWidth = 'max-w-[420px]',
+  showAppPromo = false,
   children,
 }: AuthSplitLayoutProps) {
   return (
@@ -68,6 +72,12 @@ export function AuthSplitLayout({
                     <span className="text-[12.5px] text-white/85 leading-[1.4]">{text}</span>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {showAppPromo && (
+              <div className="mt-8">
+                <AuthAppPromo />
               </div>
             )}
           </div>

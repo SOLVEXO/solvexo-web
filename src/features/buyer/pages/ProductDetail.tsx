@@ -9,24 +9,13 @@ import { Button } from '@/components/comman/ui/Button';
 import { Badge } from '@/components/comman/ui/Badge';
 import { Card } from '@/components/comman/ui/Card';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
+import { BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget } from '@/components/comman/ui';
 import {
-  ArrowRight, ArrowLeft, Package, Download, ClipboardList, CheckCircle,
-  Search, ShoppingCart, Star, Link2, Mail, Smartphone, ImageOff, Heart,
+  ArrowRight, Package, Download, ClipboardList, CheckCircle,
+  ShoppingCart, Star, Link2, Mail, Smartphone, ImageOff, Heart,
 } from 'lucide-react';
 import type { ProductVariant } from '@/api/services/marketplace';
 import { ProductReviewsSection } from './ProductReviews';
-
-
-function SolvexoIcon({ size = 32 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="8" fill="#D97757" />
-      <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-      <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7" />
-      <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function DetailSkeleton() {
@@ -159,8 +148,8 @@ export function ProductDetail() {
   usePageTitle('Product Detail');
 
   const { detail, loading, error, refetch } = useProductById(id);
-  const { cartCount, addToCart, adding } = useCartContext();
-  const { wishlistCount, isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
+  const { addToCart, adding } = useCartContext();
+  const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
 
   const [selectedImgIdx, setSelectedImgIdx] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -180,54 +169,7 @@ export function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-4 md:px-10">
-        <div className="flex-1 flex items-center gap-2">
-          <SolvexoIcon size={28} />
-          <span className="font-bold text-[15px] text-carbon">Solvex</span>
-          <span className="font-bold text-[15px] text-brand-orange">o</span>
-        </div>
-        <div className="w-[160px] sm:w-[280px] md:w-[440px] relative flex-shrink-0">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate pointer-events-none flex">
-            <Search size={14} />
-          </span>
-          <input
-            placeholder="Search..."
-            className="w-full pl-9 pr-[14px] py-[9px] rounded-[20px] border border-bone bg-cream text-[13px] text-charcoal outline-none box-border"
-          />
-        </div>
-        <div className="flex-1 flex items-center justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')}>
-            <ArrowLeft size={14} className="inline align-middle mr-1" /> Marketplace
-          </Button>
-
-          {/* Wishlist icon */}
-          <div
-            onClick={() => navigate('/account/profile?tab=wishlist')}
-            className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer transition-transform hover:scale-105"
-          >
-            <Heart size={16} className={wishlistCount > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'} />
-            {wishlistCount > 0 && (
-              <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
-                {wishlistCount > 99 ? '99+' : wishlistCount}
-              </span>
-            )}
-          </div>
-
-          {/* Cart icon */}
-          <div
-            onClick={() => navigate('/cart')}
-            className="relative w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer transition-transform hover:scale-105"
-          >
-            <ShoppingCart size={16} className="text-white" />
-            {cartCount > 0 && (
-              <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
-                {cartCount > 99 ? '99+' : cartCount}
-              </span>
-            )}
-          </div>
-        </div>
-      </nav>
+      <BuyerNavbar contextLabel="Marketplace" backTo={{ label: 'Marketplace', path: '/marketplace' }} />
 
       {/* Loading */}
       {loading && <DetailSkeleton />}
@@ -246,14 +188,11 @@ export function ProductDetail() {
       {/* Content */}
       {!loading && product && (
         <div className="px-4 md:px-6 lg:px-10 py-6 md:py-8 pb-[92px] lg:pb-8">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 mb-6 text-[13px]">
-            <span className="text-slate cursor-pointer" onClick={() => navigate('/marketplace')}>Marketplace</span>
-            <span className="text-slate">/</span>
-            <span className="text-charcoal font-bold overflow-hidden text-ellipsis whitespace-nowrap max-w-[260px]">
-              {product.name}
-            </span>
-          </div>
+          <Breadcrumb className="mb-4" items={[
+            { label: 'Home', path: '/' },
+            { label: 'Marketplace', path: '/marketplace' },
+            { label: product.name },
+          ]} />
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-9 items-start min-w-0">
             {/* LEFT */}
@@ -506,6 +445,15 @@ export function ProductDetail() {
         </div>
       )}
 
+      {!loading && product && (
+        <div className="pb-[76px] lg:pb-0">
+          <div className="px-4 md:px-6 lg:px-10 pb-8">
+            <AppDownloadBanner />
+          </div>
+          <Footer />
+        </div>
+      )}
+
       {/* Mobile sticky Add to Cart bar */}
       {!loading && product && activeVariant && (
         <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-white border-t border-bone px-4 py-3 flex items-center gap-3">
@@ -536,6 +484,8 @@ export function ProductDetail() {
           </Button>
         </div>
       )}
+
+      <FloatingAppWidget mobileBottomClass="bottom-[150px]" />
     </div>
   );
 }

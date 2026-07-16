@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
-import { FilterDropdown, SkeletonBox } from '@/components/comman/ui';
+import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget } from '@/components/comman/ui';
 import {
   ShoppingCart, Star, Heart, ArrowLeft, Users,
   Store, Package, Loader2, MessageCircle, BadgeCheck, Award, Gift, RefreshCw, Check,
@@ -100,15 +100,6 @@ function StarRating({ rating, color }: { rating: number; color: string }) {
         <Star key={i} size={10} style={i <= Math.round(rating) ? { color, fill: color } : { color: '#C8C6BE', fill: '#C8C6BE' }} />
       ))}
     </div>
-  );
-}
-
-function SolvexoIcon({ size = 32 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="8" fill="#D97757"/>
-      <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-    </svg>
   );
 }
 
@@ -372,36 +363,19 @@ export function SellerStorefront() {
   return (
     <div className="min-h-screen" style={{ ...themeStyle, background: cfg.bgColor, color: cfg.textColor }}>
 
-      {/* ── Nav ─────────────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone">
-        <div className="h-[60px] flex items-center gap-3 px-4 sm:px-6 lg:px-10">
-          <div className="flex items-center gap-[6px] shrink-0">
-            <SolvexoIcon size={28} />
-            <span className="font-bold text-[15px] text-carbon">Solvex</span>
-            <span className="font-bold text-[15px] text-brand-orange">o</span>
-            <span className="text-bone mx-1 hidden md:inline">|</span>
-            <span className="text-[13px] text-slate hidden md:inline">Marketplace</span>
-          </div>
-          <div className="flex-1 flex justify-center px-2 sm:px-4">
-            <input
-              placeholder="Search store..."
-              className="w-full max-w-[360px] px-[14px] py-[9px] rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none focus:border-brand-orange transition-colors"
-            />
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')} className="hidden md:inline-flex">
-              <ArrowLeft size={13} className="mr-1" /> Marketplace
-            </Button>
-            <div
-              onClick={() => navigate('/cart')}
-              className="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shrink-0"
-              style={{ background: cfg.primaryColor }}
-            >
-              <ShoppingCart size={16} className="text-white" />
-            </div>
-          </div>
-        </div>
-      </nav>
+      <BuyerNavbar
+        contextLabel={store.name}
+        accentColor={cfg.primaryColor}
+        backTo={{ label: 'Marketplace', path: '/marketplace' }}
+      />
+
+      <div className="px-4 sm:px-6 lg:px-10 pt-3 bg-white border-b border-bone">
+        <Breadcrumb items={[
+          { label: 'Home', path: '/' },
+          { label: 'Marketplace', path: '/marketplace' },
+          { label: store.name },
+        ]} />
+      </div>
 
       {/* ── Store Banner ─────────────────────────────────────────────────────── */}
       <div
@@ -708,6 +682,12 @@ export function SellerStorefront() {
           </div>
         </div>
       )}
+
+      <div className="px-4 sm:px-6 lg:px-10 pb-8 pt-2">
+        <AppDownloadBanner />
+      </div>
+      <Footer />
+      <FloatingAppWidget />
 
       {showRewards && (
         <Modal title="Rewards Catalog" onClose={() => setShowRewards(false)}>

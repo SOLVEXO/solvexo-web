@@ -5,19 +5,9 @@ import { Button } from '@/components/comman/ui/Button';
 import { Badge } from '@/components/comman/ui/Badge';
 import { Card } from '@/components/comman/ui/Card';
 import { ComingSoonBanner } from '@/components/comman/ui/ComingSoonBanner';
-import { ArrowRight, ShoppingCart, GraduationCap, Star, Sparkles, BookOpen, BookMarked, Microscope, Heart } from 'lucide-react';
+import { BuyerNavbar, AppDownloadBanner, Footer, EducationAppPromo } from '@/components/comman/ui';
+import { ArrowRight, ShoppingCart, Star, Sparkles, BookOpen, BookMarked, Microscope, Heart } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-
-function SolvexoIcon({ size = 32 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="8" fill="#D97757"/>
-      <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-      <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7"/>
-      <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
 
 const GRADE_LEVELS = ['All Grades', 'PreK', 'K–2', '3–5', '6–8', '9–12', 'Higher Ed', 'Adult Ed'];
 const SUBJECTS     = ['All', 'Math', 'ELA', 'Science', 'Social Studies', 'Art', 'SEL'];
@@ -67,49 +57,10 @@ export function EducationMarketplace() {
   return (
     <div className="min-h-screen bg-cream">
 
-      {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone">
-        <div className="h-[60px] flex items-center gap-3 px-4 sm:px-6 lg:px-10">
-
-          {/* Logo */}
-          <div className="flex items-center gap-[6px] shrink-0">
-            <SolvexoIcon size={28} />
-            <span className="font-bold text-[15px] text-carbon">Solvex</span>
-            <span className="font-bold text-[15px] text-brand-orange">o</span>
-            <span className="text-bone mx-1 hidden md:inline">|</span>
-            <span className="text-[13px] text-slate hidden md:inline">Education</span>
-          </div>
-
-          {/* Search */}
-          <div className="flex-1 flex justify-center px-2 sm:px-4">
-            <input
-              placeholder="Search resources..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full max-w-[240px] sm:max-w-[360px] lg:max-w-[480px] px-[14px] py-[9px] rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none focus:border-[#2D8A4E] transition-colors"
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Hidden on mobile — BottomNav handles navigation below md */}
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="hidden md:inline-flex">
-              Home
-            </Button>
-            <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')} className="hidden md:inline-flex">
-              Sell on Solvexo
-            </Button>
-
-            {/* Cart */}
-            <div
-              onClick={() => navigate('/cart')}
-              className="w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer shrink-0"
-            >
-              <ShoppingCart size={16} className="text-white" />
-            </div>
-          </div>
-        </div>
-      </nav>
+      <BuyerNavbar
+        contextLabel="Education"
+        search={{ value: searchQuery, onChange: setSearchQuery, placeholder: 'Search resources...' }}
+      />
 
       {/* ── Hero Banner ──────────────────────────────────────────────────────── */}
       <div style={{ background: 'linear-gradient(120deg, #1A4A2C, #2D7A4E)' }}>
@@ -143,8 +94,8 @@ export function EducationMarketplace() {
             </div>
           </div>
 
-          <div className="text-[rgba(255,255,255,0.6)] hidden md:block shrink-0">
-            <GraduationCap size={60} />
+          <div className="hidden lg:block shrink-0">
+            <EducationAppPromo />
           </div>
         </div>
       </div>
@@ -276,8 +227,13 @@ export function EducationMarketplace() {
             Try AI Builder <ArrowRight size={14} className="inline align-middle ml-1" />
           </Button>
         </div>
+
+        <div className="mt-6">
+          <AppDownloadBanner />
+        </div>
       </div>
 
+      <Footer />
     </div>
   );
 }

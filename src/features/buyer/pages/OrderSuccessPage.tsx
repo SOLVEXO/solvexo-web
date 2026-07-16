@@ -9,23 +9,7 @@ import type { PlacedOrder, OrderItem, OrderDeliveryAddress } from '@/api/service
 import { apiGetDownloadUrl } from '@/api/services/orders';
 import { clsx } from 'clsx';
 import { Button } from '@/components/comman/ui/Button';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Logo
-// ─────────────────────────────────────────────────────────────────────────────
-function SolvexoLogo({ onClick }: { onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex items-center gap-2 bg-transparent border-none cursor-pointer p-0">
-      <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-        <rect width="32" height="32" rx="8" fill="#D97757" />
-        <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-        <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7" />
-        <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <span className="font-bold text-[15px] text-carbon">Solvex<span className="text-brand-orange">o</span></span>
-    </button>
-  );
-}
+import { BuyerNavbar, Footer } from '@/components/comman/ui';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DownloadBtn
@@ -409,10 +393,7 @@ export function OrderSuccessPage() {
   return (
     <div className="min-h-screen bg-cream">
 
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-4 md:px-10">
-        <SolvexoLogo onClick={() => navigate('/')} />
-      </nav>
+      <BuyerNavbar variant="minimal" />
 
       {/* Content */}
       <div className="max-w-[1040px] mx-auto px-4 md:px-6 py-6 md:py-10">
@@ -432,6 +413,7 @@ export function OrderSuccessPage() {
         </div>
       </div>
 
+      <Footer />
     </div>
   );
 }

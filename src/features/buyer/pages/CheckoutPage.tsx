@@ -7,26 +7,14 @@ import { apiGetMyAddresses, type Address } from '@/api/services/address';
 import { apiCreateCheckout, type Checkout, type CheckoutSummary, type SubscriptionSavingsHint } from '@/api/services/checkout';
 import { apiPlaceCodOrder, apiPlaceOrder } from '@/api/services/payment';
 import { Button } from '@/components/comman/ui/Button';
-import { SkeletonBox } from '@/components/comman/ui';
+import { SkeletonBox, BuyerNavbar, Breadcrumb } from '@/components/comman/ui';
 import {
-  ArrowLeft, MapPin, Truck, CreditCard, CheckCircle2,
+  MapPin, Truck, CreditCard, CheckCircle2,
   ChevronRight, AlertCircle, PackageCheck,
   Banknote, ShieldCheck, ArrowDownCircle, Download,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { currencySymbol } from '@/utils/currency';
-
-// ── Logo ──────────────────────────────────────────────────────────────────────
-function SolvexoIcon({ size = 28 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="8" fill="#D97757" />
-      <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-      <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7" />
-      <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 // ── Step badge ────────────────────────────────────────────────────────────────
 function StepBadge({ n, active, done }: { n: number; active: boolean; done: boolean }) {
@@ -222,20 +210,14 @@ export function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-bone shadow-xs h-[60px] flex items-center px-4 md:px-10 gap-4">
-        <div className="flex-1 flex items-center gap-2">
-          <SolvexoIcon size={28} />
-          <span className="font-bold text-[15px] text-carbon">Solvex</span>
-          <span className="font-bold text-[15px] text-brand-orange">o</span>
-        </div>
-        <Button variant="ghost" size="sm" onClick={() => navigate('/cart')}>
-          <ArrowLeft size={14} className="inline align-middle mr-1" />
-          Back to Cart
-        </Button>
-      </nav>
+      <BuyerNavbar variant="minimal" backTo={{ label: 'Back to Cart', path: '/cart' }} />
 
       <div className="max-w-[960px] mx-auto px-4 md:px-6 py-6 md:py-8">
+        <Breadcrumb className="mb-4" items={[
+          { label: 'Home', path: '/' },
+          { label: 'Cart', path: '/cart' },
+          { label: 'Checkout' },
+        ]} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
 

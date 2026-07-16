@@ -56,10 +56,10 @@
   /* ── Shadows (elevation scale) ── */
   --shadow-xs:   0 1px 2px rgba(20,20,19,0.04);
   --shadow-sm:   0 1px 3px rgba(20,20,19,0.06), 0 1px 2px rgba(20,20,19,0.04);
-  --shadow-card: 0 2px 12px rgba(20,20,19,0.06);
-  --shadow-md:   0 4px 16px rgba(20,20,19,0.08);
-  --shadow-lg:   0 8px 40px rgba(20,20,19,0.12);
-  --shadow-xl:   0 16px 56px rgba(20,20,19,0.16);
+  --shadow-card: 0 1px 3px rgba(20,20,19,0.05), 0 4px 16px rgba(20,20,19,0.08);
+  --shadow-md:   0 4px 16px rgba(20,20,19,0.10), 0 1px 4px rgba(20,20,19,0.06);
+  --shadow-lg:   0 8px 40px rgba(20,20,19,0.14), 0 2px 8px rgba(20,20,19,0.06);
+  --shadow-xl:   0 16px 56px rgba(20,20,19,0.18), 0 4px 12px rgba(20,20,19,0.08);
 
   /* ── Motion ── */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -137,3 +137,15 @@
 .pos-overlay-enter { animation: pos-overlay-fade-in 180ms var(--ease-out); }
 .pos-panel-enter { animation: pos-panel-enter 220ms var(--ease-out); }
 .pos-item-enter { animation: pos-item-enter 180ms var(--ease-out); }
+
+/* ── Shared dropdown / panel / drawer motion (Navbar previews, mini cart, popups) ── */
+@keyframes dropdown-enter {
+  from { opacity: 0; transform: scale(0.97) translateY(-6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes drawer-enter-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+.dropdown-enter { animation: dropdown-enter 180ms var(--ease-out); transform-origin: top right; }
+.drawer-enter-right { animation: drawer-enter-right 240ms var(--ease-out); }

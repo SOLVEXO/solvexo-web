@@ -5,7 +5,7 @@ import { useGetProfile, invalidateProfileCache } from '@/hooks/auth/useGetProfil
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
 import { apiDeleteAccount } from '@/api/services/users';
 import { TokenStorage } from '@/api/services/auth';
-import { Modal, Button } from '@/components/comman/ui';
+import { Modal, Button, NotificationsPanel } from '@/components/comman/ui';
 import {
   User, KeyRound, ShieldCheck, Bell, Store, Search, CreditCard,
   Package, Receipt, Users, Lock, DollarSign, ArrowDownToLine,
@@ -279,8 +279,13 @@ export function SellerSettings() {
               </div>
             )}
 
+            {/* Notifications section */}
+            {active === 'notifications' && (
+              <NotificationsPanel />
+            )}
+
             {/* Other sections */}
-            {active !== 'profile' && (
+            {active !== 'profile' && active !== 'notifications' && (
               <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
                 <div className="flex flex-col items-center justify-center py-[60px] text-center">
                   <div className="text-slate mb-[14px]">

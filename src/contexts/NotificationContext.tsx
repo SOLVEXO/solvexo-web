@@ -17,7 +17,9 @@ import {
 interface NotificationContextValue {
   notifications: NotificationItem[];
   unreadCount:   number;
+  /** @deprecated use notificationsLoading */
   loading:       boolean;
+  notificationsLoading: boolean;
   preferences:   NotificationPreferenceData | null;
   fetchNotifications: (unreadOnly?: boolean) => Promise<void>;
   markAsRead:    (id: string) => Promise<void>;
@@ -40,7 +42,7 @@ export function useNotification(): NotificationContextValue {
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount,   setUnreadCount]   = useState(0);
-  const [loading,       setLoading]       = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [preferences,   setPreferences]   = useState<NotificationPreferenceData | null>(null);
   const [toast,         setToast]         = useState<NotificationItem | null>(null);
 
@@ -58,7 +60,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const fetchNotifications = useCallback(async (unreadOnly = false) => {
     if (!TokenStorage.isLoggedIn()) return;
-    setLoading(true);
+    setNotificationsLoading(true);
     try {
       const res = await apiListNotifications({ unreadOnly, limit: 50 });
       setNotifications(res.data.items);
@@ -66,7 +68,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore list fetch errors
     } finally {
-      setLoading(false);
+      setNotificationsLoading(false);
     }
   }, []);
 
@@ -120,10 +122,32 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updatePrefs = useCallback(async (dto: Partial<NotificationPreferenceFlags> & { pushEnabled?: boolean; emailEnabled?: boolean }) => {
+    let snapshot: NotificationPreferenceData | null = null;
+
+    setPreferences(prev => {
+      snapshot = prev;
+      if (!prev) return prev;
+
+      const next: NotificationPreferenceData = {
+        ...prev,
+        prefs: { ...prev.prefs },
+      };
+
+      if (dto.pushEnabled !== undefined) next.pushEnabled = dto.pushEnabled;
+      if (dto.emailEnabled !== undefined) next.emailEnabled = dto.emailEnabled;
+
+      (['orders', 'messages', 'promotions', 'loyalty', 'subscriptions'] as const).forEach(key => {
+        if (dto[key] !== undefined) next.prefs[key] = dto[key]!;
+      });
+
+      return next;
+    });
+
     try {
       const res = await apiUpdatePreferences(dto);
       setPreferences(res.data);
     } catch (err) {
+      if (snapshot) setPreferences(snapshot);
       throw err;
     }
   }, []);
@@ -175,7 +199,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       value={{
         notifications,
         unreadCount,
-        loading,
+        loading: notificationsLoading,
+        notificationsLoading,
         preferences,
         fetchNotifications,
         markAsRead,

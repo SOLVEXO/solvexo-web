@@ -36,7 +36,7 @@ import { SubscriptionsTab } from '@/features/buyer/pages/MySubscriptionsPage';
 import { apiChangePassword, apiDeleteAccount } from '@/api/services/users';
 import { TokenStorage } from '@/api/services/auth';
 import { Modal } from '@/components/comman/ui/Modal';
-import { NotificationsPanel } from '@/components/comman/ui';
+import { NotificationsPanel, BuyerNavbar, Breadcrumb, PageHeader } from '@/components/comman/ui';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses' | 'messages' | 'reviews' | 'subscriptions' | 'notifications';
@@ -292,8 +292,7 @@ function WishlistTab() {
     return (
       <Card padding="none">
         <div className="px-5 pt-5 pb-4 border-b border-bone">
-          <p className="text-[11px] text-slate mb-[3px]">Account / Wishlist</p>
-          <h1 className="text-[22px] font-bold text-charcoal">Wishlist</h1>
+          <PageHeader eyebrow="Account / Wishlist" title="Wishlist" />
         </div>
         <EmptyState
           icon={<Heart size={28} className="text-brand-orange opacity-55" />}
@@ -309,24 +308,26 @@ function WishlistTab() {
     <>
     <Card padding="none">
       {/* Header: title left, Saved Items right — single row */}
-      <div className="px-5 pt-5 pb-4 border-b border-bone flex items-end justify-between">
-        <div>
-          <p className="text-[11px] text-slate mb-[3px]">Account / Wishlist</p>
-          <h1 className="text-[22px] font-bold text-charcoal leading-none">Wishlist</h1>
-        </div>
-        <div className="flex flex-col items-end gap-[6px] pb-[2px]">
-          <div className="text-right">
-            <p className="text-[13px] font-semibold text-charcoal leading-tight">Saved Items</p>
-            <p className="text-[11px] text-slate mt-[2px]">{wishlistCount} item{wishlistCount !== 1 ? 's' : ''}</p>
-          </div>
-          <button
-            onClick={() => { setConfirmingClear(true); setClearError(''); }}
-            disabled={clearing}
-            className="text-[11px] font-medium text-error bg-transparent border-none cursor-pointer disabled:opacity-50"
-          >
-            Clear All
-          </button>
-        </div>
+      <div className="px-5 pt-5 pb-4 border-b border-bone">
+        <PageHeader
+          eyebrow="Account / Wishlist"
+          title="Wishlist"
+          actions={
+            <div className="flex flex-col items-end gap-[6px]">
+              <div className="text-right">
+                <p className="text-[13px] font-semibold text-charcoal leading-tight">Saved Items</p>
+                <p className="text-[11px] text-slate mt-[2px]">{wishlistCount} item{wishlistCount !== 1 ? 's' : ''}</p>
+              </div>
+              <button
+                onClick={() => { setConfirmingClear(true); setClearError(''); }}
+                disabled={clearing}
+                className="text-[11px] font-medium text-error bg-transparent border-none cursor-pointer disabled:opacity-50"
+              >
+                Clear All
+              </button>
+            </div>
+          }
+        />
       </div>
       <div className="divide-y divide-[#F5F4EF]">
         {wishlistItems.map((item, idx) => {
@@ -684,19 +685,21 @@ function AddressTab() {
   if (view !== 'list') {
     return (
       <Card padding="none">
-        <div className="px-5 pt-5 pb-4 mb-5 border-b border-bone flex items-end justify-between">
-          <div>
-            <p className="text-[11px] text-slate mb-[3px]">Account / Addresses</p>
-            <h1 className="text-[22px] font-bold text-charcoal leading-none">Addresses</h1>
-          </div>
-          <div className="flex items-center gap-[10px] pb-[2px]">
-            <button onClick={goList} className="flex items-center gap-[6px] px-3 py-[6px] rounded-lg text-[12px] border border-bone bg-cream text-charcoal cursor-pointer">
-              <ArrowLeft size={14} /> Back
-            </button>
-            <p className="text-[14px] font-semibold text-charcoal">
-              {view === 'edit' ? 'Edit Address' : 'Add New Address'}
-            </p>
-          </div>
+        <div className="px-5 pt-5 pb-4 mb-5 border-b border-bone">
+          <PageHeader
+            eyebrow="Account / Addresses"
+            title="Addresses"
+            actions={
+              <>
+                <button onClick={goList} className="flex items-center gap-[6px] px-3 py-[6px] rounded-lg text-[12px] border border-bone bg-cream text-charcoal cursor-pointer">
+                  <ArrowLeft size={14} /> Back
+                </button>
+                <p className="text-[14px] font-semibold text-charcoal">
+                  {view === 'edit' ? 'Edit Address' : 'Add New Address'}
+                </p>
+              </>
+            }
+          />
         </div>
         <div className="px-5 pb-5">
           <AddressForm
@@ -715,23 +718,25 @@ function AddressTab() {
   return (
     <>
     <Card padding="none">
-      <div className="px-5 pt-5 pb-4 flex items-end justify-between border-b border-bone">
-        <div>
-          <p className="text-[11px] text-slate mb-[3px]">Account / Addresses</p>
-          <h1 className="text-[22px] font-bold text-charcoal leading-none">Addresses</h1>
-        </div>
-        <div className="flex items-end gap-4 pb-[2px]">
-          <div className="text-right">
-            <p className="text-[13px] font-semibold text-charcoal leading-tight">Saved Addresses</p>
-            <p className="text-[11px] text-slate mt-[1px]">{addresses.length} address{addresses.length !== 1 ? 'es' : ''}</p>
-          </div>
-          <button
-            onClick={() => setView('add')}
-            className="flex items-center gap-[6px] px-[14px] py-[8px] rounded-lg text-[13px] font-semibold bg-brand-orange text-white border-none cursor-pointer"
-          >
-            <Plus size={15} /> Add Address
-          </button>
-        </div>
+      <div className="px-5 pt-5 pb-4 border-b border-bone">
+        <PageHeader
+          eyebrow="Account / Addresses"
+          title="Addresses"
+          actions={
+            <>
+              <div className="text-right">
+                <p className="text-[13px] font-semibold text-charcoal leading-tight">Saved Addresses</p>
+                <p className="text-[11px] text-slate mt-[1px]">{addresses.length} address{addresses.length !== 1 ? 'es' : ''}</p>
+              </div>
+              <button
+                onClick={() => setView('add')}
+                className="flex items-center gap-[6px] px-[14px] py-[8px] rounded-lg text-[13px] font-semibold bg-brand-orange text-white border-none cursor-pointer"
+              >
+                <Plus size={15} /> Add Address
+              </button>
+            </>
+          }
+        />
       </div>
 
       {actionError && (
@@ -1014,11 +1019,8 @@ function ProfileTab() {
     <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 300px' }}>
       {/* Edit form */}
       <Card padding="none">
-        <div className="px-5 pt-5 pb-4 border-b border-bone flex items-end justify-between">
-          <div>
-            <p className="text-[11px] text-slate mb-[3px]">Account / My Profile</p>
-            <h1 className="text-[22px] font-bold text-charcoal leading-none">My Profile</h1>
-          </div>
+        <div className="px-5 pt-5 pb-4 border-b border-bone">
+          <PageHeader eyebrow="Account / My Profile" title="My Profile" />
         </div>
         <div className="p-5">
 
@@ -1199,31 +1201,43 @@ export function UserProfile() {
   const { wishlistCount } = useWishlistContext();
 
   const handleSetTab = (t: Tab) => { setTab(t); setSidebarOpen(false); };
+  const currentTabLabel = NAV_ITEMS.find(n => n.id === tab)?.label ?? 'My Account';
 
   return (
-    <div className="bg-cream flex flex-col md:flex-row h-[calc(100vh-108px)] md:h-[calc(100vh-44px)] overflow-hidden">
-      <ProfileSidebar
-        profile={profile}
-        loading={loading}
-        tab={tab}
-        setTab={handleSetTab}
-        wishlistCount={wishlistCount}
-        mobileOpen={sidebarOpen}
-        onMobileClose={() => setSidebarOpen(false)}
-      />
+    <div className="bg-cream flex flex-col h-[calc(100vh-108px)] md:h-[calc(100vh-44px)] overflow-hidden">
+      <BuyerNavbar />
 
-      <div className="flex flex-col flex-1 min-w-0 min-h-0">
-        <MobileTopBar tab={tab} onOpen={() => setSidebarOpen(true)} />
-        <main className="flex-1 min-h-0 min-w-0 px-4 md:px-7 py-4 md:py-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {tab === 'profile'   && <ProfileTab />}
-          {tab === 'wishlist'  && <WishlistTab />}
-          {tab === 'addresses' && <AddressTab />}
-          {tab === 'orders'    && <OrdersTab />}
-          {tab === 'subscriptions' && <SubscriptionsTab />}
-          {tab === 'reviews'   && <ReviewsTab />}
-          {tab === 'messages'  && <MessagesTab initialConversationId={initialConversationId} />}
-          {tab === 'notifications' && <NotificationsTab />}
-        </main>
+      <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
+        <ProfileSidebar
+          profile={profile}
+          loading={loading}
+          tab={tab}
+          setTab={handleSetTab}
+          wishlistCount={wishlistCount}
+          mobileOpen={sidebarOpen}
+          onMobileClose={() => setSidebarOpen(false)}
+        />
+
+        <div className="flex flex-col flex-1 min-w-0 min-h-0">
+          <MobileTopBar tab={tab} onOpen={() => setSidebarOpen(true)} />
+          <div className="hidden md:flex justify-end px-7 pt-3">
+            <Breadcrumb items={[
+              { label: 'Home', path: '/' },
+              { label: 'My Account', path: '/account/profile' },
+              { label: currentTabLabel },
+            ]} />
+          </div>
+          <main className="flex-1 min-h-0 min-w-0 px-4 md:px-7 py-4 md:py-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {tab === 'profile'   && <ProfileTab />}
+            {tab === 'wishlist'  && <WishlistTab />}
+            {tab === 'addresses' && <AddressTab />}
+            {tab === 'orders'    && <OrdersTab />}
+            {tab === 'subscriptions' && <SubscriptionsTab />}
+            {tab === 'reviews'   && <ReviewsTab />}
+            {tab === 'messages'  && <MessagesTab initialConversationId={initialConversationId} />}
+            {tab === 'notifications' && <NotificationsTab />}
+          </main>
+        </div>
       </div>
     </div>
   );
@@ -1234,8 +1248,7 @@ function NotificationsTab() {
     <div className="flex flex-col gap-4">
       <Card padding="none">
         <div className="px-5 pt-5 pb-4 border-b border-bone">
-          <p className="text-[11px] text-slate mb-[3px]">Account / Notifications</p>
-          <h1 className="text-[22px] font-bold text-charcoal leading-none">Notifications</h1>
+          <PageHeader eyebrow="Account / Notifications" title="Notifications" />
         </div>
       </Card>
       <NotificationsPanel />
