@@ -189,6 +189,59 @@ export function apiGetPublicStoreFilters(storeId: string) {
   return client.get<never, ApiResponse<{ tags: string[] }>>(ENDPOINTS.STORE.PUBLIC_FILTERS(storeId));
 }
 
+// ── Public store browse / discovery ────────────────────────────────────────────
+
+export interface PublicStoreListItem {
+  storeId:        string;
+  name:           string;
+  slug:           string;
+  logo:           string | null;
+  coverImage:     string | null;
+  description:    string | null;
+  categoryId:     string | null;
+  followersCount: number;
+  averageRating:  number;
+  reviewCount:    number;
+  sellerType:     SellerType | null;
+  badges:         string[];
+  /** Only present on the paginated browse list, not on the cached top-stores row. */
+  productCount?:  number;
+}
+
+export interface ListPublicStoresParams {
+  page?:       number;
+  limit?:      number;
+  categoryId?: string;
+  q?:          string;
+  sort?:       'rating' | 'followers' | 'newest';
+}
+
+export interface PublicStoresListData {
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+  stores:     PublicStoreListItem[];
+}
+
+/** GET /api/store/public — browse/search public stores. */
+export function apiListPublicStores(params?: ListPublicStoresParams) {
+  const query = new URLSearchParams();
+  if (params?.page)       query.set('page',       String(params.page));
+  if (params?.limit)      query.set('limit',      String(params.limit));
+  if (params?.categoryId) query.set('categoryId', params.categoryId);
+  if (params?.q)          query.set('q',          params.q);
+  if (params?.sort)       query.set('sort',       params.sort);
+  const qs = query.toString();
+  return client.get<never, ApiResponse<PublicStoresListData>>(
+    `${ENDPOINTS.STORE.PUBLIC_LIST}${qs ? `?${qs}` : ''}`,
+  );
+}
+
+/** GET /api/store/public/top — cached top-stores row (home screen). */
+export function apiGetTopStores(limit = 10) {
+  return client.get<never, ApiResponse<{ stores: PublicStoreListItem[] }>>(
+    `${ENDPOINTS.STORE.PUBLIC_TOP}?limit=${limit}`,
+  );
+}
+
 // ── Follow ────────────────────────────────────────────────────────────────────
 
 export interface FollowStatusData {

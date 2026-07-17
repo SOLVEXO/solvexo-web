@@ -9,7 +9,9 @@ import { useForm } from '@/hooks/useForm';
 import { newPasswordSchema, type NewPasswordFormData } from '@/utils/validation/schemas';
 import { AuthContext } from '@/api/services/auth';
 import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
+import { OTPInput } from '@/components/comman/ui/OTPInput';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
+import { PasswordSecurityMockup } from '@/features/auth/components/mockups/AuthMockups';
 
 const HIGHLIGHTS = [
   { Icon: KeyRound,    text: 'Verify with the code we emailed you' },
@@ -96,8 +98,9 @@ export function NewPasswordPage() {
   const navigate      = useNavigate();
   usePageTitle('New Password');
   const resetPassword = useResetPassword();
-  const [otp, setOtp]           = useState('');
-  const [otpError, setOtpError] = useState('');
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [otpError, setOtpError]   = useState('');
+  const otp = otpDigits.join('');
 
   const ctx       = AuthContext.get();
   const userEmail = ctx?.email ?? '';
@@ -114,11 +117,15 @@ export function NewPasswordPage() {
     },
   );
 
+  const handleOtpChange = (i: number, val: string) => {
+    const next = [...otpDigits]; next[i] = val; setOtpDigits(next); setOtpError('');
+  };
+
   const passwordsMatch = values.password === values.confirmPassword && values.confirmPassword !== '';
 
   if (resetPassword.success) {
     return (
-      <AuthSplitLayout heading="Password updated." subtext="You're all set — sign back in with your new password." highlights={HIGHLIGHTS}>
+      <AuthSplitLayout heading="Password updated." subtext="You're all set — sign back in with your new password." highlights={HIGHLIGHTS} visual={<PasswordSecurityMockup />}>
         <div className="lg:hidden flex justify-center mb-6"><SolvexoLogo size={32} /></div>
         <h1 className="text-[22px] font-bold text-carbon text-center mb-2">Password updated!</h1>
         <p className="text-[13px] text-slate text-center leading-[1.6] mb-6">
@@ -132,7 +139,7 @@ export function NewPasswordPage() {
   }
 
   return (
-    <AuthSplitLayout heading="Almost there. Set a new password." subtext="Enter the code we emailed you and choose a new password to finish." highlights={HIGHLIGHTS}>
+    <AuthSplitLayout heading="Almost there. Set a new password." subtext="Enter the code we emailed you and choose a new password to finish." highlights={HIGHLIGHTS} visual={<PasswordSecurityMockup />}>
       <div className="lg:hidden flex justify-center mb-6"><SolvexoLogo size={32} /></div>
 
       <h1 className="text-[22px] font-bold text-carbon text-center lg:text-left mb-2">Reset your password</h1>
@@ -144,24 +151,9 @@ export function NewPasswordPage() {
 
       {/* OTP */}
       <div className="mb-4">
-        <label htmlFor="reset-otp" className="block text-[12px] font-medium text-charcoal mb-[6px]">Verification Code</label>
-        <input
-          id="reset-otp"
-          type="text" inputMode="numeric" maxLength={6} placeholder="Enter 6-digit OTP" value={otp} autoComplete="one-time-code"
-          onChange={e => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
-          className={clsx(
-            'w-full px-3 py-[10px] rounded-lg border text-charcoal outline-none bg-white text-center',
-            'transition-[border-color,box-shadow,letter-spacing] duration-150 focus:ring-2 focus:ring-brand-orange/10',
-            otpError ? 'border-error' : otp.length === 6 ? 'border-success' : 'border-bone focus:border-brand-orange',
-            otp ? 'tracking-[0.3em] font-bold text-[18px]' : 'text-[13px]',
-          )}
-        />
-        {otpError && <p className="text-[11px] text-error mt-[5px]">{otpError}</p>}
-        {otp.length === 6 && !otpError && (
-          <p className="text-[11px] text-success mt-[5px] flex items-center gap-1">
-            <Check size={11} /> Code entered
-          </p>
-        )}
+        <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Verification Code</label>
+        <OTPInput values={otpDigits} onChange={handleOtpChange} />
+        {otpError && <p className="text-[11px] text-error text-center mt-[-8px] mb-2">{otpError}</p>}
       </div>
 
       {/* New password */}

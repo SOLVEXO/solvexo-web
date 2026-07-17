@@ -20,6 +20,14 @@ export { SolvexoLogo, SolvexoIcon }          from './SolvexoLogo';
 export { RadioButton }                       from './RadioButton';
 export type { RadioOption }                  from './RadioButton';
 
+export { RoleSegmentedControl }              from './RoleSegmentedControl';
+export type { RoleSegmentOption }            from './RoleSegmentedControl';
+
+export { OTPInput }                          from './OTPInput';
+
+export { SocialLoginRow, GoogleIcon, AppleIcon, FacebookIcon, SOCIAL_PROVIDERS } from './SocialIcons';
+export type { SocialProvider }               from './SocialIcons';
+
 export { Table }                             from './Table';
 export type { TableColumn }                  from './Table';
 

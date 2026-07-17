@@ -19,7 +19,9 @@ import {
 } from '@/components/comman/ui';
 import {
   apiGetStoreInventory,
+  apiGetLowStockSummary,
   type InventoryProduct,
+  type LowStockSummaryData,
 } from '@/api/services/product';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
@@ -61,6 +63,7 @@ export function StoreInventory() {
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [lowStock,   setLowStock]   = useState<LowStockSummaryData | null>(null);
 
   const LIMIT = 10;
 
@@ -82,6 +85,16 @@ export function StoreInventory() {
 
     return () => { cancelled = true; };
   }, [storeId, page, refreshKey]);
+
+  // Low-stock detail list — independent of pagination, only re-runs on store/refresh.
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    apiGetLowStockSummary(storeId)
+      .then(res => { if (!cancelled) setLowStock(res.data); })
+      .catch(() => { /* non-critical widget — stats card above already covers the count */ });
+    return () => { cancelled = true; };
+  }, [storeId, refreshKey]);
 
   const goAdd    = ()                     => navigate(`/seller/store/${storeId}/products/add`);
   const goEdit   = (p: InventoryProduct) => navigate(`/seller/store/${storeId}/products/edit/${p.productId}`);
@@ -216,6 +229,34 @@ export function StoreInventory() {
             loading={loading && !stats}
           />
         </div>
+
+        {/* Low stock detail */}
+        {!!lowStock?.count && (
+          <Card padding="none">
+            <div className="px-5 pt-4 pb-3 flex items-center gap-2 border-b border-[#F3F2EC]">
+              <AlertTriangle size={14} className="text-warning shrink-0" />
+              <p className="text-[13px] font-bold text-charcoal">
+                {lowStock.count} product{lowStock.count !== 1 ? 's' : ''} running low
+              </p>
+              <span className="text-[11px] text-slate ml-1">(≤ {lowStock.threshold} units left)</span>
+            </div>
+            <div className="px-5 py-3 flex flex-col divide-y divide-[#F3F2EC]">
+              {lowStock.items.slice(0, 5).map(item => (
+                <button
+                  key={item.productId}
+                  onClick={() => navigate(`/seller/store/${storeId}/products/edit/${item.productId}`)}
+                  className="flex items-center justify-between gap-3 py-2 bg-transparent border-none text-left cursor-pointer group"
+                >
+                  <span className="text-[13px] text-charcoal group-hover:text-brand-orange transition-colors">{item.name}</span>
+                  <Badge color="orange">{item.stock} left</Badge>
+                </button>
+              ))}
+              {lowStock.items.length > 5 && (
+                <p className="text-[11px] text-slate pt-2">+ {lowStock.items.length - 5} more</p>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Error */}
         {error && (

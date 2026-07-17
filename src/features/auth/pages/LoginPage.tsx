@@ -7,45 +7,20 @@ import { Button } from '@/components/comman/ui/Button';
 import { Input } from '@/components/comman/ui/Input';
 import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import { SocialLoginModal } from '@/components/comman/ui/SocialLoginModal';
+import { RoleSegmentedControl } from '@/components/comman/ui/RoleSegmentedControl';
+import { SocialLoginRow, type SocialProvider } from '@/components/comman/ui/SocialIcons';
 import { Eye, EyeOff, ShieldCheck, Sparkles, Zap, AlertTriangle } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import type { AppRole, SocialLoginPayload } from '@/api/services/auth';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
+import { MarketplaceMockup } from '@/features/auth/components/mockups/AuthMockups';
 
-/* ── SVG brand icons (inline — no external deps) ─────────────────────────── */
-function GoogleIcon() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
-      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
-      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
-      <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/>
-      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
-    </svg>
-  );
-}
-function AppleIcon() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
-      <path d="M14.044 9.52c-.02-2.22 1.815-3.293 1.897-3.348-1.033-1.511-2.638-1.718-3.207-1.736-1.363-.14-2.665.806-3.354.806-.69 0-1.755-.788-2.885-.766-1.482.022-2.853.866-3.614 2.197-1.54 2.674-.395 6.633 1.107 8.8.737 1.062 1.61 2.253 2.758 2.21 1.11-.044 1.527-.714 2.868-.714 1.34 0 1.713.714 2.884.69 1.193-.02 1.946-1.082 2.677-2.147.845-1.23 1.19-2.42 1.208-2.482-.027-.012-2.316-.888-2.339-3.51ZM11.78 3.06c.613-.742 1.026-1.773.912-2.8-.883.035-1.95.587-2.582 1.33-.567.655-1.063 1.703-.93 2.707 1 .077 2.02-.508 2.6-1.237Z" fill="#141413"/>
-    </svg>
-  );
-}
-function FacebookIcon() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
-      <rect width="18" height="18" rx="4" fill="#1877F2"/>
-      <path d="M12.25 11.5l.375-2.5H10.25V7.5c0-.694.344-1.25 1.313-1.25H12.75V4.062S11.875 3.75 10.938 3.75c-1.875 0-3.063 1.156-3.063 3.25V9H5.75v2.5H7.875V18h2.375v-6.5h2Z" fill="white"/>
-    </svg>
-  );
-}
+type Provider = SocialProvider;
 
-type Provider = 'google' | 'facebook' | 'apple';
-
-const SOCIAL: { Icon: () => JSX.Element; label: string; provider: Provider }[] = [
-  { Icon: GoogleIcon,   label: 'Google',   provider: 'google'   },
-  { Icon: AppleIcon,    label: 'Apple',    provider: 'apple'    },
-  { Icon: FacebookIcon, label: 'Facebook', provider: 'facebook' },
+const ROLE_OPTIONS = [
+  { value: 'user',   label: 'Buyer'  },
+  { value: 'seller', label: 'Seller' },
 ];
 
 const HIGHLIGHTS = [
@@ -97,7 +72,7 @@ export function LoginPage() {
       heading={<>Commerce.<br />Solved.</>}
       subtext="Join thousands of buyers and sellers building their business on Solvexo's marketplace."
       highlights={HIGHLIGHTS}
-      showAppPromo
+      visual={<MarketplaceMockup />}
     >
       <div className="lg:hidden flex justify-center mb-4">
         <SolvexoLogo size={30} />
@@ -111,28 +86,13 @@ export function LoginPage() {
       </p>
 
       {/* Role switch — pure visual, no state reset */}
-      <div className="mb-3">
-        <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Sign in as</label>
-        <div className="flex rounded-xl bg-cream p-1 gap-1 border border-bone">
-          {(['user', 'seller'] as AppRole[]).map((r) => {
-            const active = role === r;
-            return (
-              <button
-                key={r}
-                type="button"
-                onClick={() => handleRoleToggle(r)}
-                aria-pressed={active}
-                className={[
-                  'flex-1 py-[9px] text-[13px] cursor-pointer border-none transition-all duration-200 rounded-[10px]',
-                  active ? 'font-semibold bg-white text-carbon shadow-sm' : 'font-normal bg-transparent text-slate hover:text-charcoal',
-                ].join(' ')}
-              >
-                {r === 'user' ? 'Buyer' : 'Seller'}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <RoleSegmentedControl
+        label="Sign in as"
+        options={ROLE_OPTIONS}
+        value={role}
+        onChange={val => handleRoleToggle(val as AppRole)}
+        className="mb-4"
+      />
 
       <div className="flex flex-col gap-3">
         <Input
@@ -184,20 +144,12 @@ export function LoginPage() {
         <div className="flex-1 h-px bg-bone" />
       </div>
 
-      {/* Social buttons — icon + label, one row like register */}
-      <div className="flex gap-2 mb-4">
-        {SOCIAL.map(({ Icon, label, provider }) => (
-          <button
-            key={provider}
-            onClick={() => setSocialProvider(provider)}
-            disabled={social.loading || login.loading}
-            className="flex-1 flex items-center justify-center gap-[7px] px-3 py-[10px] bg-white border border-bone rounded-xl text-[12px] font-medium text-charcoal hover:bg-[#F8F8F8] cursor-pointer transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Icon />
-            <span className="hidden sm:inline">{label}</span>
-          </button>
-        ))}
-      </div>
+      {/* Social buttons */}
+      <SocialLoginRow
+        onSelect={setSocialProvider}
+        disabled={social.loading || login.loading}
+        className="mb-4"
+      />
 
       <p className="text-center text-[12px] text-slate">
         Don't have an account?{' '}

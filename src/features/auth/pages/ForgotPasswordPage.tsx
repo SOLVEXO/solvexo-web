@@ -8,6 +8,7 @@ import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import { useForm } from '@/hooks/useForm';
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/utils/validation/schemas';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
+import { SecurityMockup } from '@/features/auth/components/mockups/AuthMockups';
 
 const HIGHLIGHTS = [
   { Icon: KeyRound,    text: 'Get a secure reset code by email' },
@@ -35,6 +36,7 @@ export function ForgotPasswordPage() {
       heading="Forgot your way in? No problem."
       subtext="We'll email you a secure code to get you straight back into your account."
       highlights={HIGHLIGHTS}
+      visual={<SecurityMockup />}
     >
       <div className="lg:hidden flex justify-center mb-6">
         <SolvexoLogo size={32} />

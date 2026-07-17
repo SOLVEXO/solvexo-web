@@ -185,6 +185,18 @@ export interface GetInventoryData {
   products:   InventoryProduct[];
 }
 
+export interface LowStockItem {
+  productId: string;
+  name:      string;
+  stock:     number;
+}
+
+export interface LowStockSummaryData {
+  count:     number;
+  threshold: number;
+  items:     LowStockItem[];
+}
+
 // ── API functions ─────────────────────────────────────────────────────────────
 
 export function apiCreatePhysicalProduct(payload: CreatePhysicalPayload) {
@@ -220,6 +232,13 @@ export function apiGetMyProductById(id: string) {
 export function apiGetStoreInventory(storeId: string, page = 1, limit = 10) {
   return client.get<never, ApiResponse<GetInventoryData>>(
     `${ENDPOINTS.INVENTORY.GET_STORE_INVENTORY(storeId)}?page=${page}&limit=${limit}`,
+  );
+}
+
+/** GET /api/inventory/low-stock-summary/:storeId — seller/admin only. */
+export function apiGetLowStockSummary(storeId: string) {
+  return client.get<never, ApiResponse<LowStockSummaryData>>(
+    ENDPOINTS.INVENTORY.LOW_STOCK_SUMMARY(storeId),
   );
 }
 

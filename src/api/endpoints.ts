@@ -62,6 +62,10 @@ export const ENDPOINTS = {
     PUBLIC_BY_SLUG: (slug: string) => `/api/store/public/${slug}`,
     PUBLIC_PRODUCTS: (storeId: string) => `/api/store/public/${storeId}/products`,
     PUBLIC_FILTERS:  (storeId: string) => `/api/store/public/${storeId}/filters`,
+    // Public store browse/discovery — note: 'public' and 'public/top' must stay
+    // registered before PUBLIC_BY_SLUG on the backend or they'd be swallowed by it.
+    PUBLIC_LIST: '/api/store/public',
+    PUBLIC_TOP:  '/api/store/public/top',
 
     // Follow
     FOLLOW: (storeId: string) => `/api/store/${storeId}/follow`,
@@ -185,6 +189,11 @@ export const ENDPOINTS = {
     PRODUCT_BY_ID: (id: string) => `/api/products/getProductById/${id}`,
   },
 
+  // ── SEARCH ────────────────────────────────────────────────────────────────
+  SEARCH: {
+    STORES: '/api/search/stores',
+  },
+
   // ── CART ──────────────────────────────────────────────────────────────────
   CART: {
     ADD: '/api/cart/add-to-cart',
@@ -231,6 +240,7 @@ export const ENDPOINTS = {
 
   INVENTORY: {
     GET_STORE_INVENTORY: (id: string) => `/api/inventory/getStoreInventory/${id}`,
+    LOW_STOCK_SUMMARY: (storeId: string) => `/api/inventory/low-stock-summary/${storeId}`,
   },
 
   SELLER_ACCOUNT: {
@@ -403,6 +413,7 @@ export const ENDPOINTS = {
   // ── ANALYTICS ─────────────────────────────────────────────────────────────
   ANALYTICS: {
     SELLER: {
+      TODAY:                '/api/seller/analytics/today',
       OVERVIEW:             '/api/seller/analytics/overview',
       REVENUE_OVER_TIME:    '/api/seller/analytics/revenue-over-time',
       ORDERS_OVER_TIME:     '/api/seller/analytics/orders-over-time',

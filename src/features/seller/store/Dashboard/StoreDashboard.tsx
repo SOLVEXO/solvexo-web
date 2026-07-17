@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  TrendingUp, ShoppingBag, Package, Users,
+  TrendingUp, TrendingDown, ShoppingBag, Package, Users,
   CheckCircle, Clock, Globe, Copy, ExternalLink,
   ArrowRight, Settings, Sparkles, BarChart2,
   ClipboardList, Megaphone,
@@ -11,8 +11,8 @@ import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLa
 import { AreaChart } from '@/components/comman/charts';
 import { MetricCard } from '@/components/comman/ui';
 import {
-  apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime,
-  type SellerOverviewData, type RevenuePoint,
+  apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsToday,
+  type SellerOverviewData, type RevenuePoint, type SellerTodaySummaryData,
 } from '@/api/services/analytics/analytics';
 import { apiGetStoreInventory } from '@/api/services/product';
 import { formatCurrency, formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
@@ -21,6 +21,7 @@ interface StoreMetrics {
   overview:      SellerOverviewData;
   revenueSeries: RevenuePoint[];
   totalProducts: number;
+  today:         SellerTodaySummaryData;
 }
 
 function useStoreDashboardMetrics(storeId: string) {
@@ -40,13 +41,15 @@ function useStoreDashboardMetrics(storeId: string) {
       apiSellerAnalyticsOverview({ storeId, range: '30d' }),
       apiSellerAnalyticsRevenueOverTime({ storeId, range: '6m', granularity: 'month' }),
       apiGetStoreInventory(storeId, 1, 1),
+      apiSellerAnalyticsToday(storeId),
     ])
-      .then(([overviewRes, revenueRes, inventoryRes]) => {
+      .then(([overviewRes, revenueRes, inventoryRes, todayRes]) => {
         if (cancelled) return;
         setMetrics({
           overview: overviewRes.data,
           revenueSeries: revenueRes.data.series,
           totalProducts: inventoryRes.data.stats.totalProducts,
+          today: todayRes.data,
         });
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store metrics.'); })
@@ -235,6 +238,39 @@ function QuickActionsRow({ storeId }: { storeId: string }) {
   );
 }
 
+// ── Today Snapshot ────────────────────────────────────────────────────────────
+function TodaySnapshot({ today }: { today: SellerTodaySummaryData }) {
+  const up = today.revenueChangePercent >= 0;
+  const TrendIcon = up ? TrendingUp : TrendingDown;
+
+  return (
+    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4 flex flex-wrap items-center gap-x-8 gap-y-3">
+      <p className="text-[13px] font-bold text-charcoal shrink-0">Today</p>
+
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] text-slate">Revenue</span>
+        <span className="text-[14px] font-bold text-carbon">{formatCurrency(today.revenue)}</span>
+        <span className={`flex items-center gap-0.5 text-[11px] font-semibold ${up ? 'text-success' : 'text-error'}`}>
+          <TrendIcon size={11} />
+          {Math.abs(today.revenueChangePercent).toFixed(0)}%
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] text-slate">Orders</span>
+        <span className="text-[14px] font-bold text-carbon">{formatNumber(today.ordersCount)}</span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] text-slate">Avg. Order Value</span>
+        <span className="text-[14px] font-bold text-carbon">{formatCurrency(today.avgOrderValue)}</span>
+      </div>
+
+      <span className="text-[10px] text-slate/70 ml-auto shrink-0">vs. this time yesterday</span>
+    </div>
+  );
+}
+
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function DashSkeleton() {
   return (
@@ -319,6 +355,8 @@ export default function StoreDashboard() {
               </button>
             </div>
           )}
+
+          {metrics?.today && <TodaySnapshot today={metrics.today} />}
 
           {/* Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

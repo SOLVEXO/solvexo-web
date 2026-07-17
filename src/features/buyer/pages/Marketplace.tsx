@@ -14,10 +14,12 @@ import type { Tab } from '@/components/comman/ui';
 import {
   ShoppingCart, ShoppingBag, Star, Heart, ImageOff,
   Loader2, SlidersHorizontal, X, ChevronLeft, ChevronRight,
-  ShieldCheck, BadgeCheck, RefreshCcw, Flame, Clock, TrendingUp,
+  ShieldCheck, BadgeCheck, RefreshCcw, Flame, Clock, TrendingUp, Store, Users,
 } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
+import { apiGetTopStores, type PublicStoreListItem } from '@/api/services/store';
+import { apiSearchStores } from '@/api/services/search';
 
 // ── Promotional banner carousel — full-bleed hero background (admin-managed) ──
 function BannerCarousel({ banners }: { banners: Banner[] }) {
@@ -327,6 +329,35 @@ function RailCard({ product, onClick, badge }: {
   );
 }
 
+// ── Store rail card — same shape as RailCard, for seller/store discovery rails ──
+function StoreRailCard({ store, onClick }: { store: PublicStoreListItem; onClick: (slug: string) => void }) {
+  return (
+    <button
+      onClick={() => onClick(store.slug)}
+      className="shrink-0 w-[136px] sm:w-[152px] text-left bg-white rounded-xl border border-bone overflow-hidden cursor-pointer group transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_12px_28px_rgba(0,0,0,0.1)] hover:border-brand-orange/25"
+    >
+      <div className="h-[100px] sm:h-[112px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">
+        {store.logo
+          ? <img loading="lazy" decoding="async" src={store.logo} alt="" className="w-full h-full object-cover" />
+          : <Store size={28} className="text-brand-orange" />}
+      </div>
+      <div className="px-[10px] py-[9px]">
+        <p className="text-[11.5px] font-semibold text-carbon leading-tight line-clamp-1 mb-1">{store.name}</p>
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-[2px] text-[10px] text-slate">
+            <Star size={9} className="text-brand-orange fill-brand-orange" />
+            {store.averageRating.toFixed(1)}
+          </span>
+          <span className="flex items-center gap-[2px] text-[10px] text-slate">
+            <Users size={9} />
+            {store.followersCount}
+          </span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
 // ── Filter data ───────────────────────────────────────────────────────────────
 const FILTER_GROUPS = [
   { key: 'price',  title: 'Price Range',  items: ['Under $10', '$10–$50', '$50–$100', '$100+'] },
@@ -436,6 +467,8 @@ export function Marketplace() {
   const [search,      setSearch]      = useState('');
   const [categories,       setCategories]       = useState<CategoryNode[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [topStores,        setTopStores]        = useState<PublicStoreListItem[]>([]);
+  const [storeResults,     setStoreResults]      = useState<PublicStoreListItem[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -444,6 +477,25 @@ export function Marketplace() {
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetTopStores(10)
+      .then(res => { if (!cancelled) setTopStores(res.data.stores); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  // Store/seller matches for the navbar search — runs alongside the existing
+  // client-side product filter, so search covers both products and stores.
+  useEffect(() => {
+    if (!search) { setStoreResults([]); return; }
+    let cancelled = false;
+    apiSearchStores(search, 1, 6)
+      .then(res => { if (!cancelled) setStoreResults(res.data.stores); })
+      .catch(() => { if (!cancelled) setStoreResults([]); });
+    return () => { cancelled = true; };
+  }, [search]);
 
   const handleCategoryChange = (id: string) => {
     setSelectedCategory(id);
@@ -702,6 +754,28 @@ export function Marketplace() {
         </div>
       )}
 
+      {/* ── Featured Sellers — real store discovery, sorted by rating/followers ── */}
+      {topStores.length > 0 && (
+        <div className="bg-white border-b border-bone">
+          <div className="px-4 sm:px-6 lg:px-10 py-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
+                <Store size={16} className="text-brand-orange" />
+              </span>
+              <div>
+                <p className="text-[14px] font-bold text-carbon leading-tight">Featured Sellers</p>
+                <p className="text-[10.5px] text-slate">Top-rated stores on Solvexo</p>
+              </div>
+            </div>
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+              {topStores.map(s => (
+                <StoreRailCard key={s.storeId} store={s} onClick={slug => navigate(`/store/${slug}`)} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Trust & Service strip ────────────────────────────────────────────── */}
       <TrustServiceStrip />
 
@@ -793,6 +867,21 @@ export function Marketplace() {
           </button>
           <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
         </div>
+
+        {/* Stores matching the current search — sits above the product grid so a
+            search for a seller's name surfaces the store itself, not just products. */}
+        {search && storeResults.length > 0 && (
+          <div className="mb-5">
+            <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.08em] mb-[10px]">
+              Stores matching "{search}"
+            </p>
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+              {storeResults.map(s => (
+                <StoreRailCard key={s.storeId} store={s} onClick={slug => navigate(`/store/${slug}`)} />
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-5 lg:gap-6 items-start">
 

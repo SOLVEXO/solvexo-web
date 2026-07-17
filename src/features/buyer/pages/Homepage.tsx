@@ -1,13 +1,15 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
-import { AppDownloadBanner, Footer, HomeAppPromo, FloatingAppWidget } from '@/components/comman/ui';
+import { AppDownloadBanner, Footer, HomeAppPromo, FloatingAppWidget, SkeletonBox } from '@/components/comman/ui';
 import {
-  ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles,
+  ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles, Star, Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { apiGetTopStores, type PublicStoreListItem } from '@/api/services/store';
 
 const FEATURES: { Icon: LucideIcon; title: string; bg: string; desc: string; path: string }[] = [
   { Icon: ShoppingBag, title: 'Marketplace',          bg: '#FBECE4', desc: 'Join thousands of buyers discovering your products in the Solvexo marketplace.',         path: '/marketplace' },
@@ -33,6 +35,18 @@ const STATS = [
 export function Homepage() {
   const navigate = useNavigate();
   usePageTitle('Home');
+
+  const [topStores, setTopStores] = useState<PublicStoreListItem[]>([]);
+  const [storesLoading, setStoresLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetTopStores(6)
+      .then(res => { if (!cancelled) setTopStores(res.data.stores); })
+      .catch(() => { /* non-critical section — homepage still works without it */ })
+      .finally(() => { if (!cancelled) setStoresLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="bg-white min-h-full">
@@ -130,6 +144,53 @@ export function Homepage() {
           </div>
         </div>
       </section>
+
+      {/* ── Top Stores ───────────────────────────────────────────────────────────── */}
+      {(storesLoading || topStores.length > 0) && (
+        <section className="py-12 sm:py-14 lg:py-16 border-t border-bone">
+          <div className="px-4 sm:px-6 lg:px-12">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="font-serif text-[22px] sm:text-[26px] font-bold text-carbon leading-[1.2]">
+                Top stores this week
+              </h2>
+              <Button variant="link" size="sm" onClick={() => navigate('/marketplace')}>
+                Browse all <ArrowRight size={13} className="inline align-middle ml-1" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {storesLoading
+                ? Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex flex-col items-center gap-2">
+                      <SkeletonBox width={64} height={64} rounded="16px" />
+                      <SkeletonBox width="70%" height={11} />
+                    </div>
+                  ))
+                : topStores.map(s => (
+                    <button
+                      key={s.storeId}
+                      onClick={() => navigate(`/store/${s.slug}`)}
+                      className="flex flex-col items-center gap-2 text-center bg-transparent border-none cursor-pointer group"
+                    >
+                      <div className="w-16 h-16 rounded-2xl bg-brand-pale-orange border border-bone flex items-center justify-center overflow-hidden shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:shadow-card">
+                        {s.logo
+                          ? <img loading="lazy" decoding="async" src={s.logo} alt="" className="w-full h-full object-cover" />
+                          : <Store size={22} className="text-brand-orange" />}
+                      </div>
+                      <p className="text-[12px] font-semibold text-carbon leading-tight line-clamp-1 group-hover:text-brand-orange transition-colors">
+                        {s.name}
+                      </p>
+                      <p className="flex items-center gap-1 text-[10.5px] text-slate">
+                        <Star size={10} className="text-brand-orange fill-brand-orange" />
+                        {s.averageRating.toFixed(1)}
+                        <Users size={10} className="ml-1" />
+                        {s.followersCount}
+                      </p>
+                    </button>
+                  ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── Social Proof ─────────────────────────────────────────────────────────── */}
       <section className="bg-cream border-t border-bone py-12 sm:py-14 lg:py-16">

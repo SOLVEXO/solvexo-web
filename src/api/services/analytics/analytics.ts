@@ -174,6 +174,21 @@ function qs(query: Record<string, unknown> = {}) {
   return s ? `?${s}` : '';
 }
 
+// ── Today summary (dashboard header stat row) ─────────────────────────────────────
+// Backend only reads storeId (it derives "today" vs "yesterday" itself), so this
+// takes a bare storeId rather than the full SellerAnalyticsParams (range is ignored).
+
+export interface SellerTodaySummaryData {
+  revenue:              number;
+  revenueChangePercent: number;
+  ordersCount:          number;
+  avgOrderValue:        number;
+}
+
+export function apiSellerAnalyticsToday(storeId: string) {
+  return client.get<never, ApiResponse<SellerTodaySummaryData>>(`${ENDPOINTS.ANALYTICS.SELLER.TODAY}${qs({ storeId })}`);
+}
+
 // ── A. Overview ──────────────────────────────────────────────────────────────────
 
 export function apiSellerAnalyticsOverview(params: SellerAnalyticsParams) {

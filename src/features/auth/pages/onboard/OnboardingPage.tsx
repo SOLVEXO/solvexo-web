@@ -14,6 +14,14 @@ import {
 import { useUpload } from '@/hooks/upload/useUpload';
 import type { SellerType, ProductType, StoreData } from '@/api/services/store';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
+import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
+import { SellerDashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
+
+const ONBOARDING_HIGHLIGHTS = [
+  { Icon: Store,     text: 'A store built around how you sell' },
+  { Icon: Sparkles,  text: 'AI Studio and analytics from day one' },
+  { Icon: ShoppingCart, text: 'Reach thousands of active buyers' },
+];
 
 const STEPS = ['Store Info', 'Seller Type', 'What You Sell', 'Go Live'];
 
@@ -124,7 +132,7 @@ function StepPane({ step, children }: { step: number; children: ReactNode }) {
 
 function PageHeader({ onSignIn }: { onSignIn: () => void }) {
   return (
-    <div className="flex items-center justify-between px-4 md:px-10 h-16 border-b border-bone bg-white sticky top-11 z-10">
+    <div className="flex items-center justify-between px-4 md:px-10 h-16 border-b border-bone bg-white sticky top-0 z-10 shrink-0">
       <SolvexoLogo size={30} />
       <div className="flex items-center gap-[10px]">
         <span className="hidden sm:inline text-[13px] text-slate">Already have an account?</span>
@@ -453,10 +461,17 @@ export function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col">
+    <AuthSplitLayout
+      panelGradient="from-carbon via-[#241F1B] to-brand-deep-orange"
+      heading={<>Your store,<br />your way.</>}
+      subtext="A few quick steps and your Solvexo seller dashboard is ready — tools, analytics and AI Studio included."
+      highlights={ONBOARDING_HIGHLIGHTS}
+      visual={<SellerDashboardMockup />}
+      bare
+    >
       <PageHeader onSignIn={() => navigate('/login')} />
 
-      <div className="bg-white border-b border-bone px-4 md:px-10 py-3">
+      <div className="bg-white border-b border-bone px-4 md:px-10 py-3 shrink-0">
         <div className="max-w-[500px] mx-auto">
           <StepProgress current={step} maxReached={maxReached} onStepClick={jumpTo} />
         </div>
@@ -476,6 +491,6 @@ export function OnboardingPage() {
           {step === 4 && <Step4 store={createStore.store} categoryName={form.categoryName} />}
         </StepPane>
       </div>
-    </div>
+    </AuthSplitLayout>
   );
 }

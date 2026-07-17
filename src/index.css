@@ -60,6 +60,9 @@
   --shadow-md:   0 4px 16px rgba(20,20,19,0.10), 0 1px 4px rgba(20,20,19,0.06);
   --shadow-lg:   0 8px 40px rgba(20,20,19,0.14), 0 2px 8px rgba(20,20,19,0.06);
   --shadow-xl:   0 16px 56px rgba(20,20,19,0.18), 0 4px 12px rgba(20,20,19,0.08);
+  /* Premium elevated surfaces (auth split-panel forms, floating branding cards) */
+  --shadow-2xl:  0 24px 70px rgba(20,20,19,0.22), 0 8px 24px rgba(20,20,19,0.10);
+  --shadow-glow: 0 8px 32px rgba(217,119,87,0.35);
 
   /* ── Motion ── */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -149,3 +152,16 @@
 }
 .dropdown-enter { animation: dropdown-enter 180ms var(--ease-out); transform-origin: top right; }
 .drawer-enter-right { animation: drawer-enter-right 240ms var(--ease-out); }
+
+/* ── Auth branding-panel ambient motion (floating mockup cards, glow orbs) ── */
+@keyframes auth-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+@keyframes auth-glow-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 0.85; }
+}
+.auth-float { animation: auth-float 6s var(--ease-out) infinite; }
+.auth-float-slow { animation: auth-float 8s var(--ease-out) infinite; animation-delay: -2s; }
+.auth-glow-pulse { animation: auth-glow-pulse 4s ease-in-out infinite; }
