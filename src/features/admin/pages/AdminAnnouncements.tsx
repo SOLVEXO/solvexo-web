@@ -1,128 +1,279 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { ComingSoonBanner } from '@/components/comman/ui';
+import { useAdminAnnouncements, useAnnouncementActions } from '@/hooks/admin/useAdminAnnouncements';
+import type { Announcement, AnnouncementAudience, AnnouncementStatus } from '@/api/services/announcements/adminAnnouncements';
+import { Button, Modal, Input, Textarea, Select, Table, StatusBadge, Badge, FilterDropdown, SearchInput } from '@/components/comman/ui';
+import type { TableColumn } from '@/components/comman/ui';
+import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
+import { formatDate } from '@/components/comman/analytics/format';
+import { Megaphone, Trash2, Pencil, Send, CalendarClock, ArrowDownToLine } from 'lucide-react';
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-interface Announcement {
-  id: number; title: string; body: string;
-  audience: string; status: 'Published' | 'Draft' | 'Scheduled'; date: string;
-}
-
-const ANNOUNCEMENTS: Announcement[] = [
-  { id: 1, title: 'Platform Maintenance — May 18, 2025',  body: 'We will be performing scheduled maintenance on May 18 from 2:00 AM – 4:00 AM UTC. Some services may be temporarily unavailable.', audience: 'All Users',    status: 'Published', date: 'May 15, 2025' },
-  { id: 2, title: 'New Seller Feature: AI Studio Launch', body: 'We are excited to introduce AI Studio — a suite of AI-powered tools to help you write better listings, optimize prices and build worksheets.', audience: 'Sellers Only', status: 'Published', date: 'May 10, 2025' },
-  { id: 3, title: 'Summer Sale Promotion — June 2025',    body: "Get ready for the Solvexo Summer Sale! Sellers can opt-in to participate and receive featured placement on the marketplace homepage.", audience: 'Sellers Only', status: 'Draft',     date: 'May 18, 2025' },
-  { id: 4, title: 'Updated Seller Terms of Service',      body: 'Our seller terms of service have been updated. Please review the changes before June 1, 2025.', audience: 'All Users',    status: 'Scheduled', date: 'Jun 1, 2025'  },
+const AUDIENCE_LABEL: Record<AnnouncementAudience, string> = { all: 'All Users', sellers: 'Sellers Only', buyers: 'Buyers Only' };
+const AUDIENCE_OPTIONS = [
+  { value: 'all', label: 'All Users' },
+  { value: 'sellers', label: 'Sellers Only' },
+  { value: 'buyers', label: 'Buyers Only' },
+];
+const STATUS_OPTIONS = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'published', label: 'Published' },
+  { value: 'scheduled', label: 'Scheduled' },
 ];
 
-const statusStyle: Record<string, { bg: string; color: string }> = {
-  Published: { bg: '#E3F4EA', color: '#1E7A3C' },
-  Draft:     { bg: '#F0EEE6', color: '#5A5852' },
-  Scheduled: { bg: '#EAF0FB', color: '#2156A8' },
-};
+// ── Create form ───────────────────────────────────────────────────────────────
+function CreateAnnouncementCard({ onCreated }: { onCreated: () => void }) {
+  const { createAnnouncement, submitting, error } = useAnnouncementActions();
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [audience, setAudience] = useState<AnnouncementAudience>('all');
+  const [validationError, setValidationError] = useState('');
+
+  async function submit(status: 'draft' | 'published') {
+    if (!title.trim() || !message.trim()) { setValidationError('Title and message are required.'); return; }
+    setValidationError('');
+    const ok = await createAnnouncement({ title: title.trim(), message: message.trim(), audience, status });
+    if (ok) { setTitle(''); setMessage(''); setAudience('all'); onCreated(); }
+  }
+
+  return (
+    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5">
+      <p className="text-[14px] font-bold text-charcoal mb-[18px]">Create Announcement</p>
+      <div className="flex flex-col gap-4">
+        <Input label="Title" placeholder="Announcement title…" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Textarea label="Message" rows={4} placeholder="Write your announcement message here…" value={message} onChange={(e) => setMessage(e.target.value)} />
+        <div className="max-w-[260px]">
+          <Select label="Audience" value={audience} onChange={(e) => setAudience(e.target.value as AnnouncementAudience)}>
+            {AUDIENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </Select>
+        </div>
+        {(validationError || error) && <p className="text-[12px] text-error">{validationError || error}</p>}
+        <div className="flex gap-[10px]">
+          <Button onClick={() => submit('published')} loading={submitting}>Publish Now</Button>
+          <Button variant="outline" onClick={() => submit('draft')} loading={submitting}>Save as Draft</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Edit modal ────────────────────────────────────────────────────────────────
+function EditAnnouncementModal({ announcement, onClose, onSaved }: { announcement: Announcement; onClose: () => void; onSaved: () => void }) {
+  const { updateAnnouncement, submitting, error } = useAnnouncementActions();
+  const [title, setTitle] = useState(announcement.title);
+  const [message, setMessage] = useState(announcement.message);
+  const [audience, setAudience] = useState<AnnouncementAudience>(announcement.audience);
+  const [validationError, setValidationError] = useState('');
+
+  async function submit() {
+    if (!title.trim() || !message.trim()) { setValidationError('Title and message are required.'); return; }
+    setValidationError('');
+    const ok = await updateAnnouncement(announcement._id, { title: title.trim(), message: message.trim(), audience });
+    if (ok) onSaved();
+  }
+
+  return (
+    <Modal
+      title="Edit Announcement"
+      width={520}
+      onClose={onClose}
+      footer={<>
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <Button onClick={submit} loading={submitting}>Save Changes</Button>
+      </>}
+    >
+      <div className="flex flex-col gap-4">
+        <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Textarea label="Message" rows={4} value={message} onChange={(e) => setMessage(e.target.value)} />
+        <Select label="Audience" value={audience} onChange={(e) => setAudience(e.target.value as AnnouncementAudience)}>
+          {AUDIENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </Select>
+        {(validationError || error) && <p className="text-[12px] text-error">{validationError || error}</p>}
+      </div>
+    </Modal>
+  );
+}
+
+// ── Schedule modal ────────────────────────────────────────────────────────────
+function ScheduleModal({ announcement, onClose, onSaved }: { announcement: Announcement; onClose: () => void; onSaved: () => void }) {
+  const { setStatus, submitting, error } = useAnnouncementActions();
+  const [scheduledAt, setScheduledAt] = useState('');
+  const [validationError, setValidationError] = useState('');
+
+  async function submit() {
+    if (!scheduledAt) { setValidationError('Pick a date and time to schedule this announcement.'); return; }
+    setValidationError('');
+    const ok = await setStatus(announcement._id, 'scheduled', new Date(scheduledAt).toISOString());
+    if (ok) onSaved();
+  }
+
+  return (
+    <Modal
+      title="Schedule Announcement"
+      onClose={onClose}
+      footer={<>
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <Button onClick={submit} loading={submitting}>Schedule</Button>
+      </>}
+    >
+      <div className="flex flex-col gap-3">
+        <p className="text-[13px] text-charcoal">Schedule "<strong>{announcement.title}</strong>" to publish automatically at:</p>
+        <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} error={validationError || undefined} />
+        {error && <p className="text-[12px] text-error">{error}</p>}
+      </div>
+    </Modal>
+  );
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function AdminAnnouncements() {
   usePageTitle('Announcements');
-  const [announcements, setAnnouncements] = useState<Announcement[]>(ANNOUNCEMENTS);
-  const [title,    setTitle]    = useState('');
-  const [body,     setBody]     = useState('');
-  const [audience, setAudience] = useState('All Users');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [audienceFilter, setAudienceFilter] = useState('');
+  const [page, setPage] = useState(1);
 
-  const createEntry = (status: 'Published' | 'Draft') => {
-    if (!title) return;
-    setAnnouncements(prev => [{
-      id: Date.now(), title, body, audience, status,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    }, ...prev]);
-    setTitle(''); setBody('');
-  };
+  const query = useMemo(
+    () => ({
+      search: search || undefined,
+      status: (statusFilter || undefined) as AnnouncementStatus | undefined,
+      audience: (audienceFilter || undefined) as AnnouncementAudience | undefined,
+      page,
+      limit: 10,
+    }),
+    [search, statusFilter, audienceFilter, page],
+  );
 
-  const remove = (id: number) => setAnnouncements(prev => prev.filter(a => a.id !== id));
+  const { data, loading, error, refetch } = useAdminAnnouncements(query);
+  const { setStatus, deleteAnnouncement, submitting: actionSubmitting, error: actionError } = useAnnouncementActions();
+
+  const [editing, setEditing] = useState<Announcement | null>(null);
+  const [scheduling, setScheduling] = useState<Announcement | null>(null);
+  const [deleting, setDeleting] = useState<Announcement | null>(null);
+
+  async function handlePublish(a: Announcement) {
+    const ok = await setStatus(a._id, 'published');
+    if (ok) refetch();
+  }
+
+  async function handleUnpublish(a: Announcement) {
+    const ok = await setStatus(a._id, 'draft');
+    if (ok) refetch();
+  }
+
+  async function handleDelete() {
+    if (!deleting) return;
+    const ok = await deleteAnnouncement(deleting._id);
+    if (ok) { setDeleting(null); refetch(); }
+  }
+
+  const columns: TableColumn<Announcement>[] = [
+    {
+      key: 'title',
+      header: 'Announcement',
+      render: (a) => (
+        <div className="max-w-[420px]">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <p className="text-[13px] font-semibold text-charcoal">{a.title}</p>
+            <StatusBadge status={a.status} size="sm" />
+            <Badge size="sm">{AUDIENCE_LABEL[a.audience]}</Badge>
+          </div>
+          <p className="text-[12px] text-slate leading-[1.5] line-clamp-2">{a.message}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Date',
+      render: (a) => (
+        <span className="text-[12px] text-slate whitespace-nowrap">
+          {a.status === 'scheduled' && a.scheduledAt ? `Scheduled ${formatDate(a.scheduledAt)}` : formatDate(a.createdAt)}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (a) => (
+        <div className="flex items-center gap-[10px] flex-wrap">
+          {a.status !== 'published' && (
+            <button onClick={() => handlePublish(a)} disabled={actionSubmitting} className="text-[12px] font-medium text-success bg-transparent border-none cursor-pointer flex items-center gap-1 disabled:opacity-50">
+              <Send size={11} /> Publish
+            </button>
+          )}
+          {a.status === 'draft' && (
+            <button onClick={() => setScheduling(a)} className="text-[12px] font-medium text-info bg-transparent border-none cursor-pointer flex items-center gap-1">
+              <CalendarClock size={11} /> Schedule
+            </button>
+          )}
+          {a.status === 'published' && (
+            <button onClick={() => handleUnpublish(a)} disabled={actionSubmitting} className="text-[12px] font-medium text-slate bg-transparent border-none cursor-pointer flex items-center gap-1 disabled:opacity-50">
+              <ArrowDownToLine size={11} /> Unpublish
+            </button>
+          )}
+          <button onClick={() => setEditing(a)} className="text-[12px] font-medium text-info bg-transparent border-none cursor-pointer flex items-center gap-1">
+            <Pencil size={11} /> Edit
+          </button>
+          <button onClick={() => setDeleting(a)} className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer flex items-center gap-1">
+            <Trash2 size={11} /> Delete
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="px-7 pt-6 pb-8 flex flex-col gap-5">
-
-      {/* ── Header ── */}
+    <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       <div>
         <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Announcements</h1>
         <p className="text-[12px] text-slate">Broadcast platform-wide messages to users and sellers.</p>
       </div>
 
-      <ComingSoonBanner message="Announcements aren't saved to a backend yet — changes here are local to this session and will reset on refresh." />
+      <CreateAnnouncementCard onCreated={refetch} />
 
-      {/* ── Create form ── */}
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5">
-        <p className="text-[14px] font-bold text-charcoal mb-[18px]">Create Announcement</p>
-        <div className="flex flex-col gap-4">
-          <div>
-            <label className="text-[12px] font-medium text-graphite mb-[5px] block">Title</label>
-            <input placeholder="Announcement title…" value={title} onChange={e => setTitle(e.target.value)}
-              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
-          </div>
-          <div>
-            <label className="text-[12px] font-medium text-graphite mb-[5px] block">Message</label>
-            <textarea rows={4} placeholder="Write your announcement message here…" value={body} onChange={e => setBody(e.target.value)}
-              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border resize-y leading-[1.6] transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
-          </div>
-          <div className="max-w-[260px]">
-            <label className="text-[12px] font-medium text-graphite mb-[5px] block">Audience</label>
-            <select value={audience} onChange={e => setAudience(e.target.value)}
-              className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
-              <option>All Users</option>
-              <option>Sellers Only</option>
-              <option>Buyers Only</option>
-              <option>Admins Only</option>
-            </select>
-          </div>
-          <div className="flex gap-[10px]">
-            <button onClick={() => createEntry('Published')}
-              className="px-5 py-[9px] bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer outline-none transition-[filter,transform] duration-150 hover:brightness-95 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
-              Publish Now
-            </button>
-            <button onClick={() => createEntry('Draft')}
-              className="px-[18px] py-[9px] bg-white border border-bone rounded-lg text-[13px] font-medium text-graphite cursor-pointer outline-none transition-[background-color,transform] duration-150 hover:bg-cream active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
-              Save as Draft
-            </button>
-          </div>
-        </div>
-      </div>
+      {actionError && (
+        <div className="bg-error-bg border border-[#FECACA] rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>
+      )}
 
-      {/* ── Announcements list ── */}
       <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
-        <div className="px-5 pt-4 pb-[10px]">
-          <p className="text-[14px] font-bold text-charcoal">All Announcements</p>
+        <div className="px-5 py-[14px] border-b border-bone flex items-center gap-[10px] flex-wrap">
+          <p className="text-[14px] font-bold text-charcoal flex-1">All Announcements</p>
+          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search announcements…" className="max-w-[240px]" />
+          <FilterDropdown placeholder="All Statuses" options={STATUS_OPTIONS} value={statusFilter} onChange={(v) => { setStatusFilter(v); setPage(1); }} />
+          <FilterDropdown placeholder="All Audiences" options={AUDIENCE_OPTIONS} value={audienceFilter} onChange={(v) => { setAudienceFilter(v); setPage(1); }} />
         </div>
-        <div>
-          {announcements.map((ann, i) => {
-            const ss = statusStyle[ann.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
-            return (
-              <div
-                key={ann.id}
-                className="px-5 py-[14px] transition-colors duration-[120ms] hover:bg-[#FAF9F5]"
-                style={{ borderBottom: i < announcements.length - 1 ? '1px solid #F0EEE6' : 'none' }}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-[5px]">
-                      <p className="text-[13px] font-semibold text-charcoal">{ann.title}</p>
-                      <span className="px-[9px] py-[2px] rounded-[5px] text-[11px] font-semibold flex-shrink-0"
-                        style={{ background: ss.bg, color: ss.color }}>{ann.status}</span>
-                      <span className="px-[9px] py-[2px] rounded-[5px] text-[11px] font-medium bg-[#F0EEE6] text-[#5A5852] flex-shrink-0">{ann.audience}</span>
-                    </div>
-                    <p className="text-[12px] text-slate leading-[1.5] mb-1">{ann.body}</p>
-                    <p className="text-[11px] text-[#B0AEA8]">{ann.date}</p>
-                  </div>
-                  <div className="flex items-center gap-[10px] flex-shrink-0">
-                    <button disabled title="Not connected to a backend yet" className="text-[12px] text-slate bg-transparent border-none opacity-40 cursor-not-allowed">Edit</button>
-                    <button onClick={() => remove(ann.id)} className="text-[12px] text-error bg-transparent border-none cursor-pointer outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">Delete</button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+
+        {error ? (
+          <div className="p-5"><AnalyticsErrorState message={error} onRetry={refetch} /></div>
+        ) : (
+          <Table
+            columns={columns}
+            data={data?.items ?? []}
+            keyExtractor={(a) => a._id}
+            loading={loading}
+            emptyState={{ icon: <Megaphone size={28} className="text-slate/50" />, title: 'No announcements yet', description: 'Create your first announcement above to broadcast a message to users or sellers.' }}
+            pagination={{ page, total: data?.total ?? 0, perPage: 10, onChange: setPage, label: 'announcements' }}
+          />
+        )}
       </div>
+
+      {editing && <EditAnnouncementModal announcement={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); refetch(); }} />}
+      {scheduling && <ScheduleModal announcement={scheduling} onClose={() => setScheduling(null)} onSaved={() => { setScheduling(null); refetch(); }} />}
+
+      {deleting && (
+        <Modal
+          title="Delete Announcement"
+          onClose={() => setDeleting(null)}
+          footer={<>
+            <Button variant="ghost" onClick={() => setDeleting(null)}>Cancel</Button>
+            <Button variant="danger" onClick={handleDelete} loading={actionSubmitting}>Delete Announcement</Button>
+          </>}
+        >
+          <p className="text-[13px] text-charcoal leading-[1.6]">
+            Delete "<strong>{deleting.title}</strong>"? This cannot be undone.
+          </p>
+          {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
+        </Modal>
+      )}
     </div>
   );
 }

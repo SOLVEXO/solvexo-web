@@ -4,7 +4,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
 import { apiGetMyAddresses, type Address } from '@/api/services/address';
-import { apiCreateCheckout, type Checkout, type CheckoutSummary, type SubscriptionSavingsHint } from '@/api/services/checkout';
+import { apiCreateCheckout, apiApplyCoupon, apiRemoveCoupon, type Checkout, type CheckoutSummary, type SubscriptionSavingsHint } from '@/api/services/checkout';
 import { apiPlaceCodOrder, apiPlaceOrder } from '@/api/services/payment';
 import { Button } from '@/components/comman/ui/Button';
 import { SkeletonBox, BuyerNavbar, Breadcrumb } from '@/components/comman/ui';
@@ -79,6 +79,11 @@ export function CheckoutPage() {
   const [placing,     setPlacing]     = useState(false);
   const [placeError,  setPlaceError]  = useState('');
 
+  // Coupon
+  const [couponInput,   setCouponInput]   = useState('');
+  const [couponBusy,    setCouponBusy]    = useState(false);
+  const [couponError,   setCouponError]   = useState('');
+
   // For digital carts: strip COD from allowed methods
   const effectiveMethods = isDigital
     ? allowedMethods.filter(m => m !== 'cash_on_delivery')
@@ -148,9 +153,39 @@ export function CheckoutPage() {
 
   const shipping = summary?.shippingFee ?? selectedZone?.shippingPrice ?? 0;
   const tax      = summary?.taxAmount ?? 0;
-  const total    = filteredSubtotal + (isDigital ? 0 : shipping) + tax;
+  const couponDiscount = checkout?.couponDiscountUSD ?? 0;
+  const total    = Math.max(0, filteredSubtotal + (isDigital ? 0 : shipping) + tax - couponDiscount);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
+  async function handleApplyCoupon() {
+    if (!checkout || !couponInput.trim()) return;
+    setCouponBusy(true);
+    setCouponError('');
+    try {
+      const res = await apiApplyCoupon({ checkoutId: checkout._id, code: couponInput.trim() });
+      setCheckout(c => c && { ...c, couponCode: res.data.couponCode, couponDiscountUSD: res.data.couponDiscountUSD, totalAmount: res.data.totalAmount });
+      setCouponInput('');
+    } catch (err) {
+      setCouponError(err instanceof Error ? err.message : 'Failed to apply coupon.');
+    } finally {
+      setCouponBusy(false);
+    }
+  }
+
+  async function handleRemoveCoupon() {
+    if (!checkout) return;
+    setCouponBusy(true);
+    setCouponError('');
+    try {
+      const res = await apiRemoveCoupon(checkout._id);
+      setCheckout(c => c && { ...c, couponCode: null, couponDiscountUSD: 0, totalAmount: res.data.totalAmount });
+    } catch (err) {
+      setCouponError(err instanceof Error ? err.message : 'Failed to remove coupon.');
+    } finally {
+      setCouponBusy(false);
+    }
+  }
+
   const selectAddress = (addr: Address) => {
     setSelectedAddr(addr);
     setSelectedZoneId(null);
@@ -772,7 +807,44 @@ export function CheckoutPage() {
                   <span className="font-semibold text-success">-${summary.subscriberSavingsUSD.toFixed(2)}</span>
                 </div>
               )}
+              {!!checkout?.couponCode && (
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-success">Coupon ({checkout.couponCode})</span>
+                  <span className="font-semibold text-success">-${couponDiscount.toFixed(2)}</span>
+                </div>
+              )}
             </div>
+
+            {checkout && (
+              <div className="mb-4">
+                {checkout.couponCode ? (
+                  <button
+                    onClick={handleRemoveCoupon}
+                    disabled={couponBusy}
+                    className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer disabled:opacity-50"
+                  >
+                    Remove coupon
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      value={couponInput}
+                      onChange={e => setCouponInput(e.target.value.toUpperCase())}
+                      placeholder="Coupon code"
+                      className="flex-1 min-w-0 px-3 py-2 text-[12.5px] border border-bone rounded-lg outline-none text-charcoal bg-white focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
+                    />
+                    <button
+                      onClick={handleApplyCoupon}
+                      disabled={couponBusy || !couponInput.trim()}
+                      className="px-4 py-2 bg-white border border-bone rounded-lg text-[12.5px] font-semibold text-graphite cursor-pointer hover:bg-cream disabled:opacity-50"
+                    >
+                      {couponBusy ? 'Applying…' : 'Apply'}
+                    </button>
+                  </div>
+                )}
+                {couponError && <p className="text-[11px] text-error mt-1.5">{couponError}</p>}
+              </div>
+            )}
 
             <div className="h-px bg-bone mb-4" />
 

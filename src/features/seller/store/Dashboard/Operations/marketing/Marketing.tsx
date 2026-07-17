@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Gift, type LucideIcon } from 'lucide-react';
+import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Gift, Megaphone, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState, SkeletonBox, Modal, Button } from '@/components/comman/ui';
 import {
   apiGetCoupons, apiCreateCoupon, apiUpdateCoupon, apiDeleteCoupon,
-  type Coupon, type DiscountType,
+  apiGetJoinableCampaigns, apiJoinCampaign, apiLeaveCampaign,
+  type Coupon, type DiscountType, type JoinableCampaign,
 } from '@/api/services/marketing';
 
-type Tab = 'coupons' | 'email' | 'cart' | 'affiliate' | 'giftcards';
+type Tab = 'coupons' | 'platform' | 'email' | 'cart' | 'affiliate' | 'giftcards';
 
 const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
   { id: 'coupons',   label: 'Coupons',        Icon: TagIcon      },
+  { id: 'platform',  label: 'Platform Sales', Icon: Megaphone    },
   { id: 'email',     label: 'Email Campaigns', Icon: Mail         },
   { id: 'cart',      label: 'Abandoned Cart',  Icon: ShoppingCart },
   { id: 'affiliate', label: 'Affiliate',       Icon: Handshake    },
@@ -55,6 +57,35 @@ export function StoreMarketing() {
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load coupons.'))
       .finally(() => setLoading(false));
   }, [storeId]);
+
+  // Platform-wide sale campaigns (admin-created) this store can opt into
+  const [campaigns, setCampaigns] = useState<JoinableCampaign[]>([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(true);
+  const [campaignsError, setCampaignsError] = useState('');
+  const [campaignBusyId, setCampaignBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!storeId || tab !== 'platform') return;
+    setCampaignsLoading(true);
+    apiGetJoinableCampaigns(storeId)
+      .then(res => setCampaigns(res.data))
+      .catch(err => setCampaignsError(err instanceof Error ? err.message : 'Failed to load campaigns.'))
+      .finally(() => setCampaignsLoading(false));
+  }, [storeId, tab]);
+
+  async function toggleCampaign(campaign: JoinableCampaign) {
+    setCampaignBusyId(campaign._id);
+    setCampaignsError('');
+    try {
+      if (campaign.isJoined) await apiLeaveCampaign(storeId, campaign._id);
+      else await apiJoinCampaign(storeId, campaign._id);
+      setCampaigns(prev => prev.map(c => c._id === campaign._id ? { ...c, isJoined: !c.isJoined } : c));
+    } catch (err) {
+      setCampaignsError(err instanceof Error ? err.message : 'Failed to update campaign.');
+    } finally {
+      setCampaignBusyId(null);
+    }
+  }
 
   function startEdit(c: Coupon) {
     setEditingId(c._id);
@@ -269,6 +300,65 @@ export function StoreMarketing() {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Platform Sales Tab — admin-created campaigns this store can opt into */}
+        {tab === 'platform' && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <p className="text-[15px] font-bold text-carbon">Platform Sale Campaigns</p>
+              <p className="text-[12.5px] text-slate mt-0.5">
+                Solvexo-wide sale events. Join one to get your products featured in the marketplace deals banner for its duration.
+              </p>
+            </div>
+
+            {campaignsError && <p className="text-xs text-error">{campaignsError}</p>}
+
+            {campaignsLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <SkeletonBox key={i} height={120} rounded="10px" />
+                ))}
+              </div>
+            ) : campaigns.length === 0 ? (
+              <EmptyState
+                icon={<Megaphone size={28} className="text-brand-orange opacity-55" />}
+                title="No active campaigns right now"
+                description="When the Solvexo team launches a platform-wide sale, it'll show up here for you to join."
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {campaigns.map(c => (
+                  <div key={c._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-sm font-semibold text-carbon">{c.name}</p>
+                      {c.isJoined && (
+                        <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold shrink-0 ml-2 bg-success-bg text-success">Joined</span>
+                      )}
+                    </div>
+                    {c.description && <p className="text-xs text-slate mb-2">{c.description}</p>}
+                    <p className="text-[11px] text-slate mb-3">
+                      {new Date(c.startDate).toLocaleDateString()} – {new Date(c.endDate).toLocaleDateString()}
+                      {c.discountType && c.discountValue != null && (
+                        <> · Suggested: {c.discountType === 'percentage' ? `${c.discountValue}% off` : `$${c.discountValue} off`}</>
+                      )}
+                    </p>
+                    <button
+                      onClick={() => toggleCampaign(c)}
+                      disabled={campaignBusyId === c._id}
+                      className={`w-full py-2 rounded-[7px] text-xs font-semibold cursor-pointer transition-colors duration-150 border disabled:opacity-50 ${
+                        c.isJoined
+                          ? 'bg-white border-bone text-graphite hover:bg-cream'
+                          : 'bg-brand-orange border-transparent text-white hover:bg-brand-deep-orange'
+                      }`}
+                    >
+                      {campaignBusyId === c._id ? 'Updating…' : c.isJoined ? 'Leave Campaign' : 'Join Campaign'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

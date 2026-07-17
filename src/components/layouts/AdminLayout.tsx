@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, FolderTree, RefreshCw,
-  BarChart3, Layers, Search, Sparkles,
+  BarChart3, Layers, Search, Sparkles, Tag,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -28,6 +28,7 @@ const ADMIN_NAV: AdminNavItem[] = [
   { id: 'marketplace',   Icon: Store,           label: 'Marketplace',     path: '/admin/marketplace'   },
   { id: 'categories',    Icon: FolderTree,      label: 'Categories',      path: '/admin/categories'    },
   { id: 'subscriptions', Icon: RefreshCw,       label: 'Subscriptions',   path: '/admin/subscriptions' },
+  { id: 'marketing',     Icon: Tag,             label: 'Marketing',       path: '/admin/marketing'     },
   { id: 'platform-plans',Icon: Layers,          label: 'Platform Plans',  path: '/admin/platform-plans' },
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
   { id: 'seo',           Icon: Search,          label: 'SEO',             path: '/admin/seo'           },
@@ -44,7 +45,7 @@ const ADMIN_NAV: AdminNavItem[] = [
 const NAV_GROUPS: { label: string; ids: AdminNavItem['id'][] }[] = [
   { label: 'Overview', ids: ['overview', 'analytics'] },
   { label: 'Community', ids: ['users', 'moderation', 'messages'] },
-  { label: 'Commerce',  ids: ['marketplace', 'categories', 'subscriptions', 'finance', 'seo', 'ai-studio'] },
+  { label: 'Commerce',  ids: ['marketplace', 'categories', 'subscriptions', 'marketing', 'finance', 'seo', 'ai-studio'] },
   { label: 'Content',   ids: ['banners', 'faqs', 'announcements'] },
   { label: 'Platform',  ids: ['config', 'settings'] },
 ];

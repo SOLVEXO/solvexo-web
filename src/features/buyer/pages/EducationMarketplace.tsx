@@ -5,7 +5,7 @@ import { Button } from '@/components/comman/ui/Button';
 import { Badge } from '@/components/comman/ui/Badge';
 import { Card } from '@/components/comman/ui/Card';
 import { ComingSoonBanner } from '@/components/comman/ui/ComingSoonBanner';
-import { BuyerNavbar, AppDownloadBanner, Footer, EducationAppPromo } from '@/components/comman/ui';
+import { BuyerNavbar, AppDownloadBanner, Footer } from '@/components/comman/ui';
 import { ArrowRight, ShoppingCart, Star, Sparkles, BookOpen, BookMarked, Microscope, Heart } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -92,10 +92,6 @@ export function EducationMarketplace() {
                 Sell Your Resources
               </Button>
             </div>
-          </div>
-
-          <div className="hidden lg:block shrink-0">
-            <EducationAppPromo />
           </div>
         </div>
       </div>

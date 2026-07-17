@@ -1,20 +1,21 @@
-import { useState, useEffect, useCallback, memo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductsByCategory } from '@/hooks/marketplace/useProductsByCategory';
 import { useBanners } from '@/hooks/useBanners';
 import type { Banner } from '@/api/services/banner';
 import { useCartContext } from '@/contexts/CartContext';
+import { TokenStorage } from '@/api/services/auth';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
-import { TabBar, Pagination, FilterDropdown, BuyerNavbar, AppDownloadBanner, Footer, TrustServiceStrip, MarketplaceAppPromo, FloatingAppWidget } from '@/components/comman/ui';
-import type { Tab } from '@/components/comman/ui';
+import { Pagination, FilterDropdown, BuyerNavbar, AppDownloadBanner, Footer, TrustServiceStrip, FloatingAppWidget, DealsBanner, StoreFeatureCard } from '@/components/comman/ui';
 import {
   ShoppingCart, ShoppingBag, Star, Heart, ImageOff,
   Loader2, SlidersHorizontal, X, ChevronLeft, ChevronRight,
-  ShieldCheck, BadgeCheck, RefreshCcw, Flame, Clock, TrendingUp, Store, Users,
+  ShieldCheck, BadgeCheck, RefreshCcw,
+  ChevronDown, Tag, Globe,
 } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
@@ -169,7 +170,7 @@ const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, i
   const stock = isDigital ? Infinity : (defaultVariant?.stock ?? 0);
 
   return (
-    <Card padding="none" hover onClick={() => onClick(product._id)} className="overflow-hidden">
+    <Card padding="none" hover onClick={() => onClick(product._id)} className="overflow-hidden rounded-[16px] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_32px_rgba(0,0,0,0.1)] transition-shadow duration-300">
       {/* Image container */}
       <div className="relative overflow-hidden group/img">
         <ProductImage
@@ -292,69 +293,388 @@ function useCountdownToMidnight() {
   };
 }
 
-// ── Compact rail card — shared shape for the Flash Sale / Top Picks rails ──────
-function RailCard({ product, onClick, badge }: {
+// ── Compact rail card — dense Flash Sale / Top Picks strip card ────────────────
+function RailCard({ product, onClick, badge, rank }: {
   product: MarketplaceProduct;
   onClick: (id: string) => void;
   badge?: React.ReactNode;
+  rank?: number;
 }) {
-  const dv    = product.variants.find(v => v.isDefault) ?? product.variants[0];
-  const price = dv?.price ?? null;
+  const dv        = product.variants.find(v => v.isDefault) ?? product.variants[0];
+  const price     = dv?.price ?? null;
+  const compareAt = dv?.compareAtPrice ?? null;
   return (
     <button
       onClick={() => onClick(product._id)}
-      className="shrink-0 w-[136px] sm:w-[152px] text-left bg-white rounded-xl border border-bone overflow-hidden cursor-pointer group transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_12px_28px_rgba(0,0,0,0.1)] hover:border-brand-orange/25"
+      className="relative shrink-0 w-[112px] sm:w-[126px] text-left bg-white rounded-[14px] border border-bone overflow-hidden cursor-pointer group transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_10px_24px_rgba(0,0,0,0.1)] hover:border-brand-orange/25"
     >
       <div className="relative">
         <ProductImage
           images={product.images ?? []}
           name={product.name}
-          className="h-[100px] sm:h-[112px] transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+          className="h-[92px] sm:h-[100px] transition-transform duration-500 ease-out group-hover:scale-[1.06]"
         />
-        {badge && <div className="absolute top-[6px] left-[6px]">{badge}</div>}
+        {badge && <div className="absolute top-[5px] left-[5px]">{badge}</div>}
+        {rank != null && (
+          <span className="absolute bottom-[5px] left-[5px] w-[18px] h-[18px] rounded-full bg-carbon/85 backdrop-blur-sm text-white text-[10px] font-bold flex items-center justify-center">
+            {rank}
+          </span>
+        )}
       </div>
-      <div className="px-[10px] py-[9px]">
-        <p className="text-[11.5px] font-semibold text-carbon leading-tight line-clamp-2 mb-1">{product.name}</p>
-        <div className="flex items-center justify-between">
-          <span className="text-[12.5px] font-bold text-carbon">{price != null ? `$${price.toLocaleString()}` : '—'}</span>
-          {product.averageRating > 0 && (
-            <span className="flex items-center gap-[2px] text-[10px] text-slate">
-              <Star size={9} className="text-brand-orange fill-brand-orange" />
-              {product.averageRating.toFixed(1)}
-            </span>
+      <div className="px-[9px] py-[8px]">
+        <p className="text-[11px] font-semibold text-carbon leading-tight line-clamp-2 mb-[5px] min-h-[28px]">{product.name}</p>
+        <div className="flex items-baseline gap-[4px]">
+          <span className="text-[12px] font-bold text-carbon">{price != null ? `$${price.toLocaleString()}` : '—'}</span>
+          {compareAt != null && compareAt > (price ?? 0) && (
+            <span className="text-[9.5px] text-slate line-through">${compareAt.toLocaleString()}</span>
           )}
         </div>
+        {product.averageRating > 0 && (
+          <span className="flex items-center gap-[2px] text-[9.5px] text-slate mt-[3px]">
+            <Star size={8} className="text-brand-orange fill-brand-orange" />
+            {product.averageRating.toFixed(1)}
+          </span>
+        )}
       </div>
     </button>
   );
 }
 
-// ── Store rail card — same shape as RailCard, for seller/store discovery rails ──
-function StoreRailCard({ store, onClick }: { store: PublicStoreListItem; onClick: (slug: string) => void }) {
+// ── Category bar icon — reuses each category's real uploaded image, falls back to a tag glyph ──
+function CategoryBarIcon({ category }: { category: CategoryNode }) {
+  if (category.image) {
+    return (
+      <span className="w-[24px] h-[24px] rounded-lg overflow-hidden shrink-0 bg-cream border border-bone">
+        <img loading="lazy" decoding="async" src={category.image} alt="" className="w-full h-full object-cover" />
+      </span>
+    );
+  }
   return (
-    <button
-      onClick={() => onClick(store.slug)}
-      className="shrink-0 w-[136px] sm:w-[152px] text-left bg-white rounded-xl border border-bone overflow-hidden cursor-pointer group transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_12px_28px_rgba(0,0,0,0.1)] hover:border-brand-orange/25"
-    >
-      <div className="h-[100px] sm:h-[112px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">
-        {store.logo
-          ? <img loading="lazy" decoding="async" src={store.logo} alt="" className="w-full h-full object-cover" />
-          : <Store size={28} className="text-brand-orange" />}
+    <span className="w-[24px] h-[24px] rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
+      <Tag size={13} className="text-brand-orange" />
+    </span>
+  );
+}
+
+const CATEGORY_BAR_TRENDING = ['Wireless Earbuds', 'Digital Planner', 'Desk Organizer', 'Handmade Jewelry', 'Watercolor Prints'];
+
+// ── Alibaba-style category mega menu — opened from the ☰ / "All" trigger in the category bar ──
+function CategoryBarMegaMenu({
+  categories, spotlight, onShopCategory, onProductClick, onTrendingTerm,
+}: {
+  categories:     CategoryNode[];
+  spotlight:      MarketplaceProduct[];
+  onShopCategory: (id: string) => void;
+  onProductClick: (id: string) => void;
+  onTrendingTerm: (term: string) => void;
+}) {
+  const [activeId, setActiveId] = useState<string | null>(categories[0]?._id ?? null);
+  const active = categories.find(c => c._id === activeId) ?? categories[0] ?? null;
+  const siblingChips = categories.filter(c => c._id !== active?._id).slice(0, 6);
+
+  if (categories.length === 0) return null;
+
+  return (
+    <div className="dropdown-enter flex bg-white border border-bone rounded-2xl shadow-[0_24px_56px_rgba(0,0,0,0.18)] overflow-hidden w-[860px] max-w-[92vw]">
+      {/* Left rail — main categories */}
+      <div className="w-[220px] shrink-0 border-r border-bone py-2 bg-cream/50 max-h-[480px] overflow-y-auto">
+        {categories.map(cat => (
+          <button
+            key={cat._id}
+            onMouseEnter={() => setActiveId(cat._id)}
+            onFocus={() => setActiveId(cat._id)}
+            onClick={() => onShopCategory(cat._id)}
+            className={clsx(
+              'w-full flex items-center gap-[10px] px-[14px] py-[10px] text-left bg-transparent border-none cursor-pointer transition-colors duration-150',
+              activeId === cat._id ? 'bg-white text-brand-orange' : 'text-charcoal hover:bg-white/70',
+            )}
+          >
+            <CategoryBarIcon category={cat} />
+            <span className="flex-1 text-[12.5px] font-medium truncate">{cat.name}</span>
+            <ChevronRight size={13} className={clsx('shrink-0 transition-transform', activeId === cat._id ? 'text-brand-orange translate-x-[2px]' : 'text-slate/50')} />
+          </button>
+        ))}
       </div>
-      <div className="px-[10px] py-[9px]">
-        <p className="text-[11.5px] font-semibold text-carbon leading-tight line-clamp-1 mb-1">{store.name}</p>
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-[2px] text-[10px] text-slate">
-            <Star size={9} className="text-brand-orange fill-brand-orange" />
-            {store.averageRating.toFixed(1)}
-          </span>
-          <span className="flex items-center gap-[2px] text-[10px] text-slate">
-            <Users size={9} />
-            {store.followersCount}
-          </span>
+
+      {/* Right panel — subcategories / popular categories / popular products / trending / banner */}
+      {active && (
+        <div className="flex-1 p-6 max-h-[480px] overflow-y-auto flex gap-7">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10.5px] font-bold text-slate uppercase tracking-[0.07em] mb-3">Subcategories</p>
+            {active.children.length > 0 ? (
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3 mb-5">
+                {active.children.map(sub => (
+                  <button
+                    key={sub._id}
+                    onClick={() => onShopCategory(sub._id)}
+                    className="text-left text-[12.5px] text-charcoal bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors"
+                  >
+                    {sub.name}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[12px] text-slate mb-5">No subcategories yet — browse everything in {active.name}.</p>
+            )}
+
+            {siblingChips.length > 0 && (
+              <>
+                <p className="text-[10.5px] font-bold text-slate uppercase tracking-[0.07em] mb-3">Popular Categories</p>
+                <div className="flex flex-wrap gap-[6px] mb-5">
+                  {siblingChips.map(c => (
+                    <button
+                      key={c._id}
+                      onClick={() => onShopCategory(c._id)}
+                      className="px-[10px] py-[5px] rounded-full text-[11.5px] font-medium bg-cream text-charcoal border border-bone hover:border-brand-orange hover:text-brand-orange transition-colors cursor-pointer"
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {spotlight.length > 0 && (
+              <>
+                <p className="text-[10.5px] font-bold text-slate uppercase tracking-[0.07em] mb-3">Popular Products</p>
+                <div className="flex gap-3 mb-5">
+                  {spotlight.slice(0, 3).map(p => <RailCard key={p._id} product={p} onClick={onProductClick} />)}
+                </div>
+              </>
+            )}
+
+            <p className="text-[10.5px] font-bold text-slate uppercase tracking-[0.07em] mb-3">Trending Searches</p>
+            <div className="flex flex-wrap gap-[6px]">
+              {CATEGORY_BAR_TRENDING.map(term => (
+                <button
+                  key={term}
+                  onClick={() => onTrendingTerm(term)}
+                  className="px-[10px] py-[5px] rounded-full text-[11.5px] font-medium bg-white text-charcoal border border-bone hover:border-brand-orange hover:text-brand-orange transition-colors cursor-pointer"
+                >
+                  {term}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="w-[210px] shrink-0">
+            <div className="rounded-xl overflow-hidden border border-bone bg-brand-pale-orange h-[130px] flex items-center justify-center mb-3">
+              {active.image
+                ? <img loading="lazy" decoding="async" src={active.image} alt="" className="w-full h-full object-cover" />
+                : <Tag size={28} className="text-brand-orange opacity-50" />}
+            </div>
+            <button
+              onClick={() => onShopCategory(active._id)}
+              className="w-full flex items-center justify-center gap-[6px] text-[12.5px] font-semibold text-white bg-brand-orange rounded-lg py-[10px] cursor-pointer border-none hover:opacity-90 transition-opacity"
+            >
+              Shop {active.name}
+            </button>
+          </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ── "About Solvexo.store" mega menu — company / commerce-tools / support links ──
+function AboutSolvexoMegaMenu({ onNavigate }: { onNavigate: (path: string) => void }) {
+  const columns: { title: string; items: { label: string; path: string }[] }[] = [
+    {
+      title: 'Company',
+      items: [
+        { label: 'About Solvexo', path: '/' },
+        { label: 'Why Solvexo',   path: '/' },
+        { label: 'Marketplace',   path: '/marketplace' },
+        { label: 'Education Marketplace', path: '/education' },
+      ],
+    },
+    {
+      title: 'Commerce Tools',
+      items: [
+        { label: 'AI Commerce', path: '/sellers' },
+        { label: 'POS',         path: '/sellers' },
+        { label: 'Seller Benefits', path: '/sellers' },
+      ],
+    },
+    {
+      title: 'Support',
+      items: [
+        { label: 'Buyer Protection', path: '/faq' },
+        { label: 'Help Center',      path: '/faq' },
+        { label: 'Contact',          path: '/faq' },
+      ],
+    },
+  ];
+
+  return (
+    <div className="dropdown-enter grid grid-cols-3 gap-6 bg-white border border-bone rounded-2xl shadow-[0_24px_56px_rgba(0,0,0,0.18)] p-6 w-[420px]">
+      {columns.map(col => (
+        <div key={col.title}>
+          <p className="text-[10.5px] font-bold text-slate uppercase tracking-[0.07em] mb-3">{col.title}</p>
+          <div className="flex flex-col gap-[9px]">
+            {col.items.map(item => (
+              <button
+                key={item.label}
+                onClick={() => onNavigate(item.path)}
+                className="text-left text-[12.5px] text-charcoal bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Deals dropdown — Flash Sale / Top Picks / Featured Sellers, tucked behind one trigger instead of full-page bands ──
+interface DealsDropdownMenuProps {
+  flashDeals: { product: MarketplaceProduct; pct: number }[];
+  topPicks:   MarketplaceProduct[];
+  topStores:  PublicStoreListItem[];
+  countdown:  { h: string; m: string; s: string };
+  onProductClick: (id: string) => void;
+  onStoreClick:   (slug: string) => void;
+}
+function DealsDropdownMenu({ flashDeals, topPicks, topStores, countdown, onProductClick, onStoreClick }: DealsDropdownMenuProps) {
+  type DealTab = 'flash-sale' | 'top-picks' | 'featured-sellers';
+  const [active, setActive] = useState<DealTab>('flash-sale');
+
+  const items: { id: DealTab; label: string }[] = [
+    { id: 'flash-sale',       label: 'Flash Sale' },
+    { id: 'top-picks',        label: 'Top Picks' },
+    { id: 'featured-sellers', label: 'Featured Sellers' },
+  ];
+
+  return (
+    <div className="dropdown-enter flex bg-white border border-bone rounded-2xl shadow-[0_24px_56px_rgba(0,0,0,0.18)] overflow-hidden w-[640px] max-w-[92vw]">
+      {/* Left — the three sections */}
+      <div className="w-[190px] shrink-0 border-r border-bone py-2 bg-cream/50">
+        {items.map(item => (
+          <button
+            key={item.id}
+            onMouseEnter={() => setActive(item.id)}
+            onFocus={() => setActive(item.id)}
+            className={clsx(
+              'w-full flex items-center justify-between px-[14px] py-[11px] text-left bg-transparent border-none cursor-pointer transition-colors',
+              active === item.id ? 'bg-white text-brand-orange' : 'text-charcoal hover:bg-white/70',
+            )}
+          >
+            <span className="text-[12.5px] font-medium">{item.label}</span>
+            <ChevronRight size={13} className={active === item.id ? 'text-brand-orange' : 'text-slate/50'} />
+          </button>
+        ))}
       </div>
-    </button>
+
+      {/* Right — that section's real cards */}
+      <div className="flex-1 p-5 max-h-[380px] overflow-y-auto">
+        {active === 'flash-sale' && (
+          <>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[12px] font-bold text-carbon">Flash Sale</p>
+              <span className="text-[11px] text-slate tabular-nums">Ends in {countdown.h}:{countdown.m}:{countdown.s}</span>
+            </div>
+            <div className="flex gap-[10px] overflow-x-auto scrollbar-hide pb-1">
+              {flashDeals.length === 0 && <p className="text-[12px] text-slate">No flash deals right now.</p>}
+              {flashDeals.map(({ product, pct }) => (
+                <RailCard
+                  key={product._id}
+                  product={product}
+                  onClick={onProductClick}
+                  badge={
+                    <span className="px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-[#E11D48] text-white shadow-sm">
+                      -{pct}%
+                    </span>
+                  }
+                />
+              ))}
+            </div>
+          </>
+        )}
+
+        {active === 'top-picks' && (
+          <>
+            <p className="text-[12px] font-bold text-carbon mb-3">Top Picks</p>
+            <div className="flex gap-[10px] overflow-x-auto scrollbar-hide pb-1">
+              {topPicks.length === 0 && <p className="text-[12px] text-slate">No top picks yet.</p>}
+              {topPicks.map(product => (
+                <RailCard
+                  key={product._id}
+                  product={product}
+                  onClick={onProductClick}
+                  badge={product.purchaseCount > 0 ? (
+                    <span className="px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-carbon/80 text-white backdrop-blur-sm">
+                      {product.purchaseCount} sold
+                    </span>
+                  ) : undefined}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
+        {active === 'featured-sellers' && (
+          <>
+            <p className="text-[12px] font-bold text-carbon mb-3">Featured Sellers</p>
+            <div className="flex gap-[14px] overflow-x-auto scrollbar-hide pb-1">
+              {topStores.length === 0 && <p className="text-[12px] text-slate">No featured sellers yet.</p>}
+              {topStores.map(s => (
+                <StoreFeatureCard key={s.storeId} store={s} onClick={onStoreClick} />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Generic hover trigger — shared open/close/debounce/escape/click-outside for the category bar's mega menus ──
+function HoverMegaTrigger({ trigger, panel, panelAlign = 'left' }: {
+  trigger: (open: boolean) => React.ReactNode;
+  panel:   React.ReactNode;
+  panelAlign?: 'left' | 'right';
+}) {
+  const [open, setOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    const onClickOutside = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('mousedown', onClickOutside);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('mousedown', onClickOutside);
+    };
+  }, [open]);
+
+  const clearCloseTimer = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } };
+  const scheduleClose = () => { clearCloseTimer(); closeTimer.current = setTimeout(() => setOpen(false), 150); };
+
+  return (
+    <div
+      ref={rootRef}
+      className="relative"
+      onMouseEnter={() => { clearCloseTimer(); setOpen(true); }}
+      onMouseLeave={scheduleClose}
+    >
+      {trigger(open)}
+      <div
+        className={clsx(
+          'absolute top-[calc(100%+10px)] z-50 transition-all duration-200 origin-top',
+          panelAlign === 'left' ? 'left-0' : 'right-0',
+          open ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-1 pointer-events-none',
+        )}
+      >
+        {panel}
+      </div>
+    </div>
   );
 }
 
@@ -367,6 +687,26 @@ const FILTER_GROUPS = [
 
 interface FilterState { price: string[]; type: string[]; rating: string[]; }
 
+function FilterAccordionSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-b border-bone pb-4 last:border-b-0 last:pb-0">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between mb-[10px] bg-transparent border-none cursor-pointer p-0 group"
+      >
+        <span className="text-[11px] font-bold text-charcoal uppercase tracking-[0.08em] group-hover:text-brand-orange transition-colors">
+          {title}
+        </span>
+        <ChevronDown size={14} className={clsx('text-slate transition-transform duration-200', open && 'rotate-180')} />
+      </button>
+      <div className={clsx('overflow-hidden transition-all duration-200', open ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0')}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function FilterPanel({ filters, onChange, categories = [], selectedCategory, onCategoryChange }: {
   filters:  FilterState;
   onChange: (key: keyof FilterState, value: string) => void;
@@ -375,20 +715,17 @@ function FilterPanel({ filters, onChange, categories = [], selectedCategory, onC
   onCategoryChange: (id: string) => void;
 }) {
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-4">
       {categories.length > 0 && (
-        <div>
-          <p className="text-[10px] font-bold text-slate uppercase tracking-[0.1em] mb-[10px]">
-            Category
-          </p>
-          <div className="flex flex-wrap gap-[6px]">
+        <FilterAccordionSection title="Category">
+          <div className="flex flex-wrap gap-[7px]">
             <button
               onClick={() => onCategoryChange('')}
               className={clsx(
-                'px-[10px] py-[5px] rounded-full text-[11.5px] font-medium border transition-all duration-150 cursor-pointer leading-none',
+                'px-[11px] py-[6px] rounded-full text-[11.5px] font-semibold border transition-all duration-150 cursor-pointer leading-none',
                 selectedCategory === ''
-                  ? 'bg-brand-orange text-white border-brand-orange'
-                  : 'bg-white text-charcoal border-[#DDD9D0] hover:border-brand-orange hover:text-brand-orange',
+                  ? 'bg-brand-orange text-white border-brand-orange shadow-[0_2px_8px_rgba(184,90,54,0.25)]'
+                  : 'bg-cream text-charcoal border-transparent hover:border-brand-orange/40 hover:text-brand-orange',
               )}
             >
               All
@@ -398,26 +735,21 @@ function FilterPanel({ filters, onChange, categories = [], selectedCategory, onC
                 key={c._id}
                 onClick={() => onCategoryChange(c._id)}
                 className={clsx(
-                  'px-[10px] py-[5px] rounded-full text-[11.5px] font-medium border transition-all duration-150 cursor-pointer leading-none',
+                  'px-[11px] py-[6px] rounded-full text-[11.5px] font-semibold border transition-all duration-150 cursor-pointer leading-none',
                   selectedCategory === c._id
-                    ? 'bg-brand-orange text-white border-brand-orange'
-                    : 'bg-white text-charcoal border-[#DDD9D0] hover:border-brand-orange hover:text-brand-orange',
+                    ? 'bg-brand-orange text-white border-brand-orange shadow-[0_2px_8px_rgba(184,90,54,0.25)]'
+                    : 'bg-cream text-charcoal border-transparent hover:border-brand-orange/40 hover:text-brand-orange',
                 )}
               >
                 {c.name}
               </button>
             ))}
           </div>
-          <div className="h-px bg-bone my-5" />
-        </div>
+        </FilterAccordionSection>
       )}
-      {FILTER_GROUPS.map((group, gi) => (
-        <div key={group.key}>
-          {gi > 0 && <div className="h-px bg-bone mb-5 -mt-[2px]" />}
-          <p className="text-[10px] font-bold text-slate uppercase tracking-[0.1em] mb-[10px]">
-            {group.title}
-          </p>
-          <div className="flex flex-wrap gap-[6px]">
+      {FILTER_GROUPS.map(group => (
+        <FilterAccordionSection key={group.key} title={group.title}>
+          <div className="flex flex-wrap gap-[7px]">
             {group.items.map(label => {
               const active = (filters[group.key as keyof FilterState] as string[]).includes(label);
               return (
@@ -425,10 +757,10 @@ function FilterPanel({ filters, onChange, categories = [], selectedCategory, onC
                   key={label}
                   onClick={() => onChange(group.key as keyof FilterState, label)}
                   className={clsx(
-                    'px-[10px] py-[5px] rounded-full text-[11.5px] font-medium border transition-all duration-150 cursor-pointer leading-none',
+                    'px-[11px] py-[6px] rounded-full text-[11.5px] font-semibold border transition-all duration-150 cursor-pointer leading-none',
                     active
-                      ? 'bg-brand-orange text-white border-brand-orange'
-                      : 'bg-white text-charcoal border-[#DDD9D0] hover:border-brand-orange hover:text-brand-orange',
+                      ? 'bg-brand-orange text-white border-brand-orange shadow-[0_2px_8px_rgba(184,90,54,0.25)]'
+                      : 'bg-cream text-charcoal border-transparent hover:border-brand-orange/40 hover:text-brand-orange',
                   )}
                 >
                   {label}
@@ -436,16 +768,13 @@ function FilterPanel({ filters, onChange, categories = [], selectedCategory, onC
               );
             })}
           </div>
-        </div>
+        </FilterAccordionSection>
       ))}
     </div>
   );
 }
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const TABS: Tab[] = ['All', 'Physical', 'Digital', 'Education', 'Art & Design', 'Templates', 'Music']
-  .map(t => ({ id: t, label: t }));
-
 const SORT_OPTIONS = [
   { value: 'newest',     label: 'Newest'         },
   { value: 'price-asc',  label: 'Price: Low–High' },
@@ -456,6 +785,7 @@ const SORT_OPTIONS = [
 
 export function Marketplace() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   usePageTitle('Marketplace');
 
   const [activeTab,     setActiveTab]     = useState('All');
@@ -466,7 +796,9 @@ export function Marketplace() {
   const [searchInput, setSearchInput] = useState('');
   const [search,      setSearch]      = useState('');
   const [categories,       setCategories]       = useState<CategoryNode[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  // Seeded from ?category= so links from the mega menu / other pages land
+  // pre-filtered to that category.
+  const [selectedCategory, setSelectedCategory] = useState(() => searchParams.get('category') ?? '');
   const [topStores,        setTopStores]        = useState<PublicStoreListItem[]>([]);
   const [storeResults,     setStoreResults]      = useState<PublicStoreListItem[]>([]);
 
@@ -477,6 +809,16 @@ export function Marketplace() {
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
+
+  // Re-sync when ?category= changes while already on this page (mega menu
+  // link clicked from here) — the initial-mount case is covered by the
+  // useState initializer above.
+  useEffect(() => {
+    const fromUrl = searchParams.get('category') ?? '';
+    setSelectedCategory(fromUrl);
+    setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -613,6 +955,8 @@ export function Marketplace() {
         }}
       />
 
+      <DealsBanner />
+
       {/* ── Hero ─ full-bleed banner with overlaid copy ─────────────────────── */}
       <div className="relative overflow-hidden h-[300px] sm:h-[360px] lg:h-[420px] border-b border-[#F5D5C2]">
 
@@ -676,171 +1020,124 @@ export function Marketplace() {
             </div>
           </div>
         </div>
-
-        {/* Compact app promotion — desktop only, top-right so it never collides with the carousel's own controls (bottom-right) or the hero copy (left) */}
-        <div className="hidden xl:block absolute right-6 lg:right-10 top-6 lg:top-8 z-[1]">
-          <MarketplaceAppPromo tone={banners.length > 0 ? 'dark' : 'light'} />
-        </div>
       </div>
-
-      {/* ── Flash Sale — real, currently-active discounts; countdown is a real timer to local midnight ── */}
-      {flashDeals.length > 0 && (
-        <div className="bg-white border-b border-bone">
-          <div className="px-4 sm:px-6 lg:px-10 py-5">
-            <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg bg-[#FFF0F0] flex items-center justify-center shrink-0">
-                  <Flame size={16} className="text-[#E11D48]" />
-                </span>
-                <div>
-                  <p className="text-[14px] font-bold text-carbon leading-tight">Flash Sale</p>
-                  <p className="text-[10.5px] text-slate">Real discounts, live on the marketplace right now</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-[6px] rounded-full bg-cream border border-bone">
-                <Clock size={12} className="text-slate" />
-                <span className="text-[11px] font-semibold text-charcoal tabular-nums">
-                  {countdown.h}:{countdown.m}:{countdown.s}
-                </span>
-                <span className="text-[10px] text-slate">left today</span>
-              </div>
-            </div>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
-              {flashDeals.map(({ product, pct }) => (
-                <RailCard
-                  key={product._id}
-                  product={product}
-                  onClick={handleCardClick}
-                  badge={
-                    <span className="px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-[#E11D48] text-white shadow-sm">
-                      -{pct}%
-                    </span>
-                  }
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Top Picks — real purchase count + rating signal, not an ML claim ── */}
-      {topPicks.length > 0 && (
-        <div className="bg-white border-b border-bone">
-          <div className="px-4 sm:px-6 lg:px-10 py-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
-                <TrendingUp size={16} className="text-brand-orange" />
-              </span>
-              <div>
-                <p className="text-[14px] font-bold text-carbon leading-tight">Top Picks</p>
-                <p className="text-[10.5px] text-slate">Highest rated and most purchased on Solvexo</p>
-              </div>
-            </div>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
-              {topPicks.map(product => (
-                <RailCard
-                  key={product._id}
-                  product={product}
-                  onClick={handleCardClick}
-                  badge={product.purchaseCount > 0 ? (
-                    <span className="px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-carbon/80 text-white backdrop-blur-sm">
-                      {product.purchaseCount} sold
-                    </span>
-                  ) : undefined}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Featured Sellers — real store discovery, sorted by rating/followers ── */}
-      {topStores.length > 0 && (
-        <div className="bg-white border-b border-bone">
-          <div className="px-4 sm:px-6 lg:px-10 py-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
-                <Store size={16} className="text-brand-orange" />
-              </span>
-              <div>
-                <p className="text-[14px] font-bold text-carbon leading-tight">Featured Sellers</p>
-                <p className="text-[10.5px] text-slate">Top-rated stores on Solvexo</p>
-              </div>
-            </div>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
-              {topStores.map(s => (
-                <StoreRailCard key={s.storeId} store={s} onClick={slug => navigate(`/store/${slug}`)} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Trust & Service strip ────────────────────────────────────────────── */}
       <TrustServiceStrip />
 
-      {/* ── Category navigation (real categories, admin-managed) ────────────── */}
-      {categories.length > 0 && (
-        <div className="bg-white border-b border-bone">
-          <div className="flex gap-5 sm:gap-6 px-4 sm:px-6 lg:px-10 py-5 overflow-x-auto scrollbar-hide">
-            <button
-              onClick={() => handleCategoryChange('')}
-              className="relative flex flex-col items-center gap-2 shrink-0 w-[72px] cursor-pointer bg-transparent border-none group pb-[3px]"
-            >
-              <div className={clsx(
-                'w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border-[1.5px] transition-all duration-200 ease-out',
-                'group-hover:-translate-y-[2px] group-hover:shadow-[0_8px_20px_rgba(184,90,54,0.14)]',
-                selectedCategory === '' ? 'border-brand-orange bg-brand-pale-orange shadow-[0_8px_20px_rgba(184,90,54,0.14)]' : 'border-bone bg-cream group-hover:border-brand-orange/40',
-              )}>
-                <ShoppingBag size={22} className={selectedCategory === '' ? 'text-brand-orange' : 'text-slate'} />
-              </div>
-              <span className={clsx(
-                'text-[11px] font-semibold text-center leading-tight transition-colors',
-                selectedCategory === '' ? 'text-brand-orange' : 'text-charcoal group-hover:text-brand-orange',
-              )}>
-                All
-              </span>
-              {selectedCategory === '' && (
-                <span className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-full bg-brand-orange" />
-              )}
-            </button>
-            {categories.map(cat => {
-              const active = selectedCategory === cat._id;
-              return (
+      {/* ── Category line — "All Categories" mega-menu dropdown (left), utility links (right) ── */}
+      <div className="bg-white border-b border-bone">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-10">
+
+          {/* LEFT: single "All Categories" dropdown trigger */}
+          <div className="flex items-center min-w-0 flex-1 py-[11px]">
+            <HoverMegaTrigger
+              trigger={openState => (
                 <button
-                  key={cat._id}
-                  onClick={() => handleCategoryChange(cat._id)}
-                  className="relative flex flex-col items-center gap-2 shrink-0 w-[72px] cursor-pointer bg-transparent border-none group pb-[3px]"
-                >
-                  <div className={clsx(
-                    'w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden flex items-center justify-center border-[1.5px] transition-all duration-200 ease-out',
-                    'group-hover:-translate-y-[2px] group-hover:shadow-[0_8px_20px_rgba(184,90,54,0.14)]',
-                    active ? 'border-brand-orange bg-brand-pale-orange shadow-[0_8px_20px_rgba(184,90,54,0.14)]' : 'border-bone bg-cream group-hover:border-brand-orange/40',
-                  )}>
-                    {cat.image
-                      ? <img loading="lazy" decoding="async" src={cat.image} alt="" className="w-full h-full object-cover" />
-                      : <ShoppingBag size={22} className={active ? 'text-brand-orange' : 'text-slate'} />
-                    }
-                  </div>
-                  <span className={clsx(
-                    'text-[11px] font-semibold text-center leading-tight truncate w-full transition-colors',
-                    active ? 'text-brand-orange' : 'text-charcoal group-hover:text-brand-orange',
-                  )}>
-                    {cat.name}
-                  </span>
-                  {active && (
-                    <span className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-full bg-brand-orange" />
+                  onClick={() => setActiveTab('All')}
+                  aria-haspopup="true"
+                  aria-expanded={openState}
+                  className={clsx(
+                    'flex items-center gap-[6px] text-[13px] font-semibold bg-transparent border-none cursor-pointer whitespace-nowrap transition-colors duration-150',
+                    openState ? 'text-brand-orange' : 'text-charcoal hover:text-brand-orange',
                   )}
+                >
+                  All Categories
+                  <ChevronDown size={14} className={clsx('transition-transform duration-200', openState && 'rotate-180')} />
                 </button>
-              );
-            })}
+              )}
+              panel={
+                <CategoryBarMegaMenu
+                  categories={categories}
+                  spotlight={topPicks}
+                  onShopCategory={id => { handleCategoryChange(id); setActiveTab('All'); }}
+                  onProductClick={handleCardClick}
+                  onTrendingTerm={term => { setSearchInput(term); setSearch(term); }}
+                />
+              }
+            />
+          </div>
+
+          {/* RIGHT: utility links */}
+          <div className="hidden lg:flex items-center gap-4 shrink-0 text-[12.5px] text-slate whitespace-nowrap py-3">
+            <button onClick={() => navigate('/marketplace')} className="flex items-center gap-1 bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0">
+              <BadgeCheck size={13} className="text-success" /> Verified Sellers
+            </button>
+            <button onClick={() => navigate('/marketplace')} className="flex items-center gap-1 bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0">
+              <ShieldCheck size={13} className="text-success" /> Verified Stores
+            </button>
+            <button
+              onClick={() => navigate(TokenStorage.isLoggedIn() ? '/account/profile?tab=orders' : '/login')}
+              className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0"
+            >
+              Track Order
+            </button>
+            <button onClick={() => navigate('/faq')} className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0">
+              Help Center
+            </button>
+            <button onClick={() => navigate('/faq')} className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0">
+              Contact
+            </button>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* ── Category Tabs ────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-bone overflow-x-auto scrollbar-hide">
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} className="px-4 sm:px-6 lg:px-10" />
+      {/* ── Welcome line — brand message (left), Deals dropdown + About (right) ── */}
+      <div className="bg-white border-b border-bone">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-10 py-[10px]">
+          <p className="text-[15px] text-charcoal tracking-[-0.1px]">
+            Welcome to <span className="font-bold text-brand-orange">Solvexo Store</span>
+          </p>
+
+          <div className="flex items-center gap-4 text-[12.5px] text-slate whitespace-nowrap">
+            <HoverMegaTrigger
+              panelAlign="right"
+              trigger={openState => (
+                <button
+                  aria-haspopup="true"
+                  aria-expanded={openState}
+                  className={clsx(
+                    'flex items-center gap-[6px] bg-transparent border-none cursor-pointer transition-colors p-0 font-medium',
+                    openState ? 'text-brand-orange' : 'text-charcoal hover:text-brand-orange',
+                  )}
+                >
+                  Top Picks · Featured Sellers · Flash Sale
+                  <ChevronDown size={13} className={clsx('transition-transform', openState && 'rotate-180')} />
+                </button>
+              )}
+              panel={
+                <DealsDropdownMenu
+                  flashDeals={flashDeals}
+                  topPicks={topPicks}
+                  topStores={topStores}
+                  countdown={countdown}
+                  onProductClick={handleCardClick}
+                  onStoreClick={slug => navigate(`/store/${slug}`)}
+                />
+              }
+            />
+            <span className="h-3 w-px bg-bone hidden sm:inline-block" />
+            <HoverMegaTrigger
+              panelAlign="right"
+              trigger={openState => (
+                <button
+                  aria-haspopup="true"
+                  aria-expanded={openState}
+                  className={clsx(
+                    'hidden sm:inline bg-transparent border-none cursor-pointer transition-colors p-0',
+                    openState ? 'text-brand-orange' : 'text-slate hover:text-brand-orange',
+                  )}
+                >
+                  About Solvexo.store
+                </button>
+              )}
+              panel={<AboutSolvexoMegaMenu onNavigate={navigate} />}
+            />
+            <span className="hidden sm:flex items-center gap-1 text-slate/80">
+              <Globe size={12} /> EN
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
@@ -877,7 +1174,7 @@ export function Marketplace() {
             </p>
             <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
               {storeResults.map(s => (
-                <StoreRailCard key={s.storeId} store={s} onClick={slug => navigate(`/store/${slug}`)} />
+                <StoreFeatureCard key={s.storeId} store={s} onClick={slug => navigate(`/store/${slug}`)} />
               ))}
             </div>
           </div>

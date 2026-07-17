@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { Heart, ArrowLeft, Search, Clock, TrendingUp, LayoutGrid, X } from 'lucide-react';
+import { Heart, ArrowLeft, Search, Clock, LayoutGrid, X, Flame } from 'lucide-react';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { TokenStorage } from '@/api/services/auth';
+import { apiGetRecentSearches } from '@/api/services/search';
 import { Button } from './Button';
 import { SolvexoLogo } from './SolvexoLogo';
 import { NotificationBell } from './NotificationBell';
@@ -37,13 +38,13 @@ export interface BuyerNavbarProps {
 const RECENT_KEY = 'solvexo_recent_searches';
 const TRENDING_SEARCHES = ['Wireless Earbuds', 'Digital Planner', 'Desk Organizer', 'Handmade Jewelry', 'Watercolor Prints'];
 
-function getRecentSearches(): string[] {
+function getLocalRecentSearches(): string[] {
   try { return JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]'); } catch { return []; }
 }
-function pushRecentSearch(term: string) {
+function pushLocalRecentSearch(term: string) {
   const t = term.trim();
   if (!t) return;
-  const next = [t, ...getRecentSearches().filter(s => s.toLowerCase() !== t.toLowerCase())].slice(0, 5);
+  const next = [t, ...getLocalRecentSearches().filter(s => s.toLowerCase() !== t.toLowerCase())].slice(0, 5);
   try { localStorage.setItem(RECENT_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
 }
 
@@ -67,7 +68,22 @@ function SearchBox({
 
   useEffect(() => {
     if (!open) return;
-    setRecent(getRecentSearches());
+
+    const local = getLocalRecentSearches();
+    if (TokenStorage.isLoggedIn()) {
+      // Account-synced history when the backend has it; merge in anything
+      // typed this session that hasn't round-tripped to the server yet.
+      apiGetRecentSearches(5)
+        .then(res => {
+          const synced = res.data.map(r => r.query);
+          const extra = local.filter(t => !synced.some(s => s.toLowerCase() === t.toLowerCase()));
+          setRecent([...synced, ...extra].slice(0, 5));
+        })
+        .catch(() => setRecent(local));
+    } else {
+      setRecent(local);
+    }
+
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
@@ -110,18 +126,21 @@ function SearchBox({
       </div>
 
       {open && hasSuggestions && (
-        <div className="dropdown-enter absolute left-2 right-2 sm:left-auto sm:right-auto top-[calc(100%+8px)] w-auto sm:w-[380px] bg-white border border-bone rounded-[14px] shadow-[0_20px_48px_rgba(0,0,0,0.14)] overflow-hidden max-h-[70vh] overflow-y-auto">
+        <div className="dropdown-enter absolute left-2 right-2 sm:left-auto sm:right-auto top-[calc(100%+8px)] w-auto sm:w-[380px] bg-white border border-bone rounded-2xl shadow-[0_20px_48px_rgba(0,0,0,0.14)] overflow-hidden max-h-[70vh] overflow-y-auto">
           {recent.length > 0 && (
-            <div className="p-3 border-b border-bone">
-              <p className="text-[10px] font-bold text-slate uppercase tracking-[0.08em] mb-2 flex items-center gap-[6px]">
-                <Clock size={11} /> Recent Searches
+            <div className="p-3.5 border-b border-bone">
+              <p className="flex items-center gap-[7px] text-[10px] font-bold text-slate uppercase tracking-[0.08em] mb-2.5">
+                <span className="flex size-[18px] items-center justify-center rounded-full bg-bone/70 text-graphite">
+                  <Clock size={10} />
+                </span>
+                Recent Searches
               </p>
-              <div className="flex flex-wrap gap-[6px]">
+              <div className="flex flex-wrap gap-[7px]">
                 {recent.map(term => (
                   <button
                     key={term}
                     onClick={() => pick(term)}
-                    className="px-[10px] py-[5px] rounded-full text-[11.5px] font-medium bg-cream text-charcoal border border-bone hover:border-brand-orange hover:text-brand-orange transition-colors cursor-pointer"
+                    className="px-[11px] py-[6px] rounded-full text-[11.5px] font-medium bg-cream text-charcoal border border-bone hover:border-brand-orange hover:bg-brand-pale-orange hover:text-brand-deep-orange transition-colors cursor-pointer"
                   >
                     {term}
                   </button>
@@ -131,11 +150,14 @@ function SearchBox({
           )}
 
           {categories && categories.length > 0 && (
-            <div className="p-3 border-b border-bone">
-              <p className="text-[10px] font-bold text-slate uppercase tracking-[0.08em] mb-2 flex items-center gap-[6px]">
-                <LayoutGrid size={11} /> Popular Categories
+            <div className="p-3.5 border-b border-bone">
+              <p className="flex items-center gap-[7px] text-[10px] font-bold text-slate uppercase tracking-[0.08em] mb-2.5">
+                <span className="flex size-[18px] items-center justify-center rounded-full bg-bone/70 text-graphite">
+                  <LayoutGrid size={10} />
+                </span>
+                Popular Categories
               </p>
-              <div className="flex flex-wrap gap-[6px]">
+              <div className="flex flex-wrap gap-[7px]">
                 {categories.slice(0, 8).map(cat => (
                   <button
                     key={cat.id}
@@ -143,7 +165,8 @@ function SearchBox({
                       if (onCategorySelect) { onCategorySelect(cat.id); setOpen(false); }
                       else pick(cat.name);
                     }}
-                    className="px-[10px] py-[5px] rounded-full text-[11.5px] font-medium bg-white text-charcoal border border-bone hover:border-brand-orange hover:text-brand-orange transition-colors cursor-pointer"
+                    className="max-w-[160px] truncate px-[11px] py-[6px] rounded-full text-[11.5px] font-medium bg-white text-charcoal border border-bone hover:border-brand-orange hover:bg-brand-pale-orange hover:text-brand-deep-orange transition-colors cursor-pointer"
+                    title={cat.name}
                   >
                     {cat.name}
                   </button>
@@ -152,16 +175,19 @@ function SearchBox({
             </div>
           )}
 
-          <div className="p-3">
-            <p className="text-[10px] font-bold text-slate uppercase tracking-[0.08em] mb-2 flex items-center gap-[6px]">
-              <TrendingUp size={11} /> Trending
+          <div className="p-3.5">
+            <p className="flex items-center gap-[7px] text-[10px] font-bold text-slate uppercase tracking-[0.08em] mb-2.5">
+              <span className="flex size-[18px] items-center justify-center rounded-full bg-brand-pale-orange text-brand-deep-orange">
+                <Flame size={10} className="fill-brand-orange/30" />
+              </span>
+              Trending
             </p>
-            <div className="flex flex-wrap gap-[6px]">
+            <div className="flex flex-wrap gap-[7px]">
               {TRENDING_SEARCHES.map(term => (
                 <button
                   key={term}
                   onClick={() => pick(term)}
-                  className="px-[10px] py-[5px] rounded-full text-[11.5px] font-medium bg-white text-charcoal border border-bone hover:border-brand-orange hover:text-brand-orange transition-colors cursor-pointer"
+                  className="px-[11px] py-[6px] rounded-full text-[11.5px] font-medium bg-white text-charcoal border border-bone hover:border-brand-orange hover:bg-brand-pale-orange hover:text-brand-deep-orange transition-colors cursor-pointer"
                 >
                   {term}
                 </button>
@@ -241,7 +267,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
   const searchOnChange = search?.onChange ?? uncontrolled.onChange;
 
   const handleSearchSubmit = useCallback((term?: string) => {
-    pushRecentSearch(term ?? searchValue);
+    pushLocalRecentSearch(term ?? searchValue);
     if (!search) uncontrolled.submit(term);
   }, [search, searchValue, uncontrolled]);
 

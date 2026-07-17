@@ -153,6 +153,20 @@
 .dropdown-enter { animation: dropdown-enter 180ms var(--ease-out); transform-origin: top right; }
 .drawer-enter-right { animation: drawer-enter-right 240ms var(--ease-out); }
 
+/* ── Top ribbon banners (deals/announcement bars) ── */
+@keyframes banner-slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.banner-slide-down { animation: banner-slide-down 260ms var(--ease-out); }
+
+/* Periodic light sweep across the deals ribbon — reads as "live sale", not distracting */
+@keyframes banner-shimmer {
+  0%   { transform: translateX(-120%); }
+  60%, 100% { transform: translateX(220%); }
+}
+.banner-shimmer { animation: banner-shimmer 3.2s ease-in-out infinite; }
+
 /* ── Auth branding-panel ambient motion (floating mockup cards, glow orbs) ── */
 @keyframes auth-float {
   0%, 100% { transform: translateY(0); }

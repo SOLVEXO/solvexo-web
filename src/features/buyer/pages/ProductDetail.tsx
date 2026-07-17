@@ -1,54 +1,43 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
+import { TokenStorage } from '@/api/services/auth';
+import { apiGetAllProducts, type MarketplaceProduct, type ProductVariant } from '@/api/services/marketplace';
+import { apiGetPublicStoreProducts, apiGetPublicStore, apiFollowStore, apiGetFollowStatus, type PublicStoreProduct, type PublicStoreData } from '@/api/services/store';
 import { Button } from '@/components/comman/ui/Button';
 import { Badge } from '@/components/comman/ui/Badge';
 import { Card } from '@/components/comman/ui/Card';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
+import { TabBar } from '@/components/comman/ui/TabBar';
 import { BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget } from '@/components/comman/ui';
 import {
-  ArrowRight, Package, Download, ClipboardList, CheckCircle,
-  ShoppingCart, Star, Link2, Mail, Smartphone, ImageOff, Heart,
+  ArrowRight, Package, Download, ClipboardList, CheckCircle, Minus, Plus,
+  ShoppingCart, Star, Link2, Share2, ImageOff, Heart, ShieldCheck, Truck,
+  UserPlus, UserCheck, Tag, ZoomIn, Users, Calendar, Award, Sparkles, Flame,
 } from 'lucide-react';
-import type { ProductVariant } from '@/api/services/marketplace';
 import { ProductReviewsSection } from './ProductReviews';
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function DetailSkeleton() {
   return (
     <div className="px-4 md:px-6 lg:px-10 py-6 md:py-7">
-      {/* Breadcrumb */}
       <div className="flex gap-2 mb-6">
-        {[80, 20, 60, 20, 120].map((w, i) => (
-          <SkeletonBox key={i} width={w} height={13} rounded="4px" />
-        ))}
+        {[80, 20, 60, 20, 120].map((w, i) => <SkeletonBox key={i} width={w} height={13} rounded="4px" />)}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-9 items-start min-w-0">
-        {/* Left */}
-        <div>
-          <SkeletonBox className="w-full h-[240px] md:h-[340px] lg:h-[400px] mb-4" rounded="16px" />
-          <div className="flex gap-[10px] mb-6">
-            {[1, 2, 3, 4].map(i => (
-              <SkeletonBox key={i} width={70} height={70} rounded="10px" />
-            ))}
-          </div>
-          <SkeletonBox width="40%" height={18} rounded="6px" />
-          <div className="mt-3 flex flex-col gap-2">
-            {[100, 95, 90, 80].map((w, i) => (
-              <SkeletonBox key={i} width={`${w}%`} height={12} rounded="4px" />
-            ))}
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[64px_1fr_400px] gap-6 items-start min-w-0">
+        <div className="hidden lg:flex flex-col gap-2">
+          {[1, 2, 3, 4].map(i => <SkeletonBox key={i} width={64} height={64} rounded="10px" />)}
         </div>
-        {/* Right */}
+        <SkeletonBox className="w-full h-[320px] md:h-[420px]" rounded="16px" />
         <div className="bg-white rounded-xl border border-bone shadow-xs p-6">
           <SkeletonBox width={60} height={20} rounded="4px" />
           <div className="mt-3"><SkeletonBox width="80%" height={24} rounded="6px" /></div>
           <div className="mt-2"><SkeletonBox width="50%" height={13} rounded="4px" /></div>
-          <div className="mt-4"><SkeletonBox width={80} height={36} rounded="8px" /></div>
+          <div className="mt-4"><SkeletonBox width={100} height={32} rounded="6px" /></div>
           <div className="mt-5 flex flex-col gap-[10px]">
             <SkeletonBox width="100%" height={44} rounded="10px" />
             <SkeletonBox width="100%" height={40} rounded="10px" />
@@ -59,54 +48,99 @@ function DetailSkeleton() {
   );
 }
 
-// ── Product Image ─────────────────────────────────────────────────────────────
-function ProductImage({ images, name, selected }: { images: string[]; name: string; selected: number }) {
-  const [errored, setErrored] = useState(false);
-  const src = images[selected] ?? images[0];
+// ── Image gallery — vertical thumbnail rail (desktop) + hover zoom ────────────
+function ImageGallery({ images, name }: { images: string[]; name: string }) {
+  const [selected, setSelected] = useState(0);
+  const [errored, setErrored] = useState<Record<number, boolean>>({});
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+  const [zooming, setZooming] = useState(false);
+  const src = images[selected];
 
-  if (!src || errored) {
-    return (
-      <div className="h-[240px] md:h-[340px] lg:h-[400px] rounded-2xl flex flex-col items-center justify-center gap-2 mb-4 bg-gradient-to-br from-[#FBECE4] to-[#FFF5EE]">
-        <ImageOff size={60} className="text-brand-orange opacity-50" />
-        <span className="text-[12px] text-slate">{name}</span>
-      </div>
-    );
-  }
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setZoomPos({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 });
+  };
 
   return (
-    <img loading="lazy" decoding="async"
-      src={src}
-      alt={name}
-      onError={() => setErrored(true)}
-      className="h-[240px] md:h-[340px] lg:h-[400px] w-full object-cover rounded-2xl block mb-4"
-    />
+    <div className="flex gap-3 lg:flex-row-reverse min-w-0">
+      {/* Main image */}
+      <div
+        className="relative flex-1 min-w-0 h-[300px] md:h-[400px] lg:h-[460px] rounded-2xl overflow-hidden border border-bone bg-white group cursor-zoom-in"
+        onMouseEnter={() => setZooming(true)}
+        onMouseLeave={() => setZooming(false)}
+        onMouseMove={onMouseMove}
+      >
+        {!src || errored[selected] ? (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#FBECE4] to-[#FFF5EE]">
+            <ImageOff size={56} className="text-brand-orange opacity-50" />
+            <span className="text-[12px] text-slate">{name}</span>
+          </div>
+        ) : (
+          <>
+            <img
+              loading="lazy" decoding="async" src={src} alt={name}
+              onError={() => setErrored(e => ({ ...e, [selected]: true }))}
+              className="w-full h-full object-cover"
+            />
+            {zooming && (
+              <div
+                className="absolute inset-0 bg-no-repeat pointer-events-none transition-opacity duration-100"
+                style={{
+                  backgroundImage: `url(${src})`,
+                  backgroundSize: '200%',
+                  backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
+                }}
+              />
+            )}
+            <span className="absolute top-3 right-3 flex items-center gap-1 px-[9px] py-[5px] rounded-full bg-black/55 text-white text-[10.5px] font-medium opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+              <ZoomIn size={12} /> Hover to zoom
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* Thumbnails — vertical rail on desktop, horizontal scroll on mobile */}
+      {images.length > 1 && (
+        <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto lg:max-h-[460px] scrollbar-hide shrink-0">
+          {images.slice(0, 8).map((img, i) => (
+            <button
+              key={i}
+              onClick={() => setSelected(i)}
+              className={clsx(
+                'w-14 h-14 md:w-16 md:h-16 rounded-[10px] overflow-hidden shrink-0 bg-brand-pale-orange flex items-center justify-center border-2 cursor-pointer transition-all duration-150',
+                selected === i ? 'border-brand-orange' : 'border-transparent opacity-70 hover:opacity-100',
+              )}
+            >
+              {!errored[i] && img
+                ? <img loading="lazy" decoding="async" src={img} alt="" onError={() => setErrored(e => ({ ...e, [i]: true }))} className="w-full h-full object-cover" />
+                : <ImageOff size={16} className="text-brand-orange opacity-50" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
 // ── Variant Selector ──────────────────────────────────────────────────────────
 function VariantSelector({ variants, selected, onSelect }: {
-  variants: ProductVariant[];
-  selected: ProductVariant | null;
-  onSelect: (v: ProductVariant) => void;
+  variants: ProductVariant[]; selected: ProductVariant | null; onSelect: (v: ProductVariant) => void;
 }) {
   if (!variants.length) return null;
   return (
-    <div className="mb-4">
+    <div className="flex flex-col gap-3 mb-4">
       {variants.some(v => v.color) && (
-        <div className="mb-[10px]">
+        <div>
           <p className="text-[12px] font-semibold text-charcoal mb-[6px]">
             Color: <span className="font-normal text-slate">{selected?.color ?? '—'}</span>
           </p>
           <div className="flex flex-wrap gap-[6px]">
             {variants.map(v => (
               <button
-                key={v._id}
-                onClick={() => onSelect(v)}
+                key={v._id} onClick={() => onSelect(v)}
                 className={clsx(
                   'px-[10px] py-1 rounded-[6px] text-[12px] cursor-pointer border-[1.5px]',
-                  selected?._id === v._id
-                    ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange font-semibold'
-                    : 'border-bone bg-white text-charcoal font-normal',
+                  selected?._id === v._id ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange font-semibold' : 'border-bone bg-white text-charcoal font-normal',
                 )}
               >
                 {v.color}
@@ -123,13 +157,10 @@ function VariantSelector({ variants, selected, onSelect }: {
           <div className="flex flex-wrap gap-[6px]">
             {variants.map(v => (
               <button
-                key={v._id}
-                onClick={() => onSelect(v)}
+                key={v._id} onClick={() => onSelect(v)}
                 className={clsx(
                   'px-[10px] py-1 rounded-[6px] text-[12px] cursor-pointer border-[1.5px]',
-                  selected?._id === v._id
-                    ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange font-semibold'
-                    : 'border-bone bg-white text-charcoal font-normal',
+                  selected?._id === v._id ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange font-semibold' : 'border-bone bg-white text-charcoal font-normal',
                 )}
               >
                 {v.size}
@@ -142,39 +173,236 @@ function VariantSelector({ variants, selected, onSelect }: {
   );
 }
 
+// ── Quantity stepper ────────────────────────────────────────────────────────────
+function QuantityStepper({ qty, max, onChange }: { qty: number; max: number; onChange: (n: number) => void }) {
+  return (
+    <div className="flex items-center border border-bone rounded-[10px] overflow-hidden w-fit">
+      <button
+        onClick={() => onChange(Math.max(1, qty - 1))}
+        disabled={qty <= 1}
+        className="w-8 h-9 flex items-center justify-center bg-cream text-charcoal cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <Minus size={13} />
+      </button>
+      <span className="w-10 text-center text-[13px] font-semibold text-carbon tabular-nums">{qty}</span>
+      <button
+        onClick={() => onChange(Math.min(max, qty + 1))}
+        disabled={qty >= max}
+        className="w-8 h-9 flex items-center justify-center bg-cream text-charcoal cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <Plus size={13} />
+      </button>
+    </div>
+  );
+}
+
+// ── Compact rail card — Related / More-from-seller strips ─────────────────────
+interface RelatedCardProps {
+  id: string; name: string; image: string | null; price: number | null; compareAtPrice?: number | null;
+  rating?: number; reviewCount?: number; sold?: number; isNew?: boolean; isBestseller?: boolean;
+  onClick: (id: string) => void;
+  wishlist?: { active: boolean; onToggle: () => void };
+}
+function RelatedCard({ id, name, image, price, compareAtPrice, rating, reviewCount, sold, isNew, isBestseller, onClick, wishlist }: RelatedCardProps) {
+  const [errored, setErrored] = useState(false);
+  const pctOff = compareAtPrice != null && price != null && compareAtPrice > price
+    ? Math.round((1 - price / compareAtPrice) * 100)
+    : null;
+  return (
+    <div
+      onClick={() => onClick(id)}
+      className="relative shrink-0 w-[150px] text-left bg-white rounded-[14px] border border-bone overflow-hidden cursor-pointer group transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_12px_28px_rgba(0,0,0,0.12)] hover:border-brand-orange/25"
+    >
+      <div className="relative h-[110px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">
+        {image && !errored
+          ? <img loading="lazy" decoding="async" src={image} alt="" onError={() => setErrored(true)} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          : <ImageOff size={22} className="text-brand-orange opacity-50" />}
+
+        {/* Badges */}
+        <div className="absolute top-[6px] left-[6px] flex flex-col gap-1 items-start">
+          {pctOff != null && pctOff > 0 && (
+            <span className="text-[9.5px] font-bold text-white bg-error px-[6px] py-[2px] rounded-md shadow-sm">-{pctOff}%</span>
+          )}
+          {isBestseller && (
+            <span className="flex items-center gap-[3px] text-[9.5px] font-bold text-white bg-brand-deep-orange px-[6px] py-[2px] rounded-md shadow-sm"><Flame size={9} /> Bestseller</span>
+          )}
+          {isNew && !isBestseller && (
+            <span className="flex items-center gap-[3px] text-[9.5px] font-bold text-white bg-success px-[6px] py-[2px] rounded-md shadow-sm"><Sparkles size={9} /> New</span>
+          )}
+        </div>
+
+        {wishlist && (
+          <button
+            onClick={e => { e.stopPropagation(); wishlist.onToggle(); }}
+            aria-label={wishlist.active ? 'Remove from wishlist' : 'Save to wishlist'}
+            className={clsx(
+              'absolute top-[6px] right-[6px] w-6 h-6 rounded-full flex items-center justify-center border-0 cursor-pointer transition-opacity',
+              wishlist.active ? 'bg-white opacity-100' : 'bg-white/85 opacity-0 group-hover:opacity-100',
+            )}
+          >
+            <Heart size={12} className={wishlist.active ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate'} />
+          </button>
+        )}
+      </div>
+      <div className="px-[10px] py-[9px]">
+        <p className="text-[11.5px] font-semibold text-carbon leading-tight line-clamp-2 mb-1 min-h-[28px]">{name}</p>
+        <div className="flex items-center justify-between gap-1">
+          <span className="flex items-baseline gap-1">
+            <span className="text-[12.5px] font-bold text-carbon">{price != null ? `$${price.toLocaleString()}` : '—'}</span>
+            {compareAtPrice != null && price != null && compareAtPrice > price && (
+              <span className="text-[10px] text-slate line-through">${compareAtPrice.toLocaleString()}</span>
+            )}
+          </span>
+          {!!rating && rating > 0 && (
+            <span className="flex items-center gap-[2px] text-[10px] text-slate shrink-0">
+              <Star size={9} className="text-brand-orange fill-brand-orange" />
+              {rating.toFixed(1)}
+            </span>
+          )}
+        </div>
+        {(sold != null && sold > 0) || (reviewCount != null && reviewCount > 0) ? (
+          <p className="text-[10px] text-slate mt-[2px]">
+            {sold != null && sold > 0 ? `${sold} sold` : ''}
+            {sold != null && sold > 0 && reviewCount != null && reviewCount > 0 ? ' · ' : ''}
+            {reviewCount != null && reviewCount > 0 ? `${reviewCount} reviews` : ''}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ProductRail({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-6">
+      <p className="text-[15px] font-bold text-carbon mb-3">{title}</p>
+      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">{children}</div>
+    </div>
+  );
+}
+
 export function ProductDetail() {
   const navigate = useNavigate();
   const { id = '' } = useParams<{ id: string }>();
   usePageTitle('Product Detail');
 
   const { detail, loading, error, refetch } = useProductById(id);
-  const { addToCart, adding } = useCartContext();
+  const { addToCart, updateQty, adding } = useCartContext();
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
 
-  const [selectedImgIdx, setSelectedImgIdx] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [addedFeedback, setAddedFeedback] = useState(false);
+  const [qty, setQty] = useState(1);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  const [following, setFollowing] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
+
+  const [sellerProducts, setSellerProducts] = useState<PublicStoreProduct[]>([]);
+  const [sellerProductsTotal, setSellerProductsTotal] = useState(0);
+  const [relatedProducts, setRelatedProducts] = useState<MarketplaceProduct[]>([]);
+  const [storeData, setStoreData] = useState<PublicStoreData | null>(null);
+  const [activeTab, setActiveTab] = useState('description');
 
   const product = detail?.product ?? null;
   const variants = detail?.variants ?? [];
   const activeVariant = selectedVariant ?? detail?.defaultVariant ?? null;
-  const allImages = [
-    ...(product?.images ?? []),
-    ...(activeVariant?.images ?? []),
-  ].filter((v, i, a) => a.indexOf(v) === i); // deduplicate
+  const allImages = [...(product?.images ?? []), ...(activeVariant?.images ?? [])].filter((v, i, a) => a.indexOf(v) === i);
 
-  const sellerInitials = product?.sellerName
-    ? product.sellerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-    : '?';
+  const isLoggedIn = TokenStorage.isLoggedIn();
+  const storeId = product?.storeId;
+  const isDigital = (product?.productType ?? product?.type) === 'digital';
+  const stock = isDigital ? Infinity : (activeVariant?.stock ?? 0);
+  const pctOff = activeVariant?.compareAtPrice != null && activeVariant.compareAtPrice > activeVariant.price
+    ? Math.round((1 - activeVariant.price / activeVariant.compareAtPrice) * 100)
+    : null;
+
+  useEffect(() => { setQty(1); }, [activeVariant?._id]);
+
+  useEffect(() => {
+    if (!storeId || !isLoggedIn) return;
+    apiGetFollowStatus(storeId).then(res => setFollowing(res.data.following)).catch(() => {});
+  }, [storeId, isLoggedIn]);
+
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    apiGetPublicStoreProducts(storeId, { limit: 8 })
+      .then(res => {
+        if (cancelled) return;
+        setSellerProducts(res.data.products.filter(p => p._id !== product?._id));
+        setSellerProductsTotal(res.data.pagination.total);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [storeId, product?._id]);
+
+  useEffect(() => {
+    const slug = product?.storeSlug;
+    if (!slug) return;
+    let cancelled = false;
+    apiGetPublicStore(slug).then(res => { if (!cancelled) setStoreData(res.data); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [product?.storeSlug]);
+
+  useEffect(() => {
+    if (!product?.categoryId) return;
+    let cancelled = false;
+    apiGetAllProducts(1, 8, product.categoryId)
+      .then(res => { if (!cancelled) setRelatedProducts(res.data.products.filter(p => p._id !== product._id)); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [product?.categoryId, product?._id]);
+
+  async function handleFollow() {
+    if (!storeId || followBusy) return;
+    setFollowBusy(true);
+    try {
+      const res = await apiFollowStore(storeId);
+      setFollowing(res.data.following);
+    } catch { /* non-critical */ }
+    finally { setFollowBusy(false); }
+  }
+
+  async function handleAddToCart(navigateToCart: boolean) {
+    if (!product || !activeVariant) return;
+    await addToCart(product._id, activeVariant._id, product.productType ?? product.type ?? 'physical');
+    for (let i = 1; i < qty; i++) {
+      await updateQty(product._id, activeVariant._id, 'increase');
+    }
+    if (navigateToCart) navigate('/cart');
+    else { setAddedFeedback(true); setTimeout(() => setAddedFeedback(false), 2000); }
+  }
+
+  async function handleShare() {
+    const url = window.location.href;
+    if (navigator.share) {
+      try { await navigator.share({ title: product?.name, url }); return; } catch { /* user cancelled */ }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch { /* clipboard unavailable */ }
+  }
+
+  const specs: { label: string; value: string }[] = product ? [
+    { label: 'Product Type', value: isDigital ? 'Digital' : 'Physical' },
+    ...(activeVariant?.sku ? [{ label: 'SKU', value: activeVariant.sku }] : []),
+    ...(activeVariant?.color ? [{ label: 'Color', value: activeVariant.color }] : []),
+    ...(activeVariant?.size ? [{ label: 'Size', value: activeVariant.size }] : []),
+    ...(activeVariant?.shippingWeight ? [{ label: 'Weight', value: activeVariant.shippingWeight }] : []),
+    ...(product.digital?.licenseType ? [{ label: 'License', value: product.digital.licenseType }] : []),
+    ...(product.digital?.downloadLimit ? [{ label: 'Download Limit', value: String(product.digital.downloadLimit) }] : []),
+    { label: 'Status', value: product.status },
+  ] : [];
 
   return (
     <div className="min-h-screen bg-cream">
       <BuyerNavbar contextLabel="Marketplace" backTo={{ label: 'Marketplace', path: '/marketplace' }} />
 
-      {/* Loading */}
       {loading && <DetailSkeleton />}
 
-      {/* Error */}
       {!loading && error && (
         <div className="px-4 md:px-10 py-[60px] text-center">
           <p className="text-[15px] text-error mb-4">{error}</p>
@@ -185,7 +413,6 @@ export function ProductDetail() {
         </div>
       )}
 
-      {/* Content */}
       {!loading && product && (
         <div className="px-4 md:px-6 lg:px-10 py-6 md:py-8 pb-[92px] lg:pb-8">
           <Breadcrumb className="mb-4" items={[
@@ -194,122 +421,18 @@ export function ProductDetail() {
             { label: product.name },
           ]} />
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-9 items-start min-w-0">
-            {/* LEFT */}
-            <div className="min-w-0">
-              <ProductImage images={allImages} name={product.name} selected={selectedImgIdx} />
+          {/* ── Gallery + Purchase panel ─────────────────────────────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 items-start min-w-0 mb-8">
+            <ImageGallery images={allImages} name={product.name} />
 
-              {/* Thumbnails */}
-              {allImages.length > 1 && (
-                <div className="flex gap-[10px] mb-6 flex-wrap">
-                  {allImages.slice(0, 6).map((img, i) => (
-                    <ThumbImage
-                      key={i}
-                      src={img}
-                      active={selectedImgIdx === i}
-                      onClick={() => setSelectedImgIdx(i)}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Description */}
-              <h2 className="text-[18px] font-bold text-carbon mb-3">About This Product</h2>
-              <p className="text-[13px] text-slate leading-[1.8] mb-4">
-                {product.description || 'No description available.'}
-              </p>
-
-              {/* Info chips */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                {product.slug && (
-                  <span className="bg-brand-pale-orange text-[#B95A3A] text-[11px] font-medium px-2 py-[3px] rounded-[6px] border border-bone">
-                    /{product.slug}
-                  </span>
-                )}
-                {activeVariant?.sku && (
-                  <span className="bg-cream text-slate text-[11px] font-medium px-2 py-[3px] rounded-[6px] border border-bone">
-                    SKU: {activeVariant.sku}
-                  </span>
-                )}
-                {(activeVariant?.stock ?? 0) > 0 && (
-                  <span className="bg-[#EBF7EF] text-[#2D8A4E] text-[11px] font-medium px-2 py-[3px] rounded-[6px] border border-[#A7F3D0]">
-                    {activeVariant!.stock} in stock
-                  </span>
-                )}
-              </div>
-
-              <div className="h-px bg-bone my-4" />
-
-              {/* Seller */}
-              <div className="text-[15px] font-bold text-carbon mb-[14px]">
-                About the Seller
-              </div>
-
-              <div className="flex items-center gap-[14px] mb-4">
-
-                <div className="w-[52px] h-[52px] rounded-full bg-success-bg text-success flex items-center justify-center font-bold text-[16px] flex-shrink-0">
-                  {sellerInitials}
-                </div>
-
-                <div className="flex-1 min-w-0">
-
-                  <div className="flex items-center justify-between gap-3">
-
-                    <div className="min-w-0">
-                      <div className="text-[15px] font-bold text-carbon truncate">
-                        {product.sellerName ?? 'Unknown Seller'}
-                      </div>
-
-                      <div className="flex items-center gap-1 mt-[3px]">
-                        <Star size={12} className="text-brand-orange fill-brand-orange" />
-
-                        <span className="text-[12px] font-semibold text-charcoal">
-                          {product.averageRating?.toFixed(1) ?? '0.0'}
-                        </span>
-
-                        <span className="text-[12px] text-slate">
-                          ({product.totalRatings ?? 0})
-                        </span>
-                      </div>
-                    </div>
-
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        product.storeSlug &&
-                        navigate(`/store/${product.storeSlug}`)
-                      }
-                      disabled={!product.storeSlug}
-                    >
-                      View Store
-                      <ArrowRight size={14} className="inline align-middle ml-1" />
-                    </Button>
-
-                  </div>
-
-
-                  <p className="text-[12px] text-slate leading-[1.6] mt-1">
-                    Independent seller on Solvexo marketplace.
-                  </p>
-
-                </div>
-
-              </div>
-
-              <div className="h-px bg-bone my-4" />
-
-              {/* Reviews */}
-              <ProductReviewsSection productId={product._id} storeName={product.sellerName} />
-            </div>
-
-            {/* RIGHT: sticky purchase card */}
             <div className="lg:sticky lg:top-20 min-w-0">
               <Card padding="none">
                 <div className="px-6 pt-6 pb-0">
-                  <Badge color="orange">Physical</Badge>
-                  <h1 className="text-[21px] font-bold text-carbon mt-3 mb-[6px] leading-[1.35] break-words font-serif">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge color="orange">{isDigital ? 'Digital' : 'Physical'}</Badge>
+                    {pctOff != null && pctOff > 0 && <Badge color="red">-{pctOff}% OFF</Badge>}
+                  </div>
+                  <h1 className="text-[20px] font-bold text-carbon mb-[6px] leading-[1.35] break-words">
                     {product.name}
                   </h1>
                   <p className="text-[12px] text-slate mb-4 flex items-center gap-1 flex-wrap">
@@ -320,64 +443,57 @@ export function ProductDetail() {
                         {product.averageRating.toFixed(1)} ({product.totalRatings} reviews)
                       </span>
                     )}
+                    {product.purchaseCount > 0 && <span className="text-slate/70">• {product.purchaseCount} sold</span>}
                   </p>
 
                   {/* Price */}
-                  <div className="text-[32px] font-extrabold text-carbon mb-1 tracking-[-0.5px]">
-                    {activeVariant ? `$${activeVariant.price.toLocaleString()}` : '—'}
+                  <div className="flex items-baseline gap-[10px] mb-1">
+                    <span className="text-[30px] font-extrabold text-carbon tracking-[-0.5px]">
+                      {activeVariant ? `$${activeVariant.price.toLocaleString()}` : '—'}
+                    </span>
+                    {activeVariant?.compareAtPrice != null && activeVariant.compareAtPrice > activeVariant.price && (
+                      <span className="text-[14px] text-slate line-through">${activeVariant.compareAtPrice.toLocaleString()}</span>
+                    )}
                   </div>
-                  <div className="text-[12px] text-success mb-4 flex items-center gap-[5px]">
+                  {activeVariant?.subscriberPrice != null && (
+                    <p className="text-[11.5px] font-semibold text-brand-orange mb-2">
+                      Members pay ${activeVariant.subscriberPrice.toLocaleString()} — save {activeVariant.discountPercent}%
+                    </p>
+                  )}
+                  <div className={clsx(
+                    'text-[12px] mb-4 flex items-center gap-[5px] font-medium',
+                    stock <= 0 ? 'text-error' : stock <= 5 ? 'text-amber-600' : 'text-success',
+                  )}>
                     <CheckCircle size={13} />
-                    {(activeVariant?.stock ?? 0) > 0 ? `${activeVariant!.stock} in stock` : 'Out of stock'}
+                    {stock <= 0 ? 'Out of stock' : isDigital ? 'Available — instant delivery' : stock <= 5 ? `Only ${stock} left` : 'In stock'}
                   </div>
 
-                  {/* Variant selector */}
-                  <VariantSelector
-                    variants={variants}
-                    selected={activeVariant}
-                    onSelect={v => setSelectedVariant(v)}
-                  />
+                  <VariantSelector variants={variants} selected={activeVariant} onSelect={setSelectedVariant} />
+
+                  {!isDigital && stock > 0 && (
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-[12px] font-semibold text-charcoal">Quantity</span>
+                      <QuantityStepper qty={qty} max={Math.min(stock, 99)} onChange={setQty} />
+                    </div>
+                  )}
 
                   {/* Buttons */}
                   <div className="flex flex-col gap-[10px] mb-6">
                     <Button
-                      variant="primary" size="lg" fullWidth
-                      className="justify-center"
-                      disabled={(activeVariant?.stock ?? 0) <= 0}
-                      loading={adding === activeVariant?._id}
-                      onClick={async () => {
-                        if (!product || !activeVariant) return;
-                        await addToCart(product._id, activeVariant._id, product.productType ?? product.type ?? 'physical');
-                        navigate('/cart');
-                      }}
+                      variant="primary" size="lg" fullWidth className="justify-center"
+                      disabled={stock <= 0} loading={adding === activeVariant?._id}
+                      onClick={() => handleAddToCart(true)}
                     >
-                      {(activeVariant?.stock ?? 0) <= 0
-                        ? 'Out of Stock'
-                        : <>Buy Now <ArrowRight size={14} className="inline align-middle ml-[6px]" />{activeVariant ? ` $${activeVariant.price.toLocaleString()}` : ''}</>}
+                      {stock <= 0 ? 'Out of Stock' : <>Buy Now <ArrowRight size={14} className="inline align-middle ml-[6px]" />{activeVariant ? ` $${(activeVariant.price * qty).toLocaleString()}` : ''}</>}
                     </Button>
-
                     <div className="flex gap-2">
                       <Button
-                        variant="secondary" size="md" fullWidth
-                        className="justify-center flex-1"
-                        disabled={(activeVariant?.stock ?? 0) <= 0}
-                        loading={adding === activeVariant?._id}
-                        onClick={async () => {
-                          if (!product || !activeVariant) return;
-                          await addToCart(product._id, activeVariant._id, product.productType ?? product.type ?? 'physical');
-                          setAddedFeedback(true);
-                          setTimeout(() => setAddedFeedback(false), 2000);
-                        }}
+                        variant="secondary" size="md" fullWidth className="justify-center flex-1"
+                        disabled={stock <= 0} loading={adding === activeVariant?._id}
+                        onClick={() => handleAddToCart(false)}
                       >
-                        {(activeVariant?.stock ?? 0) <= 0
-                          ? 'Out of Stock'
-                          : addedFeedback
-                            ? '✓ Added to Cart'
-                            : 'Add to Cart'
-                        }
+                        {stock <= 0 ? 'Out of Stock' : addedFeedback ? '✓ Added to Cart' : <><ShoppingCart size={14} /> Add to Cart</>}
                       </Button>
-
-                      {/* Wishlist toggle button */}
                       {product && activeVariant && (() => {
                         const wishlisted = isWishlisted(product._id, activeVariant._id);
                         const busy = wishlisting === activeVariant._id;
@@ -392,29 +508,158 @@ export function ProductDetail() {
                               busy ? 'cursor-wait' : 'cursor-pointer',
                             )}
                           >
-                            <Heart
-                              size={16}
-                              className={clsx(
-                                'transition-[color,fill] duration-150',
-                                wishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none',
-                              )}
-                            />
+                            <Heart size={16} className={clsx('transition-[color,fill] duration-150', wishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')} />
                           </button>
                         );
                       })()}
+                      <button
+                        onClick={handleShare}
+                        title="Share this listing"
+                        className="w-10 flex-shrink-0 rounded-[10px] flex items-center justify-center border-[1.5px] border-bone bg-white cursor-pointer text-slate hover:text-brand-orange hover:border-brand-orange/40 transition-colors"
+                      >
+                        {shareCopied ? <Link2 size={15} className="text-success" /> : <Share2 size={15} />}
+                      </button>
                     </div>
                   </div>
                 </div>
 
                 <div className="h-px bg-bone" />
 
-                {/* Info rows */}
-                <div className="px-6 py-5 flex flex-col gap-4">
+                {/* Trust row */}
+                <div className="px-6 py-4 flex items-center gap-4 flex-wrap">
+                  <span className="flex items-center gap-[6px] text-[11px] text-slate"><ShieldCheck size={13} className="text-brand-orange" /> Secure checkout</span>
+                  <span className="flex items-center gap-[6px] text-[11px] text-slate"><Truck size={13} className="text-brand-orange" /> {isDigital ? 'Instant delivery' : 'Fast shipping'}</span>
+                </div>
+              </Card>
+            </div>
+          </div>
+
+          {/* ── Description / Specifications / Seller / Shipping tabs ──────────── */}
+          <div className="bg-white rounded-2xl border border-bone overflow-hidden mb-6">
+            <TabBar
+              className="px-4 sm:px-6"
+              tabs={[
+                { id: 'description', label: 'Description' },
+                { id: 'specs', label: 'Specifications' },
+                { id: 'seller', label: 'Seller' },
+                { id: 'shipping', label: 'Shipping' },
+              ]}
+              active={activeTab}
+              onChange={setActiveTab}
+            />
+
+            <div className="p-6">
+              {activeTab === 'description' && (
+                <div>
+                  <p className="text-[13px] text-slate leading-[1.8] mb-4">{product.description || 'No description available.'}</p>
+                  {(product.tags?.length ?? 0) > 0 && (
+                    <div className="flex flex-wrap gap-[6px]">
+                      {product.tags!.map(tag => (
+                        <span key={tag} className="flex items-center gap-1 text-[11px] px-[9px] py-[3px] rounded-full bg-cream text-slate border border-bone">
+                          <Tag size={9} /> {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'specs' && (
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                  {specs.map(s => (
+                    <div key={s.label} className="flex items-center justify-between border-b border-bone pb-2">
+                      <dt className="text-[12px] text-slate">{s.label}</dt>
+                      <dd className="text-[12.5px] font-medium text-charcoal capitalize">{s.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+
+              {activeTab === 'seller' && (
+                <div>
+                  {storeData?.coverImage && (
+                    <div className="h-[100px] -mx-6 -mt-6 mb-5 overflow-hidden">
+                      <img loading="lazy" decoding="async" src={storeData.coverImage} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="flex items-start gap-[14px] mb-5 flex-wrap">
+                    <div className="w-[60px] h-[60px] rounded-full bg-success-bg text-success flex items-center justify-center font-bold text-[18px] flex-shrink-0 overflow-hidden border-2 border-white shadow-[0_0_0_1px_theme(colors.bone)]">
+                      {storeData?.logo
+                        ? <img loading="lazy" decoding="async" src={storeData.logo} alt="" className="w-full h-full object-cover" />
+                        : (product.sellerName ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-[6px] flex-wrap">
+                        <span className="text-[16px] font-bold text-carbon">{storeData?.name ?? product.sellerName ?? 'Unknown Seller'}</span>
+                        {storeData?.badges.includes('verified') && (
+                          <Badge color="green" size="sm"><ShieldCheck size={11} /> Verified Seller</Badge>
+                        )}
+                        {storeData?.badges.includes('top_seller') && (
+                          <Badge color="orange" size="sm"><Award size={11} /> Top Seller</Badge>
+                        )}
+                        {storeData?.badges.includes('featured') && (
+                          <Badge color="blue" size="sm"><Sparkles size={11} /> Featured</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 mt-[4px]">
+                        <Star size={12} className="text-brand-orange fill-brand-orange" />
+                        <span className="text-[12px] font-semibold text-charcoal">
+                          {(storeData?.averageRating ?? product.averageRating ?? 0).toFixed(1)}
+                        </span>
+                        <span className="text-[12px] text-slate">
+                          ({storeData?.reviewCount ?? product.totalRatings ?? 0} reviews)
+                        </span>
+                      </div>
+                      {storeData?.description && (
+                        <p className="text-[12px] text-slate mt-[6px] leading-[1.6] line-clamp-2">{storeData.description}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 mb-5">
+                    <div className="rounded-xl bg-cream border border-bone p-3 text-center">
+                      <Users size={14} className="text-brand-orange mx-auto mb-1" />
+                      <p className="text-[13px] font-bold text-carbon leading-none">{storeData?.followersCount ?? 0}</p>
+                      <p className="text-[10px] text-slate mt-[3px]">Followers</p>
+                    </div>
+                    <div className="rounded-xl bg-cream border border-bone p-3 text-center">
+                      <Package size={14} className="text-brand-orange mx-auto mb-1" />
+                      <p className="text-[13px] font-bold text-carbon leading-none">{sellerProductsTotal || sellerProducts.length}</p>
+                      <p className="text-[10px] text-slate mt-[3px]">Products</p>
+                    </div>
+                    <div className="rounded-xl bg-cream border border-bone p-3 text-center">
+                      <Calendar size={14} className="text-brand-orange mx-auto mb-1" />
+                      <p className="text-[13px] font-bold text-carbon leading-none">
+                        {storeData?.createdAt ? new Date(storeData.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '—'}
+                      </p>
+                      <p className="text-[10px] text-slate mt-[3px]">Joined</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" fullWidth className="justify-center" disabled={!product.storeSlug} onClick={() => product.storeSlug && navigate(`/store/${product.storeSlug}`)}>
+                      Visit Store <ArrowRight size={13} className="inline align-middle ml-1" />
+                    </Button>
+                    {storeId && (
+                      <Button
+                        variant={following ? 'outline' : 'secondary'} size="sm" fullWidth className="justify-center"
+                        loading={followBusy} onClick={handleFollow}
+                      >
+                        {following ? <><UserCheck size={13} /> Following</> : <><UserPlus size={13} /> Follow</>}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'shipping' && (
+                <div className="flex flex-col gap-4">
                   {[
-                    { Icon: Package, label: "Seller", value: product.sellerName ?? 'Unknown' },
-                    { Icon: Download, label: 'Delivery', value: 'Ships after purchase' },
+                    isDigital
+                      ? { Icon: Download, label: 'Instant Digital Delivery', value: 'Download link available immediately after purchase' }
+                      : { Icon: Truck, label: 'Shipping', value: 'Ships after purchase — rate calculated at checkout' },
+                    { Icon: Package, label: 'Seller Fulfilled', value: `Sold and shipped by ${product.sellerName ?? 'seller'}` },
                     { Icon: ClipboardList, label: 'SKU', value: activeVariant?.sku ?? '—' },
-                    { Icon: CheckCircle, label: 'Status', value: product.status },
                   ].map(row => (
                     <div key={row.label} className="flex gap-3 items-start">
                       <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center flex-shrink-0">
@@ -427,29 +672,58 @@ export function ProductDetail() {
                     </div>
                   ))}
                 </div>
-
-                <div className="h-px bg-bone" />
-
-                {/* Share */}
-                <div className="px-6 py-[14px] flex items-center gap-2">
-                  <span className="text-[12px] text-slate flex-1">Share this listing</span>
-                  {[Link2, Mail, Smartphone].map((Icon, i) => (
-                    <button key={i} className="w-[30px] h-[30px] rounded-lg bg-cream border border-bone cursor-pointer flex items-center justify-center text-slate">
-                      <Icon size={14} />
-                    </button>
-                  ))}
-                </div>
-              </Card>
+              )}
             </div>
           </div>
+
+          {/* ── Reviews ────────────────────────────────────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-bone p-6 mb-6">
+            <ProductReviewsSection productId={product._id} storeName={product.sellerName} />
+          </div>
+
+          {/* ── More from this Seller ────────────────────────────────────────── */}
+          {sellerProducts.length > 0 && (
+            <ProductRail title="More from this Seller">
+              {sellerProducts.map(p => (
+                <RelatedCard
+                  key={p._id} id={p._id} name={p.name} image={p.images?.[0] ?? null}
+                  price={p.subscriberPrice ?? p.defaultVariantPrice} rating={p.averageRating}
+                  onClick={pid => navigate(`/marketplace/${pid}`)}
+                />
+              ))}
+            </ProductRail>
+          )}
+
+          {/* ── Related Products ─────────────────────────────────────────────── */}
+          {relatedProducts.length > 0 && (() => {
+            const topSeller = relatedProducts.reduce((max, p) => p.purchaseCount > max ? p.purchaseCount : max, 0);
+            const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+            return (
+              <ProductRail title="Related Products">
+                {relatedProducts.map(p => {
+                  const dv = p.variants.find(v => v.isDefault) ?? p.variants[0];
+                  const wishlisted = dv ? isWishlisted(p._id, dv._id) : false;
+                  return (
+                    <RelatedCard
+                      key={p._id} id={p._id} name={p.name} image={p.images?.[0] ?? null}
+                      price={dv?.price ?? null} compareAtPrice={dv?.compareAtPrice ?? null}
+                      rating={p.averageRating} reviewCount={p.totalRatings} sold={p.purchaseCount}
+                      isNew={new Date(p.createdAt).getTime() >= fourteenDaysAgo}
+                      isBestseller={topSeller > 0 && p.purchaseCount === topSeller}
+                      onClick={pid => navigate(`/marketplace/${pid}`)}
+                      wishlist={dv ? { active: wishlisted, onToggle: () => toggleWishlist(p._id, dv._id) } : undefined}
+                    />
+                  );
+                })}
+              </ProductRail>
+            );
+          })()}
         </div>
       )}
 
       {!loading && product && (
         <div className="pb-[76px] lg:pb-0">
-          <div className="px-4 md:px-6 lg:px-10 pb-8">
-            <AppDownloadBanner />
-          </div>
+          <div className="px-4 md:px-6 lg:px-10 pb-8"><AppDownloadBanner /></div>
           <Footer />
         </div>
       )}
@@ -459,53 +733,19 @@ export function ProductDetail() {
         <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-white border-t border-bone px-4 py-3 flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-[10px] text-slate leading-none mb-[3px]">Price</p>
-            <p className="text-[17px] font-extrabold text-carbon leading-none truncate">
-              ${activeVariant.price.toLocaleString()}
-            </p>
+            <p className="text-[17px] font-extrabold text-carbon leading-none truncate">${activeVariant.price.toLocaleString()}</p>
           </div>
           <Button
-            variant="primary"
-            size="md"
-            className="justify-center flex-1 max-w-[220px]"
-            disabled={(activeVariant.stock ?? 0) <= 0}
-            loading={adding === activeVariant._id}
-            onClick={async () => {
-              await addToCart(product._id, activeVariant._id, product.productType ?? product.type ?? 'physical');
-              setAddedFeedback(true);
-              setTimeout(() => setAddedFeedback(false), 2000);
-            }}
+            variant="primary" size="md" className="justify-center flex-1 max-w-[220px]"
+            disabled={stock <= 0} loading={adding === activeVariant._id}
+            onClick={() => handleAddToCart(false)}
           >
-            {(activeVariant.stock ?? 0) <= 0
-              ? 'Out of Stock'
-              : addedFeedback
-                ? '✓ Added to Cart'
-                : <><ShoppingCart size={14} /> Add to Cart</>
-            }
+            {stock <= 0 ? 'Out of Stock' : addedFeedback ? '✓ Added to Cart' : <><ShoppingCart size={14} /> Add to Cart</>}
           </Button>
         </div>
       )}
 
       <FloatingAppWidget mobileBottomClass="bottom-[150px]" />
-    </div>
-  );
-}
-
-// ── Thumbnail helper ──────────────────────────────────────────────────────────
-function ThumbImage({ src, active, onClick }: { src: string; active: boolean; onClick: () => void }) {
-  const [errored, setErrored] = useState(false);
-  return (
-    <div
-      onClick={onClick}
-      className={clsx(
-        'w-[70px] h-[70px] rounded-[10px] overflow-hidden cursor-pointer bg-brand-pale-orange flex items-center justify-center border-2 shrink-0',
-        'transition-[border-color,opacity,transform] duration-150 ease-out hover:-translate-y-[1px]',
-        active ? 'border-brand-orange' : 'border-transparent opacity-70 hover:opacity-100',
-      )}
-    >
-      {!errored && src
-        ? <img loading="lazy" decoding="async" src={src} alt="" onError={() => setErrored(true)} className="w-full h-full object-cover" />
-        : <ImageOff size={20} className="text-brand-orange opacity-50" />
-      }
     </div>
   );
 }

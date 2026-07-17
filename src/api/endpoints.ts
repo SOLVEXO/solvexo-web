@@ -9,6 +9,45 @@ export const ENDPOINTS = {
   USERS: {
     CHANGE_PASSWORD: '/api/users/change-password',
     DELETE_ACCOUNT:  '/api/users/profile',
+
+    // Admin — merged buyer/seller directory
+    ADMIN: {
+      STATS:     '/api/admin/users/stats',
+      LIST:      '/api/admin/users',
+      GET_BY_ID: (role: string, id: string) => `/api/admin/users/${role}/${id}`,
+      SUSPEND:   (role: string, id: string) => `/api/admin/users/${role}/${id}/suspend`,
+      UNSUSPEND: (role: string, id: string) => `/api/admin/users/${role}/${id}/unsuspend`,
+    },
+  },
+
+  // ── PLATFORM CONFIG (Admin) ────────────────────────────────────────────────
+  PLATFORM_CONFIG: {
+    GET:                  '/api/admin/platform-config',
+    UPDATE_FEATURE_FLAGS: '/api/admin/platform-config/feature-flags',
+    UPDATE_AI:            '/api/admin/platform-config/ai',
+    UPDATE_EMAIL:         '/api/admin/platform-config/email',
+    UPDATE_MAINTENANCE:   '/api/admin/platform-config/maintenance',
+  },
+
+  // ── ANNOUNCEMENTS (Admin) ───────────────────────────────────────────────────
+  ANNOUNCEMENTS: {
+    LIST:       '/api/admin/announcements',
+    CREATE:     '/api/admin/announcements',
+    UPDATE:     (id: string) => `/api/admin/announcements/${id}`,
+    SET_STATUS: (id: string) => `/api/admin/announcements/${id}/status`,
+    DELETE:     (id: string) => `/api/admin/announcements/${id}`,
+
+    // Public — buyer/seller consumption
+    ACTIVE: '/api/announcements/active',
+  },
+
+  // ── CONTENT MODERATION (Admin) ──────────────────────────────────────────────
+  MODERATION: {
+    STATS:   '/api/admin/moderation/stats',
+    QUEUE:   '/api/admin/moderation/queue',
+    REVIEW:  (id: string) => `/api/admin/moderation/${id}/review`,
+    APPROVE: (id: string) => `/api/admin/moderation/${id}/approve`,
+    REMOVE:  (id: string) => `/api/admin/moderation/${id}/remove`,
   },
 
   // ── AUTH ───────────────────────────────────────────────────────────────────
@@ -153,6 +192,31 @@ export const ENDPOINTS = {
       UPDATE: (storeId: string, couponId: string) => `/api/marketing/${storeId}/coupons/${couponId}`,
       DELETE: (storeId: string, couponId: string) => `/api/marketing/${storeId}/coupons/${couponId}`,
     },
+    CAMPAIGNS: {
+      LIST: (storeId: string) => `/api/marketing/${storeId}/campaigns`,
+      JOIN: (storeId: string, campaignId: string) => `/api/marketing/${storeId}/campaigns/${campaignId}/join`,
+      LEAVE:(storeId: string, campaignId: string) => `/api/marketing/${storeId}/campaigns/${campaignId}/leave`,
+    },
+
+    // Public — buyer marketplace/homepage deal banner
+    PUBLIC_CAMPAIGNS: '/api/public/marketing/campaigns',
+
+    // Admin — platform-wide sale campaigns + platform-issued coupons
+    ADMIN: {
+      CAMPAIGNS: {
+        CREATE:     '/api/admin/marketing/campaigns',
+        LIST:       '/api/admin/marketing/campaigns',
+        UPDATE:     (id: string) => `/api/admin/marketing/campaigns/${id}`,
+        SET_STATUS: (id: string) => `/api/admin/marketing/campaigns/${id}/status`,
+        DELETE:     (id: string) => `/api/admin/marketing/campaigns/${id}`,
+      },
+      COUPONS: {
+        CREATE: '/api/admin/marketing/coupons',
+        LIST:   '/api/admin/marketing/coupons',
+        UPDATE: (id: string) => `/api/admin/marketing/coupons/${id}`,
+        DELETE: (id: string) => `/api/admin/marketing/coupons/${id}`,
+      },
+    },
   },
 
   // ── LOYALTY & REWARDS ─────────────────────────────────────────────────────
@@ -187,11 +251,20 @@ export const ENDPOINTS = {
   MARKETPLACE: {
     PRODUCTS_BY_CATEGORY: `/api/products/products-by-category`,
     PRODUCT_BY_ID: (id: string) => `/api/products/getProductById/${id}`,
+
+    // Admin — marketplace-wide listing management
+    ADMIN: {
+      STATS:    '/api/admin/marketplace/stats',
+      LISTINGS: '/api/admin/marketplace/listings',
+      FEATURE:  (id: string) => `/api/admin/marketplace/listings/${id}/feature`,
+      REMOVE:   (id: string) => `/api/admin/marketplace/listings/${id}/remove`,
+    },
   },
 
   // ── SEARCH ────────────────────────────────────────────────────────────────
   SEARCH: {
     STORES: '/api/search/stores',
+    RECENT: '/api/search/recent',
   },
 
   // ── CART ──────────────────────────────────────────────────────────────────
@@ -230,7 +303,9 @@ export const ENDPOINTS = {
   CHECKOUT: {
     CREATE: '/api/checkout/create-checkout',
     ADD_SHIPPING_ZONE_IN_CHECKOUT: '/api/checkout/addShippingInCheckout',
-    DELETE_CHECKOUT: '/api/checkout/delete-checkout', 
+    DELETE_CHECKOUT: '/api/checkout/delete-checkout',
+    APPLY_COUPON: '/api/checkout/apply-coupon',
+    REMOVE_COUPON: (checkoutId: string) => `/api/checkout/remove-coupon/${checkoutId}`,
   },
 
   UPLOAD: {

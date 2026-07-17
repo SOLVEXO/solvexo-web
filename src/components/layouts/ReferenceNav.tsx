@@ -5,7 +5,7 @@ import {
   Home, ShoppingCart, Store, DollarSign, Users, BookOpen,
   LogIn, Rocket,
   LayoutDashboard,
-  RefreshCw, Settings,
+  Settings,
   Shield,
 } from 'lucide-react';
 
@@ -24,7 +24,7 @@ const PUBLIC_PAGES: NavPage[] = [
 
 const AUTH_PAGES: NavPage[] = [
   { label: 'Login',        path: '/login',        Icon: LogIn       },
-  { label: 'Onboarding',   path: '/onboarding',   Icon: Rocket      },
+  { label: 'Onboarding',   path: '/onboard',   Icon: Rocket      },
 ];
 
 const SELLER_PAGES: NavPage[] = [
@@ -42,7 +42,7 @@ const SELLER_PAGES: NavPage[] = [
   // { label: 'SEO',            path: '/seller/seo',              Icon: Search          },
   // { label: 'Customers',      path: '/seller/customers',        Icon: Users           },
   // { label: 'Loyalty',        path: '/seller/loyalty',          Icon: Star            },
-  { label: 'Subscriptions',  path: '/seller/subscriptions',    Icon: RefreshCw       },
+  // { label: 'Subscriptions',  path: '/seller/subscriptions',    Icon: RefreshCw       },
   // { label: 'Marketing',      path: '/seller/marketing',        Icon: Megaphone       },
   // { label: 'Finance',        path: '/seller/finance',          Icon: Wallet          },
   // { label: 'Shipping',       path: '/seller/shipping',         Icon: Truck           },

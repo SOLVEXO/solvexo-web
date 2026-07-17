@@ -93,15 +93,13 @@ export function AuthSplitLayout({
 
       {/* ── Form panel (65%) — internal scroll only, never the page ───────── */}
       {bare ? (
-        <div className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden flex flex-col">
+        <div className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col">
           {children}
         </div>
       ) : (
-        <div className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden flex flex-col items-center px-4 py-6 sm:py-8">
+        <div className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col items-center px-4 py-6 sm:py-8">
           <div className={clsx('w-full my-auto', maxWidth)}>
-            <div className="bg-white rounded-2xl shadow-card border border-bone/60 p-5 sm:p-7 lg:p-8">
-              {children}
-            </div>
+            {children}
           </div>
         </div>
       )}

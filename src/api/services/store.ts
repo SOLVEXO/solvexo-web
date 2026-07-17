@@ -129,9 +129,12 @@ export interface PublicStoreData {
   coverImage:     string | null;
   description:    string | null;
   followersCount: number;
+  averageRating:  number;
+  reviewCount:    number;
   builderConfig:  Record<string, unknown> | null;
   sellerType:     string | null;
   badges:         string[];
+  createdAt:      string;
 }
 
 export interface PublicStoreProductsParams {
@@ -204,7 +207,6 @@ export interface PublicStoreListItem {
   reviewCount:    number;
   sellerType:     SellerType | null;
   badges:         string[];
-  /** Only present on the paginated browse list, not on the cached top-stores row. */
   productCount?:  number;
 }
 

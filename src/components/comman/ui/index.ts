@@ -73,6 +73,10 @@ export { StarRating }                        from './StarRating';
 
 export { ComingSoonBanner }                  from './ComingSoonBanner';
 
+export { AnnouncementBanner }                 from './AnnouncementBanner';
+
+export { DealsBanner }                        from './DealsBanner';
+
 export { SocialLoginModal }                  from './SocialLoginModal';
 export { NotificationBell }                  from './NotificationBell';
 export { NotificationsPanel }                 from './NotificationsPanel';
@@ -100,3 +104,5 @@ export { MarketplaceAppPromo, HomeAppPromo, EducationAppPromo, AuthAppPromo } fr
 export { FloatingAppWidget }                  from './FloatingAppWidget';
 
 export { MiniCart }                           from './MiniCart';
+
+export { StoreFeatureCard }                   from './StoreFeatureCard';

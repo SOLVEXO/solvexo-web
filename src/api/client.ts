@@ -41,6 +41,12 @@ client.interceptors.response.use(
       window.location.href = '/login';
     }
 
+    // Platform-wide maintenance mode (see main.ts) — admin/auth routes are
+    // exempted server-side, so this only ever fires for buyer/seller calls.
+    if (err.response?.status === 503 && err.response?.data?.maintenanceMode === true) {
+      if (window.location.pathname !== '/maintenance') window.location.href = '/maintenance';
+    }
+
     // `isNetworkError` distinguishes "the request never reached the server" (no
     // network, timeout, DNS failure — safe to retry/queue) from a real server
     // rejection (4xx/5xx — retrying with the same input will just fail again).

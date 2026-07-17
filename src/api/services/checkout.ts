@@ -35,6 +35,8 @@ export interface Checkout {
   shippingFee:       number;
   taxAmount:         number;
   subscriberSavingsUSD?: number;
+  couponCode?:       string | null;
+  couponDiscountUSD?: number;
   totalAmount:       number;
   status:            string;
   expiredAt:         string;
@@ -50,6 +52,20 @@ export interface CheckoutSummary {
   totalAmount: number;
   subscriberSavingsUSD?: number;
 }
+
+export interface ApplyCouponPayload { checkoutId: string; code: string }
+
+export interface ApplyCouponData {
+  checkoutId: string;
+  couponCode: string;
+  couponDiscountUSD: number;
+  totalAmount: number;
+}
+
+interface ApplyCouponResponse { success: boolean; message: string; data: ApplyCouponData }
+
+export interface RemoveCouponData { checkoutId: string; totalAmount: number }
+interface RemoveCouponResponse { success: boolean; message: string; data: RemoveCouponData }
 
 export interface SubscriptionSavingsHint {
   storeId: string; storeName: string; storeSlug: string; planId: string; planName: string; potentialSavingsUSD: number;
@@ -112,4 +128,12 @@ export function apiDeleteCheckout(checkoutId: string) {
   return client.delete<never, DeleteCheckoutResponse>(
     `${ENDPOINTS.CHECKOUT.DELETE_CHECKOUT}/${checkoutId}`,
   );
+}
+
+export function apiApplyCoupon(payload: ApplyCouponPayload) {
+  return client.post<never, ApplyCouponResponse>(ENDPOINTS.CHECKOUT.APPLY_COUPON, payload);
+}
+
+export function apiRemoveCoupon(checkoutId: string) {
+  return client.delete<never, RemoveCouponResponse>(ENDPOINTS.CHECKOUT.REMOVE_COUPON(checkoutId));
 }

@@ -1,15 +1,148 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
-import { AppDownloadBanner, Footer, HomeAppPromo, FloatingAppWidget, SkeletonBox } from '@/components/comman/ui';
+import { AppDownloadBanner, Footer, FloatingAppWidget, SkeletonBox, DealsBanner } from '@/components/comman/ui';
 import {
-  ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles, Star, Users,
+  ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles,
+  Star, TrendingUp, BadgeCheck, Crown, UserPlus, UserCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { apiGetTopStores, type PublicStoreListItem } from '@/api/services/store';
+import { apiGetTopStores, apiFollowStore, type PublicStoreListItem } from '@/api/services/store';
+
+const compactNumber = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+
+// ── Premium store spotlight card — 16:9 cover, overlapping logo, badge stack,
+// rating/followers/products stat row, and Follow + Visit actions. Modeled on
+// marketplace "featured seller" cards (Amazon/Etsy/Alibaba style storefront tiles). ──
+function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick: () => void }) {
+  const [following, setFollowing] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
+
+  const isVerified  = store.badges?.includes('verified');
+  const isFeatured  = store.badges?.includes('featured');
+  const isTopSeller = store.badges?.includes('top_seller');
+  const isTopRated  = store.reviewCount > 0 && store.averageRating >= 4.8;
+  const initial     = store.name.trim().charAt(0).toUpperCase() || '?';
+
+  const handleFollow = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (followBusy) return;
+    setFollowBusy(true);
+    try {
+      const res = await apiFollowStore(store.storeId);
+      setFollowing(res.data.following);
+    } catch { /* non-critical — button just stays in prior state */ }
+    finally { setFollowBusy(false); }
+  };
+
+  return (
+    <div
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter') onClick(); }}
+      className="group shrink-0 w-[252px] sm:w-auto snap-start bg-white border border-bone rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-[3px] hover:shadow-[0_18px_36px_rgba(0,0,0,0.1)] hover:border-brand-orange/25"
+    >
+      {/* Cover — 16:9 */}
+      <div className="relative aspect-[16/9] overflow-hidden">
+        {store.coverImage ? (
+          <img loading="lazy" decoding="async" src={store.coverImage} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]" />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-brand-pale-orange via-[#FBE9DB] to-[#F5DFC7] flex items-center justify-center">
+            <span className="font-serif text-[34px] font-bold text-brand-orange/30">{initial}</span>
+          </div>
+        )}
+        <div className="absolute inset-x-0 top-0 p-[9px] flex flex-wrap gap-[5px]">
+          {isFeatured && (
+            <span className="inline-flex items-center gap-1 px-[8px] py-[4px] rounded-full bg-[#7C3AED]/90 backdrop-blur-sm text-white text-[9.5px] font-bold">
+              <Crown size={9} /> Platinum
+            </span>
+          )}
+          {isTopSeller && (
+            <span className="inline-flex items-center gap-1 px-[8px] py-[4px] rounded-full bg-carbon/80 backdrop-blur-sm text-white text-[9.5px] font-bold">
+              <TrendingUp size={9} /> Top Seller
+            </span>
+          )}
+          {isTopRated && (
+            <span className="inline-flex items-center gap-1 px-[8px] py-[4px] rounded-full bg-white/90 backdrop-blur-sm text-brand-deep-orange text-[9.5px] font-bold">
+              <Star size={9} className="fill-brand-orange text-brand-orange" /> Top Rated
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="px-4 pb-4 -mt-7 relative">
+        <div className="flex items-end justify-between mb-2">
+          <div className="w-[52px] h-[52px] rounded-2xl bg-white p-[3px] shadow-[0_3px_10px_rgba(0,0,0,0.14)] shrink-0 transition-transform duration-300 group-hover:scale-105">
+            <div className="w-full h-full rounded-[15px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">
+              {store.logo
+                ? <img loading="lazy" decoding="async" src={store.logo} alt="" className="w-full h-full object-cover" />
+                : <Store size={20} className="text-brand-orange" />}
+            </div>
+          </div>
+          <button
+            onClick={handleFollow}
+            disabled={followBusy}
+            className={clsx(
+              'inline-flex items-center gap-[5px] px-[11px] py-[6px] rounded-full text-[11px] font-semibold border cursor-pointer transition-all duration-150 mb-[2px] shrink-0',
+              following
+                ? 'bg-carbon/5 border-bone text-charcoal'
+                : 'bg-brand-orange border-brand-orange text-white hover:bg-brand-deep-orange',
+              followBusy && 'opacity-60 cursor-wait',
+            )}
+          >
+            {following ? <UserCheck size={11} /> : <UserPlus size={11} />}
+            {following ? 'Following' : 'Follow'}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-[5px] min-w-0">
+          <p className="text-[14px] font-bold text-carbon leading-tight truncate">{store.name}</p>
+          {isVerified && <BadgeCheck size={13} className="text-[#1A72C2] fill-[#1A72C2]/15 shrink-0" />}
+        </div>
+
+        {store.description ? (
+          <p className="text-[11px] text-slate leading-snug line-clamp-1 mt-[3px]">{store.description}</p>
+        ) : (
+          <p className="text-[11px] text-slate/70 italic leading-snug mt-[3px]">New on Solvexo</p>
+        )}
+
+        {store.sellerType && (
+          <span className="inline-block px-[8px] py-[2px] rounded-full bg-cream text-[10px] font-medium text-charcoal capitalize mt-[8px]">
+            {store.sellerType}
+          </span>
+        )}
+
+        <div className="grid grid-cols-3 gap-1 pt-[10px] mt-[10px] border-t border-bone">
+          <div className="flex flex-col items-center">
+            <span className="flex items-center gap-[3px] text-[12px] font-bold text-carbon">
+              <Star size={10} className="text-brand-orange fill-brand-orange" />
+              {store.averageRating > 0 ? store.averageRating.toFixed(1) : 'New'}
+            </span>
+            <span className="text-[9px] text-slate mt-[2px]">{compactNumber.format(store.reviewCount)} reviews</span>
+          </div>
+          <div className="flex flex-col items-center border-x border-bone">
+            <span className="text-[12px] font-bold text-carbon">{compactNumber.format(store.followersCount)}</span>
+            <span className="text-[9px] text-slate mt-[2px]">Followers</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-[12px] font-bold text-carbon">{store.productCount != null ? compactNumber.format(store.productCount) : '—'}</span>
+            <span className="text-[9px] text-slate mt-[2px]">Products</span>
+          </div>
+        </div>
+
+        <Button variant="primary" size="sm" className="w-full mt-3" onClick={e => { e.stopPropagation(); onClick(); }}>
+          Visit Store <ArrowRight size={12} className="inline align-middle ml-1" />
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 const FEATURES: { Icon: LucideIcon; title: string; bg: string; desc: string; path: string }[] = [
   { Icon: ShoppingBag, title: 'Marketplace',          bg: '#FBECE4', desc: 'Join thousands of buyers discovering your products in the Solvexo marketplace.',         path: '/marketplace' },
@@ -41,7 +174,7 @@ export function Homepage() {
 
   useEffect(() => {
     let cancelled = false;
-    apiGetTopStores(6)
+    apiGetTopStores(12)
       .then(res => { if (!cancelled) setTopStores(res.data.stores); })
       .catch(() => { /* non-critical section — homepage still works without it */ })
       .finally(() => { if (!cancelled) setStoresLoading(false); });
@@ -50,6 +183,8 @@ export function Homepage() {
 
   return (
     <div className="bg-white min-h-full">
+
+      <DealsBanner />
 
       {/* ── Hero ─────────────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-gradient-to-br from-carbon to-charcoal">
@@ -102,16 +237,11 @@ export function Homepage() {
               ))}
             </div>
           </div>
-
-          {/* Compact app promotion — desktop only, balances the hero without competing with the headline */}
-          <div className="hidden xl:block shrink-0">
-            <HomeAppPromo />
-          </div>
         </div>
       </section>
 
       {/* ── Feature Categories ───────────────────────────────────────────────────── */}
-      <section className="py-14 sm:py-16 lg:py-20">
+      <section className="py-10 sm:py-12 lg:py-14">
         <div className="px-4 sm:px-6 lg:px-12">
           <p className="text-[11px] font-semibold text-brand-orange text-center uppercase tracking-[0.1em] mb-2">
             Built for every type of seller
@@ -147,45 +277,43 @@ export function Homepage() {
 
       {/* ── Top Stores ───────────────────────────────────────────────────────────── */}
       {(storesLoading || topStores.length > 0) && (
-        <section className="py-12 sm:py-14 lg:py-16 border-t border-bone">
+        <section className="py-10 sm:py-12 lg:py-14 border-t border-bone">
           <div className="px-4 sm:px-6 lg:px-12">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="font-serif text-[22px] sm:text-[26px] font-bold text-carbon leading-[1.2]">
-                Top stores this week
-              </h2>
-              <Button variant="link" size="sm" onClick={() => navigate('/marketplace')}>
-                Browse all <ArrowRight size={13} className="inline align-middle ml-1" />
+            <div className="flex items-end justify-between gap-4 mb-6">
+              <div>
+                <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-[6px]">
+                  Marketplace Spotlight
+                </p>
+                <h2 className="font-serif text-[22px] sm:text-[26px] font-bold text-carbon leading-[1.2] mb-1">
+                  Top Stores This Week
+                </h2>
+                <p className="text-[12.5px] sm:text-[13px] text-slate max-w-md">
+                  Discover trusted, verified stores with the highest ratings and fastest growth.
+                </p>
+              </div>
+              <Button variant="link" size="sm" onClick={() => navigate('/marketplace')} className="shrink-0 whitespace-nowrap">
+                View All Stores <ArrowRight size={13} className="inline align-middle ml-1" />
               </Button>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+
+            <div className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:overflow-visible sm:grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {storesLoading
                 ? Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="flex flex-col items-center gap-2">
-                      <SkeletonBox width={64} height={64} rounded="16px" />
-                      <SkeletonBox width="70%" height={11} />
+                    <div key={i} className="shrink-0 w-[252px] sm:w-auto rounded-2xl border border-bone overflow-hidden">
+                      <SkeletonBox width="100%" height="auto" rounded="0" className="aspect-[16/9]" />
+                      <div className="px-4 pb-4 -mt-7">
+                        <div className="flex items-end justify-between mb-2">
+                          <SkeletonBox width={52} height={52} rounded="15px" className="border-[3px] border-white" />
+                          <SkeletonBox width={64} height={24} rounded="999px" />
+                        </div>
+                        <SkeletonBox width="65%" height={13} className="mb-[6px]" />
+                        <SkeletonBox width="85%" height={10} className="mb-3" />
+                        <SkeletonBox width="100%" height={40} rounded="8px" />
+                      </div>
                     </div>
                   ))
                 : topStores.map(s => (
-                    <button
-                      key={s.storeId}
-                      onClick={() => navigate(`/store/${s.slug}`)}
-                      className="flex flex-col items-center gap-2 text-center bg-transparent border-none cursor-pointer group"
-                    >
-                      <div className="w-16 h-16 rounded-2xl bg-brand-pale-orange border border-bone flex items-center justify-center overflow-hidden shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:shadow-card">
-                        {s.logo
-                          ? <img loading="lazy" decoding="async" src={s.logo} alt="" className="w-full h-full object-cover" />
-                          : <Store size={22} className="text-brand-orange" />}
-                      </div>
-                      <p className="text-[12px] font-semibold text-carbon leading-tight line-clamp-1 group-hover:text-brand-orange transition-colors">
-                        {s.name}
-                      </p>
-                      <p className="flex items-center gap-1 text-[10.5px] text-slate">
-                        <Star size={10} className="text-brand-orange fill-brand-orange" />
-                        {s.averageRating.toFixed(1)}
-                        <Users size={10} className="ml-1" />
-                        {s.followersCount}
-                      </p>
-                    </button>
+                    <TopStoreCard key={s.storeId} store={s} onClick={() => navigate(`/store/${s.slug}`)} />
                   ))}
             </div>
           </div>
@@ -193,7 +321,7 @@ export function Homepage() {
       )}
 
       {/* ── Social Proof ─────────────────────────────────────────────────────────── */}
-      <section className="bg-cream border-t border-bone py-12 sm:py-14 lg:py-16">
+      <section className="bg-cream border-t border-bone py-10 sm:py-12 lg:py-14">
         <div className="px-4 sm:px-6 lg:px-12">
           <p className="text-[11px] font-semibold text-slate text-center uppercase tracking-[0.08em] mb-6">
             Trusted by creators worldwide
@@ -220,7 +348,7 @@ export function Homepage() {
       </section>
 
       {/* ── CTA ──────────────────────────────────────────────────────────────────── */}
-      <section className="bg-brand-orange py-12 sm:py-14 lg:py-16 px-4 sm:px-6 text-center">
+      <section className="bg-brand-orange py-10 sm:py-12 lg:py-14 px-4 sm:px-6 text-center">
         <div className="max-w-lg mx-auto">
           <h2 className="font-serif text-[24px] sm:text-[28px] lg:text-[32px] font-bold text-white mb-3 leading-[1.2]">
             Ready to start selling?

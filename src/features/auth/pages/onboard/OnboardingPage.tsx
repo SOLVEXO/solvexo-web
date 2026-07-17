@@ -4,7 +4,6 @@ import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCreateStore } from '@/hooks/store/useCreateStore';
 import { Button } from '@/components/comman/ui/Button';
-import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import {
   Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
   Package, Download, Calendar, Repeat, MonitorSmartphone,
@@ -126,18 +125,6 @@ function StepPane({ step, children }: { step: number; children: ReactNode }) {
       visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1',
     )}>
       {children}
-    </div>
-  );
-}
-
-function PageHeader({ onSignIn }: { onSignIn: () => void }) {
-  return (
-    <div className="flex items-center justify-between px-4 md:px-10 h-16 border-b border-bone bg-white sticky top-0 z-10 shrink-0">
-      <SolvexoLogo size={30} />
-      <div className="flex items-center gap-[10px]">
-        <span className="hidden sm:inline text-[13px] text-slate">Already have an account?</span>
-        <Button variant="ghost" size="sm" onClick={onSignIn}>Sign In</Button>
-      </div>
     </div>
   );
 }
@@ -431,7 +418,6 @@ function Step4({ store, categoryName }: { store: StoreData | null; categoryName:
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export function OnboardingPage() {
-  const navigate    = useNavigate();
   usePageTitle('Onboarding');
   const createStore = useCreateStore();
   const [step, setStep]             = useState(1);
@@ -469,8 +455,6 @@ export function OnboardingPage() {
       visual={<SellerDashboardMockup />}
       bare
     >
-      <PageHeader onSignIn={() => navigate('/login')} />
-
       <div className="bg-white border-b border-bone px-4 md:px-10 py-3 shrink-0">
         <div className="max-w-[500px] mx-auto">
           <StepProgress current={step} maxReached={maxReached} onStepClick={jumpTo} />

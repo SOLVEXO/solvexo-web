@@ -3,6 +3,7 @@ import { clsx } from 'clsx';
 import { Home, Store, ShoppingCart, Package, UserCircle } from 'lucide-react';
 import { TokenStorage } from '@/api/services/auth';
 import { useCartContext } from '@/contexts/CartContext';
+import { AnnouncementBanner } from '@/components/comman/ui';
 
 // ── Bottom navigation tab bar (mobile only) ───────────────────────────────────
 interface BottomTab {
@@ -94,6 +95,7 @@ export function BuyerLayout() {
   return (
     <>
       <div className="pb-[64px] md:pb-0">
+        <AnnouncementBanner audience="buyers" />
         <Outlet />
       </div>
       <BottomNav />

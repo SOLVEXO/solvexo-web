@@ -10,10 +10,10 @@ import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Store,
   Settings, BarChart2,
-  Bell, ChevronDown, Plus, PanelLeftClose, PanelLeftOpen,
+  ChevronDown, Plus, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
-import { NotificationBell } from '@/components/comman/ui';
+import { NotificationBell, AnnouncementBanner } from '@/components/comman/ui';
 
 // ── Sidebar context (lets SellerPageHeader consume the toggle) ────────────────
 const SellerSidebarCtx = createContext<{ toggle: () => void }>({ toggle: () => {} });
@@ -482,6 +482,7 @@ export function SellerLayout() {
         <div className="flex h-[calc(100vh-44px)] bg-cream">
           <SellerSidebar open={sidebarOpen} onToggle={toggle} onClose={onClose} />
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <AnnouncementBanner audience="sellers" />
             <div className="flex-1 overflow-y-auto overflow-x-hidden">
               <Outlet />
             </div>

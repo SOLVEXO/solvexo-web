@@ -5,7 +5,7 @@ import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, Bell, ChevronLeft, Monitor, Store,
+  Settings, Sparkles, ChevronLeft, Monitor, Store,
   ClipboardList, Megaphone, Star, Plug, Activity, Search, Wallet,
   Truck, MessageSquare, UserPlus, FolderTree, RefreshCw, Undo2, CreditCard,
   PanelLeftClose, PanelLeftOpen,
@@ -13,7 +13,7 @@ import {
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
-import { NotificationBell } from '@/components/comman/ui';
+import { NotificationBell, AnnouncementBanner } from '@/components/comman/ui';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
@@ -448,6 +448,7 @@ export function StoreLayout() {
         <div className="flex h-[calc(100vh-44px)] bg-cream overflow-hidden">
           <StoreSidebar open={sidebarOpen} onToggle={toggle} onClose={onClose} />
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <AnnouncementBanner audience="sellers" />
             <div className="flex-1 overflow-y-auto">
               <Outlet />
             </div>

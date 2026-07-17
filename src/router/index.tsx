@@ -32,6 +32,7 @@ const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/Edu
 const PricingPage          = lazy(() => named(import('@/features/buyer/pages/PricingPage'),                     'PricingPage'));
 const ForSellersPage       = lazy(() => named(import('@/features/buyer/pages/ForSellersPage'),                  'ForSellersPage'));
 const FaqPage              = lazy(() => named(import('@/features/buyer/pages/FaqPage'),                         'FaqPage'));
+const MaintenancePage      = lazy(() => named(import('@/features/buyer/pages/MaintenancePage'),                 'MaintenancePage'));
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 const LoginPage            = lazy(() => named(import('@/features/auth/pages/LoginPage'),                        'LoginPage'));
@@ -76,7 +77,7 @@ const StoreMarketing     = lazy(() => named(import('@/features/seller/store/Dash
 const StoreLoyalty       = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/loyalty/Loyalty'),          'StoreLoyalty'));
 const StoreSubscriptions = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/subscriptions/Subscriptions'), 'StoreSubscriptions'));
 const StoreIntegrations  = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/integrations/Integrations'),'StoreIntegrations'));
-const StoreActivity      = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/activity/activity'),        'StoreActivity'));
+const StoreActivity      = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/activity/Activity'),        'StoreActivity'));
 const StoreFollowers     = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/followers/StoreFollowers'), 'StoreFollowers'));
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
@@ -94,6 +95,7 @@ const AdminAnnouncements = lazy(() => named(import('@/features/admin/pages/Admin
 const AdminBanners       = lazy(() => named(import('@/features/admin/pages/AdminBanners'),                       'AdminBanners'));
 const AdminFaqs          = lazy(() => named(import('@/features/admin/pages/AdminFaqs'),                          'AdminFaqs'));
 const AdminConfig        = lazy(() => named(import('@/features/admin/pages/AdminConfig'),                       'AdminConfig'));
+const AdminMarketing     = lazy(() => named(import('@/features/admin/pages/AdminMarketing'),                     'AdminMarketing'));
 const AdminSettings      = lazy(() => named(import('@/features/admin/pages/settings/AdminSettings'),           'AdminSettings'));
 const AdminSEO           = lazy(() => named(import('@/features/admin/pages/AdminSEO'),                          'AdminSEO'));
 const AdminAiStudio      = lazy(() => named(import('@/features/admin/pages/AdminAiStudio'),                     'AdminAiStudio'));
@@ -131,11 +133,14 @@ export const router = createBrowserRouter([
         ],
       },
 
+      // ── Maintenance mode (backend 503 redirects here — see client.ts) ──
+      { path: '/maintenance',     element: <MaintenancePage /> },
+
       // ── Auth ──────────────────────────────────────────────────────────
       { path: '/login',           element: <LoginPage /> },
       { path: '/admin/login',     element: <AdminLoginPage /> },
       { path: '/register',        element: <RegisterPage /> },
-      { path: '/onboarding',      element: <OnboardingPage /> },
+      { path: '/onboard',      element: <OnboardingPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/verify-otp',      element: <VerifyOTPPage /> },
       { path: '/new-password',    element: <NewPasswordPage /> },
@@ -202,18 +207,19 @@ export const router = createBrowserRouter([
         children: [
           { index: true,          element: <AdminOverview /> },
           { path: 'analytics',    element: <RequireRole role="admin"><AdminAnalytics /></RequireRole> },
-          { path: 'users',        element: <AdminUsers /> },
-          { path: 'moderation',   element: <AdminModeration /> },
+          { path: 'users',        element: <RequireRole role="admin"><AdminUsers /></RequireRole> },
+          { path: 'moderation',   element: <RequireRole role="admin"><AdminModeration /></RequireRole> },
           { path: 'messages',     element: <AdminMessaging /> },
-          { path: 'marketplace',  element: <AdminMarketplace /> },
+          { path: 'marketplace',  element: <RequireRole role="admin"><AdminMarketplace /></RequireRole> },
           { path: 'categories',   element: <AdminCategories /> },
           { path: 'subscriptions',element: <AdminSubscriptions /> },
           { path: 'platform-plans',element: <AdminPlatformPlans /> },
           { path: 'finance',      element: <RequireRole role="admin"><AdminFinance /></RequireRole> },
-          { path: 'announcements',element: <AdminAnnouncements /> },
+          { path: 'announcements',element: <RequireRole role="admin"><AdminAnnouncements /></RequireRole> },
           { path: 'banners',      element: <AdminBanners /> },
           { path: 'faqs',         element: <AdminFaqs /> },
-          { path: 'config',       element: <AdminConfig /> },
+          { path: 'config',       element: <RequireRole role="admin"><AdminConfig /></RequireRole> },
+          { path: 'marketing',    element: <RequireRole role="admin"><AdminMarketing /></RequireRole> },
           { path: 'settings',     element: <AdminSettings /> },
           { path: 'seo',          element: <RequireRole role="admin"><AdminSEO /></RequireRole> },
           { path: 'ai-studio',    element: <RequireRole role="admin"><AdminAiStudio /></RequireRole> },

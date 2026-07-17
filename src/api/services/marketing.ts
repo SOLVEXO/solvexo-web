@@ -53,3 +53,33 @@ export function apiUpdateCoupon(storeId: string, couponId: string, payload: Upda
 export function apiDeleteCoupon(storeId: string, couponId: string) {
   return client.delete<never, ApiResponse<null>>(ENDPOINTS.MARKETING.COUPONS.DELETE(storeId, couponId));
 }
+
+// ── Platform-wide sale campaigns (admin-created, seller opts a store in) ────
+
+export interface JoinableCampaign {
+  _id:           string;
+  name:          string;
+  description:   string | null;
+  bannerImage:   string | null;
+  startDate:     string;
+  endDate:       string;
+  status:        'draft' | 'active' | 'ended';
+  discountType:  DiscountType | null;
+  discountValue: number | null;
+  isJoined:      boolean;
+}
+
+/** GET /api/marketing/:storeId/campaigns */
+export function apiGetJoinableCampaigns(storeId: string) {
+  return client.get<never, ApiResponse<JoinableCampaign[]>>(ENDPOINTS.MARKETING.CAMPAIGNS.LIST(storeId));
+}
+
+/** POST /api/marketing/:storeId/campaigns/:campaignId/join */
+export function apiJoinCampaign(storeId: string, campaignId: string) {
+  return client.post<never, ApiResponse<null>>(ENDPOINTS.MARKETING.CAMPAIGNS.JOIN(storeId, campaignId));
+}
+
+/** DELETE /api/marketing/:storeId/campaigns/:campaignId/leave */
+export function apiLeaveCampaign(storeId: string, campaignId: string) {
+  return client.delete<never, ApiResponse<null>>(ENDPOINTS.MARKETING.CAMPAIGNS.LEAVE(storeId, campaignId));
+}
