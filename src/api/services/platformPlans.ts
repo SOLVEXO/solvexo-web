@@ -67,7 +67,18 @@ export function apiBrowsePlatformPlans() {
 
 // ── Seller ────────────────────────────────────────────────────────────────────
 export function apiGetSellerPlatformOverview() {
-  return client.get<never, ApiResponse<{ stores: Array<{ storeId: string; storeName: string; planName: string; status: string; amountUSD: number }> }>>(`${BASE}/seller/overview`);
+  return client.get<never, ApiResponse<{
+    stores: Array<{
+      storeId: string;
+      storeName: string;
+      storeSlug: string;
+      storeStatus: string;
+      platformPlan: { id: string; name: string; isFree: boolean } | null;
+      subscriptionStatus: string;
+      nextBillingDate: string | null;
+      totalPaidUSD: number;
+    }>;
+  }>>(`${BASE}/seller/overview`);
 }
 
 export function apiGetStorePlatformPlan(storeId: string) {

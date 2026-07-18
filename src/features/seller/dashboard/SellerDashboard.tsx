@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AreaChart } from '@/components/comman/charts';
-import { ArrowRight, Store, AlertCircle } from 'lucide-react';
+import {
+  ArrowRight, Store, AlertCircle, DollarSign, Package, ShoppingBag, Repeat,
+  BarChart2, Settings, Sparkles,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/comman/ui/Button';
 import { Table } from '@/components/comman/ui/Table';
 import type { TableColumn } from '@/components/comman/ui/Table';
@@ -151,7 +155,21 @@ function MyStoreCard({ stores, loading, error, onRetry }: { stores: MyStore[]; l
 }
 
 // ── Platform Billing widget ──────────────────────────────────────────────────
-interface PlatformOverviewStore { storeId: string; storeName: string; planName: string; status: string; amountUSD: number }
+interface PlatformOverviewStore {
+  storeId: string;
+  storeName: string;
+  platformPlan: { id: string; name: string; isFree: boolean } | null;
+  subscriptionStatus: string;
+  totalPaidUSD: number;
+}
+
+const billingStatusColors: Record<string, { bg: string; color: string }> = {
+  active:    { bg: '#E3F4EA', color: '#1E7A3C' },
+  trialing:  { bg: '#EAF0FB', color: '#2156A8' },
+  past_due:  { bg: '#FFF0E0', color: '#B36200' },
+  canceled:  { bg: '#FBE9E7', color: '#B3261E' },
+  none:      { bg: '#F0EEE6', color: '#8C8A82' },
+};
 
 function PlatformBillingCard() {
   const navigate = useNavigate();
@@ -162,26 +180,84 @@ function PlatformBillingCard() {
     apiGetSellerPlatformOverview().then(res => setStores(res.data.stores)).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="bg-white border border-bone rounded-[10px] h-[120px] animate-pulse" />;
+  if (loading) return <div className="bg-white border border-bone rounded-[10px] h-full min-h-[220px] animate-pulse" />;
   if (stores.length === 0) return null;
 
-  const totalUSD = stores.reduce((s, r) => s + r.amountUSD, 0);
+  const totalUSD = stores.reduce((s, r) => s + r.totalPaidUSD, 0);
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
-      <div className="px-[18px] pt-4 pb-2 flex items-center justify-between">
+    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden h-full flex flex-col">
+      <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-[#F3F2EC]">
         <p className="text-sm font-bold text-charcoal">Platform Billing</p>
-        <span className="text-[11px] text-slate">${totalUSD.toFixed(2)}/mo total</span>
+        <span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">
+          {formatCurrency(totalUSD)}/mo total
+        </span>
       </div>
-      <div className="px-2 pb-2">
-        {stores.map(s => (
-          <button key={s.storeId} onClick={() => navigate(`/seller/store/${s.storeId}/plan-billing`)}
-            className="w-full flex items-center justify-between gap-3 px-[10px] py-[10px] bg-transparent border-0 cursor-pointer text-left hover:bg-cream rounded-md">
-            <div>
-              <p className="text-[13px] font-medium text-charcoal">{s.storeName}</p>
-              <p className="text-[11px] text-slate">{s.planName} — {s.status}</p>
+      <div className="px-2 py-2 max-h-[280px] overflow-y-auto scrollbar-hide">
+        {stores.map((s, i) => {
+          const st = billingStatusColors[s.subscriptionStatus] ?? billingStatusColors.none;
+          return (
+            <button
+              key={s.storeId}
+              onClick={() => navigate(`/seller/store/${s.storeId}/plan-billing`)}
+              className="w-full flex items-center gap-3 px-[10px] py-[11px] bg-transparent border-0 cursor-pointer text-left hover:bg-cream rounded-md"
+              style={{ borderBottom: i < stores.length - 1 ? '1px solid #F5F4EF' : 'none' }}
+            >
+              <div className="w-9 h-9 rounded-[10px] bg-brand-pale-orange flex items-center justify-center shrink-0">
+                <Store size={15} className="text-brand-orange" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-medium text-charcoal truncate">{s.storeName}</p>
+                <div className="flex items-center gap-[6px] mt-[3px]">
+                  <span className="text-[10px] font-semibold px-[6px] py-px rounded-[20px]" style={{ background: st.bg, color: st.color }}>
+                    {s.subscriptionStatus}
+                  </span>
+                  <span className="text-[10px] text-slate">{s.platformPlan?.name ?? 'No plan'}</span>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-[13px] font-bold text-carbon leading-tight">{formatCurrency(s.totalPaidUSD)}</p>
+                <p className="text-[10px] text-slate">/mo</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Quick Actions ─────────────────────────────────────────────────────────────
+interface QuickAction { Icon: LucideIcon; label: string; path: string; color: string }
+
+const QUICK_ACTIONS: QuickAction[] = [
+  { Icon: Store,     label: 'My Stores',       path: '/seller/stores',   color: '#D97757' },
+  { Icon: Sparkles,  label: 'Create Store',    path: '/seller/store',    color: '#A855F7' },
+  { Icon: BarChart2, label: 'Analytics',       path: '/seller/analytics', color: '#0EA5E9' },
+  { Icon: Settings,  label: 'Settings',        path: '/seller/settings', color: '#8C8A82' },
+];
+
+function QuickActionsRow() {
+  const navigate = useNavigate();
+  return (
+    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] h-full flex flex-col">
+      <div className="px-5 pt-4 pb-3 border-b border-[#F3F2EC]">
+        <p className="text-sm font-bold text-charcoal">Quick Actions</p>
+      </div>
+      <div className="px-4 py-4 grid grid-cols-2 gap-3 flex-1">
+        {QUICK_ACTIONS.map(({ Icon, label, path, color }) => (
+          <button
+            key={label}
+            onClick={() => navigate(path)}
+            className="flex flex-col items-center justify-center gap-2 py-4 px-2 rounded-[10px] border border-bone bg-transparent cursor-pointer transition-colors duration-150 hover:bg-cream w-full"
+          >
+            <div
+              className="w-9 h-9 rounded-[9px] flex items-center justify-center"
+              style={{ background: color + '18' }}
+            >
+              <Icon size={16} style={{ color }} />
             </div>
-            <span className="text-[12px] font-semibold text-carbon">${s.amountUSD.toFixed(2)}/mo</span>
+            <span className="text-[11px] font-medium text-charcoal text-center leading-[1.3]">{label}</span>
           </button>
         ))}
       </div>
@@ -258,10 +334,10 @@ export function SellerDashboard() {
   }, [storeId, storesLoading]);
 
   const metrics = overview ? [
-    { label: 'Revenue (7 days)',  value: formatCurrency(overview.totalRevenue), trend: overview.totalRevenueChangePercent != null ? formatPercent(overview.totalRevenueChangePercent, { signed: true }) : null, trendUp: (overview.totalRevenueChangePercent ?? 0) >= 0, sub: null },
-    { label: 'Orders (7 days)',   value: formatNumber(overview.totalOrders),    trend: overview.totalOrdersChange ? formatPercent(overview.totalOrdersChange, { signed: true }) : null, trendUp: (overview.totalOrdersChange ?? 0) >= 0, sub: null },
-    { label: 'Avg Order Value',   value: formatCurrency(overview.avgOrderValue), trend: overview.avgOrderValueChangePercent != null ? formatPercent(overview.avgOrderValueChangePercent, { signed: true }) : null, trendUp: (overview.avgOrderValueChangePercent ?? 0) >= 0, sub: null },
-    { label: 'Repeat Buyers',     value: formatPercent(overview.repeatBuyerPercent), trend: null, trendUp: true, sub: overview.repeatBuyerTrend === 'improving' ? 'Improving' : overview.repeatBuyerTrend === 'declining' ? 'Declining' : 'Steady' },
+    { label: 'Revenue (7 days)',  value: formatCurrency(overview.totalRevenue), trend: overview.totalRevenueChangePercent != null ? formatPercent(overview.totalRevenueChangePercent, { signed: true }) : null, trendUp: (overview.totalRevenueChangePercent ?? 0) >= 0, sub: null, icon: <DollarSign size={16} />, color: '#D97757' },
+    { label: 'Orders (7 days)',   value: formatNumber(overview.totalOrders),    trend: overview.totalOrdersChange ? formatPercent(overview.totalOrdersChange, { signed: true }) : null, trendUp: (overview.totalOrdersChange ?? 0) >= 0, sub: null, icon: <Package size={16} />, color: '#8B5CF6' },
+    { label: 'Avg Order Value',   value: formatCurrency(overview.avgOrderValue), trend: overview.avgOrderValueChangePercent != null ? formatPercent(overview.avgOrderValueChangePercent, { signed: true }) : null, trendUp: (overview.avgOrderValueChangePercent ?? 0) >= 0, sub: null, icon: <ShoppingBag size={16} />, color: '#0EA5E9' },
+    { label: 'Repeat Buyers',     value: formatPercent(overview.repeatBuyerPercent), trend: null, trendUp: true, sub: overview.repeatBuyerTrend === 'improving' ? 'Improving' : overview.repeatBuyerTrend === 'declining' ? 'Declining' : 'Steady', icon: <Repeat size={16} />, color: '#22C55E' },
   ] : [];
 
   const chartData = revenueSeries.map(p => ({ day: formatBucketLabel(p.date, 'day'), sales: p.grossRevenue }));
@@ -295,7 +371,7 @@ export function SellerDashboard() {
               Create a store to see your revenue, orders, and product metrics here.
             </div>
           ) : metrics.map((m) => (
-            <MetricCard key={m.label} label={m.label} value={m.value} trend={m.trend ?? undefined} trendUp={m.trendUp} sub={m.sub ?? undefined} />
+            <MetricCard key={m.label} label={m.label} value={m.value} trend={m.trend ?? undefined} trendUp={m.trendUp} sub={m.sub ?? undefined} icon={m.icon} color={m.color} />
           ))}
         </div>
 
@@ -314,7 +390,15 @@ export function SellerDashboard() {
           <MyStoreCard stores={stores} loading={storesLoading} error={storesError} onRetry={refetchStores} />
         </div>
 
-        {hasStore && <PlatformBillingCard />}
+        {/* ── Row: Platform Billing (6) + Quick Actions (6) ── */}
+        {hasStore ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <PlatformBillingCard />
+            <QuickActionsRow />
+          </div>
+        ) : (
+          <QuickActionsRow />
+        )}
 
         {/* ── Row 3: Top Products + Recent Orders ── */}
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
