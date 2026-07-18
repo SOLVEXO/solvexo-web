@@ -120,7 +120,7 @@ export function NotificationBell() {
 
       {/* Bell Dropdown Popup */}
       {isOpen && (
-        <div className="absolute right-0 top-[calc(100%+10px)] bg-white border border-bone rounded-[16px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] w-[320px] md:w-[350px] overflow-hidden flex flex-col">
+        <div className="absolute right-0 top-[calc(100%+10px)] bg-white border border-bone rounded-[16px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] w-[320px] md:w-[350px] max-w-[calc(100vw-2rem)] overflow-hidden flex flex-col">
           {/* Header */}
           <div className="px-4 py-3 border-b border-bone flex items-center justify-between bg-cream/30">
             <div className="flex items-center gap-1.5">

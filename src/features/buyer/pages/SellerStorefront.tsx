@@ -418,7 +418,7 @@ export function SellerStorefront() {
             </div>
 
             {/* Actions */}
-            <div className="flex flex-row sm:flex-col gap-2 items-center sm:items-end shrink-0">
+            <div className="flex flex-wrap sm:flex-col gap-2 items-center justify-center sm:items-end shrink-0">
               {plans.length > 0 && (
                 <button
                   onClick={() => document.getElementById('store-membership')?.scrollIntoView({ behavior: 'smooth' })}

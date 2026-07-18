@@ -104,7 +104,7 @@ function NavActions() {
       {/* Desktop: both buttons */}
       <div className="hidden md:flex items-center gap-[10px]">
         <NavBtn variant="ghost"   onClick={() => navigate('/login')}>Sign In</NavBtn>
-        <NavBtn variant="primary" onClick={() => navigate('/onboarding')}>Start Selling</NavBtn>
+        <NavBtn variant="primary" onClick={() => navigate('/onboard')}>Start Selling</NavBtn>
       </div>
       {/* Mobile: compact sign in only */}
       <button

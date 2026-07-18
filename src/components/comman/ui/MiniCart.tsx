@@ -69,7 +69,7 @@ export function MiniCart({ accentColor }: { accentColor?: string }) {
       </button>
 
       {open && (
-        <div className="dropdown-enter absolute right-0 top-[calc(100%+10px)] z-[100] w-[320px] bg-white border border-bone rounded-[16px] shadow-[0_24px_56px_rgba(0,0,0,0.16)] overflow-hidden flex flex-col">
+        <div className="dropdown-enter absolute right-0 top-[calc(100%+10px)] z-[100] w-[320px] max-w-[calc(100vw-2rem)] bg-white border border-bone rounded-[16px] shadow-[0_24px_56px_rgba(0,0,0,0.16)] overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-bone">
             <p className="text-[13px] font-bold text-carbon">Your Cart{cartCount > 0 ? ` (${cartCount})` : ''}</p>
             <button

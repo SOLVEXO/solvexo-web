@@ -72,7 +72,7 @@ function StepProgress({ current, maxReached, onStepClick }: { current: number; m
               onClick={() => clickable && onStepClick(n)}
             >
               <div className={clsx(
-                'size-8 rounded-full flex items-center justify-center text-[13px] font-bold transition-all duration-300 ease-out',
+                'size-7 sm:size-8 rounded-full flex items-center justify-center text-[12px] sm:text-[13px] font-bold transition-all duration-300 ease-out',
                 done    ? 'bg-success text-white'      : '',
                 active  ? 'bg-brand-orange text-white shadow-[0_0_0_4px_#FBECE4]' : '',
                 !done && !active ? 'bg-bone text-slate' : '',
@@ -80,7 +80,7 @@ function StepProgress({ current, maxReached, onStepClick }: { current: number; m
                 {done ? <Check size={12} /> : n}
               </div>
               <span className={clsx(
-                'mt-[6px] text-[10px] font-medium whitespace-nowrap transition-colors duration-200',
+                'hidden sm:block mt-[6px] text-[10px] font-medium whitespace-nowrap transition-colors duration-200',
                 active ? 'text-brand-orange' : done ? 'text-success' : 'text-slate',
               )}>
                 {label}
@@ -88,7 +88,7 @@ function StepProgress({ current, maxReached, onStepClick }: { current: number; m
             </div>
             {i < STEPS.length - 1 && (
               <div className={clsx(
-                'w-[60px] h-0.5 mb-4 mx-1.5 rounded-sm transition-colors duration-300 ease-out',
+                'w-6 sm:w-[60px] h-0.5 mx-1 sm:mx-1.5 sm:mb-4 rounded-sm transition-colors duration-300 ease-out',
                 n < maxReached ? 'bg-success' : 'bg-bone',
               )} />
             )}

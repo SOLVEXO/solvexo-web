@@ -1,17 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
 import { apiGetMyAddresses, type Address } from '@/api/services/address';
 import { apiCreateCheckout, apiApplyCoupon, apiRemoveCoupon, type Checkout, type CheckoutSummary, type SubscriptionSavingsHint } from '@/api/services/checkout';
-import { apiPlaceCodOrder, apiPlaceOrder } from '@/api/services/payment';
+import { apiPlaceCodOrder, apiInitiatePayment, apiGetPaymentStatus } from '@/api/services/payment';
 import { Button } from '@/components/comman/ui/Button';
 import { SkeletonBox, BuyerNavbar, Breadcrumb } from '@/components/comman/ui';
+import { StripeCardPayment, isStripeConfigured } from '@/features/buyer/components/StripeCardPayment';
 import {
   MapPin, Truck, CreditCard, CheckCircle2,
   ChevronRight, AlertCircle, PackageCheck,
-  Banknote, ShieldCheck, ArrowDownCircle, Download,
+  Banknote, ShieldCheck, ArrowDownCircle, Download, Clock, Loader2,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { currencySymbol } from '@/utils/currency';
@@ -30,25 +31,89 @@ function StepBadge({ n, active, done }: { n: number; active: boolean; done: bool
   );
 }
 
+// ── Card payment slot — shows the real Stripe form once configured, a clear
+// "coming soon" notice otherwise. Never a dead-end silent button. ─────────────
+function CardPaymentSlot({
+  checkoutReady, clientSecret, initiating, initiateError, polling, amount, currency, onConfirmed,
+}: {
+  checkoutReady:  boolean;
+  clientSecret:   string | null;
+  initiating:     boolean;
+  initiateError:  string;
+  polling:        boolean;
+  amount:         number;
+  currency:       string;
+  onConfirmed:    () => void;
+}) {
+  if (!isStripeConfigured()) {
+    return (
+      <div className="flex items-start gap-2 text-[12px] text-charcoal bg-cream border border-bone rounded-[8px] px-3 py-3">
+        <Clock size={14} className="mt-[1px] flex-shrink-0 text-slate" />
+        <div>
+          <p className="font-semibold text-carbon mb-[2px]">Card payments are coming soon</p>
+          <p className="text-slate">We're finishing setup for online card payments — please check back shortly to complete this order.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (polling) {
+    return (
+      <div className="flex flex-col items-center gap-2 py-6 text-center">
+        <Loader2 size={22} className="animate-spin text-brand-orange" />
+        <p className="text-[13px] font-medium text-carbon">Confirming your payment…</p>
+        <p className="text-[11px] text-slate">This only takes a moment.</p>
+      </div>
+    );
+  }
+
+  if (!checkoutReady || initiating) {
+    return (
+      <div className="flex flex-col gap-3">
+        <SkeletonBox height={44} rounded="8px" />
+        <SkeletonBox height={48} rounded="12px" />
+      </div>
+    );
+  }
+
+  if (initiateError) {
+    return (
+      <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2">
+        <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
+        {initiateError}
+      </div>
+    );
+  }
+
+  if (!clientSecret) return null;
+
+  return <StripeCardPayment clientSecret={clientSecret} amount={amount} currency={currency} onConfirmed={onConfirmed} />;
+}
+
 // ── Payment method labels ─────────────────────────────────────────────────────
 const PAYMENT_LABELS: Record<string, { label: string; desc: string; Icon: React.ElementType }> = {
   stripe:           { label: 'Credit / Debit Card',  desc: 'Secure payment via Stripe',       Icon: CreditCard },
   cash_on_delivery: { label: 'Cash on Delivery',     desc: 'Pay when your order arrives',     Icon: Banknote   },
 };
 
-// Methods the frontend can't actually process yet — shown disabled with a "Coming soon"
-// badge instead of silently accepting a selection that handlePlaceOrder can't fulfil.
-const UNAVAILABLE_METHODS = new Set(['stripe']);
-
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function CheckoutPage() {
   usePageTitle('Checkout');
   const navigate  = useNavigate();
-  const location  = useLocation();
-  const cartType  = (location.state as { cartType?: 'physical' | 'digital' } | null)?.cartType ?? 'physical';
-  const isDigital = cartType === 'digital';
 
   const { cart, loading: cartLoading, cartCount, clearCart } = useCartContext();
+
+  // One unified checkout for the whole cart, mixed physical+digital included
+  // (Amazon/Alibaba/Shopify/Daraz all check out a mixed cart as one order —
+  // splitting it into two separate checkouts was the old behavior here and
+  // it under-charged the displayed total while still billing the full cart
+  // server-side, since the backend was never told to filter by type).
+  const cartItems  = cart?.items ?? [];
+  const hasDigital = cartItems.some(i => i.type === 'digital');
+  // Fully-digital carts skip address/shipping entirely; a mixed cart still
+  // needs both, for its physical items — so this only means "skip the
+  // shipping steps", not "no digital items in this order".
+  const isDigital  = cartItems.length > 0 && cartItems.every(i => i.type === 'digital');
 
   // Step: 1 = address, 2 = shipping, 3 = payment
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -79,15 +144,33 @@ export function CheckoutPage() {
   const [placing,     setPlacing]     = useState(false);
   const [placeError,  setPlaceError]  = useState('');
 
+  // Card payment (Stripe) — clientSecret drives the embedded PaymentElement form;
+  // pollingStatus drives the "confirming your payment…" state after the buyer submits.
+  const [clientSecret,        setClientSecret]        = useState<string | null>(null);
+  const [initiatingPayment,   setInitiatingPayment]   = useState(false);
+  const [initiatePaymentErr,  setInitiatePaymentErr]  = useState('');
+  const [pollingStatus,       setPollingStatus]       = useState(false);
+  const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Coupon
   const [couponInput,   setCouponInput]   = useState('');
   const [couponBusy,    setCouponBusy]    = useState(false);
   const [couponError,   setCouponError]   = useState('');
 
-  // For digital carts: strip COD from allowed methods
-  const effectiveMethods = isDigital
+  // Cash on Delivery can't cover a digital item — it's delivered instantly, long
+  // before any cash changes hands, so a buyer could take the download and then
+  // refuse the COD payment at the door. Any digital item in the order (mixed
+  // or pure-digital) forces card payment for the whole order instead.
+  const effectiveMethods = hasDigital
     ? allowedMethods.filter(m => m !== 'cash_on_delivery')
     : allowedMethods;
+
+  // With no COD choice to make, card is the only option — select it automatically
+  // instead of making the buyer pick a "radio group" with one item in it.
+  useEffect(() => {
+    if (hasDigital && effectiveMethods.includes('stripe')) setSelectedMethod('stripe');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasDigital, allowedMethods.length]);
 
   // Fetch addresses (physical only)
   useEffect(() => {
@@ -128,6 +211,67 @@ export function CheckoutPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDigital]);
 
+  // Card selected (forced for any-digital cart, or chosen for an all-physical one)
+  // → get a Stripe clientSecret for this checkout so the PaymentElement can mount.
+  useEffect(() => {
+    if (selectedMethod !== 'stripe' || !checkout || clientSecret || !isStripeConfigured()) return;
+    let cancelled = false;
+    setInitiatingPayment(true);
+    setInitiatePaymentErr('');
+    apiInitiatePayment({ checkoutId: checkout._id })
+      .then(res => { if (!cancelled) setClientSecret(res.data.clientSecret); })
+      .catch(err => {
+        if (!cancelled) setInitiatePaymentErr(err instanceof Error ? err.message : 'Failed to start card payment.');
+      })
+      .finally(() => { if (!cancelled) setInitiatingPayment(false); });
+    return () => { cancelled = true; };
+  }, [selectedMethod, checkout, clientSecret]);
+
+  // Stop any in-flight poll on unmount (e.g. buyer navigates away mid-confirmation).
+  useEffect(() => () => { if (pollTimer.current) clearTimeout(pollTimer.current); }, []);
+
+  // Stripe confirmed the PaymentIntent client-side — the order itself is created
+  // server-side (webhook, or this poll acting as a fallback for local dev / slow
+  // webhook delivery). Poll until the order shows up, then hand off to Order Success.
+  const handleStripeConfirmed = () => {
+    if (!checkout) return;
+    setPollingStatus(true);
+    setPlaceError('');
+    let stopped = false;
+    const poll = async () => {
+      if (stopped) return;
+      try {
+        const res = await apiGetPaymentStatus(checkout._id);
+        if (stopped) return;
+        if (res.data.status === 'completed') {
+          setPollingStatus(false);
+          await clearCart();
+          navigate('/order-success', { state: { orders: res.data.orders } });
+          return;
+        }
+        if (res.data.status === 'failed') {
+          setPollingStatus(false);
+          setPlaceError('Payment could not be confirmed. Please try again.');
+          return;
+        }
+      } catch {
+        // transient — keep polling, a real failure will surface via the timeout below
+      }
+      if (!stopped) pollTimer.current = setTimeout(poll, 1500);
+    };
+    poll();
+    // Stop waiting after ~30s so the buyer isn't stuck on a spinner forever —
+    // the payment likely succeeded (Stripe already confirmed it), it just means
+    // order finalization is taking unusually long; direct them to their orders.
+    setTimeout(() => {
+      if (!stopped) {
+        stopped = true;
+        if (pollTimer.current) clearTimeout(pollTimer.current);
+        setPollingStatus(false);
+        setPlaceError('Your payment was received and is being confirmed — check My Orders in a moment.');
+      }
+    }, 30_000);
+  };
 
   const matchingZones = selectedAddr
     ? zones.filter(z =>
@@ -138,23 +282,15 @@ export function CheckoutPage() {
 
   const selectedZone = zones.find(z => z._id === selectedZoneId) ?? null;
 
-  // Filter items to only what's being checked out (physical OR digital)
-  const filteredCheckoutItems = (checkout?.items ?? []).filter(i =>
-    cartType === 'digital' ? i.type === 'digital' : i.type === 'physical',
-  );
-  const filteredCartItems = (cart?.items ?? []).filter(i =>
-    cartType === 'digital' ? i.type === 'digital' : (i.type === 'physical' || !i.type),
-  );
-
-  // Subtotal from filtered items only
-  const filteredSubtotal = checkout
-    ? filteredCheckoutItems.reduce((s, i) => s + i.totalPrice, 0)
-    : filteredCartItems.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
+  // The whole cart checks out together — one order, no more splitting by type.
+  const orderSubtotal = checkout
+    ? checkout.items.reduce((s, i) => s + i.totalPrice, 0)
+    : cartItems.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
 
   const shipping = summary?.shippingFee ?? selectedZone?.shippingPrice ?? 0;
   const tax      = summary?.taxAmount ?? 0;
   const couponDiscount = checkout?.couponDiscountUSD ?? 0;
-  const total    = Math.max(0, filteredSubtotal + (isDigital ? 0 : shipping) + tax - couponDiscount);
+  const total    = Math.max(0, orderSubtotal + (isDigital ? 0 : shipping) + tax - couponDiscount);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   async function handleApplyCoupon() {
@@ -217,25 +353,16 @@ export function CheckoutPage() {
     }
   };
 
+  // Cash on Delivery only — card payment is handled by StripeCardPayment +
+  // handleStripeConfirmed instead, since it has its own form/submit button.
   const handlePlaceOrder = async () => {
-    if (!checkout) return;
-    if (!isDigital && !selectedMethod) return;
+    if (!checkout || selectedMethod !== 'cash_on_delivery') return;
     setPlacing(true);
     setPlaceError('');
     try {
-      if (isDigital) {
-        const res = await apiPlaceOrder({ checkoutId: checkout._id });
-        await clearCart();
-        navigate('/order-success', { state: { orders: res.data.orders } });
-      } else if (selectedMethod === 'cash_on_delivery') {
-        const res = await apiPlaceCodOrder({ checkoutId: checkout._id });
-        await clearCart();
-        navigate('/order-success', { state: { orders: res.data.orders } });
-      } else {
-        // Card/Stripe checkout isn't wired up yet — the option is disabled in the UI,
-        // this is a defensive guard in case selectedMethod is ever set another way.
-        setPlaceError('This payment method is not available yet. Please choose Cash on Delivery.');
-      }
+      const res = await apiPlaceCodOrder({ checkoutId: checkout._id });
+      await clearCart();
+      navigate('/order-success', { state: { orders: res.data.orders } });
     } catch (err) {
       setPlaceError(err instanceof Error ? err.message : 'Failed to place order. Please try again.');
     } finally {
@@ -313,16 +440,16 @@ export function CheckoutPage() {
                       </div>
                     )}
 
-                    <Button
-                      variant="primary" size="lg"
-                      disabled={!checkout}
-                      loading={placing}
-                      icon={!placing && <PackageCheck size={16} />}
-                      onClick={handlePlaceOrder}
-                      className="gap-2 w-full justify-center"
-                    >
-                      {placing ? 'Placing Order…' : 'Place Order'}
-                    </Button>
+                    <CardPaymentSlot
+                      checkoutReady={!!checkout}
+                      clientSecret={clientSecret}
+                      initiating={initiatingPayment}
+                      initiateError={initiatePaymentErr}
+                      polling={pollingStatus}
+                      amount={total}
+                      currency={checkout?.currency ?? 'USD'}
+                      onConfirmed={handleStripeConfirmed}
+                    />
                   </>
                 )}
               </div>
@@ -673,7 +800,7 @@ export function CheckoutPage() {
                     {effectiveMethods.map(method => {
                       const meta = PAYMENT_LABELS[method] ?? { label: method, desc: '', Icon: CreditCard };
                       const { label, desc, Icon } = meta;
-                      const unavailable = UNAVAILABLE_METHODS.has(method);
+                      const unavailable = method === 'stripe' && !isStripeConfigured();
                       return (
                         <label
                           key={method}
@@ -726,16 +853,29 @@ export function CheckoutPage() {
                     </div>
                   )}
 
-                  <Button
-                    variant="primary" size="lg"
-                    disabled={!selectedMethod}
-                    loading={placing}
-                    icon={!placing && <PackageCheck size={16} />}
-                    onClick={handlePlaceOrder}
-                    className="gap-2 w-full justify-center"
-                  >
-                    {placing ? 'Placing Order…' : 'Place Order'}
-                  </Button>
+                  {selectedMethod === 'stripe' ? (
+                    <CardPaymentSlot
+                      checkoutReady={!!checkout}
+                      clientSecret={clientSecret}
+                      initiating={initiatingPayment}
+                      initiateError={initiatePaymentErr}
+                      polling={pollingStatus}
+                      amount={total}
+                      currency={checkout?.currency ?? 'USD'}
+                      onConfirmed={handleStripeConfirmed}
+                    />
+                  ) : (
+                    <Button
+                      variant="primary" size="lg"
+                      disabled={!selectedMethod}
+                      loading={placing}
+                      icon={!placing && <PackageCheck size={16} />}
+                      onClick={handlePlaceOrder}
+                      className="gap-2 w-full justify-center"
+                    >
+                      {placing ? 'Placing Order…' : 'Place Order'}
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -747,10 +887,10 @@ export function CheckoutPage() {
           <div className="bg-white rounded-xl shadow-card border border-bone p-6 lg:sticky top-20">
             <p className="text-[15px] font-bold text-carbon mb-[18px]">Order Summary</p>
 
-            {/* Items — filtered to current cartType only */}
+            {/* Items — the whole cart, one order */}
             <div className="flex flex-col gap-2 mb-5">
               {(() => { const cur = currencySymbol(checkout?.currency); return checkout
-                ? filteredCheckoutItems.map(item => (
+                ? checkout.items.map(item => (
                   <div key={item.variantId} className="flex justify-between text-[12px]">
                     <span className="text-carbon truncate max-w-[150px]">
                       {item.name}
@@ -761,7 +901,7 @@ export function CheckoutPage() {
                     </span>
                   </div>
                 ))
-                : !cartLoading && filteredCartItems.map(item => {
+                : !cartLoading && cartItems.map(item => {
                   const price = item.unitPrice ?? item.price ?? 0;
                   const ttl   = item.itemTotal ?? price * item.quantity;
                   return (
@@ -784,7 +924,7 @@ export function CheckoutPage() {
             <div className="flex flex-col gap-3 mb-5">
               <div className="flex justify-between text-[13px]">
                 <span className="text-slate">Subtotal</span>
-                <span className="font-semibold text-carbon">{currencySymbol(checkout?.currency)} {filteredSubtotal.toLocaleString()}</span>
+                <span className="font-semibold text-carbon">{currencySymbol(checkout?.currency)} {orderSubtotal.toLocaleString()}</span>
               </div>
               {!isDigital && (
                 <div className="flex justify-between text-[13px]">

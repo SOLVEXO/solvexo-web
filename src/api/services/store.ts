@@ -244,6 +244,34 @@ export function apiGetTopStores(limit = 10) {
   );
 }
 
+export interface PlatformStats {
+  sellersCount: number;
+  gmv:          number;
+  avgRating:    number;
+  ratingCount:  number;
+}
+
+/** GET /api/store/public/platform-stats — real, cached homepage stat strip. */
+export function apiGetPlatformStats() {
+  return client.get<never, ApiResponse<PlatformStats>>(ENDPOINTS.STORE.PUBLIC_PLATFORM_STATS);
+}
+
+export interface Testimonial {
+  id:                 string;
+  name:               string;
+  storeName:          string | null;
+  rating:             number;
+  text:               string;
+  isVerifiedPurchase: boolean;
+}
+
+/** GET /api/store/public/testimonials — real, cached homepage reviews (min length + rating filtered). */
+export function apiGetTestimonials(limit = 6) {
+  return client.get<never, ApiResponse<Testimonial[]>>(
+    `${ENDPOINTS.STORE.PUBLIC_TESTIMONIALS}?limit=${limit}`,
+  );
+}
+
 // ── Follow ────────────────────────────────────────────────────────────────────
 
 export interface FollowStatusData {

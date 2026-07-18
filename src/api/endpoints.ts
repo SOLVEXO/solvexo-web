@@ -105,6 +105,8 @@ export const ENDPOINTS = {
     // registered before PUBLIC_BY_SLUG on the backend or they'd be swallowed by it.
     PUBLIC_LIST: '/api/store/public',
     PUBLIC_TOP:  '/api/store/public/top',
+    PUBLIC_PLATFORM_STATS: '/api/store/public/platform-stats',
+    PUBLIC_TESTIMONIALS:   '/api/store/public/testimonials',
 
     // Follow
     FOLLOW: (storeId: string) => `/api/store/${storeId}/follow`,
@@ -323,8 +325,9 @@ export const ENDPOINTS = {
   },
 
   PAYMENT: {
-    COD:         '/api/payment/cod-payment',
-    PLACE_ORDER: '/api/payment/place-order',
+    COD:              '/api/payment/cod-payment',
+    INITIATE_PAYMENT: '/api/payment/initiate-payment',
+    STATUS:           '/api/payment/status',
   },
 
   ORDERS: {

@@ -11,9 +11,13 @@ import {
   Star, TrendingUp, BadgeCheck, Crown, UserPlus, UserCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { apiGetTopStores, apiFollowStore, type PublicStoreListItem } from '@/api/services/store';
+import {
+  apiGetTopStores, apiFollowStore, apiGetPlatformStats, apiGetTestimonials,
+  type PublicStoreListItem, type PlatformStats, type Testimonial,
+} from '@/api/services/store';
 
 const compactNumber = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+const compactCurrency = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1, style: 'currency', currency: 'USD' });
 
 // ── Premium store spotlight card — 16:9 cover, overlapping logo, badge stack,
 // rating/followers/products stat row, and Follow + Visit actions. Modeled on
@@ -153,24 +157,18 @@ const FEATURES: { Icon: LucideIcon; title: string; bg: string; desc: string; pat
   { Icon: Sparkles,    title: 'AI Commerce Tools',     bg: '#F5F0FB', desc: 'Write listings, optimize pricing, auto-generate descriptions with built-in AI.',           path: '/sellers'     },
 ];
 
-const TESTIMONIALS = [
-  { name: 'Maria Santos',   role: 'Educator & Seller',      text: 'I went from zero to $8,000/month selling lesson plans. The AI tools are incredible.'               },
-  { name: 'James Kowalski', role: 'Physical Goods Seller',  text: 'The POS + online store combo is exactly what my boutique needed. Setup took an afternoon.'         },
-  { name: 'Priya Nair',     role: 'Digital Creator',        text: 'Solvexo handles everything — my store, downloads, taxes. I just focus on creating.'                },
-];
-
-const STATS = [
-  { value: '50K+',   label: 'Active Sellers'  },
-  { value: '$180M+', label: 'GMV Processed'   },
-  { value: '4.9★',   label: 'Seller Rating'   },
-];
-
 export function Homepage() {
   const navigate = useNavigate();
   usePageTitle('Home');
 
   const [topStores, setTopStores] = useState<PublicStoreListItem[]>([]);
   const [storesLoading, setStoresLoading] = useState(true);
+
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -180,6 +178,30 @@ export function Homepage() {
       .finally(() => { if (!cancelled) setStoresLoading(false); });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetPlatformStats()
+      .then(res => { if (!cancelled) setStats(res.data); })
+      .catch(() => { /* non-critical — stat strip just stays hidden */ })
+      .finally(() => { if (!cancelled) setStatsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetTestimonials(3)
+      .then(res => { if (!cancelled) setTestimonials(res.data); })
+      .catch(() => { /* non-critical — section just stays hidden */ })
+      .finally(() => { if (!cancelled) setTestimonialsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const statItems = stats ? [
+    { value: `${compactNumber.format(stats.sellersCount)}+`, label: 'Active Sellers' },
+    { value: `${compactCurrency.format(stats.gmv)}+`,        label: 'GMV Processed'  },
+    { value: stats.ratingCount > 0 ? `${stats.avgRating.toFixed(1)}★` : '—', label: 'Seller Rating' },
+  ] : [];
 
   return (
     <div className="bg-white min-h-full">
@@ -216,7 +238,7 @@ export function Homepage() {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-start gap-3 mb-8">
-              <Button size="md" onClick={() => navigate('/onboarding')} className="w-full sm:w-auto">
+              <Button size="md" onClick={() => navigate('/onboard')} className="w-full sm:w-auto">
                 Start for Free <ArrowRight size={13} className="inline align-middle ml-1" />
               </Button>
               <button
@@ -227,15 +249,24 @@ export function Homepage() {
               </button>
             </div>
 
-            {/* Stats */}
-            <div className="flex gap-6 sm:gap-8">
-              {STATS.map(({ value, label }) => (
-                <div key={label}>
-                  <p className="text-[20px] sm:text-[22px] font-bold text-brand-orange leading-none">{value}</p>
-                  <p className="text-[10px] sm:text-[11px] text-slate mt-1">{label}</p>
-                </div>
-              ))}
-            </div>
+            {/* Stats — real platform numbers, hidden until they load (no fake placeholders) */}
+            {(statsLoading || statItems.length > 0) && (
+              <div className="flex gap-6 sm:gap-8">
+                {statsLoading
+                  ? Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i}>
+                        <SkeletonBox width={48} height={22} className="mb-1" />
+                        <SkeletonBox width={64} height={11} />
+                      </div>
+                    ))
+                  : statItems.map(({ value, label }) => (
+                      <div key={label}>
+                        <p className="text-[20px] sm:text-[22px] font-bold text-brand-orange leading-none">{value}</p>
+                        <p className="text-[10px] sm:text-[11px] text-slate mt-1">{label}</p>
+                      </div>
+                    ))}
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -320,32 +351,53 @@ export function Homepage() {
         </section>
       )}
 
-      {/* ── Social Proof ─────────────────────────────────────────────────────────── */}
-      <section className="bg-cream border-t border-bone py-10 sm:py-12 lg:py-14">
-        <div className="px-4 sm:px-6 lg:px-12">
-          <p className="text-[11px] font-semibold text-slate text-center uppercase tracking-[0.08em] mb-6">
-            Trusted by creators worldwide
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {TESTIMONIALS.map(t => (
-              <Card key={t.name} padding="none">
-                <div className="p-5">
-                  <p className="text-[13px] text-charcoal leading-[1.75] mb-4 italic">
-                    "{t.text}"
-                  </p>
-                  <div className="flex items-center gap-[10px]">
-                    <Avatar name={t.name} size={30} />
-                    <div>
-                      <p className="text-[13px] font-semibold text-carbon">{t.name}</p>
-                      <p className="text-[11px] text-slate">{t.role}</p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
+      {/* ── Social Proof — real reviews only; section hides itself until there's enough real content ── */}
+      {(testimonialsLoading || testimonials.length > 0) && (
+        <section className="bg-cream border-t border-bone py-10 sm:py-12 lg:py-14">
+          <div className="px-4 sm:px-6 lg:px-12">
+            <p className="text-[11px] font-semibold text-slate text-center uppercase tracking-[0.08em] mb-6">
+              Trusted by creators worldwide
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {testimonialsLoading
+                ? Array.from({ length: 3 }).map((_, i) => (
+                    <Card key={i} padding="none">
+                      <div className="p-5">
+                        <SkeletonBox width="100%" height={13} className="mb-2" />
+                        <SkeletonBox width="80%" height={13} className="mb-4" />
+                        <div className="flex items-center gap-[10px]">
+                          <SkeletonBox width={30} height={30} rounded="999px" />
+                          <div>
+                            <SkeletonBox width={90} height={13} className="mb-1" />
+                            <SkeletonBox width={70} height={11} />
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                : testimonials.map(t => (
+                    <Card key={t.id} padding="none">
+                      <div className="p-5">
+                        <p className="text-[13px] text-charcoal leading-[1.75] mb-4 italic">
+                          "{t.text}"
+                        </p>
+                        <div className="flex items-center gap-[10px]">
+                          <Avatar name={t.name} size={30} />
+                          <div>
+                            <div className="flex items-center gap-[6px]">
+                              <p className="text-[13px] font-semibold text-carbon">{t.name}</p>
+                              {t.isVerifiedPurchase && <BadgeCheck size={13} className="text-[#1A72C2] fill-[#1A72C2]/15 shrink-0" />}
+                            </div>
+                            <p className="text-[11px] text-slate">{t.storeName ? `Bought from ${t.storeName}` : 'Verified buyer'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── CTA ──────────────────────────────────────────────────────────────────── */}
       <section className="bg-brand-orange py-10 sm:py-12 lg:py-14 px-4 sm:px-6 text-center">
@@ -356,7 +408,7 @@ export function Homepage() {
           <p className="text-[13px] sm:text-[14px] text-[rgba(255,255,255,0.85)] mb-6 leading-[1.7]">
             Join 50,000+ sellers on Solvexo. Free to start, no credit card required.
           </p>
-          <Button variant="dark" size="md" onClick={() => navigate('/onboarding')}>
+          <Button variant="dark" size="md" onClick={() => navigate('/onboard')}>
             Create Your Account <ArrowRight size={13} className="inline align-middle ml-1" />
           </Button>
         </div>

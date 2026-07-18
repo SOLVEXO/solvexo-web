@@ -154,7 +154,7 @@ function SidebarStoreSwitcher() {
           </div>
           <div className="h-px bg-charcoal mx-[6px] my-1" />
           <button
-            onClick={() => { setOpen(false); navigate('/onboarding'); }}
+            onClick={() => { setOpen(false); navigate('/onboard'); }}
             className="flex items-center gap-[7px] w-full py-2 px-[10px] rounded-[7px] bg-transparent border-0 cursor-pointer text-[11px] font-semibold text-brand-orange hover:bg-charcoal transition-colors duration-150"
           >
             <Plus size={12} /> New Store

@@ -290,62 +290,29 @@ export function CartPage() {
                 <span className="text-carbon">${(cart?.totalPrice ?? 0).toLocaleString()}</span>
               </div>
 
-              {/* ── Checkout Buttons ── */}
+              {/* ── Checkout ── One order for the whole cart, mixed physical +
+                  digital included — matches Amazon/Alibaba/Shopify/Daraz, and
+                  avoids the old two-button flow's double-checkout/billing bug. */}
               <div className="flex flex-col gap-2">
-
-                {/* Case 1: type not known from API → single general button */}
-                {!typeKnown && (
-                  <Button
-                    variant="primary" fullWidth
-                    className="justify-center! px-5! py-[11px]! rounded-xl!"
-                    onClick={() => navigate('/checkout', { state: { cartType: 'physical' } })}
-                  >
-                    <Package size={15} /> Proceed to Checkout
-                    <ChevronRight size={14} className="ml-auto" />
-                  </Button>
+                {typeKnown && hasPhysical && hasDigital && (
+                  <p className="text-[11px] text-slate text-center -mt-1 mb-1">
+                    {physicalCount} physical · {digitalCount} digital — delivered together
+                  </p>
                 )}
-
-                {/* Physical button */}
-                {hasPhysical && (
-                  <Button
-                    variant="primary" fullWidth
-                    className="justify-between! px-5! py-[11px]! rounded-xl!"
-                    onClick={() => navigate('/checkout', { state: { cartType: 'physical' } })}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Package size={15} />
-                      Checkout Physical
-                    </span>
-                    <span className="flex items-center gap-1 opacity-80 text-[12px]">
-                      {physicalCount} item{physicalCount !== 1 ? 's' : ''}
-                      <ChevronRight size={13} />
-                    </span>
-                  </Button>
-                )}
-
-                {/* Digital button */}
-                {hasDigital && (
-                  <Button
-                    fullWidth
-                    className={clsx(
-                      'justify-between! px-5! py-[11px]! rounded-xl! border-0!',
-                      hasPhysical
-                        ? 'bg-[#3851D1]! text-white! hover:bg-[#2E42B0]!'
-                        : 'bg-brand-orange! text-white! hover:bg-brand-deep-orange!',
-                    )}
-                    onClick={() => navigate('/checkout', { state: { cartType: 'digital' } })}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Download size={15} />
-                      Get Digital Products
-                    </span>
-                    <span className="flex items-center gap-1 opacity-80 text-[12px]">
-                      {digitalCount} item{digitalCount !== 1 ? 's' : ''}
-                      <ChevronRight size={13} />
-                    </span>
-                  </Button>
-                )}
-
+                <Button
+                  variant="primary" fullWidth
+                  className="justify-between! px-5! py-[11px]! rounded-xl!"
+                  onClick={() => navigate('/checkout')}
+                >
+                  <span className="flex items-center gap-2">
+                    <Package size={15} />
+                    Proceed to Checkout
+                  </span>
+                  <span className="flex items-center gap-1 opacity-80 text-[12px]">
+                    {cartCount} item{cartCount !== 1 ? 's' : ''}
+                    <ChevronRight size={13} />
+                  </span>
+                </Button>
               </div>
 
               <Button

@@ -664,7 +664,11 @@ function HoverMegaTrigger({ trigger, panel, panelAlign = 'left' }: {
       onMouseEnter={() => { clearCloseTimer(); setOpen(true); }}
       onMouseLeave={scheduleClose}
     >
-      {trigger(open)}
+      {/* Tap-to-toggle wrapper — onMouseEnter/Leave alone never fires on touch devices,
+          so without this, mobile/tablet users have no way to open the panel at all. */}
+      <div onClick={() => setOpen(o => !o)}>
+        {trigger(open)}
+      </div>
       <div
         className={clsx(
           'absolute top-[calc(100%+10px)] z-50 transition-all duration-200 origin-top',

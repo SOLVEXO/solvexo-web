@@ -36,7 +36,7 @@ export function OTPInput({ values, onChange, length = 6 }: OTPInputProps) {
 
   return (
     <div>
-      <div role="group" aria-label={`${length}-digit verification code`} className="flex gap-[10px] sm:gap-3 justify-center mb-3">
+      <div role="group" aria-label={`${length}-digit verification code`} className="flex gap-2 sm:gap-3 justify-center mb-3">
         {values.map((val, i) => (
           <input key={i}
             ref={el => { refs.current[i] = el; }}
