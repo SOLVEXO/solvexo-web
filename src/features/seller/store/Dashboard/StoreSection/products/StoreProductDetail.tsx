@@ -139,7 +139,9 @@ export default function StoreProductDetail() {
   if (!entry) return null;
 
   const { product: p, variant: v } = entry;
-  const isDigital = p.productType === 'digital';
+  const isPhysical = p.productType === 'physical';
+  const isDigital  = !isPhysical;
+  const typeLabel  = isPhysical ? 'Physical' : p.productType === 'educational' ? 'Educational' : 'Digital';
   const discountPct = v.compareAtPrice != null && v.compareAtPrice > v.price
     ? Math.round(((v.compareAtPrice - v.price) / v.compareAtPrice) * 100)
     : null;
@@ -192,7 +194,7 @@ export default function StoreProductDetail() {
                     <StatusBadge status={p.status} />
                     <span className="text-[11px] text-slate flex items-center gap-1">
                       {isDigital ? <Download size={11} /> : <Package size={11} />}
-                      {isDigital ? 'Digital' : 'Physical'} Product
+                      {typeLabel} Product
                     </span>
                   </div>
                 </div>
@@ -248,7 +250,7 @@ export default function StoreProductDetail() {
               <InfoRow label="Product Type" value={
                 <span className="flex items-center gap-1.5 justify-end">
                   {isDigital ? <Download size={12} className="text-brand-orange" /> : <Package size={12} className="text-brand-orange" />}
-                  {isDigital ? 'Digital Download' : 'Physical Product'}
+                  {typeLabel}{isPhysical ? ' Product' : ' Download'}
                 </span>
               } />
               <InfoRow label="Category"    value={p.categoryId || '—'} />

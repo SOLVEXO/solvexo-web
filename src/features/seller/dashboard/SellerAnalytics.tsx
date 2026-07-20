@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Store } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
@@ -7,23 +6,15 @@ import { useActiveStore } from '@/contexts/ActiveStoreContext';
 import { SellerAnalyticsView } from '@/features/seller/components/analytics/SellerAnalyticsView';
 
 /**
- * Top-level (not store-scoped-by-URL) analytics entry point. The seller analytics
- * backend is always scoped to exactly one store, so this page resolves "which
+ * Top-level (not store-scoped-by-URL) analytics entry point. Resolves "which
  * store" via the app-wide `useActiveStore()` context (the same store switcher the
- * seller sidebar already uses) instead of a URL param — defaulting to the seller's
- * first store, with a dropdown to switch when they have more than one.
+ * seller sidebar already uses) instead of a URL param — including its "All Stores"
+ * option (`activeStoreId === 'all'`), which now aggregates across every store the
+ * seller owns instead of picking one (the seller analytics backend supports both).
  */
 export function SellerAnalytics() {
   usePageTitle('Analytics');
-  const { stores, activeStoreId, activeStore, loading, switchStore } = useActiveStore();
-
-  // "All stores" has no meaning for this backend (every endpoint requires one storeId) —
-  // fall back to the first real store the moment we know the seller has any.
-  useEffect(() => {
-    if (!loading && activeStoreId === 'all' && stores.length > 0) {
-      switchStore(stores[0]._id);
-    }
-  }, [loading, activeStoreId, stores, switchStore]);
+  const { stores, activeStoreId, loading, switchStore } = useActiveStore();
 
   if (loading) {
     return (
@@ -52,17 +43,17 @@ export function SellerAnalytics() {
     );
   }
 
-  const storeId = activeStore?._id ?? stores[0]._id;
+  const storeId = activeStoreId === 'all' ? null : activeStoreId;
 
   return (
     <>
       <SellerPageHeader
         title="Analytics"
-        subtitle="Understand your store performance and growth trends."
+        subtitle={storeId ? 'Understand your store performance and growth trends.' : 'Combined performance and growth trends across every store you own.'}
         actions={stores.length > 1 ? (
           <FilterDropdown
-            options={stores.map(s => ({ value: s._id, label: s.name }))}
-            value={storeId}
+            options={[{ value: 'all', label: 'All Stores' }, ...stores.map(s => ({ value: s._id, label: s.name }))]}
+            value={activeStoreId}
             onChange={switchStore}
           />
         ) : undefined}

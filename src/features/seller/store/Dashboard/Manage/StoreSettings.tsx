@@ -7,13 +7,14 @@ import { ImageUpload } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 
 const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
-  physical_products: 'Physical Products',
-  digital_downloads: 'Digital Downloads',
-  services:          'Services',
-  in_person_pos:     'In-Person / POS',
+  physical_products:     'Physical Products',
+  digital_downloads:     'Digital Downloads',
+  educational_resources: 'Educational Resources',
+  services:              'Services',
+  in_person_pos:          'In-Person / POS',
 };
 const ALL_PRODUCT_TYPES: ProductType[] = [
-  'physical_products', 'digital_downloads', 'services', 'in_person_pos',
+  'physical_products', 'digital_downloads', 'educational_resources', 'services', 'in_person_pos',
 ];
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────

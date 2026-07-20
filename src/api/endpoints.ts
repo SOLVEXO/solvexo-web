@@ -247,6 +247,8 @@ export const ENDPOINTS = {
     EDIT_PRODUCT: '/api/products/edit-product',
     GET_MY_ALL_PRODUCT: (id: string) => `/api/inventory/getStoreInventory/${id}`,
     GET_MY_PRODUCT_BY_ID: (id: string) => `/api/products/get-my-product/${id}`,
+    EDUCATION_FACETS: '/api/products/education/facets',
+    EDUCATION_CUSTOM_LEVEL_SUGGESTIONS: '/api/products/education/custom-level-suggestions',
   },
 
   // ── MARKETPLACE ───────────────────────────────────────────────────────────
@@ -260,7 +262,13 @@ export const ENDPOINTS = {
       LISTINGS: '/api/admin/marketplace/listings',
       FEATURE:  (id: string) => `/api/admin/marketplace/listings/${id}/feature`,
       REMOVE:   (id: string) => `/api/admin/marketplace/listings/${id}/remove`,
+      SET_STORE_BADGE: (storeId: string) => `/api/admin/marketplace/stores/${storeId}/badge`,
     },
+  },
+
+  // ── AI STUDIO (public trial) ───────────────────────────────────────────────
+  AI_STUDIO_PUBLIC: {
+    WORKSHEET_TRY_FREE: '/api/public/worksheet-builder/try-free',
   },
 
   // ── SEARCH ────────────────────────────────────────────────────────────────
@@ -322,6 +330,7 @@ export const ENDPOINTS = {
 
   SELLER_ACCOUNT: {
     GET_SELLER_ORDERS: (id: string) => `/api/orders/seller-orders/${id}`,
+    GET_MY_SELLER_ORDERS: '/api/orders/seller-orders/my',
   },
 
   PAYMENT: {

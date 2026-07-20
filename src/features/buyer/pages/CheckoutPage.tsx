@@ -536,10 +536,10 @@ export function CheckoutPage() {
                     <div className="flex flex-col gap-3">
                       <div className="flex items-start gap-2 text-[13px] text-slate">
                         <AlertCircle size={14} className="mt-[2px] flex-shrink-0" />
-                        No saved addresses. Please add one from your profile.
+                        No saved addresses. Please add one first.
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => navigate('/account/profile')}>
-                        Go to Profile
+                      <Button variant="ghost" size="sm" onClick={() => navigate('/account/addresses')}>
+                        Go to Addresses
                       </Button>
                     </div>
                   ) : (
@@ -615,7 +615,7 @@ export function CheckoutPage() {
                             <div className="border-t border-bone px-4 py-2">
                               <button
                                 type="button"
-                                onClick={() => navigate('/account/profile')}
+                                onClick={() => navigate('/account/addresses')}
                                 className="text-[12px] text-brand-orange font-medium cursor-pointer"
                               >
                                 + Add new address

@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import { Search, ScanLine, ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
+import { Search, ScanLine, ChevronLeft, ChevronRight, ImageOff, X, RotateCcw, PackageSearch, Pause } from 'lucide-react';
 import { useState } from 'react';
 import type { CartItem, POSSaleState } from '../../pos.types';
 
@@ -14,7 +14,7 @@ const BARCODE_PATTERN = /^\d{6,}$/;
 
 export function ProductGrid({ sale }: ProductGridProps) {
   const {
-    products, productsLoading, productsError,
+    products, productsLoading, productsError, reloadProducts,
     searchQuery, setSearchQuery, page, totalPages, setPage,
     lookupBarcode, barcodeError,
     cart, addItem,
@@ -32,50 +32,79 @@ export function ProductGrid({ sale }: ProductGridProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-[420px] lg:min-h-0 lg:overflow-hidden lg:border-r border-carbon">
+    <div className="flex-1 flex flex-col min-h-[420px] lg:min-h-0 lg:overflow-hidden lg:border-r border-pos-border bg-pos-bg">
 
       {/* Search bar */}
-      <div className="flex flex-col gap-1 px-4 py-3 bg-pos-surface border-b border-carbon shrink-0">
-        <div className="flex items-center bg-carbon rounded-lg overflow-hidden transition-shadow duration-200 focus-within:shadow-md">
-          <Search size={13} className="ml-3 shrink-0 text-pos-faint" />
+      <div className="flex flex-col gap-[6px] px-4 sm:px-5 py-4 bg-pos-surface-2 border-b border-pos-border shrink-0">
+        <div className={clsx(
+          'flex items-center h-[52px] bg-pos-surface rounded-2xl border overflow-hidden',
+          'transition-[box-shadow,border-color] duration-200',
+          'focus-within:border-brand-orange/50 focus-within:shadow-[0_0_0_4px_rgba(217,119,87,0.12)]',
+          barcodeError ? 'border-error/50' : 'border-pos-border',
+        )}>
+          <Search size={17} className="ml-4 shrink-0 text-pos-faint" />
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
             placeholder="Search products, or scan a barcode…"
-            className="flex-1 px-3 py-[10px] text-[13px] bg-transparent border-0 outline-none text-white"
+            className="flex-1 px-3 py-[10px] text-[15px] bg-transparent border-0 outline-none text-white placeholder:text-pos-muted min-w-0"
           />
-          <ScanLine size={13} className="mr-3 shrink-0 text-pos-muted" />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
+              className="w-11 h-11 shrink-0 flex items-center justify-center bg-transparent border-0 cursor-pointer text-pos-faint hover:text-white transition-colors"
+            >
+              <X size={16} />
+            </button>
+          )}
+          <div className="w-px h-6 bg-pos-border shrink-0" />
+          <div className="w-11 h-11 shrink-0 flex items-center justify-center text-pos-muted" title="Barcode scanner ready">
+            <ScanLine size={17} />
+          </div>
         </div>
-        {barcodeError && <span className="text-[11px] text-error px-1">{barcodeError}</span>}
+        {barcodeError && <span className="text-[12px] text-error px-1">{barcodeError}</span>}
       </div>
 
       {/* Product cards grid */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-5">
         {productsLoading ? (
-          <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(140px,1fr))]">
+          <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="h-[168px] rounded-xl bg-pos-surface border border-charcoal animate-pulse" />
+              <div key={i} className="rounded-2xl border border-pos-border overflow-hidden">
+                <div className="pos-skeleton aspect-square" />
+                <div className="p-3 flex flex-col gap-2">
+                  <div className="pos-skeleton h-[10px] w-4/5 rounded-full" />
+                  <div className="pos-skeleton h-[14px] w-2/5 rounded-full" />
+                </div>
+              </div>
             ))}
           </div>
         ) : productsError ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-carbon border border-charcoal flex items-center justify-center mb-4 shrink-0">
-              <ImageOff size={28} className="text-error" />
+            <div className="w-[72px] h-[72px] rounded-3xl bg-gradient-to-br from-[#2A1A1A] to-pos-surface-2 border border-error/25 flex items-center justify-center mb-5 shrink-0">
+              <ImageOff size={30} className="text-error" />
             </div>
-            <p className="text-[13px] font-semibold text-white mb-1">Failed to load products</p>
-            <p className="text-[12px] text-pos-muted max-w-[280px] leading-[1.5]">{productsError}</p>
+            <p className="text-[15px] font-bold text-white mb-1">Failed to load products</p>
+            <p className="text-[13px] text-pos-muted max-w-[300px] leading-[1.5] mb-5">{productsError}</p>
+            <button
+              onClick={reloadProducts}
+              className="inline-flex items-center gap-[7px] h-11 px-5 rounded-xl bg-pos-surface-2 border border-pos-border-strong text-[13px] font-semibold text-white cursor-pointer transition-all duration-150 hover:bg-pos-surface-3 active:scale-[0.97]"
+            >
+              <RotateCcw size={14} /> Try Again
+            </button>
           </div>
         ) : products.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-carbon border border-charcoal flex items-center justify-center mb-4 shrink-0">
-              <Search size={28} className="text-pos-muted" />
+            <div className="w-[72px] h-[72px] rounded-3xl bg-gradient-to-br from-pos-surface-3 to-pos-surface-2 border border-pos-border-strong flex items-center justify-center mb-5 shrink-0">
+              <PackageSearch size={30} className="text-pos-muted" />
             </div>
-            <p className="text-[13px] font-semibold text-white mb-1">No products found</p>
-            <p className="text-[12px] text-pos-muted">Try a different search term.</p>
+            <p className="text-[15px] font-bold text-white mb-1">No products found</p>
+            <p className="text-[13px] text-pos-muted">Try a different search term.</p>
           </div>
         ) : (
-          <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(140px,1fr))]">
+          <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
             {products.map(p => (
               <ProductCard
                 key={p.productId}
@@ -90,44 +119,46 @@ export function ProductGrid({ sale }: ProductGridProps) {
 
       {/* Pagination */}
       {!searchQuery && totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 px-4 py-[10px] bg-pos-surface border-t border-carbon shrink-0">
+        <div className="flex items-center justify-center gap-3 px-4 py-3 bg-pos-surface-2 border-t border-pos-border shrink-0">
           <button
             onClick={() => setPage(Math.max(1, page - 1))}
             disabled={page <= 1}
-            className="w-9 h-9 rounded-lg bg-carbon border-0 text-white cursor-pointer flex items-center justify-center transition-transform duration-100 active:scale-90 disabled:opacity-30 disabled:active:scale-100"
+            className="w-11 h-11 rounded-xl bg-pos-surface border border-pos-border text-white cursor-pointer flex items-center justify-center transition-all duration-150 hover:bg-pos-surface-3 active:scale-90 disabled:opacity-30 disabled:hover:bg-pos-surface disabled:active:scale-100"
           >
-            <ChevronLeft size={14} />
+            <ChevronLeft size={17} />
           </button>
-          <span className="text-[11px] text-pos-muted">Page {page} of {totalPages}</span>
+          <span className="text-[12.5px] font-medium text-pos-faint px-2 min-w-[92px] text-center">Page {page} of {totalPages}</span>
           <button
             onClick={() => setPage(Math.min(totalPages, page + 1))}
             disabled={page >= totalPages}
-            className="w-9 h-9 rounded-lg bg-carbon border-0 text-white cursor-pointer flex items-center justify-center transition-transform duration-100 active:scale-90 disabled:opacity-30 disabled:active:scale-100"
+            className="w-11 h-11 rounded-xl bg-pos-surface border border-pos-border text-white cursor-pointer flex items-center justify-center transition-all duration-150 hover:bg-pos-surface-3 active:scale-90 disabled:opacity-30 disabled:hover:bg-pos-surface disabled:active:scale-100"
           >
-            <ChevronRight size={14} />
+            <ChevronRight size={17} />
           </button>
         </div>
       )}
 
       {/* Held sales bar */}
       {(heldSales.length > 0 || heldSalesLoading) && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-pos-surface border-t border-carbon shrink-0 overflow-x-auto">
-          <span className="text-[11px] shrink-0 text-pos-muted">On Hold:</span>
+        <div className="flex items-center gap-[10px] px-4 py-3 bg-pos-surface-2 border-t border-pos-border shrink-0 overflow-x-auto scrollbar-hide">
+          <span className="flex items-center gap-[6px] text-[12px] font-semibold shrink-0 text-warning">
+            <Pause size={12} className="fill-warning" /> On Hold
+          </span>
           {heldSales.map(h => (
-            <div key={h._id} className="flex items-center gap-2 pl-[14px] pr-2 py-[6px] bg-carbon rounded-lg shrink-0 transition-shadow duration-150 hover:shadow-sm">
+            <div key={h._id} className="flex items-center gap-[10px] pl-[4px] pr-[6px] py-[6px] min-h-11 bg-pos-surface rounded-xl border border-pos-border shrink-0 transition-all duration-150 hover:border-pos-border-strong">
               <button
                 onClick={() => resumeHeldSale(h)}
-                className="bg-transparent border-0 cursor-pointer flex items-center gap-2 transition-transform duration-100 active:scale-95"
+                className="flex items-center gap-[10px] bg-transparent border-0 cursor-pointer pl-[10px] transition-transform duration-100 active:scale-95"
               >
-                <span className="text-[11px] font-medium text-white">{h.customerName}</span>
-                <span className="text-[11px] text-brand-orange">${h.total.toFixed(2)}</span>
+                <span className="text-[12.5px] font-medium text-white">{h.customerName}</span>
+                <span className="text-[12.5px] font-bold text-brand-orange">${h.total.toFixed(2)}</span>
               </button>
               <button
                 onClick={() => discardHeldSale(h._id)}
-                className="text-[13px] leading-none bg-transparent border-0 cursor-pointer text-[#6A6862] p-[6px] -m-[6px] rounded-md transition-transform duration-100 active:scale-90"
+                className="w-9 h-9 shrink-0 flex items-center justify-center leading-none bg-transparent border-0 cursor-pointer text-pos-faint hover:text-error rounded-lg transition-colors duration-150"
                 title="Discard held sale"
               >
-                ×
+                <X size={15} />
               </button>
             </div>
           ))}
@@ -154,19 +185,32 @@ function ProductCard({
 
   const inCartQty = cartQtyFor(variant.variantId);
   const outOfStock = variant.stock <= 0;
+  const lowStock = !outOfStock && variant.stock <= 8;
 
   return (
     <div
       className={clsx(
-        'relative flex flex-col items-center px-4 py-5 rounded-xl text-center bg-pos-surface border shadow-xs hover:shadow-md transition-all duration-200',
-        inCartQty > 0 ? 'border-brand-orange' : 'border-charcoal',
+        'group relative flex flex-col rounded-2xl overflow-hidden bg-pos-surface border pos-surface-hover',
+        inCartQty > 0 ? 'border-brand-orange shadow-[0_0_0_3px_rgba(217,119,87,0.15)]' : 'border-pos-border',
       )}
     >
+      {/* In-cart quantity badge */}
       {inCartQty > 0 && (
-        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-brand-orange text-white text-[11px] font-bold flex items-center justify-center shadow-sm">
+        <div className="absolute top-2 left-2 z-[1] w-7 h-7 rounded-full bg-gradient-to-br from-brand-orange to-brand-deep-orange text-white text-[12px] font-bold flex items-center justify-center shadow-[0_2px_8px_rgba(217,119,87,0.5)]">
           {inCartQty}
         </div>
       )}
+
+      {/* Stock status badge */}
+      {outOfStock ? (
+        <span className="absolute top-2 right-2 z-[1] px-[8px] py-[3px] rounded-full bg-error/90 backdrop-blur-sm text-white text-[9.5px] font-bold">
+          Out of stock
+        </span>
+      ) : lowStock ? (
+        <span className="absolute top-2 right-2 z-[1] px-[8px] py-[3px] rounded-full bg-warning/90 backdrop-blur-sm text-white text-[9.5px] font-bold">
+          Low: {variant.stock}
+        </span>
+      ) : null}
 
       <button
         onClick={() => !outOfStock && onAdd({
@@ -180,45 +224,52 @@ function ProductCard({
         })}
         disabled={outOfStock}
         className={clsx(
-          'flex flex-col items-center w-full bg-transparent border-0 transition-transform duration-100',
-          outOfStock ? 'cursor-not-allowed opacity-45' : 'cursor-pointer active:scale-[0.96]',
+          'flex flex-col w-full bg-transparent border-0 text-left transition-transform duration-100',
+          outOfStock ? 'cursor-not-allowed' : 'cursor-pointer active:scale-[0.98]',
         )}
       >
-        <div className="w-16 h-16 mb-3 flex items-center justify-center shrink-0 rounded-lg overflow-hidden bg-carbon">
+        <div className={clsx('aspect-square w-full shrink-0 overflow-hidden bg-pos-surface-2', outOfStock && 'grayscale opacity-50')}>
           {product.image ? (
-            <img loading="lazy" decoding="async" src={product.image} alt={product.name} className="w-full h-full object-cover" />
+            <img
+              loading="lazy" decoding="async" src={product.image} alt={product.name}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+            />
           ) : (
-            <ImageOff size={22} className="text-pos-muted" />
+            <div className="w-full h-full flex items-center justify-center">
+              <ImageOff size={26} className="text-pos-muted" />
+            </div>
           )}
         </div>
 
-        <span className="block text-[12px] font-semibold text-white leading-[1.35] mb-1 break-words">
-          {product.name}
-        </span>
-        <span className="block text-[10px] mb-2 text-pos-muted">{variant.sku}</span>
-        <span className={clsx('block text-[15px] font-bold', outOfStock ? 'text-pos-muted' : 'text-brand-orange')}>
-          ${variant.price.toFixed(2)}
-        </span>
-
-        {!outOfStock && variant.stock <= 8 && (
-          <span className="block text-[10px] mt-1 text-warning">Low: {variant.stock} left</span>
-        )}
-        {outOfStock && <span className="block text-[10px] mt-1 text-error">Out of stock</span>}
+        <div className="px-3 pt-[10px] pb-3 flex flex-col gap-[2px]">
+          <span className="block text-[12.5px] font-semibold text-white leading-[1.35] line-clamp-2 min-h-[34px]">
+            {product.name}
+          </span>
+          <span className="block text-[10px] text-pos-muted mb-[2px]">{variant.sku}</span>
+          <span className={clsx('block text-[17px] font-bold', outOfStock ? 'text-pos-muted' : 'text-brand-orange')}>
+            ${variant.price.toFixed(2)}
+          </span>
+        </div>
       </button>
 
       {variants.length > 1 && (
-        <select
-          value={selectedId}
-          onChange={e => setSelectedId(e.target.value)}
-          onClick={e => e.stopPropagation()}
-          className="mt-3 w-full bg-carbon border-0 rounded-md px-2 py-[6px] text-[10px] text-white outline-none"
-        >
-          {variants.map(v => (
-            <option key={v.variantId} value={v.variantId}>
-              {[v.size, v.color].filter(Boolean).join(' / ') || v.sku}
-            </option>
-          ))}
-        </select>
+        <div className="px-3 pb-3 -mt-1">
+          <div className="relative">
+            <select
+              value={selectedId}
+              onChange={e => setSelectedId(e.target.value)}
+              onClick={e => e.stopPropagation()}
+              className="w-full h-11 appearance-none bg-pos-surface-2 border border-pos-border rounded-xl pl-3 pr-8 text-[12px] font-medium text-white outline-none cursor-pointer transition-colors duration-150 hover:border-pos-border-strong"
+            >
+              {variants.map(v => (
+                <option key={v.variantId} value={v.variantId}>
+                  {[v.size, v.color].filter(Boolean).join(' / ') || v.sku}
+                </option>
+              ))}
+            </select>
+            <ChevronRight size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-pos-faint" />
+          </div>
+        </div>
       )}
     </div>
   );

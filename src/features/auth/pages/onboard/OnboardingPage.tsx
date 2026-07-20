@@ -36,7 +36,7 @@ const SELLER_TYPES: { id: SellerType; Icon: React.ElementType; title: string; de
 const PRODUCT_TYPES: { id: ProductType; Icon: React.ElementType; title: string; desc: string }[] = [
   { id: 'physical_products', Icon: Package,           title: 'Physical Products',     desc: 'Ship items to customers' },
   { id: 'digital_downloads', Icon: Download,          title: 'Digital Downloads',     desc: 'PDFs, files, audio, video' },
-  { id: 'digital_downloads', Icon: BookOpen,          title: 'Educational Resources', desc: 'Worksheets, lesson plans' },
+  { id: 'educational_resources', Icon: BookOpen,      title: 'Educational Resources', desc: 'Worksheets, lesson plans' },
   { id: 'services',          Icon: Calendar,          title: 'Services / Bookings',   desc: 'Appointments and packages' },
   { id: 'services',          Icon: Repeat,            title: 'Subscriptions',         desc: 'Recurring membership access' },
   { id: 'in_person_pos',     Icon: MonitorSmartphone, title: 'In-Person / POS',       desc: 'Sell at a physical location' },
@@ -316,7 +316,8 @@ function Step3({ form, setForm, onNext, onBack, loading, error }: {
             <p className="text-[13px] font-semibold text-brand-deep-orange mb-[6px]">We'll activate these tools for you:</p>
             <div className="flex gap-[6px] flex-wrap">
               {form.productTypes.includes('physical_products') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Inventory Manager</span>}
-              {form.productTypes.includes('digital_downloads') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Digital Delivery</span>}
+              {form.productTypes.includes('digital_downloads')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Digital Delivery</span>}
+              {form.productTypes.includes('educational_resources') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">AI Worksheet Builder</span>}
               {form.productTypes.includes('in_person_pos')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">POS Register</span>}
               {form.productTypes.includes('services')          && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Bookings</span>}
               <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">AI Studio</span>

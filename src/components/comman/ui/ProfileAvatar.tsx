@@ -157,9 +157,9 @@ function DropdownMenu({
         {hasBuyer && (
           <MenuItem
             icon={User}
-            label="My Profile"
-            sublabel="Account settings"
-            onClick={() => onNavigate('/account/profile')}
+            label="My Account"
+            sublabel="Dashboard & settings"
+            onClick={() => onNavigate('/account/dashboard')}
           />
         )}
         {hasBuyer && (
@@ -167,7 +167,7 @@ function DropdownMenu({
             icon={ShoppingBag}
             label="My Orders"
             sublabel="Track your purchases"
-            onClick={() => onNavigate('/account/profile?tab=orders')}
+            onClick={() => onNavigate('/account/orders')}
           />
         )}
         {hasDash && (

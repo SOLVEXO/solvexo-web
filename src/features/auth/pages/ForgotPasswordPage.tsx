@@ -57,7 +57,7 @@ export function ForgotPasswordPage() {
         <Input
           id="forgot-email"
           label="Email Address"
-          type="email" placeholder="you@example.com" autoComplete="email"
+          type="email" placeholder="Enter Your Email Address" autoComplete="email"
           value={values.email} onChange={set('email')} onBlur={blur('email')}
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
           error={errors.email}

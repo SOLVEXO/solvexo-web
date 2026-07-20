@@ -1,0 +1,128 @@
+import { useState } from 'react';
+import { clsx } from 'clsx';
+import { useNavigate } from 'react-router-dom';
+import { Shield, Check, Loader2, KeyRound, Mail } from 'lucide-react';
+import { useGetProfile } from '@/hooks/auth/useGetProfile';
+import { apiChangePassword } from '@/api/services/users';
+import { Card, PageHeader, Badge, SkeletonBox } from '@/components/comman/ui';
+
+const INPUT_CLS = 'w-full py-[10px] px-[13px] text-[13px] border border-bone rounded-[9px] outline-none text-charcoal bg-white box-border focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 transition-colors';
+const LABEL_CLS = 'text-[12px] font-medium text-graphite mb-[6px] block';
+
+export function Security() {
+  const navigate = useNavigate();
+  const { profile, loading } = useGetProfile();
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState(false);
+
+  const handleChangePassword = async () => {
+    setPwError(''); setPwSuccess(false);
+    if (!currentPassword || !newPassword) { setPwError('Please fill in both password fields.'); return; }
+    setPwSaving(true);
+    try {
+      await apiChangePassword({ currentPassword, newPassword });
+      setPwSuccess(true);
+      setCurrentPassword(''); setNewPassword('');
+    } catch (err) {
+      setPwError(err instanceof Error ? err.message : 'Failed to change password');
+    } finally {
+      setPwSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      <PageHeader
+        eyebrow="Account"
+        title="Login & Security"
+        description="Manage your password and keep your account protected."
+      />
+
+      <Card padding="none" className="rounded-2xl overflow-hidden">
+        <div className="px-6 py-5 bg-gradient-to-br from-brand-pale-orange/60 to-cream flex items-center gap-3 border-b border-bone">
+          <div className="w-10 h-10 rounded-[10px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
+            <Mail size={16} className="text-brand-orange" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-bold text-charcoal">Email Verification</p>
+            {loading ? (
+              <SkeletonBox width={140} height={11} className="mt-1" />
+            ) : (
+              <p className="text-[11.5px] text-slate mt-[2px] truncate">{profile?.email ?? '—'}</p>
+            )}
+          </div>
+          {!loading && (
+            <Badge color={profile?.isVerified ? 'green' : 'gray'} size="sm">
+              {profile?.isVerified ? (<><Check size={9} className="mr-[2px]" /> Verified</>) : 'Unverified'}
+            </Badge>
+          )}
+        </div>
+
+        <div className="p-6">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-8 h-8 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0">
+              <KeyRound size={14} className="text-brand-orange" />
+            </div>
+            <p className="text-[13px] font-bold text-charcoal">Change Password</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className={LABEL_CLS}>Current Password</label>
+              <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className={INPUT_CLS} />
+            </div>
+            <div>
+              <label className={LABEL_CLS}>New Password</label>
+              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className={INPUT_CLS} />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-[#F0EDE5]">
+            <button
+              onClick={handleChangePassword}
+              disabled={pwSaving}
+              className={clsx(
+                'mt-4 px-6 py-[11px] bg-brand-orange border-none rounded-[10px] text-[13px] font-semibold text-white flex items-center gap-2',
+                pwSaving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-brand-deep-orange transition-colors',
+              )}
+            >
+              {pwSaving && <Loader2 size={13} className="animate-spin" />}
+              {pwSaving ? 'Updating…' : 'Update Password'}
+            </button>
+            {pwSuccess && <span className="text-[11px] text-success font-medium mt-4">Password changed successfully</span>}
+            {pwError && <span className="text-[11px] text-error font-medium mt-4">{pwError}</span>}
+          </div>
+        </div>
+      </Card>
+
+      <Card padding="none" className="rounded-2xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-bone flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0">
+            <Shield size={14} className="text-brand-orange" />
+          </div>
+          <p className="text-[13px] font-bold text-charcoal">Security Overview</p>
+        </div>
+        <div className="p-6 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[12.5px] text-graphite">Password protection</span>
+            <Badge color="green" size="sm" dot>Active</Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[12.5px] text-graphite">Email verification</span>
+            <Badge color={profile?.isVerified ? 'green' : 'gray'} size="sm" dot>{profile?.isVerified ? 'Verified' : 'Unverified'}</Badge>
+          </div>
+          <p className="text-[11px] text-slate leading-relaxed mt-1">
+            Need to remove your account entirely? Manage account deletion from{' '}
+            <button onClick={() => navigate('/account/settings')} className="text-brand-orange font-medium bg-transparent border-none cursor-pointer p-0 underline">
+              Settings
+            </button>.
+          </p>
+        </div>
+      </Card>
+    </div>
+  );
+}

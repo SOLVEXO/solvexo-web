@@ -60,7 +60,7 @@ interface TableProps<T = Record<string, unknown>> {
 
 const TH =
   'text-left text-[11px] font-semibold text-slate uppercase tracking-[0.05em] ' +
-  'px-4 py-[10px] whitespace-nowrap';
+  'px-5 py-[12px] whitespace-nowrap';
 
 export function Table<T = Record<string, unknown>>({
   columns, data, keyExtractor, onRowClick, pagination, className,
@@ -106,7 +106,7 @@ export function Table<T = Record<string, unknown>>({
       )}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[13px]">
-          <thead>
+          <thead className="sticky top-0 z-[1]">
             <tr className="border-y border-bone bg-cream">
               {selectable && (
                 <th className={clsx(TH, 'w-[40px]')}>
@@ -160,10 +160,10 @@ export function Table<T = Record<string, unknown>>({
               Array.from({ length: loadingRows }).map((_, i) => (
                 <tr key={`skeleton-${i}`} className={clsx(i < loadingRows - 1 && 'border-b border-[#F0EEE6]')}>
                   {selectable && (
-                    <td className="px-4 py-[13px]"><SkeletonBox width={16} height={16} rounded="4px" /></td>
+                    <td className="px-5 py-[14px]"><SkeletonBox width={16} height={16} rounded="4px" /></td>
                   )}
                   {columns.map(col => (
-                    <td key={col.key} className="px-4 py-[13px]">
+                    <td key={col.key} className="px-5 py-[14px]">
                       <SkeletonBox height={14} rounded="4px" className="w-full max-w-[160px]" />
                     </td>
                   ))}
@@ -191,12 +191,12 @@ export function Table<T = Record<string, unknown>>({
                   className={clsx(
                     i < data.length - 1 && 'border-b border-[#F0EEE6]',
                     onRowClick && 'cursor-pointer',
-                    'transition-colors duration-100 hover:bg-cream',
+                    'transition-colors duration-150 hover:bg-cream',
                   )}
                   onClick={() => onRowClick?.(row)}
                 >
                   {selectable && (
-                    <td className="px-4 py-[13px]" onClick={e => e.stopPropagation()}>
+                    <td className="px-5 py-[14px]" onClick={e => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         className="accent-brand-orange cursor-pointer"
@@ -210,7 +210,7 @@ export function Table<T = Record<string, unknown>>({
                     <td
                       key={col.key}
                       className={clsx(
-                        'px-4 py-[13px] text-carbon',
+                        'px-5 py-[14px] text-carbon',
                         col.align === 'right'  && 'text-right',
                         col.align === 'center' && 'text-center',
                       )}

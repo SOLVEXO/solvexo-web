@@ -205,7 +205,7 @@ function WishlistButton() {
   const { wishlistCount } = useWishlistContext();
   return (
     <button
-      onClick={() => navigate('/account/profile?tab=wishlist')}
+      onClick={() => navigate('/account/wishlist')}
       aria-label={`Wishlist${wishlistCount > 0 ? ` (${wishlistCount} items)` : ''}`}
       className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer shrink-0 transition-transform hover:scale-105 outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 focus-visible:ring-offset-1"
     >

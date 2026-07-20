@@ -107,6 +107,7 @@ function Pipe() {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export function ReferenceNav() {
+  const navigate = useNavigate();
   const { pathname } = useLocation();
   const { profile } = useGetProfile();
 
@@ -129,7 +130,14 @@ export function ReferenceNav() {
       borderBottom: '1px solid #1E1C1A',
     }}>
       {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 4, flexShrink: 0 }}>
+      <button
+        onClick={() => navigate('/')}
+        title="Go to Home"
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6, marginRight: 4, flexShrink: 0,
+          background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+        }}
+      >
         <div style={{
           width: 24, height: 24, borderRadius: 6, background: '#D97757',
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -139,7 +147,7 @@ export function ReferenceNav() {
         <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: "'Poppins', sans-serif" }}>
           Solvex<span style={{ color: '#D97757' }}>o</span>
         </span>
-      </div>
+      </button>
 
       <Pipe />
 

@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { clsx } from 'clsx';
-import { Pin, PinOff, Bell, BellOff, Archive, ArchiveRestore, Ban, Flag, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Pin, PinOff, Bell, BellOff, Archive, ArchiveRestore, Ban, Flag, Trash2, Package } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -9,20 +8,31 @@ import { useConversations, useSearchConversations } from '@/hooks/messaging/useC
 import { useConversation } from '@/hooks/messaging/useConversation';
 import { useMessages } from '@/hooks/messaging/useMessages';
 import { useModeration } from '@/hooks/messaging/useModeration';
-import { apiUploadAttachment, type Conversation } from '@/api/services/messaging';
-import { ChatList, ChatWindow, type ChatListEntry } from '@/components/comman/messaging';
+import { usePresence } from '@/hooks/messaging/usePresence';
+import { useRecentSearches } from '@/hooks/messaging/useRecentSearches';
+import { apiUploadAttachment, type Conversation, type MessageType } from '@/api/services/messaging';
+import { ChatList, ChatWindow, type ChatListEntry, type ChatListFilter } from '@/components/comman/messaging';
 import type { ActionMenuItem } from '@/components/comman/ui';
 
-function toEntry(c: Conversation): ChatListEntry {
+const TYPE_PREVIEW: Partial<Record<MessageType, string>> = {
+  voice: 'Voice note', image: 'Photo', video: 'Video', pdf: 'File', document: 'File', product_share: 'Product shared',
+};
+
+type FilterId = 'all' | 'unread' | 'pinned' | 'archived';
+
+function toEntry(c: Conversation, online: Record<string, boolean>): ChatListEntry {
   return {
-    id:      c._id,
-    name:    c.buyer?.name ?? `Buyer #${c.buyerId.slice(-6).toUpperCase()}`,
-    image:   c.buyer?.profileImage,
-    preview: c.lastMessage ? (c.lastMessage.type === 'text' ? c.lastMessage.text ?? '' : c.lastMessage.type === 'voice' ? '🎤 Voice note' : c.lastMessage.type === 'image' ? '📷 Photo' : c.lastMessage.type === 'video' ? '🎥 Video' : '📎 File') : 'No messages yet',
-    time:    c.lastMessage ? new Date(c.lastMessage.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-    unread:  c.sellerUnread,
-    pinned:  c.isPinned,
-    muted:   c.isMuted,
+    id:          c._id,
+    name:        c.buyer?.name ?? `Buyer #${c.buyerId.slice(-6).toUpperCase()}`,
+    image:       c.buyer?.profileImage,
+    preview:     c.lastMessage ? (c.lastMessage.type === 'text' ? (c.lastMessage.text ?? '') : (TYPE_PREVIEW[c.lastMessage.type] ?? 'Message')) : 'No messages yet',
+    previewType: c.lastMessage?.type,
+    time:        c.lastMessage ? new Date(c.lastMessage.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+    unread:      c.sellerUnread,
+    pinned:      c.isPinned,
+    muted:       c.isMuted,
+    archived:    c.isArchived,
+    online:      online[c.buyerId],
   };
 }
 
@@ -30,15 +40,31 @@ function toEntry(c: Conversation): ChatListEntry {
 export function SellerMessages() {
   usePageTitle('Messages');
   const { storeId } = useParams<{ storeId: string }>();
+  const navigate = useNavigate();
   const { profile } = useGetProfile();
 
+  const [filter, setFilter] = useState<FilterId>('all');
+  // "All" hides archived (matches WhatsApp/Telegram convention); "Archived" shows only those.
   const { conversations, loading: listLoading, error: listError, refetch: refetchList } =
-    useConversations(storeId ? { storeId } : undefined);
+    useConversations(storeId ? { storeId, isArchived: filter === 'archived' } : undefined);
   const { results: searchResults, search, loading: searching } = useSearchConversations();
+  const { recent, commit, clear } = useRecentSearches(`seller-inbox:${storeId ?? ''}`);
   const [query, setQuery] = useState('');
 
   const isSearching = query.trim().length >= 2;
-  const list = isSearching ? searchResults : conversations;
+  const baseList = isSearching ? searchResults : conversations;
+  const list = filter === 'unread' ? baseList.filter(c => c.sellerUnread > 0)
+    : filter === 'pinned' ? baseList.filter(c => c.isPinned)
+    : baseList;
+
+  const unreadCount = conversations.filter(c => c.sellerUnread > 0).length;
+  const pinnedCount = conversations.filter(c => c.isPinned).length;
+  const filters: ChatListFilter[] = [
+    { id: 'all', label: 'All' },
+    { id: 'unread', label: 'Unread', count: unreadCount },
+    { id: 'pinned', label: 'Pinned', count: pinnedCount },
+    { id: 'archived', label: 'Archived' },
+  ];
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -48,10 +74,13 @@ export function SellerMessages() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, storeId]);
 
+  const buyerIds = useMemo(() => conversations.map(c => c.buyerId), [conversations]);
+  const online = usePresence(buyerIds);
+
   const [activeId, setActiveId] = useState<string | null>(null);
   const { conversation, pin, mute, archive, restore, remove } = useConversation(activeId);
   const {
-    messages, loading: msgLoading, sending, send, edit, remove: removeMessage, markSeen, hasMore, loadMore,
+    messages, loading: msgLoading, loadingMore, sending, send, retry, edit, remove: removeMessage, markSeen, hasMore, loadMore,
     otherOnline, otherTyping, sendTyping,
   } = useMessages(activeId);
   const { block, unblock, report } = useModeration();
@@ -65,7 +94,12 @@ export function SellerMessages() {
   useEffect(() => {
     if (!activeId || messages.length === 0) return;
     const last = messages[messages.length - 1];
-    if (last.senderId !== profile?._id) void markSeen(last._id);
+    if (last.senderId !== profile?._id) {
+      // Don't rely solely on the 'conversation:update' socket echo to clear
+      // this conversation's unread badge — refetch directly so it's correct
+      // even if that event was missed (e.g. a socket reconnect gap).
+      void markSeen(last._id).then(refetchList);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId, messages.length]);
 
@@ -128,16 +162,24 @@ export function SellerMessages() {
       />
 
       <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 108px)' }}>
-        <div className={clsx('md:flex', activeId ? 'hidden' : 'flex')}>
+        <div className={activeId ? 'hidden md:flex' : 'flex'}>
           <ChatList
             title="Chats"
-            entries={list.map(toEntry)}
+            entries={list.map(c => toEntry(c, online))}
             activeId={activeId}
             onSelect={setActiveId}
             query={query}
             onQueryChange={handleSearch}
             loading={isSearching ? searching : listLoading}
             error={listError}
+            filters={filters}
+            activeFilter={filter}
+            onFilterChange={id => setFilter(id as FilterId)}
+            recentSearches={recent}
+            onSelectRecentSearch={q => { setQuery(q); }}
+            onClearRecentSearches={clear}
+            onCommitSearch={commit}
+            resizeStorageKey="solvexo:seller-inbox-width"
           />
         </div>
 
@@ -145,11 +187,13 @@ export function SellerMessages() {
           open={!!active}
           headerName={active ? (active.buyer?.name ?? `Buyer #${active.buyerId.slice(-6).toUpperCase()}`) : ''}
           headerImage={active?.buyer?.profileImage}
-          headerSubtitle={active ? (active.isArchived ? 'Archived' : active.isMuted ? 'Muted' : undefined) : undefined}
+          subtitleOverride={active ? (active.isArchived ? 'Archived' : active.isMuted ? 'Muted' : undefined) : undefined}
           menuItems={menuItems}
           onBack={() => setActiveId(null)}
+          shortcuts={storeId ? [{ icon: <Package size={17} />, label: 'View Orders', onClick: () => navigate(`/seller/store/${storeId}/orders`) }] : []}
           messages={messages}
           msgLoading={msgLoading}
+          loadingMore={loadingMore}
           currentUserId={profile?._id}
           otherPartyId={active?.buyerId ?? ''}
           hasMore={hasMore}
@@ -160,10 +204,12 @@ export function SellerMessages() {
           onUpload={file => void handleUpload(file)}
           onEditMessage={(id, text) => void edit(id, text)}
           onDeleteMessage={id => void removeMessage(id)}
+          onRetry={(m, payload) => m._tempId && retry(m._tempId, payload)}
           otherOnline={otherOnline}
           otherTyping={otherTyping}
           onTyping={sendTyping}
           conversationId={activeId}
+          storeId={storeId}
         />
       </div>
     </>

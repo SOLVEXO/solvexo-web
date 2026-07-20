@@ -1,3 +1,4 @@
+import { BadgeCheck } from 'lucide-react';
 import { Avatar } from '@/components/comman/ui';
 
 interface ChatAvatarProps {
@@ -5,13 +6,16 @@ interface ChatAvatarProps {
   image?:     string | null;
   size?:      number;
   online?:    boolean;
+  verified?:  boolean;
   className?: string;
 }
 
-// Instagram/WhatsApp-style avatar: real photo if we have one, else the
-// app's initials Avatar. The small green dot mirrors the "online" pip
-// both platforms show on a contact's avatar.
-export function ChatAvatar({ name, image, size = 40, online, className }: ChatAvatarProps) {
+// WhatsApp/Instagram-style avatar: real photo if we have one, else the
+// app's initials Avatar. A green presence dot mirrors the "online" pip both
+// platforms show on a contact's avatar; a small blue check overlays it for
+// admin-verified stores (mutually exclusive with the presence dot — a store
+// doesn't have online/offline presence the way a person does).
+export function ChatAvatar({ name, image, size = 40, online, verified, className }: ChatAvatarProps) {
   return (
     <div className={className} style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
       {image ? (
@@ -28,6 +32,13 @@ export function ChatAvatar({ name, image, size = 40, online, className }: ChatAv
         <span
           className="absolute rounded-full bg-[#31A24C] border-2 border-white"
           style={{ width: size * 0.28, height: size * 0.28, right: -1, bottom: -1 }}
+        />
+      )}
+      {verified && !online && (
+        <BadgeCheck
+          className="absolute text-[#3B82F6] fill-white"
+          style={{ width: size * 0.34, height: size * 0.34, right: -2, bottom: -2 }}
+          strokeWidth={2.5}
         />
       )}
     </div>

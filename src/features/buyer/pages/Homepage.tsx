@@ -49,7 +49,7 @@ function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick:
       role="button"
       tabIndex={0}
       onKeyDown={e => { if (e.key === 'Enter') onClick(); }}
-      className="group shrink-0 w-[252px] sm:w-auto snap-start bg-white border border-bone rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-[3px] hover:shadow-[0_18px_36px_rgba(0,0,0,0.1)] hover:border-brand-orange/25"
+      className="group shrink-0 w-[252px] sm:w-auto snap-start bg-white border border-bone rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-[3px] hover:border-brand-orange/25"
     >
       {/* Cover — 16:9 */}
       <div className="relative aspect-[16/9] overflow-hidden">

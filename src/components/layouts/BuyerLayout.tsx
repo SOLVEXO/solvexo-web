@@ -25,8 +25,8 @@ function BottomNav() {
     { id: 'home',    Icon: Home,         label: 'Home',    path: '/'                             },
     { id: 'shop',    Icon: Store,        label: 'Shop',    path: '/marketplace'                  },
     { id: 'cart',    Icon: ShoppingCart, label: 'Cart',    path: '/cart',   badge: cartCount     },
-    { id: 'orders',  Icon: Package,      label: 'Orders',  path: '/account/profile?tab=orders',  authRequired: true },
-    { id: 'account', Icon: UserCircle,   label: 'Account', path: '/account/profile',             authRequired: true },
+    { id: 'orders',  Icon: Package,      label: 'Orders',  path: '/account/orders',    authRequired: true },
+    { id: 'account', Icon: UserCircle,   label: 'Account', path: '/account/dashboard', authRequired: true },
   ];
 
   const isActive = (path: string) => {

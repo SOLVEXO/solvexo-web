@@ -21,12 +21,14 @@ interface AnalyticsFilterBarProps<T extends BaseAnalyticsUIFilters> {
   csvSections: FilterOption[];
   csvSection: string;
   onCsvSectionChange: (v: string) => void;
+  /** Hide the PDF/CSV export controls entirely — for views export doesn't support yet (e.g. the seller's cross-store "All Stores" view). Defaults to shown. */
+  showExport?: boolean;
 }
 
 export function AnalyticsFilterBar<T extends BaseAnalyticsUIFilters>({
   filters, onChange, onExportPdf, onExportCsv, exporting, advanced,
   granularityOptions, granularity, onGranularityChange,
-  csvSections, csvSection, onCsvSectionChange,
+  csvSections, csvSection, onCsvSectionChange, showExport = true,
 }: AnalyticsFilterBarProps<T>) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -90,13 +92,17 @@ export function AnalyticsFilterBar<T extends BaseAnalyticsUIFilters>({
 
         <div className="flex-1" />
 
-        <Button variant="outline" size="sm" icon={<FileText size={13} />} onClick={onExportPdf} loading={exporting} disabled={exporting}>
-          Export PDF
-        </Button>
-        <FilterDropdown options={csvSections} value={csvSection} onChange={onCsvSectionChange} />
-        <Button variant="outline" size="sm" icon={<Download size={13} />} onClick={onExportCsv} loading={exporting} disabled={exporting}>
-          Export CSV
-        </Button>
+        {showExport && (
+          <>
+            <Button variant="outline" size="sm" icon={<FileText size={13} />} onClick={onExportPdf} loading={exporting} disabled={exporting}>
+              Export PDF
+            </Button>
+            <FilterDropdown options={csvSections} value={csvSection} onChange={onCsvSectionChange} />
+            <Button variant="outline" size="sm" icon={<Download size={13} />} onClick={onExportCsv} loading={exporting} disabled={exporting}>
+              Export CSV
+            </Button>
+          </>
+        )}
       </div>
 
       {advanced && showAdvanced && (

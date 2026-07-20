@@ -29,6 +29,9 @@ export type SellerAnalyticsFilters = BaseAnalyticsUIFilters;
 
 export const DEFAULT_SELLER_ANALYTICS_FILTERS: SellerAnalyticsFilters = { ...DEFAULT_ANALYTICS_UI_FILTERS };
 
-export function toSellerAnalyticsParams(filters: SellerAnalyticsFilters, storeId: string): SellerAnalyticsParams {
-  return { ...toBaseAnalyticsApiParams(filters), storeId };
+/** `storeId: null` means "every store the seller owns" — the cross-store view (no `storeId` sent at all). */
+export function toSellerAnalyticsParams(filters: SellerAnalyticsFilters, storeId: string | null): SellerAnalyticsParams {
+  const params: SellerAnalyticsParams = { ...toBaseAnalyticsApiParams(filters) };
+  if (storeId) params.storeId = storeId;
+  return params;
 }

@@ -11,16 +11,22 @@ export function useConversations(params?: ListConversationsParams) {
   const [error,   setError]   = useState('');
   const requestId = useRef(0);
 
-  const storeId = params?.storeId;
+  const storeId    = params?.storeId;
+  const isArchived = params?.isArchived;
+  const isPinned   = params?.isPinned;
 
   const refetch = useCallback(() => {
     const thisRequest = ++requestId.current;
     setLoading(true);
-    return apiListConversations(storeId ? { storeId } : undefined)
+    return apiListConversations({
+      ...(storeId ? { storeId } : {}),
+      ...(isArchived !== undefined ? { isArchived } : {}),
+      ...(isPinned !== undefined ? { isPinned } : {}),
+    })
       .then(res => { if (requestId.current === thisRequest) setConversations(res.conversations ?? []); })
       .catch((err: unknown) => { if (requestId.current === thisRequest) setError(err instanceof Error ? err.message : 'Failed to load conversations.'); })
       .finally(() => { if (requestId.current === thisRequest) setLoading(false); });
-  }, [storeId]);
+  }, [storeId, isArchived, isPinned]);
 
   useEffect(() => { refetch(); }, [refetch]);
 
@@ -31,6 +37,12 @@ export function useConversations(params?: ListConversationsParams) {
 
     function handleUpdate(updated: Conversation) {
       if (storeId && updated.storeId !== storeId) return;
+      // Respect the current archived/pinned filter — an update that no longer
+      // matches (e.g. just got archived while viewing the "All" tab) drops out.
+      if (isArchived !== undefined && updated.isArchived !== isArchived) {
+        setConversations(prev => prev.filter(c => c._id !== updated._id));
+        return;
+      }
       setConversations(prev => {
         const rest = prev.filter(c => c._id !== updated._id);
         return [{ ...prev.find(c => c._id === updated._id), ...updated }, ...rest];
@@ -42,7 +54,7 @@ export function useConversations(params?: ListConversationsParams) {
       socket.off('conversation:update', handleUpdate);
       releaseMessagingSocket();
     };
-  }, [storeId]);
+  }, [storeId, isArchived]);
 
   return { conversations, loading, error, refetch };
 }

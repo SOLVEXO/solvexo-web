@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { ShoppingCart, ClipboardList, Package, BarChart2, Settings2, Banknote } from 'lucide-react';
+import { ShoppingCart, ClipboardList, Package, BarChart2, Settings2, Banknote, ArrowLeft, LogOut } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Avatar } from '@/components/comman/ui/Avatar';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
@@ -36,18 +36,19 @@ export function POSTopBar({ activeTab, setActiveTab }: POSTopBarProps) {
   const tabs = mode === 'owner' ? [...OPERATOR_TABS, ...OWNER_ONLY_TABS] : OPERATOR_TABS;
 
   return (
-    <div className="shrink-0 flex flex-wrap items-center gap-3 sm:gap-4 px-3 sm:px-5 py-2 sm:h-[52px] bg-pos-surface border-b border-carbon">
+    <div className="shrink-0 flex flex-wrap items-center gap-3 sm:gap-5 px-3 sm:px-5 py-[10px] sm:h-16 bg-pos-surface-2 border-b border-pos-border shadow-[0_1px_0_rgba(255,255,255,0.03)]">
       {/* Logo */}
       <div className="flex items-center gap-[10px] shrink-0">
-        <SolvexoIcon size={26} />
-        <span className="hidden sm:inline text-[13px] font-bold text-white">POS Register</span>
-        <div className="bg-carbon rounded-[6px] px-2 py-[2px]">
-          <span className="text-[10px] text-brand-orange">● Live</span>
+        <SolvexoIcon size={28} />
+        <span className="hidden sm:inline text-[14px] font-bold text-white">POS Register</span>
+        <div className="flex items-center gap-[6px] bg-pos-surface rounded-full pl-[7px] pr-[10px] py-[5px] border border-pos-border">
+          <span className="relative w-[7px] h-[7px] rounded-full bg-success shrink-0 pos-live-pulse" />
+          <span className="text-[10.5px] font-semibold text-success">Live</span>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-[2px] bg-carbon rounded-lg p-[3px] overflow-x-auto max-w-full">
+      <div className="flex gap-[3px] bg-pos-surface rounded-[14px] p-[4px] overflow-x-auto scrollbar-hide max-w-full border border-pos-border">
         {tabs.map(tab => {
           const Icon = TAB_ICONS[tab];
           return (
@@ -55,15 +56,15 @@ export function POSTopBar({ activeTab, setActiveTab }: POSTopBarProps) {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={clsx(
-                'shrink-0 px-[14px] py-[6px] rounded-[6px] text-[12px] font-medium cursor-pointer border-0',
-                'flex items-center gap-[5px] capitalize transition-colors duration-150',
+                'shrink-0 h-11 px-[16px] rounded-xl text-[13px] font-semibold cursor-pointer border-0',
+                'flex items-center gap-[7px] capitalize transition-all duration-150',
                 activeTab === tab
-                  ? 'bg-brand-orange text-white'
-                  : 'bg-transparent text-pos-faint',
+                  ? 'bg-gradient-to-b from-brand-orange to-brand-deep-orange text-white shadow-[0_4px_14px_rgba(217,119,87,0.4)]'
+                  : 'bg-transparent text-pos-faint hover:text-white hover:bg-pos-surface-3',
               )}
             >
-              <Icon size={12} />
-              {tab === 'manage' ? 'Manage' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              <Icon size={15} />
+              <span className="hidden md:inline">{tab === 'manage' ? 'Manage' : tab.charAt(0).toUpperCase() + tab.slice(1)}</span>
             </button>
           );
         })}
@@ -74,42 +75,43 @@ export function POSTopBar({ activeTab, setActiveTab }: POSTopBarProps) {
       {sessionId && (
         <button
           onClick={() => setShowCash(true)}
-          className="hidden sm:flex items-center gap-[6px] px-3 py-[6px] rounded-lg text-[11px] cursor-pointer border border-carbon bg-transparent text-pos-faint"
+          className="hidden sm:flex items-center gap-[8px] h-11 px-[16px] rounded-xl text-[12.5px] font-medium cursor-pointer border border-pos-border bg-pos-surface text-pos-faint transition-all duration-150 hover:border-pos-border-strong hover:text-white"
         >
-          <Banknote size={12} /> Cash In/Out
+          <Banknote size={15} /> Cash In/Out
         </button>
       )}
 
       {/* Profile trigger */}
       <button
         onClick={() => setShowProfile(true)}
-        className="flex items-center gap-[10px] bg-transparent border-0 cursor-pointer p-0"
+        className="flex items-center gap-3 bg-pos-surface border border-pos-border rounded-xl pl-[10px] pr-[6px] h-11 cursor-pointer transition-all duration-150 hover:border-pos-border-strong"
         title="View profile"
       >
-        <div className="hidden md:block text-right">
-          <p className="text-[11px] text-pos-muted">
-            {openedAt ? `Shift: ${openedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · Open` : ''}
+        <div className="hidden md:block text-right leading-tight">
+          <p className="flex items-center justify-end gap-[5px] text-[10.5px] text-pos-muted">
+            {openedAt && <span className="w-[5px] h-[5px] rounded-full bg-success shrink-0 pos-live-pulse" />}
+            {openedAt ? `Open · ${openedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
           </p>
-          <p className="text-[11px] font-medium text-brand-orange">
+          <p className="text-[12px] font-semibold text-white">
             {employee?.name ?? ''}{registerName ? ` · ${registerName}` : ''}
           </p>
         </div>
-        <Avatar name={employee?.name ?? 'Employee'} size={30} variant="pos" />
+        <Avatar name={employee?.name ?? 'Employee'} size={34} variant="pos" />
       </button>
 
       {mode === 'owner' ? (
         <button
           onClick={() => navigate(`/seller/store/${storeId}/pos`)}
-          className="px-3 py-[6px] rounded-lg text-[11px] cursor-pointer border border-carbon bg-transparent text-white/45"
+          className="flex items-center gap-[6px] h-11 px-[14px] rounded-xl text-[12.5px] font-medium cursor-pointer border border-pos-border bg-transparent text-white/50 transition-all duration-150 hover:text-white hover:border-pos-border-strong"
         >
-          ← Dashboard
+          <ArrowLeft size={14} /> <span className="hidden sm:inline">Dashboard</span>
         </button>
       ) : (
         <button
           onClick={() => logout()}
-          className="px-3 py-[6px] rounded-lg text-[11px] cursor-pointer border border-carbon bg-transparent text-white/45"
+          className="flex items-center gap-[6px] h-11 px-[14px] rounded-xl text-[12.5px] font-medium cursor-pointer border border-pos-border bg-transparent text-white/50 transition-all duration-150 hover:text-error hover:border-error/40"
         >
-          Log Out
+          <LogOut size={14} /> <span className="hidden sm:inline">Log Out</span>
         </button>
       )}
 
@@ -167,23 +169,34 @@ function CashAdjustmentOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4">
-      <div className="w-full max-w-[320px] bg-pos-surface border border-carbon rounded-2xl p-5">
-        <p className="text-[14px] font-bold text-white mb-4">Cash In / Out</p>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4 pos-overlay-enter">
+      <div className="w-full max-w-[360px] bg-pos-surface-3 border border-pos-border-strong rounded-[20px] shadow-2xl p-6 pos-panel-enter">
+        <div className="flex items-center gap-[10px] mb-5">
+          <div className="w-9 h-9 rounded-xl bg-brand-orange/15 border border-brand-orange/30 flex items-center justify-center shrink-0">
+            <Banknote size={16} className="text-brand-orange" />
+          </div>
+          <p className="text-[15px] font-bold text-white">Cash In / Out</p>
+        </div>
 
-        <div className="flex gap-[6px] mb-3">
-          {(['cash_in', 'cash_out'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setType(t)}
-              className={clsx(
-                'flex-1 py-[7px] rounded-lg text-[12px] font-medium cursor-pointer border',
-                type === t ? 'bg-brand-deep-orange border-brand-orange text-white' : 'bg-carbon border-transparent text-pos-faint',
-              )}
-            >
-              {t === 'cash_in' ? 'Cash In' : 'Cash Out'}
-            </button>
-          ))}
+        <div className="flex gap-[8px] mb-4">
+          <button
+            onClick={() => setType('cash_in')}
+            className={clsx(
+              'flex-1 h-12 rounded-xl text-[13px] font-semibold cursor-pointer border-2 transition-all duration-150 active:scale-[0.97]',
+              type === 'cash_in' ? 'bg-success/15 border-success/50 text-success' : 'bg-pos-surface border-pos-border text-pos-faint',
+            )}
+          >
+            Cash In
+          </button>
+          <button
+            onClick={() => setType('cash_out')}
+            className={clsx(
+              'flex-1 h-12 rounded-xl text-[13px] font-semibold cursor-pointer border-2 transition-all duration-150 active:scale-[0.97]',
+              type === 'cash_out' ? 'bg-error/15 border-error/50 text-error' : 'bg-pos-surface border-pos-border text-pos-faint',
+            )}
+          >
+            Cash Out
+          </button>
         </div>
 
         <input
@@ -191,25 +204,25 @@ function CashAdjustmentOverlay({
           onChange={e => setAmount(e.target.value)}
           placeholder="Amount"
           inputMode="decimal"
-          className="w-full bg-carbon border border-carbon rounded-lg px-3 py-[8px] text-[13px] text-white outline-none box-border mb-2"
+          className="w-full h-12 bg-pos-surface border border-pos-border rounded-xl px-[14px] text-[14px] text-white outline-none box-border mb-3 transition-colors duration-150 focus:border-pos-border-strong"
         />
         <input
           value={reason}
           onChange={e => setReason(e.target.value)}
           placeholder="Reason"
-          className="w-full bg-carbon border border-carbon rounded-lg px-3 py-[8px] text-[13px] text-white outline-none box-border mb-3"
+          className="w-full h-12 bg-pos-surface border border-pos-border rounded-xl px-[14px] text-[14px] text-white outline-none box-border mb-4 transition-colors duration-150 focus:border-pos-border-strong"
         />
 
-        {error && <p className="text-[11px] text-error mb-2">{error}</p>}
+        {error && <p className="text-[12px] text-error bg-error/10 border border-error/30 rounded-xl px-[12px] py-[8px] mb-3">{error}</p>}
 
-        <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-[9px] bg-carbon border-0 rounded-lg text-[12px] text-pos-faint cursor-pointer">
+        <div className="flex gap-[8px]">
+          <button onClick={onClose} className="flex-1 h-12 bg-pos-surface border border-pos-border rounded-xl text-[13px] text-pos-faint cursor-pointer transition-all duration-150 hover:border-pos-border-strong">
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={saving}
-            className="flex-1 py-[9px] bg-brand-orange border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer disabled:opacity-50"
+            className="flex-1 h-12 bg-gradient-to-b from-brand-orange to-brand-deep-orange border-0 rounded-xl text-[13px] font-semibold text-white cursor-pointer shadow-[0_6px_18px_rgba(217,119,87,0.35)] transition-all duration-150 disabled:opacity-50 active:scale-[0.98]"
           >
             {saving ? 'Saving…' : 'Confirm'}
           </button>

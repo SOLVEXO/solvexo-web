@@ -98,7 +98,7 @@ export function LoginPage() {
         <Input
           id="login-email"
           label="Email Address"
-          type="email" placeholder="you@example.com" autoComplete="email"
+          type="email" placeholder="Enter Your Email Address" autoComplete="email"
           value={values.email} onChange={set('email')} onBlur={blur('email')}
           error={errors.email}
         />
@@ -106,7 +106,7 @@ export function LoginPage() {
           <Input
             id="login-password"
             label="Password"
-            type={showPass ? 'text' : 'password'} placeholder="Enter your password" autoComplete="current-password"
+            type={showPass ? 'text' : 'password'} placeholder="Enter Your Password" autoComplete="current-password"
             value={values.password} onChange={set('password')} onBlur={blur('password')}
             onKeyDown={e => e.key === 'Enter' && handleSubmit()}
             error={errors.password}

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { RefreshCw, ImageOff } from 'lucide-react';
 import {
   Card, EmptyState, SkeletonBox, Table, type TableColumn,
-  ActionMenu, type ActionMenuItem, Badge,
+  ActionMenu, type ActionMenuItem, Badge, PageHeader,
 } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
@@ -434,21 +434,18 @@ export function SubscriptionsTab() {
   return (
     <div className="flex flex-col gap-4">
     <Card padding="none">
-      <div className="px-5 pt-5 pb-4 border-b border-bone flex items-end justify-between flex-wrap gap-3">
-        <div>
-          <p className="text-[11px] text-slate mb-[3px]">Account / My Subscriptions</p>
-          <h1 className="text-[22px] font-bold text-charcoal leading-none">My Subscriptions</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex flex-col items-end gap-1">
-            <Button size="sm" variant="outline" loading={openingPortal} onClick={handleManageBilling}>Manage Billing</Button>
-            {billingError && <p className="text-[11px] text-error max-w-[220px] text-right">{billingError}</p>}
-          </div>
-          <div className="text-right">
-            <p className="text-[13px] font-semibold text-charcoal leading-tight">Total</p>
-            <p className="text-[11px] text-slate mt-[2px]">{total} subscription{total !== 1 ? 's' : ''}</p>
-          </div>
-        </div>
+      <div className="px-5 pt-5 pb-4 border-b border-bone">
+        <PageHeader
+          eyebrow="Account"
+          title="Subscriptions"
+          description={`${total} subscription${total !== 1 ? 's' : ''} · Manage plans, invoices, and billing`}
+          actions={
+            <div className="flex flex-col items-end gap-1">
+              <Button size="sm" variant="outline" loading={openingPortal} onClick={handleManageBilling}>Manage Billing</Button>
+              {billingError && <p className="text-[11px] text-error max-w-[220px] text-right">{billingError}</p>}
+            </div>
+          }
+        />
       </div>
 
       {loading ? (

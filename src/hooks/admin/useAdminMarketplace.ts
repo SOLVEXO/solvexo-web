@@ -5,7 +5,9 @@ import {
   apiGetMarketplaceListings,
   apiSetListingFeatured,
   apiRemoveListing,
+  apiSetStoreBadge,
   type MarketplaceListingQuery,
+  type GrantableStoreBadge,
 } from '@/api/services/marketplace/adminMarketplace';
 
 export function useMarketplaceStats() {
@@ -48,5 +50,19 @@ export function useMarketplaceListingActions() {
     }
   }, []);
 
-  return { setFeatured, removeListing, processingId, error };
+  const setStoreBadge = useCallback(async (storeId: string, badge: GrantableStoreBadge, grant: boolean) => {
+    setProcessingId(storeId);
+    setError('');
+    try {
+      await apiSetStoreBadge(storeId, badge, grant);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update store badge.');
+      return false;
+    } finally {
+      setProcessingId(null);
+    }
+  }, []);
+
+  return { setFeatured, removeListing, setStoreBadge, processingId, error };
 }

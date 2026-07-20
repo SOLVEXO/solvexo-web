@@ -1,16 +1,17 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, memo } from 'react';
 import { clsx } from 'clsx';
 import {
-  Check, CheckCheck, Paperclip, FileText, Video as VideoIcon, Play, Pause,
-  Reply as ReplyIcon, ChevronDown, Pencil, Trash2, X as XIcon,
+  Check, CheckCheck, Clock, AlertCircle, FileText, Video as VideoIcon, Play, Pause,
+  Reply as ReplyIcon, ChevronDown, Pencil, Trash2, X as XIcon, ShoppingBag,
 } from 'lucide-react';
 import type { Message } from '@/api/services/messaging';
+import type { OptimisticMessage } from '@/hooks/messaging/useMessages';
 import { ChatAvatar } from './ChatAvatar';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 
 interface MessageBubbleProps {
-  message:          Message;
+  message:          OptimisticMessage;
   own:              boolean;
   isLastInGroup:    boolean;
   seenByOther:      boolean;
@@ -25,6 +26,14 @@ interface MessageBubbleProps {
   onSaveEdit?:      () => void;
   onDelete?:        (id: string) => void;
   onReply?:         (m: Message) => void;
+  onRetry?:         (message: OptimisticMessage) => void;
+}
+
+function formatFileSize(bytes?: number): string {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 // ── Voice note player ─────────────────────────────────────────────────────────
@@ -106,16 +115,24 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('keydown', onEsc);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('keydown', onEsc);
+    };
   }, [open]);
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
+        aria-label="Message options"
+        aria-haspopup="menu"
+        aria-expanded={open}
         className={clsx(
-          'opacity-0 group-hover:opacity-100 transition-opacity duration-150 w-[18px] h-[18px] rounded-full flex items-center justify-center border-none cursor-pointer',
+          'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity duration-150 w-[18px] h-[18px] rounded-full flex items-center justify-center border-none cursor-pointer outline-none',
           own ? 'bg-black/15 text-white hover:bg-black/25' : 'bg-black/8 text-charcoal hover:bg-black/15',
         )}
         title="Message options"
@@ -124,11 +141,12 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
       </button>
 
       {open && (
-        <div className={clsx(
+        <div role="menu" className={clsx(
           'absolute top-[22px] z-30 bg-white border border-bone rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.14)] py-[5px] min-w-[138px]',
           own ? 'right-0' : 'left-0',
         )}>
           <button
+            role="menuitem"
             onClick={() => { onReply(); setOpen(false); }}
             className="w-full flex items-center gap-[9px] px-[13px] py-[9px] text-[13px] text-charcoal hover:bg-[#F7F6F1] cursor-pointer bg-transparent border-none text-left"
           >
@@ -136,6 +154,7 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
           </button>
           {canEdit && onEdit && (
             <button
+              role="menuitem"
               onClick={() => { onEdit(); setOpen(false); }}
               className="w-full flex items-center gap-[9px] px-[13px] py-[9px] text-[13px] text-charcoal hover:bg-[#F7F6F1] cursor-pointer bg-transparent border-none text-left"
             >
@@ -146,6 +165,7 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
             <>
               <div className="border-t border-[#F3F2EC] mx-[8px] my-[3px]" />
               <button
+                role="menuitem"
                 onClick={() => { onDelete(); setOpen(false); }}
                 className="w-full flex items-center gap-[9px] px-[13px] py-[9px] text-[13px] text-red-500 hover:bg-red-50 cursor-pointer bg-transparent border-none text-left"
               >
@@ -179,9 +199,11 @@ function DeleteModal({ onCancel, onConfirm }: { onCancel: () => void; onConfirm:
 }
 
 // ── Main bubble ───────────────────────────────────────────────────────────────
-export function MessageBubble({
+// Memoized: composer keystrokes re-render ChatWindow/MessageThread constantly,
+// but individual bubbles only need to re-render when their own props change.
+export const MessageBubble = memo(function MessageBubble({
   message, own, isLastInGroup, seenByOther, avatarName, avatarImage, showAvatar,
-  editing, editText, onEditTextChange, onStartEdit, onCancelEdit, onSaveEdit, onDelete, onReply,
+  editing, editText, onEditTextChange, onStartEdit, onCancelEdit, onSaveEdit, onDelete, onReply, onRetry,
 }: MessageBubbleProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const time = new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -213,10 +235,14 @@ export function MessageBubble({
         />
       )}
 
-      <div className={clsx(
-        'group flex w-full items-end gap-[6px] mb-[2px] transition-all duration-300 ease-out starting:opacity-0 starting:translate-y-1',
-        own ? 'justify-end' : 'justify-start',
-      )}>
+      <div
+        className={clsx(
+          'group flex w-full items-end gap-[6px] mb-[2px] transition-all duration-300 ease-out starting:opacity-0 starting:translate-y-1',
+          own ? 'justify-end' : 'justify-start',
+          message._pending && 'opacity-60',
+        )}
+        style={{ contentVisibility: 'auto', containIntrinsicSize: '0 44px' } as React.CSSProperties}
+      >
         {/* Left avatar gutter */}
         {!own && (
           <div className="w-7 shrink-0 self-end">
@@ -224,12 +250,10 @@ export function MessageBubble({
           </div>
         )}
 
-        {/* For other party: menu appears to the right of bubble */}
-        {/* Layout: own → [menu][bubble], other → [avatar][bubble][menu] */}
         <div className={clsx('flex items-end gap-[4px]', own ? 'flex-row-reverse' : 'flex-row')}>
 
           {/* Bubble column */}
-          <div className={clsx('flex flex-col max-w-[72%] sm:max-w-[400px]', own ? 'items-end' : 'items-start')}>
+          <div className={clsx('flex flex-col max-w-[78vw] sm:max-w-[400px]', own ? 'items-end' : 'items-start')}>
             {editing ? (
               // ── Inline edit — matches bubble color ──────────────────────────
               <div className={clsx('px-[14px] py-[10px] shadow-[0_1px_2px_rgba(0,0,0,0.07)]', bubbleRadius, own ? 'bg-brand-orange' : 'bg-white border border-[#EEECE4]')}>
@@ -251,12 +275,14 @@ export function MessageBubble({
                   <span className="text-[10px]">Enter to save</span>
                   <button
                     onClick={onCancelEdit}
+                    aria-label="Cancel edit"
                     className={clsx('w-6 h-6 rounded-full flex items-center justify-center border-none cursor-pointer', own ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-bone text-charcoal hover:bg-bone')}
                   >
                     <XIcon size={11} />
                   </button>
                   <button
                     onClick={onSaveEdit}
+                    aria-label="Save edit"
                     className={clsx('w-6 h-6 rounded-full flex items-center justify-center border-none cursor-pointer', own ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-brand-pale-orange text-brand-orange hover:opacity-80')}
                   >
                     <Check size={11} />
@@ -267,21 +293,24 @@ export function MessageBubble({
               // ── Normal bubble ──────────────────────────────────────────────
               <div
                 className={clsx(
-                  'relative px-[14px] py-[9px] shadow-[0_1px_2px_rgba(0,0,0,0.07)]',
+                  'relative px-[14px] py-[9px] shadow-[0_1px_2px_rgba(0,0,0,0.07)] transition-shadow',
                   bubbleRadius,
                   own ? 'bg-brand-orange text-white' : 'bg-white text-charcoal border border-[#EEECE4]',
+                  message._failed && 'ring-2 ring-error/50',
                 )}
               >
                 {/* ▾ menu trigger — top corner, shows on hover */}
-                <div className={clsx('absolute top-[5px] z-10', own ? 'left-[5px]' : 'right-[5px]')}>
-                  <BubbleMenu
-                    own={own}
-                    canEdit={own && message.type === 'text'}
-                    onReply={() => onReply?.(message)}
-                    onEdit={onStartEdit ? () => onStartEdit(message) : undefined}
-                    onDelete={onDelete ? () => setConfirmDelete(true) : undefined}
-                  />
-                </div>
+                {!message._pending && !message._failed && (
+                  <div className={clsx('absolute top-[5px] z-10', own ? 'left-[5px]' : 'right-[5px]')}>
+                    <BubbleMenu
+                      own={own}
+                      canEdit={own && message.type === 'text'}
+                      onReply={() => onReply?.(message)}
+                      onEdit={onStartEdit ? () => onStartEdit(message) : undefined}
+                      onDelete={onDelete ? () => setConfirmDelete(true) : undefined}
+                    />
+                  </div>
+                )}
 
                 {/* Reply-to preview */}
                 {message.replyTo && (
@@ -308,7 +337,7 @@ export function MessageBubble({
                       <img loading="lazy" decoding="async" src={message.productShare.image} alt="" className="w-11 h-11 rounded-[10px] object-cover shrink-0" />
                     ) : (
                       <div className={clsx('w-11 h-11 rounded-[10px] shrink-0 flex items-center justify-center', own ? 'bg-white/15' : 'bg-cream')}>
-                        <Paperclip size={16} />
+                        <ShoppingBag size={16} />
                       </div>
                     )}
                     <div className="min-w-0">
@@ -325,7 +354,7 @@ export function MessageBubble({
                   <div className="flex flex-col gap-1">
                     {(message.attachments ?? []).filter(Boolean).map(a => (
                       <a key={a.url} href={a.url} target="_blank" rel="noreferrer">
-                        <img loading="lazy" decoding="async" src={a.url} alt={a.fileName ?? ''} className="rounded-[12px] max-w-[240px] max-h-[240px] object-cover" />
+                        <img loading="lazy" decoding="async" src={a.thumbnailUrl ?? a.url} alt={a.fileName ?? ''} className="rounded-[12px] max-w-[240px] max-h-[240px] object-cover" />
                       </a>
                     ))}
                   </div>
@@ -340,16 +369,26 @@ export function MessageBubble({
                   </div>
                 )}
 
-                {/* PDF / Document / Video — generic file link */}
+                {/* PDF / Document / Video — generic file card */}
                 {!isAudioAttachment && (message.type === 'pdf' || message.type === 'document' || message.type === 'video') && (
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1.5">
                     {(message.attachments ?? []).filter(Boolean).map(a => (
                       <a
                         key={a.url} href={a.url} target="_blank" rel="noreferrer"
-                        className={clsx('flex items-center gap-2 text-[13px]', own ? 'text-white underline' : 'text-charcoal underline')}
+                        className={clsx(
+                          'flex items-center gap-[10px] px-2 py-1.5 rounded-[10px] transition-colors min-w-[170px]',
+                          own ? 'hover:bg-white/10' : 'hover:bg-cream',
+                        )}
                       >
-                        {message.type === 'video' ? <VideoIcon size={14} /> : <FileText size={14} />}
-                        {a.fileName ?? 'File'}
+                        <div className={clsx('w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0', own ? 'bg-white/15' : 'bg-cream')}>
+                          {message.type === 'video' ? <VideoIcon size={15} /> : <FileText size={15} />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[12.5px] font-medium truncate max-w-[180px]">{a.fileName ?? 'File'}</p>
+                          {a.fileSize != null && (
+                            <p className={clsx('text-[10.5px]', own ? 'text-white/70' : 'text-slate')}>{formatFileSize(a.fileSize)}</p>
+                          )}
+                        </div>
                       </a>
                     ))}
                   </div>
@@ -357,12 +396,26 @@ export function MessageBubble({
               </div>
             )}
 
-            {/* Time + seen */}
-            <div className={clsx('flex items-center gap-[3px] mt-[3px] px-1', own ? 'flex-row' : 'flex-row-reverse')}>
-              <span className="text-[10.5px] text-slate">{time}</span>
-              {own && (seenByOther
-                ? <CheckCheck size={13} className="text-[#4FA8E8]" />
-                : <Check size={13} className="text-slate" />
+            {/* Time + status */}
+            <div className={clsx('flex items-center gap-[4px] mt-[3px] px-1', own ? 'flex-row' : 'flex-row-reverse')}>
+              {message._failed ? (
+                <button
+                  onClick={() => onRetry?.(message)}
+                  className="flex items-center gap-[3px] text-[10.5px] text-error bg-transparent border-none cursor-pointer p-0"
+                >
+                  <AlertCircle size={12} /> Tap to retry
+                </button>
+              ) : (
+                <>
+                  <span className="text-[10.5px] text-slate">{time}</span>
+                  {own && (
+                    message._pending
+                      ? <Clock size={12} className="text-slate" />
+                      : seenByOther
+                        ? <CheckCheck size={13} className="text-[#4FA8E8]" />
+                        : <Check size={13} className="text-slate" />
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -370,4 +423,4 @@ export function MessageBubble({
       </div>
     </>
   );
-}
+});

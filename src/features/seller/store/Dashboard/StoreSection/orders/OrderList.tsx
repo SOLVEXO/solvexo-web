@@ -132,7 +132,7 @@ export function StoreOrderList() {
       key: 'type', header: 'Type',
       render: o => (
         <Badge color={o.type === 'digital' ? 'blue' : 'orange'}>
-          {o.type === 'digital' ? 'Digital' : 'Physical'}
+          {o.type === 'digital' ? (o.productType === 'educational' ? 'Educational' : 'Digital') : 'Physical'}
         </Badge>
       ),
     },

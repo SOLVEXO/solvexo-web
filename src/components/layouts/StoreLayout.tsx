@@ -8,10 +8,11 @@ import {
   Settings, Sparkles, ChevronLeft, Monitor, Store,
   ClipboardList, Megaphone, Star, Plug, Activity, Search, Wallet,
   Truck, MessageSquare, UserPlus, FolderTree, RefreshCw, Undo2, CreditCard,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, AlertTriangle, XCircle, Clock,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
+import { apiGetStorePlatformPlan, type StorePlatformSubscription } from '@/api/services/platformPlans';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { NotificationBell, AnnouncementBanner } from '@/components/comman/ui';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
@@ -419,6 +420,59 @@ function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// ── Platform-plan billing banner — past-due / scheduled-cancellation / trial-ending,
+// surfaced workspace-wide (not just on the Billing Center page) so a seller can't
+// miss it just by not visiting that one page. Same source of truth as StorePlanBilling. ──
+function PlatformBillingBanner() {
+  const navigate = useNavigate();
+  const { storeId } = useStoreWorkspace();
+  const [sub, setSub] = useState<StorePlatformSubscription | null>(null);
+
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    apiGetStorePlatformPlan(storeId)
+      .then(res => { if (!cancelled) setSub(res.data); })
+      .catch(() => {}); // non-critical — workspace still works without this banner
+    return () => { cancelled = true; };
+  }, [storeId]);
+
+  if (!sub) return null;
+  const goToBilling = () => navigate(`/seller/store/${storeId}/plan-billing`);
+
+  if (sub.status === 'past_due') {
+    return (
+      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-[#FECACA] cursor-pointer">
+        <AlertTriangle size={14} className="shrink-0" />
+        Your plan payment failed (attempt {sub.failedPaymentAttempts}) — update your payment method to avoid losing access.
+        <span className="underline font-semibold">Fix now</span>
+      </button>
+    );
+  }
+  if (sub.cancelAtPeriodEnd) {
+    return (
+      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#946200] bg-[#FDF2DA] border-b border-[#F5DFA6] cursor-pointer">
+        <XCircle size={14} className="shrink-0" />
+        Your plan is set to cancel on {new Date(sub.currentPeriodEnd).toDateString()}.
+        <span className="underline font-semibold">Reactivate</span>
+      </button>
+    );
+  }
+  if (sub.trialEndsAt) {
+    const daysLeft = Math.max(0, Math.ceil((new Date(sub.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
+    if (daysLeft <= 7) {
+      return (
+        <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1A5A8A] bg-[#E6F1FB] border-b border-[#BFDCF3] cursor-pointer">
+          <Clock size={14} className="shrink-0" />
+          Your trial ends in {daysLeft} day{daysLeft === 1 ? '' : 's'}.
+          <span className="underline font-semibold">Add a payment method</span>
+        </button>
+      );
+    }
+  }
+  return null;
+}
+
 // ── Layout ────────────────────────────────────────────────────────────────────
 export function StoreLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
@@ -449,6 +503,7 @@ export function StoreLayout() {
           <StoreSidebar open={sidebarOpen} onToggle={toggle} onClose={onClose} />
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             <AnnouncementBanner audience="sellers" />
+            <PlatformBillingBanner />
             <div className="flex-1 overflow-y-auto">
               <Outlet />
             </div>

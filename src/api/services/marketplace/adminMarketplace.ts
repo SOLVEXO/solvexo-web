@@ -26,12 +26,16 @@ export interface MarketplaceListingRow {
   title: string;
   sellerId: string;
   sellerName: string;
+  storeId: string;
+  storeBadges: string[];
   categoryId: string;
   price: number | null;
   purchaseCount: number;
   status: string;
   isFeatured: boolean;
 }
+
+export type GrantableStoreBadge = 'verified' | 'top_seller' | 'verified_educator';
 
 export interface MarketplaceListingsData {
   items: MarketplaceListingRow[];
@@ -59,4 +63,11 @@ export function apiSetListingFeatured(id: string, isFeatured: boolean) {
 
 export function apiRemoveListing(id: string) {
   return client.patch<never, ApiResponse<null>>(ENDPOINTS.MARKETPLACE.ADMIN.REMOVE(id));
+}
+
+/** PATCH /api/admin/marketplace/stores/:id/badge — grants/revokes a store trust badge (e.g. 'verified_educator'). */
+export function apiSetStoreBadge(storeId: string, badge: GrantableStoreBadge, grant: boolean) {
+  return client.patch<never, ApiResponse<{ badges: string[] }>>(
+    ENDPOINTS.MARKETPLACE.ADMIN.SET_STORE_BADGE(storeId), { badge, grant },
+  );
 }

@@ -45,7 +45,7 @@ const ADMIN_NAV: AdminNavItem[] = [
 const NAV_GROUPS: { label: string; ids: AdminNavItem['id'][] }[] = [
   { label: 'Overview', ids: ['overview', 'analytics'] },
   { label: 'Community', ids: ['users', 'moderation', 'messages'] },
-  { label: 'Commerce',  ids: ['marketplace', 'categories', 'subscriptions', 'marketing', 'finance', 'seo', 'ai-studio'] },
+  { label: 'Commerce',  ids: ['marketplace', 'categories', 'subscriptions', 'marketing', 'platform-plans', 'finance', 'seo', 'ai-studio'] },
   { label: 'Content',   ids: ['banners', 'faqs', 'announcements'] },
   { label: 'Platform',  ids: ['config', 'settings'] },
 ];

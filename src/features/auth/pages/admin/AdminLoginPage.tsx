@@ -91,7 +91,7 @@ export function AdminLoginPage() {
           id="admin-login-email"
           label="Email Address"
           type="email"
-          placeholder="admin@solvexo.com"
+          placeholder="Enter Admin Email"
           autoComplete="email"
           value={values.email}
           onChange={set('email')}
@@ -102,7 +102,7 @@ export function AdminLoginPage() {
         <div>
           <Input
             id="admin-login-password"
-            label="Password"
+            label="Enter Admin Password"
             type={showPass ? 'text' : 'password'}
             placeholder="Enter your password"
             autoComplete="current-password"

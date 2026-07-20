@@ -122,6 +122,7 @@ export function SellerStorefront() {
   const [followLoading,      setFollowLoading]     = useState(false);
   const [followStatusLoaded, setFollowStatusLoaded] = useState(false);
   const [msgLoading,         setMsgLoading]        = useState(false);
+  const [msgError,           setMsgError]          = useState('');
   const [wishlisted,     setWishlisted]    = useState<Set<string>>(new Set());
   const [tags,           setTags]          = useState<string[]>([]);
   const [activeTag,      setActiveTag]     = useState<string>('all');
@@ -299,11 +300,14 @@ export function SellerStorefront() {
     if (!store) return;
     if (!isLoggedIn) { navigate('/login'); return; }
     setMsgLoading(true);
+    setMsgError('');
     try {
       const conv = await apiStartConversation({ storeId: store.storeId });
-      navigate(`/account/profile?tab=messages&conversation=${conv._id}`);
-    } catch {
-      navigate(`/account/profile?tab=messages`);
+      navigate(`/account/messages?conversation=${conv._id}`);
+    } catch (err) {
+      // Stay on the page and say why instead of silently dropping the buyer
+      // onto an empty inbox (e.g. blocked, or messaging their own store).
+      setMsgError(err instanceof Error ? err.message : 'Could not start a conversation.');
     } finally {
       setMsgLoading(false);
     }
@@ -464,6 +468,11 @@ export function SellerStorefront() {
                 }
                 Message
               </button>
+              {msgError && (
+                <p className="text-[11px] text-white bg-black/30 rounded-md px-2 py-1 max-w-[220px] text-center sm:text-right">
+                  {msgError}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -522,7 +531,11 @@ export function SellerStorefront() {
         ) : (
           <>
             <div className={clsx('grid gap-[10px] sm:gap-3 lg:gap-[14px]', colClass)}>
-              {products.map((p: PublicStoreProduct) => (
+              {products.map((p: PublicStoreProduct) => {
+                const pType = p.productType ?? p.type ?? 'physical';
+                const isPhysical = pType === 'physical';
+                const typeLabel = isPhysical ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
+                return (
                 <Card key={p._id} padding="none" hover onClick={() => navigate(`/marketplace/${p._id}`)} className="overflow-hidden bg-white">
                   {/* Image */}
                   <div className="relative w-full h-[110px] sm:h-[150px] lg:h-[170px] bg-[#EAF4EE] flex items-center justify-center">
@@ -538,11 +551,11 @@ export function SellerStorefront() {
                     </button>
                     <span className={clsx(
                       'absolute top-[6px] left-[6px] px-[5px] py-[2px] rounded-[4px] text-[9px] font-semibold border leading-none',
-                      p.type === 'digital'
-                        ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
-                        : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
+                      isPhysical
+                        ? 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]'
+                        : 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]',
                     )}>
-                      {p.type === 'digital' ? 'Digital' : 'Physical'}
+                      {typeLabel}
                     </span>
                   </div>
 
@@ -582,7 +595,8 @@ export function SellerStorefront() {
                     </div>
                   </div>
                 </Card>
-              ))}
+                );
+              })}
             </div>
 
             {/* Pagination */}

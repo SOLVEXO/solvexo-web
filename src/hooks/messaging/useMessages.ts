@@ -72,12 +72,24 @@ export function useMessages(conversationId: string | null) {
       setOtherTyping(body.isTyping);
     }
 
+    // Live read-receipt sync: the other participant just marked messages as
+    // seen up to lastMessageId — flip our checkmarks without a refetch.
+    function handleSeen(body: { conversationId: string; userId: string; lastMessageId: string }) {
+      if (body.conversationId !== conversationId) return;
+      setMessages(prev => prev.map(m => {
+        if (m._id > body.lastMessageId) return m;
+        if (m.seenBy.some(s => s.userId === body.userId)) return m;
+        return { ...m, status: 'seen', seenBy: [...m.seenBy, { userId: body.userId, seenAt: new Date().toISOString() }] };
+      }));
+    }
+
     socket.emit('join-conversation', conversationId);
     socket.on('messaging:joined', handleJoined);
     socket.on('message:new', handleNew);
     socket.on('message:edited', handleEdited);
     socket.on('message:deleted', handleDeleted);
     socket.on('typing', handleTyping);
+    socket.on('message:seen', handleSeen);
 
     return () => {
       socket.emit('leave-conversation', conversationId);
@@ -86,6 +98,7 @@ export function useMessages(conversationId: string | null) {
       socket.off('message:edited', handleEdited);
       socket.off('message:deleted', handleDeleted);
       socket.off('typing', handleTyping);
+      socket.off('message:seen', handleSeen);
       releaseMessagingSocket();
     };
   }, [conversationId]);
@@ -109,51 +122,70 @@ export function useMessages(conversationId: string | null) {
     };
   }, [otherUserId]);
 
+  const [loadingMore, setLoadingMore] = useState(false);
+
   async function loadMore() {
-    if (!conversationId || !nextCursor) return;
+    if (!conversationId || !nextCursor || loadingMore) return;
+    setLoadingMore(true);
     try {
-      const res = await apiGetMessages(conversationId, { cursor: nextCursor });
-      setMessages(prev => [...prev, ...(res.messages ?? [])]);
+      const res = await apiGetMessages(conversationId, { before: nextCursor });
+      // Older page arrives oldest-first for itself, but it's older than
+      // everything currently in `messages` — prepend, don't append.
+      setMessages(prev => [...(res.messages ?? []), ...prev]);
       setNextCursor(res.nextCursor ?? null);
       setHasMore(res.hasMore ?? false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load more messages.');
+    } finally {
+      setLoadingMore(false);
     }
   }
 
-  async function send(payload: SendMessagePayload): Promise<Message | null> {
+  async function send(payload: SendMessagePayload, tempIdOverride?: string): Promise<Message | null> {
     if (!conversationId) return null;
     setError('');
     setSending(true);
 
-    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const optimistic: OptimisticMessage = {
-      _id: tempId,
-      _tempId: tempId,
-      _pending: true,
-      conversationId,
-      senderId: '',
-      senderRole: 'user',
-      type: payload.type,
-      text: 'text' in payload ? payload.text : null,
-      attachments: 'attachments' in payload ? payload.attachments : [],
-      productShare: null,
-      replyTo: payload.replyTo ?? null,
-      status: 'sent',
-      seenBy: [],
-      isEdited: false,
-      editedAt: null,
-      isDeleted: false,
-      deletedAt: null,
-      isFlagged: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, optimistic]);
+    const tempId = tempIdOverride ?? `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    if (!tempIdOverride) {
+      const optimistic: OptimisticMessage = {
+        _id: tempId,
+        _tempId: tempId,
+        _pending: true,
+        conversationId,
+        senderId: '',
+        senderRole: 'user',
+        type: payload.type,
+        text: 'text' in payload ? payload.text : null,
+        attachments: 'attachments' in payload ? payload.attachments : [],
+        productShare: null,
+        replyTo: payload.replyTo ?? null,
+        status: 'sent',
+        seenBy: [],
+        isEdited: false,
+        editedAt: null,
+        isDeleted: false,
+        deletedAt: null,
+        isFlagged: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, optimistic]);
+    } else {
+      // Retrying a previously failed message — clear the failed flag, keep its place.
+      setMessages(prev => prev.map(m => m._tempId === tempId ? { ...m, _pending: true, _failed: false } : m));
+    }
 
     try {
       const res = await apiSendMessage(conversationId, payload);
-      setMessages(prev => prev.map(m => m._tempId === tempId ? res : m).filter(m => m._id !== tempId || m === res));
+      setMessages(prev => {
+        // The server echoes 'message:new' back to the sender's own socket too,
+        // so the real doc may already be in the list by the time this resolves —
+        // replace the optimistic entry, then dedupe by real _id either way.
+        const replaced = prev.map(m => m._tempId === tempId ? res : m);
+        const seen = new Set<string>();
+        return replaced.filter(m => (seen.has(m._id) ? false : (seen.add(m._id), true)));
+      });
       return res;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message.');
@@ -162,6 +194,11 @@ export function useMessages(conversationId: string | null) {
     } finally {
       setSending(false);
     }
+  }
+
+  // Re-attempt a failed optimistic send, reusing its temp id so it stays in place.
+  function retry(tempId: string, payload: SendMessagePayload) {
+    return send(payload, tempId);
   }
 
   async function edit(messageId: string, text: string) {
@@ -192,7 +229,7 @@ export function useMessages(conversationId: string | null) {
   }
 
   return {
-    messages, loading, sending, error, hasMore, refetch, loadMore, send, edit, remove, markSeen,
+    messages, loading, sending, error, hasMore, loadingMore, refetch, loadMore, send, retry, edit, remove, markSeen,
     otherOnline, otherTyping, sendTyping,
   };
 }

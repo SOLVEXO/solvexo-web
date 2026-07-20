@@ -1,15 +1,17 @@
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Download, Loader2, CalendarClock } from 'lucide-react';
+import { Package, Download, GraduationCap, Loader2, CalendarClock } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { apiCreatePhysicalProduct, apiCreateDigitalProduct } from '@/api/services/product';
+import { apiCreatePhysicalProduct, apiCreateDigitalProduct, EDUCATION_LEVELS, type EducationLevel } from '@/api/services/product';
 import { addCachedProduct } from './_cache';
 import { SubcategoryField } from './SubcategoryField';
+import { CustomLevelInput } from './CustomLevelInput';
 import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal } from '@/components/comman/ui';
 
-type ProductType   = 'physical' | 'digital';
+type ProductType   = 'physical' | 'digital' | 'educational';
 type ProductStatus = 'draft' | 'active' | 'scheduled';
+type LicenseType   = 'personal' | 'single_classroom' | 'school' | 'commercial';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#B5B3AC] outline-none';
 const ta  = `${inp} resize-y min-h-[100px]`;
@@ -77,8 +79,8 @@ const initDig = {
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   fileData: null as PrivateUploadData | null,
   downloadLimit: 'unlimited', linkExpiryDays: '',
-  pdfStampingEnabled: false, licenseType: 'personal' as 'personal' | 'commercial',
-  buyerDeliveryMessage: '',
+  pdfStampingEnabled: false, licenseType: 'personal' as LicenseType,
+  buyerDeliveryMessage: '', educationLevel: '' as EducationLevel | '', customLevel: '',
 };
 type PhysForm = typeof initPhys;
 type DigForm  = typeof initDig;
@@ -87,8 +89,9 @@ export default function StoreAddProduct() {
   const navigate           = useNavigate();
   const { storeId, store } = useStoreWorkspace();
 
-  const supportsPhysical = !store || store.productTypes.includes('physical_products');
-  const supportsDigital  = !store || store.productTypes.includes('digital_downloads');
+  const supportsPhysical    = !store || store.productTypes.includes('physical_products');
+  const supportsDigital     = !store || store.productTypes.includes('digital_downloads');
+  const supportsEducational = !store || store.productTypes.includes('educational_resources');
 
   const { mainCategory, subcategories, loading: catLoading, refetch: refetchCats } = useStoreSubcategories(store?.categoryId);
 
@@ -115,7 +118,9 @@ export default function StoreAddProduct() {
   const handleSubmit = async (statusOverride?: ProductStatus) => {
     setError('');
     if (pType === 'physical' && (!phys.name || !phys.price || !phys.stock)) { setError('Name, price, and stock are required.'); return; }
-    if (pType === 'digital'  && (!dig.name  || !dig.price))                  { setError('Name and price are required.'); return; }
+    if (pType !== 'physical' && (!dig.name  || !dig.price))                  { setError('Name and price are required.'); return; }
+    if (pType === 'educational' && !dig.educationLevel)                      { setError('Education level is required for educational resources.'); return; }
+    if (pType === 'educational' && dig.educationLevel === 'other' && !dig.customLevel.trim()) { setError('Please describe the custom education level.'); return; }
     setSaving(true);
     try {
       const finalStatus = statusOverride ?? (pType === 'physical' ? phys.status : dig.status);
@@ -133,7 +138,10 @@ export default function StoreAddProduct() {
         const files = dig.fileData ? [{ url: dig.fileData.publicId, name: dig.fileData.fileName, size: dig.fileData.fileSize, mimeType: dig.fileData.mimeType }] : [];
         const res = await apiCreateDigitalProduct({
           storeId, name: dig.name, description: dig.description,
-          productType: 'digital', subCategoryId: dig.subCategoryId || null, images: dig.images, tags: dig.tags,
+          productType: pType === 'educational' ? 'educational' : 'digital',
+          subCategoryId: dig.subCategoryId || null, images: dig.images, tags: dig.tags,
+          educationLevel: pType === 'educational' ? (dig.educationLevel || null) : null,
+          customLevel: pType === 'educational' && dig.educationLevel === 'other' ? dig.customLevel : null,
           isListedOnSolvexo: dig.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? dig.scheduledAt || null : null,
           price: Number(dig.price), compareAtPrice: dig.compareAtPrice ? Number(dig.compareAtPrice) : null,
@@ -180,10 +188,11 @@ export default function StoreAddProduct() {
 
           {/* Product Type */}
           <Card title="Product Type">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {([
-                { t: 'physical' as const, Icon: Package,  label: 'Physical Product', desc: 'Shipped to the customer',   enabled: supportsPhysical },
-                { t: 'digital'  as const, Icon: Download, label: 'Digital Download',  desc: 'Instant downloadable file', enabled: supportsDigital  },
+                { t: 'physical'    as const, Icon: Package,       label: 'Physical Product',    desc: 'Shipped to the customer',      enabled: supportsPhysical    },
+                { t: 'digital'     as const, Icon: Download,      label: 'Digital Download',     desc: 'Instant downloadable file',    enabled: supportsDigital     },
+                { t: 'educational' as const, Icon: GraduationCap, label: 'Educational Resource', desc: 'Worksheets, lessons, curricula', enabled: supportsEducational },
               ]).map(({ t, Icon: TIcon, label, desc, enabled }) => {
                 const sel = pType === t;
                 return (
@@ -244,16 +253,43 @@ export default function StoreAddProduct() {
             />
           </Card>
 
-          {/* Digital: File Upload */}
-          {pType === 'digital' && (
-            <Card title="Digital File">
+          {/* Digital/Educational: File Upload */}
+          {(pType === 'digital' || pType === 'educational') && (
+            <Card title={pType === 'educational' ? 'Resource File' : 'Digital File'}>
               <p className="text-[12px] text-slate mb-3">Upload the file buyers will receive instantly after purchase.</p>
               <FileUpload value={dig.fileData} onChange={v => sd('fileData', v)} label="Click to upload your digital file" />
             </Card>
           )}
 
-          {/* Digital: Delivery Settings */}
-          {pType === 'digital' && (
+          {/* Educational: Education Level (controlled Tier-1 + optional Tier-2 custom label) */}
+          {pType === 'educational' && (
+            <Card title="Education Level">
+              <div className="flex flex-col gap-4">
+                <F label="Education Level" req>
+                  <div className="flex gap-2 flex-wrap">
+                    {EDUCATION_LEVELS.map(l => {
+                      const sel = dig.educationLevel === l.value;
+                      return (
+                        <button key={l.value} type="button" onClick={() => sd('educationLevel', l.value)}
+                          className="px-3 py-[7px] rounded-full cursor-pointer text-[12px] font-medium transition-all duration-150"
+                          style={{ border: `1.5px solid ${sel ? '#D97757' : '#E8E6DC'}`, background: sel ? '#FBECE4' : '#fff', color: sel ? '#D97757' : '#8C8A82' }}>
+                          {l.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </F>
+                {dig.educationLevel === 'other' && (
+                  <F label="Custom Education Level" req>
+                    <CustomLevelInput value={dig.customLevel} onChange={v => sd('customLevel', v)} />
+                  </F>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {/* Digital/Educational: Delivery Settings */}
+          {(pType === 'digital' || pType === 'educational') && (
             <Card title="Delivery Settings">
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -265,14 +301,17 @@ export default function StoreAddProduct() {
                   </F>
                 </div>
                 <F label="License Type">
-                  <div className="flex gap-2 mt-0.5">
-                    {(['personal', 'commercial'] as const).map(l => {
+                  <div className="flex gap-2 mt-0.5 flex-wrap">
+                    {(pType === 'educational'
+                      ? (['personal', 'single_classroom', 'school', 'commercial'] as const)
+                      : (['personal', 'commercial'] as const)
+                    ).map(l => {
                       const sel = dig.licenseType === l;
                       return (
                         <button key={l} type="button" onClick={() => sd('licenseType', l)}
                           className="flex-1 py-2 rounded-lg cursor-pointer text-[12px] font-semibold capitalize transition-all duration-150"
                           style={{ border: `1.5px solid ${sel ? '#D97757' : '#E8E6DC'}`, background: sel ? '#FBECE4' : '#fff', color: sel ? '#D97757' : '#8C8A82' }}>
-                          {l}
+                          {l.replace('_', ' ')}
                         </button>
                       );
                     })}

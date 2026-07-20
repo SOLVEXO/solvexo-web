@@ -25,15 +25,18 @@ const TABS: Tab[] = [
 ];
 
 interface SellerAnalyticsViewProps {
-  storeId: string;
+  /** `null` means "every store the seller owns" — the cross-store view. */
+  storeId: string | null;
 }
 
 /**
- * The full analytics dashboard for one store — shared by both `StoreAnalytics`
- * (routed at `/seller/store/:storeId/analytics`, storeId from the URL) and
- * `SellerAnalytics` (routed at `/seller/analytics`, storeId from a store picker).
+ * The full analytics dashboard for one store, or for every store the seller owns
+ * — shared by `StoreAnalytics` (routed at `/seller/store/:storeId/analytics`,
+ * always one store from the URL) and `SellerAnalytics` (routed at
+ * `/seller/analytics`, storeId from a store picker that also offers "All Stores").
  * Mirrors the `AdminAnalytics` page structure 1:1 (filter bar + TabBar + tab panels)
  * scoped down to the 5 tabs the seller-side backend module actually supports.
+ * Export (PDF/CSV) stays single-store only — hidden when `storeId` is null.
  */
 export function SellerAnalyticsView({ storeId }: SellerAnalyticsViewProps) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -56,6 +59,7 @@ export function SellerAnalyticsView({ storeId }: SellerAnalyticsViewProps) {
         csvSections={CSV_SECTION_OPTIONS}
         csvSection={csvSection}
         onCsvSectionChange={setCsvSection}
+        showExport={!!storeId}
       />
 
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />

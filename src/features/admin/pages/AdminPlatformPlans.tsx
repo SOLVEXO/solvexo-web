@@ -23,6 +23,7 @@ const DEFAULT_LIMITS: PlatformPlanLimits = {
   customDomainAllowed: false, whiteLabelAllowed: false, loyaltyProgramAllowed: false, subscriptionProductsAllowed: false,
   advancedAnalyticsAllowed: false, abandonedCartRecoveryAllowed: false, emailCampaignsAllowed: false,
   apiWebhooksAllowed: false, dedicatedAccountManager: false, prioritySupport: false, marketplaceFeaturedBadge: false,
+  advancedSeoToolsAllowed: false, seoAiSuggestionsAllowed: false, searchConsoleIntegrationAllowed: false, customRedirectsAllowed: false,
 };
 
 type BooleanKeys<T> = { [K in keyof T]-?: NonNullable<T[K]> extends boolean ? K : never }[keyof T];
@@ -39,6 +40,10 @@ const BOOL_FLAGS: { key: BooleanKeys<PlatformPlanLimits>; label: string }[] = [
   { key: 'dedicatedAccountManager', label: 'Dedicated account manager' },
   { key: 'prioritySupport', label: 'Priority support' },
   { key: 'marketplaceFeaturedBadge', label: 'Marketplace featured badge' },
+  { key: 'advancedSeoToolsAllowed', label: 'Advanced SEO tools' },
+  { key: 'seoAiSuggestionsAllowed', label: 'AI SEO suggestions' },
+  { key: 'searchConsoleIntegrationAllowed', label: 'Search Console integration' },
+  { key: 'customRedirectsAllowed', label: 'Custom redirects' },
 ];
 
 function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new'; onClose: () => void; onSaved: () => void }) {
@@ -51,6 +56,8 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
   const [monthlyPrice, setMonthlyPrice] = useState(p?.monthlyPriceUSD != null ? String(p.monthlyPriceUSD) : '');
   const [yearlyPrice, setYearlyPrice] = useState(p?.yearlyPriceUSD != null ? String(p.yearlyPriceUSD) : '');
   const [trialDays, setTrialDays] = useState(p ? String(p.trialDays ?? 0) : '0');
+  const [sortOrder, setSortOrder] = useState(p ? String(p.sortOrder ?? 0) : '0');
+  const [isPubliclyVisible, setIsPubliclyVisible] = useState(p?.isPubliclyVisible ?? true);
   const [featuresText, setFeaturesText] = useState(p?.featureBullets.join('\n') ?? '');
   const [limits, setLimits] = useState<PlatformPlanLimits>(p?.limits ?? DEFAULT_LIMITS);
   const [saving, setSaving] = useState(false);
@@ -67,6 +74,8 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
         isFree, monthlyPriceUSD: monthlyPrice ? Number(monthlyPrice) : undefined,
         yearlyPriceUSD: yearlyPrice ? Number(yearlyPrice) : undefined,
         trialDays: Number(trialDays) || 0,
+        sortOrder: Number(sortOrder) || 0,
+        isPubliclyVisible,
         featureBullets: featuresText.split('\n').map(f => f.trim()).filter(Boolean),
         limits,
       };
@@ -91,6 +100,19 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
           <Input label="Monthly $" type="number" min={0} value={monthlyPrice} onChange={e => setMonthlyPrice(e.target.value)} disabled={isFree} />
           <Input label="Yearly $ (optional)" type="number" min={0} value={yearlyPrice} onChange={e => setYearlyPrice(e.target.value)} disabled={isFree} />
           <Input label="Trial Days" type="number" min={0} value={trialDays} onChange={e => setTrialDays(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label="Sort order (lower = shown first)" type="number" value={sortOrder}
+            onChange={e => setSortOrder(e.target.value)}
+          />
+          <div>
+            <p className="block text-[12px] font-medium text-charcoal mb-1.5">Visibility</p>
+            <label className="flex items-center gap-2 text-[12.5px] text-charcoal h-[38px]">
+              <input type="checkbox" checked={isPubliclyVisible} onChange={e => setIsPubliclyVisible(e.target.checked)} />
+              Show on public pricing page
+            </label>
+          </div>
         </div>
         <label className="flex items-center gap-2 text-[12.5px] text-charcoal">
           <input type="checkbox" checked={isFree} onChange={e => setIsFree(e.target.checked)} /> Free plan (no charge)
@@ -354,7 +376,10 @@ export function AdminPlatformPlans() {
               <div key={plan._id} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4 flex flex-col">
                 <div className="flex items-start justify-between mb-1">
                   <p className="text-[15px] font-bold text-carbon">{plan.name}</p>
-                  {plan.badge && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-[#FBECE4] text-[#B95A3A]">{plan.badge}</span>}
+                  <div className="flex items-center gap-1.5">
+                    {plan.isPubliclyVisible === false && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-bone text-slate">Hidden</span>}
+                    {plan.badge && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-[#FBECE4] text-[#B95A3A]">{plan.badge}</span>}
+                  </div>
                 </div>
                 <p className="text-[18px] font-bold text-brand-orange mb-2">
                   {plan.isFree ? 'Free' : plan.isCustomPricing ? 'Custom' : `$${plan.monthlyPriceUSD}/mo`}

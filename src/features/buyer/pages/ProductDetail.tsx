@@ -311,7 +311,10 @@ export function ProductDetail() {
 
   const isLoggedIn = TokenStorage.isLoggedIn();
   const storeId = product?.storeId;
-  const isDigital = (product?.productType ?? product?.type) === 'digital';
+  const pType = product?.productType ?? product?.type ?? 'physical';
+  const isPhysical = pType === 'physical';
+  const isDigital  = !isPhysical;
+  const typeLabel  = isPhysical ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
   const stock = isDigital ? Infinity : (activeVariant?.stock ?? 0);
   const pctOff = activeVariant?.compareAtPrice != null && activeVariant.compareAtPrice > activeVariant.price
     ? Math.round((1 - activeVariant.price / activeVariant.compareAtPrice) * 100)
@@ -366,7 +369,7 @@ export function ProductDetail() {
 
   async function handleAddToCart(navigateToCart: boolean) {
     if (!product || !activeVariant) return;
-    await addToCart(product._id, activeVariant._id, product.productType ?? product.type ?? 'physical');
+    await addToCart(product._id, activeVariant._id, product.type ?? 'physical');
     for (let i = 1; i < qty; i++) {
       await updateQty(product._id, activeVariant._id, 'increase');
     }
@@ -387,7 +390,7 @@ export function ProductDetail() {
   }
 
   const specs: { label: string; value: string }[] = product ? [
-    { label: 'Product Type', value: isDigital ? 'Digital' : 'Physical' },
+    { label: 'Product Type', value: typeLabel },
     ...(activeVariant?.sku ? [{ label: 'SKU', value: activeVariant.sku }] : []),
     ...(activeVariant?.color ? [{ label: 'Color', value: activeVariant.color }] : []),
     ...(activeVariant?.size ? [{ label: 'Size', value: activeVariant.size }] : []),
@@ -429,7 +432,7 @@ export function ProductDetail() {
               <Card padding="none">
                 <div className="px-6 pt-6 pb-0">
                   <div className="flex items-center gap-2 mb-3">
-                    <Badge color="orange">{isDigital ? 'Digital' : 'Physical'}</Badge>
+                    <Badge color="orange">{typeLabel}</Badge>
                     {pctOff != null && pctOff > 0 && <Badge color="red">-{pctOff}% OFF</Badge>}
                   </div>
                   <h1 className="text-[20px] font-bold text-carbon mb-[6px] leading-[1.35] break-words">

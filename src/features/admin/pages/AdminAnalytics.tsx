@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   LayoutDashboard, DollarSign, Store, Users, Package, ShoppingCart, CreditCard, TrendingUp,
 } from 'lucide-react';
-import { Button, Input, TabBar, type Tab } from '@/components/comman/ui';
+import { Button, TabBar, type Tab } from '@/components/comman/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminAnalyticsExport } from '@/hooks/admin/useAdminAnalytics';
 import { AnalyticsFilterBar } from '@/components/comman/analytics/AnalyticsFilterBar';
 import type { ExportSection } from '@/api/services/analytics/adminAnalytics';
+import { apiSearchStores } from '@/api/services/search';
+import { apiListAdminUsers } from '@/api/services/users/adminUsers';
 import {
   CSV_SECTION_OPTIONS,
   DEFAULT_ANALYTICS_FILTERS,
@@ -14,6 +16,7 @@ import {
   TAB_TO_CSV_SECTION,
   toBaseAnalyticsParams,
 } from '../components/analytics/analyticsFilters';
+import { EntitySearchSelect, type EntityOption } from '../components/analytics/EntitySearchSelect';
 import { OverviewTab } from './analytics/OverviewTab';
 import { RevenueTab } from './analytics/RevenueTab';
 import { SellersTab } from './analytics/SellersTab';
@@ -22,6 +25,16 @@ import { ProductsTab } from './analytics/ProductsTab';
 import { OrdersTab } from './analytics/OrdersTab';
 import { PaymentsTab } from './analytics/PaymentsTab';
 import { PlatformTab } from './analytics/PlatformTab';
+
+async function searchStoresByName(query: string): Promise<EntityOption[]> {
+  const res = await apiSearchStores(query, 1, 8);
+  return res.data.stores.map(s => ({ id: s.storeId, label: s.name, sub: `/${s.slug}` }));
+}
+
+async function searchSellersByName(query: string): Promise<EntityOption[]> {
+  const res = await apiListAdminUsers({ role: 'seller', search: query, limit: 8 });
+  return res.data.items.map(u => ({ id: u.id, label: u.name, sub: u.email }));
+}
 
 const TABS: Tab[] = [
   { id: 'overview',  label: 'Overview',  icon: <LayoutDashboard size={14} /> },
@@ -34,6 +47,13 @@ const TABS: Tab[] = [
   { id: 'platform',  label: 'Platform',  icon: <TrendingUp size={14} /> },
 ];
 
+/**
+ * The power-user report: full filter bar (custom ranges, compare-to-previous,
+ * store/seller drill-down, PDF/CSV export) + every section as its own tab —
+ * distinct from `AdminOverview` (`/admin`), the fixed-range glance dashboard
+ * with no filter chrome. Same 8 tab components/hooks/endpoints as before
+ * (zero duplicated logic), just switched via an underline `TabBar` here.
+ */
 export function AdminAnalytics() {
   usePageTitle('Analytics');
   const [activeTab, setActiveTab] = useState('overview');
@@ -68,22 +88,20 @@ export function AdminAnalytics() {
         onCsvSectionChange={setCsvSection}
         advanced={
           <>
-            <div className="w-[220px]">
-              <Input
-                label="Store ID"
-                placeholder="Drill down to one store…"
-                value={filters.storeId}
-                onChange={e => setFilters({ ...filters, storeId: e.target.value.trim() })}
-              />
-            </div>
-            <div className="w-[220px]">
-              <Input
-                label="Seller ID"
-                placeholder="Drill down to one seller…"
-                value={filters.sellerId}
-                onChange={e => setFilters({ ...filters, sellerId: e.target.value.trim() })}
-              />
-            </div>
+            <EntitySearchSelect
+              label="Store"
+              placeholder="Search by store name…"
+              selectedId={filters.storeId}
+              onSelect={opt => setFilters({ ...filters, storeId: opt?.id ?? '' })}
+              search={searchStoresByName}
+            />
+            <EntitySearchSelect
+              label="Seller"
+              placeholder="Search by seller name…"
+              selectedId={filters.sellerId}
+              onSelect={opt => setFilters({ ...filters, sellerId: opt?.id ?? '' })}
+              search={searchSellersByName}
+            />
             {(filters.storeId || filters.sellerId) && (
               <Button variant="ghost" size="sm" onClick={() => setFilters({ ...filters, storeId: '', sellerId: '' })}>
                 Clear

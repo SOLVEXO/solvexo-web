@@ -45,10 +45,13 @@ export interface MarketplaceProduct {
   storeSlug?:        string | null;
   slug:              string;
   description:       string;
-  productType?:      'physical' | 'digital';
+  productType?:      'physical' | 'digital' | 'educational';
   type?:             'physical' | 'digital';
   categoryId:        string;
   subCategoryId?:    string | null;
+  educationLevel?:   string | null;
+  customLevel?:      string | null;
+  normalizedCustomLevel?: string | null;
   images:            string[];
   tags?:             string[];
   digital?:          DigitalProduct | null;
@@ -89,11 +92,54 @@ interface ProductByIdResponse {
   };
 }
 
-export function apiGetAllProducts(page = 1, limit = 10, categoryId?: string) {
+export function apiGetAllProducts(
+  page = 1, limit = 10, categoryId?: string,
+  productType?: 'physical' | 'digital' | 'educational',
+  educationLevel?: string, normalizedCustomLevel?: string,
+) {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (categoryId) params.set('id', categoryId);
+  if (productType) params.set('productType', productType);
+  if (educationLevel) params.set('educationLevel', educationLevel);
+  if (normalizedCustomLevel) params.set('normalizedCustomLevel', normalizedCustomLevel);
   return client.get<never, ProductsByCategoryResponse>(
     `${ENDPOINTS.MARKETPLACE.PRODUCTS_BY_CATEGORY}?${params.toString()}`,
+  );
+}
+
+export interface EducationFacetLevel { level: string; count: number }
+export interface EducationFacetOtherLevel { slug: string; displayName: string; count: number }
+interface EducationFacetsResponse {
+  success: boolean;
+  data: { levels: EducationFacetLevel[]; otherLevels: EducationFacetOtherLevel[] };
+}
+
+/** GET /api/products/education/facets — public; backs the Education marketplace's dynamic filter chips. */
+export function apiGetEducationFacets() {
+  return client.get<never, EducationFacetsResponse>(ENDPOINTS.PRODUCT.EDUCATION_FACETS);
+}
+
+interface WorksheetTrialPayload {
+  subject: string;
+  gradeLevel: string;
+  topics: string[];
+  questionCount: number;
+  includeAnswerKey: boolean;
+}
+
+interface WorksheetTrialResponse {
+  success: boolean;
+  data: {
+    title: string;
+    sections: { instructions: string; questions: { prompt: string; type: string; choices?: string[]; answer?: string }[] }[];
+    provider: string;
+  };
+}
+
+/** POST /api/public/worksheet-builder/try-free — public, unauthenticated, rate-limited (3/hr/IP). */
+export function apiGenerateWorksheetTrial(payload: WorksheetTrialPayload) {
+  return client.post<never, WorksheetTrialResponse>(
+    ENDPOINTS.AI_STUDIO_PUBLIC.WORKSHEET_TRY_FREE, payload,
   );
 }
 

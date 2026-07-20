@@ -116,10 +116,10 @@ export function MiniCart({ accentColor }: { accentColor?: string }) {
                   <span className="text-[15px] font-bold text-carbon">${subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" fullWidth className="justify-center" onClick={() => goTo('/cart')}>
+                  <Button variant="outline" size="sm" className="flex-1 min-w-0 justify-center" onClick={() => goTo('/cart')}>
                     View Cart
                   </Button>
-                  <Button variant="primary" size="sm" fullWidth className="justify-center" onClick={() => goTo('/checkout')}>
+                  <Button variant="primary" size="sm" className="flex-1 min-w-0 justify-center" onClick={() => goTo('/checkout')}>
                     Checkout <ArrowRight size={12} />
                   </Button>
                 </div>

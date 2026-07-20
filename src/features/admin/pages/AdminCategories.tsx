@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Plus, ChevronRight, FolderTree, Tag } from 'lucide-react';
+import { Plus, ChevronRight, FolderTree, Tag, ImagePlus, Loader2 } from 'lucide-react';
+import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { apiGetCategoryTree, apiAddCategory, type CategoryNode } from '@/api/services/categories';
+import { useUpload } from '@/hooks/upload/useUpload';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Input, Textarea, Select } from '@/components/comman/ui/Input';
@@ -18,9 +20,20 @@ function AddCategoryModal({ mainCategories, onClose, onSaved }: {
   const [name,        setName]        = useState('');
   const [description, setDescription] = useState('');
   const [image,       setImage]       = useState('');
+  const [preview,     setPreview]     = useState('');
   const [sortOrder,   setSortOrder]   = useState('0');
   const [saving,      setSaving]      = useState(false);
   const [error,       setError]       = useState('');
+  const { upload: uploadImage, uploading: imageUploading } = useUpload('public');
+
+  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPreview(URL.createObjectURL(file));
+    uploadImage(file)
+      .then(data => setImage(data.url))
+      .catch(() => setPreview(''));
+  };
 
   async function submit() {
     if (!name.trim()) { setError('Category name is required.'); return; }
@@ -62,7 +75,25 @@ function AddCategoryModal({ mainCategories, onClose, onSaved }: {
         <Input label="Name" placeholder="e.g. Electronics" value={name} onChange={e => setName(e.target.value)} />
         <Textarea label="Description (optional)" rows={3} placeholder="Describe this category…" value={description} onChange={e => setDescription(e.target.value)} />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input label="Image URL (optional)" placeholder="https://…" value={image} onChange={e => setImage(e.target.value)} />
+          <div>
+            <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Image (optional)</label>
+            <div className="flex items-center gap-3">
+              <label className={clsx(
+                'size-[52px] rounded-lg bg-cream border-2 border-dashed border-bone flex items-center justify-center shrink-0 overflow-hidden transition-colors',
+                imageUploading ? 'cursor-wait opacity-60' : 'cursor-pointer hover:border-brand-orange',
+              )}>
+                {imageUploading
+                  ? <Loader2 size={18} className="text-brand-orange animate-spin" />
+                  : preview || image
+                    ? <img loading="lazy" decoding="async" src={preview || image} alt="" className="w-full h-full object-cover" />
+                    : <ImagePlus size={18} className="text-slate" />}
+                <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleImageFile} disabled={imageUploading} />
+              </label>
+              <p className="text-[11px] text-slate leading-[1.4]">
+                {imageUploading ? 'Uploading…' : image ? 'Image uploaded — click to replace.' : 'PNG, JPG or WebP.'}
+              </p>
+            </div>
+          </div>
           <Input label="Sort Order" type="number" min={0} value={sortOrder} onChange={e => setSortOrder(e.target.value)} />
         </div>
         {error && <p className="text-[12px] text-error">{error}</p>}

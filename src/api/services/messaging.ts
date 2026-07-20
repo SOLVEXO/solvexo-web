@@ -19,9 +19,11 @@ export interface ConversationParticipantPreview {
 }
 
 export interface StorePreview {
-  _id:  string;
-  name: string;
-  logo: string | null;
+  _id:     string;
+  name:    string;
+  logo:    string | null;
+  slug?:   string;
+  badges?: string[];
 }
 
 export interface LastMessagePreview {
@@ -56,13 +58,16 @@ export interface Conversation {
 }
 
 export interface MessageAttachment {
-  url:          string;
-  publicId:     string;
-  resourceType: string;
-  mimeType:     string;
-  fileName:     string;
-  fileSize:     number;
+  url:           string;
+  publicId:      string;
+  resourceType:  string;
+  mimeType:      string;
+  fileName:      string;
+  fileSize:      number;
+  thumbnailUrl?: string;
 }
+
+export interface MessageSeenEntry { userId: string; seenAt: string }
 
 export interface MessageReplyTo {
   messageId:   string;
@@ -95,7 +100,7 @@ export interface Message {
   replyTo:         MessageReplyTo | null;
   forwardedFrom?:  string | null;
   status:          string;
-  seenBy:          string[];
+  seenBy:          MessageSeenEntry[];
   isEdited:        boolean;
   editedAt:        string | null;
   isDeleted:       boolean;
@@ -124,7 +129,7 @@ interface Paginated { total: number; page: number; limit: number; pages: number 
 // ── Payloads ──────────────────────────────────────────────────────────────────
 export interface StartConversationPayload { storeId: string }
 
-export interface ListConversationsParams   { storeId?: string; page?: number; limit?: number }
+export interface ListConversationsParams   { storeId?: string; page?: number; limit?: number; isArchived?: boolean; isPinned?: boolean }
 export interface SearchConversationsParams { q: string; storeId?: string }
 
 export interface SendTextMessagePayload       { type: 'text'; text: string; replyTo?: MessageReplyTo }
@@ -132,7 +137,7 @@ export interface SendAttachmentMessagePayload { type: 'image' | 'video' | 'pdf' 
 export interface SendProductSharePayload      { type: 'product_share'; productShare: ProductSharePayload; replyTo?: MessageReplyTo }
 export type SendMessagePayload = SendTextMessagePayload | SendAttachmentMessagePayload | SendProductSharePayload;
 
-export interface GetMessagesParams    { cursor?: string; limit?: number }
+export interface GetMessagesParams    { before?: string; limit?: number }
 export interface SearchMessagesParams { q: string }
 export interface EditMessagePayload   { text: string }
 

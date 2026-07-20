@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiGetAllProducts, type MarketplaceProduct } from '@/api/services/marketplace';
 
-export function useProductsByCategory(page = 1, limit = 10, categoryId?: string) {
+export function useProductsByCategory(
+  page = 1, limit = 10, categoryId?: string,
+  productType?: 'physical' | 'digital' | 'educational',
+  educationLevel?: string, normalizedCustomLevel?: string,
+) {
   const [products, setProducts] = useState<MarketplaceProduct[]>([]);
   const [total,    setTotal]    = useState(0);
   const [loading,  setLoading]  = useState(true);
@@ -14,7 +18,7 @@ export function useProductsByCategory(page = 1, limit = 10, categoryId?: string)
     let cancelled = false;
     setLoading(true);
     setError('');
-    apiGetAllProducts(page, limit, categoryId)
+    apiGetAllProducts(page, limit, categoryId, productType, educationLevel, normalizedCustomLevel)
       .then(res => {
         if (!cancelled) {
           setProducts(res.data.products);
@@ -26,7 +30,7 @@ export function useProductsByCategory(page = 1, limit = 10, categoryId?: string)
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [page, limit, categoryId, reloadKey]);
+  }, [page, limit, categoryId, productType, educationLevel, normalizedCustomLevel, reloadKey]);
 
   return { products, total, loading, error, refetch };
 }

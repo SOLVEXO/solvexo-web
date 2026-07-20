@@ -1,4 +1,4 @@
-import { CheckCircle, Printer, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Printer, ArrowRight } from 'lucide-react';
 import type { Sale } from '@/api/services/pos/posSales';
 
 interface ReceiptOverlayProps {
@@ -8,57 +8,62 @@ interface ReceiptOverlayProps {
 
 export function ReceiptOverlay({ sale, resetSale }: ReceiptOverlayProps) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/85 z-20 px-4 pos-overlay-enter">
-      <div className="bg-pos-surface border border-carbon rounded-2xl shadow-xl p-7 w-full max-w-[320px] pos-panel-enter">
+    <div className="absolute inset-0 flex items-center justify-center bg-black/85 backdrop-blur-sm z-20 px-4 pos-overlay-enter">
+      <div className="bg-pos-surface-3 border border-pos-border-strong rounded-[24px] shadow-2xl p-7 w-full max-w-[340px] max-h-[90%] overflow-y-auto pos-panel-enter">
 
         {/* Header */}
         <div className="text-center mb-6">
-          <CheckCircle size={48} className="text-success mx-auto mb-3" />
-          <p className="text-[18px] font-bold text-white">Payment Complete</p>
-          <p className="text-[12px] text-pos-muted mt-1">{sale.saleNumber}</p>
-          <p className="text-[30px] font-bold text-brand-orange my-2">${sale.total.toFixed(2)}</p>
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <div className="absolute inset-0 rounded-full bg-success/15 pos-live-pulse" />
+            <div className="absolute inset-[3px] rounded-full bg-success/10 flex items-center justify-center">
+              <CheckCircle2 size={34} className="text-success" />
+            </div>
+          </div>
+          <p className="text-[19px] font-bold text-white">Payment Complete</p>
+          <p className="text-[12px] text-pos-muted mt-[3px]">{sale.saleNumber}</p>
+          <p className="text-[34px] font-bold text-brand-orange my-2 leading-none">${sale.total.toFixed(2)}</p>
           <p className="text-[12px] text-pos-faint">
-            {new Date(sale.createdAt).toLocaleTimeString()} · {sale.paymentMethod}
+            {new Date(sale.createdAt).toLocaleTimeString()} · <span className="capitalize">{sale.paymentMethod}</span>
           </p>
         </div>
 
-        {/* Line items */}
-        <div className="mb-5">
+        {/* Line items — styled like a physical receipt slip */}
+        <div className="mb-6 rounded-2xl bg-pos-surface border border-pos-border border-dashed p-4">
           {sale.items.map(item => (
-            <div key={item._id} className="flex justify-between py-[6px] border-b border-carbon">
-              <span className="text-[11px] text-slate">{item.qty}× {item.name}</span>
-              <span className="text-[11px] text-white">${item.lineTotal.toFixed(2)}</span>
+            <div key={item._id} className="flex justify-between py-[7px] border-b border-pos-border last:border-b-0">
+              <span className="text-[12px] text-slate">{item.qty}× {item.name}</span>
+              <span className="text-[12px] text-white font-medium">${item.lineTotal.toFixed(2)}</span>
             </div>
           ))}
           {sale.discount > 0 && (
-            <div className="flex justify-between pt-[6px]">
-              <span className="text-[11px] text-success">Discount</span>
-              <span className="text-[11px] text-success">−${sale.discount.toFixed(2)}</span>
+            <div className="flex justify-between pt-[8px]">
+              <span className="text-[12px] text-success">Discount</span>
+              <span className="text-[12px] text-success">−${sale.discount.toFixed(2)}</span>
             </div>
           )}
           <div className="flex justify-between pt-[6px]">
-            <span className="text-[11px] text-pos-faint">Tax</span>
-            <span className="text-[11px] text-white">${sale.tax.toFixed(2)}</span>
+            <span className="text-[12px] text-pos-faint">Tax</span>
+            <span className="text-[12px] text-white">${sale.tax.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between pt-2 mt-1 border-t border-carbon">
-            <span className="text-[12px] text-pos-faint">Total paid</span>
-            <span className="text-[12px] font-semibold text-white">${sale.total.toFixed(2)}</span>
+          <div className="flex justify-between items-baseline pt-3 mt-2 border-t border-pos-border">
+            <span className="text-[13px] font-semibold text-pos-faint">Total paid</span>
+            <span className="text-[16px] font-bold text-white">${sale.total.toFixed(2)}</span>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-[10px]">
           <button
             onClick={() => window.print()}
-            className="bg-carbon border-0 rounded-lg py-[11px] text-[12px] text-white cursor-pointer flex items-center justify-center gap-[6px] transition-transform duration-100 active:scale-[0.98]"
+            className="h-12 bg-pos-surface border border-pos-border rounded-xl text-[13px] font-medium text-white cursor-pointer flex items-center justify-center gap-[8px] transition-all duration-150 hover:border-pos-border-strong active:scale-[0.98]"
           >
-            <Printer size={13} />Print Receipt
+            <Printer size={15} />Print Receipt
           </button>
           <button
             onClick={resetSale}
-            className="bg-brand-orange border-0 rounded-lg py-[13px] text-[13px] font-bold text-white cursor-pointer flex items-center justify-center gap-[6px] shadow-md transition-transform duration-100 active:scale-[0.98]"
+            className="h-[52px] bg-gradient-to-b from-brand-orange to-brand-deep-orange border-0 rounded-xl text-[14px] font-bold text-white cursor-pointer flex items-center justify-center gap-[8px] shadow-[0_8px_24px_rgba(217,119,87,0.35)] transition-all duration-150 active:scale-[0.98]"
           >
-            New Sale <ArrowRight size={14} />
+            New Sale <ArrowRight size={15} />
           </button>
         </div>
       </div>

@@ -1,25 +1,31 @@
-import { useState } from 'react';
-import { MessageCircle, Search, X } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { MessageCircle, Search, X, Store as StoreIcon } from 'lucide-react';
 import type { ActionMenuItem } from '@/components/comman/ui';
 import type { Message, SendMessagePayload } from '@/api/services/messaging';
+import type { OptimisticMessage } from '@/hooks/messaging/useMessages';
 import { useSearchMessages } from '@/hooks/messaging/useMessages';
-import { ChatHeader } from './ChatHeader';
+import { ChatHeader, type ChatHeaderShortcut } from './ChatHeader';
 import { MessageThread } from './MessageThread';
 import { MessageInput } from './MessageInput';
+import { ProductShareModal } from './ProductShareModal';
 
 interface ChatWindowProps {
   open:            boolean;
   headerName:      string;
   headerImage?:    string | null;
-  headerSubtitle?: string;
+  headerVerified?: boolean;
+  /** Overrides the online/typing-derived subtitle (e.g. "Archived", "Muted"). */
+  subtitleOverride?: string;
   menuItems:       ActionMenuItem[];
   onBack?:         () => void;
+  shortcuts?:      ChatHeaderShortcut[];
 
-  messages:        Message[];
+  messages:        OptimisticMessage[];
   msgLoading:      boolean;
   currentUserId?:  string;
   otherPartyId:    string;
   hasMore:         boolean;
+  loadingMore?:    boolean;
   onLoadMore:      () => void;
 
   sending:         boolean;
@@ -28,11 +34,24 @@ interface ChatWindowProps {
   onUpload:        (file: File) => void;
   onEditMessage:   (id: string, text: string) => void;
   onDeleteMessage: (id: string) => void;
+  onRetry:         (message: OptimisticMessage, payload: SendMessagePayload) => void;
 
   otherOnline?:    boolean;
   otherTyping?:    boolean;
   onTyping?:       (isTyping: boolean) => void;
   conversationId?: string | null;
+
+  /** Present only when the conversation has a browsable store catalog — enables "Share Product". */
+  storeId?:        string;
+}
+
+function payloadFromMessage(m: OptimisticMessage): SendMessagePayload | null {
+  if (m.type === 'text') return { type: 'text', text: m.text ?? '', ...(m.replyTo ? { replyTo: m.replyTo } : {}) };
+  if (m.type === 'product_share' && m.productShare) return { type: 'product_share', productShare: { productId: m.productShare.productId } };
+  if (['image', 'video', 'pdf', 'document', 'voice'].includes(m.type) && m.attachments.length) {
+    return { type: m.type as 'image' | 'video' | 'pdf' | 'document' | 'voice', attachments: m.attachments, ...(m.replyTo ? { replyTo: m.replyTo } : {}) };
+  }
+  return null;
 }
 
 // The full right-hand pane: header, message thread, composer — the piece
@@ -40,18 +59,21 @@ interface ChatWindowProps {
 // Reply/edit/compose state lives here since it's pure UI state that
 // resets per-conversation and doesn't need to leak into the page.
 export function ChatWindow({
-  open, headerName, headerImage, headerSubtitle, menuItems, onBack,
-  messages, msgLoading, currentUserId, otherPartyId, hasMore, onLoadMore,
-  sending, uploading, onSend, onUpload, onEditMessage, onDeleteMessage,
-  otherOnline, otherTyping, onTyping, conversationId,
+  open, headerName, headerImage, headerVerified, subtitleOverride, menuItems, onBack, shortcuts,
+  messages, msgLoading, currentUserId, otherPartyId, hasMore, loadingMore, onLoadMore,
+  sending, uploading, onSend, onUpload, onEditMessage, onDeleteMessage, onRetry,
+  otherOnline, otherTyping, onTyping, conversationId, storeId,
 }: ChatWindowProps) {
   const [text,      setText]      = useState('');
   const [replyTo,   setReplyTo]   = useState<Message | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText,  setEditText]  = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [showProductShare, setShowProductShare] = useState(false);
+  const [sharingProduct, setSharingProduct] = useState(false);
   const [query, setQuery] = useState('');
   const { results, search, loading: searching } = useSearchMessages(conversationId ?? null);
+  const touchStartX = useRef<number | null>(null);
 
   if (!open) {
     return (
@@ -80,10 +102,6 @@ export function ChatWindow({
     onTyping?.(v.trim().length > 0);
   };
 
-  const subtitle = otherTyping
-    ? 'Typing…'
-    : headerSubtitle ?? (otherOnline !== undefined ? (otherOnline ? 'Online' : 'Offline') : undefined);
-
   const handleSaveEdit = () => {
     if (!editingId || !editText.trim()) return;
     onEditMessage(editingId, editText.trim());
@@ -91,30 +109,68 @@ export function ChatWindow({
     setEditText('');
   };
 
+  const handleRetry = (m: OptimisticMessage) => {
+    const payload = payloadFromMessage(m);
+    if (payload) onRetry(m, payload);
+  };
+
+  const handleShareProduct = (productId: string) => {
+    setSharingProduct(true);
+    onSend({ type: 'product_share', productShare: { productId } });
+    setShowProductShare(false);
+    setSharingProduct(false);
+  };
+
   function handleSearchChange(v: string) {
     setQuery(v);
     if (v.trim().length >= 2) search(v.trim());
   }
 
+  // Edge-swipe-to-go-back: only registers a gesture that starts within 24px
+  // of the left edge and travels right — avoids hijacking normal scrolling.
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX < 24 ? e.touches[0].clientX : null;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current == null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (dx > 60) onBack?.();
+    touchStartX.current = null;
+  };
+
+  const headerShortcuts: ChatHeaderShortcut[] = [
+    ...(storeId ? [{ icon: <StoreIcon size={17} />, label: 'View Store', onClick: () => window.open(`/store/${storeId}`, '_blank') }] : []),
+    ...(shortcuts ?? []),
+  ];
+
   return (
-    <div className="flex-1 flex flex-col min-w-0 h-full">
-      <div className="relative">
-        <ChatHeader name={headerName} image={headerImage} subtitle={subtitle} menuItems={menuItems} onBack={onBack} />
-        {conversationId && (
-          <button onClick={() => setShowSearch(s => !s)} aria-label="Search messages"
-            className="absolute right-[52px] top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-cream cursor-pointer bg-transparent border-none text-slate">
-            <Search size={16} />
-          </button>
-        )}
-      </div>
+    <div
+      className="flex-1 flex flex-col min-w-0 h-full transition-transform duration-200 ease-out"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <ChatHeader
+        name={headerName}
+        image={headerImage}
+        online={otherOnline}
+        typing={otherTyping}
+        verified={headerVerified}
+        subtitleOverride={subtitleOverride}
+        menuItems={menuItems}
+        onBack={onBack}
+        onSearchClick={conversationId ? () => setShowSearch(s => !s) : undefined}
+        searchActive={showSearch}
+        shortcuts={headerShortcuts}
+      />
 
       {showSearch && conversationId && (
-        <div className="border-b border-[#EEECE4] bg-white px-4 py-[10px]">
+        <div className="border-b border-[#EEECE4] bg-white px-4 py-[10px] transition-all duration-200 ease-out starting:opacity-0 starting:-translate-y-1">
           <div className="flex items-center gap-2 bg-cream rounded-full px-3.5 py-2">
             <Search size={14} className="text-slate shrink-0" />
             <input autoFocus value={query} onChange={e => handleSearchChange(e.target.value)}
-              placeholder="Search messages…" className="flex-1 bg-transparent border-none outline-none text-[13px] text-charcoal" />
-            <button onClick={() => { setShowSearch(false); setQuery(''); }} className="bg-transparent border-none cursor-pointer text-slate shrink-0">
+              placeholder="Search messages…" aria-label="Search messages in this conversation"
+              className="flex-1 bg-transparent border-none outline-none text-[13px] text-charcoal" />
+            <button onClick={() => { setShowSearch(false); setQuery(''); }} aria-label="Close search" className="bg-transparent border-none cursor-pointer text-slate shrink-0">
               <X size={13} />
             </button>
           </div>
@@ -138,10 +194,12 @@ export function ChatWindow({
       <MessageThread
         messages={messages}
         loading={msgLoading}
+        loadingMore={loadingMore}
         currentUserId={currentUserId}
         otherPartyId={otherPartyId}
         otherPartyName={headerName}
         otherPartyImage={headerImage}
+        otherTyping={otherTyping}
         hasMore={hasMore}
         onLoadMore={onLoadMore}
         editingId={editingId}
@@ -152,6 +210,7 @@ export function ChatWindow({
         onSaveEdit={handleSaveEdit}
         onDelete={onDeleteMessage}
         onReply={setReplyTo}
+        onRetry={handleRetry}
       />
 
       <MessageInput
@@ -163,7 +222,17 @@ export function ChatWindow({
         sending={sending}
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}
+        onShareProduct={storeId ? () => setShowProductShare(true) : undefined}
       />
+
+      {showProductShare && storeId && (
+        <ProductShareModal
+          storeId={storeId}
+          onClose={() => setShowProductShare(false)}
+          onShare={handleShareProduct}
+          sharing={sharingProduct}
+        />
+      )}
     </div>
   );
 }

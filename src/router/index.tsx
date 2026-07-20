@@ -6,6 +6,7 @@ import { RootLayout }   from '@/components/layouts/RootLayout';
 
 // Layouts — eagerly imported (needed as wrappers immediately)
 import { BuyerLayout }  from '@/components/layouts/BuyerLayout';
+import { AccountLayout } from '@/components/layouts/AccountLayout';
 import { PublicLayout } from '@/components/layouts/PublicLayout';
 import { SellerLayout } from '@/components/layouts/SellerLayout';
 import { AdminLayout }  from '@/components/layouts/AdminLayout';
@@ -21,7 +22,6 @@ const named = <T extends Record<string, unknown>>(
 
 // ── Public / Buyer ────────────────────────────────────────────────────────────
 const Homepage             = lazy(() => named(import('@/features/buyer/pages/Homepage'),                         'Homepage'));
-const UserProfile          = lazy(() => named(import('@/features/buyer/pages/settings/UserProfile'),            'UserProfile'));
 const Marketplace          = lazy(() => named(import('@/features/buyer/pages/Marketplace'),                     'Marketplace'));
 const ProductDetail        = lazy(() => named(import('@/features/buyer/pages/ProductDetail'),                   'ProductDetail'));
 const CartPage             = lazy(() => named(import('@/features/buyer/pages/CartPage'),                        'CartPage'));
@@ -33,6 +33,19 @@ const PricingPage          = lazy(() => named(import('@/features/buyer/pages/Pri
 const ForSellersPage       = lazy(() => named(import('@/features/buyer/pages/ForSellersPage'),                  'ForSellersPage'));
 const FaqPage              = lazy(() => named(import('@/features/buyer/pages/FaqPage'),                         'FaqPage'));
 const MaintenancePage      = lazy(() => named(import('@/features/buyer/pages/MaintenancePage'),                 'MaintenancePage'));
+
+// ── Account (buyer) ───────────────────────────────────────────────────────────
+const AccountDashboard     = lazy(() => named(import('@/features/buyer/pages/account/AccountDashboard'),        'AccountDashboard'));
+const PersonalInfo         = lazy(() => named(import('@/features/buyer/pages/account/PersonalInfo'),             'PersonalInfo'));
+const AccountOrders        = lazy(() => named(import('@/features/buyer/pages/MyOrdersPage'),                     'OrdersTab'));
+const AccountWishlist      = lazy(() => named(import('@/features/buyer/pages/account/Wishlist'),                 'Wishlist'));
+const AccountAddresses     = lazy(() => named(import('@/features/buyer/pages/account/Addresses'),                'Addresses'));
+const AccountReviews       = lazy(() => named(import('@/features/buyer/pages/MyReviewsPage'),                    'ReviewsTab'));
+const AccountNotifications = lazy(() => named(import('@/features/buyer/pages/account/Notifications'),           'Notifications'));
+const AccountSecurity      = lazy(() => named(import('@/features/buyer/pages/account/Security'),                 'Security'));
+const AccountSettings      = lazy(() => named(import('@/features/buyer/pages/account/Settings'),                 'Settings'));
+const AccountMessages      = lazy(() => named(import('@/features/buyer/pages/account/Messages'),                 'Messages'));
+const AccountSubscriptions = lazy(() => named(import('@/features/buyer/pages/MySubscriptionsPage'),              'SubscriptionsTab'));
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 const LoginPage            = lazy(() => named(import('@/features/auth/pages/LoginPage'),                        'LoginPage'));
@@ -121,8 +134,26 @@ export const router = createBrowserRouter([
               { path: 'faq',             element: <FaqPage /> },
             ],
           },
+          // Account — nested routes, each section is its own deep-linkable page
+          {
+            path: 'account',
+            element: <AccountLayout />,
+            children: [
+              { index: true,          element: <Navigate to="dashboard" replace /> },
+              { path: 'dashboard',     element: <AccountDashboard /> },
+              { path: 'profile',       element: <PersonalInfo /> },
+              { path: 'orders',        element: <AccountOrders /> },
+              { path: 'wishlist',      element: <AccountWishlist /> },
+              { path: 'addresses',     element: <AccountAddresses /> },
+              { path: 'reviews',       element: <AccountReviews /> },
+              { path: 'notifications', element: <AccountNotifications /> },
+              { path: 'security',      element: <AccountSecurity /> },
+              { path: 'settings',      element: <AccountSettings /> },
+              { path: 'messages',      element: <AccountMessages /> },
+              { path: 'subscriptions', element: <AccountSubscriptions /> },
+            ],
+          },
           // Pages with their own embedded navbar (no PublicLayout wrapper needed)
-          { path: 'account/profile', element: <UserProfile /> },
           { path: 'marketplace',     element: <Marketplace /> },
           { path: 'cart',            element: <CartPage /> },
           { path: 'checkout',        element: <CheckoutPage /> },

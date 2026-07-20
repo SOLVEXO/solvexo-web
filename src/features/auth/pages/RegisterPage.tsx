@@ -103,28 +103,28 @@ export function RegisterPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input
-          label="Full Name" placeholder="Enter your name" autoComplete="name"
+          label="Full Name" placeholder="Enter Your Name" autoComplete="name"
           value={values.name} onChange={set('name')} onBlur={blur('name')}
           error={errors.name}
         />
         <Input
-          label="Email Address" type="email" placeholder="you@example.com" autoComplete="email"
+          label="Email Address" type="email" placeholder="Enter Your Email Address" autoComplete="email"
           value={values.email} onChange={set('email')} onBlur={blur('email')}
           error={errors.email}
         />
         <Input
-          label="Phone Number" type="tel" placeholder="e.g. 03001234567" autoComplete="tel"
+          label="Phone Number" type="tel" placeholder="Enter Your Phone Number" autoComplete="tel"
           value={values.phone} onChange={set('phone')} onBlur={blur('phone')}
           error={errors.phone}
         />
         <Input
-          label="Address" placeholder="Enter your address" autoComplete="street-address"
+          label="Address" placeholder="Enter Your Address" autoComplete="street-address"
           value={values.address} onChange={set('address')} onBlur={blur('address')}
           error={errors.address}
         />
         <div className="sm:col-span-2">
           <Input
-            label="Password" type={showPass ? 'text' : 'password'} placeholder="Create a password" autoComplete="new-password"
+            label="Password" type={showPass ? 'text' : 'password'} placeholder="Create a Password" autoComplete="new-password"
             value={values.password} onChange={set('password')} onBlur={blur('password')}
             onKeyDown={e => e.key === 'Enter' && handleSubmit()}
             error={errors.password}

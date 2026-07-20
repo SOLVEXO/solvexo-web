@@ -1,14 +1,19 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Check, Zap, Users, Package, Sparkles, type LucideIcon } from 'lucide-react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import {
+  Check, Zap, Users, Package, Sparkles, MonitorSmartphone, AlertTriangle, Clock, CreditCard,
+  XCircle, RotateCcw, Loader2, type LucideIcon,
+} from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
+import { Textarea } from '@/components/comman/ui/Input';
 import { SkeletonBox } from '@/components/comman/ui';
 import {
   apiBrowsePlatformPlans, apiGetStorePlatformPlan, apiGetStoreEntitlements, apiChangePlatformPlan,
+  apiPreviewPlatformPlanChange, apiCancelPlatformPlan, apiReactivatePlatformPlan, apiCreatePlatformBillingPortalSession,
   apiPurchaseAddon, apiListStoreAddons, apiCancelAddon, apiGetStoreInvoices,
   type PlatformPlan, type StorePlatformSubscription, type EntitlementsSummary, type AddonPurchase, type AddonType,
-  type PlatformPlanInvoice,
+  type PlatformPlanInvoice, type PlanChangePreview,
 } from '@/api/services/platformPlans';
 
 const INVOICE_STATUS_STYLE: Record<string, string> = {
@@ -26,6 +31,10 @@ const ADDON_LABELS: Record<AddonType, string> = {
   advanced_tax_compliance: 'Advanced Tax Compliance',
   sms_notifications: 'SMS Notifications',
 };
+
+function daysUntil(dateStr: string): number {
+  return Math.max(0, Math.ceil((new Date(dateStr).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
+}
 
 function UsageBar({ label, used, max, Icon }: { label: string; used: number; max: number; Icon: LucideIcon }) {
   const unlimited = max === -1;
@@ -59,9 +68,16 @@ export default function StorePlanBilling() {
   const [interval, setInterval_] = useState<'monthly' | 'yearly'>('monthly');
   const [addonModal, setAddonModal] = useState(false);
   const [confirmingPlan, setConfirmingPlan] = useState<PlatformPlan | null>(null);
+  const [preview, setPreview] = useState<PlanChangePreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [cancelingAddon, setCancelingAddon] = useState<AddonPurchase | null>(null);
   const [actionError, setActionError] = useState('');
   const [addonBusy, setAddonBusy] = useState(false);
+  const [cancelModal, setCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [reactivateBusy, setReactivateBusy] = useState(false);
+  const [portalBusy, setPortalBusy] = useState(false);
 
   const load = useCallback(() => {
     if (!storeId) return;
@@ -75,6 +91,18 @@ export default function StorePlanBilling() {
   }, [storeId]);
   useEffect(load, [load]);
 
+  // ── Confirm-plan-change modal — fetch the exact proration preview the moment it opens ──
+  useEffect(() => {
+    if (!confirmingPlan) { setPreview(null); return; }
+    let cancelled = false;
+    setPreviewLoading(true);
+    apiPreviewPlatformPlanChange(storeId, confirmingPlan._id, interval)
+      .then(res => { if (!cancelled) setPreview(res.data); })
+      .catch(err => { if (!cancelled) setActionError(err instanceof Error ? err.message : 'Failed to calculate proration.'); })
+      .finally(() => { if (!cancelled) setPreviewLoading(false); });
+    return () => { cancelled = true; };
+  }, [confirmingPlan, interval, storeId]);
+
   async function submitChangePlan() {
     if (!confirmingPlan) return;
     setChangingId(confirmingPlan._id);
@@ -87,6 +115,46 @@ export default function StorePlanBilling() {
       setActionError(err instanceof Error ? err.message : 'Failed to change plan.');
     } finally {
       setChangingId(null);
+    }
+  }
+
+  async function submitCancelSubscription() {
+    setCancelBusy(true);
+    setActionError('');
+    try {
+      await apiCancelPlatformPlan(storeId, cancelReason.trim() || undefined);
+      setCancelModal(false);
+      setCancelReason('');
+      load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to cancel subscription.');
+    } finally {
+      setCancelBusy(false);
+    }
+  }
+
+  async function submitReactivate() {
+    setReactivateBusy(true);
+    setActionError('');
+    try {
+      await apiReactivatePlatformPlan(storeId);
+      load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to reactivate subscription.');
+    } finally {
+      setReactivateBusy(false);
+    }
+  }
+
+  async function openBillingPortal() {
+    setPortalBusy(true);
+    setActionError('');
+    try {
+      const res = await apiCreatePlatformBillingPortalSession(storeId, window.location.href);
+      window.location.href = res.data.url;
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No billing portal is available yet — subscribe to a paid plan first.');
+      setPortalBusy(false);
     }
   }
 
@@ -119,6 +187,42 @@ export default function StorePlanBilling() {
     }
   }
 
+  const trialDaysLeft = current?.trialEndsAt ? daysUntil(current.trialEndsAt) : null;
+  const isPastDue = current?.status === 'past_due';
+  const isCancelPending = !!current?.cancelAtPeriodEnd;
+
+  const banner = useMemo(() => {
+    if (isPastDue) {
+      return {
+        tone: 'error' as const, Icon: AlertTriangle,
+        text: `We couldn't process your last payment (attempt ${current?.failedPaymentAttempts ?? 1}). Update your payment method to avoid losing your plan.`,
+        actionLabel: 'Update payment method', onAction: openBillingPortal,
+      };
+    }
+    if (isCancelPending && current) {
+      return {
+        tone: 'warning' as const, Icon: XCircle,
+        text: `Your plan will move to the free tier on ${new Date(current.currentPeriodEnd).toDateString()}. You keep full access until then.`,
+        actionLabel: 'Reactivate', onAction: submitReactivate,
+      };
+    }
+    if (trialDaysLeft != null && trialDaysLeft <= 7) {
+      return {
+        tone: 'info' as const, Icon: Clock,
+        text: `Your trial ends in ${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'}. Add a payment method to keep your plan active after that.`,
+        actionLabel: 'Add payment method', onAction: openBillingPortal,
+      };
+    }
+    return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPastDue, isCancelPending, trialDaysLeft, current]);
+
+  const BANNER_STYLE = {
+    error:   { bg: 'bg-error-bg', border: 'border-[#FECACA]', text: 'text-error', icon: 'text-error' },
+    warning: { bg: 'bg-[#FDF2DA]', border: 'border-[#F5DFA6]', text: 'text-[#946200]', icon: 'text-[#946200]' },
+    info:    { bg: 'bg-[#E6F1FB]', border: 'border-[#BFDCF3]', text: 'text-[#1A5A8A]', icon: 'text-[#1A5A8A]' },
+  };
+
   if (loading && !current) {
     return (
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
@@ -140,7 +244,7 @@ export default function StorePlanBilling() {
 
   return (
     <>
-      <StorePageHeader title="Plan & Billing" subtitle="Your store's Solvexo subscription, usage limits, and add-ons." />
+      <StorePageHeader title="Billing Center" subtitle="Your store's Solvexo subscription, usage limits, payment method, and billing history." />
 
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error">{error}</p>}
@@ -151,11 +255,54 @@ export default function StorePlanBilling() {
           </div>
         )}
 
-        {entitlements && (
+        {banner && (() => {
+          const s = BANNER_STYLE[banner.tone];
+          return (
+            <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-lg border ${s.bg} ${s.border}`}>
+              <span className={`flex items-center gap-2 text-[12.5px] font-medium ${s.text}`}>
+                <banner.Icon size={15} className={`shrink-0 ${s.icon}`} />
+                {banner.text}
+              </span>
+              <Button size="sm" variant="outline" loading={reactivateBusy || portalBusy} onClick={banner.onAction}>
+                {banner.actionLabel}
+              </Button>
+            </div>
+          );
+        })()}
+
+        {entitlements && current && (
           <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-[13px] font-bold text-carbon">Current Plan — {entitlements.currentPlanName}</p>
-              {current?.status && <span className="text-[11px] font-semibold px-2 py-[3px] rounded-full bg-[#E3F4EA] text-[#1E7A3C] capitalize">{current.status}</span>}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div>
+                <p className="text-[13px] font-bold text-carbon">Current Plan — {entitlements.currentPlanName}</p>
+                <p className="text-[11.5px] text-slate mt-[3px]">
+                  {current.amountUSD > 0 ? `$${current.amountUSD.toFixed(2)}/${current.billingInterval === 'yearly' ? 'yr' : 'mo'} · ` : ''}
+                  Renews {new Date(current.nextBillingDate).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${
+                  isPastDue ? 'bg-error-bg text-error' : isCancelPending ? 'bg-[#FDF2DA] text-[#946200]' : 'bg-[#E3F4EA] text-[#1E7A3C]'
+                }`}>
+                  {isCancelPending ? 'Canceling' : current.status}
+                </span>
+                {current.stripeCustomerId && (
+                  <Button size="sm" variant="outline" icon={<CreditCard size={13} />} loading={portalBusy} onClick={openBillingPortal}>
+                    Payment method
+                  </Button>
+                )}
+                {current.amountUSD > 0 && (
+                  isCancelPending ? (
+                    <Button size="sm" variant="outline" icon={<RotateCcw size={13} />} loading={reactivateBusy} onClick={submitReactivate}>
+                      Reactivate
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" icon={<XCircle size={13} />} onClick={() => { setCancelModal(true); setActionError(''); }}>
+                      Cancel plan
+                    </Button>
+                  )
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <UsageBar label="Products" used={entitlements.maxProducts.used} max={entitlements.maxProducts.limit} Icon={Package} />
@@ -166,6 +313,7 @@ export default function StorePlanBilling() {
                 max={entitlements.aiCredits.monthlyAllowance}
                 Icon={Sparkles}
               />
+              <UsageBar label="POS Locations" used={0} max={entitlements.maxPosLocations.limit} Icon={MonitorSmartphone} />
             </div>
           </div>
         )}
@@ -233,7 +381,7 @@ export default function StorePlanBilling() {
 
         <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
           <div className="px-5 py-[14px] border-b border-bone">
-            <p className="text-[13px] font-bold text-carbon">Invoice History</p>
+            <p className="text-[13px] font-bold text-carbon">Billing History</p>
           </div>
           {invoices.length === 0 ? (
             <p className="px-5 py-6 text-center text-[13px] text-slate">No invoices yet.</p>
@@ -243,7 +391,10 @@ export default function StorePlanBilling() {
                 <div key={inv._id} className="flex items-center justify-between px-5 py-3 border-b border-[#F0EEE6] last:border-b-0">
                   <div>
                     <p className="text-[13px] font-medium text-carbon">{inv.invoiceNumber}</p>
-                    <p className="text-[11px] text-slate">{new Date(inv.createdAt).toLocaleDateString()} · ${inv.amountUSD.toFixed(2)}</p>
+                    <p className="text-[11px] text-slate">
+                      {new Date(inv.createdAt).toLocaleDateString()} · ${inv.amountUSD.toFixed(2)}
+                      {inv.refundedAmountUSD > 0 && <span className="text-error"> · ${inv.refundedAmountUSD.toFixed(2)} refunded</span>}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${INVOICE_STATUS_STYLE[inv.status] ?? 'bg-bone text-slate'}`}>
@@ -278,18 +429,64 @@ export default function StorePlanBilling() {
       )}
 
       {confirmingPlan && (
-        <Modal title="Switch Plan" width={420} onClose={() => setConfirmingPlan(null)}
+        <Modal title="Confirm Plan Change" width={440} onClose={() => setConfirmingPlan(null)}
           footer={<>
             <Button variant="outline" onClick={() => setConfirmingPlan(null)} disabled={changingId === confirmingPlan._id}>Cancel</Button>
-            <Button onClick={submitChangePlan} loading={changingId === confirmingPlan._id}>Switch Plan</Button>
+            <Button onClick={submitChangePlan} loading={changingId === confirmingPlan._id} disabled={previewLoading || !preview}>Confirm & Switch</Button>
           </>}
         >
-          <p className="text-[13px] text-charcoal">
-            Switch to <strong>{confirmingPlan.name}</strong>
-            {!confirmingPlan.isFree && !confirmingPlan.isCustomPricing && (
-              <> — ${interval === 'yearly' && confirmingPlan.yearlyPriceUSD != null ? confirmingPlan.yearlyPriceUSD : confirmingPlan.monthlyPriceUSD}/{interval === 'yearly' ? 'yr' : 'mo'}</>
-            )}?
+          <p className="text-[13px] text-charcoal mb-3">
+            Switch to <strong>{confirmingPlan.name}</strong> ({interval})?
           </p>
+
+          {previewLoading ? (
+            <div className="flex items-center gap-2 text-[12.5px] text-slate py-3">
+              <Loader2 size={14} className="animate-spin" /> Calculating exact proration…
+            </div>
+          ) : preview ? (
+            <div className="bg-cream border border-bone rounded-lg p-3.5 flex flex-col gap-[6px]">
+              <div className="flex justify-between text-[12.5px]">
+                <span className="text-slate">New plan price</span>
+                <span className="text-charcoal font-medium">${preview.newAmountUSD.toFixed(2)}/{preview.newBillingInterval === 'yearly' ? 'yr' : 'mo'}</span>
+              </div>
+              {preview.unusedCreditFromCurrentPlanUSD > 0 && (
+                <div className="flex justify-between text-[12.5px]">
+                  <span className="text-slate">Unused credit ({preview.remainingDaysInCurrentPeriod} day{preview.remainingDaysInCurrentPeriod === 1 ? '' : 's'} left)</span>
+                  <span className="text-success">−${preview.unusedCreditFromCurrentPlanUSD.toFixed(2)}</span>
+                </div>
+              )}
+              {preview.existingCreditBalanceUSD > 0 && (
+                <div className="flex justify-between text-[12.5px]">
+                  <span className="text-slate">Existing account credit</span>
+                  <span className="text-success">−${preview.existingCreditBalanceUSD.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-[13.5px] font-bold pt-[6px] mt-[2px] border-t border-bone">
+                <span className="text-carbon">{preview.creditAppliedToBalanceUSD > 0 ? 'Credited to your account' : 'Due today'}</span>
+                <span className={preview.creditAppliedToBalanceUSD > 0 ? 'text-success' : 'text-brand-orange'}>
+                  ${(preview.creditAppliedToBalanceUSD > 0 ? preview.creditAppliedToBalanceUSD : preview.amountDueTodayUSD).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          ) : null}
+
+          {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
+        </Modal>
+      )}
+
+      {cancelModal && (
+        <Modal title="Cancel Subscription" width={440} onClose={() => setCancelModal(false)}
+          footer={<>
+            <Button variant="outline" onClick={() => setCancelModal(false)} disabled={cancelBusy}>Keep my plan</Button>
+            <Button variant="danger" onClick={submitCancelSubscription} loading={cancelBusy}>Cancel at period end</Button>
+          </>}
+        >
+          <p className="text-[13px] text-charcoal mb-3">
+            You'll keep full access to <strong>{entitlements?.currentPlanName}</strong> until{' '}
+            {current && new Date(current.currentPeriodEnd).toDateString()}, then your store moves to the free plan. You can reactivate any time before that.
+          </p>
+          <label className="block text-[11.5px] font-medium text-slate mb-1.5">Reason (optional — helps us improve)</label>
+          <Textarea value={cancelReason} onChange={e => setCancelReason(e.target.value)} rows={3} placeholder="Too expensive, missing a feature, switching platforms…" />
           {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
         </Modal>
       )}

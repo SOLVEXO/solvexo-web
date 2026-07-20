@@ -6,7 +6,7 @@ import {
   BadgeCheck, RotateCcw, Loader2, Ban, Undo2,
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { Card, EmptyState, Modal, Textarea, Button, SkeletonBox } from '@/components/comman/ui';
+import { Card, EmptyState, Modal, Textarea, Button, SkeletonBox, PageHeader } from '@/components/comman/ui';
 import {
   apiGetMyOrders, apiCancelOrder, apiRequestReturn, apiGetDownloadLink,
   type OrderSummary, type OrderStatus, type OrderLineItem,
@@ -446,7 +446,7 @@ function OrderCard({ order, onChanged }: { order: OrderSummary; onChanged: () =>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OrdersTab  — embedded inside UserProfile
+// OrdersTab  — routed at /account/orders
 // ─────────────────────────────────────────────────────────────────────────────
 const ORDERS_PAGE_SIZE = 50;
 
@@ -506,17 +506,15 @@ export function OrdersTab() {
   };
 
   return (
+    <div>
     <Card padding="none">
       {/* Header */}
-      <div className="px-5 pt-5 pb-4 border-b border-bone flex items-end justify-between">
-        <div>
-          <p className="text-[11px] text-slate mb-[3px]">Account / My Orders</p>
-          <h1 className="text-[22px] font-bold text-charcoal leading-none">My Orders</h1>
-        </div>
-        <div className="text-right pb-[2px]">
-          <p className="text-[13px] font-semibold text-charcoal leading-tight">Total Orders</p>
-          <p className="text-[11px] text-slate mt-[2px]">{totalOrders} order{totalOrders !== 1 ? 's' : ''}</p>
-        </div>
+      <div className="px-5 pt-5 pb-4 border-b border-bone">
+        <PageHeader
+          eyebrow="Account"
+          title="Orders"
+          description={`${totalOrders} order${totalOrders !== 1 ? 's' : ''} placed`}
+        />
       </div>
 
       {/* Filter tabs */}
@@ -567,5 +565,6 @@ export function OrdersTab() {
         </div>
       )}
     </Card>
+    </div>
   );
 }

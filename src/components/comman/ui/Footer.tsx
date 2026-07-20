@@ -18,8 +18,8 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
     links: [
       { label: 'Marketplace', path: '/marketplace' },
       { label: 'Education',   path: '/education' },
-      { label: 'My Orders',   path: '/account/profile?tab=orders' },
-      { label: 'Wishlist',    path: '/account/profile?tab=wishlist' },
+      { label: 'My Orders',   path: '/account/orders' },
+      { label: 'Wishlist',    path: '/account/wishlist' },
     ],
   },
   {

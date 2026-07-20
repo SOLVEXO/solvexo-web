@@ -10,7 +10,7 @@ interface SkeletonBoxProps {
 export function SkeletonBox({ width, height, rounded = '4px', className }: SkeletonBoxProps) {
   return (
     <div
-      className={clsx('animate-pulse bg-bone', className)}
+      className={clsx('skeleton-shimmer', className)}
       style={{ width, height, borderRadius: rounded }}
     />
   );

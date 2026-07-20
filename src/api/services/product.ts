@@ -1,6 +1,22 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
 
+// ── Education taxonomy ──────────────────────────────────────────────────────────
+
+export const EDUCATION_LEVELS = [
+  { value: 'preschool',            label: 'Preschool' },
+  { value: 'primary_school',       label: 'Primary School' },
+  { value: 'middle_school',        label: 'Middle School' },
+  { value: 'secondary_school',     label: 'Secondary School' },
+  { value: 'college',              label: 'College' },
+  { value: 'university',           label: 'University' },
+  { value: 'professional_courses', label: 'Professional Courses' },
+  { value: 'islamic_education',    label: 'Islamic Education' },
+  { value: 'other',                label: 'Other' },
+] as const;
+
+export type EducationLevel = (typeof EDUCATION_LEVELS)[number]['value'];
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface DigitalFile {
@@ -15,7 +31,7 @@ export interface DigitalMeta {
   downloadLimit:        string;          // 'unlimited' or a number as string
   linkExpiryDays:       number | null;
   pdfStampingEnabled:   boolean;
-  licenseType:          'personal' | 'commercial';
+  licenseType:          'personal' | 'single_classroom' | 'school' | 'commercial';
   buyerDeliveryMessage: string;
 }
 
@@ -44,10 +60,13 @@ export interface StoreProduct {
   name:              string;
   slug:              string;
   description:       string;
-  productType:       'physical' | 'digital';
+  productType:       'physical' | 'digital' | 'educational';
   type:              'physical' | 'digital';
   categoryId:        string;
   subCategoryId:     string | null;
+  educationLevel:    EducationLevel | null;
+  customLevel:       string | null;
+  normalizedCustomLevel: string | null;
   images:            string[];
   tags:              string[];
   digital:           DigitalMeta | null;
@@ -87,8 +106,10 @@ export interface CreateDigitalPayload {
   storeId:           string;
   name:              string;
   description:       string;
-  productType:       'digital';
+  productType:       'digital' | 'educational';
   subCategoryId:     string | null;
+  educationLevel?:   EducationLevel | null;
+  customLevel?:      string | null;
   images:            string[];
   tags:              string[];
   isListedOnSolvexo: boolean;
@@ -123,6 +144,8 @@ export interface EditDigitalPayload {
   name:           string;
   description:    string;
   subCategoryId:  string | null;
+  educationLevel?: EducationLevel | null;
+  customLevel?:   string | null;
   status:         'draft' | 'active' | 'scheduled';
   scheduledAt?:   string | null;
   price:          number;
@@ -158,6 +181,7 @@ export interface InventoryProduct {
   name:         string;
   image:        string | null;
   type:         'physical' | 'digital';
+  productType?: 'physical' | 'digital' | 'educational';
   stock:        number | string;
   stockStatus:  string;
   status:       'active' | 'draft' | 'archived';
@@ -255,6 +279,7 @@ export interface SellerOrder {
   customer:    SellerOrderCustomer;
   product:     string;
   type:        'physical' | 'digital';
+  productType?: 'physical' | 'digital' | 'educational';
   date:        string;
   amount:      number;
   status:      string;
@@ -285,6 +310,20 @@ export interface GetSellerOrdersData {
 export function apiGetSellerOrders(storeId: string, page = 1, limit = 10) {
   return client.get<never, ApiResponse<GetSellerOrdersData>>(
     `${ENDPOINTS.SELLER_ACCOUNT.GET_SELLER_ORDERS(storeId)}?page=${page}&limit=${limit}`,
+  );
+}
+
+/** Orders across every store the seller owns — used by the cross-store seller dashboard. */
+export function apiGetMySellerOrders(page = 1, limit = 10) {
+  return client.get<never, ApiResponse<GetSellerOrdersData>>(
+    `${ENDPOINTS.SELLER_ACCOUNT.GET_MY_SELLER_ORDERS}?page=${page}&limit=${limit}`,
+  );
+}
+
+/** GET /api/products/education/custom-level-suggestions?q= — seller-only autocomplete for the "Other" custom level input. */
+export function apiGetCustomLevelSuggestions(q: string) {
+  return client.get<never, ApiResponse<string[]>>(
+    `${ENDPOINTS.PRODUCT.EDUCATION_CUSTOM_LEVEL_SUGGESTIONS}?q=${encodeURIComponent(q)}`,
   );
 }
 

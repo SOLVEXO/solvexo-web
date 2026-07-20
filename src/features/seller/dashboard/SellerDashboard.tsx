@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AreaChart } from '@/components/comman/charts';
 import {
   ArrowRight, Store, AlertCircle, DollarSign, Package, ShoppingBag, Repeat,
-  BarChart2, Settings, Sparkles,
+  BarChart2, Settings, Sparkles, CircleCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/comman/ui/Button';
@@ -15,13 +15,70 @@ import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useMyStores } from '@/hooks/store/useMyStores';
+import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { apiGetSellerPlatformOverview } from '@/api/services/platformPlans';
 import {
   apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsTopProducts,
   type SellerOverviewData, type RevenuePoint, type TopProductRow,
 } from '@/api/services/analytics/analytics';
-import { apiGetSellerOrders, type SellerOrder } from '@/api/services/product';
+import { apiGetMySellerOrders, type SellerOrder } from '@/api/services/product';
 import { formatCurrency, formatNumber, formatPercent, formatBucketLabel } from '@/components/comman/analytics/format';
+
+// ── Workspace hero — replaces the plain title/subtitle with a real-data
+// summary banner: who's logged in, how many stores they run, and the most
+// common next actions, front and center. ──────────────────────────────────
+function WorkspaceHero({ storeCount, activeCount }: { storeCount: number; activeCount: number }) {
+  const navigate = useNavigate();
+  const { profile } = useGetProfile();
+
+  return (
+    <div className="dash-section-enter relative overflow-hidden rounded-2xl bg-gradient-to-br from-carbon via-[#241F1B] to-brand-deep-orange px-6 py-6 sm:px-7 sm:py-7 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.06]"
+        style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '22px 22px' }}
+      />
+      <div className="pointer-events-none absolute -top-16 -right-10 size-56 rounded-full bg-brand-orange/25 blur-3xl" />
+
+      <div className="relative flex items-center gap-4 flex-1 min-w-0">
+        {profile?.profileImage ? (
+          <img
+            loading="lazy" decoding="async"
+            src={profile.profileImage} alt={profile.name}
+            className="size-14 rounded-2xl object-cover ring-2 ring-white/15 shrink-0"
+          />
+        ) : (
+          <div className="size-14 rounded-2xl bg-white/10 ring-2 ring-white/15 flex items-center justify-center shrink-0">
+            <Avatar name={profile?.name ?? 'Seller'} size={44} />
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="text-[20px] sm:text-[22px] font-bold text-white leading-tight truncate">
+            Welcome back{profile?.name ? `, ${profile.name.split(' ')[0]}` : ''}
+          </p>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <span className="inline-flex items-center gap-[6px] rounded-full bg-white/10 px-[10px] py-[4px] text-[12px] font-medium text-white/85">
+              <Store size={12} /> {storeCount} store{storeCount === 1 ? '' : 's'}
+            </span>
+            {activeCount > 0 && (
+              <span className="inline-flex items-center gap-[6px] rounded-full bg-success/20 px-[10px] py-[4px] text-[12px] font-medium text-[#8FE3AC]">
+                <CircleCheck size={12} /> {activeCount} active
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="relative flex items-center gap-2 flex-wrap shrink-0">
+        <Button variant="outline" size="sm" className="!bg-white/10 !border-white/20 !text-white hover:!bg-white/20" onClick={() => navigate('/seller/analytics')}>
+          View Analytics
+        </Button>
+        <Button variant="primary" size="sm" icon={<Sparkles size={14} />} onClick={() => navigate('/onboarding')}>
+          Create Store
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 // ── My Store Card ────────────────────────────────────────────────────────────
 const statusColors: Record<string, { bg: string; color: string }> = {
@@ -32,18 +89,18 @@ const statusColors: Record<string, { bg: string; color: string }> = {
 
 function MyStoreCardSkeleton() {
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
-      <div className="px-[18px] pt-4 pb-[10px] flex items-center justify-between">
-        <div className="animate-pulse w-[72px] h-[14px] rounded bg-[#EDEBE2]" />
-        <div className="animate-pulse w-[44px] h-[11px] rounded-[3px] bg-[#EDEBE2]" />
+    <div className="bg-white border border-bone rounded-2xl shadow-card overflow-hidden">
+      <div className="px-5 pt-4 pb-[10px] flex items-center justify-between">
+        <SkeletonBox width={72} height={14} rounded="4px" />
+        <SkeletonBox width={44} height={11} rounded="3px" />
       </div>
       <div className="px-2 pb-2">
         {[0, 1, 2].map(i => (
           <div key={i} className={`flex items-center gap-3 px-[10px] py-[11px]${i < 2 ? ' border-b border-[#F5F4EF]' : ''}`}>
-            <div className="animate-pulse w-8 h-8 rounded-lg bg-[#EDEBE2] shrink-0" />
+            <SkeletonBox width={32} height={32} rounded="8px" className="shrink-0" />
             <div className="flex-1 flex flex-col gap-[6px]">
-              <div className="animate-pulse w-[100px] h-3 rounded bg-[#EDEBE2]" />
-              <div className="animate-pulse w-16 h-[10px] rounded bg-[#EDEBE2]" />
+              <SkeletonBox width={100} height={12} rounded="4px" />
+              <SkeletonBox width={64} height={10} rounded="4px" />
             </div>
           </div>
         ))}
@@ -61,7 +118,7 @@ function MyStoreCard({ stores, loading, error, onRetry }: { stores: MyStore[]; l
 
   if (error) {
     return (
-      <div className="bg-white border border-bone rounded-[10px] px-5 py-8 shadow-[0_1px_4px_rgba(0,0,0,0.04)] text-center">
+      <div className="bg-white border border-bone rounded-2xl px-5 py-8 shadow-card text-center">
         <div className="w-[52px] h-[52px] rounded-xl bg-error-bg flex items-center justify-center mx-auto mb-[14px]">
           <AlertCircle size={24} className="text-error" />
         </div>
@@ -78,7 +135,7 @@ function MyStoreCard({ stores, loading, error, onRetry }: { stores: MyStore[]; l
 
   if (stores.length === 0) {
     return (
-      <div className="bg-white border border-bone rounded-[10px] px-5 py-8 shadow-[0_1px_4px_rgba(0,0,0,0.04)] text-center">
+      <div className="bg-white border border-bone rounded-2xl px-5 py-8 shadow-card text-center">
         <div className="w-[52px] h-[52px] rounded-xl bg-brand-pale-orange flex items-center justify-center mx-auto mb-[14px]">
           <Store size={24} className="text-brand-orange" />
         </div>
@@ -103,33 +160,31 @@ function MyStoreCard({ stores, loading, error, onRetry }: { stores: MyStore[]; l
   }
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
-      <div className="px-[18px] pt-4 pb-2 flex items-start justify-between">
-        <p className="text-sm font-bold text-charcoal">My Store</p>
+    <div className="bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200 overflow-hidden h-full flex flex-col">
+      <div className="px-5 pt-4 pb-2 flex items-start justify-between">
+        <p className="text-sm font-bold text-charcoal">My Stores</p>
         <div className="text-right">
           <span className="text-[11px] text-slate">
-            Total Stores ({stores.length})
+            Total ({stores.length})
           </span>
           <br />
           <button
             onClick={() => navigate('/seller/stores')}
-            className="bg-transparent border-0 cursor-pointer p-0 text-[11px] text-brand-orange font-semibold mt-0.5 underline"
+            className="bg-transparent border-0 cursor-pointer p-0 text-[11px] text-brand-orange font-semibold mt-0.5 hover:text-brand-deep-orange transition-colors"
           >
             View All
           </button>
         </div>
       </div>
-      <div className="px-2 pb-2 max-h-[252px] overflow-y-auto scrollbar-hide">
+      <div className="px-2 pb-2 flex-1 max-h-[252px] overflow-y-auto scrollbar-hide">
         {stores.map((store, i) => {
           const st = statusColors[store.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
           return (
             <button
               key={store._id}
               onClick={() => navigate(`/seller/store/${store._id}/dashboard`)}
-              className="w-full flex items-center gap-3 px-[10px] py-[11px] bg-transparent border-0 cursor-pointer text-left transition-[background] duration-150 rounded-md"
+              className="w-full flex items-center gap-3 px-[10px] py-[11px] bg-transparent border-0 cursor-pointer text-left transition-colors duration-150 rounded-lg hover:bg-cream"
               style={{ borderBottom: i < stores.length - 1 ? '1px solid #F5F4EF' : 'none' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0 overflow-hidden border border-[#EDEBE2]">
                 {store.logo
@@ -180,13 +235,13 @@ function PlatformBillingCard() {
     apiGetSellerPlatformOverview().then(res => setStores(res.data.stores)).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="bg-white border border-bone rounded-[10px] h-full min-h-[220px] animate-pulse" />;
+  if (loading) return <div className="bg-white border border-bone rounded-2xl h-full min-h-[220px] shadow-card overflow-hidden"><SkeletonBox height="100%" width="100%" rounded="0" /></div>;
   if (stores.length === 0) return null;
 
   const totalUSD = stores.reduce((s, r) => s + r.totalPaidUSD, 0);
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden h-full flex flex-col">
+    <div className="bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200 overflow-hidden h-full flex flex-col">
       <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-[#F3F2EC]">
         <p className="text-sm font-bold text-charcoal">Platform Billing</p>
         <span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">
@@ -200,7 +255,7 @@ function PlatformBillingCard() {
             <button
               key={s.storeId}
               onClick={() => navigate(`/seller/store/${s.storeId}/plan-billing`)}
-              className="w-full flex items-center gap-3 px-[10px] py-[11px] bg-transparent border-0 cursor-pointer text-left hover:bg-cream rounded-md"
+              className="w-full flex items-center gap-3 px-[10px] py-[11px] bg-transparent border-0 cursor-pointer text-left hover:bg-cream rounded-lg transition-colors duration-150"
               style={{ borderBottom: i < stores.length - 1 ? '1px solid #F5F4EF' : 'none' }}
             >
               <div className="w-9 h-9 rounded-[10px] bg-brand-pale-orange flex items-center justify-center shrink-0">
@@ -228,36 +283,36 @@ function PlatformBillingCard() {
 }
 
 // ── Quick Actions ─────────────────────────────────────────────────────────────
-interface QuickAction { Icon: LucideIcon; label: string; path: string; color: string }
+interface QuickAction { Icon: LucideIcon; label: string; path: string; gradient: string; iconColor: string }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { Icon: Store,     label: 'My Stores',       path: '/seller/stores',   color: '#D97757' },
-  { Icon: Sparkles,  label: 'Create Store',    path: '/seller/store',    color: '#A855F7' },
-  { Icon: BarChart2, label: 'Analytics',       path: '/seller/analytics', color: '#0EA5E9' },
-  { Icon: Settings,  label: 'Settings',        path: '/seller/settings', color: '#8C8A82' },
+  { Icon: Store,     label: 'My Stores',    path: '/seller/stores',    gradient: 'from-brand-pale-orange to-[#FBECE4]', iconColor: '#D97757' },
+  { Icon: Sparkles,  label: 'Create Store', path: '/seller/store',     gradient: 'from-[#F3E8FF] to-[#EDE0FE]',         iconColor: '#A855F7' },
+  { Icon: BarChart2, label: 'Analytics',    path: '/seller/analytics', gradient: 'from-[#E6F1FB] to-[#DCEBFA]',         iconColor: '#0EA5E9' },
+  { Icon: Settings,  label: 'Settings',     path: '/seller/settings',  gradient: 'from-cream to-bone',                  iconColor: '#8C8A82' },
 ];
 
 function QuickActionsRow() {
   const navigate = useNavigate();
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] h-full flex flex-col">
+    <div className="bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200 h-full flex flex-col">
       <div className="px-5 pt-4 pb-3 border-b border-[#F3F2EC]">
         <p className="text-sm font-bold text-charcoal">Quick Actions</p>
       </div>
       <div className="px-4 py-4 grid grid-cols-2 gap-3 flex-1">
-        {QUICK_ACTIONS.map(({ Icon, label, path, color }) => (
+        {QUICK_ACTIONS.map(({ Icon, label, path, gradient, iconColor }) => (
           <button
             key={label}
             onClick={() => navigate(path)}
-            className="flex flex-col items-center justify-center gap-2 py-4 px-2 rounded-[10px] border border-bone bg-transparent cursor-pointer transition-colors duration-150 hover:bg-cream w-full"
+            className={`group flex flex-col items-center justify-center gap-2 py-4 px-2 rounded-[14px] border border-bone bg-gradient-to-br ${gradient} cursor-pointer transition-all duration-200 hover:-translate-y-[3px] hover:shadow-md w-full`}
           >
             <div
-              className="w-9 h-9 rounded-[9px] flex items-center justify-center"
-              style={{ background: color + '18' }}
+              className="w-9 h-9 rounded-[10px] bg-white/70 flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-transform duration-200 group-hover:scale-110"
+              style={{ color: iconColor }}
             >
-              <Icon size={16} style={{ color }} />
+              <Icon size={16} />
             </div>
-            <span className="text-[11px] font-medium text-charcoal text-center leading-[1.3]">{label}</span>
+            <span className="text-[11px] font-semibold text-charcoal text-center leading-[1.3]">{label}</span>
           </button>
         ))}
       </div>
@@ -297,10 +352,10 @@ const ORDER_COLUMNS: TableColumn<SellerOrder>[] = [
 // ── Component ─────────────────────────────────────────────────────────────────
 export function SellerDashboard() {
   const navigate = useNavigate();
-  const subtitle = "Welcome back — Here's your store overview.";
 
   const { stores, loading: storesLoading, error: storesError, refetch: refetchStores } = useMyStores();
-  const storeId = stores[0]?._id ?? null;
+  const hasStore = stores.length > 0;
+  const activeStoreCount = stores.filter(s => s.status === 'active').length;
 
   const [overview, setOverview]       = useState<SellerOverviewData | null>(null);
   const [revenueSeries, setRevenueSeries] = useState<RevenuePoint[]>([]);
@@ -309,17 +364,19 @@ export function SellerDashboard() {
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState('');
 
+  // Aggregated across every store this seller owns — not just one — so the
+  // top-level seller dashboard reflects the whole business, not a single store.
   useEffect(() => {
     if (storesLoading) return;
-    if (!storeId) { setLoading(false); return; }
+    if (!hasStore) { setLoading(false); return; }
     let cancelled = false;
     setLoading(true);
     setError('');
     Promise.all([
-      apiSellerAnalyticsOverview({ storeId, range: '7d' }),
-      apiSellerAnalyticsRevenueOverTime({ storeId, range: '7d' }),
-      apiSellerAnalyticsTopProducts({ storeId, limit: 5, sort: 'revenue' }),
-      apiGetSellerOrders(storeId, 1, 4),
+      apiSellerAnalyticsOverview({ range: '7d' }),
+      apiSellerAnalyticsRevenueOverTime({ range: '7d' }),
+      apiSellerAnalyticsTopProducts({ limit: 5, sort: 'revenue' }),
+      apiGetMySellerOrders(1, 4),
     ])
       .then(([overviewRes, revenueRes, productsRes, ordersRes]) => {
         if (cancelled) return;
@@ -331,10 +388,12 @@ export function SellerDashboard() {
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load dashboard data.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [storeId, storesLoading]);
+  }, [hasStore, storesLoading]);
+
+  const revenueSparkline = revenueSeries.map(p => p.grossRevenue);
 
   const metrics = overview ? [
-    { label: 'Revenue (7 days)',  value: formatCurrency(overview.totalRevenue), trend: overview.totalRevenueChangePercent != null ? formatPercent(overview.totalRevenueChangePercent, { signed: true }) : null, trendUp: (overview.totalRevenueChangePercent ?? 0) >= 0, sub: null, icon: <DollarSign size={16} />, color: '#D97757' },
+    { label: 'Revenue (7 days)',  value: formatCurrency(overview.totalRevenue), trend: overview.totalRevenueChangePercent != null ? formatPercent(overview.totalRevenueChangePercent, { signed: true }) : null, trendUp: (overview.totalRevenueChangePercent ?? 0) >= 0, sub: null, icon: <DollarSign size={16} />, color: '#D97757', sparkline: revenueSparkline },
     { label: 'Orders (7 days)',   value: formatNumber(overview.totalOrders),    trend: overview.totalOrdersChange ? formatPercent(overview.totalOrdersChange, { signed: true }) : null, trendUp: (overview.totalOrdersChange ?? 0) >= 0, sub: null, icon: <Package size={16} />, color: '#8B5CF6' },
     { label: 'Avg Order Value',   value: formatCurrency(overview.avgOrderValue), trend: overview.avgOrderValueChangePercent != null ? formatPercent(overview.avgOrderValueChangePercent, { signed: true }) : null, trendUp: (overview.avgOrderValueChangePercent ?? 0) >= 0, sub: null, icon: <ShoppingBag size={16} />, color: '#0EA5E9' },
     { label: 'Repeat Buyers',     value: formatPercent(overview.repeatBuyerPercent), trend: null, trendUp: true, sub: overview.repeatBuyerTrend === 'improving' ? 'Improving' : overview.repeatBuyerTrend === 'declining' ? 'Declining' : 'Steady', icon: <Repeat size={16} />, color: '#22C55E' },
@@ -344,19 +403,20 @@ export function SellerDashboard() {
   const revenueTotal = revenueSeries.reduce((s, p) => s + p.grossRevenue, 0);
   const maxProductRevenue = Math.max(1, ...topProducts.map(p => p.revenue));
 
-  const hasStore = !!storeId;
-
   return (
     <>
       <SellerPageHeader
         title="Dashboard"
-        subtitle={subtitle}
+        subtitle="Here's how all your stores are doing."
       />
 
       <div className="px-5 pt-4 pb-6 flex flex-col gap-4">
 
+        {/* ── Workspace hero ── */}
+        <WorkspaceHero storeCount={stores.length} activeCount={activeStoreCount} />
+
         {error && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-[10px] bg-error-bg text-error text-[12.5px]">
+          <div className="dash-section-enter flex items-center gap-2 px-4 py-3 rounded-xl bg-error-bg text-error text-[12.5px] border border-error/10">
             <AlertCircle size={14} className="shrink-0" />
             {error}
           </div>
@@ -367,48 +427,42 @@ export function SellerDashboard() {
           {(loading || storesLoading) ? (
             Array.from({ length: 4 }).map((_, i) => <MetricCard key={i} label="" value="" loading />)
           ) : !hasStore ? (
-            <div className="col-span-full bg-white border border-bone rounded-[10px] px-5 py-6 text-center text-[13px] text-slate">
+            <div className="col-span-full bg-white border border-bone rounded-2xl shadow-card px-5 py-6 text-center text-[13px] text-slate">
               Create a store to see your revenue, orders, and product metrics here.
             </div>
           ) : metrics.map((m) => (
-            <MetricCard key={m.label} label={m.label} value={m.value} trend={m.trend ?? undefined} trendUp={m.trendUp} sub={m.sub ?? undefined} icon={m.icon} color={m.color} />
+            <MetricCard key={m.label} label={m.label} value={m.value} trend={m.trend ?? undefined} trendUp={m.trendUp} sub={m.sub ?? undefined} icon={m.icon} color={m.color} sparkline={m.sparkline} />
           ))}
         </div>
 
-        {/* ── Row 2: Revenue Chart + My Store (col-8 + col-4) ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
-          <AreaChart
-            data={chartData}
-            dataKey="sales"
-            xKey="day"
-            title="Revenue — Last 7 Days"
-            action={hasStore ? <span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">{formatCurrency(revenueTotal)} total</span> : undefined}
-            height={240}
-            valuePrefix="$"
-            yTickFormatter={v => `$${v.toLocaleString()}`}
-          />
+        {/* ── Revenue chart — dominant, full-width ── */}
+        <AreaChart
+          data={chartData}
+          dataKey="sales"
+          xKey="day"
+          title="Revenue — Last 7 Days"
+          action={hasStore ? <span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">{formatCurrency(revenueTotal)} total</span> : undefined}
+          height={320}
+          valuePrefix="$"
+          yTickFormatter={v => `$${v.toLocaleString()}`}
+        />
+
+        {/* ── Row: My Stores + Platform Billing + Quick Actions ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <MyStoreCard stores={stores} loading={storesLoading} error={storesError} onRetry={refetchStores} />
+          {hasStore ? <PlatformBillingCard /> : null}
+          <QuickActionsRow />
         </div>
 
-        {/* ── Row: Platform Billing (6) + Quick Actions (6) ── */}
-        {hasStore ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <PlatformBillingCard />
-            <QuickActionsRow />
-          </div>
-        ) : (
-          <QuickActionsRow />
-        )}
-
-        {/* ── Row 3: Top Products + Recent Orders ── */}
+        {/* ── Row: Top Products + Recent Orders ── */}
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
 
           {/* Top Products */}
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+          <div className="bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200 overflow-hidden">
             <div className="px-[18px] pt-4 pb-3 flex items-center justify-between border-b border-bone">
               <p className="text-sm font-bold text-charcoal">Top Products</p>
               {hasStore && (
-                <button onClick={() => navigate(`/seller/store/${storeId}/products`)} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
+                <button onClick={() => navigate('/seller/stores')} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
                   View All <ArrowRight size={14} />
                 </button>
               )}
@@ -419,7 +473,7 @@ export function SellerDashboard() {
               ) : !hasStore || topProducts.length === 0 ? (
                 <p className="text-[12.5px] text-slate py-2">{hasStore ? 'No product sales in the last 7 days yet.' : 'Create a store to see your top products.'}</p>
               ) : topProducts.map((p, i) => (
-                <div key={p.productId}>
+                <div key={p.productId} className="group">
                   <div className="flex items-center justify-between mb-[6px]">
                     <div className="flex items-center gap-[7px] min-w-0">
                       <span className="text-[10px] font-bold text-slate shrink-0 w-4">#{i + 1}</span>
@@ -431,7 +485,10 @@ export function SellerDashboard() {
                     </div>
                   </div>
                   <div className="h-[3px] bg-cream rounded-full overflow-hidden">
-                    <div className="h-full bg-brand-orange rounded-full" style={{ width: `${Math.round((p.revenue / maxProductRevenue) * 100)}%` }} />
+                    <div
+                      className="h-full bg-brand-orange rounded-full transition-[width] duration-500 ease-out"
+                      style={{ width: `${Math.round((p.revenue / maxProductRevenue) * 100)}%` }}
+                    />
                   </div>
                 </div>
               ))}
@@ -439,11 +496,11 @@ export function SellerDashboard() {
           </div>
 
           {/* Recent Orders — Table component */}
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+          <div className="bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200 overflow-hidden">
             <div className="px-5 pt-4 pb-[10px] flex items-center justify-between">
               <p className="text-sm font-bold text-charcoal">Recent Orders</p>
               {hasStore && (
-                <button onClick={() => navigate(`/seller/store/${storeId}/orders`)} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
+                <button onClick={() => navigate('/seller/stores')} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
                   View All <ArrowRight size={14} />
                 </button>
               )}

@@ -1,7 +1,7 @@
 import { clsx } from 'clsx';
 import {
-  ShoppingCart, User, Tag, Pause, ImageOff,
-  CreditCard, Banknote, Wallet, CloudOff,
+  ShoppingCart, User, Tag, Pause, ImageOff, Minus, Plus,
+  CreditCard, Banknote, Wallet, CloudOff, X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { CustomerPanel } from './CustomerPanel';
@@ -9,11 +9,20 @@ import { DiscountPanel } from './DiscountPanel';
 import { ReceiptOverlay } from './ReceiptOverlay';
 import type { POSSaleState, PosPaymentMethod } from '../../pos.types';
 
-const PAYMENT_METHODS: [PosPaymentMethod, LucideIcon, string][] = [
-  ['card',  CreditCard, 'Card'  ],
-  ['cash',  Banknote,   'Cash'  ],
-  ['other', Wallet,     'Other' ],
+// Each payment method carries its own semantic accent — Card reads as "digital/
+// info", Cash as "success/tender", Other as neutral — instead of every state in
+// the terminal defaulting to the same brand-orange highlight.
+const PAYMENT_METHODS: [PosPaymentMethod, LucideIcon, string, string][] = [
+  ['card',  CreditCard, 'Card',  'info'    ],
+  ['cash',  Banknote,   'Cash',  'success' ],
+  ['other', Wallet,     'Other', 'neutral' ],
 ];
+
+const PAYMENT_ACTIVE_CLASSES: Record<string, string> = {
+  info:    'bg-info/15 border-info text-info',
+  success: 'bg-success/15 border-success text-success',
+  neutral: 'bg-white/10 border-white/25 text-white',
+};
 
 interface CartPanelProps {
   sale: POSSaleState;
@@ -37,16 +46,16 @@ export function CartPanel({ sale }: CartPanelProps) {
   const isResuming = !!resumingSaleId;
 
   return (
-    <div className="w-full lg:w-[300px] shrink-0 flex flex-col relative bg-pos-surface lg:min-h-0">
+    <div className="w-full lg:w-[320px] shrink-0 flex flex-col relative bg-pos-surface-2 lg:min-h-0">
 
       {/* Cart header */}
-      <div className="flex items-center justify-between px-[18px] py-3 border-b border-carbon shrink-0">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-pos-border shrink-0">
         <div>
-          <p className="text-[14px] font-semibold text-white">
+          <p className="text-[15px] font-bold text-white">
             {isResuming ? 'Resuming Held Sale' : 'Current Sale'}
           </p>
           {cart.length > 0 && (
-            <p className="text-[11px] text-slate mt-[1px]">
+            <p className="text-[12px] text-pos-muted mt-[2px]">
               {cart.reduce((s, i) => s + i.qty, 0)} items · ${subtotal.toFixed(2)} subtotal
             </p>
           )}
@@ -55,25 +64,27 @@ export function CartPanel({ sale }: CartPanelProps) {
           <button
             onClick={() => setPosView(posView === 'customer' ? 'charge' : 'customer')}
             className={clsx(
-              'px-3 py-[6px] border-0 rounded-lg text-[11px] cursor-pointer flex items-center gap-1',
-              'transition-transform duration-100 active:scale-95',
-              posView === 'customer' ? 'bg-brand-deep-orange' : 'bg-charcoal',
-              customerName !== 'Walk-in' ? 'text-brand-orange' : 'text-pos-faint',
+              'h-11 px-[14px] border rounded-xl text-[12px] font-semibold cursor-pointer flex items-center gap-[6px]',
+              'transition-all duration-150 active:scale-95',
+              posView === 'customer' || customerName !== 'Walk-in'
+                ? 'bg-info/15 border-info/40 text-info'
+                : 'bg-pos-surface border-pos-border text-pos-faint hover:border-pos-border-strong',
             )}
           >
-            <User size={11} />
+            <User size={14} />
             {customerName !== 'Walk-in' ? customerName.split(' ')[0] : 'Customer'}
           </button>
           <button
             onClick={() => setPosView(posView === 'discount' ? 'charge' : 'discount')}
             className={clsx(
-              'px-3 py-[6px] border-0 rounded-lg text-[11px] cursor-pointer flex items-center gap-1',
-              'transition-transform duration-100 active:scale-95',
-              posView === 'discount' ? 'bg-brand-deep-orange' : 'bg-charcoal',
-              appliedDiscount ? 'text-brand-orange' : 'text-pos-faint',
+              'h-11 px-[14px] border rounded-xl text-[12px] font-semibold cursor-pointer flex items-center gap-[6px]',
+              'transition-all duration-150 active:scale-95',
+              posView === 'discount' || appliedDiscount
+                ? 'bg-warning/15 border-warning/40 text-warning'
+                : 'bg-pos-surface border-pos-border text-pos-faint hover:border-pos-border-strong',
             )}
           >
-            <Tag size={11} />
+            <Tag size={14} />
             {appliedDiscount ? appliedDiscount.label : 'Discount'}
           </button>
         </div>
@@ -82,14 +93,14 @@ export function CartPanel({ sale }: CartPanelProps) {
       {pendingSyncCount > 0 && (
         <button
           onClick={() => syncNow()}
-          className="flex items-center gap-2 px-[18px] py-2 bg-[#3A2A1A] border-b border-carbon text-left cursor-pointer border-x-0 border-t-0 w-full transition-opacity duration-150 active:opacity-80"
+          className="flex items-center gap-[10px] min-h-11 px-5 py-[10px] bg-warning/10 border-b border-pos-border text-left cursor-pointer border-x-0 border-t-0 w-full transition-opacity duration-150 active:opacity-80"
           title="Retry syncing now"
         >
-          <CloudOff size={13} className="text-brand-orange shrink-0" />
-          <span className="text-[11px] text-brand-orange flex-1">
+          <CloudOff size={15} className="text-warning shrink-0" />
+          <span className="text-[12px] font-medium text-warning flex-1">
             {pendingSyncCount} sale{pendingSyncCount !== 1 ? 's' : ''} waiting to sync
           </span>
-          <span className="text-[10px] text-pos-faint underline">Retry now</span>
+          <span className="text-[11px] text-warning/80 underline">Retry now</span>
         </button>
       )}
 
@@ -115,75 +126,76 @@ export function CartPanel({ sale }: CartPanelProps) {
       )}
 
       {/* Cart items */}
-      <div className="flex-1 overflow-y-auto px-[18px] py-2">
+      <div className="flex-1 overflow-y-auto px-5 py-2">
         {cart.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full pt-10">
-            <div className="w-16 h-16 rounded-2xl bg-carbon flex items-center justify-center mb-4 shrink-0">
-              <ShoppingCart size={26} className="text-charcoal" />
+            <div className="w-[72px] h-[72px] rounded-3xl bg-gradient-to-br from-pos-surface-3 to-pos-surface border border-pos-border flex items-center justify-center mb-5 shrink-0">
+              <ShoppingCart size={28} className="text-pos-border-strong" />
             </div>
-            <p className="text-[13px] text-[#3A3836] text-center leading-[1.6]">
+            <p className="text-[13.5px] text-pos-muted text-center leading-[1.6]">
               Tap a product to add it<br />to the cart
             </p>
           </div>
         ) : (
           cart.map(item => (
-            <div key={item.variantId} className="py-3 border-b border-carbon pos-item-enter">
-              <div className="flex items-start gap-[10px]">
-                <div className="w-[26px] h-[26px] mt-[1px] shrink-0 rounded-md overflow-hidden bg-carbon flex items-center justify-center">
+            <div key={item.variantId} className="py-[14px] border-b border-pos-border pos-item-enter">
+              <div className="flex items-start gap-3">
+                <div className="w-11 h-11 shrink-0 rounded-lg overflow-hidden bg-pos-surface-3 flex items-center justify-center">
                   {item.image ? (
                     <img loading="lazy" decoding="async" src={item.image} alt={item.name} className="w-full h-full object-cover" />
                   ) : (
-                    <ImageOff size={13} className="text-pos-muted" />
+                    <ImageOff size={16} className="text-pos-muted" />
                   )}
                 </div>
-                <div className="flex-1">
-                  <p className="text-[12px] font-medium text-white">{item.name}</p>
-                  <p className="text-[10px] text-pos-muted">{item.sku}</p>
+                <div className="flex-1 min-w-0 pt-[2px]">
+                  <p className="text-[13px] font-medium text-white truncate">{item.name}</p>
+                  <p className="text-[10.5px] text-pos-muted">{item.sku}</p>
                 </div>
                 <button
                   onClick={() => removeItem(item.variantId)}
-                  className="text-[16px] bg-transparent border-0 cursor-pointer leading-none text-[#3A3836] p-[6px] -m-[6px] rounded-md transition-transform duration-100 active:scale-90"
+                  aria-label="Remove item"
+                  className="w-9 h-9 -mr-[6px] -mt-[6px] shrink-0 flex items-center justify-center bg-transparent border-0 cursor-pointer text-pos-faint hover:text-error rounded-lg transition-colors duration-150"
                 >
-                  ×
+                  <X size={15} />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between mt-[10px] pl-9">
-                {/* Qty controls */}
-                <div className="flex items-center gap-[8px]">
+              <div className="flex items-center justify-between mt-3 pl-[52px] gap-2">
+                {/* Floating qty stepper */}
+                <div className="flex items-center gap-[2px] bg-pos-surface rounded-full border border-pos-border p-[3px] shrink-0">
                   <button
                     onClick={() => updateQty(item.variantId, -1)}
-                    className="w-7 h-7 rounded-[6px] bg-carbon border-0 text-white cursor-pointer flex items-center justify-center text-[14px] transition-transform duration-100 active:scale-90"
+                    className="w-8 h-8 rounded-full bg-pos-surface-3 border-0 text-white cursor-pointer flex items-center justify-center transition-transform duration-100 active:scale-90"
                   >
-                    −
+                    <Minus size={13} />
                   </button>
-                  <span className="text-[13px] font-semibold text-white w-5 text-center">
+                  <span className="text-[13px] font-bold text-white w-7 text-center">
                     {item.qty}
                   </span>
                   <button
                     onClick={() => updateQty(item.variantId, 1)}
-                    className="w-7 h-7 rounded-[6px] bg-carbon border-0 text-white cursor-pointer flex items-center justify-center text-[14px] transition-transform duration-100 active:scale-90"
+                    className="w-8 h-8 rounded-full bg-pos-surface-3 border-0 text-white cursor-pointer flex items-center justify-center transition-transform duration-100 active:scale-90"
                   >
-                    +
+                    <Plus size={13} />
                   </button>
                 </div>
 
                 {/* Custom price input */}
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-pos-muted">$</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="text-[11px] text-pos-muted">$</span>
                   <input
                     value={item.customPrice ?? item.price}
                     onChange={e => setCustomPrice(item.variantId, e.target.value)}
                     className={clsx(
-                      'w-[52px] text-right rounded-[6px] px-[6px] py-[2px] text-[12px] outline-none bg-charcoal border',
+                      'w-[56px] h-8 text-right rounded-lg px-[8px] text-[12px] outline-none bg-pos-surface border transition-colors duration-150',
                       item.customPrice
-                        ? 'border-brand-orange text-brand-orange'
-                        : 'border-charcoal text-white',
+                        ? 'border-brand-orange/50 text-brand-orange'
+                        : 'border-pos-border text-white focus:border-pos-border-strong',
                     )}
                   />
                 </div>
 
-                <span className="text-[13px] font-bold text-brand-orange">
+                <span className="text-[14px] font-bold text-brand-orange ml-auto">
                   ${((item.customPrice ?? item.price) * item.qty).toFixed(2)}
                 </span>
               </div>
@@ -196,68 +208,62 @@ export function CartPanel({ sale }: CartPanelProps) {
             value={note}
             onChange={e => setNote(e.target.value)}
             placeholder="Add order note..."
-            className="w-full mt-[10px] bg-[#141312] border border-carbon rounded-lg px-[10px] py-[6px] text-[11px] outline-none box-border text-pos-faint"
+            className="w-full h-11 mt-3 mb-2 bg-pos-surface border border-pos-border rounded-xl px-[14px] text-[12px] outline-none box-border text-pos-faint transition-colors duration-150 focus:border-pos-border-strong"
           />
         )}
       </div>
 
-      {/* Cart footer */}
-      <div className="px-[18px] py-4 border-t border-carbon bg-[#141312] shrink-0 shadow-lg">
+      {/* Cart footer — elevated "floating summary" surface, sticky at the bottom */}
+      <div className="px-5 pt-5 pb-5 border-t border-pos-border bg-pos-surface-3 shrink-0 shadow-[0_-8px_24px_rgba(0,0,0,0.25)] rounded-t-2xl">
         {cart.length > 0 && (
           <>
             {/* Totals */}
-            <div className="mb-3">
-              <div className="flex justify-between mb-1">
-                <span className="text-[12px] text-pos-faint">Subtotal</span>
-                <span className="text-[12px] text-white">${subtotal.toFixed(2)}</span>
+            <div className="mb-4">
+              <div className="flex justify-between mb-[6px]">
+                <span className="text-[12.5px] text-pos-faint">Subtotal</span>
+                <span className="text-[12.5px] text-white">${subtotal.toFixed(2)}</span>
               </div>
               {appliedDiscount && (
-                <div className="flex justify-between mb-1">
-                  <span className="text-[12px] text-success flex items-center gap-1">
-                    <Tag size={10} />{appliedDiscount.label}
+                <div className="flex justify-between mb-[6px]">
+                  <span className="text-[12.5px] text-success flex items-center gap-1">
+                    <Tag size={11} />{appliedDiscount.label}
                   </span>
-                  <span className="text-[12px] text-success">−${discountAmt.toFixed(2)}</span>
+                  <span className="text-[12.5px] text-success">−${discountAmt.toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex justify-between mb-2">
-                <span className="text-[12px] text-pos-faint">Tax ({(taxRate * 100).toFixed(0)}%)</span>
-                <span className="text-[12px] text-white">${tax.toFixed(2)}</span>
+              <div className="flex justify-between mb-3">
+                <span className="text-[12.5px] text-pos-faint">Tax ({(taxRate * 100).toFixed(0)}%)</span>
+                <span className="text-[12.5px] text-white">${tax.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between pt-2 border-t border-carbon">
-                <span className="text-[16px] font-bold text-white">Total</span>
-                <span className="text-[20px] font-bold text-brand-orange">${total.toFixed(2)}</span>
+              <div className="flex justify-between items-baseline pt-3 border-t border-pos-border">
+                <span className="text-[15px] font-bold text-white">Total</span>
+                <span className="text-[24px] font-bold text-brand-orange">${total.toFixed(2)}</span>
               </div>
               {customerName !== 'Walk-in' && (
-                <div className="mt-[6px] bg-pos-surface rounded-lg px-[10px] py-[6px] flex justify-between">
-                  <span className="text-[11px] text-pos-faint flex items-center gap-1">
-                    <User size={10} />{customerName}
+                <div className="mt-[10px] bg-info/10 border border-info/20 rounded-xl px-[12px] py-[8px] flex justify-between">
+                  <span className="text-[11.5px] text-info flex items-center gap-[6px] font-medium">
+                    <User size={11} />{customerName}
                   </span>
                 </div>
               )}
             </div>
 
             {/* Payment methods */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[6px] mb-[10px]">
-              {PAYMENT_METHODS.map(([id, IconComp, label]) => (
+            <div className="grid grid-cols-3 gap-[8px] mb-3">
+              {PAYMENT_METHODS.map(([id, IconComp, label, tone]) => (
                 <button
                   key={id}
                   onClick={() => setPaymentMethod(id)}
                   className={clsx(
-                    'px-1 py-[10px] rounded-lg cursor-pointer flex flex-col items-center gap-1 border',
-                    'transition-transform duration-100 active:scale-95',
+                    'h-[64px] rounded-xl cursor-pointer flex flex-col items-center justify-center gap-[5px] border-2',
+                    'transition-all duration-150 active:scale-[0.96]',
                     paymentMethod === id
-                      ? 'bg-brand-deep-orange border-brand-orange'
-                      : 'bg-charcoal border-transparent',
+                      ? PAYMENT_ACTIVE_CLASSES[tone]
+                      : 'bg-pos-surface border-pos-border text-pos-faint hover:border-pos-border-strong',
                   )}
                 >
-                  <IconComp
-                    size={14}
-                    className={paymentMethod === id ? 'text-white' : 'text-pos-faint'}
-                  />
-                  <span className={clsx(
-                    'text-[10px] font-medium',
-                    paymentMethod === id ? 'text-white' : 'text-pos-faint',
-                  )}>
+                  <IconComp size={19} />
+                  <span className="text-[11px] font-semibold">
                     {label}
                   </span>
                 </button>
@@ -266,36 +272,36 @@ export function CartPanel({ sale }: CartPanelProps) {
 
             {/* Cash tendered */}
             {paymentMethod === 'cash' && (
-              <div className="bg-pos-surface rounded-lg p-3 mb-[10px]">
-                <p className="text-[11px] text-pos-faint mb-[6px]">Cash tendered</p>
-                <div className="flex gap-[6px] mb-[6px]">
+              <div className="bg-pos-surface rounded-xl border border-pos-border p-[14px] mb-3">
+                <p className="text-[11.5px] text-pos-faint mb-[8px] font-medium">Cash tendered</p>
+                <div className="flex gap-[8px] mb-[8px]">
                   <input
                     value={cashGiven}
                     onChange={e => setCashGiven(e.target.value)}
                     placeholder="0.00"
-                    className="flex-1 bg-carbon border-0 rounded-lg px-[10px] py-[6px] text-[13px] text-white outline-none"
+                    className="flex-1 h-11 min-w-0 bg-pos-surface-2 border border-pos-border rounded-xl px-[12px] text-[14px] text-white outline-none transition-colors duration-150 focus:border-pos-border-strong"
                   />
                   {[20, 50, 100].map(amt => (
                     <button
                       key={amt}
                       onClick={() => setCashGiven(amt.toString())}
-                      className="px-3 py-[6px] bg-carbon border-0 rounded-lg text-[11px] text-white cursor-pointer transition-transform duration-100 active:scale-95"
+                      className="w-12 h-11 shrink-0 bg-pos-surface-2 border border-pos-border rounded-xl text-[12px] font-semibold text-white cursor-pointer transition-all duration-150 hover:border-pos-border-strong active:scale-95"
                     >
                       ${amt}
                     </button>
                   ))}
                 </div>
                 {cashGiven && parseFloat(cashGiven) >= total && (
-                  <div className="flex justify-between">
-                    <span className="text-[12px] text-pos-faint">Change due</span>
-                    <span className="text-[14px] font-bold text-success">${cashChange.toFixed(2)}</span>
+                  <div className="flex justify-between items-center bg-success/10 rounded-lg px-3 py-[8px]">
+                    <span className="text-[12px] text-success font-medium">Change due</span>
+                    <span className="text-[15px] font-bold text-success">${cashChange.toFixed(2)}</span>
                   </div>
                 )}
               </div>
             )}
 
             {chargeError && (
-              <p className="text-[11px] text-error bg-[#C1303020] border border-error rounded-lg px-3 py-2 mb-[10px]">
+              <p className="text-[12px] text-error bg-error/10 border border-error/30 rounded-xl px-[14px] py-[10px] mb-3">
                 {chargeError}
               </p>
             )}
@@ -307,11 +313,11 @@ export function CartPanel({ sale }: CartPanelProps) {
           onClick={() => cart.length > 0 && !charging && charge('completed')}
           disabled={cart.length === 0 || charging}
           className={clsx(
-            'w-full rounded-[10px] py-[15px] text-center text-[15px] font-bold text-white border-0',
-            'flex items-center justify-center gap-[6px] transition-all duration-150',
+            'w-full rounded-2xl h-[60px] text-center text-[16px] font-bold text-white border-0',
+            'flex items-center justify-center gap-[8px] transition-all duration-150',
             cart.length === 0 || charging
-              ? 'bg-charcoal opacity-40 cursor-default'
-              : 'bg-brand-orange cursor-pointer shadow-md active:scale-[0.98]',
+              ? 'bg-pos-surface-2 opacity-40 cursor-default'
+              : 'bg-gradient-to-b from-brand-orange to-brand-deep-orange cursor-pointer shadow-[0_8px_24px_rgba(217,119,87,0.35)] hover:shadow-[0_10px_28px_rgba(217,119,87,0.45)] active:scale-[0.98]',
           )}
         >
           {charging
@@ -323,21 +329,22 @@ export function CartPanel({ sale }: CartPanelProps) {
 
         {/* Clear / Hold */}
         {cart.length > 0 && (
-          <div className="flex gap-2 mt-2">
+          <div className="flex gap-2 mt-[10px]">
             <button
               onClick={resetSale}
-              className="flex-1 py-2 bg-pos-surface border border-carbon rounded-lg cursor-pointer flex items-center justify-center gap-1 transition-transform duration-100 active:scale-95"
+              className="flex-1 h-11 bg-pos-surface border border-pos-border rounded-xl cursor-pointer flex items-center justify-center gap-[6px] transition-all duration-150 hover:border-pos-border-strong active:scale-95"
             >
-              <span className="text-[11px] text-pos-muted">× Clear</span>
+              <X size={13} className="text-pos-muted" />
+              <span className="text-[12px] font-medium text-pos-muted">Clear</span>
             </button>
             {!isResuming && (
               <button
                 onClick={() => !charging && charge('held')}
                 disabled={charging}
-                className="flex-1 py-2 bg-pos-surface border border-carbon rounded-lg cursor-pointer flex items-center justify-center gap-1 transition-transform duration-100 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                className="flex-1 h-11 bg-pos-surface border border-pos-border rounded-xl cursor-pointer flex items-center justify-center gap-[6px] transition-all duration-150 hover:border-pos-border-strong active:scale-95 disabled:opacity-50 disabled:active:scale-100"
               >
-                <Pause size={11} className="text-pos-muted" />
-                <span className="text-[11px] text-pos-muted">Hold</span>
+                <Pause size={13} className="text-pos-muted" />
+                <span className="text-[12px] font-medium text-pos-muted">Hold</span>
               </button>
             )}
           </div>

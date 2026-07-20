@@ -25,12 +25,15 @@
   --color-info:       #1A72C2;
   --color-info-bg:    #E6F1FB;
 
-  /* ── POS Dark Theme ── */
-  --color-pos-bg:      #0F0E0D;
-  --color-pos-surface: #1A1918;
-  --color-pos-border:  #2C2A28;
-  --color-pos-muted:   #5C5A58;
-  --color-pos-faint:   #6A6866;
+  /* ── POS Dark Theme — 4-level elevation scale (0 = page → 3 = floating) ── */
+  --color-pos-bg:            #0F0E0D;  /* level 0 — page background */
+  --color-pos-surface:       #1A1918;  /* level 1 — resting cards (product tiles) */
+  --color-pos-surface-2:     #211F1C;  /* level 2 — raised panels (top bar, cart, footers) */
+  --color-pos-surface-3:     #2A2723;  /* level 3 — floating (modals, overlays, receipts) */
+  --color-pos-border:        #2C2A28;
+  --color-pos-border-strong: #3B3733;
+  --color-pos-muted:         #5C5A58;
+  --color-pos-faint:         #6A6866;
 
   /* ── Admin Theme ── */
   --color-admin-bg:     #0F0E0D;
@@ -141,6 +144,35 @@
 .pos-panel-enter { animation: pos-panel-enter 220ms var(--ease-out); }
 .pos-item-enter { animation: pos-item-enter 180ms var(--ease-out); }
 
+/* Animated "Live" status ring — a soft pulsing halo behind a solid status dot */
+@keyframes pos-live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(45,138,78,0.45); }
+  70%  { box-shadow: 0 0 0 6px rgba(45,138,78,0); }
+  100% { box-shadow: 0 0 0 0 rgba(45,138,78,0); }
+}
+.pos-live-pulse { animation: pos-live-pulse 2.2s ease-out infinite; }
+
+/* Shimmering skeleton — replaces flat animate-pulse for POS loading states */
+@keyframes pos-skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.pos-skeleton {
+  background: linear-gradient(100deg, var(--color-pos-surface) 30%, #262420 50%, var(--color-pos-surface) 70%);
+  background-size: 250% 100%;
+  animation: pos-skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+/* Shared hover-lift for POS surfaces (product tiles, cards) — one definition
+   instead of repeating the same transform/shadow utility combo everywhere. */
+.pos-surface-hover {
+  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out), border-color 200ms var(--ease-out);
+}
+.pos-surface-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
 /* ── Shared dropdown / panel / drawer motion (Navbar previews, mini cart, popups) ── */
 @keyframes dropdown-enter {
   from { opacity: 0; transform: scale(0.97) translateY(-6px); }
@@ -179,3 +211,27 @@
 .auth-float { animation: auth-float 6s var(--ease-out) infinite; }
 .auth-float-slow { animation: auth-float 8s var(--ease-out) infinite; animation-delay: -2s; }
 .auth-glow-pulse { animation: auth-glow-pulse 4s ease-in-out infinite; }
+
+/* ── Dashboard KPI card entrance + light-surface shimmer skeleton ── */
+@keyframes metric-card-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.metric-card-enter { animation: metric-card-enter 320ms var(--ease-out); }
+
+@keyframes skeleton-shimmer-light {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(100deg, var(--color-bone) 30%, #F0EEE4 50%, var(--color-bone) 70%);
+  background-size: 250% 100%;
+  animation: skeleton-shimmer-light 1.8s ease-in-out infinite;
+}
+
+/* ── Dashboard section fade/slide-in (stat rows, charts, panels) ── */
+@keyframes dash-section-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.dash-section-enter { animation: dash-section-enter 360ms var(--ease-out) both; }

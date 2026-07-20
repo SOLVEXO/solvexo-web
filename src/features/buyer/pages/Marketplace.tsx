@@ -1,19 +1,20 @@
-import { useState, useEffect, useCallback, useRef, memo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductsByCategory } from '@/hooks/marketplace/useProductsByCategory';
 import { useBanners } from '@/hooks/useBanners';
-import type { Banner } from '@/api/services/banner';
 import { useCartContext } from '@/contexts/CartContext';
 import { TokenStorage } from '@/api/services/auth';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
-import { Card } from '@/components/comman/ui/Card';
 import { Pagination, FilterDropdown, BuyerNavbar, AppDownloadBanner, Footer, TrustServiceStrip, FloatingAppWidget, DealsBanner, StoreFeatureCard } from '@/components/comman/ui';
+import { ProductCard, ProductCardSkeleton, ProductImage } from '@/components/comman/marketplace/ProductCard';
+import { FilterAccordionSection, FilterChipPill } from '@/components/comman/marketplace/FilterAccordionSection';
+import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import {
-  ShoppingCart, ShoppingBag, Star, Heart, ImageOff,
-  Loader2, SlidersHorizontal, X, ChevronLeft, ChevronRight,
+  ShoppingBag, Star,
+  SlidersHorizontal, X, ChevronRight,
   ShieldCheck, BadgeCheck, RefreshCcw,
   ChevronDown, Tag, Globe,
 } from 'lucide-react';
@@ -22,253 +23,6 @@ import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories
 import { apiGetTopStores, type PublicStoreListItem } from '@/api/services/store';
 import { apiSearchStores } from '@/api/services/search';
 
-// ── Promotional banner carousel — full-bleed hero background (admin-managed) ──
-function BannerCarousel({ banners }: { banners: Banner[] }) {
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    if (banners.length < 2) return;
-    const id = setInterval(() => setIndex(i => (i + 1) % banners.length), 5000);
-    return () => clearInterval(id);
-  }, [banners.length]);
-
-  const sorted = [...banners].sort((a, b) => a.order - b.order);
-  const active = sorted[index];
-
-  const go = (dir: 1 | -1) => setIndex(i => (i + dir + sorted.length) % sorted.length);
-
-  const content = <img loading="lazy" decoding="async" src={active.bannerImage} alt="" className="absolute inset-0 w-full h-full object-cover" />;
-
-  return (
-    <div className="absolute inset-0 group">
-      {active.urlOnTap ? (
-        <a href={active.urlOnTap} target="_blank" rel="noreferrer" className="absolute inset-0">{content}</a>
-      ) : content}
-
-      {sorted.length > 1 && (
-        <>
-          <button
-            onClick={() => go(-1)}
-            aria-label="Previous banner"
-            className="absolute left-3 top-1/2 -translate-y-1/2 size-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10"
-          >
-            <ChevronLeft size={16} className="text-charcoal" />
-          </button>
-          <button
-            onClick={() => go(1)}
-            aria-label="Next banner"
-            className="absolute right-3 top-1/2 -translate-y-1/2 size-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10"
-          >
-            <ChevronRight size={16} className="text-charcoal" />
-          </button>
-          <div className="absolute bottom-4 right-4 sm:right-6 lg:right-10 flex gap-[6px] z-10">
-            {sorted.map((b, i) => (
-              <button
-                key={b._id}
-                onClick={() => setIndex(i)}
-                aria-label={`Go to banner ${i + 1}`}
-                className="h-[6px] rounded-full border-none cursor-pointer transition-all"
-                style={{ width: i === index ? 18 : 6, background: i === index ? '#D97757' : 'rgba(255,255,255,0.7)' }}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ── Skeleton ──────────────────────────────────────────────────────────────────
-function ProductCardSkeleton() {
-  return (
-    <div className="bg-white rounded-xl border border-bone overflow-hidden">
-      <div className="animate-pulse h-[130px] sm:h-[160px] lg:h-[180px] bg-bone" />
-      <div className="p-2 sm:p-4">
-        <div className="animate-pulse h-[12px] bg-bone rounded-[6px] mb-2" />
-        <div className="animate-pulse h-[10px] bg-bone rounded-[6px] w-[55%] mb-[10px]" />
-        <div className="flex justify-between items-center">
-          <div className="animate-pulse h-5 w-14 bg-bone rounded-[6px]" />
-          <div className="animate-pulse h-[28px] w-8 sm:w-[86px] bg-bone rounded-lg" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Product Image ─────────────────────────────────────────────────────────────
-function ProductImage({ images, name, className }: { images: string[]; name: string; className?: string }) {
-  const [errored, setErrored] = useState(false);
-  const src = images[0];
-
-  if (!src || errored) {
-    return (
-      <div className={clsx('bg-brand-pale-orange flex flex-col items-center justify-center gap-[6px]', className)}>
-        <ImageOff size={24} className="text-brand-orange opacity-[0.45]" style={{ display: 'block', flexShrink: 0 }} />
-        <span className="text-[9px] text-slate max-w-[80px] text-center leading-[1.4] overflow-hidden">
-          {name.slice(0, 20)}{name.length > 20 ? '…' : ''}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={src}
-      alt={name}
-      loading="lazy"
-      decoding="async"
-      onError={() => setErrored(true)}
-      className={clsx('w-full object-cover block transition-transform duration-500 ease-out group-hover:scale-[1.07]', className)}
-    />
-  );
-}
-
-// ── Star Rating ───────────────────────────────────────────────────────────────
-function StarRating({ rating, count }: { rating: number; count?: number }) {
-  return (
-    <div className="flex items-center gap-[3px]">
-      {[1, 2, 3, 4, 5].map(i => (
-        <Star
-          key={i}
-          size={10}
-          className={i <= Math.round(rating) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone'}
-        />
-      ))}
-      {count !== undefined && (
-        <span className="text-[10px] text-slate ml-[2px] hidden sm:inline">({count})</span>
-      )}
-    </div>
-  );
-}
-
-// ── Product Card ──────────────────────────────────────────────────────────────
-const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, isWishlisting, onToggleWishlist }: {
-  product:          MarketplaceProduct;
-  onClick:          (id: string) => void;
-  onAddToCart:      (e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => void;
-  isAdding:         boolean;
-  isWishlisted:     boolean;
-  isWishlisting:    boolean;
-  onToggleWishlist: (e: React.MouseEvent, id: string, variantId: string) => void;
-}) {
-  const pType     = product.productType ?? product.type ?? 'physical';
-  const isDigital = pType === 'digital';
-
-  const defaultVariant = product.variants.find(v => v.isDefault) ?? product.variants[0];
-  const lowestPrice    = product.variants.length > 0
-    ? Math.min(...product.variants.map(v => v.price))
-    : null;
-  const compareAt   = defaultVariant?.compareAtPrice ?? null;
-  const ratingCount = product.totalRatings ?? 0;
-  const vId         = defaultVariant?._id ?? '';
-  const subscriberPrice = defaultVariant?.subscriberPrice;
-  const discountPercent = defaultVariant?.discountPercent;
-  const pctOff = compareAt != null && lowestPrice != null && compareAt > lowestPrice
-    ? Math.round((1 - lowestPrice / compareAt) * 100)
-    : null;
-  // Stock tracking only applies to physical goods — digital products are always available.
-  const stock = isDigital ? Infinity : (defaultVariant?.stock ?? 0);
-
-  return (
-    <Card padding="none" hover onClick={() => onClick(product._id)} className="overflow-hidden rounded-[16px] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_32px_rgba(0,0,0,0.1)] transition-shadow duration-300">
-      {/* Image container */}
-      <div className="relative overflow-hidden group/img">
-        <ProductImage
-          images={product.images ?? []}
-          name={product.name}
-          className="h-[130px] sm:h-[160px] lg:h-[180px] transition-transform duration-500 ease-out group-hover/img:scale-[1.07]"
-        />
-
-        {/* Hover overlay — dark gradient + Quick View label */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(20,20,19,0.55)] via-[rgba(20,20,19,0.18)] to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 pointer-events-none" />
-        <div className="absolute inset-x-0 bottom-0 flex items-end justify-center pb-[10px] opacity-0 group-hover/img:opacity-100 translate-y-[6px] group-hover/img:translate-y-0 transition-all duration-300 pointer-events-none">
-          <span className="px-3 py-[4px] rounded-full bg-white/90 text-carbon text-[10.5px] font-semibold tracking-wide backdrop-blur-sm shadow-sm">
-            Quick View
-          </span>
-        </div>
-
-        {/* Wishlist button */}
-        <button
-          onClick={e => onToggleWishlist(e, product._id, vId)}
-          disabled={isWishlisting}
-          className={clsx(
-            'absolute top-[8px] right-[8px] w-7 h-7 sm:w-8 sm:h-8 rounded-full',
-            'bg-[rgba(255,255,255,0.92)] border-none flex items-center justify-center',
-            'shadow-[0_1px_4px_rgba(0,0,0,0.12)] transition-transform duration-150 hover:scale-[1.15]',
-            isWishlisting ? 'cursor-wait' : 'cursor-pointer',
-          )}
-        >
-          <Heart
-            size={13}
-            className={clsx('transition-[color,fill] duration-150', isWishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')}
-          />
-        </button>
-        <div className="absolute top-[8px] left-[8px] flex flex-col gap-[4px] items-start">
-          <span className={clsx(
-            'px-[6px] py-[2px] rounded-[5px] text-[9px] sm:text-[10px] font-semibold border',
-            isDigital
-              ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
-              : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
-          )}>
-            {isDigital ? 'Digital' : 'Physical'}
-          </span>
-          {pctOff != null && pctOff > 0 && (
-            <span className="px-[6px] py-[2px] rounded-[5px] text-[9px] sm:text-[10px] font-bold bg-[#E11D48] text-white shadow-sm">
-              -{pctOff}%
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="px-2 pt-2 pb-2 sm:px-[14px] sm:pt-3 sm:pb-[14px]">
-        <p className="font-bold text-[12px] sm:text-[13px] text-carbon mb-[3px] leading-[1.4] line-clamp-2">
-          {product.name}
-        </p>
-        <StarRating rating={product.averageRating} count={ratingCount} />
-        {(product.tags?.length ?? 0) > 0 && (
-          <div className="hidden lg:flex flex-wrap gap-1 mt-[6px]">
-            {product.tags!.slice(0, 3).map(tag => (
-              <span key={tag} className="text-[10px] px-[6px] py-[1px] rounded bg-cream text-slate border border-bone">
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-        {subscriberPrice != null && (
-          <p className="text-[9px] sm:text-[10px] font-semibold text-brand-orange mt-1">Members save {discountPercent}%</p>
-        )}
-        {stock <= 0 ? (
-          <p className="text-[9px] sm:text-[10px] font-semibold text-error mt-1">Out of stock</p>
-        ) : stock <= 5 && (
-          <p className="text-[9px] sm:text-[10px] font-semibold text-amber-600 mt-1">Only {stock} left</p>
-        )}
-        <div className="flex items-center justify-between mt-[8px] sm:mt-[10px]">
-          <div className="flex items-baseline gap-[3px]">
-            <span className={clsx('font-bold text-[13px] sm:text-[15px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
-              {subscriberPrice != null ? `$${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `$${lowestPrice.toLocaleString()}` : '—'}
-            </span>
-            {subscriberPrice != null && lowestPrice != null ? (
-              <span className="hidden sm:inline text-[11px] text-slate line-through">${lowestPrice.toLocaleString()}</span>
-            ) : compareAt != null && compareAt > (lowestPrice ?? 0) && (
-              <span className="hidden sm:inline text-[11px] text-slate line-through">${compareAt.toLocaleString()}</span>
-            )}
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={stock <= 0}
-            onClick={e => onAddToCart(e, product._id, vId, product.productType ?? product.type ?? 'physical')}
-            className="inline-flex shrink-0"
-          >
-            {isAdding ? <Loader2 size={11} className="animate-spin" /> : <ShoppingCart size={11} />}
-            <span className="hidden lg:inline">{stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}</span>
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-});
 
 // ── Countdown to local midnight — real, deterministic timer (not tied to a
 // fabricated campaign end-time); frames "today's deals" honestly. ──────────
@@ -685,31 +439,11 @@ function HoverMegaTrigger({ trigger, panel, panelAlign = 'left' }: {
 // ── Filter data ───────────────────────────────────────────────────────────────
 const FILTER_GROUPS = [
   { key: 'price',  title: 'Price Range',  items: ['Under $10', '$10–$50', '$50–$100', '$100+'] },
-  { key: 'type',   title: 'Product Type', items: ['Physical', 'Digital']                       },
+  { key: 'type',   title: 'Product Type', items: ['Physical', 'Digital', 'Educational']         },
   { key: 'rating', title: 'Rating',       items: ['4★ & up', '3★ & up']                        },
 ];
 
 interface FilterState { price: string[]; type: string[]; rating: string[]; }
-
-function FilterAccordionSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="border-b border-bone pb-4 last:border-b-0 last:pb-0">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between mb-[10px] bg-transparent border-none cursor-pointer p-0 group"
-      >
-        <span className="text-[11px] font-bold text-charcoal uppercase tracking-[0.08em] group-hover:text-brand-orange transition-colors">
-          {title}
-        </span>
-        <ChevronDown size={14} className={clsx('text-slate transition-transform duration-200', open && 'rotate-180')} />
-      </button>
-      <div className={clsx('overflow-hidden transition-all duration-200', open ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0')}>
-        {children}
-      </div>
-    </div>
-  );
-}
 
 function FilterPanel({ filters, onChange, categories = [], selectedCategory, onCategoryChange }: {
   filters:  FilterState;
@@ -723,30 +457,9 @@ function FilterPanel({ filters, onChange, categories = [], selectedCategory, onC
       {categories.length > 0 && (
         <FilterAccordionSection title="Category">
           <div className="flex flex-wrap gap-[7px]">
-            <button
-              onClick={() => onCategoryChange('')}
-              className={clsx(
-                'px-[11px] py-[6px] rounded-full text-[11.5px] font-semibold border transition-all duration-150 cursor-pointer leading-none',
-                selectedCategory === ''
-                  ? 'bg-brand-orange text-white border-brand-orange shadow-[0_2px_8px_rgba(184,90,54,0.25)]'
-                  : 'bg-cream text-charcoal border-transparent hover:border-brand-orange/40 hover:text-brand-orange',
-              )}
-            >
-              All
-            </button>
+            <FilterChipPill label="All" active={selectedCategory === ''} onClick={() => onCategoryChange('')} />
             {categories.map(c => (
-              <button
-                key={c._id}
-                onClick={() => onCategoryChange(c._id)}
-                className={clsx(
-                  'px-[11px] py-[6px] rounded-full text-[11.5px] font-semibold border transition-all duration-150 cursor-pointer leading-none',
-                  selectedCategory === c._id
-                    ? 'bg-brand-orange text-white border-brand-orange shadow-[0_2px_8px_rgba(184,90,54,0.25)]'
-                    : 'bg-cream text-charcoal border-transparent hover:border-brand-orange/40 hover:text-brand-orange',
-                )}
-              >
-                {c.name}
-              </button>
+              <FilterChipPill key={c._id} label={c.name} active={selectedCategory === c._id} onClick={() => onCategoryChange(c._id)} />
             ))}
           </div>
         </FilterAccordionSection>
@@ -757,18 +470,7 @@ function FilterPanel({ filters, onChange, categories = [], selectedCategory, onC
             {group.items.map(label => {
               const active = (filters[group.key as keyof FilterState] as string[]).includes(label);
               return (
-                <button
-                  key={label}
-                  onClick={() => onChange(group.key as keyof FilterState, label)}
-                  className={clsx(
-                    'px-[11px] py-[6px] rounded-full text-[11.5px] font-semibold border transition-all duration-150 cursor-pointer leading-none',
-                    active
-                      ? 'bg-brand-orange text-white border-brand-orange shadow-[0_2px_8px_rgba(184,90,54,0.25)]'
-                      : 'bg-cream text-charcoal border-transparent hover:border-brand-orange/40 hover:text-brand-orange',
-                  )}
-                >
-                  {label}
-                </button>
+                <FilterChipPill key={label} label={label} active={active} onClick={() => onChange(group.key as keyof FilterState, label)} />
               );
             })}
           </div>
@@ -1071,7 +773,7 @@ export function Marketplace() {
               <ShieldCheck size={13} className="text-success" /> Verified Stores
             </button>
             <button
-              onClick={() => navigate(TokenStorage.isLoggedIn() ? '/account/profile?tab=orders' : '/login')}
+              onClick={() => navigate(TokenStorage.isLoggedIn() ? '/account/orders' : '/login')}
               className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0"
             >
               Track Order

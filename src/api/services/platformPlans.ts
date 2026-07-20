@@ -10,6 +10,8 @@ export interface PlatformPlanLimits {
   abandonedCartRecoveryAllowed?: boolean; emailCampaignsAllowed?: boolean; apiWebhooksAllowed?: boolean;
   dedicatedAccountManager?: boolean; prioritySupport?: boolean; marketplaceFeaturedBadge?: boolean;
   slaUptimePercent?: number;
+  advancedSeoToolsAllowed?: boolean; seoAiSuggestionsAllowed?: boolean;
+  searchConsoleIntegrationAllowed?: boolean; customRedirectsAllowed?: boolean;
 }
 
 export interface PlatformPlan {
@@ -17,7 +19,7 @@ export interface PlatformPlan {
   sortOrder: number; isFree: boolean; isCustomPricing: boolean;
   monthlyPriceUSD: number | null; yearlyPriceUSD: number | null; trialDays: number;
   featureBullets: string[]; limits: PlatformPlanLimits;
-  status: 'active' | 'archived'; createdAt: string; updatedAt: string;
+  status: 'active' | 'archived'; isPubliclyVisible: boolean; createdAt: string; updatedAt: string;
   subscriberCount?: number; mrrUSD?: number;
 }
 
@@ -40,7 +42,18 @@ export interface PlatformPlanInvoice {
 export interface StorePlatformSubscription {
   _id: string; storeId: string; platformPlanId: string; billingInterval: 'monthly' | 'yearly';
   amountUSD: number; status: string; trialEndsAt: string | null; currentPeriodEnd: string; nextBillingDate: string;
+  cancelAtPeriodEnd: boolean; cancelReason: string | null; failedPaymentAttempts: number;
+  creditBalanceUSD: number; stripeCustomerId: string | null;
   plan?: PlatformPlan;
+}
+
+export interface PlanChangePreview {
+  direction: 'upgrade' | 'downgrade' | 'billing_interval_change';
+  currentPlanName: string; currentAmountUSD: number;
+  newPlanName: string; newAmountUSD: number; newBillingInterval: 'monthly' | 'yearly';
+  remainingDaysInCurrentPeriod: number;
+  unusedCreditFromCurrentPlanUSD: number; existingCreditBalanceUSD: number; totalCreditAppliedUSD: number;
+  amountDueTodayUSD: number; creditAppliedToBalanceUSD: number; effectiveImmediately: boolean;
 }
 
 export interface EntitlementsSummary {
@@ -103,6 +116,26 @@ export function apiChangePlatformPlan(storeId: string, newPlatformPlanId: string
   return client.patch<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/${storeId}/change-plan`, { newPlatformPlanId, newBillingInterval });
 }
 
+/** Exact proration math for a would-be plan change — no charge, no write. Call this before showing a confirm dialog. */
+export function apiPreviewPlatformPlanChange(storeId: string, newPlatformPlanId: string, newBillingInterval: 'monthly' | 'yearly') {
+  return client.post<never, ApiResponse<PlanChangePreview>>(`${BASE}/${storeId}/preview-change-plan`, { newPlatformPlanId, newBillingInterval });
+}
+
+/** Schedules a downgrade to the free plan at the end of the current paid period — access continues until then. */
+export function apiCancelPlatformPlan(storeId: string, reason?: string) {
+  return client.post<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/${storeId}/cancel`, { reason });
+}
+
+/** Undoes a still-pending apiCancelPlatformPlan — the subscription keeps renewing normally. */
+export function apiReactivatePlatformPlan(storeId: string) {
+  return client.post<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/${storeId}/reactivate`, {});
+}
+
+/** Stripe-hosted portal for updating the payment method / viewing past invoices on this store's platform-plan billing. */
+export function apiCreatePlatformBillingPortalSession(storeId: string, returnUrl: string) {
+  return client.post<never, ApiResponse<{ url: string }>>(`${BASE}/${storeId}/billing-portal`, { returnUrl });
+}
+
 export function apiPurchaseAddon(storeId: string, addonType: AddonType, quantity = 1) {
   return client.post<never, ApiResponse<AddonPurchase>>(`${BASE}/${storeId}/addons`, { addonType, quantity });
 }
@@ -120,6 +153,7 @@ export interface CreatePlatformPlanPayload {
   name: string; description?: string; badge?: string; sortOrder?: number;
   isFree?: boolean; isCustomPricing?: boolean; monthlyPriceUSD?: number; yearlyPriceUSD?: number;
   trialDays?: number; featureBullets?: string[]; limits: PlatformPlanLimits;
+  isPubliclyVisible?: boolean;
 }
 
 export function apiAdminCreatePlatformPlan(payload: CreatePlatformPlanPayload) {

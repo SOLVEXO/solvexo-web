@@ -29,6 +29,7 @@ export interface OrderLineItem {
   image:      string | null;
   sku:        string;
   type:       'physical' | 'digital';
+  productType?: 'physical' | 'digital' | 'educational';
   quantity:   number;
   price:      number;
   totalPrice: number;

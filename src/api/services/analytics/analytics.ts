@@ -3,12 +3,13 @@ import { ENDPOINTS } from '../../endpoints';
 import type { AnalyticsRangePreset } from '@/components/comman/analytics/analyticsFilters';
 
 // ── Query params ────────────────────────────────────────────────────────────────
-// Mirrors `src/api/services/adminAnalytics.ts` — same shape, but every seller
-// endpoint is scoped to one store (`storeId` is required, there's no
-// sellerId/granularity-override on this backend module).
+// Mirrors `src/api/services/adminAnalytics.ts` — same shape. `storeId` is
+// optional: pass it to scope to one store, omit it for the cross-store view
+// (aggregates across every store the seller owns) — the backend now supports
+// both from the exact same endpoint.
 
 export interface SellerAnalyticsParams {
-  storeId: string;
+  storeId?: string;
   range?: AnalyticsRangePreset;
   from?: string;
   to?: string;
@@ -75,6 +76,8 @@ export interface SellerOverviewData {
   newCustomersCount: number;
   returningCustomersCount: number;
   previousPeriod?: SellerOverviewPreviousPeriod;
+  /** Only present on the cross-store "my" overview — how many stores the totals were aggregated across. */
+  storeCount?: number;
 }
 
 // ── B. Revenue over time ─────────────────────────────────────────────────────────

@@ -147,7 +147,7 @@ export default function StoreProductList() {
       key: 'type', header: 'Type',
       render: p => (
         <Badge color={p.type === 'digital' ? 'blue' : 'orange'}>
-          {p.type === 'digital' ? 'Digital' : 'Physical'}
+          {p.type === 'digital' ? (p.productType === 'educational' ? 'Educational' : 'Digital') : 'Physical'}
         </Badge>
       ),
     },

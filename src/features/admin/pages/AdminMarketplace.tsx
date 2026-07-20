@@ -7,7 +7,7 @@ import { Table, StatusBadge, Button, Modal, SkeletonBox, SearchInput, FilterDrop
 import type { TableColumn } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatCurrency, formatNumber } from '@/components/comman/analytics/format';
-import { Star, StoreIcon, RefreshCw } from 'lucide-react';
+import { Star, StoreIcon, RefreshCw, GraduationCap } from 'lucide-react';
 
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Active' },
@@ -63,13 +63,19 @@ export function AdminMarketplace() {
   );
 
   const { data, loading, error, refetch } = useMarketplaceListings(query);
-  const { setFeatured, removeListing, processingId, error: actionError } = useMarketplaceListingActions();
+  const { setFeatured, removeListing, setStoreBadge, processingId, error: actionError } = useMarketplaceListingActions();
   const [removing, setRemoving] = useState<MarketplaceListingRow | null>(null);
 
   function refreshAll() { refetchStats(); refetch(); }
 
   async function toggleFeatured(row: MarketplaceListingRow) {
     const ok = await setFeatured(row.id, !row.isFeatured);
+    if (ok) refetch();
+  }
+
+  async function toggleEducatorBadge(row: MarketplaceListingRow) {
+    const hasBadge = row.storeBadges.includes('verified_educator');
+    const ok = await setStoreBadge(row.storeId, 'verified_educator', !hasBadge);
     if (ok) refetch();
   }
 
@@ -95,22 +101,36 @@ export function AdminMarketplace() {
     {
       key: 'actions',
       header: 'Actions',
-      render: (r) => (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => toggleFeatured(r)}
-            disabled={processingId === r.id}
-            className="text-[11px] font-medium bg-transparent border-none cursor-pointer disabled:opacity-40"
-            style={{ color: r.isFeatured ? '#8C8A82' : '#D97757' }}
-          >
-            {r.isFeatured ? 'Unfeature' : 'Feature'}
-          </button>
-          <span className="text-bone text-[13px]">|</span>
-          <button onClick={() => setRemoving(r)} disabled={processingId === r.id} className="text-[11px] font-medium text-error bg-transparent border-none cursor-pointer disabled:opacity-40">
-            Remove
-          </button>
-        </div>
-      ),
+      render: (r) => {
+        const hasEducatorBadge = r.storeBadges.includes('verified_educator');
+        return (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => toggleFeatured(r)}
+              disabled={processingId === r.id}
+              className="text-[11px] font-medium bg-transparent border-none cursor-pointer disabled:opacity-40"
+              style={{ color: r.isFeatured ? '#8C8A82' : '#D97757' }}
+            >
+              {r.isFeatured ? 'Unfeature' : 'Feature'}
+            </button>
+            <span className="text-bone text-[13px]">|</span>
+            <button
+              onClick={() => toggleEducatorBadge(r)}
+              disabled={processingId === r.storeId}
+              title="Grant/revoke this store's 'Verified Educator' badge"
+              className="text-[11px] font-medium bg-transparent border-none cursor-pointer disabled:opacity-40 flex items-center gap-1"
+              style={{ color: hasEducatorBadge ? '#8C8A82' : '#2D8A4E' }}
+            >
+              <GraduationCap size={12} />
+              {hasEducatorBadge ? 'Unbadge Educator' : 'Verify Educator'}
+            </button>
+            <span className="text-bone text-[13px]">|</span>
+            <button onClick={() => setRemoving(r)} disabled={processingId === r.id} className="text-[11px] font-medium text-error bg-transparent border-none cursor-pointer disabled:opacity-40">
+              Remove
+            </button>
+          </div>
+        );
+      },
     },
   ];
 

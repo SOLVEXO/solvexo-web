@@ -2,7 +2,7 @@ import client from '../client';
 import { ENDPOINTS } from '../endpoints';
 
 export type SellerType  = 'creator' | 'reseller' | 'brand' | 'retailer';
-export type ProductType = 'physical_products' | 'digital_downloads' | 'services' | 'in_person_pos';
+export type ProductType = 'physical_products' | 'digital_downloads' | 'educational_resources' | 'services' | 'in_person_pos';
 
 export interface CreateStorePayload {
   name:         string;
@@ -151,6 +151,7 @@ export interface PublicStoreProduct {
   name:        string;
   images?:     string[];
   type?:       'physical' | 'digital';
+  productType?: 'physical' | 'digital' | 'educational';
   tags?:       string[];
   averageRating?: number;
   defaultVariantPrice: number | null;

@@ -4,7 +4,7 @@ import { Star, ImageOff, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import {
   Card, EmptyState, StarRating, SkeletonBox,
   Table, type TableColumn, ActionMenu, type ActionMenuItem,
-  Modal, Button,
+  Modal, Button, PageHeader,
 } from '@/components/comman/ui';
 import { apiGetMyReviews, apiDeleteReview, type MyReviewEntry } from '@/api/services/rating';
 import { ReviewFormModal } from '@/features/buyer/components/ReviewFormModal';
@@ -111,17 +111,15 @@ export function ReviewsTab() {
   ];
 
   return (
+    <div>
     <Card padding="none">
       {/* Header */}
-      <div className="px-5 pt-5 pb-4 border-b border-bone flex items-end justify-between">
-        <div>
-          <p className="text-[11px] text-slate mb-[3px]">Account / My Reviews</p>
-          <h1 className="text-[22px] font-bold text-charcoal leading-none">My Reviews</h1>
-        </div>
-        <div className="text-right pb-[2px]">
-          <p className="text-[13px] font-semibold text-charcoal leading-tight">Total Reviews</p>
-          <p className="text-[11px] text-slate mt-[2px]">{total} review{total !== 1 ? 's' : ''}</p>
-        </div>
+      <div className="px-5 pt-5 pb-4 border-b border-bone">
+        <PageHeader
+          eyebrow="Account"
+          title="Reviews"
+          description={`${total} review${total !== 1 ? 's' : ''} written`}
+        />
       </div>
 
       {loading ? (
@@ -183,5 +181,6 @@ export function ReviewsTab() {
         </Modal>
       )}
     </Card>
+    </div>
   );
 }
