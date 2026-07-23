@@ -38,8 +38,8 @@ export function ProductGrid({ sale }: ProductGridProps) {
       <div className="flex flex-col gap-[6px] px-4 sm:px-5 py-4 bg-pos-surface-2 border-b border-pos-border shrink-0">
         <div className={clsx(
           'flex items-center h-[52px] bg-pos-surface rounded-2xl border overflow-hidden',
-          'transition-[box-shadow,border-color] duration-200',
-          'focus-within:border-brand-orange/50 focus-within:shadow-[0_0_0_4px_rgba(217,119,87,0.12)]',
+          'transition-colors duration-200',
+          'focus-within:border-brand-orange/50',
           barcodeError ? 'border-error/50' : 'border-pos-border',
         )}>
           <Search size={17} className="ml-4 shrink-0 text-pos-faint" />
@@ -190,13 +190,13 @@ function ProductCard({
   return (
     <div
       className={clsx(
-        'group relative flex flex-col rounded-2xl overflow-hidden bg-pos-surface border pos-surface-hover',
-        inCartQty > 0 ? 'border-brand-orange shadow-[0_0_0_3px_rgba(217,119,87,0.15)]' : 'border-pos-border',
+        'group relative flex flex-col rounded-2xl overflow-hidden bg-pos-surface border-2 pos-surface-hover',
+        inCartQty > 0 ? 'border-brand-orange' : 'border-pos-border',
       )}
     >
       {/* In-cart quantity badge */}
       {inCartQty > 0 && (
-        <div className="absolute top-2 left-2 z-[1] w-7 h-7 rounded-full bg-gradient-to-br from-brand-orange to-brand-deep-orange text-white text-[12px] font-bold flex items-center justify-center shadow-[0_2px_8px_rgba(217,119,87,0.5)]">
+        <div className="absolute top-2 left-2 z-[1] w-7 h-7 rounded-full bg-gradient-to-br from-brand-orange to-brand-deep-orange text-white text-[12px] font-bold flex items-center justify-center border-2 border-pos-surface">
           {inCartQty}
         </div>
       )}

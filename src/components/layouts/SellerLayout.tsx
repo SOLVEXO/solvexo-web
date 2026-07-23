@@ -134,7 +134,7 @@ function SidebarStoreSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-[#1A1917] border border-charcoal rounded-[10px] shadow-[0_8px_28px_rgba(0,0,0,0.35)] p-[6px]">
+        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-[#1A1917] border border-charcoal rounded-[10px] p-[6px]">
           <p className="text-[10px] font-semibold text-dark-label uppercase tracking-[0.08em] px-[10px] pt-1 pb-2">
             Switch Store
           </p>
@@ -431,7 +431,7 @@ export interface SellerPageHeaderProps {
 export function SellerPageHeader({ title, subtitle, actions }: SellerPageHeaderProps) {
   const { toggle } = useContext(SellerSidebarCtx);
   return (
-    <div className="bg-white/90 backdrop-blur-md border-b border-bone shadow-xs px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
+    <div className="bg-white/90 backdrop-blur-md border-b border-bone px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
       <div className="flex items-center gap-3">
         <button
           onClick={toggle}

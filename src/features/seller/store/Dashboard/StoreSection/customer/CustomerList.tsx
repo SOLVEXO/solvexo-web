@@ -62,13 +62,13 @@ export default function StoreCustomerList() {
 
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4 max-w-[220px]">
+        <div className="bg-white border border-bone rounded-[10px] px-5 py-4 max-w-[220px]">
           <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Total Customers</p>
           <p className="text-[28px] font-bold text-carbon leading-[1.15]">{total}</p>
         </div>
 
         <div className="flex gap-4 items-start">
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex-1 min-w-0 overflow-hidden">
+          <div className="bg-white border border-bone rounded-[10px] flex-1 min-w-0 overflow-hidden">
             <div className="flex gap-2.5 px-5 py-3.5 border-b border-bone">
               <div className="flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white flex-1 max-w-[260px]">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -124,7 +124,7 @@ export default function StoreCustomerList() {
           {/* Edit panel */}
           {sel && (
             <div className="w-[300px] shrink-0">
-              <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-5 sticky top-[70px]">
+              <div className="bg-white border border-bone rounded-[10px] px-[18px] py-5 sticky top-[70px]">
                 <div className="flex flex-col items-center text-center pb-4 border-b border-[#F0EEE6] mb-3.5">
                   <div className="w-[52px] h-[52px] rounded-full text-base font-bold flex items-center justify-center mb-2.5 bg-[#F0EEE6] text-[#5A5852]">
                     {initialsOf(sel.name)}

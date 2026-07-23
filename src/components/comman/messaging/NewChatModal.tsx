@@ -26,7 +26,7 @@ export function NewChatModal({ onClose, onStart, starting }: NewChatModalProps) 
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="w-full max-w-[380px] bg-white rounded-[16px] shadow-2xl overflow-hidden outline-none transition-all duration-200 ease-out starting:opacity-0 starting:scale-95"
+        className="w-full max-w-[380px] bg-white border border-bone rounded-[16px] overflow-hidden outline-none transition-all duration-200 ease-out starting:opacity-0 starting:scale-95"
       >
         <div className="flex items-center justify-between px-4 py-[14px] border-b border-[#EEECE4]">
           <p id={titleId} className="text-[15px] font-bold text-charcoal">New message</p>

@@ -157,7 +157,7 @@ export function ChatList({
           </div>
 
           {showRecent && (
-            <div className="absolute left-4 right-4 top-full mt-1 z-20 bg-white border border-bone rounded-[12px] shadow-[0_8px_24px_rgba(0,0,0,0.12)] py-2 overflow-hidden">
+            <div className="absolute left-4 right-4 top-full mt-1 z-20 bg-white border border-bone rounded-[12px] py-2 overflow-hidden">
               <div className="flex items-center justify-between px-3 pb-1.5">
                 <span className="text-[10.5px] font-semibold text-slate uppercase tracking-[0.05em]">Recent</span>
                 {onClearRecentSearches && (

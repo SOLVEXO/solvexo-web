@@ -115,11 +115,11 @@ export function SignInPreview() {
       </Button>
 
       {open && (
-        <div className="dropdown-enter absolute right-0 top-[calc(100%+10px)] z-[100] w-[320px] max-w-[calc(100vw-2rem)] bg-white border border-bone rounded-[18px] shadow-[0_24px_56px_rgba(0,0,0,0.18)] overflow-hidden">
+        <div className="dropdown-enter absolute right-0 top-[calc(100%+10px)] z-[100] w-[320px] max-w-[calc(100vw-2rem)] bg-white border border-bone rounded-[18px] overflow-hidden">
 
           {/* Header — avatar + welcome */}
           <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-gradient-to-br from-cream to-white border-b border-bone">
-            <div className="w-11 h-11 rounded-full bg-brand-pale-orange border-2 border-white shadow-sm flex items-center justify-center shrink-0">
+            <div className="w-11 h-11 rounded-full bg-brand-pale-orange border-2 border-white flex items-center justify-center shrink-0">
               <User size={19} className="text-brand-deep-orange" />
             </div>
             <div className="min-w-0">

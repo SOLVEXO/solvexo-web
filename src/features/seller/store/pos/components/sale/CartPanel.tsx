@@ -214,7 +214,7 @@ export function CartPanel({ sale }: CartPanelProps) {
       </div>
 
       {/* Cart footer — elevated "floating summary" surface, sticky at the bottom */}
-      <div className="px-5 pt-5 pb-5 border-t border-pos-border bg-pos-surface-3 shrink-0 shadow-[0_-8px_24px_rgba(0,0,0,0.25)] rounded-t-2xl">
+      <div className="px-5 pt-5 pb-5 border-t border-pos-border bg-pos-surface-3 shrink-0 rounded-t-2xl">
         {cart.length > 0 && (
           <>
             {/* Totals */}
@@ -317,7 +317,7 @@ export function CartPanel({ sale }: CartPanelProps) {
             'flex items-center justify-center gap-[8px] transition-all duration-150',
             cart.length === 0 || charging
               ? 'bg-pos-surface-2 opacity-40 cursor-default'
-              : 'bg-gradient-to-b from-brand-orange to-brand-deep-orange cursor-pointer shadow-[0_8px_24px_rgba(217,119,87,0.35)] hover:shadow-[0_10px_28px_rgba(217,119,87,0.45)] active:scale-[0.98]',
+              : 'bg-gradient-to-b from-brand-orange to-brand-deep-orange cursor-pointer hover:brightness-110 active:scale-[0.98]',
           )}
         >
           {charging

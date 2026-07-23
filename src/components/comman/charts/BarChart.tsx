@@ -16,7 +16,7 @@ interface CustomTooltipProps {
 function ChartTooltip({ active, payload, label, valuePrefix = '', valueSuffix = '' }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-bone rounded-lg px-3 py-[6px] shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-xs">
+    <div className="bg-white border border-bone rounded-lg px-3 py-[6px] text-xs">
       <p className="text-slate mb-0.5">{label}</p>
       <p className="font-bold text-charcoal">{valuePrefix}{payload[0].value.toLocaleString()}{valueSuffix}</p>
     </div>
@@ -58,7 +58,7 @@ export function BarChart({
   if (!data.length) {
     return (
       <div
-        className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex items-center justify-center"
+        className="bg-white border border-bone rounded-[10px] flex items-center justify-center"
         style={{ height: height + (title || subtitle ? 56 : 0) }}
         role="img"
         aria-label={ariaLabel}
@@ -70,7 +70,7 @@ export function BarChart({
 
   return (
     <div
-      className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-shadow duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
+      className="bg-white border border-bone rounded-[10px] transition-colors duration-200 hover:border-slate/30"
       role="img"
       aria-label={ariaLabel}
     >

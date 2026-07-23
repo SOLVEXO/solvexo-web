@@ -44,13 +44,13 @@ const SIZES: Record<ButtonSize, string> = {
 const VARIANTS: Record<ButtonVariant, string> = {
   // Orange filled — primary CTA
   primary:
-    'bg-brand-orange text-white border-0 shadow-[0_1px_2px_rgba(184,90,54,0.15)] hover:bg-brand-deep-orange hover:shadow-[0_2px_8px_rgba(184,90,54,0.25)]',
+    'bg-brand-orange text-white border-0 hover:bg-brand-deep-orange',
   // Soft orange fill — secondary CTA on light bg
   secondary:
     'bg-brand-pale-orange text-brand-deep-orange border-0 hover:opacity-[0.88]',
   // White with border — common "ghost" action button (Export, Edit, Clear…)
   outline:
-    'bg-white text-carbon border border-bone shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:bg-cream hover:border-slate/40',
+    'bg-white text-carbon border border-bone hover:bg-cream hover:border-slate/40',
   // No bg, no border — subtle inline action
   ghost:
     'bg-transparent text-slate border-0 hover:bg-cream',
@@ -59,7 +59,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
     'bg-transparent text-brand-orange border-0 p-0! hover:opacity-80 active:scale-100',
   // Dark fill — dark-theme CTAs
   dark:
-    'bg-charcoal text-white border-0 shadow-[0_1px_2px_rgba(0,0,0,0.2)] hover:bg-carbon',
+    'bg-charcoal text-white border-0 hover:bg-carbon',
   // Soft red — destructive actions (Flag, Delete, Cancel…)
   danger:
     'bg-error-bg text-error border border-[#FECACA] hover:bg-error hover:text-white hover:border-error',

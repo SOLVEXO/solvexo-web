@@ -81,7 +81,7 @@ export function CartPage() {
             <button
               onClick={clearError}
               aria-label="Dismiss error"
-              className="text-[12px] font-semibold text-error cursor-pointer shrink-0"
+              className="text-[12px] font-semibold text-error cursor-pointer shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error"
             >
               Dismiss
             </button>
@@ -90,7 +90,7 @@ export function CartPage() {
 
         {/* ── Empty ── */}
         {isEmpty && (
-          <div className="bg-white rounded-xl shadow-card border border-bone p-10 text-center">
+          <div className="bg-white rounded-xl border border-bone p-10 text-center">
             <div className="w-16 h-16 rounded-2xl bg-bone flex items-center justify-center mx-auto mb-4">
               <ShoppingBag size={30} className="text-slate opacity-60" />
             </div>
@@ -105,7 +105,7 @@ export function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
 
             {/* ── Left: Cart card ── */}
-            <div className="bg-white rounded-xl shadow-card border border-bone overflow-hidden">
+            <div className="bg-white rounded-xl border border-bone overflow-hidden">
 
               {/* Card header */}
               <div className="px-6 pt-5 pb-4 border-b border-bone flex items-center justify-between">
@@ -185,8 +185,9 @@ export function CartPage() {
                         <button
                           onClick={() => handleUpdateQty(item.productId, key, 'decrease')}
                           disabled={item.quantity <= 1 || isUpdating}
+                          aria-label={`Decrease quantity of ${item.name}`}
                           className={clsx(
-                            'w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors',
+                            'w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                             item.quantity <= 1 || isUpdating
                               ? 'cursor-not-allowed opacity-40'
                               : 'cursor-pointer hover:bg-bone',
@@ -204,8 +205,9 @@ export function CartPage() {
                         <button
                           onClick={() => handleUpdateQty(item.productId, key, 'increase')}
                           disabled={isUpdating}
+                          aria-label={`Increase quantity of ${item.name}`}
                           className={clsx(
-                            'w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors',
+                            'w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                             isUpdating ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-bone',
                           )}
                         >
@@ -248,7 +250,7 @@ export function CartPage() {
             </div>
 
             {/* ── Right: Order Summary ── */}
-            <div className="bg-white rounded-xl shadow-card border border-bone p-6 lg:sticky top-20 flex flex-col gap-5">
+            <div className="bg-white rounded-xl border border-bone p-6 lg:sticky top-20 flex flex-col gap-5">
               <p className="text-[15px] font-bold text-carbon">Order Summary</p>
 
               {/* Item list */}
@@ -278,8 +280,10 @@ export function CartPage() {
                   <span className="font-semibold text-carbon">${(cart?.totalPrice ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-[13px]">
-                  <span className="text-slate">Shipping</span>
-                  <span className="text-success font-medium text-[12px]">Calculated at checkout</span>
+                  <span className="text-slate">{hasPhysical ? 'Shipping' : 'Delivery'}</span>
+                  <span className="text-charcoal font-medium text-[12px]">
+                    {hasPhysical ? 'Calculated at checkout' : 'Instant'}
+                  </span>
                 </div>
               </div>
 

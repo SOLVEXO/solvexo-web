@@ -152,7 +152,7 @@ export function StoreReturnList() {
             { label: 'Return Rate',    value: stats?.returnRate ?? '—' },
             { label: 'Total Refunded (30d)', value: stats ? `$${stats.totalRefunded.toLocaleString()}` : '—' },
           ].map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
               <p className="text-[28px] font-bold text-carbon leading-[1.15]">{loading ? '—' : m.value}</p>
             </div>
@@ -160,7 +160,7 @@ export function StoreReturnList() {
         </div>
 
         {/* ── Return Policy Summary ── */}
-        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-[18px] shadow-xs">
+        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-[18px]">
           <p className="text-[14px] font-semibold text-carbon mb-1.5">Return Policy Summary</p>
           <p className="text-[13px] text-slate leading-[1.6]">
             Physical: 30-day returns in original condition. Digital: Non-refundable unless defective. Damaged items: replacement or full refund.
@@ -180,11 +180,11 @@ export function StoreReturnList() {
 
         {/* ── Table card ── */}
         {!error && (
-          <div className="bg-white border border-bone rounded-[10px] shadow-xs overflow-hidden">
+          <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
 
             {/* Filters */}
             <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
-              <div className="flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white transition-shadow duration-150 focus-within:ring-2 focus-within:ring-brand-orange/40 focus-within:border-brand-orange/50">
+              <div className="flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white transition-colors duration-150 focus-within:ring-2 focus-within:ring-brand-orange/40 focus-within:border-brand-orange/50">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                 </svg>
@@ -199,7 +199,7 @@ export function StoreReturnList() {
               <select
                 value={status}
                 onChange={e => setStatus(e.target.value)}
-                className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50"
+                className="text-[13px] px-3 py-2 rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer transition-colors duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50"
               >
                 {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>

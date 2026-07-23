@@ -49,17 +49,17 @@ function AddSubcategoryModal({ mainCategoryId, onClose, onCreated }: {
         <div>
           <label className="text-[12px] font-medium text-charcoal block mb-1.5">Name</label>
           <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Ceramics"
-            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
+            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white transition-colors duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
         </div>
         <div>
           <label className="text-[12px] font-medium text-charcoal block mb-1.5">Description (optional)</label>
           <textarea rows={2} value={description} onChange={e => setDescription(e.target.value)}
-            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white resize-y transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
+            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white resize-y transition-colors duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
         </div>
         <div>
           <label className="text-[12px] font-medium text-charcoal block mb-1.5">Image URL (optional)</label>
           <input value={image} onChange={e => setImage(e.target.value)} placeholder="https://…"
-            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
+            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white transition-colors duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
         </div>
         {error && <p className="text-[12px] text-error">{error}</p>}
       </div>
@@ -82,7 +82,7 @@ export default function StoreCategories() {
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5 max-w-[640px]">
 
         {/* Main category */}
-        <div className="bg-white border border-bone rounded-[10px] shadow-xs px-5 py-4 flex items-center gap-3">
+        <div className="bg-white border border-bone rounded-[10px] px-5 py-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-[10px] bg-[#FBECE4] flex items-center justify-center shrink-0">
             <FolderTree size={19} style={{ color: '#D97757' }} />
           </div>
@@ -100,7 +100,7 @@ export default function StoreCategories() {
         </p>
 
         {/* Subcategories */}
-        <div className="bg-white border border-bone rounded-[10px] shadow-xs overflow-hidden">
+        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="px-5 py-[14px] border-b border-bone flex items-center justify-between">
             <div>
               <p className="text-[13px] font-bold text-charcoal">Subcategories</p>

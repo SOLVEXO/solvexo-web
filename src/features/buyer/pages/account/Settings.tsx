@@ -48,7 +48,7 @@ export function Settings() {
 
       <Card padding="none" className="rounded-2xl overflow-hidden">
         <div className="px-6 py-5 bg-gradient-to-br from-brand-pale-orange/60 to-cream border-b border-bone flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-[10px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-[10px] bg-white border border-bone flex items-center justify-center shrink-0">
             <UserCog size={16} className="text-brand-orange" />
           </div>
           <p className="text-[13px] font-bold text-charcoal">Account Overview</p>
@@ -101,7 +101,7 @@ export function Settings() {
 
       <Card padding="none" className="rounded-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-[#F5BCBC] bg-error-bg/40 flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-[10px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-[10px] bg-white border border-[#F5BCBC] flex items-center justify-center shrink-0">
             <AlertTriangle size={16} className="text-error" />
           </div>
           <p className="text-[13px] font-bold text-error">Danger Zone</p>

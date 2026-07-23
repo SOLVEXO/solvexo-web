@@ -33,7 +33,7 @@ function DetailSkeleton() {
           {[1, 2, 3, 4].map(i => <SkeletonBox key={i} width={64} height={64} rounded="10px" />)}
         </div>
         <SkeletonBox className="w-full h-[320px] md:h-[420px]" rounded="16px" />
-        <div className="bg-white rounded-xl border border-bone shadow-xs p-6">
+        <div className="bg-white rounded-xl border border-bone p-6">
           <SkeletonBox width={60} height={20} rounded="4px" />
           <div className="mt-3"><SkeletonBox width="80%" height={24} rounded="6px" /></div>
           <div className="mt-2"><SkeletonBox width="50%" height={13} rounded="4px" /></div>
@@ -106,8 +106,10 @@ function ImageGallery({ images, name }: { images: string[]; name: string }) {
             <button
               key={i}
               onClick={() => setSelected(i)}
+              aria-label={`View image ${i + 1} of ${images.length}`}
+              aria-pressed={selected === i}
               className={clsx(
-                'w-14 h-14 md:w-16 md:h-16 rounded-[10px] overflow-hidden shrink-0 bg-brand-pale-orange flex items-center justify-center border-2 cursor-pointer transition-all duration-150',
+                'w-14 h-14 md:w-16 md:h-16 rounded-[10px] overflow-hidden shrink-0 bg-brand-pale-orange flex items-center justify-center border-2 cursor-pointer transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                 selected === i ? 'border-brand-orange' : 'border-transparent opacity-70 hover:opacity-100',
               )}
             >
@@ -139,7 +141,7 @@ function VariantSelector({ variants, selected, onSelect }: {
               <button
                 key={v._id} onClick={() => onSelect(v)}
                 className={clsx(
-                  'px-[10px] py-1 rounded-[6px] text-[12px] cursor-pointer border-[1.5px]',
+                  'px-[10px] py-1 rounded-[6px] text-[12px] cursor-pointer border-[1.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                   selected?._id === v._id ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange font-semibold' : 'border-bone bg-white text-charcoal font-normal',
                 )}
               >
@@ -159,7 +161,7 @@ function VariantSelector({ variants, selected, onSelect }: {
               <button
                 key={v._id} onClick={() => onSelect(v)}
                 className={clsx(
-                  'px-[10px] py-1 rounded-[6px] text-[12px] cursor-pointer border-[1.5px]',
+                  'px-[10px] py-1 rounded-[6px] text-[12px] cursor-pointer border-[1.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                   selected?._id === v._id ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange font-semibold' : 'border-bone bg-white text-charcoal font-normal',
                 )}
               >
@@ -180,7 +182,8 @@ function QuantityStepper({ qty, max, onChange }: { qty: number; max: number; onC
       <button
         onClick={() => onChange(Math.max(1, qty - 1))}
         disabled={qty <= 1}
-        className="w-8 h-9 flex items-center justify-center bg-cream text-charcoal cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed"
+        aria-label="Decrease quantity"
+        className="w-8 h-9 flex items-center justify-center bg-cream text-charcoal cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
       >
         <Minus size={13} />
       </button>
@@ -188,7 +191,8 @@ function QuantityStepper({ qty, max, onChange }: { qty: number; max: number; onC
       <button
         onClick={() => onChange(Math.min(max, qty + 1))}
         disabled={qty >= max}
-        className="w-8 h-9 flex items-center justify-center bg-cream text-charcoal cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed"
+        aria-label="Increase quantity"
+        className="w-8 h-9 flex items-center justify-center bg-cream text-charcoal cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
       >
         <Plus size={13} />
       </button>
@@ -211,7 +215,7 @@ function RelatedCard({ id, name, image, price, compareAtPrice, rating, reviewCou
   return (
     <div
       onClick={() => onClick(id)}
-      className="relative shrink-0 w-[150px] text-left bg-white rounded-[14px] border border-bone overflow-hidden cursor-pointer group transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_12px_28px_rgba(0,0,0,0.12)] hover:border-brand-orange/25"
+      className="relative shrink-0 w-[150px] text-left bg-white rounded-[14px] border border-bone overflow-hidden cursor-pointer group transition-all duration-200 hover:-translate-y-[3px] hover:border-brand-orange/25"
     >
       <div className="relative h-[110px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">
         {image && !errored
@@ -221,13 +225,13 @@ function RelatedCard({ id, name, image, price, compareAtPrice, rating, reviewCou
         {/* Badges */}
         <div className="absolute top-[6px] left-[6px] flex flex-col gap-1 items-start">
           {pctOff != null && pctOff > 0 && (
-            <span className="text-[9.5px] font-bold text-white bg-error px-[6px] py-[2px] rounded-md shadow-sm">-{pctOff}%</span>
+            <span className="text-[9.5px] font-bold text-white bg-error px-[6px] py-[2px] rounded-md">-{pctOff}%</span>
           )}
           {isBestseller && (
-            <span className="flex items-center gap-[3px] text-[9.5px] font-bold text-white bg-brand-deep-orange px-[6px] py-[2px] rounded-md shadow-sm"><Flame size={9} /> Bestseller</span>
+            <span className="flex items-center gap-[3px] text-[9.5px] font-bold text-white bg-brand-deep-orange px-[6px] py-[2px] rounded-md"><Flame size={9} /> Bestseller</span>
           )}
           {isNew && !isBestseller && (
-            <span className="flex items-center gap-[3px] text-[9.5px] font-bold text-white bg-success px-[6px] py-[2px] rounded-md shadow-sm"><Sparkles size={9} /> New</span>
+            <span className="flex items-center gap-[3px] text-[9.5px] font-bold text-white bg-success px-[6px] py-[2px] rounded-md"><Sparkles size={9} /> New</span>
           )}
         </div>
 
@@ -236,7 +240,7 @@ function RelatedCard({ id, name, image, price, compareAtPrice, rating, reviewCou
             onClick={e => { e.stopPropagation(); wishlist.onToggle(); }}
             aria-label={wishlist.active ? 'Remove from wishlist' : 'Save to wishlist'}
             className={clsx(
-              'absolute top-[6px] right-[6px] w-6 h-6 rounded-full flex items-center justify-center border-0 cursor-pointer transition-opacity',
+              'absolute top-[6px] right-[6px] w-6 h-6 rounded-full flex items-center justify-center border-0 cursor-pointer transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
               wishlist.active ? 'bg-white opacity-100' : 'bg-white/85 opacity-0 group-hover:opacity-100',
             )}
           >
@@ -369,7 +373,7 @@ export function ProductDetail() {
 
   async function handleAddToCart(navigateToCart: boolean) {
     if (!product || !activeVariant) return;
-    await addToCart(product._id, activeVariant._id, product.type ?? 'physical');
+    await addToCart(product._id, activeVariant._id, isPhysical ? 'physical' : 'digital');
     for (let i = 1; i < qty; i++) {
       await updateQty(product._id, activeVariant._id, 'increase');
     }
@@ -505,8 +509,9 @@ export function ProductDetail() {
                             onClick={() => toggleWishlist(product._id, activeVariant._id)}
                             disabled={busy}
                             title={wishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
+                            aria-label={wishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
                             className={clsx(
-                              'w-10 flex-shrink-0 rounded-[10px] flex items-center justify-center transition-all duration-150 border-[1.5px]',
+                              'w-10 flex-shrink-0 rounded-[10px] flex items-center justify-center transition-all duration-150 border-[1.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                               wishlisted ? 'border-[#FECDD3] bg-[#FFF0F5]' : 'border-bone bg-white',
                               busy ? 'cursor-wait' : 'cursor-pointer',
                             )}
@@ -518,7 +523,8 @@ export function ProductDetail() {
                       <button
                         onClick={handleShare}
                         title="Share this listing"
-                        className="w-10 flex-shrink-0 rounded-[10px] flex items-center justify-center border-[1.5px] border-bone bg-white cursor-pointer text-slate hover:text-brand-orange hover:border-brand-orange/40 transition-colors"
+                        aria-label="Share this listing"
+                        className="w-10 flex-shrink-0 rounded-[10px] flex items-center justify-center border-[1.5px] border-bone bg-white cursor-pointer text-slate hover:text-brand-orange hover:border-brand-orange/40 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                       >
                         {shareCopied ? <Link2 size={15} className="text-success" /> : <Share2 size={15} />}
                       </button>
@@ -586,7 +592,7 @@ export function ProductDetail() {
                     </div>
                   )}
                   <div className="flex items-start gap-[14px] mb-5 flex-wrap">
-                    <div className="w-[60px] h-[60px] rounded-full bg-success-bg text-success flex items-center justify-center font-bold text-[18px] flex-shrink-0 overflow-hidden border-2 border-white shadow-[0_0_0_1px_theme(colors.bone)]">
+                    <div className="w-[60px] h-[60px] rounded-full bg-success-bg text-success flex items-center justify-center font-bold text-[18px] flex-shrink-0 overflow-hidden border-2 border-white outline outline-1 outline-bone">
                       {storeData?.logo
                         ? <img loading="lazy" decoding="async" src={storeData.logo} alt="" className="w-full h-full object-cover" />
                         : (product.sellerName ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}

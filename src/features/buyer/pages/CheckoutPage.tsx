@@ -120,6 +120,8 @@ export function CheckoutPage() {
 
   // Address dropdown open state
   const [addrDropOpen, setAddrDropOpen] = useState(false);
+  const addrDropRef = useRef<HTMLDivElement>(null);
+  const shippingDropRef = useRef<HTMLDivElement>(null);
 
   // Address
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -130,6 +132,26 @@ export function CheckoutPage() {
   const { zones, loading: zonesLoading } = useShippingZones();
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [shippingDropOpen, setShippingDropOpen] = useState(false);
+
+  // Close either dropdown on an outside click or Escape — matches the
+  // click-outside/Escape convention every other dropdown in this app follows.
+  useEffect(() => {
+    if (!addrDropOpen && !shippingDropOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setAddrDropOpen(false); setShippingDropOpen(false); }
+    };
+    const onClickOutside = (e: MouseEvent) => {
+      if (addrDropOpen && addrDropRef.current && !addrDropRef.current.contains(e.target as Node)) setAddrDropOpen(false);
+      if (shippingDropOpen && shippingDropRef.current && !shippingDropRef.current.contains(e.target as Node)) setShippingDropOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('mousedown', onClickOutside);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('mousedown', onClickOutside);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addrDropOpen, shippingDropOpen]);
 
   // Checkout creation (step 2 → 3)
   const [creatingCheckout, setCreatingCheckout] = useState(false);
@@ -386,7 +408,7 @@ export function CheckoutPage() {
           {/* ── Left panel ─────────────────────────────────────────────── */}
           {isDigital ? (
             /* ── Digital: single-step payment ──────────────────────────── */
-            <div className="bg-white rounded-xl shadow-card border border-bone overflow-hidden">
+            <div className="bg-white rounded-xl border border-bone overflow-hidden">
 
               {/* Header */}
               <div className="px-6 pt-5 pb-4 border-b border-bone flex items-center justify-between">
@@ -456,7 +478,7 @@ export function CheckoutPage() {
             </div>
           ) : (
             /* ── Physical: 3-step flow ──────────────────────────────────── */
-            <div className="bg-white rounded-xl shadow-card border border-bone overflow-hidden">
+            <div className="bg-white rounded-xl border border-bone overflow-hidden">
 
             {/* ── Card Header ───────────────────────────────────────────── */}
             <div className="px-6 pt-5 pb-4 border-b border-bone">
@@ -545,12 +567,12 @@ export function CheckoutPage() {
                   ) : (
                     <div className="flex flex-col gap-4">
                       {/* Dropdown trigger */}
-                      <div className="relative">
+                      <div className="relative" ref={addrDropRef}>
                         <button
                           type="button"
                           onClick={() => setAddrDropOpen(o => !o)}
                           className={clsx(
-                            'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-[10px] border bg-cream text-left transition-colors',
+                            'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-[10px] border bg-cream text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                             addrDropOpen ? 'border-brand-orange ring-2 ring-brand-pale-orange' : 'border-bone hover:border-[#c5c4bc]',
                           )}
                         >
@@ -575,14 +597,14 @@ export function CheckoutPage() {
 
                         {/* Dropdown list */}
                         {addrDropOpen && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-bone rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.10)] z-20 overflow-hidden">
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-bone rounded-[10px] z-20 overflow-hidden">
                             {addresses.map((addr, i) => (
                               <button
                                 key={addr._id}
                                 type="button"
                                 onClick={() => selectAddress(addr)}
                                 className={clsx(
-                                  'w-full flex items-start gap-3 px-4 py-3 text-left transition-colors',
+                                  'w-full flex items-start gap-3 px-4 py-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                                   i > 0 && 'border-t border-bone',
                                   selectedAddr?._id === addr._id
                                     ? 'bg-brand-pale-orange'
@@ -616,7 +638,7 @@ export function CheckoutPage() {
                               <button
                                 type="button"
                                 onClick={() => navigate('/account/addresses')}
-                                className="text-[12px] text-brand-orange font-medium cursor-pointer"
+                                className="text-[12px] text-brand-orange font-medium cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                               >
                                 + Add new address
                               </button>
@@ -679,12 +701,12 @@ export function CheckoutPage() {
                   ) : (
                     <div className="flex flex-col gap-4">
                       {/* Dropdown trigger */}
-                      <div className="relative">
+                      <div className="relative" ref={shippingDropRef}>
                         <button
                           type="button"
                           onClick={() => setShippingDropOpen(o => !o)}
                           className={clsx(
-                            'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-[10px] border bg-cream text-left transition-colors',
+                            'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-[10px] border bg-cream text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                             shippingDropOpen ? 'border-brand-orange ring-2 ring-brand-pale-orange' : 'border-bone hover:border-[#c5c4bc]',
                           )}
                         >
@@ -710,7 +732,7 @@ export function CheckoutPage() {
 
                         {/* Dropdown list */}
                         {shippingDropOpen && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-bone rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.10)] z-20 overflow-hidden">
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-bone rounded-[10px] z-20 overflow-hidden">
                             {(matchingZones.length > 0 ? matchingZones : zones).length === 0 ? (
                               <div className="px-4 py-4 text-[13px] text-slate text-center">
                                 No shipping methods available for this address yet.
@@ -721,7 +743,7 @@ export function CheckoutPage() {
                                 type="button"
                                 onClick={() => { setSelectedZoneId(zone._id); setShippingDropOpen(false); }}
                                 className={clsx(
-                                  'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors',
+                                  'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                                   i > 0 && 'border-t border-bone',
                                   selectedZoneId === zone._id ? 'bg-brand-pale-orange' : 'hover:bg-cream',
                                 )}
@@ -796,6 +818,12 @@ export function CheckoutPage() {
 
               {step === 3 && (
                 <div className="p-5">
+                  {effectiveMethods.length === 0 && (
+                    <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-3 mb-4">
+                      <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
+                      No payment method is available for this order right now. Please try again shortly or contact support.
+                    </div>
+                  )}
                   <div className="flex flex-col gap-3 mb-4">
                     {effectiveMethods.map(method => {
                       const meta = PAYMENT_LABELS[method] ?? { label: method, desc: '', Icon: CreditCard };
@@ -884,7 +912,7 @@ export function CheckoutPage() {
           )} {/* end isDigital ? ... : ... */}
 
           {/* ── Right: Order Summary ──────────────────────────────────── */}
-          <div className="bg-white rounded-xl shadow-card border border-bone p-6 lg:sticky top-20">
+          <div className="bg-white rounded-xl border border-bone p-6 lg:sticky top-20">
             <p className="text-[15px] font-bold text-carbon mb-[18px]">Order Summary</p>
 
             {/* Items — the whole cart, one order */}
@@ -931,7 +959,7 @@ export function CheckoutPage() {
                   <span className="text-slate">Shipping</span>
                   {selectedZone || summary
                     ? <span className="font-semibold text-carbon">{currencySymbol(checkout?.currency)} {shipping.toLocaleString()}</span>
-                    : <span className="text-success font-medium">Select method</span>
+                    : <span className="text-slate font-medium">Select method</span>
                   }
                 </div>
               )}
@@ -961,7 +989,7 @@ export function CheckoutPage() {
                   <button
                     onClick={handleRemoveCoupon}
                     disabled={couponBusy}
-                    className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer disabled:opacity-50"
+                    className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error"
                   >
                     Remove coupon
                   </button>
@@ -976,7 +1004,7 @@ export function CheckoutPage() {
                     <button
                       onClick={handleApplyCoupon}
                       disabled={couponBusy || !couponInput.trim()}
-                      className="px-4 py-2 bg-white border border-bone rounded-lg text-[12.5px] font-semibold text-graphite cursor-pointer hover:bg-cream disabled:opacity-50"
+                      className="px-4 py-2 bg-white border border-bone rounded-lg text-[12.5px] font-semibold text-graphite cursor-pointer hover:bg-cream disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                     >
                       {couponBusy ? 'Applying…' : 'Apply'}
                     </button>
@@ -1005,7 +1033,7 @@ export function CheckoutPage() {
                   <button
                     key={hint.storeId}
                     onClick={() => hint.storeSlug && navigate(`/store/${hint.storeSlug}`)}
-                    className="w-full text-left px-3.5 py-3 rounded-lg bg-brand-pale-orange border border-brand-orange/20 cursor-pointer"
+                    className="w-full text-left px-3.5 py-3 rounded-lg bg-brand-pale-orange border border-brand-orange/20 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                   >
                     <p className="text-[12.5px] font-semibold text-brand-deep-orange">
                       You could save ${hint.potentialSavingsUSD.toFixed(2)} on this order

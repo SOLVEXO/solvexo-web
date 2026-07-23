@@ -52,7 +52,7 @@ export function SellerTrafficPaymentsTab({ params }: { params: SellerAnalyticsPa
           />
         )}
 
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+        <div className="bg-white border border-bone rounded-[10px]">
           <div className="px-5 pt-4 pb-3">
             <p className="text-[14px] font-bold text-charcoal">Payment Method Breakdown</p>
           </div>

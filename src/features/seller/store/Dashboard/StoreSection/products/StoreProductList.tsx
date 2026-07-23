@@ -202,7 +202,7 @@ export default function StoreProductList() {
         actions={
           <button
             onClick={goAdd}
-            className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-4 py-[9px] text-[13px] font-semibold cursor-pointer transition-[background-color,box-shadow] duration-150 hover:bg-brand-deep-orange hover:shadow-[0_2px_8px_rgba(184,90,54,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-2"
+            className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-4 py-[9px] text-[13px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-2"
           >
             <Plus size={15} /> Add Product
           </button>

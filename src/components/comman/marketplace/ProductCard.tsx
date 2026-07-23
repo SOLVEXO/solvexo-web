@@ -61,8 +61,11 @@ export function StarRating({ rating, count }: { rating: number; count?: number }
           className={i <= Math.round(rating) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone'}
         />
       ))}
-      {count !== undefined && (
-        <span className="text-[10px] text-slate ml-[2px] hidden sm:inline">({count})</span>
+      <span className="text-[10px] font-semibold text-carbon ml-[2px]">
+        {rating > 0 ? rating.toFixed(1) : 'New'}
+      </span>
+      {!!count && (
+        <span className="text-[10px] text-slate hidden sm:inline">({count})</span>
       )}
     </div>
   );
@@ -72,7 +75,7 @@ export function StarRating({ rating, count }: { rating: number; count?: number }
 // Shared by the general Marketplace and the Education marketplace — same look
 // everywhere a product grid appears, one place to fix bugs (see the isDigital/
 // stock computation below, which must treat 'educational' as non-physical too).
-export const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, isWishlisting, onToggleWishlist }: {
+export const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, isWishlisting, onToggleWishlist, compact = false }: {
   product:          MarketplaceProduct;
   onClick:          (id: string) => void;
   onAddToCart:      (e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => void;
@@ -80,6 +83,12 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   isWishlisted:     boolean;
   isWishlisting:    boolean;
   onToggleWishlist: (e: React.MouseEvent, id: string, variantId: string) => void;
+  // Denser variant for grids with more/narrower columns (e.g. Homepage's 6-up Flash
+  // Sale) — the "Add to Cart" label is always icon-only here, since a viewport-width
+  // media query can't know how narrow this particular grid column actually is, and a
+  // narrow column + a shrink-0, non-wrapping button label is exactly what clipped text
+  // inside the card's own overflow-hidden.
+  compact?: boolean;
 }) {
   const pType      = product.productType ?? product.type ?? 'physical';
   const isPhysical = pType === 'physical';
@@ -102,19 +111,22 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   const stock = isDigital ? Infinity : (defaultVariant?.stock ?? 0);
 
   return (
-    <Card padding="none" hover onClick={() => onClick(product._id)} className="overflow-hidden rounded-[16px] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_32px_rgba(0,0,0,0.1)] transition-shadow duration-300">
+    <Card padding="none" hover onClick={() => onClick(product._id)} className="overflow-hidden rounded-[16px] h-full flex flex-col">
       {/* Image container */}
       <div className="relative overflow-hidden group/img">
         <ProductImage
           images={product.images ?? []}
           name={product.name}
-          className="h-[130px] sm:h-[160px] lg:h-[180px] transition-transform duration-500 ease-out group-hover/img:scale-[1.07]"
+          className={clsx(
+            'transition-transform duration-500 ease-out group-hover/img:scale-[1.07]',
+            compact ? 'h-[104px] sm:h-[124px] lg:h-[138px]' : 'h-[130px] sm:h-[160px] lg:h-[180px]',
+          )}
         />
 
         {/* Hover overlay — dark gradient + Quick View label */}
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(20,20,19,0.55)] via-[rgba(20,20,19,0.18)] to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 pointer-events-none" />
         <div className="absolute inset-x-0 bottom-0 flex items-end justify-center pb-[10px] opacity-0 group-hover/img:opacity-100 translate-y-[6px] group-hover/img:translate-y-0 transition-all duration-300 pointer-events-none">
-          <span className="px-3 py-[4px] rounded-full bg-white/90 text-carbon text-[10.5px] font-semibold tracking-wide backdrop-blur-sm shadow-sm">
+          <span className="px-3 py-[4px] rounded-full bg-white/90 text-carbon text-[10.5px] font-semibold tracking-wide backdrop-blur-sm">
             Quick View
           </span>
         </div>
@@ -126,13 +138,14 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
           className={clsx(
             'absolute top-[8px] right-[8px] w-7 h-7 sm:w-8 sm:h-8 rounded-full',
             'bg-[rgba(255,255,255,0.92)] border-none flex items-center justify-center',
-            'shadow-[0_1px_4px_rgba(0,0,0,0.12)] transition-transform duration-150 hover:scale-[1.15]',
+            'transition-transform duration-150 hover:scale-[1.15]',
             isWishlisting ? 'cursor-wait' : 'cursor-pointer',
           )}
         >
           <Heart
+            key={isWishlisted ? 'on' : 'off'}
             size={13}
-            className={clsx('transition-[color,fill] duration-150', isWishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')}
+            className={clsx('heart-pop transition-[color,fill] duration-150', isWishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')}
           />
         </button>
         <div className="absolute top-[8px] left-[8px] flex flex-col gap-[4px] items-start">
@@ -145,7 +158,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             {typeLabel}
           </span>
           {pctOff != null && pctOff > 0 && (
-            <span className="px-[6px] py-[2px] rounded-[5px] text-[9px] sm:text-[10px] font-bold bg-[#E11D48] text-white shadow-sm">
+            <span className={clsx('font-bold bg-[#E11D48] text-white', compact ? 'px-[7px] py-[2px] rounded-full text-[10px]' : 'px-[6px] py-[2px] rounded-[5px] text-[9px] sm:text-[10px]')}>
               -{pctOff}%
             </span>
           )}
@@ -153,15 +166,19 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
       </div>
 
       {/* Body */}
-      <div className="px-2 pt-2 pb-2 sm:px-[14px] sm:pt-3 sm:pb-[14px]">
-        <p className="font-bold text-[12px] sm:text-[13px] text-carbon mb-[3px] leading-[1.4] line-clamp-2">
+      <div className={clsx('flex-1 flex flex-col', compact ? 'px-[10px] pt-[10px] pb-[10px]' : 'px-2 pt-2 pb-2 sm:px-[14px] sm:pt-3 sm:pb-[14px]')}>
+        <p className={clsx('font-bold text-carbon mb-[3px] leading-[1.35] tracking-[-0.01em] line-clamp-2', compact ? 'text-[11.5px]' : 'text-[12px] sm:text-[13px]')}>
           {product.name}
         </p>
+        {!compact && product.sellerName && (
+          <p className="hidden sm:block text-[10.5px] text-slate truncate mb-[3px]">by {product.sellerName}</p>
+        )}
         <StarRating rating={product.averageRating} count={ratingCount} />
-        {(product.tags?.length ?? 0) > 0 && (
-          <div className="hidden lg:flex flex-wrap gap-1 mt-[6px]">
-            {product.tags!.slice(0, 3).map(tag => (
-              <span key={tag} className="text-[10px] px-[6px] py-[1px] rounded bg-cream text-slate border border-bone">
+        {/* Fixed-height slot (regardless of tag count, incl. 0 or 10+) so card height stays consistent across the grid */}
+        {!compact && (
+          <div className="hidden lg:flex flex-wrap gap-1 mt-[6px] h-[22px] overflow-hidden">
+            {product.tags?.slice(0, 3).map(tag => (
+              <span key={tag} className="text-[10px] px-[6px] py-[1px] rounded bg-cream text-slate border border-bone whitespace-nowrap">
                 {tag}
               </span>
             ))}
@@ -175,26 +192,26 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
         ) : stock <= 5 && (
           <p className="text-[9px] sm:text-[10px] font-semibold text-amber-600 mt-1">Only {stock} left</p>
         )}
-        <div className="flex items-center justify-between mt-[8px] sm:mt-[10px]">
-          <div className="flex items-baseline gap-[3px]">
-            <span className={clsx('font-bold text-[13px] sm:text-[15px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
+        <div className="flex items-center justify-between gap-1 mt-auto pt-[8px] sm:pt-[10px]">
+          <div className="flex items-baseline gap-[3px] min-w-0">
+            <span className={clsx('font-bold truncate', compact ? 'text-[14px]' : 'text-[13px] sm:text-[15px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
               {subscriberPrice != null ? `$${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `$${lowestPrice.toLocaleString()}` : '—'}
             </span>
             {subscriberPrice != null && lowestPrice != null ? (
-              <span className="hidden sm:inline text-[11px] text-slate line-through">${lowestPrice.toLocaleString()}</span>
+              <span className="hidden sm:inline text-[11px] text-slate line-through shrink-0">${lowestPrice.toLocaleString()}</span>
             ) : compareAt != null && compareAt > (lowestPrice ?? 0) && (
-              <span className="hidden sm:inline text-[11px] text-slate line-through">${compareAt.toLocaleString()}</span>
+              <span className="hidden sm:inline text-[11px] text-slate line-through shrink-0">${compareAt.toLocaleString()}</span>
             )}
           </div>
           <Button
             variant="secondary"
             size="sm"
             disabled={stock <= 0}
-            onClick={e => onAddToCart(e, product._id, vId, product.type ?? 'physical')}
+            onClick={e => onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital')}
             className="inline-flex shrink-0"
           >
             {isAdding ? <Loader2 size={11} className="animate-spin" /> : <ShoppingCart size={11} />}
-            <span className="hidden lg:inline">{stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}</span>
+            {!compact && <span className="hidden lg:inline">{stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}</span>}
           </Button>
         </div>
       </div>

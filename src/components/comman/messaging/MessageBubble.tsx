@@ -142,7 +142,7 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
 
       {open && (
         <div role="menu" className={clsx(
-          'absolute top-[22px] z-30 bg-white border border-bone rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.14)] py-[5px] min-w-[138px]',
+          'absolute top-[22px] z-30 bg-white border border-bone rounded-[10px] py-[5px] min-w-[138px]',
           own ? 'right-0' : 'left-0',
         )}>
           <button
@@ -256,7 +256,7 @@ export const MessageBubble = memo(function MessageBubble({
           <div className={clsx('flex flex-col max-w-[78vw] sm:max-w-[400px]', own ? 'items-end' : 'items-start')}>
             {editing ? (
               // ── Inline edit — matches bubble color ──────────────────────────
-              <div className={clsx('px-[14px] py-[10px] shadow-[0_1px_2px_rgba(0,0,0,0.07)]', bubbleRadius, own ? 'bg-brand-orange' : 'bg-white border border-[#EEECE4]')}>
+              <div className={clsx('px-[14px] py-[10px]', bubbleRadius, own ? 'bg-brand-orange' : 'bg-white border border-[#EEECE4]')}>
                 <textarea
                   value={editText}
                   onChange={e => onEditTextChange(e.target.value)}
@@ -293,7 +293,7 @@ export const MessageBubble = memo(function MessageBubble({
               // ── Normal bubble ──────────────────────────────────────────────
               <div
                 className={clsx(
-                  'relative px-[14px] py-[9px] shadow-[0_1px_2px_rgba(0,0,0,0.07)] transition-shadow',
+                  'relative px-[14px] py-[9px]',
                   bubbleRadius,
                   own ? 'bg-brand-orange text-white' : 'bg-white text-charcoal border border-[#EEECE4]',
                   message._failed && 'ring-2 ring-error/50',

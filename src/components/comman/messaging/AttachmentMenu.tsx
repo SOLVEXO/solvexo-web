@@ -72,7 +72,7 @@ export function AttachmentMenu({ onFileSelected, onShareProduct, disabled }: Att
       </button>
 
       {open && (
-        <div role="menu" className="absolute bottom-[46px] right-0 z-50 w-[190px] bg-white border border-bone rounded-[14px] shadow-[0_8px_24px_rgba(0,0,0,0.14)] p-[6px] transition-all duration-150 ease-out starting:opacity-0 starting:translate-y-1">
+        <div role="menu" className="absolute bottom-[46px] right-0 z-50 w-[190px] bg-white border border-bone rounded-[14px] p-[6px] transition-all duration-150 ease-out starting:opacity-0 starting:translate-y-1">
           {actions.map(a => (
             <button
               key={a.label}

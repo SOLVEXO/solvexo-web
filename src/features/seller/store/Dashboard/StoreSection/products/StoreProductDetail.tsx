@@ -41,7 +41,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 
 function Card({ title, icon: Icon, children }: { title: string; icon?: React.ElementType; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+    <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
       <div className="px-5 py-3.5 border-b border-bone flex items-center gap-2">
         {Icon && <Icon size={14} className="text-brand-orange shrink-0" />}
         <p className="text-[12px] font-bold text-charcoal uppercase tracking-[0.06em]">{title}</p>
@@ -91,7 +91,7 @@ export default function StoreProductDetail() {
         <div className="px-7 py-5 flex flex-col gap-4">
 
           {/* ── Hero skeleton ── */}
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden flex">
+          <div className="bg-white border border-bone rounded-[10px] overflow-hidden flex">
             <SkeletonBox width={200} height={200} rounded="0px" className="shrink-0" />
             <div className="flex-1 px-6 py-5 flex flex-col gap-3">
               <SkeletonBox width="55%" height={20} rounded="6px" />
@@ -112,7 +112,7 @@ export default function StoreProductDetail() {
             {/* Left column */}
             <div className="flex flex-col gap-4">
               {[1, 2, 3].map(i => (
-                <div key={i} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4 flex flex-col gap-3">
+                <div key={i} className="bg-white border border-bone rounded-[10px] px-5 py-4 flex flex-col gap-3">
                   <SkeletonBox width={140} height={12} rounded="4px" />
                   <SkeletonBox width="100%" height={14} rounded="5px" />
                   <SkeletonBox width="100%" height={14} rounded="5px" />
@@ -124,7 +124,7 @@ export default function StoreProductDetail() {
             {/* Right sidebar */}
             <div className="flex flex-col gap-4">
               {[1, 2, 3].map(i => (
-                <div key={i} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4 flex flex-col gap-3">
+                <div key={i} className="bg-white border border-bone rounded-[10px] px-5 py-4 flex flex-col gap-3">
                   <SkeletonBox width={100} height={12} rounded="4px" />
                   <SkeletonBox width="100%" height={14} rounded="5px" />
                   <SkeletonBox width="50%" height={14} rounded="5px" />
@@ -171,7 +171,7 @@ export default function StoreProductDetail() {
       <div className="px-7 py-5 flex flex-col gap-4">
 
         {/* ── Hero ── */}
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden flex">
+        <div className="bg-white border border-bone rounded-[10px] overflow-hidden flex">
           {/* Image */}
           <div className="w-[200px] shrink-0 bg-[#F5F4EF] flex items-center justify-center border-r border-bone">
             {p.images[0]
@@ -348,7 +348,7 @@ export default function StoreProductDetail() {
 
             {/* Additional images */}
             {p.images.length > 1 && (
-              <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
                 <div className="px-5 py-3.5 border-b border-bone">
                   <p className="text-[12px] font-bold text-charcoal uppercase tracking-[0.06em]">Images</p>
                 </div>

@@ -127,7 +127,7 @@ export function OpenRegisterScreen({ storeId, employeeId, employeeName, onSucces
                 onChange={e => setOpeningCash(e.target.value)}
                 placeholder="0.00"
                 inputMode="decimal"
-                className="w-full bg-carbon border border-carbon rounded-lg px-[14px] py-[11px] text-[13px] text-white outline-none box-border transition-shadow duration-150 focus:shadow-md"
+                className="w-full bg-carbon border border-carbon rounded-lg px-[14px] py-[11px] text-[13px] text-white outline-none box-border transition-colors duration-150 focus:border-brand-orange/50"
               />
             </div>
 
@@ -140,7 +140,7 @@ export function OpenRegisterScreen({ storeId, employeeId, employeeName, onSucces
             <button
               type="submit"
               disabled={submitting}
-              className="mt-1 w-full bg-brand-orange border-0 rounded-lg py-3 text-[13px] font-bold text-white cursor-pointer shadow-md transition-transform duration-100 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+              className="mt-1 w-full bg-brand-orange border-0 rounded-lg py-3 text-[13px] font-bold text-white cursor-pointer transition-transform duration-100 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
             >
               {submitting ? 'Opening…' : 'Open Register & Start Shift'}
             </button>

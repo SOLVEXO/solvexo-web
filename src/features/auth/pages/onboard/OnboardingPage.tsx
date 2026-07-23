@@ -74,7 +74,7 @@ function StepProgress({ current, maxReached, onStepClick }: { current: number; m
               <div className={clsx(
                 'size-7 sm:size-8 rounded-full flex items-center justify-center text-[12px] sm:text-[13px] font-bold transition-all duration-300 ease-out',
                 done    ? 'bg-success text-white'      : '',
-                active  ? 'bg-brand-orange text-white shadow-[0_0_0_4px_#FBECE4]' : '',
+                active  ? 'bg-brand-orange text-white outline outline-4 outline-brand-pale-orange' : '',
                 !done && !active ? 'bg-bone text-slate' : '',
               )}>
                 {done ? <Check size={12} /> : n}
@@ -240,8 +240,8 @@ function Step2({ form, setForm, onNext, onBack }: { form: StoreForm; setForm: (f
           return (
             <div key={selKey} onClick={() => setForm({ ...form, sellerType: t.id, sellerKey: selKey })}
               className={clsx(
-                'bg-white rounded-[14px] p-5 border-2 cursor-pointer transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card active:translate-y-0',
-                isSelected ? 'border-brand-orange shadow-[0_0_0_4px_#FBECE4]' : 'border-bone hover:border-slate/40',
+                'rounded-[14px] p-5 border-2 cursor-pointer transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0',
+                isSelected ? 'bg-brand-pale-orange/40 border-brand-orange' : 'bg-white border-bone hover:border-slate/40',
               )}
             >
               <div className="flex justify-between items-start mb-3">
@@ -292,8 +292,8 @@ function Step3({ form, setForm, onNext, onBack, loading, error }: {
           return (
             <div key={idx} onClick={() => toggle(t.id)}
               className={clsx(
-                'bg-white rounded-[14px] px-4 py-[18px] border-2 cursor-pointer transition-all duration-200 ease-out relative hover:-translate-y-0.5 hover:shadow-card active:translate-y-0',
-                on ? 'border-brand-orange shadow-[0_0_0_4px_#FBECE4]' : 'border-bone hover:border-slate/40',
+                'rounded-[14px] px-4 py-[18px] border-2 cursor-pointer transition-all duration-200 ease-out relative hover:-translate-y-0.5 active:translate-y-0',
+                on ? 'bg-brand-pale-orange/40 border-brand-orange' : 'bg-white border-bone hover:border-slate/40',
               )}
             >
               {on && (

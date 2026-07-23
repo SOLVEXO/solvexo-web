@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { ShoppingCart, X, ImageOff, ArrowRight } from 'lucide-react';
-import { useCartContext, type CartItem } from '@/contexts/CartContext';
+import { Heart, X, ImageOff, ArrowRight } from 'lucide-react';
+import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from './Button';
 
 const CLOSE_DELAY_MS = 150;
 
-function ItemThumb({ item }: { item: CartItem }) {
-  const src = item.image?.[0] ?? item.images?.[0];
+function WishlistThumb({ images, name }: { images?: string[]; name: string }) {
+  const src = images?.[0];
   if (!src) {
     return (
       <div className="w-11 h-11 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0">
@@ -17,25 +17,21 @@ function ItemThumb({ item }: { item: CartItem }) {
     );
   }
   return (
-    <img loading="lazy" decoding="async" src={src} alt={item.name}
+    <img loading="lazy" decoding="async" src={src} alt={name}
       className="w-11 h-11 rounded-[9px] object-cover shrink-0 border border-bone" />
   );
 }
 
-function lineTotal(item: CartItem) {
-  return item.itemTotal ?? (item.unitPrice ?? item.price ?? 0) * item.quantity;
-}
-
-// Amazon/Alibaba-style mini cart: hovering (or tapping, on touch) the cart icon
-// opens a preview drawer — recent items + subtotal + View Cart / Checkout when
-// there's something in it, or a centered "cart is empty" illustration + a single
-// "Go to Cart" action when there isn't — instead of navigating away immediately.
-export function MiniCart({ accentColor }: { accentColor?: string }) {
+// Alibaba/Amazon-style mini wishlist: hovering (or tapping, on touch) the
+// wishlist icon opens a preview drawer — recent saved items + View Wishlist
+// when there's something in it, or a centered "wishlist is empty" illustration
+// + a single "Go to Wishlist" action when there isn't.
+export function MiniWishlist() {
   const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [open, setOpen] = useState(false);
-  const { cart, cartCount } = useCartContext();
+  const { wishlistItems, wishlistCount } = useWishlistContext();
 
   const clearCloseTimer = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } };
   const scheduleClose = () => { clearCloseTimer(); closeTimer.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS); };
@@ -56,10 +52,8 @@ export function MiniCart({ accentColor }: { accentColor?: string }) {
 
   useEffect(() => () => clearCloseTimer(), []);
 
-  const items = cart?.items ?? [];
-  const recent = [...items].reverse().slice(0, 4);
-  const hiddenCount = Math.max(0, items.length - recent.length);
-  const subtotal = cart?.totalPrice ?? items.reduce((s, i) => s + lineTotal(i), 0);
+  const recent = [...wishlistItems].reverse().slice(0, 4);
+  const hiddenCount = Math.max(0, wishlistItems.length - recent.length);
 
   const goTo = (path: string) => { setOpen(false); navigate(path); };
 
@@ -72,20 +66,15 @@ export function MiniCart({ accentColor }: { accentColor?: string }) {
     >
       <button
         onClick={() => setOpen(p => !p)}
-        aria-label={`Cart${cartCount > 0 ? ` (${cartCount} items)` : ''}`}
+        aria-label={`Wishlist${wishlistCount > 0 ? ` (${wishlistCount} items)` : ''}`}
         aria-haspopup="true"
         aria-expanded={open}
-        style={accentColor ? { background: accentColor } : undefined}
-        className={clsx(
-          'relative w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-transform hover:scale-105',
-          'outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 focus-visible:ring-offset-1',
-          !accentColor && 'bg-brand-orange',
-        )}
+        className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer shrink-0 transition-transform hover:scale-105 outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 focus-visible:ring-offset-1"
       >
-        <ShoppingCart size={16} className="text-white" />
-        {cartCount > 0 && (
+        <Heart size={16} className={wishlistCount > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'} />
+        {wishlistCount > 0 && (
           <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 border-2 border-white">
-            {cartCount > 99 ? '99+' : cartCount}
+            {wishlistCount > 99 ? '99+' : wishlistCount}
           </span>
         )}
       </button>
@@ -95,7 +84,7 @@ export function MiniCart({ accentColor }: { accentColor?: string }) {
           <div className="absolute -top-[7px] right-[14px] w-3 h-3 bg-white border-t border-l border-bone rotate-45" />
           <div className="relative bg-white border border-bone rounded-[16px] overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-bone">
-            <p className="text-[13px] font-bold text-carbon">Shopping Cart{cartCount > 0 ? ` (${cartCount})` : ''}</p>
+            <p className="text-[13px] font-bold text-carbon">Wishlist{wishlistCount > 0 ? ` (${wishlistCount})` : ''}</p>
             <button
               onClick={() => setOpen(false)}
               aria-label="Close"
@@ -105,54 +94,51 @@ export function MiniCart({ accentColor }: { accentColor?: string }) {
             </button>
           </div>
 
-          {items.length === 0 ? (
+          {wishlistItems.length === 0 ? (
             <div className="py-8 px-6 flex flex-col items-center text-center">
               <div className="relative w-20 h-20 mb-4 shrink-0">
-                <div className="absolute inset-0 rounded-full bg-brand-pale-orange" />
+                <div className="absolute inset-0 rounded-full bg-[#FFF0F5]" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <ShoppingCart size={30} className="text-brand-orange" strokeWidth={1.5} />
+                  <Heart size={30} className="text-[#E11D48]" strokeWidth={1.5} />
                 </div>
               </div>
-              <p className="text-[13.5px] font-semibold text-charcoal">Your cart is empty</p>
-              <p className="text-[11.5px] text-slate mt-[3px] mb-5">Add items to see them here.</p>
-              <Button variant="outline" size="sm" pill onClick={() => goTo('/cart')}>
-                Go to Cart
+              <p className="text-[13.5px] font-semibold text-charcoal">Your wishlist is empty</p>
+              <p className="text-[11.5px] text-slate mt-[3px] mb-5">Save items you love to see them here.</p>
+              <Button variant="outline" size="sm" pill onClick={() => goTo('/account/wishlist')}>
+                Go to Wishlist
               </Button>
             </div>
           ) : (
             <>
               <div className="max-h-[264px] overflow-y-auto divide-y divide-[#F5F4EF]">
-                {recent.map(item => (
-                  <div key={item.productVariantId} className="flex gap-2.5 p-3">
-                    <ItemThumb item={item} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-medium text-charcoal leading-tight line-clamp-1">{item.name}</p>
-                      <p className="text-[11px] text-slate mt-[3px]">Qty {item.quantity}</p>
+                {recent.map(item => {
+                  const variant = item.variants[0];
+                  return (
+                    <div
+                      key={item.product._id}
+                      className={clsx('flex gap-2.5 p-3', 'cursor-pointer hover:bg-cream/60 transition-colors')}
+                      onClick={() => goTo(`/marketplace/${item.product._id}`)}
+                    >
+                      <WishlistThumb images={item.product.images} name={item.product.name} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-medium text-charcoal leading-tight line-clamp-1">{item.product.name}</p>
+                        {variant && <p className="text-[11px] text-slate mt-[3px]">${variant.price.toLocaleString()}</p>}
+                      </div>
                     </div>
-                    <p className="text-[12.5px] font-bold text-carbon shrink-0">${lineTotal(item).toLocaleString()}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {hiddenCount > 0 && (
                 <p className="text-[10.5px] text-slate text-center py-2 border-t border-bone bg-cream/40">
-                  +{hiddenCount} more item{hiddenCount !== 1 ? 's' : ''} in your cart
+                  +{hiddenCount} more item{hiddenCount !== 1 ? 's' : ''} in your wishlist
                 </p>
               )}
 
               <div className="p-4 border-t border-bone">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[12px] text-slate">Subtotal</span>
-                  <span className="text-[15px] font-bold text-carbon">${subtotal.toLocaleString()}</span>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1 min-w-0 justify-center" onClick={() => goTo('/cart')}>
-                    View Cart
-                  </Button>
-                  <Button variant="primary" size="sm" className="flex-1 min-w-0 justify-center" onClick={() => goTo('/checkout')}>
-                    Checkout <ArrowRight size={12} />
-                  </Button>
-                </div>
+                <Button variant="primary" size="sm" fullWidth className="justify-center" onClick={() => goTo('/account/wishlist')}>
+                  View Wishlist <ArrowRight size={12} />
+                </Button>
               </div>
             </>
           )}

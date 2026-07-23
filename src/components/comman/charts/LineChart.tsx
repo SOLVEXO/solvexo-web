@@ -22,7 +22,7 @@ interface MultiTooltipProps {
 function ChartTooltip({ active, payload, label, valuePrefix = '', valueSuffix = '' }: MultiTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-bone rounded-lg px-3 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-xs min-w-[120px]">
+    <div className="bg-white border border-bone rounded-lg px-3 py-2 text-xs min-w-[120px]">
       <p className="text-slate mb-1.5">{label}</p>
       {payload.map(p => (
         <div key={p.name} className="flex items-center justify-between gap-4 mb-0.5">
@@ -70,7 +70,7 @@ export function LineChart({
   if (!data.length) {
     return (
       <div
-        className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex items-center justify-center"
+        className="bg-white border border-bone rounded-[10px] flex items-center justify-center"
         style={{ height: height + (title || subtitle ? 56 : 0) }}
         role="img"
         aria-label={ariaLabel}
@@ -82,7 +82,7 @@ export function LineChart({
 
   return (
     <div
-      className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-shadow duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
+      className="bg-white border border-bone rounded-[10px] transition-colors duration-200 hover:border-slate/30"
       role="img"
       aria-label={ariaLabel}
     >

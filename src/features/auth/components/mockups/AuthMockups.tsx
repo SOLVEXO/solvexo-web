@@ -11,7 +11,7 @@ import {
 
 function GlassPanel({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={clsx('rounded-2xl bg-white/[0.07] backdrop-blur-md border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.25)]', className)}>
+    <div className={clsx('rounded-2xl bg-white/[0.07] backdrop-blur-md border border-white/20', className)}>
       {children}
     </div>
   );
@@ -20,7 +20,7 @@ function GlassPanel({ className, children }: { className?: string; children: Rea
 function FloatingChip({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
     <div className={clsx(
-      'absolute flex items-center gap-2 px-3 py-2 rounded-[12px] border border-white/15 bg-white/10 backdrop-blur-md shadow-[0_12px_28px_rgba(0,0,0,0.25)] whitespace-nowrap',
+      'absolute flex items-center gap-2 px-3 py-2 rounded-[12px] border border-white/25 bg-white/10 backdrop-blur-md whitespace-nowrap',
       className,
     )}>
       {children}
@@ -120,7 +120,7 @@ export function SecurityMockup() {
       <div className="absolute size-28 rounded-full border border-white/15 auth-glow-pulse" />
       <div className="absolute size-40 rounded-full border border-white/10" />
       <GlowOrb className="w-44 h-44 bg-brand-orange/20" />
-      <div className="relative size-20 rounded-[22px] bg-white/[0.08] backdrop-blur-md border border-white/15 flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] auth-float">
+      <div className="relative size-20 rounded-[22px] bg-white/[0.08] backdrop-blur-md border border-white/25 flex items-center justify-center auth-float">
         <ShieldCheck size={34} className="text-brand-orange" />
       </div>
       <FloatingChip className="right-2 bottom-4 hidden sm:flex">
@@ -197,7 +197,7 @@ export function IdentityMockup() {
     <div className="relative w-full max-w-[240px] mx-auto py-8 flex items-center justify-center">
       <div className="absolute size-32 rounded-full border border-white/10" />
       <GlowOrb className="w-44 h-44 bg-[#1A72C2]/20" />
-      <div className="relative size-20 rounded-[22px] bg-white/[0.08] backdrop-blur-md border border-white/15 flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] auth-float">
+      <div className="relative size-20 rounded-[22px] bg-white/[0.08] backdrop-blur-md border border-white/25 flex items-center justify-center auth-float">
         <Fingerprint size={34} className="text-brand-orange" />
       </div>
       <FloatingChip className="left-1 top-3 hidden sm:flex">

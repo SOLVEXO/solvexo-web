@@ -46,7 +46,7 @@ export function SellerProductsTab({ params }: { params: SellerAnalyticsParams })
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+      <div className="bg-white border border-bone rounded-[10px]">
         <div className="px-5 pt-4 pb-3 flex flex-wrap items-center justify-between gap-3">
           <p className="text-[14px] font-bold text-charcoal">Top Products</p>
           <FilterDropdown options={SORT_OPTIONS} value={sort} onChange={v => setSort(v as 'revenue' | 'units_sold')} />
@@ -64,7 +64,7 @@ export function SellerProductsTab({ params }: { params: SellerAnalyticsParams })
         )}
       </div>
 
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+      <div className="bg-white border border-bone rounded-[10px]">
         <div className="px-5 pt-4 pb-3">
           <p className="text-[14px] font-bold text-charcoal">Product Performance</p>
           <p className="text-[12px] text-slate">Every listed product, ranked by revenue.</p>
@@ -89,7 +89,7 @@ export function SellerProductsTab({ params }: { params: SellerAnalyticsParams })
         )}
       </div>
 
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-5">
+      <div className="bg-white border border-bone rounded-[10px] px-5 py-5">
         <p className="text-[14px] font-bold text-charcoal mb-1">Inventory Insights</p>
         {inventory.loading ? (
           <TableCardSkeleton rows={3} />

@@ -24,7 +24,7 @@ export function PriceOptimizerTool({ storeId, onCreditsChanged }: PriceOptimizer
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
+      <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
         <p className="text-sm font-bold text-charcoal mb-5 flex items-center gap-2">
           <TrendingUp size={15} /> Price Optimizer — Input
         </p>
@@ -58,7 +58,7 @@ export function PriceOptimizerTool({ storeId, onCreditsChanged }: PriceOptimizer
         </Button>
       </div>
 
-      <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
+      <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
         <p className="text-sm font-bold text-charcoal mb-5 flex items-center gap-2">
           <Sparkles size={15} /> AI Output — Preview
         </p>

@@ -155,7 +155,7 @@ function CampaignsTab() {
         <Button size="sm" icon={<Plus size={13} />} onClick={() => setCreating(true)}>New Campaign</Button>
       </div>
 
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+      <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
         {error ? (
           <div className="p-5"><AnalyticsErrorState message={error} onRetry={refetch} /></div>
         ) : (
@@ -291,7 +291,7 @@ function CouponsTab() {
         <Button size="sm" icon={<Plus size={13} />} onClick={() => setCreating(true)}>New Coupon</Button>
       </div>
 
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+      <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
         {error ? (
           <div className="p-5"><AnalyticsErrorState message={error} onRetry={refetch} /></div>
         ) : (

@@ -46,7 +46,7 @@ export function ListingWriterTool({ storeId, onCreditsChanged }: ListingWriterTo
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {/* LEFT: Input panel */}
-      <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
+      <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
         <p className="text-sm font-bold text-charcoal mb-5 flex items-center gap-2">
           <PenLine size={15} /> Listing Writer — Input
         </p>
@@ -112,7 +112,7 @@ export function ListingWriterTool({ storeId, onCreditsChanged }: ListingWriterTo
       </div>
 
       {/* RIGHT: Output panel */}
-      <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
+      <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
         <p className="text-sm font-bold text-charcoal mb-5 flex items-center gap-2">
           <Sparkles size={15} /> AI Output — Preview
         </p>

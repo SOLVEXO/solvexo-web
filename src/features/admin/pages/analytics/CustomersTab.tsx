@@ -54,7 +54,7 @@ export function CustomersTab({ params }: { params: BaseAnalyticsParams }) {
       ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+        <div className="bg-white border border-bone rounded-[10px]">
           <div className="px-5 pt-4 pb-3">
             <p className="text-[14px] font-bold text-charcoal">Top Customers by Lifetime Value</p>
           </div>
@@ -71,7 +71,7 @@ export function CustomersTab({ params }: { params: BaseAnalyticsParams }) {
           />
         </div>
 
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+        <div className="bg-white border border-bone rounded-[10px]">
           <div className="px-5 pt-4 pb-3">
             <p className="text-[14px] font-bold text-charcoal">Geographic Distribution</p>
             <p className="text-[12px] text-slate">Physical orders only — digital orders have no shipping address.</p>

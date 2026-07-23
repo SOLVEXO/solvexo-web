@@ -173,7 +173,7 @@ export function AdminCategories() {
       </div>
 
       <div className="px-7 pt-5 pb-8">
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           {loading ? (
             <div className="px-4 py-4 flex flex-col gap-3">
               {Array.from({ length: 4 }).map((_, i) => <SkeletonBox key={i} className="h-6 w-full" />)}

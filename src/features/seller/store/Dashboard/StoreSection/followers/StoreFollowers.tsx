@@ -38,7 +38,7 @@ function FollowerRow({ entry }: { entry: FollowerEntry }) {
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 function Skeleton() {
   return (
-    <div className="bg-white rounded-[10px] border border-bone shadow-xs overflow-hidden">
+    <div className="bg-white rounded-[10px] border border-bone overflow-hidden">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="flex items-center gap-3 px-5 py-[14px] border-b border-[#F3F2EC] last:border-none">
           <div className="animate-pulse w-9 h-9 rounded-full bg-bone shrink-0" />
@@ -102,7 +102,7 @@ export function StoreFollowers() {
 
       <div className="px-7 py-6">
         {loading ? <Skeleton /> : followers.length === 0 ? (
-          <div className="bg-white rounded-[10px] border border-bone shadow-xs flex flex-col items-center justify-center py-16 gap-4">
+          <div className="bg-white rounded-[10px] border border-bone flex flex-col items-center justify-center py-16 gap-4">
             <div className="w-12 h-12 rounded-full bg-brand-pale-orange flex items-center justify-center">
               <UserPlus size={20} className="text-brand-orange" />
             </div>
@@ -114,7 +114,7 @@ export function StoreFollowers() {
         ) : (
           <>
             {/* Summary card */}
-            <div className="bg-white rounded-[10px] border border-bone shadow-xs px-5 py-4 mb-4 flex items-center gap-3">
+            <div className="bg-white rounded-[10px] border border-bone px-5 py-4 mb-4 flex items-center gap-3">
               <div className="w-9 h-9 rounded-[8px] bg-brand-pale-orange flex items-center justify-center shrink-0">
                 <Users size={16} className="text-brand-orange" />
               </div>
@@ -125,7 +125,7 @@ export function StoreFollowers() {
             </div>
 
             {/* List */}
-            <div className="bg-white rounded-[10px] border border-bone shadow-xs overflow-hidden">
+            <div className="bg-white rounded-[10px] border border-bone overflow-hidden">
               <div className="px-5 py-3 border-b border-[#F3F2EC] flex items-center justify-between">
                 <p className="text-[12px] font-semibold text-slate uppercase tracking-[0.06em]">Followers</p>
                 <p className="text-[11px] text-slate">{followers.length} shown</p>

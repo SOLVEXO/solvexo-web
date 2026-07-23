@@ -28,7 +28,7 @@ function flattenCategories(nodes: CategoryNode[]): { value: string; label: strin
 
 function MetricCard({ label, value, sub, trend }: { label: string; value: string; sub?: string; trend?: string }) {
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+    <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
       <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{label}</p>
       <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{value}</p>
       {trend && <p className="text-[12px] text-success mt-1">▲ {trend}</p>}
@@ -163,7 +163,7 @@ export function AdminMarketplace() {
         </div>
       )}
 
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+      <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
         <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
           <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search listings or sellers…" className="flex-1 max-w-[300px]" />
           <FilterDropdown placeholder="All Categories" options={categories} value={categoryId} onChange={(v) => { setCategoryId(v); setPage(1); }} />

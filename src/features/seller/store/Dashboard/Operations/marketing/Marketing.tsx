@@ -167,11 +167,11 @@ export function StoreMarketing() {
 
         {/* Metrics — coupon numbers are real; email/cart features below have no backend yet */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
             <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Active Coupons</p>
             <p className="text-[28px] font-bold text-carbon leading-[1.15]">{activeCount}</p>
           </div>
-          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
             <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Total Redemptions</p>
             <p className="text-[28px] font-bold text-carbon leading-[1.15]">{totalRedemptions}</p>
           </div>
@@ -197,7 +197,7 @@ export function StoreMarketing() {
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs flex flex-col gap-3">
+                  <div key={i} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 flex flex-col gap-3">
                     <SkeletonBox width="45%" height={26} rounded="8px" />
                     <SkeletonBox width="60%" height={16} />
                     <SkeletonBox width="100%" height={40} rounded="6px" />
@@ -215,7 +215,7 @@ export function StoreMarketing() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {coupons.map(coupon => (
-                  <div key={coupon._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-[1px]">
+                  <div key={coupon._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 transition-transform duration-200 hover:-translate-y-[1px]">
                     <div className="flex items-center justify-between mb-3">
                       <div className="px-3 py-[5px] rounded-lg border-2 border-dashed border-brand-orange font-mono text-[13px] font-bold text-[#B95A3A] bg-brand-pale-orange">
                         {coupon.code}
@@ -251,7 +251,7 @@ export function StoreMarketing() {
             )}
 
             {/* Create / Edit coupon form */}
-            <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
+            <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
               <p className="text-sm font-bold text-carbon mb-4">{editingId ? 'Edit Coupon' : 'Create New Coupon'}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mb-4">
                 <div>
@@ -330,7 +330,7 @@ export function StoreMarketing() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {campaigns.map(c => (
-                  <div key={c._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
+                  <div key={c._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-sm font-semibold text-carbon">{c.name}</p>
                       {c.isJoined && (
@@ -375,7 +375,7 @@ export function StoreMarketing() {
               {CAMPAIGNS.map(campaign => {
                 const st = statusStyle[campaign.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
                 return (
-                  <div key={campaign.name} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-[1px]">
+                  <div key={campaign.name} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 transition-transform duration-200 hover:-translate-y-[1px]">
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-sm font-semibold text-carbon">{campaign.name}</p>
                       <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold shrink-0 ml-2" style={{ background: st.bg, color: st.color }}>

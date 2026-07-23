@@ -73,7 +73,7 @@ export function SellerOverviewTab({ params, compareToPreviousPeriod }: { params:
       </div>
 
       {compareToPreviousPeriod && d?.previousPeriod && (
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+        <div className="bg-white border border-bone rounded-[10px]">
           <div className="px-5 pt-4 pb-3">
             <p className="text-[14px] font-bold text-charcoal">Period Comparison</p>
             <p className="text-[12px] text-slate">

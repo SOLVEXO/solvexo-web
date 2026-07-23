@@ -101,7 +101,7 @@ export function PricingPage() {
               aria-pressed={billing === b}
               className={clsx(
                 'px-6 py-2 rounded-lg cursor-pointer flex items-center gap-[6px] transition-all duration-200 border-0',
-                billing === b ? 'bg-white shadow-[0_1px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent',
+                billing === b ? 'bg-white' : 'bg-transparent',
               )}
             >
               <span className={clsx('text-[13px] capitalize', billing === b ? 'font-semibold text-carbon' : 'font-normal text-slate')}>
@@ -133,8 +133,8 @@ export function PricingPage() {
               className={clsx(
                 'rounded-[20px] p-7 relative border-2',
                 isFeatured
-                  ? 'bg-carbon border-brand-orange shadow-[0_8px_40px_rgba(217,119,87,0.25)]'
-                  : 'bg-white border-bone shadow-[0_2px_12px_rgba(0,0,0,0.06)]',
+                  ? 'bg-carbon border-brand-orange'
+                  : 'bg-white border-bone',
               )}
             >
               {/* Badge */}
@@ -184,7 +184,7 @@ export function PricingPage() {
               <button
                 onClick={() => plan.isCustomPricing
                   ? (window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${plan.name} Plan Inquiry`)}`)
-                  : navigate('/onboarding')}
+                  : navigate('/onboard')}
                 className={clsx(
                   'w-full py-[10px] rounded-lg text-[13px] font-semibold cursor-pointer mb-6 flex justify-center transition-all duration-[180ms] border',
                   isFeatured ? 'border-brand-orange bg-brand-orange text-white' : 'border-bone bg-transparent text-charcoal',
@@ -273,7 +273,7 @@ export function PricingPage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
-            onClick={() => navigate('/onboarding')}
+            onClick={() => navigate('/onboard')}
             className="px-6 py-[13px] rounded-lg text-[15px] font-medium cursor-pointer bg-brand-orange text-white border-none transition-all duration-[180ms]"
           >
             Create Free Account <ArrowRight size={14} className="inline align-middle ml-1" />

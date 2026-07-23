@@ -60,7 +60,7 @@ function MaintenanceCard({ config, onSaved }: { config: PlatformConfig; onSaved:
   return (
     <>
       <div
-        className="bg-white rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-[border-color] duration-200"
+        className="bg-white rounded-[10px] px-[22px] py-5 transition-[border-color] duration-200"
         style={{ border: config.maintenanceMode ? '2px solid #C13030' : '1px solid #E8E6DC' }}
       >
         <div className="flex items-center justify-between gap-4">
@@ -118,7 +118,7 @@ function FeatureFlagsCard({ config, onSaved }: { config: PlatformConfig; onSaved
   }
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
       <p className="text-[14px] font-bold text-charcoal mb-[18px]">Feature Flags</p>
       {error && <p className="text-[12px] text-error mb-3">{error}</p>}
       <div className="flex flex-col gap-0">
@@ -174,7 +174,7 @@ function AiConfigCard({ config, onSaved }: { config: PlatformConfig; onSaved: (c
   }
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
       <p className="text-[14px] font-bold text-charcoal mb-4">AI Configuration</p>
       <div className="flex flex-col gap-[14px]">
         <Input
@@ -236,7 +236,7 @@ function EmailConfigCard({ config, onSaved }: { config: PlatformConfig; onSaved:
   }
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
       <p className="text-[14px] font-bold text-charcoal mb-4">Email Configuration</p>
       <div className="flex flex-col gap-[14px]">
         <Input label="From Name" value={fromName} onChange={(e) => setFromName(e.target.value)} />

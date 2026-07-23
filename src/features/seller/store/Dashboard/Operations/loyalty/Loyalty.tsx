@@ -131,7 +131,7 @@ function OverviewTab({ storeId }: { storeId: string }) {
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs flex flex-col gap-2">
+          <div key={i} className="bg-white border border-bone rounded-[10px] px-5 py-4 flex flex-col gap-2">
             <SkeletonBox width="60%" height={11} />
             <SkeletonBox width="40%" height={24} />
           </div>
@@ -156,7 +156,7 @@ function OverviewTab({ storeId }: { storeId: string }) {
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {metrics.map(m => (
-          <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
+          <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
             <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
             <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
           </div>
@@ -164,7 +164,7 @@ function OverviewTab({ storeId }: { storeId: string }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
+        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
           <p className="text-[14px] font-bold text-carbon mb-[18px]">Member Distribution</p>
           {data.memberDistribution.length === 0 ? (
             <p className="text-xs text-slate italic">No tiers configured yet.</p>
@@ -192,7 +192,7 @@ function OverviewTab({ storeId }: { storeId: string }) {
           )}
         </div>
 
-        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs">
+        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
           <p className="text-[14px] font-bold text-carbon mb-[18px]">Points Activity (Last 30 Days)</p>
           <div className="flex flex-col">
             {activityRows.map((item, i) => {
@@ -234,7 +234,7 @@ function TiersTab({ storeId, program, onSaved }: { storeId: string; program: Loy
   }
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs flex flex-col gap-4">
+    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 flex flex-col gap-4">
       <p className="text-[14px] font-bold text-carbon">Tier Thresholds</p>
       {tiers.map((tier, i) => (
         <div key={i} className="grid grid-cols-[1fr_140px_1fr_32px] gap-2.5 items-end">
@@ -315,7 +315,7 @@ function RewardsTab({ storeId, showCreate, onCloseCreate }: { storeId: string; s
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs flex flex-col gap-3">
+            <div key={i} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 flex flex-col gap-3">
               <SkeletonBox width="70%" height={16} />
               <SkeletonBox width="40%" height={13} />
               <SkeletonBox width="100%" height={30} rounded="7px" />
@@ -331,7 +331,7 @@ function RewardsTab({ storeId, showCreate, onCloseCreate }: { storeId: string; s
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {rewards.map(r => (
-            <div key={r._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-[1px]">
+            <div key={r._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 transition-transform duration-200 hover:-translate-y-[1px]">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-semibold text-carbon">{r.name}</p>
                 <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: r.isActive ? '#E3F4EA' : '#F0EEE6', color: r.isActive ? '#1E7A3C' : '#5A5852' }}>
@@ -419,7 +419,7 @@ function MembersTab({ storeId, onAward }: { storeId: string; onAward: (m: Loyalt
   }, [storeId]);
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-xs overflow-hidden">
+    <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
       <div className="px-5 py-3.5 border-b border-bone">
         <p className="text-[13px] font-semibold text-carbon">{loading ? 'Loading members…' : `${total} Member${total === 1 ? '' : 's'}`}</p>
       </div>
@@ -507,7 +507,7 @@ function EarningRulesTab({ storeId, program, onSaved }: { storeId: string; progr
   ];
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 shadow-xs flex flex-col gap-4 max-w-[480px]">
+    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 flex flex-col gap-4 max-w-[480px]">
       <p className="text-[14px] font-bold text-carbon">Earning Rules</p>
       {fields.map(f => (
         <div key={f.key}>

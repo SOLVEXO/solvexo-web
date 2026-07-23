@@ -19,7 +19,7 @@ function ChartTooltip({ active, payload, total }: CustomTooltipProps) {
   const seg = payload[0];
   const pct = total > 0 ? ((seg.value / total) * 100).toFixed(1) : '0';
   return (
-    <div className="bg-white border border-bone rounded-lg px-3 py-[6px] shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-xs">
+    <div className="bg-white border border-bone rounded-lg px-3 py-[6px] text-xs">
       <p className="text-slate mb-0.5">{seg.name}</p>
       <p className="font-bold text-charcoal">{seg.value.toLocaleString()} <span className="font-normal text-slate">({pct}%)</span></p>
     </div>
@@ -54,7 +54,7 @@ export function DonutChart({
   if (!data.length) {
     return (
       <div
-        className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-5 flex items-center justify-center"
+        className="bg-white border border-bone rounded-[10px] px-5 py-5 flex items-center justify-center"
         style={{ height: size + (title || subtitle ? 40 : 0) }}
         role="img"
         aria-label={ariaLabel}
@@ -66,7 +66,7 @@ export function DonutChart({
 
   return (
     <div
-      className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-5 transition-shadow duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
+      className="bg-white border border-bone rounded-[10px] px-5 py-5 transition-colors duration-200 hover:border-slate/30"
       role="img"
       aria-label={ariaLabel}
     >

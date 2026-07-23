@@ -43,7 +43,7 @@ export function ProductShareModal({ storeId, onClose, onShare, sharing }: Produc
         aria-modal="true"
         aria-label="Share a product"
         tabIndex={-1}
-        className="w-full max-w-[420px] max-h-[80vh] bg-white rounded-[16px] shadow-2xl overflow-hidden outline-none flex flex-col transition-all duration-200 ease-out starting:opacity-0 starting:scale-95"
+        className="w-full max-w-[420px] max-h-[80vh] bg-white border border-bone rounded-[16px] overflow-hidden outline-none flex flex-col transition-all duration-200 ease-out starting:opacity-0 starting:scale-95"
       >
         <div className="flex items-center justify-between px-4 py-[14px] border-b border-[#EEECE4] shrink-0">
           <p className="text-[15px] font-bold text-charcoal">Share a product</p>

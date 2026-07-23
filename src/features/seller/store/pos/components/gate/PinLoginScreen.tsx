@@ -58,7 +58,7 @@ export function PinLoginScreen({ storeId, onSuccess }: PinLoginScreenProps) {
       <div className="absolute w-[440px] h-[440px] rounded-full bg-brand-orange/[0.08] blur-[110px] -top-40 -left-28 pointer-events-none" />
       <div className="absolute w-[380px] h-[380px] rounded-full bg-info/[0.06] blur-[110px] -bottom-32 -right-20 pointer-events-none" />
 
-      <div className="relative w-full max-w-[400px] bg-pos-surface-2 border border-pos-border-strong rounded-[28px] shadow-2xl p-8 sm:p-9 pos-panel-enter">
+      <div className="relative w-full max-w-[400px] bg-pos-surface-3 border border-pos-border-strong rounded-[28px] p-8 sm:p-9 pos-panel-enter">
         <div className="flex flex-col items-center mb-8">
           <SolvexoIcon size={48} />
           <p className="text-[19px] font-bold text-white mt-5">POS Employee Login</p>
@@ -78,7 +78,7 @@ export function PinLoginScreen({ storeId, onSuccess }: PinLoginScreenProps) {
                 onChange={set('email')}
                 onBlur={blur('email')}
                 placeholder="you@store.com"
-                className="w-full h-[52px] bg-pos-surface border border-pos-border rounded-2xl pl-[42px] pr-[14px] text-[14px] text-white outline-none box-border transition-all duration-150 focus:border-brand-orange/50 focus:shadow-[0_0_0_4px_rgba(217,119,87,0.12)]"
+                className="w-full h-[52px] bg-pos-surface border border-pos-border rounded-2xl pl-[42px] pr-[14px] text-[14px] text-white outline-none box-border transition-colors duration-150 focus:border-brand-orange/50"
                 autoFocus
               />
             </div>
@@ -100,7 +100,7 @@ export function PinLoginScreen({ storeId, onSuccess }: PinLoginScreenProps) {
           <button
             type="submit"
             disabled={submitting}
-            className="mt-1 w-full h-[54px] bg-gradient-to-b from-brand-orange to-brand-deep-orange border-0 rounded-2xl text-[14px] font-bold text-white cursor-pointer shadow-[0_10px_28px_rgba(217,119,87,0.35)] flex items-center justify-center gap-[8px] transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+            className="mt-1 w-full h-[54px] bg-gradient-to-b from-brand-orange to-brand-deep-orange border-0 rounded-2xl text-[14px] font-bold text-white cursor-pointer flex items-center justify-center gap-[8px] transition-transform duration-150 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
           >
             <LogIn size={16} />
             {submitting ? 'Signing in…' : 'Sign In'}

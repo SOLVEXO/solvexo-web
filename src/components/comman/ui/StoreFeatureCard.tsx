@@ -26,10 +26,13 @@ export function StoreFeatureCard({ store, onClick, className }: {
   };
 
   return (
-    <button
+    <div
       onClick={() => onClick(store.slug)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter') onClick(store.slug); }}
       className={clsx(
-        'relative shrink-0 w-[240px] sm:w-[264px] text-left bg-white rounded-2xl border border-bone overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-[4px] hover:shadow-[0_18px_36px_rgba(0,0,0,0.12)] hover:border-brand-orange/25',
+        'relative shrink-0 w-[240px] sm:w-[264px] text-left bg-white rounded-2xl border border-bone overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-[4px] hover:border-brand-orange/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
         className,
       )}
     >
@@ -48,7 +51,7 @@ export function StoreFeatureCard({ store, onClick, className }: {
       {/* Body */}
       <div className="px-4 pb-4 -mt-7">
         <div className="flex items-end justify-between mb-2">
-          <div className="w-14 h-14 rounded-2xl bg-white p-[3px] shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
+          <div className="w-14 h-14 rounded-2xl bg-white border border-bone p-[3px]">
             <div className="w-full h-full rounded-[13px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">
               {store.logo
                 ? <img loading="lazy" decoding="async" src={store.logo} alt="" className="w-full h-full object-cover" />
@@ -96,6 +99,6 @@ export function StoreFeatureCard({ store, onClick, className }: {
           </span>
         </div>
       </div>
-    </button>
+    </div>
   );
 }

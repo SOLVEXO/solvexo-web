@@ -63,10 +63,10 @@ export function SocialLoginRow({
             'flex-1 flex items-center justify-center gap-[7px] px-3 py-[11px] bg-white border border-bone rounded-xl',
             'text-[12.5px] font-medium text-charcoal cursor-pointer',
             'transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out',
-            'hover:bg-cream hover:border-slate/40 hover:-translate-y-px hover:shadow-sm',
+            'hover:bg-cream hover:border-slate/40 hover:-translate-y-px',
             'active:translate-y-0 active:scale-[0.98]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50',
-            'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none',
+            'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0',
           ].join(' ')}
         >
           <Icon />

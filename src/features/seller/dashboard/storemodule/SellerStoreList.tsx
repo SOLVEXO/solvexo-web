@@ -108,7 +108,7 @@ export function SellerStoreList() {
         title="My Stores"
         subtitle="Manage all your stores from one place."
         actions={
-          <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')}>
+          <Button variant="primary" size="sm" onClick={() => navigate('/onboard')}>
             <Plus size={14} className="mr-1 inline align-middle" />
             New Store
           </Button>
@@ -146,7 +146,7 @@ export function SellerStoreList() {
             icon={<Store size={30} className="text-brand-orange opacity-55" />}
             title="No stores yet"
             description="Create your first store and start selling digital products, courses, and more."
-            action={{ label: 'Create Your First Store', onClick: () => navigate('/onboarding'), icon: <Plus size={14} /> }}
+            action={{ label: 'Create Your First Store', onClick: () => navigate('/onboard'), icon: <Plus size={14} /> }}
           />
         )}
 

@@ -128,7 +128,7 @@ function RatingSummaryCard({
   stats, ratingFilter, withPhotosOnly, hasPhotoReviews, filtersActive, onSelectRating, onToggleWithPhotos, onClearFilters,
 }: RatingSummaryCardProps) {
   return (
-    <div className="rounded-2xl bg-white border border-bone shadow-sm p-5 sm:p-6 mb-6">
+    <div className="rounded-2xl bg-white border border-bone p-5 sm:p-6 mb-6">
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
         <div className="flex flex-row lg:flex-col items-center lg:items-start gap-4 lg:gap-2 shrink-0 lg:w-[170px]">
           <p className="text-[48px] sm:text-[64px] font-black text-carbon leading-none tracking-tight">
@@ -152,7 +152,7 @@ function RatingSummaryCard({
                 className="flex items-center gap-2 bg-transparent border-0 cursor-pointer p-0 group"
               >
                 <span className={`text-[12px] w-9 text-left shrink-0 ${active ? 'font-bold text-brand-orange' : 'text-graphite'}`}>{star} ★</span>
-                <div className="flex-1 h-2 rounded-full bg-[#eee9df] overflow-hidden shadow-inner">
+                <div className="flex-1 h-2 rounded-full bg-[#eee9df] overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-[width] duration-300 ${active ? 'bg-gradient-to-r from-brand-orange to-[#F59E0B]' : 'bg-[#D9D6CC] group-hover:bg-brand-orange/60'}`}
                     style={{ width: `${pct}%` }}
@@ -229,7 +229,7 @@ function ReviewCard({ review: r, storeName, onToggleHelpful, onEdit, onDelete, o
   const initials = r.isOwn ? 'Y' : r.customerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
-    <div className={`rounded-2xl p-4 sm:p-5 bg-white border shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow ${r.isOwn ? 'bg-brand-pale-orange/40 border-brand-orange/30' : 'border-bone'
+    <div className={`rounded-2xl p-4 sm:p-5 bg-white border transition-colors hover:border-slate/30 ${r.isOwn ? 'bg-brand-pale-orange/40 border-brand-orange/30' : 'border-bone'
       }`}>
       <div className="flex items-start justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-3">

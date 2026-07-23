@@ -61,7 +61,7 @@ export function PersonalInfo() {
           <Card padding="none" className="rounded-2xl overflow-hidden">
             <div className="px-6 py-6 bg-gradient-to-br from-brand-pale-orange/60 to-cream flex items-center gap-5 border-b border-bone">
               <div className="relative shrink-0">
-                <div className="w-[72px] h-[72px] rounded-full bg-white overflow-hidden flex items-center justify-center text-[24px] font-bold text-brand-deep-orange border-[3px] border-white shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
+                <div className="w-[72px] h-[72px] rounded-full bg-white overflow-hidden flex items-center justify-center text-[24px] font-bold text-brand-deep-orange border-[3px] border-white outline outline-1 outline-bone">
                   {loading
                     ? <SkeletonBox width={72} height={72} rounded="50%" />
                     : profile?.profileImage

@@ -513,7 +513,7 @@ export function StoreSubscriptions() {
           {(loading && !dashboard) ? Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="bg-white border border-bone rounded-[10px] px-5 py-4 h-[84px] animate-pulse" />
           )) : metrics.map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
               <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
             </div>
@@ -522,7 +522,7 @@ export function StoreSubscriptions() {
 
         {/* Subscriber economics — proves the feature's value with real data */}
         {dashboard?.subscriberEconomics && (
-          <div className="bg-white border border-bone rounded-[10px] shadow-xs px-5 py-4">
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
             <p className="text-[13px] font-bold text-carbon mb-3">Subscribers vs. Regular Customers</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
@@ -551,7 +551,7 @@ export function StoreSubscriptions() {
           {plans.map(plan => {
             const hs = plan.healthEstimate ? HEALTH_STYLE[plan.healthEstimate.health] : null;
             return (
-              <div key={plan._id} className="bg-white border border-bone rounded-[10px] shadow-xs px-[22px] py-5 flex flex-col transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-[1px]">
+              <div key={plan._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 flex flex-col transition-transform duration-200 hover:-translate-y-[1px]">
                 <div className="flex items-start justify-between mb-1 gap-2">
                   <p className="text-[15px] font-bold text-carbon">{plan.name}</p>
                   {plan.status === 'suspended' && <span className="text-[10px] font-bold px-[8px] py-[2px] rounded-full bg-[#FDECEA] text-[#C0392B] shrink-0">Suspended by admin</span>}
@@ -596,7 +596,7 @@ export function StoreSubscriptions() {
         </div>
 
         {/* Subscribers */}
-        <div className="bg-white border border-bone rounded-[10px] shadow-xs overflow-hidden">
+        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="flex items-center justify-between px-5 py-[14px] border-b border-bone flex-wrap gap-2">
             <p className="text-[15px] font-bold text-carbon">Subscribers</p>
             <div className="flex items-center gap-0.5 bg-[#F5F4EF] rounded-lg p-[3px]">
@@ -700,7 +700,7 @@ export function StoreSubscriptions() {
 
         {/* Cancellation reasons — churn insight */}
         {dashboard && dashboard.cancellationReasons.length > 0 && (
-          <div className="bg-white border border-bone rounded-[10px] shadow-xs px-5 py-4">
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
             <p className="text-[13px] font-bold text-carbon mb-3">Why subscribers cancel</p>
             <div className="flex flex-col gap-2">
               {dashboard.cancellationReasons.map(r => (
@@ -715,7 +715,7 @@ export function StoreSubscriptions() {
 
         {/* Advanced Analytics */}
         {advanced && (
-          <div className="bg-white border border-bone rounded-[10px] shadow-xs px-5 py-4">
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
             <p className="text-[13px] font-bold text-carbon mb-3">Advanced Analytics</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
               <div>

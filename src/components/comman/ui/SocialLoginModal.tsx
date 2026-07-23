@@ -73,7 +73,7 @@ export function SocialLoginModal({ provider, onClose, onSuccess, loading = false
         role="dialog"
         aria-modal="true"
         aria-label={`Sign in with ${providerLabel}`}
-        className="relative bg-white rounded-2xl shadow-[0_32px_80px_rgba(0,0,0,0.22)] border border-bone w-full max-w-[400px] overflow-hidden outline-none"
+        className="relative bg-white rounded-2xl border border-bone w-full max-w-[400px] overflow-hidden outline-none"
       >
         {/* Header — mimics OAuth popup chrome */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-bone bg-[#FAFAFA]">

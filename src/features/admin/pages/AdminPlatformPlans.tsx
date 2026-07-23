@@ -337,7 +337,7 @@ export function AdminPlatformPlans() {
         {error && <p className="text-[13px] text-error">{error}</p>}
 
         {showAddons && (
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+          <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
             <div className="px-5 py-[14px] border-b border-bone">
               <p className="text-[14px] font-bold text-charcoal">Add-on Purchases</p>
             </div>
@@ -348,7 +348,7 @@ export function AdminPlatformPlans() {
         <div className="grid grid-cols-3 gap-3">
           {(loading && !revenue) ? Array.from({ length: 3 }).map((_, i) => <div key={i} className="bg-white border border-bone rounded-[10px] h-[84px] animate-pulse" />)
             : metrics.map(m => (
-              <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
                 <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
                 <p className="text-[24px] font-bold text-carbon">{m.value}</p>
               </div>
@@ -358,7 +358,7 @@ export function AdminPlatformPlans() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4 flex flex-col gap-3">
+              <div key={i} className="bg-white border border-bone rounded-[10px] px-5 py-4 flex flex-col gap-3">
                 <SkeletonBox width="60%" height={16} rounded="4px" />
                 <SkeletonBox width="40%" height={20} rounded="4px" />
                 <div className="flex flex-col gap-1.5">
@@ -373,7 +373,7 @@ export function AdminPlatformPlans() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {plans.map(plan => (
-              <div key={plan._id} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4 flex flex-col">
+              <div key={plan._id} className="bg-white border border-bone rounded-[10px] px-5 py-4 flex flex-col">
                 <div className="flex items-start justify-between mb-1">
                   <p className="text-[15px] font-bold text-carbon">{plan.name}</p>
                   <div className="flex items-center gap-1.5">

@@ -44,7 +44,7 @@ export function Security() {
 
       <Card padding="none" className="rounded-2xl overflow-hidden">
         <div className="px-6 py-5 bg-gradient-to-br from-brand-pale-orange/60 to-cream flex items-center gap-3 border-b border-bone">
-          <div className="w-10 h-10 rounded-[10px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-[10px] bg-white border border-bone flex items-center justify-center shrink-0">
             <Mail size={16} className="text-brand-orange" />
           </div>
           <div className="flex-1 min-w-0">

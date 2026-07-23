@@ -35,7 +35,7 @@ export function AnalyticsFilterBar<T extends BaseAnalyticsUIFilters>({
   const patch = (partial: Partial<T>) => onChange({ ...filters, ...partial });
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-4 py-3 flex flex-col gap-3">
+    <div className="bg-white border border-bone rounded-[10px] px-4 py-3 flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <FilterDropdown
           options={RANGE_PRESET_OPTIONS}

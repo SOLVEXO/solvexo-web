@@ -32,7 +32,7 @@ export function FloatingAppWidget({ mobileBottomClass = 'bottom-[84px]' }: { mob
         <div
           role="dialog"
           aria-label="Get the Solvexo app"
-          className="dropdown-enter absolute bottom-[calc(100%+12px)] right-0 w-[280px] rounded-2xl border border-white/15 bg-carbon/90 backdrop-blur-xl shadow-[0_28px_64px_rgba(0,0,0,0.4)] overflow-hidden"
+          className="dropdown-enter absolute bottom-[calc(100%+12px)] right-0 w-[280px] rounded-2xl border border-white/15 bg-carbon/90 backdrop-blur-xl overflow-hidden"
         >
           <div className="flex items-center justify-between px-4 pt-4">
             <div className="w-9 h-9 rounded-xl bg-brand-orange/20 border border-brand-orange/30 flex items-center justify-center">
@@ -71,8 +71,8 @@ export function FloatingAppWidget({ mobileBottomClass = 'bottom-[84px]' }: { mob
         aria-expanded={open}
         className={clsx(
           'flex items-center gap-2 pl-[6px] pr-4 py-[6px] rounded-full bg-carbon text-white',
-          'shadow-[0_12px_30px_rgba(0,0,0,0.3)] border border-white/10 cursor-pointer',
-          'hover:-translate-y-[2px] hover:shadow-[0_16px_36px_rgba(0,0,0,0.38)] active:translate-y-0 transition-all duration-200',
+          'border border-white/10 cursor-pointer',
+          'hover:-translate-y-[2px] hover:border-white/25 active:translate-y-0 transition-all duration-200',
         )}
       >
         <span className="w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center shrink-0">

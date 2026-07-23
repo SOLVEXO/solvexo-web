@@ -56,19 +56,19 @@
   --radius-xl: 16px;
   --radius-2xl: 20px;
 
-  /* ── Shadows (elevation scale) ── */
-  --shadow-xs:   0 1px 2px rgba(20,20,19,0.04);
-  --shadow-sm:   0 1px 3px rgba(20,20,19,0.06), 0 1px 2px rgba(20,20,19,0.04);
-  --shadow-card: 0 1px 3px rgba(20,20,19,0.05), 0 4px 16px rgba(20,20,19,0.08);
-  --shadow-md:   0 4px 16px rgba(20,20,19,0.10), 0 1px 4px rgba(20,20,19,0.06);
-  --shadow-lg:   0 8px 40px rgba(20,20,19,0.14), 0 2px 8px rgba(20,20,19,0.06);
-  --shadow-xl:   0 16px 56px rgba(20,20,19,0.18), 0 4px 12px rgba(20,20,19,0.08);
-  /* Premium elevated surfaces (auth split-panel forms, floating branding cards) */
-  --shadow-2xl:  0 24px 70px rgba(20,20,19,0.22), 0 8px 24px rgba(20,20,19,0.10);
-  --shadow-glow: 0 8px 32px rgba(217,119,87,0.35);
-
   /* ── Motion ── */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Education Marketplace theme — scoped brand-color override.
+   Every shared component (Button, ProductCard, filter chips, nav) reads the
+   --color-brand-* variables via Tailwind utility classes, so wrapping just
+   this page's root in this class recolors it green without touching any
+   shared component file or any other page. ── */
+.theme-education {
+  --color-brand-orange:      #2F8F5B;
+  --color-brand-deep-orange: #1F6B42;
+  --color-brand-pale-orange: #E7F4EC;
 }
 
 /* ── Base Reset — inside @layer base so Tailwind utilities can override ── */
@@ -144,11 +144,12 @@
 .pos-panel-enter { animation: pos-panel-enter 220ms var(--ease-out); }
 .pos-item-enter { animation: pos-item-enter 180ms var(--ease-out); }
 
-/* Animated "Live" status ring — a soft pulsing halo behind a solid status dot */
+/* Animated "Live" status ring — a soft pulsing halo behind a solid status dot.
+   Uses an animated outline (not box-shadow) so the ring never reads as elevation. */
 @keyframes pos-live-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(45,138,78,0.45); }
-  70%  { box-shadow: 0 0 0 6px rgba(45,138,78,0); }
-  100% { box-shadow: 0 0 0 0 rgba(45,138,78,0); }
+  0%   { outline: 2px solid rgba(45,138,78,0.45); outline-offset: 0; }
+  70%  { outline: 2px solid rgba(45,138,78,0); outline-offset: 6px; }
+  100% { outline: 2px solid rgba(45,138,78,0); outline-offset: 6px; }
 }
 .pos-live-pulse { animation: pos-live-pulse 2.2s ease-out infinite; }
 
@@ -164,13 +165,14 @@
 }
 
 /* Shared hover-lift for POS surfaces (product tiles, cards) — one definition
-   instead of repeating the same transform/shadow utility combo everywhere. */
+   instead of repeating the same transform/border utility combo everywhere.
+   Depth comes from the translate + border intensification, never a shadow. */
 .pos-surface-hover {
-  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  transition: transform 200ms var(--ease-out), border-color 200ms var(--ease-out);
 }
 .pos-surface-hover:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  border-color: var(--color-pos-border-strong);
 }
 
 /* ── Shared dropdown / panel / drawer motion (Navbar previews, mini cart, popups) ── */
@@ -198,6 +200,23 @@
   60%, 100% { transform: translateX(220%); }
 }
 .banner-shimmer { animation: banner-shimmer 3.2s ease-in-out infinite; }
+
+/* Content crossfade when the deals ribbon rotates to the next active campaign */
+@keyframes campaign-fade {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.985); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.campaign-fade { animation: campaign-fade 420ms var(--ease-out); }
+
+/* Stories-style progress segment — fills left-to-right over the deals
+   ribbon's rotation interval, driven by an inline animation-duration so it
+   always matches ROTATE_MS in DealsBanner.tsx. */
+@keyframes campaign-progress-fill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+.campaign-progress-fill { animation: campaign-progress-fill linear forwards; }
 
 /* ── Auth branding-panel ambient motion (floating mockup cards, glow orbs) ── */
 @keyframes auth-float {
@@ -235,3 +254,56 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 .dash-section-enter { animation: dash-section-enter 360ms var(--ease-out) both; }
+
+/* Countdown-timer "tick" — replayed each second by remounting the segment via
+   a `key` prop (React drops/recreates the node, which restarts the CSS
+   animation), so the seconds box visibly pulses on every real tick. */
+@keyframes countdown-tick {
+  from { opacity: 0.6; transform: scale(1.05); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.countdown-tick { animation: countdown-tick 320ms var(--ease-out); }
+
+/* Wishlist heart "pop" — replayed via a `key` swap on the icon (same remount
+   trick as countdown-tick) whenever isWishlisted flips, so saving/unsaving a
+   product gets a quick tactile confirmation instead of a flat color swap. */
+@keyframes heart-pop {
+  0%   { transform: scale(0.7); }
+  50%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.heart-pop { animation: heart-pop 320ms var(--ease-out); }
+
+/* Dual-handle price range slider — two native <input type="range"> stacked on
+   the same track (a common, accessible way to build a two-thumb slider
+   without a drag library). The input's own track is made invisible; only the
+   thumb is visible/interactive, so each handle can be grabbed independently
+   even though both inputs occupy the same box. The filled portion between the
+   two thumbs is drawn separately as a plain div, not by this input at all. */
+.range-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  pointer-events: none;
+}
+.range-thumb::-webkit-slider-runnable-track { -webkit-appearance: none; background: transparent; }
+.range-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--color-brand-orange);
+  border: 2px solid white;
+  cursor: pointer;
+}
+.range-thumb::-moz-range-track { background: transparent; border: none; }
+.range-thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--color-brand-orange);
+  border: 2px solid white;
+  cursor: pointer;
+}

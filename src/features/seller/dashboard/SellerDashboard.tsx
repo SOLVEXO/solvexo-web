@@ -72,7 +72,7 @@ function WorkspaceHero({ storeCount, activeCount }: { storeCount: number; active
         <Button variant="outline" size="sm" className="!bg-white/10 !border-white/20 !text-white hover:!bg-white/20" onClick={() => navigate('/seller/analytics')}>
           View Analytics
         </Button>
-        <Button variant="primary" size="sm" icon={<Sparkles size={14} />} onClick={() => navigate('/onboarding')}>
+        <Button variant="primary" size="sm" icon={<Sparkles size={14} />} onClick={() => navigate('/onboard')}>
           Create Store
         </Button>
       </div>
@@ -89,7 +89,7 @@ const statusColors: Record<string, { bg: string; color: string }> = {
 
 function MyStoreCardSkeleton() {
   return (
-    <div className="bg-white border border-bone rounded-2xl shadow-card overflow-hidden">
+    <div className="bg-white border border-bone rounded-2xl overflow-hidden">
       <div className="px-5 pt-4 pb-[10px] flex items-center justify-between">
         <SkeletonBox width={72} height={14} rounded="4px" />
         <SkeletonBox width={44} height={11} rounded="3px" />
@@ -118,7 +118,7 @@ function MyStoreCard({ stores, loading, error, onRetry }: { stores: MyStore[]; l
 
   if (error) {
     return (
-      <div className="bg-white border border-bone rounded-2xl px-5 py-8 shadow-card text-center">
+      <div className="bg-white border border-bone rounded-2xl px-5 py-8 text-center">
         <div className="w-[52px] h-[52px] rounded-xl bg-error-bg flex items-center justify-center mx-auto mb-[14px]">
           <AlertCircle size={24} className="text-error" />
         </div>
@@ -135,7 +135,7 @@ function MyStoreCard({ stores, loading, error, onRetry }: { stores: MyStore[]; l
 
   if (stores.length === 0) {
     return (
-      <div className="bg-white border border-bone rounded-2xl px-5 py-8 shadow-card text-center">
+      <div className="bg-white border border-bone rounded-2xl px-5 py-8 text-center">
         <div className="w-[52px] h-[52px] rounded-xl bg-brand-pale-orange flex items-center justify-center mx-auto mb-[14px]">
           <Store size={24} className="text-brand-orange" />
         </div>
@@ -151,7 +151,7 @@ function MyStoreCard({ stores, loading, error, onRetry }: { stores: MyStore[]; l
         <Button
           variant="primary"
           size="sm"
-          onClick={() => navigate('/onboarding')}
+          onClick={() => navigate('/onboard')}
         >
           Create Store
         </Button>
@@ -160,7 +160,7 @@ function MyStoreCard({ stores, loading, error, onRetry }: { stores: MyStore[]; l
   }
 
   return (
-    <div className="bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200 overflow-hidden h-full flex flex-col">
+    <div className="bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200 overflow-hidden h-full flex flex-col">
       <div className="px-5 pt-4 pb-2 flex items-start justify-between">
         <p className="text-sm font-bold text-charcoal">My Stores</p>
         <div className="text-right">
@@ -235,13 +235,13 @@ function PlatformBillingCard() {
     apiGetSellerPlatformOverview().then(res => setStores(res.data.stores)).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="bg-white border border-bone rounded-2xl h-full min-h-[220px] shadow-card overflow-hidden"><SkeletonBox height="100%" width="100%" rounded="0" /></div>;
+  if (loading) return <div className="bg-white border border-bone rounded-2xl h-full min-h-[220px] overflow-hidden"><SkeletonBox height="100%" width="100%" rounded="0" /></div>;
   if (stores.length === 0) return null;
 
   const totalUSD = stores.reduce((s, r) => s + r.totalPaidUSD, 0);
 
   return (
-    <div className="bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200 overflow-hidden h-full flex flex-col">
+    <div className="bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200 overflow-hidden h-full flex flex-col">
       <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-[#F3F2EC]">
         <p className="text-sm font-bold text-charcoal">Platform Billing</p>
         <span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">
@@ -295,7 +295,7 @@ const QUICK_ACTIONS: QuickAction[] = [
 function QuickActionsRow() {
   const navigate = useNavigate();
   return (
-    <div className="bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200 h-full flex flex-col">
+    <div className="bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200 h-full flex flex-col">
       <div className="px-5 pt-4 pb-3 border-b border-[#F3F2EC]">
         <p className="text-sm font-bold text-charcoal">Quick Actions</p>
       </div>
@@ -304,10 +304,10 @@ function QuickActionsRow() {
           <button
             key={label}
             onClick={() => navigate(path)}
-            className={`group flex flex-col items-center justify-center gap-2 py-4 px-2 rounded-[14px] border border-bone bg-gradient-to-br ${gradient} cursor-pointer transition-all duration-200 hover:-translate-y-[3px] hover:shadow-md w-full`}
+            className={`group flex flex-col items-center justify-center gap-2 py-4 px-2 rounded-[14px] border border-bone bg-gradient-to-br ${gradient} cursor-pointer transition-all duration-200 hover:-translate-y-[3px] hover:border-brand-orange/25 w-full`}
           >
             <div
-              className="w-9 h-9 rounded-[10px] bg-white/70 flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-transform duration-200 group-hover:scale-110"
+              className="w-9 h-9 rounded-[10px] bg-white/70 border border-white/60 flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
               style={{ color: iconColor }}
             >
               <Icon size={16} />
@@ -427,7 +427,7 @@ export function SellerDashboard() {
           {(loading || storesLoading) ? (
             Array.from({ length: 4 }).map((_, i) => <MetricCard key={i} label="" value="" loading />)
           ) : !hasStore ? (
-            <div className="col-span-full bg-white border border-bone rounded-2xl shadow-card px-5 py-6 text-center text-[13px] text-slate">
+            <div className="col-span-full bg-white border border-bone rounded-2xl px-5 py-6 text-center text-[13px] text-slate">
               Create a store to see your revenue, orders, and product metrics here.
             </div>
           ) : metrics.map((m) => (
@@ -458,7 +458,7 @@ export function SellerDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
 
           {/* Top Products */}
-          <div className="bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200 overflow-hidden">
+          <div className="bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200 overflow-hidden">
             <div className="px-[18px] pt-4 pb-3 flex items-center justify-between border-b border-bone">
               <p className="text-sm font-bold text-charcoal">Top Products</p>
               {hasStore && (
@@ -496,7 +496,7 @@ export function SellerDashboard() {
           </div>
 
           {/* Recent Orders — Table component */}
-          <div className="bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200 overflow-hidden">
+          <div className="bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200 overflow-hidden">
             <div className="px-5 pt-4 pb-[10px] flex items-center justify-between">
               <p className="text-sm font-bold text-charcoal">Recent Orders</p>
               {hasStore && (

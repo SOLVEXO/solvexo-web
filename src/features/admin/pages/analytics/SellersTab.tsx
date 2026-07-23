@@ -72,7 +72,7 @@ export function SellersTab({ params }: { params: BaseAnalyticsParams }) {
         <MetricCard label="Total Sellers (cumulative)" value={latestCumulative != null ? formatNumber(latestCumulative) : '—'} loading={trends.loading} />
       </div>
 
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+      <div className="bg-white border border-bone rounded-[10px]">
         <div className="px-5 pt-4 pb-3 flex flex-wrap items-center justify-between gap-3">
           <p className="text-[14px] font-bold text-charcoal">Top / Lowest Performing Sellers</p>
           <div className="flex items-center gap-2">
@@ -93,7 +93,7 @@ export function SellersTab({ params }: { params: BaseAnalyticsParams }) {
         )}
       </div>
 
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+      <div className="bg-white border border-bone rounded-[10px]">
         <div className="px-5 pt-4 pb-3">
           <p className="text-[14px] font-bold text-charcoal">Seller Performance</p>
           <p className="text-[12px] text-slate">Full ranking across every seller on the platform.</p>

@@ -25,7 +25,7 @@ function initialsOf(name: string) {
 
 function MetricCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+    <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
       <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{label}</p>
       <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{value}</p>
       {sub && <p className="text-[12px] text-slate mt-1">{sub}</p>}
@@ -183,7 +183,7 @@ export function AdminUsers() {
         </div>
       )}
 
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+      <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
         <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
           <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by name or email…" className="flex-1 max-w-[280px]" />
           <FilterDropdown placeholder="All Roles" options={ROLE_OPTIONS} value={roleFilter} onChange={(v) => { setRoleFilter(v); setPage(1); }} />

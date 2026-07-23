@@ -106,7 +106,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative flex flex-col w-full max-w-[360px] max-h-[92vh] bg-white rounded-2xl border border-bone shadow-[0_32px_80px_rgba(0,0,0,0.28)] overflow-hidden outline-none"
+        className="relative flex flex-col w-full max-w-[360px] max-h-[92vh] bg-white rounded-2xl border border-bone overflow-hidden outline-none"
       >
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
@@ -181,7 +181,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
                         color:      s ? '#fff' : past ? '#C5C3BB' : '#141413',
                         fontWeight: s || t ? 700 : 400,
                         cursor:     past ? 'default' : 'pointer',
-                        boxShadow:  t && !s ? 'inset 0 0 0 1.5px #D97757' : 'none',
+                        border:     t && !s ? '1.5px solid #D97757' : '1.5px solid transparent',
                       }}
                     >
                       {day}

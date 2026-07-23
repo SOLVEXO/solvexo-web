@@ -26,7 +26,7 @@ export function FunnelChart({
   if (!steps.length) {
     return (
       <div
-        className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-5 flex items-center justify-center h-[200px]"
+        className="bg-white border border-bone rounded-[10px] px-5 py-5 flex items-center justify-center h-[200px]"
         role="img"
         aria-label={ariaLabel}
       >
@@ -40,7 +40,7 @@ export function FunnelChart({
 
   return (
     <div
-      className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-5 transition-shadow duration-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
+      className="bg-white border border-bone rounded-[10px] px-5 py-5 transition-colors duration-200 hover:border-slate/30"
       role="img"
       aria-label={ariaLabel}
     >

@@ -77,7 +77,7 @@ export function EntitySearchSelect({ label, placeholder, selectedId, onSelect, s
       </div>
 
       {open && query.trim().length >= 2 && !selectedId && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-bone rounded-lg shadow-lg max-h-[220px] overflow-y-auto">
+        <div className="absolute z-20 mt-1 w-full bg-white border border-bone rounded-lg max-h-[220px] overflow-y-auto">
           {loading ? (
             <p className="px-3 py-[10px] text-[12px] text-slate">Searching…</p>
           ) : results.length === 0 ? (

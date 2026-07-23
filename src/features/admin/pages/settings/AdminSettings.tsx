@@ -101,7 +101,7 @@ export function AdminSettings() {
 
             {/* Profile */}
             {active === 'profile' && (
-              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6">
                 <p className="text-[16px] font-bold text-charcoal mb-[22px]">Profile</p>
 
                 {profileLoading ? <ProfileSkeleton /> : (
@@ -210,7 +210,7 @@ export function AdminSettings() {
 
             {/* Other sections */}
             {active !== 'profile' && active !== 'notifications' && (
-              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6">
                 <div className="flex flex-col items-center justify-center py-[60px] text-center">
                   <div className="text-slate mb-[14px]">
                     {activeItem ? <activeItem.Icon size={40} /> : <Settings size={40} />}
@@ -235,7 +235,7 @@ export function AdminSettings() {
 
           {/* ── RIGHT: Nav sidebar ── */}
           <div>
-            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] sticky top-[70px]" style={{ padding: 0 }}>
+            <div className="bg-white border border-bone rounded-[10px] sticky top-[70px]" style={{ padding: 0 }}>
               {NAV.map((group, gi) => (
                 <div key={group.group}>
                   {gi > 0 && <div className="h-px bg-[#F0EEE6]" />}

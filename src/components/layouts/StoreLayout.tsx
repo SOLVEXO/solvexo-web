@@ -360,7 +360,7 @@ export interface StorePageHeaderProps {
 export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderProps) {
   const { toggle } = useContext(StoreSidebarCtx);
   return (
-    <div className="bg-white/90 backdrop-blur-md border-b border-bone shadow-xs px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
+    <div className="bg-white/90 backdrop-blur-md border-b border-bone px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
       <div className="flex items-center gap-3">
         <button
           onClick={toggle}

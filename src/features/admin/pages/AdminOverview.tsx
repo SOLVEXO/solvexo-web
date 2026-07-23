@@ -103,7 +103,7 @@ export function AdminOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
 
         {/* ── Top Categories ── */}
-        <div className="bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200 px-5 py-4">
+        <div className="bg-white border border-bone rounded-2xl transition-colors duration-200 hover:border-brand-orange/25 px-5 py-4">
           <p className="text-[14px] font-bold text-charcoal mb-4">
             Top Categories by Revenue (30 days)
           </p>
@@ -139,17 +139,17 @@ export function AdminOverview() {
         </div>
 
         {/* ── Quick access — shortcuts to moderation/marketplace/users/announcements ── */}
-        <div className="bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200 px-5 py-4">
+        <div className="bg-white border border-bone rounded-2xl transition-colors duration-200 hover:border-brand-orange/25 px-5 py-4">
           <p className="text-[14px] font-bold text-charcoal mb-4">Quick Access</p>
           <div className="flex flex-col gap-2">
             {QUICK_LINKS.map(({ Icon, label, desc, path, gradient, iconColor }) => (
               <button
                 key={label}
                 onClick={() => navigate(path)}
-                className={`group flex items-center gap-3 px-3 py-[10px] rounded-xl border border-bone bg-gradient-to-br ${gradient} cursor-pointer transition-all duration-200 hover:-translate-y-px hover:shadow-md text-left w-full`}
+                className={`group flex items-center gap-3 px-3 py-[10px] rounded-xl border border-bone bg-gradient-to-br ${gradient} cursor-pointer transition-all duration-200 hover:-translate-y-px hover:border-brand-orange/30 text-left w-full`}
               >
                 <div
-                  className="size-9 rounded-[10px] bg-white/70 flex items-center justify-center shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-transform duration-200 group-hover:scale-110"
+                  className="size-9 rounded-[10px] bg-white/70 border border-white/60 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110"
                   style={{ color: iconColor }}
                 >
                   <Icon size={16} />

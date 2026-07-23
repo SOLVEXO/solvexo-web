@@ -26,7 +26,7 @@ export function Modal({ title, onClose, children, footer, width = 440 }: ModalPr
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative flex flex-col w-full max-h-[90vh] bg-white rounded-2xl border border-bone shadow-[0_32px_80px_rgba(0,0,0,0.28)] overflow-hidden outline-none"
+        className="relative flex flex-col w-full max-h-[90vh] bg-white rounded-2xl border border-bone overflow-hidden outline-none"
         style={{ maxWidth: width }}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-bone shrink-0">

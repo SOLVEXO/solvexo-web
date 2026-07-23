@@ -128,7 +128,7 @@ function StoreHero({ store }: { store: ReturnType<typeof useStoreWorkspace>['sto
             href={`/store/${store.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-[6px] px-[14px] py-[9px] rounded-lg bg-white text-brand-deep-orange text-[13px] font-bold no-underline shadow-sm transition-transform duration-150 hover:scale-[1.03]"
+            className="inline-flex items-center gap-[6px] px-[14px] py-[9px] rounded-lg bg-white text-brand-deep-orange text-[13px] font-bold no-underline transition-transform duration-150 hover:scale-[1.03]"
           >
             <ExternalLink size={14} />
             View Live Store
@@ -159,7 +159,7 @@ function StoreInfoCard() {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-bone shadow-card hover:shadow-lg transition-shadow duration-200 flex flex-col h-full">
+    <div className="bg-white rounded-2xl border border-bone hover:border-slate/30 transition-colors duration-200 flex flex-col h-full">
 
       {/* Logo + name + badges */}
       <div className="px-5 pt-5 pb-4 border-b border-[#F3F2EC]">
@@ -280,7 +280,7 @@ function QuickActionsRow({ storeId }: { storeId: string }) {
   ];
 
   return (
-    <div className="bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200">
+    <div className="bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200">
       <div className="px-5 pt-4 pb-3 border-b border-[#F3F2EC]">
         <p className="text-sm font-bold text-charcoal">Quick Actions</p>
       </div>
@@ -289,10 +289,10 @@ function QuickActionsRow({ storeId }: { storeId: string }) {
           <button
             key={label}
             onClick={() => navigate(`/seller/store/${storeId}/${path}`)}
-            className={`group flex flex-col items-center gap-2 py-4 px-2 rounded-[14px] border border-bone bg-gradient-to-br ${gradient} cursor-pointer transition-all duration-200 hover:-translate-y-[3px] hover:shadow-md w-full`}
+            className={`group flex flex-col items-center gap-2 py-4 px-2 rounded-[14px] border border-bone bg-gradient-to-br ${gradient} cursor-pointer transition-all duration-200 hover:-translate-y-[3px] hover:border-brand-orange/25 w-full`}
           >
             <div
-              className="w-9 h-9 rounded-[10px] bg-white/70 flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-transform duration-200 group-hover:scale-110"
+              className="w-9 h-9 rounded-[10px] bg-white/70 border border-white/60 flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
               style={{ color: iconColor }}
             >
               <Icon size={16} />
@@ -311,7 +311,7 @@ function TodaySnapshot({ today }: { today: SellerTodaySummaryData }) {
   const TrendIcon = up ? TrendingUp : TrendingDown;
 
   return (
-    <div className="dash-section-enter bg-white border border-bone rounded-2xl shadow-card hover:shadow-lg transition-shadow duration-200 px-5 py-4 flex flex-wrap items-center gap-x-8 gap-y-3">
+    <div className="dash-section-enter bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200 px-5 py-4 flex flex-wrap items-center gap-x-8 gap-y-3">
       <p className="text-[13px] font-bold text-charcoal shrink-0 flex items-center gap-[6px]">
         <span className="size-[6px] rounded-full bg-success pos-live-pulse" />
         Today

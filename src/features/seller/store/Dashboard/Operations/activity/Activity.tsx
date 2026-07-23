@@ -122,7 +122,7 @@ export function StoreActivity() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
               <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
               {m.sub && <p className="text-xs text-slate mt-1">{m.sub}</p>}
@@ -133,7 +133,7 @@ export function StoreActivity() {
         <div className="grid grid-cols-[240px_1fr] gap-4">
 
           {/* LEFT: Filters */}
-          <div className="bg-white border border-bone rounded-[10px] shadow-xs overflow-hidden">
+          <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
             <div className="px-4 py-3 border-b border-bone">
               <p className="text-[13px] font-semibold text-carbon">Filter by Type</p>
             </div>
@@ -158,7 +158,7 @@ export function StoreActivity() {
               <select
                 value={dateRange}
                 onChange={e => { setDateRange(e.target.value); setPage(1); }}
-                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50"
+                className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer transition-colors duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50"
               >
                 <option value="last7">Last 7 days</option>
                 <option value="last30">Last 30 days</option>
@@ -169,9 +169,9 @@ export function StoreActivity() {
           </div>
 
           {/* RIGHT: Feed */}
-          <div className="bg-white border border-bone rounded-[10px] shadow-xs overflow-hidden">
+          <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
             <div className="flex items-center gap-[10px] px-4 py-3 border-b border-bone">
-              <div className="flex-1 flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white transition-shadow duration-150 focus-within:ring-2 focus-within:ring-brand-orange/40 focus-within:border-brand-orange/50">
+              <div className="flex-1 flex items-center gap-1.5 border border-bone rounded-lg px-3 bg-white transition-colors duration-150 focus-within:ring-2 focus-within:ring-brand-orange/40 focus-within:border-brand-orange/50">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 <input
                   placeholder="Search activity..."

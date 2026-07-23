@@ -36,12 +36,12 @@ export function SellerShipping() {
 
         {/* ── Metrics ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
             <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Active Zones</p>
             <p className="text-[28px] font-bold text-carbon leading-[1.15]">{loading ? '—' : zones.filter(z => z.status === 'active').length}</p>
             <p className="text-xs text-slate mt-1">Platform-wide, used at checkout</p>
           </div>
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4 flex items-center gap-2">
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 flex items-center gap-2">
             <AlertCircle size={16} className="text-slate shrink-0" />
             <p className="text-xs text-slate leading-[1.5]">
               Per-seller shipping analytics (labels printed, on-time delivery) aren't available yet.
@@ -86,7 +86,7 @@ export function SellerShipping() {
           ) : (
             <div className="flex flex-col gap-3.5">
               {zones.map(zone => (
-                <div key={zone._id} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-[18px]">
+                <div key={zone._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-[18px]">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm font-semibold text-carbon mb-[3px]">{zone.city}, {zone.province}</p>
@@ -107,7 +107,7 @@ export function SellerShipping() {
 
         {/* ── Placeholder Tabs ── */}
         {activeTab !== 'zones' && (
-          <div className="flex items-center justify-center h-[180px] bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <div className="flex items-center justify-center h-[180px] bg-white border border-bone rounded-[10px]">
             <p className="text-[13px] text-slate">
               {TABS.find(t => t.id === activeTab)?.label} — coming soon
             </p>

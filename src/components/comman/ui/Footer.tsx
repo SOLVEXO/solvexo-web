@@ -25,7 +25,7 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
   {
     heading: 'Sell',
     links: [
-      { label: 'Start Selling', path: '/onboarding' },
+      { label: 'Start Selling', path: '/onboard' },
       { label: 'Pricing',       path: '/pricing' },
       { label: 'For Sellers',   path: '/sellers' },
     ],
@@ -65,7 +65,6 @@ const SECURITY_BADGES = [
   { label: 'Verified Sellers',  Icon: BadgeCheck },
 ];
 
-const LANGUAGES  = ['English (US)', 'Español', 'اردو'];
 const CURRENCIES = ['USD $', 'PKR ₨', 'EUR €'];
 
 /* ── Minimal inline social glyphs — abstract, not brand logo assets ─────────── */
@@ -122,7 +121,7 @@ function PillSelector({ options }: { options: string[] }) {
         <ChevronDown size={12} className={clsx('transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
-        <div className="absolute bottom-[calc(100%+6px)] left-0 w-[160px] bg-charcoal border border-white/15 rounded-lg overflow-hidden shadow-[0_12px_28px_rgba(0,0,0,0.4)] z-10">
+        <div className="absolute bottom-[calc(100%+6px)] left-0 w-[160px] bg-charcoal border border-white/15 rounded-lg overflow-hidden z-10">
           {options.map(o => (
             <button
               key={o}
@@ -265,7 +264,6 @@ export function Footer() {
       <div className="border-t border-white/10 px-4 sm:px-6 lg:px-12 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
         <p className="text-[11px]">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
         <div className="flex items-center gap-2">
-          <PillSelector options={LANGUAGES} />
           <PillSelector options={CURRENCIES} />
         </div>
       </div>

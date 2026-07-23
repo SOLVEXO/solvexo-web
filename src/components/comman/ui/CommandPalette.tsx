@@ -98,7 +98,7 @@ export function CommandPalette({ items, open, onClose }: CommandPaletteProps) {
         aria-label="Command palette"
         tabIndex={-1}
         onKeyDown={onKeyDown}
-        className="relative flex flex-col w-full max-w-[560px] max-h-[70vh] bg-white rounded-2xl border border-bone shadow-[0_32px_80px_rgba(0,0,0,0.28)] overflow-hidden outline-none"
+        className="relative flex flex-col w-full max-w-[560px] max-h-[70vh] bg-white rounded-2xl border border-bone overflow-hidden outline-none"
       >
         <div className="flex items-center gap-[10px] px-4 py-3 border-b border-bone shrink-0">
           <Search size={16} className="text-slate shrink-0" />

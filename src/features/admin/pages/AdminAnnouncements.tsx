@@ -36,7 +36,7 @@ function CreateAnnouncementCard({ onCreated }: { onCreated: () => void }) {
   }
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[22px] py-5">
+    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
       <p className="text-[14px] font-bold text-charcoal mb-[18px]">Create Announcement</p>
       <div className="flex flex-col gap-4">
         <Input label="Title" placeholder="Announcement title…" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -234,7 +234,7 @@ export function AdminAnnouncements() {
         <div className="bg-error-bg border border-[#FECACA] rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>
       )}
 
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+      <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
         <div className="px-5 py-[14px] border-b border-bone flex items-center gap-[10px] flex-wrap">
           <p className="text-[14px] font-bold text-charcoal flex-1">All Announcements</p>
           <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search announcements…" className="max-w-[240px]" />

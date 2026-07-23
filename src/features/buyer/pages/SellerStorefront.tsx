@@ -394,7 +394,7 @@ export function SellerStorefront() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
 
             {/* Store logo */}
-            <div className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-[18px] bg-white flex items-center justify-center shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
+            <div className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-[18px] bg-white flex items-center justify-center shrink-0 outline outline-2 outline-white/40">
               {store.logo
                 ? <img loading="lazy" decoding="async" src={store.logo} alt={store.name} className="w-full h-full rounded-[18px] object-cover" />
                 : <Store size={36} style={{ color: cfg.primaryColor }} />
@@ -545,7 +545,7 @@ export function SellerStorefront() {
                     }
                     <button
                       onClick={e => toggleWishlist(e, p._id)}
-                      className="absolute top-[6px] right-[6px] w-6 h-6 rounded-full bg-[rgba(255,255,255,0.92)] flex items-center justify-center shadow-sm cursor-pointer border-none"
+                      className="absolute top-[6px] right-[6px] w-6 h-6 rounded-full bg-[rgba(255,255,255,0.92)] flex items-center justify-center cursor-pointer border-none"
                     >
                       <Heart size={11} className={clsx(wishlisted.has(p._id) ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')} />
                     </button>
@@ -658,7 +658,7 @@ export function SellerStorefront() {
               const isPopular = idx === Math.min(1, plans.length - 1) && plans.length > 1;
               return (
                 <div key={plan._id} className="relative bg-white rounded-2xl p-6 flex flex-col"
-                  style={{ border: isPopular ? `2px solid ${cfg.primaryColor}` : '1px solid #E8E6DC', boxShadow: isPopular ? `0 8px 24px ${cfg.primaryColor}22` : undefined }}>
+                  style={{ border: isPopular ? `2px solid ${cfg.primaryColor}` : '1px solid #E8E6DC' }}>
                   {isPopular && (
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide text-white" style={{ background: cfg.primaryColor }}>
                       Most Popular

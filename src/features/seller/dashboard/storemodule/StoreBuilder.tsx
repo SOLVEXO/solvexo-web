@@ -114,7 +114,7 @@ function Toggle({ on, set }: { on: boolean; set: (v: boolean) => void }) {
       )}
     >
       <span className={clsx(
-        'absolute top-[2px] w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200',
+        'absolute top-[2px] w-4 h-4 rounded-full bg-white border border-charcoal/10 transition-transform duration-200',
         on ? 'translate-x-[18px]' : 'translate-x-[2px]',
       )} />
     </button>
@@ -171,7 +171,7 @@ function ThemePanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => vo
     { key: 'accentColor',  label: 'Accent'     },
   ];
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
       <SectionTitle>Theme Colors</SectionTitle>
       {colors.map(c => (
         <Row key={c.key} label={c.label}>
@@ -214,7 +214,7 @@ function ThemePanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => vo
             key={p.label}
             title={p.label}
             onClick={() => set({ primaryColor: p.primary, bgColor: p.bg, textColor: p.text, accentColor: p.accent })}
-            className="w-7 h-7 rounded-full border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.12)] cursor-pointer shrink-0 transition-transform hover:scale-110"
+            className="w-7 h-7 rounded-full border-2 border-white outline outline-1 outline-black/10 cursor-pointer shrink-0 transition-transform hover:scale-110"
             style={{ background: p.primary }}
           />
         ))}
@@ -230,7 +230,7 @@ function LayoutPanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => v
     { id: 'Minimal',  desc: 'Clean whitespace-focused design for premium brands'    },
   ];
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
       <SectionTitle>Layout Style</SectionTitle>
       <div className="flex flex-col gap-[7px] mb-4">
         {opts.map(opt => {
@@ -276,7 +276,7 @@ function HeaderPanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => v
     { id: 'transparent', label: 'Transparent' },
   ];
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
       <SectionTitle>Header Settings</SectionTitle>
       <Field label="Store Name"    value={cfg.storeName} onChange={v => set({ storeName: v })} maxLen={40} />
       <Field label="Hero Tagline"  value={cfg.tagline}   onChange={v => set({ tagline: v })}   maxLen={100} />
@@ -336,7 +336,7 @@ function HeaderPanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => v
 
 function ProductsPanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => void }) {
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
       <SectionTitle>Products Display</SectionTitle>
       <div className="mb-3">
         <label className="text-[11px] font-medium text-slate block mb-[4px]">Sort Order</label>
@@ -377,7 +377,7 @@ function ProductsPanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) =>
 
 function FooterPanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => void }) {
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
       <SectionTitle>Footer Settings</SectionTitle>
       <Field label="Footer Tagline" value={cfg.footerTagline} onChange={v => set({ footerTagline: v })} maxLen={80} />
       <Field label="Copyright Text" value={cfg.copyright}     onChange={v => set({ copyright: v })}     maxLen={80} />
@@ -417,7 +417,7 @@ function FooterPanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => v
 
 function SEOPanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => void }) {
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
       <SectionTitle>SEO Settings</SectionTitle>
       <Field label="Meta Title"       value={cfg.metaTitle} onChange={v => set({ metaTitle: v })} maxLen={60} />
       <Field label="Meta Description" value={cfg.metaDesc}  onChange={v => set({ metaDesc: v })}  maxLen={160} textarea />
@@ -538,7 +538,7 @@ function StorePreview({ cfg, device }: { cfg: Config; device: Device }) {
             {products.map(p => (
               <div
                 key={p.name}
-                className="rounded-[8px] bg-white overflow-hidden border border-bone shadow-[0_1px_3px_rgba(0,0,0,0.06)] cursor-pointer"
+                className="rounded-[8px] bg-white overflow-hidden border border-bone cursor-pointer"
                 style={cfg.layoutStyle === 'Minimal' ? { border: 'none', borderRadius: 0, borderBottom: '1px solid #E8E6DC', boxShadow: 'none' } : {}}
               >
                 <div
@@ -630,7 +630,7 @@ function StoreSelector({
 }) {
   if (stores.length === 0) return null;
   return (
-    <div className="bg-white border border-bone rounded-[10px] px-[14px] py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div className="bg-white border border-bone rounded-[10px] px-[14px] py-3">
       <p className="text-[10px] font-semibold text-slate uppercase tracking-wide mb-[6px]">Customize Store</p>
       <select
         value={selectedId}
@@ -826,7 +826,7 @@ export function StoreBuilder() {
           )}
 
           {/* Section nav */}
-          <div className="bg-white border border-bone rounded-[10px] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.04)] shrink-0">
+          <div className="bg-white border border-bone rounded-[10px] overflow-hidden shrink-0">
             {SECTIONS.map((sec, i) => {
               const active = activeSection === sec.id;
               return (
@@ -859,7 +859,7 @@ export function StoreBuilder() {
         </div>
 
         {/* ── RIGHT: live preview ── */}
-        <div className="flex-1 flex flex-col border border-bone rounded-xl bg-white overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.04)] min-w-0">
+        <div className="flex-1 flex flex-col border border-bone rounded-xl bg-white overflow-hidden min-w-0">
 
           {/* Browser chrome bar */}
           <div className="flex items-center gap-3 px-4 py-[10px] border-b border-bone bg-[#F5F4F0] shrink-0">

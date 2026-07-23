@@ -226,7 +226,7 @@ export default function StorePlanBilling() {
   if (loading && !current) {
     return (
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4 flex flex-col gap-4">
+        <div className="bg-white border border-bone rounded-[10px] px-5 py-4 flex flex-col gap-4">
           <SkeletonBox width={180} height={16} rounded="4px" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <SkeletonBox height={34} rounded="6px" />
@@ -271,7 +271,7 @@ export default function StorePlanBilling() {
         })()}
 
         {entitlements && current && (
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div>
                 <p className="text-[13px] font-bold text-carbon">Current Plan — {entitlements.currentPlanName}</p>
@@ -357,7 +357,7 @@ export default function StorePlanBilling() {
           })}
         </div>
 
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="flex items-center justify-between px-5 py-[14px] border-b border-bone">
             <p className="text-[13px] font-bold text-carbon">Add-ons</p>
             <Button size="sm" icon={<Zap size={13} />} onClick={() => setAddonModal(true)}>Add Add-on</Button>
@@ -379,7 +379,7 @@ export default function StorePlanBilling() {
           )}
         </div>
 
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="px-5 py-[14px] border-b border-bone">
             <p className="text-[13px] font-bold text-carbon">Billing History</p>
           </div>

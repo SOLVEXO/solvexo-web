@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { Heart, ArrowLeft, Search, Clock, LayoutGrid, X, Flame } from 'lucide-react';
-import { useWishlistContext } from '@/contexts/WishlistContext';
+import { ArrowLeft, Search, Clock, LayoutGrid, X, Flame } from 'lucide-react';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetRecentSearches } from '@/api/services/search';
 import { Button } from './Button';
@@ -11,6 +10,7 @@ import { NotificationBell } from './NotificationBell';
 import { ProfileAvatar } from './ProfileAvatar';
 import { SignInPreview } from './SignInPreview';
 import { MiniCart } from './MiniCart';
+import { MiniWishlist } from './MiniWishlist';
 
 export interface BuyerNavbarSearchConfig {
   value: string;
@@ -126,7 +126,7 @@ function SearchBox({
       </div>
 
       {open && hasSuggestions && (
-        <div className="dropdown-enter absolute left-2 right-2 sm:left-auto sm:right-auto top-[calc(100%+8px)] w-auto sm:w-[380px] bg-white border border-bone rounded-2xl shadow-[0_20px_48px_rgba(0,0,0,0.14)] overflow-hidden max-h-[70vh] overflow-y-auto">
+        <div className="dropdown-enter absolute left-2 right-2 sm:left-auto sm:right-auto top-[calc(100%+8px)] w-auto sm:w-[380px] bg-white border border-bone rounded-2xl overflow-hidden max-h-[70vh] overflow-y-auto">
           {recent.length > 0 && (
             <div className="p-3.5 border-b border-bone">
               <p className="flex items-center gap-[7px] text-[10px] font-bold text-slate uppercase tracking-[0.08em] mb-2.5">
@@ -200,25 +200,6 @@ function SearchBox({
   );
 }
 
-function WishlistButton() {
-  const navigate = useNavigate();
-  const { wishlistCount } = useWishlistContext();
-  return (
-    <button
-      onClick={() => navigate('/account/wishlist')}
-      aria-label={`Wishlist${wishlistCount > 0 ? ` (${wishlistCount} items)` : ''}`}
-      className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer shrink-0 transition-transform hover:scale-105 outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 focus-visible:ring-offset-1"
-    >
-      <Heart size={16} className={wishlistCount > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'} />
-      {wishlistCount > 0 && (
-        <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
-          {wishlistCount > 99 ? '99+' : wishlistCount}
-        </span>
-      )}
-    </button>
-  );
-}
-
 function AccountActions() {
   const navigate = useNavigate();
   if (TokenStorage.isLoggedIn()) {
@@ -232,7 +213,7 @@ function AccountActions() {
   return (
     <div className="flex items-center gap-2 shrink-0">
       <SignInPreview />
-      <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')} className="hidden md:inline-flex">
+      <Button variant="primary" size="sm" onClick={() => navigate('/onboard')} className="hidden md:inline-flex">
         Start Selling
       </Button>
       <button
@@ -245,7 +226,7 @@ function AccountActions() {
   );
 }
 
-// Shrinks slightly and gains a firmer shadow once the page scrolls — the same
+// Shrinks slightly and gains a solid background + border once the page scrolls — the same
 // "compact sticky header" behavior applies everywhere BuyerNavbar is used
 // (Marketplace, Product Detail, Seller Storefront, Category/Search views).
 function useCompactOnScroll() {
@@ -273,8 +254,8 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
 
   return (
     <nav className={clsx(
-      'sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-bone transition-shadow duration-200',
-      scrolled ? 'shadow-[0_4px_16px_rgba(0,0,0,0.06)]' : 'shadow-xs',
+      'sticky top-0 z-50 backdrop-blur-md transition-colors duration-200 border-b',
+      scrolled ? 'bg-white border-bone' : 'bg-white/90 border-transparent',
     )}>
       <div className={clsx(
         'flex items-center gap-3 px-4 sm:px-6 lg:px-10 transition-[height] duration-200',
@@ -324,7 +305,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
                   {backTo.label}
                 </Button>
               )}
-              <WishlistButton />
+              <MiniWishlist />
               <MiniCart accentColor={accentColor} />
               <AccountActions />
             </div>

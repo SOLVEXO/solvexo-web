@@ -28,7 +28,7 @@ function F({ label, req, children }: { label: string; req?: boolean; children: R
 }
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+    <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
       <div className="px-5 py-3.5 border-b border-bone">
         <p className="text-[13px] font-bold text-charcoal">{title}</p>
       </div>
@@ -41,7 +41,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     <button type="button" onClick={() => onChange(!checked)}
       className="w-10 h-[22px] rounded-[11px] border-none cursor-pointer p-0 relative shrink-0 transition-colors duration-[180ms]"
       style={{ background: checked ? '#D97757' : '#D1D5DB' }}>
-      <span className="absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-[left] duration-[180ms]"
+      <span className="absolute top-[3px] w-4 h-4 rounded-full bg-white border border-charcoal/10 transition-[left] duration-[180ms]"
         style={{ left: checked ? 21 : 3 }} />
     </button>
   );

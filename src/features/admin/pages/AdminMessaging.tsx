@@ -18,7 +18,7 @@ function ConversationDrawer({ conversationId, onClose }: { conversationId: strin
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-[420px] max-w-[92vw] h-full bg-white shadow-2xl flex flex-col">
+      <div className="relative w-[420px] max-w-[92vw] h-full bg-white border-l border-bone flex flex-col">
         <div className="px-5 py-4 border-b border-bone flex items-center justify-between shrink-0">
           <div>
             <p className="text-[14px] font-bold text-charcoal">{conversation?.buyer?.name ?? 'Conversation'} · {conversation?.store?.name ?? conversationId.slice(-6).toUpperCase()}</p>
@@ -84,13 +84,13 @@ function ConversationsPanel() {
   const [viewingId, setViewingId] = useState<string | null>(null);
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+    <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
       <div className="px-5 py-[14px] border-b border-bone flex gap-[10px] items-center flex-wrap">
-        <input placeholder="Store ID"  value={filters.storeId}  onChange={e => setFilters(f => ({ ...f, storeId: e.target.value }))}  className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none w-[160px] transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
-        <input placeholder="Buyer ID"  value={filters.buyerId}  onChange={e => setFilters(f => ({ ...f, buyerId: e.target.value }))}  className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none w-[160px] transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
-        <input placeholder="Seller ID" value={filters.sellerId} onChange={e => setFilters(f => ({ ...f, sellerId: e.target.value }))} className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none w-[160px] transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
+        <input placeholder="Store ID"  value={filters.storeId}  onChange={e => setFilters(f => ({ ...f, storeId: e.target.value }))}  className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none w-[160px] transition-colors duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
+        <input placeholder="Buyer ID"  value={filters.buyerId}  onChange={e => setFilters(f => ({ ...f, buyerId: e.target.value }))}  className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none w-[160px] transition-colors duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
+        <input placeholder="Seller ID" value={filters.sellerId} onChange={e => setFilters(f => ({ ...f, sellerId: e.target.value }))} className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none w-[160px] transition-colors duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
         <select value={filters.isArchived} onChange={e => setFilters(f => ({ ...f, isArchived: e.target.value }))}
-          className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+          className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
           <option value="">All statuses</option>
           <option value="false">Active</option>
           <option value="true">Archived</option>
@@ -164,14 +164,14 @@ function ReportsPanel() {
   });
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+    <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
       <div className="px-5 py-[14px] border-b border-bone flex gap-[10px] items-center flex-wrap">
         <select value={status} onChange={e => { setStatus(e.target.value as ReportStatus | ''); setPage(1); }}
-          className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+          className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
           {STATUS_OPTS.map(o => <option key={o} value={o}>{o ? o[0].toUpperCase() + o.slice(1) : 'All Statuses'}</option>)}
         </select>
         <select value={targetType} onChange={e => { setTargetType(e.target.value as TargetType | ''); setPage(1); }}
-          className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+          className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
           {TARGET_OPTS.map(o => <option key={o} value={o}>{o ? o[0].toUpperCase() + o.slice(1) : 'All Types'}</option>)}
         </select>
       </div>

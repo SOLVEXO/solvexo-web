@@ -41,7 +41,7 @@ export function RoleSegmentedControl({
         {/* Sliding thumb */}
         <div
           aria-hidden
-          className="absolute top-1 bottom-1 rounded-[14px] bg-white shadow-[0_2px_10px_rgba(20,20,19,0.10)] transition-[transform,width] duration-[280ms] ease-out"
+          className="absolute top-1 bottom-1 rounded-[14px] bg-white transition-[transform,width] duration-[280ms] ease-out"
           style={{
             width: `calc(${100 / options.length}% - 4px)`,
             transform: `translateX(calc(${activeIndex * 100}% + ${activeIndex * 4}px))`,

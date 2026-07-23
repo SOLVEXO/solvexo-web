@@ -141,7 +141,7 @@ export function AdminBanners() {
         ) : error ? (
           <p className="text-[13px] text-error text-center py-8">{error}</p>
         ) : banners.length === 0 ? (
-          <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <div className="bg-white border border-bone rounded-[10px]">
             <EmptyState
               icon={<ImageIcon size={28} className="text-slate" />}
               title="No banners yet"
@@ -152,7 +152,7 @@ export function AdminBanners() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...banners].sort((a, b) => a.order - b.order).map(b => (
-              <div key={b._id} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col transition-shadow duration-200 hover:shadow-md">
+              <div key={b._id} className="bg-white border border-bone rounded-[10px] overflow-hidden flex flex-col transition-colors duration-200 hover:border-brand-orange/25">
                 <div className="aspect-[16/9] bg-cream">
                   <img loading="lazy" decoding="async" src={b.bannerImage} alt="" className="w-full h-full object-cover" />
                 </div>

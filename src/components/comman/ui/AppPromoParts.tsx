@@ -6,28 +6,42 @@ import { clsx } from 'clsx';
 // a solid standalone card — callers are responsible for integrating these
 // into whatever glassy/transparent surface fits their context.
 
-export function QrGlyph({ size = 74 }: { size?: number }) {
-  const finder = 'border-[2.5px] border-carbon rounded-[2px] flex items-center justify-center';
-  const noise = [
-    1, 0, 1, 0, 1, 0, 1,
-    0, 1, 1, 0, 1, 1, 0,
-    1, 0, 0, 1, 0, 0, 1,
-    0, 0, 1, 0, 1, 0, 1,
-    1, 1, 0, 1, 0, 1, 0,
-  ];
-  const dot = Math.max(3, Math.round(size / 18));
+// Real QR codes always have exactly 3 finder patterns (top-left, top-right,
+// bottom-left) plus a dense module grid — this mirrors that structure closely
+// enough to read as "an actual QR code" rather than an abstract pattern,
+// without encoding a real scannable payload.
+function QrFinder() {
   return (
-    <div className="bg-white rounded-[14px] p-[10px] shrink-0 grid grid-rows-[1fr_2fr_1fr] gap-[4px]" style={{ width: size, height: size }}>
-      <div className="flex items-center justify-between">
-        <div className={clsx(finder, 'w-1/4 h-full')}><span className="rounded-[1px] bg-carbon" style={{ width: dot, height: dot }} /></div>
-        <div className={clsx(finder, 'w-1/4 h-full')}><span className="rounded-[1px] bg-carbon" style={{ width: dot, height: dot }} /></div>
+    <div className="w-full h-full bg-white border-[2.5px] border-carbon rounded-[2px] p-[2.5px]">
+      <div className="w-full h-full bg-carbon rounded-[1px] flex items-center justify-center p-[2.5px]">
+        <div className="w-full h-full bg-white rounded-[0.5px] flex items-center justify-center p-[2px]">
+          <div className="w-full h-full bg-carbon rounded-[0.5px]" />
+        </div>
       </div>
-      <div className="grid grid-cols-7 gap-[3px] px-[3px]">
-        {noise.map((v, i) => <div key={i} className={v ? 'bg-carbon rounded-[0.5px]' : ''} />)}
+    </div>
+  );
+}
+
+export function QrGlyph({ size = 74 }: { size?: number }) {
+  const noise = [
+    1, 0, 1, 1, 0, 1, 0, 1, 1,
+    0, 1, 0, 0, 1, 1, 0, 0, 1,
+    1, 1, 1, 0, 1, 0, 1, 1, 0,
+    0, 0, 1, 1, 0, 1, 1, 0, 1,
+    1, 0, 0, 1, 1, 0, 0, 1, 0,
+    0, 1, 1, 0, 0, 1, 1, 0, 1,
+    1, 0, 1, 1, 0, 1, 0, 1, 1,
+    0, 1, 0, 0, 1, 0, 1, 1, 0,
+    1, 1, 0, 1, 0, 1, 0, 0, 1,
+  ];
+  return (
+    <div className="relative bg-white rounded-[14px] p-[9px] shrink-0" style={{ width: size, height: size }}>
+      <div className="grid grid-cols-9 grid-rows-9 gap-[1.5px] w-full h-full">
+        {noise.map((v, i) => <div key={i} className={clsx('rounded-[0.5px]', v && 'bg-carbon')} />)}
       </div>
-      <div className="flex items-center">
-        <div className={clsx(finder, 'w-1/4 h-full')}><span className="rounded-[1px] bg-carbon" style={{ width: dot, height: dot }} /></div>
-      </div>
+      <div className="absolute top-[9px] left-[9px] w-[28%] h-[28%]"><QrFinder /></div>
+      <div className="absolute top-[9px] right-[9px] w-[28%] h-[28%]"><QrFinder /></div>
+      <div className="absolute bottom-[9px] left-[9px] w-[28%] h-[28%]"><QrFinder /></div>
     </div>
   );
 }
@@ -78,8 +92,8 @@ export function PhoneMockup({ className, primary = true, size = 'md' }: { classN
     <div
       className={clsx(
         width,
-        'aspect-[9/19] rounded-[24px] bg-carbon p-[5px]',
-        primary ? 'shadow-[0_24px_50px_rgba(0,0,0,0.45)] z-[1]' : 'shadow-[0_16px_36px_rgba(0,0,0,0.35)] opacity-90',
+        'aspect-[9/19] rounded-[24px] bg-carbon p-[5px] border',
+        primary ? 'border-white/15 z-[1]' : 'border-white/10 opacity-90',
         className,
       )}
     >
@@ -109,7 +123,7 @@ export function PhoneMockup({ className, primary = true, size = 'md' }: { classN
 export function FloatingMiniCard({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
     <div className={clsx(
-      'absolute flex items-center gap-2 px-3 py-2 rounded-[12px] border border-white/15 bg-white/10 backdrop-blur-md shadow-[0_12px_28px_rgba(0,0,0,0.25)]',
+      'absolute flex items-center gap-2 px-3 py-2 rounded-[12px] border border-white/15 bg-white/10 backdrop-blur-md',
       className,
     )}>
       {children}

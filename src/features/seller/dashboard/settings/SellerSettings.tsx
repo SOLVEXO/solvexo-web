@@ -128,7 +128,7 @@ export function SellerSettings() {
 
             {/* Profile section */}
             {active === 'profile' && (
-              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6">
                 <p className="text-base font-bold text-carbon mb-[22px]">Profile</p>
 
                 {profileLoading ? (
@@ -286,7 +286,7 @@ export function SellerSettings() {
 
             {/* Other sections */}
             {active !== 'profile' && active !== 'notifications' && (
-              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6">
                 <div className="flex flex-col items-center justify-center py-[60px] text-center">
                   <div className="text-slate mb-[14px]">
                     {activeItem ? <activeItem.Icon size={40} /> : <Settings size={40} />}
@@ -314,7 +314,7 @@ export function SellerSettings() {
 
           {/* ── RIGHT: Nav sidebar ── */}
           <div>
-            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] p-0 sticky top-[70px]">
+            <div className="bg-white border border-bone rounded-[10px] p-0 sticky top-[70px]">
               {SETTINGS_NAV.map((group, gi) => (
                 <div key={group.group}>
                   {gi > 0 && <div className="h-px bg-[#F0EEE6]" />}

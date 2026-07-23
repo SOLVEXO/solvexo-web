@@ -70,7 +70,7 @@ export function StoreIntegrations() {
         {/* Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-xs">
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
               <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
               <p className="text-xs text-slate mt-1">{m.sub}</p>
@@ -86,7 +86,7 @@ export function StoreIntegrations() {
             style={{
               background: activeTab === 'connected' ? '#141413' : '#fff',
               color:      activeTab === 'connected' ? '#fff'    : '#4A4945',
-              boxShadow:  activeTab !== 'connected' ? '0 0 0 1px #E8E6DC' : 'none',
+              border: activeTab !== 'connected' ? '1px solid #E8E6DC' : '1px solid transparent',
             }}
           >
             <Check size={13} /> Connected (6)
@@ -97,7 +97,7 @@ export function StoreIntegrations() {
             style={{
               background: activeTab === 'available' ? '#141413' : '#fff',
               color:      activeTab === 'available' ? '#fff'    : '#4A4945',
-              boxShadow:  activeTab !== 'available' ? '0 0 0 1px #E8E6DC' : 'none',
+              border: activeTab !== 'available' ? '1px solid #E8E6DC' : '1px solid transparent',
             }}
           >
             Available (6)
@@ -108,7 +108,7 @@ export function StoreIntegrations() {
         {activeTab === 'connected' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredApps.map(app => (
-              <div key={app.id} className="bg-white border border-bone rounded-[10px] shadow-xs px-[22px] py-5 relative transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-[1px]">
+              <div key={app.id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 relative transition-transform duration-200 hover:-translate-y-[1px]">
                 <div className="absolute top-4 right-4">
                   <span className="px-[9px] py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C] flex items-center gap-1">
                     <Check size={10} /> Connected
@@ -147,7 +147,7 @@ export function StoreIntegrations() {
         )}
 
         {/* Developer Tools */}
-        <div className="bg-white border border-bone rounded-[10px] shadow-xs px-[22px] py-5 mt-1">
+        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 mt-1">
           <p className="text-[15px] font-bold text-carbon mb-5">Developer Tools — API &amp; Webhooks</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
             <div>

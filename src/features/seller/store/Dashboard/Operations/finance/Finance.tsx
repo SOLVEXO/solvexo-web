@@ -413,7 +413,7 @@ export function StoreFinance() {
             { label: 'Total Paid Out', value: fmt(dashboard.summary.totalPaidOut), sub: 'All time' },
             { label: 'Pending Tax', value: fmt(dashboard.summary.pendingTax), sub: 'Estimated' },
           ].map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
               <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
               {'trend' in m && m.trend && <p className="text-xs text-[#2D8A4E] mt-1">{m.trend}</p>}
@@ -426,7 +426,7 @@ export function StoreFinance() {
         <div className="flex gap-4 items-start flex-wrap lg:flex-nowrap">
 
           {/* LEFT — Transaction History */}
-          <div className="flex-1 min-w-0 w-full bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+          <div className="flex-1 min-w-0 w-full bg-white border border-bone rounded-[10px] overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-bone flex-wrap gap-2.5">
               <p className="text-sm font-semibold text-carbon">Transaction History</p>
               <div className="flex items-center gap-2">
@@ -494,7 +494,7 @@ export function StoreFinance() {
           <div className="w-full lg:w-[280px] shrink-0 flex flex-col gap-3.5">
 
             {/* Payout Methods */}
-            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
+            <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[13px] font-semibold text-carbon">Payout Methods</p>
                 <button onClick={() => setMethodModal(true)} className="text-slate hover:text-brand-orange cursor-pointer bg-transparent border-none">
@@ -534,7 +534,7 @@ export function StoreFinance() {
 
             {/* Payout Schedule */}
             {schedule && (
-              <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
+              <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
                 <p className="text-[13px] font-semibold text-carbon mb-3">Payout Schedule</p>
                 <div className="flex flex-col gap-2.5">
                   {[
@@ -559,7 +559,7 @@ export function StoreFinance() {
             )}
 
             {/* Fee Breakdown */}
-            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
+            <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
               <p className="text-[13px] font-semibold text-carbon mb-3">Fee Breakdown</p>
               <div className="flex flex-col gap-2.5">
                 {[
@@ -578,7 +578,7 @@ export function StoreFinance() {
             </div>
 
             {/* Tax Reports */}
-            <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
+            <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[13px] font-semibold text-carbon">Tax Reports</p>
                 <button onClick={handleGenerateTaxReport} disabled={generatingTax}
@@ -610,7 +610,7 @@ export function StoreFinance() {
 
             {/* Recent Payouts */}
             {recentPayouts.length > 0 && (
-              <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
+              <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
                 <p className="text-[13px] font-semibold text-carbon mb-3">Recent Payouts</p>
                 <div className="flex flex-col gap-2.5">
                   {recentPayouts.map(p => {

@@ -40,7 +40,7 @@ export function FinanceReportsTab({ params }: { params: AdminFinanceParams }) {
       ) : settlement.error ? (
         <AnalyticsErrorState message={settlement.error} onRetry={settlement.refetch} />
       ) : settlement.data ? (
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-5">
+        <div className="bg-white border border-bone rounded-[10px] px-5 py-5">
           <p className="text-[14px] font-bold text-charcoal mb-4">Settlement Report</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
             <MetricCard label="Gross Sales" value={formatCurrency(settlement.data.grossSales)} />
@@ -72,7 +72,7 @@ export function FinanceReportsTab({ params }: { params: AdminFinanceParams }) {
       )}
 
       {/* Refunds */}
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+      <div className="bg-white border border-bone rounded-[10px]">
         <div className="px-5 pt-4 pb-3">
           <p className="text-[14px] font-bold text-charcoal">Refund Report</p>
           {refunds.data?.note && <p className="text-[12px] text-slate">{refunds.data.note}</p>}
@@ -91,7 +91,7 @@ export function FinanceReportsTab({ params }: { params: AdminFinanceParams }) {
       </div>
 
       {/* Tax reports */}
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+      <div className="bg-white border border-bone rounded-[10px]">
         <div className="px-5 pt-4 pb-3">
           <p className="text-[14px] font-bold text-charcoal">Tax Reports</p>
           <p className="text-[12px] text-slate">Generated per-store by sellers (Finance → Tax Reports).</p>

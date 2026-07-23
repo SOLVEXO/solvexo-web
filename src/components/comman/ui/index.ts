@@ -105,4 +105,6 @@ export { FloatingAppWidget }                  from './FloatingAppWidget';
 
 export { MiniCart }                           from './MiniCart';
 
+export { MiniWishlist }                       from './MiniWishlist';
+
 export { StoreFeatureCard }                   from './StoreFeatureCard';

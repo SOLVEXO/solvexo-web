@@ -36,7 +36,7 @@ export function POSTopBar({ activeTab, setActiveTab }: POSTopBarProps) {
   const tabs = mode === 'owner' ? [...OPERATOR_TABS, ...OWNER_ONLY_TABS] : OPERATOR_TABS;
 
   return (
-    <div className="shrink-0 flex flex-wrap items-center gap-3 sm:gap-5 px-3 sm:px-5 py-[10px] sm:h-16 bg-pos-surface-2 border-b border-pos-border shadow-[0_1px_0_rgba(255,255,255,0.03)]">
+    <div className="shrink-0 flex flex-wrap items-center gap-3 sm:gap-5 px-3 sm:px-5 py-[10px] sm:h-16 bg-pos-surface-2 border-b border-pos-border">
       {/* Logo */}
       <div className="flex items-center gap-[10px] shrink-0">
         <SolvexoIcon size={28} />
@@ -59,7 +59,7 @@ export function POSTopBar({ activeTab, setActiveTab }: POSTopBarProps) {
                 'shrink-0 h-11 px-[16px] rounded-xl text-[13px] font-semibold cursor-pointer border-0',
                 'flex items-center gap-[7px] capitalize transition-all duration-150',
                 activeTab === tab
-                  ? 'bg-gradient-to-b from-brand-orange to-brand-deep-orange text-white shadow-[0_4px_14px_rgba(217,119,87,0.4)]'
+                  ? 'bg-gradient-to-b from-brand-orange to-brand-deep-orange text-white'
                   : 'bg-transparent text-pos-faint hover:text-white hover:bg-pos-surface-3',
               )}
             >
@@ -170,7 +170,7 @@ function CashAdjustmentOverlay({
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4 pos-overlay-enter">
-      <div className="w-full max-w-[360px] bg-pos-surface-3 border border-pos-border-strong rounded-[20px] shadow-2xl p-6 pos-panel-enter">
+      <div className="w-full max-w-[360px] bg-pos-surface-3 border border-pos-border-strong rounded-[20px] p-6 pos-panel-enter">
         <div className="flex items-center gap-[10px] mb-5">
           <div className="w-9 h-9 rounded-xl bg-brand-orange/15 border border-brand-orange/30 flex items-center justify-center shrink-0">
             <Banknote size={16} className="text-brand-orange" />
@@ -222,7 +222,7 @@ function CashAdjustmentOverlay({
           <button
             onClick={submit}
             disabled={saving}
-            className="flex-1 h-12 bg-gradient-to-b from-brand-orange to-brand-deep-orange border-0 rounded-xl text-[13px] font-semibold text-white cursor-pointer shadow-[0_6px_18px_rgba(217,119,87,0.35)] transition-all duration-150 disabled:opacity-50 active:scale-[0.98]"
+            className="flex-1 h-12 bg-gradient-to-b from-brand-orange to-brand-deep-orange border-0 rounded-xl text-[13px] font-semibold text-white cursor-pointer transition-transform duration-150 disabled:opacity-50 active:scale-[0.98]"
           >
             {saving ? 'Saving…' : 'Confirm'}
           </button>

@@ -416,14 +416,14 @@ export function AdminSubscriptions() {
           {(loading && !overview) ? Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="bg-white border border-bone rounded-[10px] px-5 py-4 h-[84px] animate-pulse" />
           )) : metrics.map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
               <p className="text-[24px] font-bold text-carbon leading-[1.15]">{m.value}</p>
             </div>
           ))}
         </div>
 
-        <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="px-5 py-[14px] border-b border-bone flex items-center gap-[10px]">
             {(['stores', 'failures', 'webhooks', 'insights'] as Tab[]).map(t => (
               <button key={t} onClick={() => setTab(t)}

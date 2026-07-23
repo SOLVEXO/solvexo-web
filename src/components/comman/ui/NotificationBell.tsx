@@ -120,7 +120,7 @@ export function NotificationBell() {
 
       {/* Bell Dropdown Popup */}
       {isOpen && (
-        <div className="absolute right-0 top-[calc(100%+10px)] bg-white border border-bone rounded-[16px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] w-[320px] md:w-[350px] max-w-[calc(100vw-2rem)] overflow-hidden flex flex-col">
+        <div className="absolute right-0 top-[calc(100%+10px)] bg-white border border-bone rounded-[16px] w-[320px] md:w-[350px] max-w-[calc(100vw-2rem)] overflow-hidden flex flex-col">
           {/* Header */}
           <div className="px-4 py-3 border-b border-bone flex items-center justify-between bg-cream/30">
             <div className="flex items-center gap-1.5">
@@ -225,7 +225,7 @@ export function NotificationBell() {
 
       {/* Slide-in real-time push toast overlay */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-[9999] bg-carbon text-white rounded-xl shadow-[0_12px_32px_rgba(0,0,0,0.25)] border border-charcoal p-3.5 flex gap-3.5 max-w-[340px] animate-slide-in duration-300">
+        <div className="fixed bottom-6 right-6 z-[9999] bg-carbon text-white rounded-xl border border-charcoal p-3.5 flex gap-3.5 max-w-[340px] animate-slide-in duration-300">
           <div className="size-9 rounded-lg bg-dark-active flex items-center justify-center shrink-0 border border-charcoal">
             {getNotificationIcon(toast.type)}
           </div>

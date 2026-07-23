@@ -9,7 +9,7 @@ interface ReceiptOverlayProps {
 export function ReceiptOverlay({ sale, resetSale }: ReceiptOverlayProps) {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/85 backdrop-blur-sm z-20 px-4 pos-overlay-enter">
-      <div className="bg-pos-surface-3 border border-pos-border-strong rounded-[24px] shadow-2xl p-7 w-full max-w-[340px] max-h-[90%] overflow-y-auto pos-panel-enter">
+      <div className="bg-pos-surface-3 border border-pos-border-strong rounded-[24px] p-7 w-full max-w-[340px] max-h-[90%] overflow-y-auto pos-panel-enter">
 
         {/* Header */}
         <div className="text-center mb-6">
@@ -61,7 +61,7 @@ export function ReceiptOverlay({ sale, resetSale }: ReceiptOverlayProps) {
           </button>
           <button
             onClick={resetSale}
-            className="h-[52px] bg-gradient-to-b from-brand-orange to-brand-deep-orange border-0 rounded-xl text-[14px] font-bold text-white cursor-pointer flex items-center justify-center gap-[8px] shadow-[0_8px_24px_rgba(217,119,87,0.35)] transition-all duration-150 active:scale-[0.98]"
+            className="h-[52px] bg-gradient-to-b from-brand-orange to-brand-deep-orange border-0 rounded-xl text-[14px] font-bold text-white cursor-pointer flex items-center justify-center gap-[8px] transition-transform duration-150 active:scale-[0.98]"
           >
             New Sale <ArrowRight size={15} />
           </button>
