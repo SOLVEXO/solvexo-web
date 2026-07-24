@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Settings,
   Shield,
+  HelpCircle, Mail, FileText, Cookie,
 } from 'lucide-react';
 
 // ── Page definitions with Lucide icons ───────────────────────────────────────
@@ -19,7 +20,15 @@ const PUBLIC_PAGES: NavPage[] = [
   // { label: 'Storefront',     path: '/store/teacherspro',  Icon: Store        },
   { label: 'Pricing',        path: '/pricing',            Icon: DollarSign   },
   { label: 'For Sellers',    path: '/sellers',            Icon: Users        },
-  { label: 'Edu Listing',    path: '/education',          Icon: BookOpen     },
+  { label: 'Edu Listing',    path: '/EducationMarketplace',          Icon: BookOpen     },
+];
+
+const LEGAL_PAGES: NavPage[] = [
+  { label: 'FAQ',            path: '/faq',              Icon: HelpCircle },
+  { label: 'Contact Us',     path: '/contact-us',        Icon: Mail       },
+  { label: 'Privacy Policy', path: '/privacy-policy',    Icon: FileText   },
+  { label: 'Terms',          path: '/terms-of-service',  Icon: FileText   },
+  { label: 'Cookie Policy',  path: '/cookie-policy',     Icon: Cookie     },
 ];
 
 const AUTH_PAGES: NavPage[] = [
@@ -153,6 +162,11 @@ export function ReferenceNav() {
 
       <SectionLabel>Public</SectionLabel>
       {PUBLIC_PAGES.map(p => <NavChip key={p.path} {...p} active={isActive(p.path)} />)}
+
+      <Pipe />
+
+      <SectionLabel>Legal</SectionLabel>
+      {LEGAL_PAGES.map(p => <NavChip key={p.path} {...p} active={isActive(p.path)} />)}
 
       <Pipe />
 

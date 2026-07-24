@@ -80,14 +80,14 @@ function AddressForm({ initial, onSave, onCancel, saving }: {
         <button
           onClick={() => onSave(form)} disabled={saving}
           className={clsx(
-            'px-6 py-[9px] rounded-[9px] text-[13px] font-semibold bg-brand-orange text-white border-none flex items-center gap-[6px]',
+            'px-6 min-h-11 rounded-[9px] text-[13px] font-semibold bg-brand-orange text-white border-none flex items-center gap-[6px]',
             saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-brand-deep-orange transition-colors',
           )}
         >
           {saving && <Loader2 size={13} className="animate-spin" />}
           {saving ? 'Saving…' : 'Save Address'}
         </button>
-        <button onClick={onCancel} className="px-[18px] py-[9px] rounded-[9px] text-[13px] border border-bone bg-white text-slate cursor-pointer">
+        <button onClick={onCancel} className="px-[18px] min-h-11 rounded-[9px] text-[13px] border border-bone bg-white text-slate cursor-pointer">
           Discard
         </button>
       </div>

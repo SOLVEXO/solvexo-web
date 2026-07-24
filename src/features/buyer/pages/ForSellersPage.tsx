@@ -68,7 +68,9 @@ export function ForSellersPage() {
 
         <div className="max-w-[760px] mx-auto text-center relative z-[1]">
           <div className="inline-flex items-center gap-2 bg-[rgba(217,119,87,0.15)] border border-[rgba(217,119,87,0.3)] rounded-[20px] px-[14px] py-[5px] mb-6">
-            <span className="text-[12px] text-brand-orange font-medium">Trusted by 50,000+ sellers worldwide</span>
+            <span className="text-[12px] text-brand-orange font-medium">
+              Trusted by {stats ? `${compactNumber.format(stats.sellersCount)}+` : '50,000+'} sellers worldwide
+            </span>
           </div>
 
           <h1 className="block text-3xl md:text-5xl lg:text-[48px] font-bold text-white leading-[1.15] mb-5" style={{ fontFamily: SERIF }}>

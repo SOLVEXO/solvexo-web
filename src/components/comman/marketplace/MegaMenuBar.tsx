@@ -119,9 +119,9 @@ function CategoriesMegaContent({
   if (categories.length === 0) return <p className="text-[13px] text-slate">No categories yet.</p>;
 
   return (
-    <div className="flex gap-8">
+    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
       {/* Column 1 — category links */}
-      <div className="w-[210px] shrink-0 border-r border-bone pr-6">
+      <div className="w-full lg:w-[210px] shrink-0 border-b lg:border-b-0 lg:border-r border-bone pb-5 lg:pb-0 pr-0 lg:pr-6">
         <MegaSectionLabel>Categories</MegaSectionLabel>
         <div className="flex flex-col gap-[2px] max-h-[400px] overflow-y-auto">
           {categories.map(cat => (
@@ -144,10 +144,10 @@ function CategoriesMegaContent({
       </div>
 
       {/* Column 2 — subcategory icon grid + trending searches */}
-      <div className="flex-1 min-w-0 border-r border-bone pr-8">
+      <div className="w-full lg:flex-1 lg:min-w-0 border-b lg:border-b-0 lg:border-r border-bone pb-5 lg:pb-0 pr-0 lg:pr-8">
         <MegaSectionLabel>Subcategories</MegaSectionLabel>
         {active && active.children.length > 0 ? (
-          <div className="grid grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-4 mb-6">
+          <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-4 mb-6">
             {active.children.map(sub => (
               <button
                 key={sub._id}
@@ -184,12 +184,12 @@ function CategoriesMegaContent({
       </div>
 
       {/* Column 3 — popular products (last column; Featured promo banner removed to give this a full row) */}
-      <div className="shrink-0">
+      <div className="w-full lg:w-auto lg:shrink-0">
         <MegaSectionLabel>Popular Products</MegaSectionLabel>
         {spotlight.length === 0 ? (
           <p className="text-[12px] text-slate">Nothing trending yet.</p>
         ) : (
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {spotlight.slice(0, 4).map(p => <RailCard key={p._id} product={p} onClick={onProductClick} />)}
           </div>
         )}
@@ -204,8 +204,8 @@ function FlashSaleMegaContent({ flashDeals, countdown, onProductClick }: {
   onProductClick: (id: string) => void;
 }) {
   return (
-    <div className="flex gap-8">
-      <div className="flex-1 min-w-0">
+    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+      <div className="w-full lg:flex-1 lg:min-w-0">
         <MegaSectionLabel>Today's Flash Deals</MegaSectionLabel>
         {flashDeals.length === 0 ? (
           <p className="text-[12px] text-slate">No flash deals right now.</p>
@@ -230,7 +230,7 @@ function FlashSaleMegaContent({ flashDeals, countdown, onProductClick }: {
           </div>
         )}
       </div>
-      <div className="w-[220px] shrink-0 rounded-2xl bg-gradient-to-br from-[#E11D48] to-brand-deep-orange p-5 flex flex-col items-center text-center text-white">
+      <div className="w-full lg:w-[220px] shrink-0 rounded-2xl bg-gradient-to-br from-[#E11D48] to-brand-deep-orange p-5 flex flex-col items-center text-center text-white">
         <Flame size={26} className="mb-2" />
         <p className="text-[15px] font-bold mb-1">Flash Sale</p>
         <p className="text-[11px] text-white/85 mb-4">Deep discounts, while stock lasts.</p>
@@ -305,7 +305,7 @@ const ABOUT_CARDS: { Icon: LucideIcon; bg: string; title: string; description: s
 ];
 const ABOUT_QUICK_LINKS = [
   { label: 'Marketplace',         path: '/marketplace' },
-  { label: 'Education Marketplace', path: '/education' },
+  { label: 'Education Marketplace', path: '/EducationMarketplace' },
   { label: 'AI Commerce',         path: '/sellers' },
   { label: 'POS',                 path: '/sellers' },
   { label: 'Help Center',         path: '/faq' },
@@ -314,38 +314,49 @@ const ABOUT_QUICK_LINKS = [
 
 function AboutMegaContent({ onNavigate }: { onNavigate: (path: string) => void }) {
   return (
-    <div className="flex gap-8">
+    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
       {/* Featured cards */}
-      <div className="flex-1 grid grid-cols-3 gap-5">
-        {ABOUT_CARDS.map(({ Icon, bg, title, description, path }) => (
-          <button
-            key={title}
-            onClick={() => onNavigate(path)}
-            className="flex flex-col items-start text-left bg-transparent border-none cursor-pointer p-0 group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-          >
-            <div
-              className="w-full aspect-[4/3] rounded-[14px] flex items-center justify-center mb-3 transition-transform duration-200 group-hover:-translate-y-[2px]"
-              style={{ background: bg }}
+      <div className="flex-1">
+        <MegaSectionLabel>Discover Solvexo</MegaSectionLabel>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {ABOUT_CARDS.map(({ Icon, bg, title, description, path }) => (
+            <button
+              key={title}
+              onClick={() => onNavigate(path)}
+              className="relative flex flex-col items-start text-left bg-white rounded-2xl border border-bone overflow-hidden cursor-pointer group p-4 transition-all duration-300 hover:-translate-y-[3px] hover:border-brand-orange/25 hover:shadow-[0_10px_28px_rgba(20,15,10,0.07)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
             >
-              <Icon size={28} className="text-brand-orange" strokeWidth={1.5} />
-            </div>
-            <p className="text-[13px] font-bold text-carbon leading-snug mb-1 group-hover:text-brand-orange transition-colors">{title}</p>
-            <p className="text-[11px] text-slate leading-[1.45]">{description}</p>
-          </button>
-        ))}
+              {/* Sweep-in top accent — same hover language as RailCard/StoreFeatureCard */}
+              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#F0A57A] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
+
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center mb-3 ring-1 ring-black/[0.04] transition-transform duration-200 group-hover:scale-[1.06]"
+                style={{ background: bg }}
+              >
+                <Icon size={20} className="text-brand-orange" strokeWidth={1.75} />
+              </div>
+
+              <div className="flex items-center gap-[5px] mb-1">
+                <p className="text-[13px] font-bold text-carbon leading-snug group-hover:text-brand-orange transition-colors">{title}</p>
+                <ChevronRight size={13} className="text-brand-orange opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 shrink-0" />
+              </div>
+              <p className="text-[11px] text-slate leading-[1.45]">{description}</p>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Quick links */}
-      <div className="w-[170px] shrink-0 border-l border-bone pl-8">
+      <div className="w-full lg:w-[180px] shrink-0 border-t lg:border-t-0 lg:border-l border-bone pt-5 lg:pt-0 pl-0 lg:pl-8">
         <MegaSectionLabel>Quick Links</MegaSectionLabel>
-        <div className="flex flex-col gap-[9px]">
+        <div className="flex flex-col gap-[2px] -mx-2">
           {ABOUT_QUICK_LINKS.map(item => (
             <button
               key={item.label}
               onClick={() => onNavigate(item.path)}
-              className="text-left text-[12.5px] text-charcoal bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              className="group flex items-center justify-between text-left text-[12.5px] text-charcoal bg-transparent border-none cursor-pointer rounded-lg px-2 py-[7px] hover:bg-cream hover:text-brand-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
             >
               {item.label}
+              <ChevronRight size={12} className="text-slate/40 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-brand-orange transition-all duration-200" />
             </button>
           ))}
         </div>
@@ -353,7 +364,7 @@ function AboutMegaContent({ onNavigate }: { onNavigate: (path: string) => void }
 
       {/* App download panel — orange/white gradient, dark-on-light badges since
           this panel sits on a light surface (unlike AppDownloadBanner's dark one). */}
-      <div className="w-[210px] shrink-0 rounded-2xl bg-gradient-to-br from-brand-pale-orange to-white border border-bone p-5 flex flex-col items-center text-center">
+      <div className="w-full lg:w-[210px] shrink-0 rounded-2xl bg-gradient-to-br from-brand-pale-orange to-white border border-bone p-5 flex flex-col items-center text-center">
         <p className="text-[12.5px] font-bold text-carbon mb-1">Get the Solvexo app</p>
         <p className="text-[11px] text-charcoal/70 leading-[1.5] mb-4">Shop faster, track orders, and get instant deal alerts.</p>
         <QrGlyph size={64} />

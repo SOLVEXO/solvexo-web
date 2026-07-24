@@ -35,10 +35,10 @@ function GlowOrb({ className }: { className?: string }) {
 /* ── Login → Marketplace branding ────────────────────────────────────────── */
 export function MarketplaceMockup() {
   return (
-    <div className="relative w-full max-w-[300px] mx-auto py-6">
+    <div className="relative w-full max-w-[300px] mx-auto py-[clamp(2px,1.5vh,24px)]">
       <GlowOrb className="w-40 h-40 bg-brand-orange/30 -top-6 -right-4" />
-      <GlassPanel className="relative p-4 auth-float">
-        <div className="flex items-center justify-between mb-3">
+      <GlassPanel className="relative p-[clamp(10px,1.8vh,16px)] auth-float">
+        <div className="flex items-center justify-between mb-[clamp(4px,1vh,12px)]">
           <div className="flex items-center gap-2">
             <div className="size-7 rounded-lg bg-brand-orange/20 border border-brand-orange/30 flex items-center justify-center">
               <ShoppingBag size={13} className="text-brand-orange" />
@@ -47,7 +47,7 @@ export function MarketplaceMockup() {
           </div>
           <span className="text-[10px] text-white/50">Live</span>
         </div>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-[clamp(4px,1vh,10px)]">
           {[
             { grad: 'from-brand-orange to-brand-deep-orange', price: '$24' },
             { grad: 'from-[#2D8A4E] to-[#1A72C2]',            price: '$58' },
@@ -55,7 +55,7 @@ export function MarketplaceMockup() {
             { grad: 'from-[#1A72C2] to-[#6B4EE6]',             price: '$36' },
           ].map((p, i) => (
             <div key={i} className="rounded-[10px] bg-white/[0.06] border border-white/10 overflow-hidden">
-              <div className={clsx('h-12 bg-gradient-to-br', p.grad)} />
+              <div className={clsx('h-[clamp(28px,6vh,48px)] bg-gradient-to-br', p.grad)} />
               <div className="px-2 py-[6px] flex items-center justify-between">
                 <div className="h-[5px] w-8 rounded-full bg-white/25" />
                 <span className="text-[10px] font-bold text-white/85">{p.price}</span>
@@ -86,7 +86,7 @@ export function MarketplaceMockup() {
 export function DashboardMockup() {
   const bars = [40, 65, 48, 80, 58, 92, 70];
   return (
-    <div className="relative w-full max-w-[300px] mx-auto py-6">
+    <div className="relative w-full max-w-[300px] mx-auto py-[clamp(6px,2vh,24px)]">
       <GlowOrb className="w-40 h-40 bg-[#1A72C2]/25 -top-4 -left-6" />
       <GlassPanel className="relative p-4 auth-float">
         <div className="flex items-center justify-between mb-3">
@@ -116,7 +116,7 @@ export function DashboardMockup() {
 /* ── Forgot Password → Security branding ─────────────────────────────────── */
 export function SecurityMockup() {
   return (
-    <div className="relative w-full max-w-[240px] mx-auto py-8 flex items-center justify-center">
+    <div className="relative w-full max-w-[240px] mx-auto py-[clamp(6px,2.4vh,32px)] flex items-center justify-center">
       <div className="absolute size-28 rounded-full border border-white/15 auth-glow-pulse" />
       <div className="absolute size-40 rounded-full border border-white/10" />
       <GlowOrb className="w-44 h-44 bg-brand-orange/20" />
@@ -134,7 +134,7 @@ export function SecurityMockup() {
 /* ── Reset / New Password → Password-security branding ───────────────────── */
 export function PasswordSecurityMockup() {
   return (
-    <div className="relative w-full max-w-[260px] mx-auto py-6">
+    <div className="relative w-full max-w-[260px] mx-auto py-[clamp(6px,2vh,24px)]">
       <GlowOrb className="w-40 h-40 bg-[#2D8A4E]/25 -top-2 -right-2" />
       <GlassPanel className="relative p-4 auth-float">
         <div className="flex items-center gap-2.5 mb-4">
@@ -166,7 +166,7 @@ export function PasswordSecurityMockup() {
 /* ── OTP Verification (register flow) → Inbox / Email branding ───────────── */
 export function InboxMockup() {
   return (
-    <div className="relative w-full max-w-[260px] mx-auto py-6 flex items-center justify-center">
+    <div className="relative w-full max-w-[260px] mx-auto py-[clamp(6px,2vh,24px)] flex items-center justify-center">
       <GlowOrb className="w-40 h-40 bg-brand-orange/25 -top-4" />
       <GlassPanel className="relative w-full p-4 auth-float">
         <div className="flex items-center gap-2.5 mb-3">
@@ -194,7 +194,7 @@ export function InboxMockup() {
 /* ── OTP Verification (forgot-password flow) → Identity branding ─────────── */
 export function IdentityMockup() {
   return (
-    <div className="relative w-full max-w-[240px] mx-auto py-8 flex items-center justify-center">
+    <div className="relative w-full max-w-[240px] mx-auto py-[clamp(6px,2.4vh,32px)] flex items-center justify-center">
       <div className="absolute size-32 rounded-full border border-white/10" />
       <GlowOrb className="w-44 h-44 bg-[#1A72C2]/20" />
       <div className="relative size-20 rounded-[22px] bg-white/[0.08] backdrop-blur-md border border-white/25 flex items-center justify-center auth-float">
@@ -212,7 +212,7 @@ export function IdentityMockup() {
 export function SellerDashboardMockup() {
   const bars = [35, 55, 42, 70, 50, 85, 62, 78];
   return (
-    <div className="relative w-full max-w-[300px] mx-auto py-4">
+    <div className="relative w-full max-w-[300px] mx-auto py-[clamp(4px,1.4vh,16px)]">
       <GlowOrb className="w-40 h-40 bg-brand-orange/25 -top-6 -left-4" />
       <GlassPanel className="relative p-4 auth-float">
         <div className="flex items-center justify-between mb-3">
@@ -254,7 +254,7 @@ export function SellerDashboardMockup() {
 /* ── Admin Login → Platform control branding ──────────────────────────────── */
 export function AdminControlMockup() {
   return (
-    <div className="relative w-full max-w-[280px] mx-auto py-6">
+    <div className="relative w-full max-w-[280px] mx-auto py-[clamp(6px,2vh,24px)]">
       <GlowOrb className="w-40 h-40 bg-error/25 -top-4 -right-4" />
       <GlassPanel className="relative p-4 auth-float">
         <div className="flex items-center justify-between mb-3">

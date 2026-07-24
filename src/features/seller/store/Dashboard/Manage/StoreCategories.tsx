@@ -5,7 +5,7 @@ import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
 import { apiAddCategory } from '@/api/services/categories';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
-import { SkeletonBox } from '@/components/comman/ui';
+import { SkeletonBox, ImageUpload } from '@/components/comman/ui';
 
 // A store's main category is fixed at creation (assertValidRootCategory on
 // the backend) — sellers can never change it or see other main categories
@@ -57,9 +57,8 @@ function AddSubcategoryModal({ mainCategoryId, onClose, onCreated }: {
             className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white resize-y transition-colors duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
         </div>
         <div>
-          <label className="text-[12px] font-medium text-charcoal block mb-1.5">Image URL (optional)</label>
-          <input value={image} onChange={e => setImage(e.target.value)} placeholder="https://…"
-            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white transition-colors duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
+          <label className="text-[12px] font-medium text-charcoal block mb-1.5">Image (optional)</label>
+          <ImageUpload value={image ? [image] : []} onChange={urls => setImage(urls[0] ?? '')} maxFiles={1} />
         </div>
         {error && <p className="text-[12px] text-error">{error}</p>}
       </div>

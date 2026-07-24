@@ -266,12 +266,22 @@ export default function StoreProductList() {
                   placeholder="Search by name or SKU…"
                   className="w-[220px]"
                 />
-                <button
-                  onClick={() => handleRetry()}
-                  className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[6px] transition-colors duration-150 hover:bg-bone shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-1"
-                >
-                  <RefreshCw size={11} /> Refresh
-                </button>
+                {selectedKeys.size > 0 ? (
+                  <button
+                    disabled
+                    title="Bulk delete isn't available yet — delete products individually from the row menu."
+                    className="flex items-center gap-1.5 text-[11px] font-semibold text-error border border-[#FECACA] rounded-[6px] px-2.5 py-[6px] opacity-50 cursor-not-allowed shrink-0"
+                  >
+                    <Trash2 size={12} /> Delete selected ({selectedKeys.size})
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleRetry()}
+                    className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[6px] transition-colors duration-150 hover:bg-bone shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-1"
+                  >
+                    <RefreshCw size={11} /> Refresh
+                  </button>
+                )}
               </div>
             </div>
 
@@ -310,15 +320,6 @@ export default function StoreProductList() {
                 selectable
                 selectedKeys={selectedKeys}
                 onSelectionChange={setSelectedKeys}
-                bulkActions={keys => (
-                  <button
-                    disabled
-                    title="Bulk delete isn't available yet — delete products individually from the row menu."
-                    className="flex items-center gap-1.5 text-[12px] font-semibold text-error border border-[#FECACA] rounded-[6px] px-2.5 py-[6px] opacity-50 cursor-not-allowed"
-                  >
-                    <Trash2 size={12} /> Delete selected ({keys.size})
-                  </button>
-                )}
                 pagination={isSearching ? undefined : {
                   page,
                   total:    totalProducts,

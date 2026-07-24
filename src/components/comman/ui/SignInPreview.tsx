@@ -7,10 +7,8 @@ import { useLogin } from '@/hooks/auth/useLogin';
 import { useSocialLogin } from '@/hooks/auth/useSocialLogin';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
-import type { SocialLoginPayload } from '@/api/services/auth';
 import { Input } from './Input';
 import { Button } from './Button';
-import { SocialLoginModal } from './SocialLoginModal';
 
 /* ── Minimal inline brand marks — same simplified style used across auth ────── */
 function GoogleIcon() {
@@ -54,13 +52,14 @@ const QUICK_LINKS = [
 
 // Alibaba-style hover preview: hovering "Sign In" opens a quick-login panel
 // (desktop only — touch devices have no hover, so mobile keeps the plain link).
+// Closes only on an actual outside click, never on mouse-leave — a validation
+// message appearing while typing shifts the panel's layout under the cursor,
+// which used to fire a spurious mouseleave and close the panel mid-keystroke.
 export function SignInPreview() {
   const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [open, setOpen] = useState(false);
   const [remember, setRemember] = useState(true);
-  const [socialProvider, setSocialProvider] = useState<Provider | null>(null);
 
   const login  = useLogin();
   const social = useSocialLogin();
@@ -75,13 +74,7 @@ export function SignInPreview() {
     },
   );
 
-  const openNow = useCallback(() => {
-    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
-    setOpen(true);
-  }, []);
-  const closeSoon = useCallback(() => {
-    closeTimer.current = setTimeout(() => setOpen(false), 200);
-  }, []);
+  const openNow = useCallback(() => setOpen(true), []);
 
   useEffect(() => {
     if (!open) return;
@@ -92,24 +85,8 @@ export function SignInPreview() {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const handleSocialSuccess = useCallback(async (profile: {
-    userName: string; email: string; socialId: string; image: string; token: string;
-  }) => {
-    if (!socialProvider) return;
-    const payload: SocialLoginPayload = {
-      authProvider: socialProvider,
-      socialId:     profile.socialId,
-      userName:     profile.userName,
-      email:        profile.email,
-      image:        profile.image,
-      token:        profile.token,
-    };
-    await social.execute(payload);
-    setSocialProvider(null);
-  }, [socialProvider, social]);
-
   return (
-    <div ref={ref} className="relative hidden md:block" onMouseEnter={openNow} onMouseLeave={closeSoon}>
+    <div ref={ref} className="relative hidden md:block" onMouseEnter={openNow}>
       <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
         Sign In
       </Button>
@@ -199,11 +176,11 @@ export function SignInPreview() {
             <span className="text-[10px] text-slate whitespace-nowrap">or continue with</span>
             <div className="flex-1 h-px bg-bone" />
           </div>
-          <div className="flex items-center gap-2 px-4 pb-4">
+          <div className="flex items-center gap-2 px-4 pb-2">
             {SOCIALS.map(({ Icon, label, provider }) => (
               <button
                 key={provider}
-                onClick={() => setSocialProvider(provider)}
+                onClick={() => social.notConfigured(provider)}
                 aria-label={`Continue with ${label}`}
                 title={label}
                 className="flex-1 h-9 rounded-[9px] border border-bone bg-white flex items-center justify-center cursor-pointer hover:bg-cream hover:border-slate/30 transition-colors"
@@ -212,6 +189,12 @@ export function SignInPreview() {
               </button>
             ))}
           </div>
+
+          {social.error && (
+            <p className="text-[11px] text-error px-4 pb-3 flex items-start gap-1">
+              <AlertTriangle size={11} className="shrink-0 mt-[1px]" /> {social.error}
+            </p>
+          )}
 
           {/* Footer */}
           <div className="px-4 pb-4 pt-3 border-t border-bone flex items-center justify-between">
@@ -229,15 +212,6 @@ export function SignInPreview() {
             </button>
           </div>
         </div>
-      )}
-
-      {socialProvider && (
-        <SocialLoginModal
-          provider={socialProvider}
-          onClose={() => setSocialProvider(null)}
-          onSuccess={handleSocialSuccess}
-          loading={social.loading}
-        />
       )}
     </div>
   );

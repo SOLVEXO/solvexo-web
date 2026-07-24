@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRegister } from '@/hooks/auth/useRegister';
@@ -6,17 +6,13 @@ import { useSocialLogin } from '@/hooks/auth/useSocialLogin';
 import { Button }      from '@/components/comman/ui/Button';
 import { Input }       from '@/components/comman/ui/Input';
 import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
-import { SocialLoginModal } from '@/components/comman/ui/SocialLoginModal';
 import { RoleSegmentedControl } from '@/components/comman/ui/RoleSegmentedControl';
-import { SocialLoginRow, type SocialProvider } from '@/components/comman/ui/SocialIcons';
+import { SocialLoginRow } from '@/components/comman/ui/SocialIcons';
 import { Eye, EyeOff, ArrowRight, ShoppingBag, Store, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useForm }     from '@/hooks/useForm';
 import { registerSchema, type RegisterFormData } from '@/utils/validation/schemas';
-import type { SocialLoginPayload } from '@/api/services/auth';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MarketplaceMockup, DashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
-
-type Provider = SocialProvider;
 
 const ROLE_OPTIONS = [
   { value: 'user',   label: 'Buyer',  description: 'Browse and purchase from the marketplace' },
@@ -35,7 +31,6 @@ export function RegisterPage() {
   const register  = useRegister();
   const social    = useSocialLogin();
   const [showPass, setShowPass] = useState(false);
-  const [socialProvider, setSocialProvider] = useState<Provider | null>(null);
 
   const { values, errors, set, setValue, blur, handleSubmit } = useForm(
     registerSchema,
@@ -54,26 +49,10 @@ export function RegisterPage() {
     },
   );
 
-  const handleSocialSuccess = useCallback(async (profile: {
-    userName: string; email: string; socialId: string; image: string; token: string;
-  }) => {
-    if (!socialProvider) return;
-    const payload: SocialLoginPayload = {
-      authProvider: socialProvider,
-      socialId:     profile.socialId,
-      userName:     profile.userName,
-      email:        profile.email,
-      image:        profile.image,
-      token:        profile.token,
-    };
-    await social.execute(payload);
-    setSocialProvider(null);
-  }, [socialProvider, social]);
-
   return (
     <AuthSplitLayout
       panelGradient="from-carbon via-[#241F1B] to-brand-deep-orange"
-      heading={values.role === 'seller' ? <>Launch your<br />store today</> : <>Start selling or<br />shopping today</>}
+      heading={values.role === 'seller' ? 'Launch your store today' : 'Start selling or shopping today'}
       subtext="Create your free Solvexo account and join a growing community of buyers and creators."
       highlights={HIGHLIGHTS}
       maxWidth="max-w-[520px]"
@@ -165,7 +144,7 @@ export function RegisterPage() {
 
       {/* Social buttons */}
       <SocialLoginRow
-        onSelect={setSocialProvider}
+        onSelect={social.notConfigured}
         disabled={social.loading || register.loading}
         className="mb-4"
       />
@@ -176,15 +155,6 @@ export function RegisterPage() {
           Sign In
         </Button>
       </p>
-
-      {socialProvider && (
-        <SocialLoginModal
-          provider={socialProvider}
-          loading={social.loading}
-          onClose={() => setSocialProvider(null)}
-          onSuccess={handleSocialSuccess}
-        />
-      )}
     </AuthSplitLayout>
   );
 }

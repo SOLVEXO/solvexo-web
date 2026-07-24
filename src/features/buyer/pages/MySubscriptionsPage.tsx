@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { RefreshCw, ImageOff } from 'lucide-react';
 import {
   Card, EmptyState, SkeletonBox, Table, type TableColumn,
-  ActionMenu, type ActionMenuItem, Badge, PageHeader,
+  ActionMenu, type ActionMenuItem, Badge, PageHeader, Toggle,
 } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
@@ -359,10 +359,10 @@ function NotificationPreferencesPanel() {
       </div>
       <div className="flex flex-col p-5 gap-2">
         {(Object.keys(NOTIF_LABELS) as Array<keyof NotificationPreferences>).map(key => (
-          <label key={key} className="flex items-center justify-between text-[13px] text-graphite cursor-pointer py-1">
+          <div key={key} className="flex items-center justify-between text-[13px] text-graphite py-1">
             {NOTIF_LABELS[key]}
-            <input type="checkbox" checked={prefs[key]} disabled={saving} onChange={() => toggle(key)} />
-          </label>
+            <Toggle checked={prefs[key]} disabled={saving} onChange={() => toggle(key)} />
+          </div>
         ))}
       </div>
     </Card>

@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import { clsx } from 'clsx';
 
 /* ── Brand SVG icons — single source of truth (was copy-pasted 3× across
-   LoginPage, RegisterPage and SocialLoginModal). ─────────────────────────── */
+   LoginPage, RegisterPage and SignInPreview). ─────────────────────────── */
 
 export function GoogleIcon({ size = 17 }: { size?: number }) {
   return (

@@ -5,6 +5,7 @@ export function useProductsByCategory(
   page = 1, limit = 10, categoryId?: string,
   productType?: 'physical' | 'digital' | 'educational',
   educationLevel?: string, normalizedCustomLevel?: string,
+  campaignId?: string,
 ) {
   const [products, setProducts] = useState<MarketplaceProduct[]>([]);
   const [total,    setTotal]    = useState(0);
@@ -18,7 +19,7 @@ export function useProductsByCategory(
     let cancelled = false;
     setLoading(true);
     setError('');
-    apiGetAllProducts(page, limit, categoryId, productType, educationLevel, normalizedCustomLevel)
+    apiGetAllProducts(page, limit, categoryId, productType, educationLevel, normalizedCustomLevel, campaignId)
       .then(res => {
         if (!cancelled) {
           setProducts(res.data.products);
@@ -30,7 +31,7 @@ export function useProductsByCategory(
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [page, limit, categoryId, productType, educationLevel, normalizedCustomLevel, reloadKey]);
+  }, [page, limit, categoryId, productType, educationLevel, normalizedCustomLevel, campaignId, reloadKey]);
 
   return { products, total, loading, error, refetch };
 }

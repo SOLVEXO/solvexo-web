@@ -127,6 +127,11 @@ export function apiResetPassword(payload: ResetPayload) {
   return client.post<never, ApiResponse<Record<string, never>>>(ENDPOINTS.AUTH.RESET_PASSWORD, payload);
 }
 
+/** POST /auth/logout — invalidates the current access token's Redis session server-side */
+export function apiLogout() {
+  return client.post<never, ApiResponse<Record<string, never>>>(ENDPOINTS.AUTH.LOGOUT);
+}
+
 /** GET /auth/getprofile — returns logged-in user's profile */
 export interface ProfileData {
   _id:          string;

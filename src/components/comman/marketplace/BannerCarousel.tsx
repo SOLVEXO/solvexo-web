@@ -33,14 +33,14 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
           <button
             onClick={() => go(-1)}
             aria-label="Previous banner"
-            className="absolute left-3 top-1/2 -translate-y-1/2 size-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            className="absolute left-3 top-1/2 -translate-y-1/2 size-10 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity z-10"
           >
             <ChevronLeft size={16} className="text-charcoal" />
           </button>
           <button
             onClick={() => go(1)}
             aria-label="Next banner"
-            className="absolute right-3 top-1/2 -translate-y-1/2 size-8 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            className="absolute right-3 top-1/2 -translate-y-1/2 size-10 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity z-10"
           >
             <ChevronRight size={16} className="text-charcoal" />
           </button>
@@ -50,9 +50,13 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
                 key={b._id}
                 onClick={() => setIndex(i)}
                 aria-label={`Go to banner ${i + 1}`}
-                className="h-[6px] rounded-full border-none cursor-pointer transition-all"
-                style={{ width: i === index ? 18 : 6, background: i === index ? '#D97757' : 'rgba(255,255,255,0.7)' }}
-              />
+                className="p-2 -m-2 flex items-center cursor-pointer"
+              >
+                <span
+                  className="block h-[6px] rounded-full transition-all"
+                  style={{ width: i === index ? 18 : 6, background: i === index ? '#D97757' : 'rgba(255,255,255,0.7)' }}
+                />
+              </button>
             ))}
           </div>
         </>

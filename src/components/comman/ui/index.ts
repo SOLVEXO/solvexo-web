@@ -75,9 +75,8 @@ export { ComingSoonBanner }                  from './ComingSoonBanner';
 
 export { AnnouncementBanner }                 from './AnnouncementBanner';
 
-export { DealsBanner }                        from './DealsBanner';
+export { DealsBanner, useCountdown, CountdownUnit } from './DealsBanner';
 
-export { SocialLoginModal }                  from './SocialLoginModal';
 export { NotificationBell }                  from './NotificationBell';
 export { NotificationsPanel }                 from './NotificationsPanel';
 
@@ -90,6 +89,9 @@ export { Breadcrumb }                        from './Breadcrumb';
 export type { BreadcrumbItem }               from './Breadcrumb';
 
 export { PageHeader }                        from './PageHeader';
+
+export { LegalPageLayout }                   from './LegalPageLayout';
+export type { LegalSection }                 from './LegalPageLayout';
 
 export { Footer }                            from './Footer';
 

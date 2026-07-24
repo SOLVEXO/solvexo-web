@@ -106,7 +106,7 @@ export function AccountDashboard() {
       />
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard
           label="Total Orders"
           value={totalOrders ?? 0}
@@ -132,7 +132,7 @@ export function AccountDashboard() {
         />
       </div>
 
-      <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 320px' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
         <div className="min-w-0 flex flex-col gap-5">
           {/* Recent orders */}
           <Card padding="none">

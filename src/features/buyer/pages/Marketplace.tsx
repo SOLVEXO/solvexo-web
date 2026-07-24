@@ -15,13 +15,14 @@ import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { MegaMenuBar } from '@/components/comman/marketplace/MegaMenuBar';
 import {
   ShoppingBag,
-  SlidersHorizontal, X,
+  SlidersHorizontal, X, Zap,
   ShieldCheck, BadgeCheck, RefreshCcw,
 } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { apiGetTopStores, type PublicStoreListItem } from '@/api/services/store';
 import { apiSearchStores } from '@/api/services/search';
+import { apiGetPublicActiveCampaigns, type PublicCampaign } from '@/api/services/marketing/publicCampaigns';
 
 
 
@@ -83,7 +84,7 @@ const SORT_OPTIONS = [
 
 export function Marketplace() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   usePageTitle('Marketplace');
 
   const [sortBy,        setSortBy]        = useState('newest');
@@ -96,6 +97,10 @@ export function Marketplace() {
   // Seeded from ?category= so links from the mega menu / other pages land
   // pre-filtered to that category.
   const [selectedCategory, setSelectedCategory] = useState(() => searchParams.get('category') ?? '');
+  // Seeded from ?campaign= — "Shop the Sale" on the DealsBanner lands here
+  // pre-filtered to only that campaign's participating stores.
+  const [campaignFilterId, setCampaignFilterId] = useState(() => searchParams.get('campaign') ?? '');
+  const [campaignFilterInfo, setCampaignFilterInfo] = useState<PublicCampaign | null>(null);
   const [topStores,        setTopStores]        = useState<PublicStoreListItem[]>([]);
   const [storeResults,     setStoreResults]      = useState<PublicStoreListItem[]>([]);
 
@@ -113,9 +118,28 @@ export function Marketplace() {
   useEffect(() => {
     const fromUrl = searchParams.get('category') ?? '';
     setSelectedCategory(fromUrl);
+    setCampaignFilterId(searchParams.get('campaign') ?? '');
     setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // Campaign metadata (name/discount) for the filter banner — the product
+  // list itself only needs the id (passed straight to the backend), but the
+  // banner needs something human-readable to show what's being browsed.
+  useEffect(() => {
+    if (!campaignFilterId) { setCampaignFilterInfo(null); return; }
+    let cancelled = false;
+    apiGetPublicActiveCampaigns()
+      .then(res => { if (!cancelled) setCampaignFilterInfo(res.data.find(c => c._id === campaignFilterId) ?? null); })
+      .catch(() => { if (!cancelled) setCampaignFilterInfo(null); });
+    return () => { cancelled = true; };
+  }, [campaignFilterId]);
+
+  const clearCampaignFilter = useCallback(() => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('campaign');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -142,7 +166,9 @@ export function Marketplace() {
   };
 
   const LIMIT = 20;
-  const { products, total, loading, error, refetch } = useProductsByCategory(page, LIMIT, selectedCategory || undefined);
+  const { products, total, loading, error, refetch } = useProductsByCategory(
+    page, LIMIT, selectedCategory || undefined, undefined, undefined, undefined, campaignFilterId || undefined,
+  );
   const { addToCart, adding }    = useCartContext();
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
   const { banners } = useBanners();
@@ -349,7 +375,7 @@ export function Marketplace() {
           <button
             onClick={() => setMobileFilters(true)}
             className={clsx(
-              'flex items-center gap-2 px-3 py-[9px] rounded-[10px] border text-[13px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+              'flex items-center gap-2 px-3 min-h-11 rounded-[10px] border text-[13px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
               activeFilterCount > 0
                 ? 'bg-brand-pale-orange border-brand-orange text-brand-deep-orange'
                 : 'bg-white border-bone text-charcoal hover:bg-cream',
@@ -381,6 +407,59 @@ export function Marketplace() {
           </div>
         )}
 
+        {/* Active campaign filter — cleared explicitly, never silently dropped,
+            so a buyer always knows they're viewing a narrowed "sale" set.
+            When the campaign has an uploaded banner image, this is its real
+            showcase — there's enough height here for a normal photo to read
+            properly (unlike the thin DealsBanner ticker, which only ever
+            shows a small recognizable preview of the same image). */}
+        {campaignFilterId && (
+          campaignFilterInfo?.bannerImage ? (
+            <div className="relative mb-5 overflow-hidden rounded-[14px] h-[140px] sm:h-[170px]">
+              <img src={campaignFilterInfo.bannerImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/10" />
+              <button
+                onClick={clearCampaignFilter}
+                className="absolute top-3 right-3 flex items-center gap-1 rounded-full border border-white/30 bg-black/30 px-3 min-h-10 text-[12px] font-semibold text-white cursor-pointer hover:bg-black/45 backdrop-blur-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              >
+                <X size={12} /> Clear
+              </button>
+              <div className="absolute inset-x-0 bottom-0 px-4 pb-3.5 pt-8 sm:px-5">
+                <p className="font-serif text-[18px] sm:text-[22px] font-bold text-white leading-tight">{campaignFilterInfo.name}</p>
+                <p className="text-[12px] sm:text-[13px] text-white/85 mt-1">
+                  {!loading && `${total} product${total === 1 ? '' : 's'} from participating stores`}
+                  {campaignFilterInfo.discountType && campaignFilterInfo.discountValue != null && (
+                    <> · {campaignFilterInfo.discountType === 'percentage' ? `Up to ${campaignFilterInfo.discountValue}% off` : `$${campaignFilterInfo.discountValue} off`}</>
+                  )}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-5 flex items-center gap-3 rounded-[12px] border border-brand-orange/25 bg-brand-pale-orange px-4 py-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white text-brand-orange">
+                <Zap size={15} className="fill-brand-orange" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-bold text-brand-deep-orange truncate">
+                  {campaignFilterInfo ? `Shopping: ${campaignFilterInfo.name}` : 'Shopping a platform sale'}
+                </p>
+                <p className="text-[11.5px] text-charcoal/70">
+                  {!loading && `${total} product${total === 1 ? '' : 's'} from participating stores`}
+                  {campaignFilterInfo?.discountType && campaignFilterInfo.discountValue != null && (
+                    <> · {campaignFilterInfo.discountType === 'percentage' ? `Up to ${campaignFilterInfo.discountValue}% off` : `$${campaignFilterInfo.discountValue} off`}</>
+                  )}
+                </p>
+              </div>
+              <button
+                onClick={clearCampaignFilter}
+                className="shrink-0 flex items-center gap-1 rounded-full border border-brand-orange/30 bg-white px-3 min-h-10 text-[12px] font-semibold text-brand-deep-orange cursor-pointer hover:bg-brand-pale-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              >
+                <X size={12} /> Clear
+              </button>
+            </div>
+          )
+        )}
+
         <div className="flex gap-5 lg:gap-6 items-start">
 
           {/* ── Desktop sidebar ───────────────────────────────────────────────── */}
@@ -402,7 +481,7 @@ export function Marketplace() {
                 {activeFilterCount > 0 && (
                   <button
                     onClick={clearFilters}
-                    className="text-[11px] font-semibold text-brand-orange hover:opacity-70 transition-opacity cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                    className="text-[11px] font-semibold text-brand-orange hover:opacity-70 transition-opacity cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                   >
                     Clear
                   </button>
@@ -437,8 +516,10 @@ export function Marketplace() {
               </div>
             )}
 
-            {/* Grid: 2-col mobile → 2-col sm → 3-col md (no sidebar) → 3-col lg → 4-col xl */}
-            <div id="marketplace-grid" className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px] scroll-mt-[76px]">
+            {/* Grid columns step at every breakpoint on purpose (not just sm/xl) so
+                card width never jumps discontinuously when the lg: sidebar appears:
+                2 @ 320-767 → 3 @ md → 4 @ lg → 5 @ xl → 6 @ 1440 → 7 @ 1920 */}
+            <div id="marketplace-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[1440px]:grid-cols-6 min-[1920px]:grid-cols-7 gap-[10px] sm:gap-3 lg:gap-[14px] scroll-mt-[76px]">
               {loading
                 ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
                 : filtered.map(p => {
@@ -522,14 +603,14 @@ export function Marketplace() {
             {activeFilterCount > 0 && (
               <button
                 onClick={clearFilters}
-                className="text-[12px] font-medium text-slate hover:text-brand-orange transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                className="text-[12px] font-medium text-slate hover:text-brand-orange transition-colors cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
               >
                 Clear all
               </button>
             )}
             <button
               onClick={() => setMobileFilters(false)}
-              className="size-8 rounded-full bg-cream flex items-center justify-center cursor-pointer hover:bg-bone transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              className="size-10 rounded-full bg-cream flex items-center justify-center cursor-pointer hover:bg-bone transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
             >
               <X size={15} className="text-charcoal" />
             </button>

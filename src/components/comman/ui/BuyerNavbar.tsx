@@ -60,8 +60,8 @@ function useUncontrolledSearch() {
 
 // ── Search box with recent / trending / category suggestions ────────────────
 function SearchBox({
-  value, onChange, placeholder, categories, onCategorySelect, onSubmit,
-}: BuyerNavbarSearchConfig & { onSubmit: (term?: string) => void }) {
+  value, onChange, placeholder, categories, onCategorySelect, onSubmit, autoFocus,
+}: BuyerNavbarSearchConfig & { onSubmit: (term?: string) => void; autoFocus?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [recent, setRecent] = useState<string[]>([]);
@@ -112,7 +112,8 @@ function SearchBox({
           onFocus={() => setOpen(true)}
           placeholder={placeholder ?? 'Search marketplace...'}
           aria-label={placeholder ?? 'Search marketplace...'}
-          className="border-0 outline-none text-[13px] text-carbon placeholder:text-slate bg-transparent w-full min-w-[80px]"
+          autoFocus={autoFocus}
+          className="border-0 outline-none text-[13px] text-carbon placeholder:text-slate bg-transparent w-full min-w-0"
         />
         {value && (
           <button
@@ -211,14 +212,16 @@ function AccountActions() {
     );
   }
   return (
-    <div className="flex items-center gap-2 shrink-0">
+    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
       <SignInPreview />
-      <Button variant="primary" size="sm" onClick={() => navigate('/onboard')} className="hidden md:inline-flex">
-        Start Selling
-      </Button>
+      <div className="hidden md:inline-flex">
+        <Button variant="primary" size="sm" onClick={() => navigate('/onboard')}>
+          Start Selling
+        </Button>
+      </div>
       <button
         onClick={() => navigate('/login')}
-        className="md:hidden text-[13px] font-medium text-charcoal border border-bone rounded-md px-3 py-[6px] bg-transparent cursor-pointer hover:bg-cream transition-colors"
+        className="md:hidden text-[13px] font-medium text-charcoal border border-bone rounded-md px-[10px] py-[6px] bg-transparent cursor-pointer hover:bg-cream transition-colors"
       >
         Sign In
       </button>
@@ -246,6 +249,11 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
   const scrolled = useCompactOnScroll();
   const searchValue    = search?.value    ?? uncontrolled.value;
   const searchOnChange = search?.onChange ?? uncontrolled.onChange;
+  // Below sm (~640px) there isn't room for logo + a real search input + wishlist/cart/
+  // account icons in one row (confirmed via measurement: they need ~110px more than a
+  // 320-375px viewport has) — so on mobile the search collapses to a single icon button
+  // that expands to a full-width row in its place, same pattern as Amazon/Shopify mobile.
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const handleSearchSubmit = useCallback((term?: string) => {
     pushLocalRecentSearch(term ?? searchValue);
@@ -258,15 +266,18 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
       scrolled ? 'bg-white border-bone' : 'bg-white/90 border-transparent',
     )}>
       <div className={clsx(
-        'flex items-center gap-3 px-4 sm:px-6 lg:px-10 transition-[height] duration-200',
+        'flex items-center gap-2 sm:gap-3 px-4 sm:px-6 lg:px-10 transition-[height] duration-200',
         scrolled ? 'h-[52px]' : 'h-[60px]',
       )}>
 
-        {/* Logo */}
+        {/* Logo — hidden while the mobile search row is expanded so the input gets full width */}
         <button
           onClick={() => navigate('/')}
           aria-label="Solvexo home"
-          className="flex items-center gap-[6px] shrink-0 cursor-pointer bg-transparent border-none p-0 outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-brand-orange/40"
+          className={clsx(
+            'items-center gap-[6px] shrink-0 cursor-pointer bg-transparent border-none p-0 outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-brand-orange/40',
+            mobileSearchOpen ? 'hidden sm:flex' : 'flex',
+          )}
         >
           <SolvexoLogo size={scrolled ? 24 : 28} className="transition-[width,height] duration-200" />
           {contextLabel && (
@@ -288,22 +299,48 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
           </div>
         ) : (
           <>
-            <SearchBox
-              value={searchValue}
-              onChange={searchOnChange}
-              placeholder={search?.placeholder}
-              categories={search?.categories}
-              onCategorySelect={search?.onCategorySelect}
-              onSubmit={handleSearchSubmit}
-            />
+            {/* Single SearchBox instance — its container is always visible at sm+,
+                and on mobile only shown once the search icon below is tapped. */}
+            <div className={clsx('min-w-0 justify-center', mobileSearchOpen ? 'flex flex-1' : 'hidden sm:flex sm:flex-1')}>
+              <SearchBox
+                value={searchValue}
+                onChange={searchOnChange}
+                placeholder={search?.placeholder}
+                categories={search?.categories}
+                onCategorySelect={search?.onCategorySelect}
+                onSubmit={term => { handleSearchSubmit(term); setMobileSearchOpen(false); }}
+                autoFocus={mobileSearchOpen}
+              />
+            </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-2 shrink-0">
+            {!mobileSearchOpen && (
+              <button
+                onClick={() => setMobileSearchOpen(true)}
+                aria-label="Search"
+                className="sm:hidden ml-auto shrink-0 w-11 h-11 flex items-center justify-center rounded-full text-charcoal cursor-pointer hover:bg-cream transition-colors"
+              >
+                <Search size={18} />
+              </button>
+            )}
+            {mobileSearchOpen && (
+              <button
+                onClick={() => setMobileSearchOpen(false)}
+                aria-label="Close search"
+                className="sm:hidden shrink-0 w-11 h-11 flex items-center justify-center rounded-full bg-cream text-charcoal cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            )}
+
+            {/* Actions — hidden on mobile while search is expanded so the input gets full width */}
+            <div className={clsx('items-center gap-1 sm:gap-2 shrink-0', mobileSearchOpen ? 'hidden sm:flex' : 'flex')}>
               {backTo && (
-                <Button variant="ghost" size="sm" onClick={() => navigate(backTo.path)} className="hidden md:inline-flex">
-                  <ArrowLeft size={14} className="inline align-middle mr-1" />
-                  {backTo.label}
-                </Button>
+                <div className="hidden md:inline-flex">
+                  <Button variant="ghost" size="sm" onClick={() => navigate(backTo.path)}>
+                    <ArrowLeft size={14} className="inline align-middle mr-1" />
+                    {backTo.label}
+                  </Button>
+                </div>
               )}
               <MiniWishlist />
               <MiniCart accentColor={accentColor} />

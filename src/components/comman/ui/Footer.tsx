@@ -6,6 +6,7 @@ import {
   Truck, Store, ChevronDown, Send, Check,
 } from 'lucide-react';
 import { SolvexoLogo } from './SolvexoLogo';
+import { apiSubscribeNewsletter } from '../../../api/services/newsletter';
 
 interface FooterLink {
   label: string;
@@ -17,7 +18,7 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
     heading: 'Shop',
     links: [
       { label: 'Marketplace', path: '/marketplace' },
-      { label: 'Education',   path: '/education' },
+      { label: 'Education',   path: '/EducationMarketplace' },
       { label: 'My Orders',   path: '/account/orders' },
       { label: 'Wishlist',    path: '/account/wishlist' },
     ],
@@ -34,7 +35,7 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
     heading: 'Support',
     links: [
       { label: 'FAQ',              path: '/faq' },
-      { label: 'Contact Us',       path: '/faq' },
+      { label: 'Contact Us',       path: '/contact-us' },
       { label: 'Shipping Info' },
       { label: 'Returns & Refunds' },
     ],
@@ -42,9 +43,9 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
   {
     heading: 'Legal',
     links: [
-      { label: 'Privacy Policy' },
-      { label: 'Terms of Service' },
-      { label: 'Cookie Policy' },
+      { label: 'Privacy Policy', path: '/privacy-policy' },
+      { label: 'Terms of Service', path: '/terms-of-service' },
+      { label: 'Cookie Policy', path: '/cookie-policy' },
     ],
   },
 ];
@@ -139,13 +140,25 @@ function PillSelector({ options }: { options: string[] }) {
 }
 
 function Newsletter() {
-  const [email, setEmail]   = useState('');
-  const [subscribed, setSub] = useState(false);
+  const [email, setEmail]     = useState('');
+  const [subscribed, setSub]  = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
-    setSub(true);
+    if (!email.trim() || loading) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await apiSubscribeNewsletter(email.trim());
+      setSub(true);
+      void res;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (subscribed) {
@@ -158,22 +171,28 @@ function Newsletter() {
   }
 
   return (
-    <form onSubmit={submit} className="flex items-stretch gap-2 max-w-[360px]">
-      <input
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        type="email"
-        placeholder="Your email address"
-        aria-label="Email address"
-        className="flex-1 min-w-0 px-3.5 py-[10px] rounded-lg border border-white/15 bg-white/[0.04] text-[12.5px] text-white placeholder:text-[#8B8985] outline-none focus:border-brand-orange transition-colors"
-      />
-      <button
-        type="submit"
-        className="flex items-center gap-[6px] px-4 rounded-lg bg-brand-orange text-white text-[12.5px] font-semibold border-none cursor-pointer hover:bg-brand-deep-orange transition-colors shrink-0"
-      >
-        <Send size={13} /> <span className="hidden sm:inline">Subscribe</span>
-      </button>
-    </form>
+    <div className="max-w-[360px]">
+      <form onSubmit={submit} className="flex items-stretch gap-2">
+        <input
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          type="email"
+          required
+          placeholder="Your email address"
+          aria-label="Email address"
+          disabled={loading}
+          className="flex-1 min-w-0 px-3.5 py-[10px] rounded-lg border border-white/15 bg-white/[0.04] text-[12.5px] text-white placeholder:text-[#8B8985] outline-none focus:border-brand-orange transition-colors disabled:opacity-60"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex items-center gap-[6px] px-4 rounded-lg bg-brand-orange text-white text-[12.5px] font-semibold border-none cursor-pointer hover:bg-brand-deep-orange transition-colors shrink-0 disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          <Send size={13} /> <span className="hidden sm:inline">{loading ? 'Subscribing…' : 'Subscribe'}</span>
+        </button>
+      </form>
+      {error && <p className="mt-1.5 text-[11.5px] text-red-400">{error}</p>}
+    </div>
   );
 }
 

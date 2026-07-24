@@ -32,6 +32,10 @@ const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/Edu
 const PricingPage          = lazy(() => named(import('@/features/buyer/pages/PricingPage'),                     'PricingPage'));
 const ForSellersPage       = lazy(() => named(import('@/features/buyer/pages/ForSellersPage'),                  'ForSellersPage'));
 const FaqPage              = lazy(() => named(import('@/features/buyer/pages/FaqPage'),                         'FaqPage'));
+const PrivacyPolicyPage    = lazy(() => named(import('@/features/buyer/pages/PrivacyPolicyPage'),               'PrivacyPolicyPage'));
+const TermsOfServicePage   = lazy(() => named(import('@/features/buyer/pages/TermsOfServicePage'),              'TermsOfServicePage'));
+const CookiePolicyPage     = lazy(() => named(import('@/features/buyer/pages/CookiePolicyPage'),                'CookiePolicyPage'));
+const ContactUsPage        = lazy(() => named(import('@/features/buyer/pages/ContactUsPage'),                   'ContactUsPage'));
 const MaintenancePage      = lazy(() => named(import('@/features/buyer/pages/MaintenancePage'),                 'MaintenancePage'));
 
 // ── Account (buyer) ───────────────────────────────────────────────────────────
@@ -90,8 +94,6 @@ const StoreMarketing     = lazy(() => named(import('@/features/seller/store/Dash
 const StoreLoyalty       = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/loyalty/Loyalty'),          'StoreLoyalty'));
 const StoreSubscriptions = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/subscriptions/Subscriptions'), 'StoreSubscriptions'));
 const StoreIntegrations  = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/integrations/Integrations'),'StoreIntegrations'));
-const StoreActivity      = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/activity/Activity'),        'StoreActivity'));
-const StoreFollowers     = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/followers/StoreFollowers'), 'StoreFollowers'));
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 const AdminOverview      = lazy(() => named(import('@/features/admin/pages/AdminOverview'),                     'AdminOverview'));
@@ -132,6 +134,10 @@ export const router = createBrowserRouter([
               { path: 'pricing',         element: <PricingPage /> },
               { path: 'sellers',         element: <ForSellersPage /> },
               { path: 'faq',             element: <FaqPage /> },
+              { path: 'privacy-policy',  element: <PrivacyPolicyPage /> },
+              { path: 'terms-of-service', element: <TermsOfServicePage /> },
+              { path: 'cookie-policy',   element: <CookiePolicyPage /> },
+              { path: 'contact-us',      element: <ContactUsPage /> },
             ],
           },
           // Account — nested routes, each section is its own deep-linkable page
@@ -160,7 +166,7 @@ export const router = createBrowserRouter([
           { path: 'order-success',   element: <OrderSuccessPage /> },
           { path: 'marketplace/:id', element: <ProductDetail /> },
           { path: 'store/:slug', element: <SellerStorefront /> },
-          { path: 'education',   element: <EducationMarketplace /> },
+          { path: 'EducationMarketplace',   element: <EducationMarketplace /> },
         ],
       },
 
@@ -223,8 +229,8 @@ export const router = createBrowserRouter([
           { path: 'loyalty',                          element: <StoreLoyalty /> },
           { path: 'subscriptions',                    element: <StoreSubscriptions /> },
           { path: 'integrations',                     element: <StoreIntegrations /> },
-          { path: 'activity',                         element: <StoreActivity /> },
-          { path: 'followers',                        element: <StoreFollowers /> },
+          { path: 'activity',                         element: <Navigate to="../settings" replace /> },
+          { path: 'followers',                        element: <Navigate to="../customer/list" replace /> },
           { path: 'pos-admin',                        element: <Navigate to="../pos" replace /> },
           { path: 'shipping',                         element: <SellerShipping /> },
           { path: 'messages',                         element: <SellerMessages /> },

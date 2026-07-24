@@ -81,6 +81,7 @@ const initDig = {
   downloadLimit: 'unlimited', linkExpiryDays: '',
   pdfStampingEnabled: false, licenseType: 'personal' as LicenseType,
   buyerDeliveryMessage: '', educationLevel: '' as EducationLevel | '', customLevel: '',
+  previewEnabled: false,
 };
 type PhysForm = typeof initPhys;
 type DigForm  = typeof initDig;
@@ -145,7 +146,7 @@ export default function StoreAddProduct() {
           isListedOnSolvexo: dig.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? dig.scheduledAt || null : null,
           price: Number(dig.price), compareAtPrice: dig.compareAtPrice ? Number(dig.compareAtPrice) : null,
-          digital: { files, downloadLimit: dig.downloadLimit, linkExpiryDays: dig.linkExpiryDays ? Number(dig.linkExpiryDays) : null, pdfStampingEnabled: dig.pdfStampingEnabled, licenseType: dig.licenseType, buyerDeliveryMessage: dig.buyerDeliveryMessage },
+          digital: { files, downloadLimit: dig.downloadLimit, linkExpiryDays: dig.linkExpiryDays ? Number(dig.linkExpiryDays) : null, pdfStampingEnabled: dig.pdfStampingEnabled, licenseType: dig.licenseType, buyerDeliveryMessage: dig.buyerDeliveryMessage, preview: { enabled: dig.previewEnabled, sourceFileIndex: 0 } },
         });
         addCachedProduct(storeId, { product: res.data.product, variant: res.data.defaultVariant });
       }
@@ -327,6 +328,13 @@ export default function StoreAddProduct() {
                     <p className="text-[11px] text-slate mt-0.5">Watermark PDFs with the buyer's name</p>
                   </div>
                   <Toggle checked={dig.pdfStampingEnabled} onChange={v => sd('pdfStampingEnabled', v)} />
+                </div>
+                <div className="flex items-center justify-between py-0.5">
+                  <div>
+                    <p className="text-[13px] font-semibold text-charcoal">Buyer Preview</p>
+                    <p className="text-[11px] text-slate mt-0.5">Let buyers see a watermarked/trimmed preview before purchase</p>
+                  </div>
+                  <Toggle checked={dig.previewEnabled} onChange={v => sd('previewEnabled', v)} />
                 </div>
               </div>
             </Card>

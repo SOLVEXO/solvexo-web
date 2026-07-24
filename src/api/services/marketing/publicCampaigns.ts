@@ -9,12 +9,17 @@ export interface PublicCampaign {
   endDate: string;
   discountType: 'percentage' | 'fixed' | null;
   discountValue: number | null;
+  // 'platform': applies to every active store automatically — storeCount
+  // below is the platform's total active-store count, not an opt-in tally.
+  sponsorType: 'seller' | 'platform';
   storeCount: number;
 }
 
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
 
-/** Public — no auth required. Active platform-wide sale campaigns for the buyer marketplace/homepage banner. */
-export function apiGetPublicActiveCampaigns() {
-  return client.get<never, ApiResponse<PublicCampaign[]>>(ENDPOINTS.MARKETING.PUBLIC_CAMPAIGNS);
+/** Public — no auth required. Active platform-wide sale campaigns for the buyer marketplace/homepage banner.
+ * `storeType` (e.g. 'educational_resources') scopes seller-sponsored campaigns to only those with a
+ * participating store of that type — platform-sponsored campaigns are unaffected either way. */
+export function apiGetPublicActiveCampaigns(storeType?: string) {
+  return client.get<never, ApiResponse<PublicCampaign[]>>(ENDPOINTS.MARKETING.PUBLIC_CAMPAIGNS, { params: storeType ? { storeType } : undefined });
 }

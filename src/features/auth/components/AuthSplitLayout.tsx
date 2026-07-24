@@ -27,14 +27,17 @@ interface AuthSplitLayoutProps {
 
 // Shared two-pane shell for auth screens: a fixed 35% branding panel on the
 // left (desktop only) and a 65% form panel on the right. The outer shell is
-// locked to the viewport height (no page-level scrollbar); if a form's
-// content is ever taller than the viewport, only the form panel scrolls
-// internally — the branding panel never causes page-level scroll either.
+// locked to the viewport height (no page-level scrollbar, on any screen size);
+// if a form's content is ever taller than the viewport, only the form panel
+// scrolls internally — the branding panel never causes page-level scroll either.
 //
-// `h-full` (not `h-screen` or a manual `calc(100vh - 44px)`) so this
-// shell exactly fills RootLayout's content wrapper — that wrapper already
-// reserves the 44px fixed ReferenceNav bar via its own height, so this
-// stays pixel-exact instead of drifting by 1px at some browser zoom levels.
+// `fixed inset-x-0 top-[44px] bottom-0` (not `h-full`/`h-screen`/a `calc(100vh - 44px)`
+// height) so this shell is pinned directly to the viewport below the 44px
+// ReferenceNav bar, independent of any ancestor's computed height. A height-based
+// approach (even one meant to be pixel-exact) can still drift by a pixel at some
+// zoom levels or when a mobile browser's chrome shows/hides, which overflows
+// RootLayout's wrapper and puts a scrollbar on the whole page; being taken out
+// of flow via `fixed` makes that structurally impossible.
 export function AuthSplitLayout({
   panelGradient = 'from-carbon via-[#241F1B] to-brand-deep-orange',
   brandingHeader,
@@ -48,7 +51,7 @@ export function AuthSplitLayout({
   children,
 }: AuthSplitLayoutProps) {
   return (
-    <div className="h-full w-full overflow-hidden bg-cream flex">
+    <div className="fixed inset-x-0 top-[44px] bottom-0 w-full overflow-hidden bg-cream flex">
 
       {/* ── Branding panel (desktop only, fixed 35%) ───────────────────────── */}
       <div className={clsx('hidden lg:flex lg:w-[35%] h-full min-w-0 relative overflow-hidden bg-gradient-to-br', panelGradient)}>
@@ -61,22 +64,27 @@ export function AuthSplitLayout({
         <div className="absolute -bottom-24 -left-16 w-72 h-72 rounded-full bg-brand-orange/20 blur-3xl auth-glow-pulse pointer-events-none" />
         <div className="absolute -top-20 -right-10 w-56 h-56 rounded-full bg-white/[0.06] blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col justify-between p-8 xl:p-10 w-full h-full overflow-y-auto">
-          {brandingHeader ?? <SolvexoLogo size={30} variant="light" />}
+        {/* `overflow-hidden` (not `overflow-y-auto`) + clamp()-based, viewport-height-
+           relative sizing below — this content must always fit, never scroll, on any
+           screen height, so every gap/font-size (and each mockup's own padding, see
+           AuthMockups.tsx) shrinks together as the panel shrinks rather than
+           overflowing and needing a scrollbar. */}
+        <div className="relative z-10 flex flex-col justify-between h-full w-full overflow-hidden p-[clamp(16px,3vh,40px)]">
+          {brandingHeader ?? <SolvexoLogo size={38} variant="light" />}
 
-          <div>
-            <h2 className="font-serif text-[24px] xl:text-[28px] font-bold text-white leading-[1.15] mb-3.5">
+          <div className="min-h-0 overflow-hidden">
+            <h2 className="font-serif text-[clamp(20px,3vh,34px)] font-bold text-white leading-[1.15] mb-[clamp(10px,1.4vh,14px)]">
               {heading}
             </h2>
-            <p className="text-[13px] text-white/70 leading-[1.6] max-w-[360px] mb-6">
+            <p className="text-[clamp(11px,1.4vh,13px)] text-white/70 leading-[1.6] max-w-[360px] mb-[clamp(14px,2.2vh,24px)]">
               {subtext}
             </p>
             {highlights.length > 0 && (
-              <div className="flex flex-col gap-3.5 mb-2">
+              <div className="flex flex-col gap-[clamp(8px,1.4vh,14px)] mb-2">
                 {highlights.map(({ Icon, text }) => (
-                  <div key={text} className="flex items-center gap-3 transition-transform duration-200 ease-out hover:translate-x-0.5">
-                    <div className="size-7 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                      <Icon size={14} className={accentIconClass} />
+                  <div key={text} className="group flex items-center gap-3 transition-transform duration-200 ease-out hover:translate-x-0.5">
+                    <div className="size-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 transition-colors duration-200 group-hover:bg-brand-orange/20">
+                      <Icon size={16} className={clsx(accentIconClass, 'transition-colors duration-200 group-hover:text-brand-orange')} />
                     </div>
                     <span className="text-[12.5px] text-white/85 leading-[1.4]">{text}</span>
                   </div>
@@ -84,20 +92,27 @@ export function AuthSplitLayout({
               </div>
             )}
 
-            {visual && <div className="mt-6">{visual}</div>}
+            {visual && (
+              <div className="mt-[clamp(8px,2vh,24px)]">
+                {visual}
+              </div>
+            )}
           </div>
 
-          <p className="text-[11px] text-white/40">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
+          <p className="text-[11px] text-white/40 shrink-0">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
         </div>
       </div>
 
-      {/* ── Form panel (65%) — internal scroll only, never the page ───────── */}
+      {/* ── Form panel (65%) — scrollbar always hidden; fluid padding keeps
+         typical form content fitting without needing to scroll on short
+         screens, and on the rare oversized form only the invisible-scrollbar
+         internal scroll (never a visible bar, never the page) kicks in. ── */}
       {bare ? (
         <div className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col">
           {children}
         </div>
       ) : (
-        <div className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col items-center px-4 py-6 sm:py-8">
+        <div className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col items-center px-4 py-[clamp(12px,3vh,32px)]">
           <div className={clsx('w-full my-auto', maxWidth)}>
             {children}
           </div>

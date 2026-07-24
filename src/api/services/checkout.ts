@@ -20,6 +20,9 @@ export interface CheckoutItem {
   totalPrice:   number;
   originalPrice?:          number | null;
   subscriberDiscountUSD?:  number;
+  couponDiscountUSD?:      number;
+  campaignId?:             string | null;
+  campaignDiscountUSD?:    number;
 }
 
 export interface Checkout {
@@ -37,6 +40,7 @@ export interface Checkout {
   subscriberSavingsUSD?: number;
   couponCode?:       string | null;
   couponDiscountUSD?: number;
+  campaignDiscountTotalUSD?: number;
   totalAmount:       number;
   status:            string;
   expiredAt:         string;
@@ -51,6 +55,14 @@ export interface CheckoutSummary {
   taxAmount:   number;
   totalAmount: number;
   subscriberSavingsUSD?: number;
+  campaignDiscountUSD?: number;
+}
+
+export interface AppliedCampaign {
+  campaignId: string;
+  name:       string;
+  storeId:    string;
+  discountUSD: number;
 }
 
 export interface ApplyCouponPayload { checkoutId: string; code: string }
@@ -84,6 +96,7 @@ interface CreateCheckoutResponse {
     allowedPaymentMethods:  string[];
     summary:                CheckoutSummary;
     subscriptionSavingsHints: SubscriptionSavingsHint[];
+    appliedCampaigns:       AppliedCampaign[];
   };
 }
 

@@ -41,6 +41,11 @@ export const ENDPOINTS = {
     ACTIVE: '/api/announcements/active',
   },
 
+  // ── NEWSLETTER (public) ─────────────────────────────────────────────────────
+  NEWSLETTER: {
+    SUBSCRIBE: '/api/newsletter/subscribe',
+  },
+
   // ── CONTENT MODERATION (Admin) ──────────────────────────────────────────────
   MODERATION: {
     STATS:   '/api/admin/moderation/stats',
@@ -62,6 +67,7 @@ export const ENDPOINTS = {
     GET_PROFILE: '/api/auth/getprofile',
     EDIT_PROFILE: '/api/auth/edit-profile',
     RESEND_OTP: '/api/auth/resend-otp',
+    LOGOUT: '/api/auth/logout',
   },
 
   // ── NOTIFICATIONS ──────────────────────────────────────────────────────────
@@ -255,6 +261,7 @@ export const ENDPOINTS = {
   MARKETPLACE: {
     PRODUCTS_BY_CATEGORY: `/api/products/products-by-category`,
     PRODUCT_BY_ID: (id: string) => `/api/products/getProductById/${id}`,
+    PRODUCT_PREVIEW: (id: string) => `/api/products/preview/${id}`,
 
     // Admin — marketplace-wide listing management
     ADMIN: {

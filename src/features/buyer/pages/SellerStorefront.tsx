@@ -4,10 +4,10 @@ import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
-import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget } from '@/components/comman/ui';
+import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget, DealsBanner } from '@/components/comman/ui';
 import {
   ShoppingCart, Star, Heart, ArrowLeft, Users,
-  Store, Package, Loader2, MessageCircle, BadgeCheck, Award, Gift, RefreshCw, Check,
+  Store, Package, Loader2, MessageCircle, BadgeCheck, Award, Gift, RefreshCw, Check, Zap,
 } from 'lucide-react';
 import {
   apiGetPublicStore, apiGetPublicStoreProducts,
@@ -373,6 +373,8 @@ export function SellerStorefront() {
         backTo={{ label: 'Marketplace', path: '/marketplace' }}
       />
 
+      <DealsBanner />
+
       <div className="px-4 sm:px-6 lg:px-10 pt-3 bg-white border-b border-bone">
         <Breadcrumb items={[
           { label: 'Home', path: '/' },
@@ -545,18 +547,30 @@ export function SellerStorefront() {
                     }
                     <button
                       onClick={e => toggleWishlist(e, p._id)}
-                      className="absolute top-[6px] right-[6px] w-6 h-6 rounded-full bg-[rgba(255,255,255,0.92)] flex items-center justify-center cursor-pointer border-none"
+                      className="absolute bottom-[6px] right-[6px] w-6 h-6 rounded-full bg-[rgba(255,255,255,0.92)] flex items-center justify-center cursor-pointer border-none"
                     >
                       <Heart size={11} className={clsx(wishlisted.has(p._id) ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')} />
                     </button>
-                    <span className={clsx(
-                      'absolute top-[6px] left-[6px] px-[5px] py-[2px] rounded-[4px] text-[9px] font-semibold border leading-none',
-                      isPhysical
-                        ? 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]'
-                        : 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]',
-                    )}>
-                      {typeLabel}
-                    </span>
+                    <div className="absolute top-[6px] left-[6px]">
+                      <span className={clsx(
+                        'px-[5px] py-[2px] rounded-[4px] text-[9px] font-semibold border leading-none',
+                        isPhysical
+                          ? 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]'
+                          : 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]',
+                      )}>
+                        {typeLabel}
+                      </span>
+                    </div>
+                    {p.activeCampaign && (
+                      <div className="absolute top-[6px] right-[6px]">
+                        <span className="flex items-center gap-[3px] px-[5px] py-[2px] rounded-[4px] text-[9px] font-bold leading-none bg-gradient-to-r from-brand-orange to-[#F0A57A] text-white">
+                          <Zap size={8} className="fill-white shrink-0" />
+                          {p.activeCampaign.discountType && p.activeCampaign.discountValue != null
+                            ? (p.activeCampaign.discountType === 'percentage' ? `${p.activeCampaign.discountValue}% OFF` : `$${p.activeCampaign.discountValue} OFF`)
+                            : 'FEATURED'}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Body */}

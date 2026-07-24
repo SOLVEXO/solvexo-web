@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { label: 'Marketplace', path: '/marketplace', orange: false },
   { label: 'Sellers',     path: '/sellers',     orange: true  },
   { label: 'Pricing',     path: '/pricing',     orange: true  },
-  { label: 'Learn',       path: '/education',   orange: false },
+  { label: 'Learn',       path: '/EducationMarketplace',   orange: false },
   { label: 'FAQ',         path: '/faq',         orange: false },
 ];
 

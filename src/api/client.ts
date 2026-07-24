@@ -1,5 +1,20 @@
 import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 
+// Endpoints where a 401 means "this specific attempt was rejected" (wrong
+// password, invalid/expired OTP, invalid reset token, invalid social token)
+// — not "your existing session expired". These must surface their error to
+// the calling form instead of force-navigating to /login, which would wipe
+// the form's error state via a full reload before the user ever sees it.
+const AUTH_ATTEMPT_PATHS = [
+  '/api/auth/login',
+  '/api/auth/social-login',
+  '/api/auth/verifyOtp',
+  '/api/auth/register',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
+  '/api/auth/resend-otp',
+];
+
 // ── Axios instance ────────────────────────────────────────────────────────────
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL as string,
@@ -32,8 +47,11 @@ client.interceptors.response.use(
       err.message ||
       'Something went wrong. Please try again.';
 
-    // Session expired → force logout
-    if (err.response?.status === 401) {
+    // Session expired → force logout. Not for the auth-attempt endpoints
+    // above — there, a 401 is the expected "wrong credentials/OTP/token"
+    // response for that one request, and must show inline on the form.
+    const isAuthAttempt = AUTH_ATTEMPT_PATHS.some(p => err.config?.url?.includes(p));
+    if (err.response?.status === 401 && !isAuthAttempt) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');

@@ -66,6 +66,7 @@ export function LineChart({
     v >= 1000 ? `${valuePrefix}${(v / 1000).toFixed(0)}k` : `${valuePrefix}${v}`;
   const yFmt = yTickFormatter ?? defaultYFmt;
   const ariaLabel = title ? `${title} chart` : 'Chart';
+  const hasValue = data.some(d => lines.some(line => Number(d[line.dataKey]) !== 0));
 
   if (!data.length) {
     return (
@@ -111,10 +112,10 @@ export function LineChart({
               type="monotone"
               dataKey={line.dataKey}
               name={line.label}
-              stroke={line.color ?? CHART_COLORS[i % CHART_COLORS.length]}
+              stroke={hasValue ? (line.color ?? CHART_COLORS[i % CHART_COLORS.length]) : 'transparent'}
               strokeWidth={2.5}
               dot={false}
-              activeDot={{ r: 4, strokeWidth: 0 }}
+              activeDot={hasValue ? { r: 4, strokeWidth: 0 } : false}
             />
           ))}
         </RechartsLine>

@@ -6,6 +6,9 @@ import { ENDPOINTS } from '../../endpoints';
 // ─────────────────────────────────────────────────────────────────────────────
 export type CampaignStatus = 'draft' | 'active' | 'ended';
 export type DiscountType = 'percentage' | 'fixed';
+// 'seller': participating sellers absorb the discount out of their own payout.
+// 'platform': the platform reimburses sellers — see FinanceService.recordSale.
+export type CampaignSponsorType = 'seller' | 'platform';
 
 export interface Campaign {
   _id: string;
@@ -17,7 +20,12 @@ export interface Campaign {
   status: CampaignStatus;
   discountType: DiscountType | null;
   discountValue: number | null;
+  sponsorType: CampaignSponsorType;
+  totalPlatformSubsidyUSD: number;
   participatingStoreIds: string[];
+  // Rotation order in the buyer-facing deals banner when multiple campaigns
+  // are active at once (0 = shown first) — same convention as Banner.order.
+  order: number;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
@@ -31,6 +39,8 @@ export interface CreateCampaignPayload {
   endDate: string;
   discountType?: DiscountType;
   discountValue?: number;
+  sponsorType?: CampaignSponsorType;
+  order?: number;
 }
 
 export type UpdateCampaignPayload = Partial<CreateCampaignPayload>;

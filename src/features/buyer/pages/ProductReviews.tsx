@@ -187,30 +187,18 @@ function RatingSummaryCard({
   );
 }
 
-// ── Toolbar: write-a-review action + sort control ────────────────────────────────
+// ── Toolbar: sort control ─────────────────────────────────────────────────────────
 interface ReviewsToolbarProps {
-  canWriteReview: boolean;
   hasReviews: boolean;
   sortBy: SortOption;
-  onWriteReview: () => void;
   onChangeSort: (value: string) => void;
 }
-function ReviewsToolbar({ canWriteReview, hasReviews, sortBy, onWriteReview, onChangeSort }: ReviewsToolbarProps) {
+function ReviewsToolbar({ hasReviews, sortBy, onChangeSort }: ReviewsToolbarProps) {
+  if (!hasReviews) return null;
   return (
-    <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
-      <div>
-        {canWriteReview && (
-          <Button variant="outline" size="sm" icon={<Pencil size={13} />} onClick={onWriteReview}>
-            Write a Review
-          </Button>
-        )}
-      </div>
-      {hasReviews && (
-        <div className="flex items-center gap-2">
-          <span className="text-[12px] text-slate">Sort by</span>
-          <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={onChangeSort} />
-        </div>
-      )}
+    <div className="flex items-center justify-end gap-2 mb-5">
+      <span className="text-[12px] text-slate">Sort by</span>
+      <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={onChangeSort} />
     </div>
   );
 }
@@ -422,7 +410,7 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-5">
         <div>
           <h2 className="text-[20px] font-bold text-carbon">
             Ratings & Reviews
@@ -432,12 +420,19 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
           </p>
         </div>
 
-        {hasReviews && (
-          <Badge color="green" size="md">
-            <ShieldCheck size={13} />
-            {stats!.totalReviews} Verified Reviews
-          </Badge>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {hasReviews && (
+            <Badge color="green" size="md">
+              <ShieldCheck size={13} />
+              {stats!.totalReviews} Verified Reviews
+            </Badge>
+          )}
+          {isLoggedIn && !hasOwnReview && (
+            <Button variant="outline" size="sm" icon={<Pencil size={13} />} onClick={() => setShowWrite(true)}>
+              Write a Review
+            </Button>
+          )}
+        </div>
       </div>
 
       {hasReviews && (
@@ -454,10 +449,8 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
       )}
 
       <ReviewsToolbar
-        canWriteReview={isLoggedIn && !hasOwnReview}
         hasReviews={hasReviews}
         sortBy={sortBy}
-        onWriteReview={() => setShowWrite(true)}
         onChangeSort={changeSort}
       />
 

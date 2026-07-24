@@ -3,6 +3,7 @@ import { clsx } from 'clsx';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductById } from '@/hooks/marketplace/useProductById';
+import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { TokenStorage } from '@/api/services/auth';
@@ -13,11 +14,13 @@ import { Badge } from '@/components/comman/ui/Badge';
 import { Card } from '@/components/comman/ui/Card';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { TabBar } from '@/components/comman/ui/TabBar';
+import { Modal } from '@/components/comman/ui/Modal';
 import { BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget } from '@/components/comman/ui';
 import {
   ArrowRight, Package, Download, ClipboardList, CheckCircle, Minus, Plus,
   ShoppingCart, Star, Link2, Share2, ImageOff, Heart, ShieldCheck, Truck,
   UserPlus, UserCheck, Tag, ZoomIn, Users, Calendar, Award, Sparkles, Flame,
+  FileText, Store as StoreIcon, Eye, Loader2, Zap,
 } from 'lucide-react';
 import { ProductReviewsSection } from './ProductReviews';
 
@@ -302,11 +305,14 @@ export function ProductDetail() {
   const [following, setFollowing] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const { data: previewData, loading: previewLoading, error: previewError, load: loadPreview, reset: resetPreview } = useProductPreview(id);
+
   const [sellerProducts, setSellerProducts] = useState<PublicStoreProduct[]>([]);
   const [sellerProductsTotal, setSellerProductsTotal] = useState(0);
   const [relatedProducts, setRelatedProducts] = useState<MarketplaceProduct[]>([]);
   const [storeData, setStoreData] = useState<PublicStoreData | null>(null);
-  const [activeTab, setActiveTab] = useState('description');
+  const [activeTab, setActiveTab] = useState('seller');
 
   const product = detail?.product ?? null;
   const variants = detail?.variants ?? [];
@@ -406,7 +412,7 @@ export function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-cream">
-      <BuyerNavbar contextLabel="Marketplace" backTo={{ label: 'Marketplace', path: '/marketplace' }} />
+      <BuyerNavbar backTo={{ label: 'Marketplace', path: '/marketplace' }} />
 
       {loading && <DetailSkeleton />}
 
@@ -432,18 +438,46 @@ export function ProductDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 items-start min-w-0 mb-8">
             <ImageGallery images={allImages} name={product.name} />
 
+            {/* Sticky wrapper's "stick range" is bounded by its own parent —
+                that parent must be exactly this grid row (matched in height
+                to the taller of the two columns via items-start), NOT a
+                container that also includes the tabs section below. Nesting
+                the tabs div inside the same flex-col as this previously made
+                the purchase panel stay pinned for the tabs section's entire
+                scroll range too, overlapping it (see the Buy Now button
+                rendering underneath the tabs card while scrolling). */}
             <div className="lg:sticky lg:top-20 min-w-0">
               <Card padding="none">
                 <div className="px-6 pt-6 pb-0">
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
                     <Badge color="orange">{typeLabel}</Badge>
-                    {pctOff != null && pctOff > 0 && <Badge color="red">-{pctOff}% OFF</Badge>}
+                    {/* Discount/campaign badges grouped on the opposite corner
+                        from the type badge — mirrors ProductCard.tsx's grid
+                        card corner layout instead of bunching everything together. */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {pctOff != null && pctOff > 0 && <Badge color="red">-{pctOff}% OFF</Badge>}
+                      {product.activeCampaign && (
+                        <span
+                          title={`${product.activeCampaign.name} — ends ${new Date(product.activeCampaign.endDate).toLocaleDateString()}`}
+                          className="flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-orange to-[#F0A57A] px-2.5 py-[3px] text-[11px] font-bold text-white"
+                        >
+                          <Zap size={10} className="fill-white shrink-0" />
+                          {product.activeCampaign.discountType && product.activeCampaign.discountValue != null
+                            ? (product.activeCampaign.discountType === 'percentage' ? `${product.activeCampaign.discountValue}% OFF` : `$${product.activeCampaign.discountValue} OFF`)
+                            : product.activeCampaign.name}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <h1 className="text-[20px] font-bold text-carbon mb-[6px] leading-[1.35] break-words">
                     {product.name}
                   </h1>
                   <p className="text-[12px] text-slate mb-4 flex items-center gap-1 flex-wrap">
-                    {product.sellerName && <>by {product.sellerName}</>}
+                    {/* "Sold by" prefers the store/brand name (what a buyer is
+                        actually shopping from) over the individual seller's
+                        personal account name — falls back to sellerName only
+                        if the store lookup hasn't resolved (or has no name). */}
+                    {(storeData?.name ?? product.sellerName) && <>by {storeData?.name ?? product.sellerName}</>}
                     {product.averageRating > 0 && (
                       <span className="flex items-center gap-[3px]">
                         • <Star size={11} className="text-brand-orange fill-brand-orange" />
@@ -467,13 +501,26 @@ export function ProductDetail() {
                       Members pay ${activeVariant.subscriberPrice.toLocaleString()} — save {activeVariant.discountPercent}%
                     </p>
                   )}
+
+                  {/* Stock / delivery status */}
                   <div className={clsx(
-                    'text-[12px] mb-4 flex items-center gap-[5px] font-medium',
-                    stock <= 0 ? 'text-error' : stock <= 5 ? 'text-amber-600' : 'text-success',
+                    'inline-flex w-fit items-center gap-[6px] rounded-full border px-3 py-[6px] mb-3 text-[12px] font-semibold',
+                    stock <= 0 ? 'border-[#FECDD3] bg-[#FFF0F5] text-error'
+                      : stock <= 5 ? 'border-amber-200 bg-amber-50 text-amber-600'
+                      : 'border-[#CFEEDA] bg-success-bg text-success',
                   )}>
                     <CheckCircle size={13} />
-                    {stock <= 0 ? 'Out of stock' : isDigital ? 'Available — instant delivery' : stock <= 5 ? `Only ${stock} left` : 'In stock'}
+                    {stock <= 0 ? 'Out of stock' : isDigital ? 'Available — instant delivery' : stock <= 5 ? `Only ${stock} left in stock` : 'In stock'}
                   </div>
+
+                  {isDigital && product.digital?.previewAvailable && (
+                    <Button
+                      variant="outline" size="md" fullWidth className="justify-center mb-3"
+                      onClick={() => { setPreviewOpen(true); loadPreview(); }}
+                    >
+                      <Eye size={14} className="inline align-middle mr-[6px]" /> Preview before you buy
+                    </Button>
+                  )}
 
                   <VariantSelector variants={variants} selected={activeVariant} onSelect={setSelectedVariant} />
 
@@ -530,163 +577,177 @@ export function ProductDetail() {
                       </button>
                     </div>
                   </div>
-                </div>
 
-                <div className="h-px bg-bone" />
-
-                {/* Trust row */}
-                <div className="px-6 py-4 flex items-center gap-4 flex-wrap">
-                  <span className="flex items-center gap-[6px] text-[11px] text-slate"><ShieldCheck size={13} className="text-brand-orange" /> Secure checkout</span>
-                  <span className="flex items-center gap-[6px] text-[11px] text-slate"><Truck size={13} className="text-brand-orange" /> {isDigital ? 'Instant delivery' : 'Fast shipping'}</span>
+                  {/* Trust row */}
+                  <div className="rounded-xl border border-bone bg-cream/60 px-4 py-3 mb-4 grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-[8px] min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-white border border-bone flex items-center justify-center shrink-0">
+                        <ShieldCheck size={14} className="text-brand-orange" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[11.5px] font-semibold text-charcoal leading-tight truncate">Secure checkout</p>
+                        <p className="text-[10px] text-slate mt-[1px] truncate">100% buyer protection</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-[8px] min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-white border border-bone flex items-center justify-center shrink-0">
+                        <Truck size={14} className="text-brand-orange" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[11.5px] font-semibold text-charcoal leading-tight truncate">{isDigital ? 'Instant delivery' : 'Fast shipping'}</p>
+                        <p className="text-[10px] text-slate mt-[1px] truncate">{isDigital ? 'Download right after purchase' : 'Tracked, reliable delivery'}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </Card>
             </div>
           </div>
 
           {/* ── Description / Specifications / Seller / Shipping tabs ──────────── */}
-          <div className="bg-white rounded-2xl border border-bone overflow-hidden mb-6">
-            <TabBar
-              className="px-4 sm:px-6"
-              tabs={[
-                { id: 'description', label: 'Description' },
-                { id: 'specs', label: 'Specifications' },
-                { id: 'seller', label: 'Seller' },
-                { id: 'shipping', label: 'Shipping' },
-              ]}
-              active={activeTab}
-              onChange={setActiveTab}
-            />
+            <div className="bg-white rounded-2xl border border-bone overflow-hidden mb-6">
+              <TabBar
+                className="px-3"
+                dense
+                tabs={[
+                  { id: 'seller', label: 'Seller', icon: <StoreIcon size={12} /> },
+                  { id: 'description', label: 'Description', icon: <FileText size={12} /> },
+                  { id: 'specs', label: 'Specs', icon: <ClipboardList size={12} /> },
+                  { id: 'shipping', label: 'Shipping', icon: <Truck size={12} /> },
+                ]}
+                active={activeTab}
+                onChange={setActiveTab}
+              />
 
-            <div className="p-6">
-              {activeTab === 'description' && (
-                <div>
-                  <p className="text-[13px] text-slate leading-[1.8] mb-4">{product.description || 'No description available.'}</p>
-                  {(product.tags?.length ?? 0) > 0 && (
-                    <div className="flex flex-wrap gap-[6px]">
-                      {product.tags!.map(tag => (
-                        <span key={tag} className="flex items-center gap-1 text-[11px] px-[9px] py-[3px] rounded-full bg-cream text-slate border border-bone">
-                          <Tag size={9} /> {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === 'specs' && (
-                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
-                  {specs.map(s => (
-                    <div key={s.label} className="flex items-center justify-between border-b border-bone pb-2">
-                      <dt className="text-[12px] text-slate">{s.label}</dt>
-                      <dd className="text-[12.5px] font-medium text-charcoal capitalize">{s.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
-
-              {activeTab === 'seller' && (
-                <div>
-                  {storeData?.coverImage && (
-                    <div className="h-[100px] -mx-6 -mt-6 mb-5 overflow-hidden">
-                      <img loading="lazy" decoding="async" src={storeData.coverImage} alt="" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                  <div className="flex items-start gap-[14px] mb-5 flex-wrap">
-                    <div className="w-[60px] h-[60px] rounded-full bg-success-bg text-success flex items-center justify-center font-bold text-[18px] flex-shrink-0 overflow-hidden border-2 border-white outline outline-1 outline-bone">
-                      {storeData?.logo
-                        ? <img loading="lazy" decoding="async" src={storeData.logo} alt="" className="w-full h-full object-cover" />
-                        : (product.sellerName ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-[6px] flex-wrap">
-                        <span className="text-[16px] font-bold text-carbon">{storeData?.name ?? product.sellerName ?? 'Unknown Seller'}</span>
-                        {storeData?.badges.includes('verified') && (
-                          <Badge color="green" size="sm"><ShieldCheck size={11} /> Verified Seller</Badge>
-                        )}
-                        {storeData?.badges.includes('top_seller') && (
-                          <Badge color="orange" size="sm"><Award size={11} /> Top Seller</Badge>
-                        )}
-                        {storeData?.badges.includes('featured') && (
-                          <Badge color="blue" size="sm"><Sparkles size={11} /> Featured</Badge>
-                        )}
+              <div className="p-6">
+                {activeTab === 'description' && (
+                  <div>
+                    <p className="text-[13px] text-slate leading-[1.8] mb-4">{product.description || 'No description available.'}</p>
+                    {(product.tags?.length ?? 0) > 0 && (
+                      <div className="flex flex-wrap gap-[6px]">
+                        {product.tags!.map(tag => (
+                          <span key={tag} className="flex items-center gap-1 text-[11px] px-[9px] py-[3px] rounded-full bg-cream text-slate border border-bone">
+                            <Tag size={9} /> {tag}
+                          </span>
+                        ))}
                       </div>
-                      <div className="flex items-center gap-1 mt-[4px]">
-                        <Star size={12} className="text-brand-orange fill-brand-orange" />
-                        <span className="text-[12px] font-semibold text-charcoal">
-                          {(storeData?.averageRating ?? product.averageRating ?? 0).toFixed(1)}
-                        </span>
-                        <span className="text-[12px] text-slate">
-                          ({storeData?.reviewCount ?? product.totalRatings ?? 0} reviews)
-                        </span>
-                      </div>
-                      {storeData?.description && (
-                        <p className="text-[12px] text-slate mt-[6px] leading-[1.6] line-clamp-2">{storeData.description}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 mb-5">
-                    <div className="rounded-xl bg-cream border border-bone p-3 text-center">
-                      <Users size={14} className="text-brand-orange mx-auto mb-1" />
-                      <p className="text-[13px] font-bold text-carbon leading-none">{storeData?.followersCount ?? 0}</p>
-                      <p className="text-[10px] text-slate mt-[3px]">Followers</p>
-                    </div>
-                    <div className="rounded-xl bg-cream border border-bone p-3 text-center">
-                      <Package size={14} className="text-brand-orange mx-auto mb-1" />
-                      <p className="text-[13px] font-bold text-carbon leading-none">{sellerProductsTotal || sellerProducts.length}</p>
-                      <p className="text-[10px] text-slate mt-[3px]">Products</p>
-                    </div>
-                    <div className="rounded-xl bg-cream border border-bone p-3 text-center">
-                      <Calendar size={14} className="text-brand-orange mx-auto mb-1" />
-                      <p className="text-[13px] font-bold text-carbon leading-none">
-                        {storeData?.createdAt ? new Date(storeData.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '—'}
-                      </p>
-                      <p className="text-[10px] text-slate mt-[3px]">Joined</p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" fullWidth className="justify-center" disabled={!product.storeSlug} onClick={() => product.storeSlug && navigate(`/store/${product.storeSlug}`)}>
-                      Visit Store <ArrowRight size={13} className="inline align-middle ml-1" />
-                    </Button>
-                    {storeId && (
-                      <Button
-                        variant={following ? 'outline' : 'secondary'} size="sm" fullWidth className="justify-center"
-                        loading={followBusy} onClick={handleFollow}
-                      >
-                        {following ? <><UserCheck size={13} /> Following</> : <><UserPlus size={13} /> Follow</>}
-                      </Button>
                     )}
                   </div>
-                </div>
-              )}
+                )}
 
-              {activeTab === 'shipping' && (
-                <div className="flex flex-col gap-4">
-                  {[
-                    isDigital
-                      ? { Icon: Download, label: 'Instant Digital Delivery', value: 'Download link available immediately after purchase' }
-                      : { Icon: Truck, label: 'Shipping', value: 'Ships after purchase — rate calculated at checkout' },
-                    { Icon: Package, label: 'Seller Fulfilled', value: `Sold and shipped by ${product.sellerName ?? 'seller'}` },
-                    { Icon: ClipboardList, label: 'SKU', value: activeVariant?.sku ?? '—' },
-                  ].map(row => (
-                    <div key={row.label} className="flex gap-3 items-start">
-                      <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center flex-shrink-0">
-                        <row.Icon size={15} className="text-brand-orange" />
+                {activeTab === 'specs' && (
+                  <dl className="flex flex-col gap-y-3">
+                    {specs.map(s => (
+                      <div key={s.label} className="flex items-center justify-between border-b border-bone pb-2">
+                        <dt className="text-[12px] text-slate">{s.label}</dt>
+                        <dd className="text-[12.5px] font-medium text-charcoal capitalize">{s.value}</dd>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-semibold text-[12px] text-charcoal mb-[2px]">{row.label}</div>
-                        <div className="text-[11px] text-slate break-words leading-[1.55]">{row.value}</div>
+                    ))}
+                  </dl>
+                )}
+
+                {activeTab === 'seller' && (
+                  <div>
+                    {storeData?.coverImage && (
+                      <div className="h-[100px] -mx-6 -mt-6 mb-5 overflow-hidden">
+                        <img loading="lazy" decoding="async" src={storeData.coverImage} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="flex items-start gap-[14px] mb-5 flex-wrap">
+                      <div className="w-[60px] h-[60px] rounded-full bg-success-bg text-success flex items-center justify-center font-bold text-[18px] flex-shrink-0 overflow-hidden border-2 border-white outline outline-1 outline-bone">
+                        {storeData?.logo
+                          ? <img loading="lazy" decoding="async" src={storeData.logo} alt="" className="w-full h-full object-cover" />
+                          : (product.sellerName ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-[6px] flex-wrap">
+                          <span className="text-[16px] font-bold text-carbon">{storeData?.name ?? product.sellerName ?? 'Unknown Seller'}</span>
+                          {storeData?.badges.includes('verified') && (
+                            <Badge color="green" size="sm"><ShieldCheck size={11} /> Verified Seller</Badge>
+                          )}
+                          {storeData?.badges.includes('top_seller') && (
+                            <Badge color="orange" size="sm"><Award size={11} /> Top Seller</Badge>
+                          )}
+                          {storeData?.badges.includes('featured') && (
+                            <Badge color="blue" size="sm"><Sparkles size={11} /> Featured</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 mt-[4px]">
+                          <Star size={12} className="text-brand-orange fill-brand-orange" />
+                          <span className="text-[12px] font-semibold text-charcoal">
+                            {(storeData?.averageRating ?? product.averageRating ?? 0).toFixed(1)}
+                          </span>
+                          <span className="text-[12px] text-slate">
+                            ({storeData?.reviewCount ?? product.totalRatings ?? 0} reviews)
+                          </span>
+                        </div>
+                        {storeData?.description && (
+                          <p className="text-[12px] text-slate mt-[6px] leading-[1.6] line-clamp-2">{storeData.description}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <Button variant="secondary" size="sm" disabled={!product.storeSlug} onClick={() => product.storeSlug && navigate(`/store/${product.storeSlug}`)}>
+                          Visit Store <ArrowRight size={13} className="inline align-middle ml-1" />
+                        </Button>
+                        {storeId && (
+                          <Button
+                            variant={following ? 'ghost' : 'outline'} size="sm"
+                            loading={followBusy} onClick={handleFollow}
+                          >
+                            {following ? <><UserCheck size={13} /> Following</> : <><UserPlus size={13} /> Follow</>}
+                          </Button>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+
+                    <div className="grid grid-cols-3 gap-2 mb-5">
+                      <div className="rounded-xl bg-cream border border-bone p-3 text-center">
+                        <Users size={14} className="text-brand-orange mx-auto mb-1" />
+                        <p className="text-[13px] font-bold text-carbon leading-none">{storeData?.followersCount ?? 0}</p>
+                        <p className="text-[10px] text-slate mt-[3px]">Followers</p>
+                      </div>
+                      <div className="rounded-xl bg-cream border border-bone p-3 text-center">
+                        <Package size={14} className="text-brand-orange mx-auto mb-1" />
+                        <p className="text-[13px] font-bold text-carbon leading-none">{sellerProductsTotal || sellerProducts.length}</p>
+                        <p className="text-[10px] text-slate mt-[3px]">Products</p>
+                      </div>
+                      <div className="rounded-xl bg-cream border border-bone p-3 text-center">
+                        <Calendar size={14} className="text-brand-orange mx-auto mb-1" />
+                        <p className="text-[13px] font-bold text-carbon leading-none">
+                          {storeData?.createdAt ? new Date(storeData.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '—'}
+                        </p>
+                        <p className="text-[10px] text-slate mt-[3px]">Joined</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'shipping' && (
+                  <div className="flex flex-col gap-4">
+                    {[
+                      isDigital
+                        ? { Icon: Download, label: 'Instant Digital Delivery', value: 'Download link available immediately after purchase' }
+                        : { Icon: Truck, label: 'Shipping', value: 'Ships after purchase — rate calculated at checkout' },
+                      { Icon: Package, label: 'Seller Fulfilled', value: `Sold and shipped by ${product.sellerName ?? 'seller'}` },
+                      { Icon: ClipboardList, label: 'SKU', value: activeVariant?.sku ?? '—' },
+                    ].map(row => (
+                      <div key={row.label} className="flex gap-3 items-start">
+                        <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center flex-shrink-0">
+                          <row.Icon size={15} className="text-brand-orange" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-[12px] text-charcoal mb-[2px]">{row.label}</div>
+                          <div className="text-[11px] text-slate break-words leading-[1.55]">{row.value}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
           {/* ── Reviews ────────────────────────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-bone p-6 mb-6">
+          <div id="reviews" className="bg-white rounded-2xl border border-bone p-6 mb-6 scroll-mt-24">
             <ProductReviewsSection productId={product._id} storeName={product.sellerName} />
           </div>
 
@@ -755,6 +816,35 @@ export function ProductDetail() {
       )}
 
       <FloatingAppWidget mobileBottomClass="bottom-[150px]" />
+
+      {previewOpen && (
+        <Modal title="Preview" onClose={() => { setPreviewOpen(false); resetPreview(); }} width={560}>
+          {previewLoading && (
+            <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-slate">
+              <Loader2 size={16} className="animate-spin" /> Loading preview…
+            </div>
+          )}
+          {!previewLoading && previewError && (
+            <p className="text-[13px] text-error text-center py-10">{previewError}</p>
+          )}
+          {!previewLoading && !previewError && previewData?.type === 'pdf' && (
+            <div className="flex flex-col gap-3">
+              {previewData.pages.map((url, i) => (
+                <img key={i} src={url} alt={`Preview page ${i + 1}`} className="w-full rounded-lg border border-bone" />
+              ))}
+            </div>
+          )}
+          {!previewLoading && !previewError && previewData?.type === 'image' && (
+            <img src={previewData.url} alt="Preview" className="w-full rounded-lg border border-bone" />
+          )}
+          {!previewLoading && !previewError && previewData?.type === 'video' && (
+            <video src={previewData.url} controls className="w-full rounded-lg" />
+          )}
+          {!previewLoading && !previewError && previewData?.type === 'audio' && (
+            <audio src={previewData.url} controls className="w-full" />
+          )}
+        </Modal>
+      )}
     </div>
   );
 }

@@ -112,7 +112,7 @@ function AccountSidebar({ open, onToggle, onClose }: SidebarProps) {
               <button
                 onClick={onToggle}
                 title="Collapse sidebar"
-                className="size-7 rounded-md flex items-center justify-center shrink-0 text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
+                className="size-9 rounded-md flex items-center justify-center shrink-0 text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
               >
                 <PanelLeftClose size={15} />
               </button>
@@ -122,14 +122,14 @@ function AccountSidebar({ open, onToggle, onClose }: SidebarProps) {
               <button
                 onClick={() => navigate('/')}
                 title="Home"
-                className="size-7 rounded-md flex items-center justify-center text-slate hover:text-brand-orange hover:bg-dark-active transition-colors cursor-pointer"
+                className="size-9 rounded-md flex items-center justify-center text-slate hover:text-brand-orange hover:bg-dark-active transition-colors cursor-pointer"
               >
                 <ChevronLeft size={15} />
               </button>
               <button
                 onClick={onToggle}
                 title="Expand sidebar"
-                className="size-7 rounded-md flex items-center justify-center shrink-0 text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
+                className="size-9 rounded-md flex items-center justify-center shrink-0 text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
               >
                 <PanelLeftOpen size={15} />
               </button>
@@ -160,7 +160,7 @@ function AccountSidebar({ open, onToggle, onClose }: SidebarProps) {
                     aria-label={item.label}
                     aria-current={active ? 'page' : undefined}
                     className={clsx(
-                      'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer',
+                      'flex items-center gap-[10px] min-h-11 py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer',
                       'transition-colors duration-150',
                       !open && 'lg:justify-center lg:px-0',
                       active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1A1917]',
@@ -225,7 +225,7 @@ function MobileTopBar({ label, onOpen }: { label: string; onOpen: () => void }) 
       <span className="text-[14px] font-semibold text-charcoal">{label}</span>
       <button
         onClick={onOpen}
-        className="w-9 h-9 flex items-center justify-center rounded-[8px] border border-bone bg-cream cursor-pointer"
+        className="w-10 h-10 flex items-center justify-center rounded-[8px] border border-bone bg-cream cursor-pointer"
       >
         <Menu size={16} className="text-charcoal" />
       </button>

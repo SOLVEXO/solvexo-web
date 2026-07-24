@@ -975,6 +975,15 @@ export function CheckoutPage() {
                   <span className="font-semibold text-success">-${summary.subscriberSavingsUSD.toFixed(2)}</span>
                 </div>
               )}
+              {/* Already baked into each item's totalPrice at checkout-creation
+                  time (same as member savings above) — shown here purely as a
+                  breakdown line, not subtracted again in the total below. */}
+              {!!summary?.campaignDiscountUSD && summary.campaignDiscountUSD > 0 && (
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-success">Sale discount</span>
+                  <span className="font-semibold text-success">-${summary.campaignDiscountUSD.toFixed(2)}</span>
+                </div>
+              )}
               {!!checkout?.couponCode && (
                 <div className="flex justify-between text-[13px]">
                   <span className="text-success">Coupon ({checkout.couponCode})</span>
@@ -989,7 +998,7 @@ export function CheckoutPage() {
                   <button
                     onClick={handleRemoveCoupon}
                     disabled={couponBusy}
-                    className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error"
+                    className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer p-2 -m-2 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error"
                   >
                     Remove coupon
                   </button>
@@ -999,12 +1008,12 @@ export function CheckoutPage() {
                       value={couponInput}
                       onChange={e => setCouponInput(e.target.value.toUpperCase())}
                       placeholder="Coupon code"
-                      className="flex-1 min-w-0 px-3 py-2 text-[12.5px] border border-bone rounded-lg outline-none text-charcoal bg-white focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
+                      className="flex-1 min-w-0 px-3 min-h-11 text-[12.5px] border border-bone rounded-lg outline-none text-charcoal bg-white focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
                     />
                     <button
                       onClick={handleApplyCoupon}
                       disabled={couponBusy || !couponInput.trim()}
-                      className="px-4 py-2 bg-white border border-bone rounded-lg text-[12.5px] font-semibold text-graphite cursor-pointer hover:bg-cream disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                      className="px-4 min-h-11 bg-white border border-bone rounded-lg text-[12.5px] font-semibold text-graphite cursor-pointer hover:bg-cream disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                     >
                       {couponBusy ? 'Applying…' : 'Apply'}
                     </button>

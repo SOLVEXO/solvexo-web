@@ -9,12 +9,12 @@ export function FilterAccordionSection({ title, defaultOpen = true, children }: 
     <div className="pb-5 mb-5 border-b border-bone/70 last:border-b-0 last:pb-0 last:mb-0">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between mb-3 bg-transparent border-none cursor-pointer p-0 group"
+        className="w-full min-h-10 flex items-center justify-between mb-1 bg-transparent border-none cursor-pointer p-0 group"
       >
         <span className="text-[12px] font-bold text-carbon tracking-[0.01em] group-hover:text-brand-orange transition-colors">
           {title}
         </span>
-        <span className="w-6 h-6 rounded-full flex items-center justify-center bg-cream group-hover:bg-brand-pale-orange transition-colors">
+        <span className="w-7 h-7 rounded-full flex items-center justify-center bg-cream group-hover:bg-brand-pale-orange transition-colors">
           <ChevronDown size={13} className={clsx('text-slate group-hover:text-brand-orange transition-transform duration-200', open && 'rotate-180')} />
         </span>
       </button>
@@ -31,7 +31,7 @@ export function FilterChipPill({ label, active, onClick }: { label: string; acti
     <button
       onClick={onClick}
       className={clsx(
-        'px-[11px] py-[6px] rounded-full text-[11.5px] font-semibold border transition-all duration-150 cursor-pointer leading-none',
+        'px-[13px] min-h-9 rounded-full text-[11.5px] font-semibold border transition-all duration-150 cursor-pointer leading-none flex items-center',
         active
           ? 'bg-brand-orange text-white border-brand-orange'
           : 'bg-cream text-charcoal border-transparent hover:border-brand-orange/40 hover:text-brand-orange',
@@ -52,7 +52,7 @@ export function FilterCheckboxRow({ label, active, onClick, count }: { label: st
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-[10px] py-[7px] px-[6px] -mx-[6px] rounded-lg text-left bg-transparent border-none cursor-pointer group transition-colors duration-150 hover:bg-cream"
+      className="w-full min-h-10 flex items-center gap-[10px] py-[7px] px-[6px] -mx-[6px] rounded-lg text-left bg-transparent border-none cursor-pointer group transition-colors duration-150 hover:bg-cream"
     >
       <span
         className={clsx(
@@ -89,7 +89,7 @@ export function PriceRangeSlider({ value, onChange }: { value: [number, number];
   const pctHi = ((hi - PRICE_MIN) / (PRICE_MAX - PRICE_MIN)) * 100;
   return (
     <div>
-      <div className="relative h-4 flex items-center">
+      <div className="relative h-[22px] flex items-center">
         <div className="absolute inset-x-0 h-[4px] rounded-full bg-bone" />
         <div className="absolute h-[4px] rounded-full bg-brand-orange" style={{ left: `${pctLo}%`, right: `${100 - pctHi}%` }} />
         <input
@@ -99,7 +99,7 @@ export function PriceRangeSlider({ value, onChange }: { value: [number, number];
           step={PRICE_STEP}
           value={lo}
           onChange={e => onChange([Math.min(Number(e.target.value), hi - PRICE_STEP), hi])}
-          className="range-thumb absolute inset-x-0 w-full h-4 m-0"
+          className="range-thumb absolute inset-x-0 w-full h-[22px] m-0"
           aria-label="Minimum price"
         />
         <input
@@ -109,7 +109,7 @@ export function PriceRangeSlider({ value, onChange }: { value: [number, number];
           step={PRICE_STEP}
           value={hi}
           onChange={e => onChange([lo, Math.max(Number(e.target.value), lo + PRICE_STEP)])}
-          className="range-thumb absolute inset-x-0 w-full h-4 m-0"
+          className="range-thumb absolute inset-x-0 w-full h-[22px] m-0"
           aria-label="Maximum price"
         />
       </div>

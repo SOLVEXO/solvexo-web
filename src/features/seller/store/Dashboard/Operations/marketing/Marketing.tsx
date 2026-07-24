@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Gift, Megaphone, type LucideIcon } from 'lucide-react';
+import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Gift, Megaphone, Building2, User, type LucideIcon } from 'lucide-react';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState, SkeletonBox, Modal, Button } from '@/components/comman/ui';
 import {
@@ -333,28 +333,49 @@ export function StoreMarketing() {
                   <div key={c._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-sm font-semibold text-carbon">{c.name}</p>
-                      {c.isJoined && (
+                      {c.isJoined && c.sponsorType !== 'platform' && (
                         <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold shrink-0 ml-2 bg-success-bg text-success">Joined</span>
                       )}
                     </div>
                     {c.description && <p className="text-xs text-slate mb-2">{c.description}</p>}
-                    <p className="text-[11px] text-slate mb-3">
+                    <p className="text-[11px] text-slate mb-2">
                       {new Date(c.startDate).toLocaleDateString()} – {new Date(c.endDate).toLocaleDateString()}
                       {c.discountType && c.discountValue != null && (
-                        <> · Suggested: {c.discountType === 'percentage' ? `${c.discountValue}% off` : `$${c.discountValue} off`}</>
+                        <> · {c.discountType === 'percentage' ? `${c.discountValue}% off` : `$${c.discountValue} off`}</>
                       )}
                     </p>
-                    <button
-                      onClick={() => toggleCampaign(c)}
-                      disabled={campaignBusyId === c._id}
-                      className={`w-full py-2 rounded-[7px] text-xs font-semibold cursor-pointer transition-colors duration-150 border disabled:opacity-50 ${
-                        c.isJoined
-                          ? 'bg-white border-bone text-graphite hover:bg-cream'
-                          : 'bg-brand-orange border-transparent text-white hover:bg-brand-deep-orange'
-                      }`}
-                    >
-                      {campaignBusyId === c._id ? 'Updating…' : c.isJoined ? 'Leave Campaign' : 'Join Campaign'}
-                    </button>
+                    {c.sponsorType === 'platform' ? (
+                      <div className="flex items-start gap-1.5 mb-3 px-2.5 py-2 rounded-[7px] bg-success-bg">
+                        <Building2 size={13} className="text-success shrink-0 mt-[1px]" />
+                        <p className="text-[11px] text-success font-medium leading-snug">
+                          Platform sponsored — Solvexo covers this discount. Your store is automatically included, no action needed.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-1.5 mb-3 px-2.5 py-2 rounded-[7px] bg-cream">
+                        <User size={13} className="text-slate shrink-0 mt-[1px]" />
+                        <p className="text-[11px] text-slate leading-snug">
+                          Seller sponsored — this discount comes out of your own payout for orders placed during the sale.
+                        </p>
+                      </div>
+                    )}
+                    {c.sponsorType === 'platform' ? (
+                      <div className="w-full py-2 rounded-[7px] text-xs font-semibold text-center border border-bone bg-cream text-slate">
+                        Automatically Included
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => toggleCampaign(c)}
+                        disabled={campaignBusyId === c._id}
+                        className={`w-full py-2 rounded-[7px] text-xs font-semibold cursor-pointer transition-colors duration-150 border disabled:opacity-50 ${
+                          c.isJoined
+                            ? 'bg-white border-bone text-graphite hover:bg-cream'
+                            : 'bg-brand-orange border-transparent text-white hover:bg-brand-deep-orange'
+                        }`}
+                      >
+                        {campaignBusyId === c._id ? 'Updating…' : c.isJoined ? 'Leave Campaign' : 'Join Campaign'}
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

@@ -6,7 +6,7 @@ import {
   ChevronRight, Shield, type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
-import { TokenStorage } from '@/api/services/auth';
+import { TokenStorage, apiLogout } from '@/api/services/auth';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RoleChip
@@ -266,7 +266,13 @@ export function ProfileAvatar() {
 
   const initials = profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? '..';
   const handleNavigate = (path: string) => { navigate(path); setOpen(false); };
-  const handleLogout   = () => { TokenStorage.clear(); setOpen(false); navigate('/'); window.location.reload(); };
+  const handleLogout   = async () => {
+    try { await apiLogout(); } catch { /* best-effort — clear local session regardless */ }
+    TokenStorage.clear();
+    setOpen(false);
+    navigate('/');
+    window.location.reload();
+  };
 
   return (
     <div

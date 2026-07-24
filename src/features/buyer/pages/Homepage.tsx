@@ -143,7 +143,7 @@ function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick:
 
 const FEATURES: { Icon: LucideIcon; title: string; bg: string; desc: string; path: string }[] = [
   { Icon: ShoppingBag,   title: 'Marketplace',           bg: '#FBECE4', desc: 'Join thousands of buyers discovering your products in the Solvexo marketplace.',         path: '/marketplace' },
-  { Icon: BookOpen,      title: 'Educational Resources', bg: '#EBF7EF', desc: 'Sell lesson plans, courses, worksheets and digital curricula to educators worldwide.',    path: '/education'   },
+  { Icon: BookOpen,      title: 'Educational Resources', bg: '#EBF7EF', desc: 'Sell lesson plans, courses, worksheets and digital curricula to educators worldwide.',    path: '/EducationMarketplace'   },
   { Icon: Download,      title: 'Digital Downloads',     bg: '#E6F1FB', desc: 'Sell ebooks, music, software, templates and files with instant delivery.',                path: '/marketplace' },
   { Icon: Store,         title: 'Your Own Store',        bg: '#FEF7E5', desc: 'Launch a branded store with a custom domain, no coding required.',                        path: '/sellers'     },
   { Icon: Monitor,       title: 'Point of Sale',         bg: '#FBECE4', desc: 'Accept payments in-person with the Solvexo POS app, fully synced to your dashboard.',     path: '/sellers'     },
@@ -599,11 +599,13 @@ export function Homepage() {
                     onClick={() => goToStoreCard(i)}
                     aria-label={`Go to store ${i + 1}`}
                     aria-current={i === storesActiveIndex}
-                    className={clsx(
-                      'rounded-full transition-all duration-200 cursor-pointer border-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                    className="p-2 -m-2 flex items-center cursor-pointer border-none bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange rounded-full"
+                  >
+                    <span className={clsx(
+                      'block rounded-full transition-all duration-200',
                       i === storesActiveIndex ? 'w-7 h-[9px] bg-brand-orange' : 'w-[9px] h-[9px] bg-bone hover:bg-slate/40',
-                    )}
-                  />
+                    )} />
+                  </button>
                 ))}
               </div>
             )}

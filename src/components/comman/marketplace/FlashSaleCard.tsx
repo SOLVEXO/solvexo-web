@@ -93,7 +93,7 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
           onClick={e => onToggleWishlist(e, product._id, vId)}
           disabled={isWishlisting}
           className={clsx(
-            'absolute bottom-2 right-2 w-7 h-7 rounded-full bg-white border border-bone flex items-center justify-center',
+            'absolute bottom-2 right-2 w-9 h-9 rounded-full bg-white border border-bone flex items-center justify-center',
             'transition-all duration-200 hover:scale-110 hover:border-brand-orange/40',
             isWishlisting ? 'cursor-wait' : 'cursor-pointer',
           )}

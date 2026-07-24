@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
+import { ImageUpload } from '@/components/comman/ui';
 import { apiAddCategory, type Category } from '@/api/services/categories';
 
 const selCls = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none cursor-pointer disabled:opacity-60';
@@ -61,6 +62,7 @@ function AddSubcategoryModal({ mainCategoryId, onClose, onCreated }: {
 }) {
   const [name, setName]               = useState('');
   const [description, setDescription] = useState('');
+  const [image, setImage]             = useState('');
   const [saving, setSaving]           = useState(false);
   const [error, setError]             = useState('');
 
@@ -69,7 +71,7 @@ function AddSubcategoryModal({ mainCategoryId, onClose, onCreated }: {
     setError('');
     setSaving(true);
     try {
-      const res = await apiAddCategory({ name: name.trim(), parentId: mainCategoryId, description: description.trim() || undefined });
+      const res = await apiAddCategory({ name: name.trim(), parentId: mainCategoryId, description: description.trim() || undefined, image: image.trim() || undefined });
       onCreated(res.data._id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create subcategory.');
@@ -100,6 +102,10 @@ function AddSubcategoryModal({ mainCategoryId, onClose, onCreated }: {
           <label className="text-[12px] font-medium text-charcoal block mb-1.5">Description (optional)</label>
           <textarea rows={2} value={description} onChange={e => setDescription(e.target.value)}
             className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white resize-y" />
+        </div>
+        <div>
+          <label className="text-[12px] font-medium text-charcoal block mb-1.5">Image (optional)</label>
+          <ImageUpload value={image ? [image] : []} onChange={urls => setImage(urls[0] ?? '')} maxFiles={1} />
         </div>
         {error && <p className="text-[12px] text-error">{error}</p>}
       </div>

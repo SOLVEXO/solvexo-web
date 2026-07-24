@@ -180,20 +180,20 @@ export function CartPage() {
                         ${price.toLocaleString()} each
                       </p>
 
-                      {/* Qty controls */}
-                      <div className="flex items-center gap-[6px]">
+                      {/* Qty controls — 40x40px min hit area for touch */}
+                      <div className="flex items-center gap-[6px] flex-wrap">
                         <button
                           onClick={() => handleUpdateQty(item.productId, key, 'decrease')}
                           disabled={item.quantity <= 1 || isUpdating}
                           aria-label={`Decrease quantity of ${item.name}`}
                           className={clsx(
-                            'w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                            'w-10 h-10 rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                             item.quantity <= 1 || isUpdating
                               ? 'cursor-not-allowed opacity-40'
                               : 'cursor-pointer hover:bg-bone',
                           )}
                         >
-                          <Minus size={12} />
+                          <Minus size={14} />
                         </button>
 
                         <span className="min-w-[36px] text-center text-[14px] font-bold text-carbon">
@@ -207,16 +207,16 @@ export function CartPage() {
                           disabled={isUpdating}
                           aria-label={`Increase quantity of ${item.name}`}
                           className={clsx(
-                            'w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                            'w-10 h-10 rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                             isUpdating ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-bone',
                           )}
                         >
-                          <Plus size={12} />
+                          <Plus size={14} />
                         </button>
 
                         <Button
                           variant="danger" size="xs"
-                          className="ml-2!"
+                          className="ml-2! py-[11px]! min-h-10"
                           onClick={() => handleRemove(item.productId, key)}
                           loading={isRemoving}
                           icon={!isRemoving && <Trash2 size={11} />}

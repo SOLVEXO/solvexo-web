@@ -56,6 +56,7 @@ export function AreaChart({
     v >= 1000 ? `${valuePrefix}${(v / 1000).toFixed(0)}k` : `${valuePrefix}${v}`;
   const yFmt = yTickFormatter ?? defaultYFmt;
   const ariaLabel = title ? `${title} chart` : 'Chart';
+  const hasValue = data.some(d => Number(d[dataKey]) !== 0);
 
   if (!data.length) {
     return (
@@ -101,11 +102,11 @@ export function AreaChart({
           <Area
             type="monotone"
             dataKey={dataKey}
-            stroke={color}
+            stroke={hasValue ? color : 'transparent'}
             strokeWidth={2.5}
-            fill={`url(#${gradId})`}
+            fill={hasValue ? `url(#${gradId})` : 'transparent'}
             dot={false}
-            activeDot={{ r: 4, fill: color, strokeWidth: 0 }}
+            activeDot={hasValue ? { r: 4, fill: color, strokeWidth: 0 } : false}
           />
         </RechartsArea>
       </ResponsiveContainer>

@@ -26,6 +26,11 @@ export interface DigitalFile {
   mimeType: string;
 }
 
+export interface DigitalPreviewMeta {
+  enabled:         boolean;
+  sourceFileIndex: number;
+}
+
 export interface DigitalMeta {
   files:                DigitalFile[];
   downloadLimit:        string;          // 'unlimited' or a number as string
@@ -33,6 +38,7 @@ export interface DigitalMeta {
   pdfStampingEnabled:   boolean;
   licenseType:          'personal' | 'single_classroom' | 'school' | 'commercial';
   buyerDeliveryMessage: string;
+  preview?:             DigitalPreviewMeta;
 }
 
 export interface ProductVariant {

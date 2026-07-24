@@ -2,8 +2,10 @@ import { useState, memo } from 'react';
 import { clsx } from 'clsx';
 import { Card } from '@/components/comman/ui/Card';
 import { Button } from '@/components/comman/ui/Button';
-import { ShoppingCart, Star, Heart, ImageOff, Loader2 } from 'lucide-react';
+import { Modal } from '@/components/comman/ui/Modal';
+import { ShoppingCart, Star, Heart, ImageOff, Loader2, Zap, Eye } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
+import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 export function ProductCardSkeleton() {
@@ -95,6 +97,11 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   const isDigital  = !isPhysical;
   const typeLabel  = isPhysical ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const { data: previewData, loading: previewLoading, error: previewError, load: loadPreview, reset: resetPreview } = useProductPreview(product._id);
+  const openPreview = (e: React.MouseEvent) => { e.stopPropagation(); setPreviewOpen(true); loadPreview(); };
+  const closePreview = () => { setPreviewOpen(false); resetPreview(); };
+
   const defaultVariant = product.variants.find(v => v.isDefault) ?? product.variants[0];
   const lowestPrice    = product.variants.length > 0
     ? Math.min(...product.variants.map(v => v.price))
@@ -110,7 +117,15 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   // Stock tracking only applies to physical goods — digital/educational products are always available.
   const stock = isDigital ? Infinity : (defaultVariant?.stock ?? 0);
 
+  const campaign = product.activeCampaign;
+  const campaignLabel = campaign
+    ? (campaign.discountType && campaign.discountValue != null
+        ? (campaign.discountType === 'percentage' ? `${campaign.discountValue}% OFF` : `$${campaign.discountValue} OFF`)
+        : 'FEATURED')
+    : null;
+
   return (
+    <>
     <Card padding="none" hover onClick={() => onClick(product._id)} className="overflow-hidden rounded-[16px] h-full flex flex-col">
       {/* Image container */}
       <div className="relative overflow-hidden group/img">
@@ -131,12 +146,12 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
           </span>
         </div>
 
-        {/* Wishlist button */}
+        {/* Wishlist button — bottom-right, out of the way of the top-corner badge stacks */}
         <button
           onClick={e => onToggleWishlist(e, product._id, vId)}
           disabled={isWishlisting}
           className={clsx(
-            'absolute top-[8px] right-[8px] w-7 h-7 sm:w-8 sm:h-8 rounded-full',
+            'absolute bottom-[8px] right-[8px] w-8 h-8 sm:w-9 sm:h-9 rounded-full',
             'bg-[rgba(255,255,255,0.92)] border-none flex items-center justify-center',
             'transition-transform duration-150 hover:scale-[1.15]',
             isWishlisting ? 'cursor-wait' : 'cursor-pointer',
@@ -148,7 +163,26 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             className={clsx('heart-pop transition-[color,fill] duration-150', isWishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')}
           />
         </button>
-        <div className="absolute top-[8px] left-[8px] flex flex-col gap-[4px] items-start">
+
+        {/* Bottom-left: preview button (digital/educational only) — opens right here, no navigation */}
+        {isDigital && product.digital?.previewAvailable && (
+          <button
+            onClick={openPreview}
+            disabled={previewLoading}
+            aria-label="Preview"
+            className={clsx(
+              'absolute bottom-[8px] left-[8px] w-8 h-8 sm:w-9 sm:h-9 rounded-full',
+              'bg-[rgba(255,255,255,0.92)] border-none flex items-center justify-center',
+              'transition-transform duration-150 hover:scale-[1.15]',
+              previewLoading ? 'cursor-wait' : 'cursor-pointer',
+            )}
+          >
+            {previewLoading ? <Loader2 size={13} className="text-brand-orange animate-spin" /> : <Eye size={13} className="text-brand-orange" />}
+          </button>
+        )}
+
+        {/* Top-left: product type only */}
+        <div className="absolute top-[8px] left-[8px]">
           <span className={clsx(
             'px-[6px] py-[2px] rounded-[5px] text-[9px] sm:text-[10px] font-semibold border',
             isDigital
@@ -157,9 +191,26 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
           )}>
             {typeLabel}
           </span>
+        </div>
+
+        {/* Top-right: discount badges — split from the type badge so up to
+            two of these never has to stack three-deep in one corner. */}
+        <div className="absolute top-[8px] right-[8px] flex flex-col gap-[4px] items-end">
           {pctOff != null && pctOff > 0 && (
             <span className={clsx('font-bold bg-[#E11D48] text-white', compact ? 'px-[7px] py-[2px] rounded-full text-[10px]' : 'px-[6px] py-[2px] rounded-[5px] text-[9px] sm:text-[10px]')}>
               -{pctOff}%
+            </span>
+          )}
+          {campaignLabel && (
+            <span
+              title={campaign ? `${campaign.name} — ends ${new Date(campaign.endDate).toLocaleDateString()}` : undefined}
+              className={clsx(
+                'flex items-center gap-[3px] font-bold bg-gradient-to-r from-brand-orange to-[#F0A57A] text-white',
+                compact ? 'px-[7px] py-[2px] rounded-full text-[9px]' : 'px-[6px] py-[2px] rounded-[5px] text-[9px] sm:text-[10px]',
+              )}
+            >
+              <Zap size={9} className="fill-white shrink-0" />
+              {campaignLabel}
             </span>
           )}
         </div>
@@ -208,7 +259,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             size="sm"
             disabled={stock <= 0}
             onClick={e => onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital')}
-            className="inline-flex shrink-0"
+            className="inline-flex shrink-0 min-h-9! min-w-9!"
           >
             {isAdding ? <Loader2 size={11} className="animate-spin" /> : <ShoppingCart size={11} />}
             {!compact && <span className="hidden lg:inline">{stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}</span>}
@@ -216,5 +267,35 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
         </div>
       </div>
     </Card>
+
+    {previewOpen && (
+      <Modal title="Preview" onClose={closePreview} width={560}>
+        {previewLoading && (
+          <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-slate">
+            <Loader2 size={16} className="animate-spin" /> Loading preview…
+          </div>
+        )}
+        {!previewLoading && previewError && (
+          <p className="text-[13px] text-error text-center py-10">{previewError}</p>
+        )}
+        {!previewLoading && !previewError && previewData?.type === 'pdf' && (
+          <div className="flex flex-col gap-3">
+            {previewData.pages.map((url, i) => (
+              <img key={i} src={url} alt={`Preview page ${i + 1}`} className="w-full rounded-lg border border-bone" />
+            ))}
+          </div>
+        )}
+        {!previewLoading && !previewError && previewData?.type === 'image' && (
+          <img src={previewData.url} alt="Preview" className="w-full rounded-lg border border-bone" />
+        )}
+        {!previewLoading && !previewError && previewData?.type === 'video' && (
+          <video src={previewData.url} controls className="w-full rounded-lg" />
+        )}
+        {!previewLoading && !previewError && previewData?.type === 'audio' && (
+          <audio src={previewData.url} controls className="w-full" />
+        )}
+      </Modal>
+    )}
+    </>
   );
 });

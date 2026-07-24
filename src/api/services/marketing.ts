@@ -66,6 +66,9 @@ export interface JoinableCampaign {
   status:        'draft' | 'active' | 'ended';
   discountType:  DiscountType | null;
   discountValue: number | null;
+  // 'seller': this store pays the discount out of its own payout if it joins.
+  // 'platform': Solvexo reimburses it — joining costs this store nothing.
+  sponsorType:   'seller' | 'platform';
   isJoined:      boolean;
 }
 

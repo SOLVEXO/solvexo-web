@@ -54,6 +54,7 @@ export function BarChart({
     v >= 1000 ? `${valuePrefix}${(v / 1000).toFixed(0)}k` : `${valuePrefix}${v}`;
   const yFmt = yTickFormatter ?? defaultYFmt;
   const ariaLabel = title ? `${title} chart` : 'Chart';
+  const hasValue = data.some(d => Number(d[dataKey]) !== 0);
 
   if (!data.length) {
     return (
@@ -86,7 +87,7 @@ export function BarChart({
           <XAxis dataKey={xKey}  tick={CHART_TICK} axisLine={false} tickLine={false} />
           <YAxis tick={CHART_TICK} axisLine={false} tickLine={false} tickFormatter={yFmt} width={40} />
           <Tooltip content={<ChartTooltip valuePrefix={valuePrefix} valueSuffix={valueSuffix} />} />
-          <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} maxBarSize={maxBarSize} />
+          <Bar dataKey={dataKey} fill={hasValue ? color : 'transparent'} radius={[4, 4, 0, 0]} maxBarSize={maxBarSize} />
         </RechartsBar>
       </ResponsiveContainer>
     </div>

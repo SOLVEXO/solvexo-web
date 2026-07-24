@@ -6,17 +6,14 @@ import { useSocialLogin } from '@/hooks/auth/useSocialLogin';
 import { Button } from '@/components/comman/ui/Button';
 import { Input } from '@/components/comman/ui/Input';
 import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
-import { SocialLoginModal } from '@/components/comman/ui/SocialLoginModal';
 import { RoleSegmentedControl } from '@/components/comman/ui/RoleSegmentedControl';
-import { SocialLoginRow, type SocialProvider } from '@/components/comman/ui/SocialIcons';
+import { SocialLoginRow } from '@/components/comman/ui/SocialIcons';
 import { Eye, EyeOff, ShieldCheck, Sparkles, Zap, AlertTriangle } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
-import type { AppRole, SocialLoginPayload } from '@/api/services/auth';
+import type { AppRole } from '@/api/services/auth';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MarketplaceMockup } from '@/features/auth/components/mockups/AuthMockups';
-
-type Provider = SocialProvider;
 
 const ROLE_OPTIONS = [
   { value: 'user',   label: 'Buyer'  },
@@ -36,7 +33,6 @@ export function LoginPage() {
   const social     = useSocialLogin();
   const [role, setRole]           = useState<AppRole>('user');
   const [showPass, setShowPass]   = useState(false);
-  const [socialProvider, setSocialProvider] = useState<Provider | null>(null);
 
   // Stable role toggle — doesn't reset form or trigger re-mount of hook states
   const handleRoleToggle = useCallback((r: AppRole) => setRole(r), []);
@@ -51,25 +47,9 @@ export function LoginPage() {
     },
   );
 
-  const handleSocialSuccess = useCallback(async (profile: {
-    userName: string; email: string; socialId: string; image: string; token: string;
-  }) => {
-    if (!socialProvider) return;
-    const payload: SocialLoginPayload = {
-      authProvider: socialProvider,
-      socialId:     profile.socialId,
-      userName:     profile.userName,
-      email:        profile.email,
-      image:        profile.image,
-      token:        profile.token,
-    };
-    await social.execute(payload);
-    setSocialProvider(null);
-  }, [socialProvider, social]);
-
   return (
     <AuthSplitLayout
-      heading={<>Commerce.<br />Solved.</>}
+      heading="Commerce. Solved."
       subtext="Join thousands of buyers and sellers building their business on Solvexo's marketplace."
       highlights={HIGHLIGHTS}
       visual={<MarketplaceMockup />}
@@ -146,7 +126,7 @@ export function LoginPage() {
 
       {/* Social buttons */}
       <SocialLoginRow
-        onSelect={setSocialProvider}
+        onSelect={social.notConfigured}
         disabled={social.loading || login.loading}
         className="mb-4"
       />
@@ -157,15 +137,6 @@ export function LoginPage() {
           Register
         </Button>
       </p>
-
-      {socialProvider && (
-        <SocialLoginModal
-          provider={socialProvider}
-          loading={social.loading}
-          onClose={() => setSocialProvider(null)}
-          onSuccess={handleSocialSuccess}
-        />
-      )}
     </AuthSplitLayout>
   );
 }

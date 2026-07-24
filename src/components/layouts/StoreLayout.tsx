@@ -6,8 +6,8 @@ import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, Sparkles, ChevronLeft, Monitor, Store,
-  ClipboardList, Megaphone, Star, Plug, Activity, Search, Wallet,
-  Truck, MessageSquare, UserPlus, FolderTree, RefreshCw, Undo2, CreditCard,
+  ClipboardList, Megaphone, Star, Plug, Search, Wallet,
+  Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, XCircle, Clock,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
@@ -71,8 +71,6 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { id: 'loyalty',      Icon: Star,          label: 'Loyalty',      path: 'loyalty'      },
       { id: 'subscriptions',Icon: RefreshCw,     label: 'Subscriptions', path: 'subscriptions' },
       { id: 'integrations', Icon: Plug,           label: 'Integrations', path: 'integrations' },
-      { id: 'followers',    Icon: UserPlus,       label: 'Followers',    path: 'followers'    },
-      { id: 'activity',     Icon: Activity,       label: 'Activity Log', path: 'activity'     },
       { id: 'shipping',     Icon: Truck,          label: 'Shipping',     path: 'shipping'     },
       { id: 'messages',     Icon: MessageSquare,  label: 'Messages',     path: 'messages'     },
     ],

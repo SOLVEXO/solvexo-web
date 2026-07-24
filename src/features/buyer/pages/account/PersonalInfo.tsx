@@ -55,7 +55,7 @@ export function PersonalInfo() {
         description="Manage your name, contact details, and delivery address."
       />
 
-      <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 300px' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
         <div className="flex flex-col gap-5 min-w-0">
           {/* Identity card */}
           <Card padding="none" className="rounded-2xl overflow-hidden">

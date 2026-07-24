@@ -38,7 +38,9 @@ export function SparkLine({
   showTooltip = true,
 }: SparkLineProps) {
   const chartData = data.map((v, i) => ({ i, v }));
-  const gradId = `spark-grad-${color.replace('#', '')}`;
+  const hasValue = data.some(v => v !== 0);
+  const lineColor = hasValue ? color : '#D8D5CC';
+  const gradId = `spark-grad-${lineColor.replace('#', '')}`;
 
   if (!data.length) {
     return (
@@ -59,8 +61,8 @@ export function SparkLine({
         <AreaChart data={chartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor={color} stopOpacity={0.2} />
-              <stop offset="95%" stopColor={color} stopOpacity={0}   />
+              <stop offset="5%"  stopColor={lineColor} stopOpacity={0.2} />
+              <stop offset="95%" stopColor={lineColor} stopOpacity={0}   />
             </linearGradient>
           </defs>
           {showTooltip && (
@@ -72,11 +74,11 @@ export function SparkLine({
           <Area
             type="monotone"
             dataKey="v"
-            stroke={color}
+            stroke={lineColor}
             strokeWidth={1.8}
             fill={`url(#${gradId})`}
             dot={false}
-            activeDot={{ r: 3, fill: color, strokeWidth: 0 }}
+            activeDot={{ r: 3, fill: lineColor, strokeWidth: 0 }}
           />
         </AreaChart>
       </ResponsiveContainer>

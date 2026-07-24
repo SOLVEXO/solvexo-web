@@ -35,6 +35,25 @@ export interface DigitalProduct {
   pdfStampingEnabled:    boolean;
   licenseType:           string;
   buyerDeliveryMessage:  string;
+  previewAvailable?:     boolean;
+}
+
+export type ProductPreviewData =
+  | { type: 'pdf';   pages: string[]; expiresAt: number }
+  | { type: 'image'; url: string;     expiresAt: number }
+  | { type: 'video'; url: string;     expiresAt: number }
+  | { type: 'audio'; url: string;     expiresAt: number };
+
+// A product's store can be opted into more than one platform sale campaign,
+// but the backend already resolves that down to the single best-for-buyer
+// one (see MarketingService.pickPrimaryCampaignForBadge) — the frontend just
+// renders whatever it's given, never picks among candidates itself.
+export interface ActiveCampaignBadge {
+  campaignId:    string;
+  name:          string;
+  discountType:  'percentage' | 'fixed' | null;
+  discountValue: number | null;
+  endDate:       string;
 }
 
 export interface MarketplaceProduct {
@@ -69,6 +88,7 @@ export interface MarketplaceProduct {
   updatedAt:         string;
   variants:          ProductVariant[];
   sellerName?:       string;
+  activeCampaign?:   ActiveCampaignBadge | null;
 }
 
 interface ProductsByCategoryResponse {
@@ -96,12 +116,14 @@ export function apiGetAllProducts(
   page = 1, limit = 10, categoryId?: string,
   productType?: 'physical' | 'digital' | 'educational',
   educationLevel?: string, normalizedCustomLevel?: string,
+  campaignId?: string,
 ) {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (categoryId) params.set('id', categoryId);
   if (productType) params.set('productType', productType);
   if (educationLevel) params.set('educationLevel', educationLevel);
   if (normalizedCustomLevel) params.set('normalizedCustomLevel', normalizedCustomLevel);
+  if (campaignId) params.set('campaignId', campaignId);
   return client.get<never, ProductsByCategoryResponse>(
     `${ENDPOINTS.MARKETPLACE.PRODUCTS_BY_CATEGORY}?${params.toString()}`,
   );
@@ -146,5 +168,12 @@ export function apiGenerateWorksheetTrial(payload: WorksheetTrialPayload) {
 export function apiGetProductById(id: string) {
   return client.get<never, ProductByIdResponse>(
     ENDPOINTS.MARKETPLACE.PRODUCT_BY_ID(id),
+  );
+}
+
+/** GET /api/products/preview/:id — watermarked/trimmed preview of a digital product, never the original file. */
+export function apiGetProductPreview(id: string) {
+  return client.get<never, { success: boolean; data: ProductPreviewData }>(
+    ENDPOINTS.MARKETPLACE.PRODUCT_PREVIEW(id),
   );
 }

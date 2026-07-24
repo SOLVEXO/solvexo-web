@@ -1,5 +1,6 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
+import type { ActiveCampaignBadge } from './marketplace';
 
 export type SellerType  = 'creator' | 'reseller' | 'brand' | 'retailer';
 export type ProductType = 'physical_products' | 'digital_downloads' | 'educational_resources' | 'services' | 'in_person_pos';
@@ -135,6 +136,7 @@ export interface PublicStoreData {
   sellerType:     string | null;
   badges:         string[];
   createdAt:      string;
+  activeCampaign: ActiveCampaignBadge | null;
 }
 
 export interface PublicStoreProductsParams {
@@ -161,6 +163,7 @@ export interface PublicStoreProduct {
   youSaveUSD?:         number;
   discountPercent?:    number;
   subscriberPlanName?: string;
+  activeCampaign?:     ActiveCampaignBadge | null;
 }
 
 export interface PublicStoreProductsData {
@@ -313,11 +316,14 @@ export function apiGetStoreFollowers(storeId: string, page = 1, limit = 20) {
 // ── Customers (staff-facing) ──────────────────────────────────────────────────
 
 export interface StoreCustomer {
-  _id:       string;
-  name:      string;
-  email:     string;
-  phone:     string;
-  createdAt: string;
+  _id:         string;
+  name:        string;
+  email:       string;
+  phone:       string;
+  createdAt:   string | null;
+  orderCount:  number;
+  totalSpent:  number;
+  lastOrderAt: string | null;
 }
 
 export interface UpdateStoreCustomerPayload {
@@ -328,6 +334,7 @@ export interface UpdateStoreCustomerPayload {
 
 interface PaginatedCustomers {
   pagination: { page: number; limit: number; total: number; totalPages: number };
+  summary:    { totalOrders: number; totalRevenue: number };
   customers:  StoreCustomer[];
 }
 

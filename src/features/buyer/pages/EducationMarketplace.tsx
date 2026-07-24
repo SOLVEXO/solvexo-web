@@ -388,7 +388,7 @@ export function EducationMarketplace() {
         search={{ value: searchQuery, onChange: setSearchQuery, placeholder: 'Search resources...' }}
       />
 
-      <DealsBanner />
+      <DealsBanner storeType="educational_resources" />
 
       {/* ── Admin-managed promo banners — same platform-wide Banner list shown on
           Homepage/Marketplace; there's no per-page scoping, so whatever admin
@@ -404,7 +404,7 @@ export function EducationMarketplace() {
 
       {/* ── Full-width mega-menu bar — Grade Levels / Flash Sale / Top Picks / Featured Sellers / About ── */}
       <MegaMenuBar
-        categoriesLabel="Grade Levels"
+        categoriesLabel="All Category"
         categoriesContent={
           <EducationCategoriesMegaContent
             levels={levels} otherLevels={otherLevels}
@@ -514,7 +514,7 @@ export function EducationMarketplace() {
               </div>
             )}
 
-            <div className="theme-education grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px]">
+            <div className="theme-education grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[1440px]:grid-cols-6 min-[1920px]:grid-cols-7 gap-[10px] sm:gap-3 lg:gap-[14px]">
               {loading
                 ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
                 : filtered.map(p => {

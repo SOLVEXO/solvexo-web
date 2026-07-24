@@ -5,6 +5,13 @@ import { apiUpdateStore, apiSetCustomDomain, apiSetWhiteLabel, type ProductType 
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { ImageUpload } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
+import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
+import { ActivityLogTab } from './tabs/ActivityLogTab';
+
+const TABS: Tab[] = [
+  { id: 'general',  label: 'General' },
+  { id: 'activity', label: 'Activity Log' },
+];
 
 const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   physical_products:     'Physical Products',
@@ -138,6 +145,7 @@ function DomainWhiteLabelCard({ storeId, store, refetch }: { storeId: string; st
 export default function StoreSettings() {
   const { store, storeId, loading, refetch } = useStoreWorkspace();
 
+  const [activeTab, setActiveTab] = useState('general');
   const [name,         setName]         = useState('');
   const [description,  setDescription]  = useState('');
   const [productTypes, setProductTypes] = useState<ProductType[]>([]);
@@ -186,23 +194,33 @@ export default function StoreSettings() {
         title="Store Settings"
         subtitle={store?.name ?? ''}
         actions={
-          <button
-            onClick={handleSave}
-            disabled={!isDirty || saving}
-            className="flex items-center gap-[7px] px-[18px] py-2 rounded-lg border-none text-[13px] font-semibold transition-all duration-150"
-            style={{
-              background: isDirty && !saving ? '#D97757' : '#E8E6DC',
-              color: isDirty && !saving ? '#fff' : '#8C8A82',
-              cursor: isDirty && !saving ? 'pointer' : 'not-allowed',
-            }}
-          >
-            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            Save Changes
-          </button>
+          activeTab === 'general' ? (
+            <button
+              onClick={handleSave}
+              disabled={!isDirty || saving}
+              className="flex items-center gap-[7px] px-[18px] py-2 rounded-lg border-none text-[13px] font-semibold transition-all duration-150"
+              style={{
+                background: isDirty && !saving ? '#D97757' : '#E8E6DC',
+                color: isDirty && !saving ? '#fff' : '#8C8A82',
+                cursor: isDirty && !saving ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              Save Changes
+            </button>
+          ) : undefined
         }
       />
 
-      {loading ? <SettingsSkeleton /> : (
+      <div className="px-4 md:px-7 pt-3">
+        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
+      </div>
+
+      {activeTab === 'activity' ? (
+        <div className="px-7 py-6">
+          <ActivityLogTab />
+        </div>
+      ) : loading ? <SettingsSkeleton /> : (
         <div className="px-7 py-6">
 
           {/* Status message */}

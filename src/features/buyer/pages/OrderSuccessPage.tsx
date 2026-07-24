@@ -36,7 +36,7 @@ function DownloadBtn({ orderId, productId }: { orderId: string; productId: strin
         onClick={fetch}
         disabled={busy}
         className={clsx(
-          'flex items-center gap-[5px] px-3 py-[5px] rounded-[7px] text-[11px] font-semibold border-none transition-opacity',
+          'flex items-center gap-[5px] px-3 min-h-9 rounded-[7px] text-[11px] font-semibold border-none transition-opacity',
           busy ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
           'bg-[#EEF0FF] text-[#3851D1]',
         )}

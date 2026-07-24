@@ -3,12 +3,19 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   useCampaigns, useCampaignActions, usePlatformCoupons, usePlatformCouponActions,
 } from '@/hooks/admin/useAdminMarketing';
-import type { Campaign, CampaignStatus, DiscountType, PlatformCoupon } from '@/api/services/marketing/adminMarketing';
-import { Button, Modal, Input, Textarea, Select, Table, StatusBadge, Badge, Toggle, TabBar } from '@/components/comman/ui';
+import type { Campaign, CampaignStatus, DiscountType, CampaignSponsorType, PlatformCoupon } from '@/api/services/marketing/adminMarketing';
+import { Button, Modal, Input, Textarea, Select, Table, StatusBadge, Badge, Toggle, TabBar, ImageUpload, ActionMenu } from '@/components/comman/ui';
 import type { TableColumn, Tab } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate, formatCurrency } from '@/components/comman/analytics/format';
-import { Tag, Percent, Trash2, Plus, Store } from 'lucide-react';
+import { Tag, Percent, Trash2, Plus, Store, Building2, User, Pencil, Play, Square } from 'lucide-react';
+
+// datetime-local inputs need "YYYY-MM-DDTHH:mm" in local time, not the raw ISO string.
+function toDatetimeLocalValue(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 const TABS: Tab[] = [
   { id: 'campaigns', label: 'Sale Campaigns', icon: <Tag size={14} /> },
@@ -17,56 +24,112 @@ const TABS: Tab[] = [
 
 // ═══════════════════════════════ Campaigns ═══════════════════════════════════
 
-function CreateCampaignModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const { createCampaign, submitting, error } = useCampaignActions();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [discountType, setDiscountType] = useState<DiscountType | ''>('');
-  const [discountValue, setDiscountValue] = useState('');
+function CreateCampaignModal({ campaign, onClose, onSaved }: { campaign?: Campaign; onClose: () => void; onSaved: () => void }) {
+  const isEdit = !!campaign;
+  const { createCampaign, updateCampaign, submitting, error } = useCampaignActions();
+  const [name, setName] = useState(campaign?.name ?? '');
+  const [description, setDescription] = useState(campaign?.description ?? '');
+  const [bannerImage, setBannerImage] = useState(campaign?.bannerImage ?? '');
+  const [startDate, setStartDate] = useState(campaign ? toDatetimeLocalValue(campaign.startDate) : '');
+  const [endDate, setEndDate] = useState(campaign ? toDatetimeLocalValue(campaign.endDate) : '');
+  const [discountType, setDiscountType] = useState<DiscountType | ''>(campaign?.discountType ?? '');
+  const [discountValue, setDiscountValue] = useState(campaign?.discountValue != null ? String(campaign.discountValue) : '');
+  const [sponsorType, setSponsorType] = useState<CampaignSponsorType>(campaign?.sponsorType ?? 'seller');
+  const [order, setOrder] = useState(campaign ? String(campaign.order) : '');
   const [validationError, setValidationError] = useState('');
 
   async function submit() {
     if (!name.trim() || !startDate || !endDate) { setValidationError('Name, start date, and end date are required.'); return; }
     if (new Date(endDate) <= new Date(startDate)) { setValidationError('End date must be after start date.'); return; }
+    if (sponsorType === 'platform' && (!discountType || !discountValue)) {
+      setValidationError('A platform-sponsored campaign needs a discount type and value — that\'s what the platform is covering.');
+      return;
+    }
     setValidationError('');
-    const ok = await createCampaign({
+    const payload = {
       name: name.trim(),
       description: description.trim() || undefined,
+      bannerImage: bannerImage || undefined,
       startDate: new Date(startDate).toISOString(),
       endDate: new Date(endDate).toISOString(),
       discountType: discountType || undefined,
       discountValue: discountType && discountValue ? Number(discountValue) : undefined,
-    });
-    if (ok) onCreated();
+      sponsorType,
+      order: order.trim() ? Number(order) : undefined,
+    };
+    const ok = isEdit ? await updateCampaign(campaign._id, payload) : await createCampaign(payload);
+    if (ok) onSaved();
   }
 
   return (
     <Modal
-      title="Create Sale Campaign"
+      title={isEdit ? 'Edit Sale Campaign' : 'Create Sale Campaign'}
       width={520}
       onClose={onClose}
       footer={<>
         <Button variant="outline" onClick={onClose}>Cancel</Button>
-        <Button onClick={submit} loading={submitting}>Create Campaign</Button>
+        <Button onClick={submit} loading={submitting}>{isEdit ? 'Save Changes' : 'Create Campaign'}</Button>
       </>}
     >
       <div className="flex flex-col gap-4">
         <Input label="Campaign Name" placeholder="Summer Sale Weekend" value={name} onChange={(e) => setName(e.target.value)} />
         <Textarea label="Description" rows={3} placeholder="Optional description sellers will see when opting in…" value={description} onChange={(e) => setDescription(e.target.value)} />
+        <div>
+          <label className="text-[12px] font-medium text-charcoal block mb-1.5">Banner Image (optional)</label>
+          <ImageUpload value={bannerImage ? [bannerImage] : []} onChange={(urls) => setBannerImage(urls[0] ?? '')} maxFiles={1} />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input label="Start Date" type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           <Input label="End Date" type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
         </div>
+        <div>
+          <Input
+            label="Display Order (optional)" type="number" min={0} placeholder="0 = shown first"
+            value={order} onChange={(e) => setOrder(e.target.value)}
+          />
+          <p className="text-[11px] text-slate mt-1">
+            Controls which campaign shows first when more than one is active on the deals banner — lower number = shown first. Leave blank to add it to the end of the rotation.
+          </p>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Select label="Suggested Discount (optional)" value={discountType} onChange={(e) => setDiscountType(e.target.value as DiscountType | '')}>
+          <Select label={sponsorType === 'platform' ? 'Discount (required)' : 'Suggested Discount (optional)'} value={discountType} onChange={(e) => setDiscountType(e.target.value as DiscountType | '')}>
             <option value="">No default discount</option>
             <option value="percentage">Percentage off</option>
             <option value="fixed">Fixed amount off</option>
           </Select>
           <Input label="Discount Value" type="number" min={0} disabled={!discountType} value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} />
         </div>
+
+        <div>
+          <label className="text-[12px] font-medium text-charcoal block mb-1.5">Who covers the discount?</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={() => setSponsorType('seller')}
+              className="text-left px-3.5 py-3 rounded-lg border transition-colors cursor-pointer"
+              style={{
+                borderColor: sponsorType === 'seller' ? '#D97757' : '#E8E6DC',
+                background: sponsorType === 'seller' ? '#FBECE4' : '#FAF9F5',
+              }}
+            >
+              <p className="flex items-center gap-1.5 text-[13px] font-semibold text-charcoal"><User size={13} /> Seller Sponsored</p>
+              <p className="text-[11px] text-slate mt-1">Participating sellers give the discount out of their own payout — the platform's cost is $0.</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSponsorType('platform')}
+              className="text-left px-3.5 py-3 rounded-lg border transition-colors cursor-pointer"
+              style={{
+                borderColor: sponsorType === 'platform' ? '#D97757' : '#E8E6DC',
+                background: sponsorType === 'platform' ? '#FBECE4' : '#FAF9F5',
+              }}
+            >
+              <p className="flex items-center gap-1.5 text-[13px] font-semibold text-charcoal"><Building2 size={13} /> Platform Sponsored</p>
+              <p className="text-[11px] text-slate mt-1">The platform reimburses the discount — sellers keep their full payout, no margin lost by joining.</p>
+            </button>
+          </div>
+        </div>
+
         {(validationError || error) && <p className="text-[12px] text-error">{validationError || error}</p>}
       </div>
     </Modal>
@@ -76,13 +139,29 @@ function CreateCampaignModal({ onClose, onCreated }: { onClose: () => void; onCr
 function CampaignsTab() {
   const [statusFilter, setStatusFilter] = useState<CampaignStatus | undefined>(undefined);
   const { data: campaigns, loading, error, refetch } = useCampaigns(statusFilter);
-  const { setStatus, deleteCampaign, submitting, error: actionError } = useCampaignActions();
+  const { setStatus, updateCampaign, deleteCampaign, submitting, error: actionError } = useCampaignActions();
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Campaign | null>(null);
   const [deleting, setDeleting] = useState<Campaign | null>(null);
+  const [orderDrafts, setOrderDrafts] = useState<Record<string, string>>({});
 
   async function toggleStatus(c: Campaign, next: CampaignStatus) {
     const ok = await setStatus(c._id, next);
     if (ok) refetch();
+  }
+
+  async function saveOrder(c: Campaign, raw: string) {
+    const next = Number(raw);
+    if (raw.trim() === '' || Number.isNaN(next) || next === c.order) return;
+    const ok = await updateCampaign(c._id, { order: next });
+    if (ok) {
+      refetch();
+    } else {
+      // Rejected (e.g. position already taken by another campaign) — snap the
+      // input back to the real value instead of leaving the invalid number
+      // displayed as if it had been saved.
+      setOrderDrafts((prev) => ({ ...prev, [c._id]: String(c.order) }));
+    }
   }
 
   async function handleDelete() {
@@ -104,33 +183,65 @@ function CampaignsTab() {
     },
     { key: 'dates', header: 'Dates', render: (c) => <span className="text-[12px] text-slate whitespace-nowrap">{formatDate(c.startDate)} – {formatDate(c.endDate)}</span> },
     {
+      key: 'order',
+      header: 'Banner Order',
+      align: 'center',
+      render: (c) => (
+        <input
+          type="number"
+          min={0}
+          value={orderDrafts[c._id] ?? String(c.order)}
+          onChange={(e) => setOrderDrafts((prev) => ({ ...prev, [c._id]: e.target.value }))}
+          onBlur={(e) => saveOrder(c, e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+          disabled={submitting}
+          title="Lower number shows first when multiple campaigns are active on the deals banner"
+          className="w-14 rounded-md border border-bone px-2 py-1 text-center text-[12px] text-charcoal outline-none focus:border-brand-orange disabled:opacity-50"
+        />
+      ),
+    },
+    {
       key: 'discount',
       header: 'Discount',
       render: (c) => c.discountType && c.discountValue
         ? <span className="text-[13px] font-semibold text-charcoal">{c.discountType === 'percentage' ? `${c.discountValue}% off` : formatCurrency(c.discountValue) + ' off'}</span>
         : <span className="text-slate/40">—</span>,
     },
+    {
+      key: 'sponsor',
+      header: 'Sponsored By',
+      render: (c) => c.sponsorType === 'platform'
+        ? (
+          <div>
+            <Badge size="sm" color="orange"><Building2 size={10} /> Platform</Badge>
+            {c.totalPlatformSubsidyUSD > 0 && <p className="text-[11px] text-slate mt-1">{formatCurrency(c.totalPlatformSubsidyUSD)} spent</p>}
+          </div>
+        )
+        : <Badge size="sm"><User size={10} /> Seller</Badge>,
+    },
     { key: 'status', header: 'Status', render: (c) => <StatusBadge status={c.status} size="sm" /> },
     {
       key: 'participating',
       header: 'Stores Joined',
       align: 'center',
-      render: (c) => <Badge size="sm"><Store size={10} /> {c.participatingStoreIds.length}</Badge>,
+      render: (c) => c.sponsorType === 'platform'
+        ? <Badge size="sm" color="orange"><Store size={10} /> All stores</Badge>
+        : <Badge size="sm"><Store size={10} /> {c.participatingStoreIds.length}</Badge>,
     },
     {
       key: 'actions',
       header: 'Actions',
+      align: 'center',
       render: (c) => (
-        <div className="flex items-center gap-2">
-          {c.status === 'draft' && (
-            <button onClick={() => toggleStatus(c, 'active')} disabled={submitting} className="text-[12px] font-medium text-success bg-transparent border-none cursor-pointer disabled:opacity-40">Activate</button>
-          )}
-          {c.status === 'active' && (
-            <button onClick={() => toggleStatus(c, 'ended')} disabled={submitting} className="text-[12px] font-medium text-slate bg-transparent border-none cursor-pointer disabled:opacity-40">End</button>
-          )}
-          <span className="text-bone text-[13px]">|</span>
-          <button onClick={() => setDeleting(c)} className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer">Delete</button>
-        </div>
+        <ActionMenu
+          align="right"
+          items={[
+            { label: 'Edit Campaign', icon: <Pencil size={13} />, onClick: () => setEditing(c) },
+            ...(c.status === 'draft' ? [{ label: 'Activate', icon: <Play size={13} />, onClick: () => toggleStatus(c, 'active' as CampaignStatus), disabled: submitting }] : []),
+            ...(c.status === 'active' ? [{ label: 'End Campaign', icon: <Square size={13} />, onClick: () => toggleStatus(c, 'ended' as CampaignStatus), disabled: submitting }] : []),
+            { label: 'Delete', icon: <Trash2 size={13} />, danger: true, onClick: () => setDeleting(c) },
+          ]}
+        />
       ),
     },
   ];
@@ -169,7 +280,8 @@ function CampaignsTab() {
         )}
       </div>
 
-      {creating && <CreateCampaignModal onClose={() => setCreating(false)} onCreated={() => { setCreating(false); refetch(); }} />}
+      {creating && <CreateCampaignModal onClose={() => setCreating(false)} onSaved={() => { setCreating(false); refetch(); }} />}
+      {editing && <CreateCampaignModal campaign={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); refetch(); }} />}
 
       {deleting && (
         <Modal
@@ -189,14 +301,15 @@ function CampaignsTab() {
 
 // ═══════════════════════════════ Platform Coupons ═════════════════════════════
 
-function CreateCouponModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const { createCoupon, submitting, error } = usePlatformCouponActions();
-  const [code, setCode] = useState('');
-  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
-  const [discountValue, setDiscountValue] = useState('');
-  const [minOrderAmount, setMinOrderAmount] = useState('');
-  const [usageLimit, setUsageLimit] = useState('');
-  const [expiresAt, setExpiresAt] = useState('');
+function CreateCouponModal({ coupon, onClose, onSaved }: { coupon?: PlatformCoupon; onClose: () => void; onSaved: () => void }) {
+  const isEdit = !!coupon;
+  const { createCoupon, updateCoupon, submitting, error } = usePlatformCouponActions();
+  const [code, setCode] = useState(coupon?.code ?? '');
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>(coupon?.discountType ?? 'percentage');
+  const [discountValue, setDiscountValue] = useState(coupon ? String(coupon.discountValue) : '');
+  const [minOrderAmount, setMinOrderAmount] = useState(coupon?.minOrderAmount != null ? String(coupon.minOrderAmount) : '');
+  const [usageLimit, setUsageLimit] = useState(coupon?.usageLimit != null ? String(coupon.usageLimit) : '');
+  const [expiresAt, setExpiresAt] = useState(coupon?.expiresAt ? coupon.expiresAt.slice(0, 10) : '');
   const [validationError, setValidationError] = useState('');
 
   async function submit() {
@@ -204,31 +317,35 @@ function CreateCouponModal({ onClose, onCreated }: { onClose: () => void; onCrea
     if (!code.trim() || !discountValue || Number.isNaN(value) || value <= 0) { setValidationError('Code and a valid discount value are required.'); return; }
     if (discountType === 'percentage' && value > 100) { setValidationError('Percentage discount cannot exceed 100.'); return; }
     setValidationError('');
-    const ok = await createCoupon({
-      code: code.trim().toUpperCase(),
-      discountType,
+    const commonFields = {
       discountValue: value,
       minOrderAmount: minOrderAmount ? Number(minOrderAmount) : undefined,
       usageLimit: usageLimit ? Number(usageLimit) : undefined,
       expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
-    });
-    if (ok) onCreated();
+    };
+    // code/discountType are immutable after creation (UpdatePlatformCouponPayload
+    // doesn't accept them) — an edit only ever adjusts the fields below.
+    const ok = isEdit
+      ? await updateCoupon(coupon._id, commonFields)
+      : await createCoupon({ code: code.trim().toUpperCase(), discountType, ...commonFields });
+    if (ok) onSaved();
   }
 
   return (
     <Modal
-      title="Create Platform Coupon"
+      title={isEdit ? 'Edit Platform Coupon' : 'Create Platform Coupon'}
       width={480}
       onClose={onClose}
       footer={<>
         <Button variant="outline" onClick={onClose}>Cancel</Button>
-        <Button onClick={submit} loading={submitting}>Create Coupon</Button>
+        <Button onClick={submit} loading={submitting}>{isEdit ? 'Save Changes' : 'Create Coupon'}</Button>
       </>}
     >
       <div className="flex flex-col gap-4">
-        <Input label="Coupon Code" placeholder="WELCOME10" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} />
+        <Input label="Coupon Code" placeholder="WELCOME10" value={code} disabled={isEdit} onChange={(e) => setCode(e.target.value.toUpperCase())} />
+        {isEdit && <p className="text-[11px] text-slate -mt-2.5">Code and discount type can't be changed after creation — delete and create a new coupon instead.</p>}
         <div className="grid grid-cols-2 gap-3">
-          <Select label="Discount Type" value={discountType} onChange={(e) => setDiscountType(e.target.value as 'percentage' | 'fixed')}>
+          <Select label="Discount Type" value={discountType} disabled={isEdit} onChange={(e) => setDiscountType(e.target.value as 'percentage' | 'fixed')}>
             <option value="percentage">Percentage</option>
             <option value="fixed">Fixed amount</option>
           </Select>
@@ -249,6 +366,7 @@ function CouponsTab() {
   const { data: coupons, loading, error, refetch } = usePlatformCoupons();
   const { updateCoupon, deleteCoupon, submitting, error: actionError } = usePlatformCouponActions();
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<PlatformCoupon | null>(null);
   const [deleting, setDeleting] = useState<PlatformCoupon | null>(null);
 
   async function toggleActive(coupon: PlatformCoupon) {
@@ -276,10 +394,15 @@ function CouponsTab() {
     {
       key: 'actions',
       header: 'Actions',
+      align: 'center',
       render: (c) => (
-        <button onClick={() => setDeleting(c)} className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer flex items-center gap-1">
-          <Trash2 size={11} /> Delete
-        </button>
+        <ActionMenu
+          align="right"
+          items={[
+            { label: 'Edit', icon: <Pencil size={13} />, onClick: () => setEditing(c) },
+            { label: 'Delete', icon: <Trash2 size={13} />, danger: true, onClick: () => setDeleting(c) },
+          ]}
+        />
       ),
     },
   ];
@@ -305,7 +428,8 @@ function CouponsTab() {
         )}
       </div>
 
-      {creating && <CreateCouponModal onClose={() => setCreating(false)} onCreated={() => { setCreating(false); refetch(); }} />}
+      {creating && <CreateCouponModal onClose={() => setCreating(false)} onSaved={() => { setCreating(false); refetch(); }} />}
+      {editing && <CreateCouponModal coupon={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); refetch(); }} />}
 
       {deleting && (
         <Modal
