@@ -50,7 +50,7 @@ export default function StoreCustomerList() {
     setLoading(true);
     apiGetStoreCustomers(storeId, page, PER_PAGE)
       .then(res => {
-        setCustomers(res.data.customers);
+        setCustomers(res.data.customers ?? []);
         setTotal(res.data.pagination.total);
         setSummary(res.data.summary);
       })

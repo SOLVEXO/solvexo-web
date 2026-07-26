@@ -14,7 +14,7 @@ export function useShippingZones() {
     setLoading(true);
     setError('');
     apiGetShippingZones()
-      .then(res => { if (!cancelled) setZones(res.data); })
+      .then(res => { if (!cancelled) setZones(res.data ?? []); })
       .catch((err: unknown) => {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load shipping zones.');
       })

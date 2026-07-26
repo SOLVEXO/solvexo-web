@@ -46,7 +46,7 @@ export function SellersTab({ params }: { params: BaseAnalyticsParams }) {
     { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatCurrency(r.revenue) },
   ];
 
-  const latestCumulative = trends.data?.series.length ? trends.data.series[trends.data.series.length - 1].cumulativeSellers : null;
+  const latestCumulative = trends.data?.series?.length ? trends.data.series[trends.data.series.length - 1].cumulativeSellers : null;
 
   return (
     <div className="flex flex-col gap-4">

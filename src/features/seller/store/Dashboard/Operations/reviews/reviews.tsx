@@ -49,7 +49,7 @@ export function StoreReviews() {
     apiGetStoreReviews(storeId, { page, rating: ratingFilter ? parseInt(ratingFilter) : undefined })
       .then(res => {
         if (cancelled) return;
-        setReviews(res.data.reviews);
+        setReviews(res.data.reviews ?? []);
         setStats(res.data.stats);
         setTotal(res.data.pagination.total);
       })
@@ -125,12 +125,12 @@ export function StoreReviews() {
       key: 'review', header: 'Review',
       render: r => (
         <div className="max-w-[360px]">
-          {r.comments.length > 0 ? (
+          {(r.comments ?? []).length > 0 ? (
             <p className="text-[13px] text-charcoal leading-[1.5] line-clamp-2">{r.comments[0].text}</p>
           ) : (
             <span className="text-[12px] text-slate italic">No comment</span>
           )}
-          {r.media.length > 0 && (
+          {(r.media ?? []).length > 0 && (
             <span className="inline-flex items-center gap-1 text-[11px] text-slate mt-1">
               <ImageIcon size={11} /> {r.media.length} photo{r.media.length > 1 ? 's' : ''}
             </span>

@@ -82,9 +82,9 @@ export function usePOSSale(): POSSaleState {
 
     const timer = setTimeout(() => {
       const request = q
-        ? apiSearchPosProducts(storeId, q).then(res => ({ items: res.data, totalPages: 1 }))
+        ? apiSearchPosProducts(storeId, q).then(res => ({ items: res.data ?? [], totalPages: 1 }))
         : apiGetPosProducts(storeId, { page, limit: PAGE_SIZE }).then(res => ({
-            items: res.data.products,
+            items: res.data.products ?? [],
             totalPages: res.data.pagination.totalPages,
           }));
 
@@ -213,7 +213,7 @@ export function usePOSSale(): POSSaleState {
     if (!sessionId) return;
     setHeldSalesLoading(true);
     apiGetHeldSales(storeId, sessionId)
-      .then(res => setHeldSales(res.data))
+      .then(res => setHeldSales(res.data ?? []))
       .catch(() => {})
       .finally(() => setHeldSalesLoading(false));
   }, [storeId, sessionId]);
@@ -221,7 +221,7 @@ export function usePOSSale(): POSSaleState {
   useEffect(() => { reloadHeldSales(); }, [reloadHeldSales]);
 
   const resumeHeldSale = (sale: Sale) => {
-    setCart(sale.items.map(item => ({
+    setCart((sale.items ?? []).map(item => ({
       productId:   item.productId,
       variantId:   item.variantId,
       name:        item.name,

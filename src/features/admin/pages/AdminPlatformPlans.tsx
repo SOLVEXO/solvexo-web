@@ -58,7 +58,7 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
   const [trialDays, setTrialDays] = useState(p ? String(p.trialDays ?? 0) : '0');
   const [sortOrder, setSortOrder] = useState(p ? String(p.sortOrder ?? 0) : '0');
   const [isPubliclyVisible, setIsPubliclyVisible] = useState(p?.isPubliclyVisible ?? true);
-  const [featuresText, setFeaturesText] = useState(p?.featureBullets.join('\n') ?? '');
+  const [featuresText, setFeaturesText] = useState(p?.featureBullets?.join('\n') ?? '');
   const [limits, setLimits] = useState<PlatformPlanLimits>(p?.limits ?? DEFAULT_LIMITS);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -160,7 +160,7 @@ function SubscribersModal({ plan, onClose }: { plan: PlatformPlan; onClose: () =
   const [refundSuccess, setRefundSuccess] = useState(false);
 
   useEffect(() => {
-    apiAdminGetPlatformPlanSubscribers(plan._id, { limit: 50 }).then(res => setSubs(res.data.subscribers)).finally(() => setLoading(false));
+    apiAdminGetPlatformPlanSubscribers(plan._id, { limit: 50 }).then(res => setSubs(res.data.subscribers ?? [])).finally(() => setLoading(false));
   }, [plan._id]);
 
   function openRefund() {
@@ -239,7 +239,7 @@ function AddonsPanel() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiAdminListAddonPurchases({ limit: 50 }).then(res => setAddons(res.data.addons)).finally(() => setLoading(false));
+    apiAdminListAddonPurchases({ limit: 50 }).then(res => setAddons(res.data.addons ?? [])).finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="px-5 py-4 flex flex-col gap-2">{Array.from({ length: 4 }).map((_, i) => <SkeletonBox key={i} height={36} rounded="6px" />)}</div>;
@@ -286,7 +286,7 @@ export function AdminPlatformPlans() {
   const load = useCallback(() => {
     setLoading(true); setError('');
     Promise.all([apiAdminListPlatformPlans(true), apiAdminGetPlatformPlanRevenue()])
-      .then(([plansRes, revRes]) => { setPlans(plansRes.data); setRevenue(revRes.data); })
+      .then(([plansRes, revRes]) => { setPlans(plansRes.data ?? []); setRevenue(revRes.data); })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load platform plans.'))
       .finally(() => setLoading(false));
   }, []);
@@ -385,7 +385,7 @@ export function AdminPlatformPlans() {
                   {plan.isFree ? 'Free' : plan.isCustomPricing ? 'Custom' : `$${plan.monthlyPriceUSD}/mo`}
                 </p>
                 <ul className="flex flex-col gap-1 mb-3 p-0 list-none">
-                  {plan.featureBullets.slice(0, 4).map(f => <li key={f} className="text-[12px] text-graphite">• {f}</li>)}
+                  {(plan.featureBullets ?? []).slice(0, 4).map(f => <li key={f} className="text-[12px] text-graphite">• {f}</li>)}
                 </ul>
                 <div className="flex items-center justify-between py-2 border-t border-[#F0EEE6] mb-3 mt-auto text-[11px] text-slate">
                   <span>{plan.subscriberCount ?? 0} sellers</span>

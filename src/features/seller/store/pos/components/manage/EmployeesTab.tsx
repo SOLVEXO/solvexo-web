@@ -40,7 +40,7 @@ export function EmployeesTab({ storeId }: EmployeesTabProps) {
     setLoading(true);
     setError('');
     Promise.all([apiGetEmployees(storeId), apiListShifts(storeId)])
-      .then(([empRes, shiftRes]) => { if (!cancelled) { setEmployees(empRes.data); setShifts(shiftRes.data); } })
+      .then(([empRes, shiftRes]) => { if (!cancelled) { setEmployees(empRes.data ?? []); setShifts(shiftRes.data ?? []); } })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load employees.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };

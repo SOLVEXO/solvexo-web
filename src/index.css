@@ -98,6 +98,13 @@
   }
 }
 
+/* ── Top navigation progress bar (RootLayout) — indeterminate sweep ── */
+@keyframes top-progress {
+  0%   { transform: translateX(-100%); }
+  50%  { transform: translateX(150%); }
+  100% { transform: translateX(400%); }
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--color-bone); }

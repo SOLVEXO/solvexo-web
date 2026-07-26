@@ -25,7 +25,7 @@ export function LocationsTab({ storeId }: LocationsTabProps) {
     let cancelled = false;
     setLoading(true);
     Promise.all([apiListLocations(storeId), apiGetLocationsOverview(storeId)])
-      .then(([locRes, ovRes]) => { if (!cancelled) { setLocations(locRes.data); setOverview(ovRes.data); } })
+      .then(([locRes, ovRes]) => { if (!cancelled) { setLocations(locRes.data ?? []); setOverview(ovRes.data); } })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load locations.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -85,7 +85,7 @@ export function LocationsTab({ storeId }: LocationsTabProps) {
 
           <DarkTable headers={['Branch', 'City', 'Sales (30d)', 'Status', '']}>
             {locations.map(loc => {
-              const stats = overview?.byLocation.find(r => r.locationId === loc._id);
+              const stats = overview?.byLocation?.find(r => r.locationId === loc._id);
               return (
                 <tr key={loc._id} className="border-b border-carbon last:border-0">
                   <td className="px-4 py-[10px] text-[12px] font-medium text-white">{loc.name}</td>

@@ -662,13 +662,13 @@ export function ProductDetail() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-[6px] flex-wrap">
                           <span className="text-[16px] font-bold text-carbon">{storeData?.name ?? product.sellerName ?? 'Unknown Seller'}</span>
-                          {storeData?.badges.includes('verified') && (
+                          {storeData?.badges?.includes('verified') && (
                             <Badge color="green" size="sm"><ShieldCheck size={11} /> Verified Seller</Badge>
                           )}
-                          {storeData?.badges.includes('top_seller') && (
+                          {storeData?.badges?.includes('top_seller') && (
                             <Badge color="orange" size="sm"><Award size={11} /> Top Seller</Badge>
                           )}
-                          {storeData?.badges.includes('featured') && (
+                          {storeData?.badges?.includes('featured') && (
                             <Badge color="blue" size="sm"><Sparkles size={11} /> Featured</Badge>
                           )}
                         </div>
@@ -771,7 +771,7 @@ export function ProductDetail() {
             return (
               <ProductRail title="Related Products">
                 {relatedProducts.map(p => {
-                  const dv = p.variants.find(v => v.isDefault) ?? p.variants[0];
+                  const dv = (p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0];
                   const wishlisted = dv ? isWishlisted(p._id, dv._id) : false;
                   return (
                     <RelatedCard

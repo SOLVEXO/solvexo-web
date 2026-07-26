@@ -50,7 +50,7 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
 
   useEffect(() => {
     apiGetMySubscriptionById(sub._id)
-      .then(res => setInvoices(res.data.invoices))
+      .then(res => setInvoices(res.data.invoices ?? []))
       .catch(() => {})
       .finally(() => setLoadingInvoices(false));
     if (sub.store) apiGetBenefitsSummary(sub.store._id).then(res => setBenefits(res.data)).catch(() => {});
@@ -256,7 +256,7 @@ function CreditsPanel() {
 
   const load = useCallback(() => {
     setLoading(true);
-    apiGetCreditWallets().then(res => setWallets(res.data)).finally(() => setLoading(false));
+    apiGetCreditWallets().then(res => setWallets(res.data ?? [])).finally(() => setLoading(false));
   }, []);
   useEffect(load, [load]);
 
@@ -396,7 +396,7 @@ export function SubscriptionsTab() {
   const load = useCallback(() => {
     setLoading(true);
     apiGetMySubscriptions({ page, limit: 10 })
-      .then(res => { setSubs(res.data.subscriptions); setTotal(res.data.pagination.total); })
+      .then(res => { setSubs(res.data.subscriptions ?? []); setTotal(res.data.pagination?.total ?? 0); })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load your subscriptions.'))
       .finally(() => setLoading(false));
   }, [page]);

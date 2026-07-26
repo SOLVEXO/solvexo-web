@@ -35,7 +35,7 @@ export function PaymentsTab({ params }: { params: BaseAnalyticsParams }) {
         ) : d ? (
           <DonutChart
             title="Revenue by Payment Method"
-            data={d.methodBreakdown.map(m => ({ label: m.label, value: m.revenue }))}
+            data={(d.methodBreakdown ?? []).map(m => ({ label: m.label, value: m.revenue }))}
           />
         ) : null}
 

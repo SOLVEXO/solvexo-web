@@ -54,7 +54,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         setWishlistItems(items);
         const keys = new Set<string>();
         items.forEach(item => {
-          item.variants.forEach(v => keys.add(wKey(item.product._id, v._id)));
+          (item.variants ?? []).forEach(v => keys.add(wKey(item.product._id, v._id)));
         });
         setWishlistedKeys(keys);
       })

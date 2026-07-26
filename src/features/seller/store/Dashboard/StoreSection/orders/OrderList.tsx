@@ -63,7 +63,7 @@ export function StoreOrderList() {
     apiGetSellerOrders(storeId, page, LIMIT)
       .then(res => {
         if (cancelled) return;
-        setOrders(res.data.orders);
+        setOrders(res.data.orders ?? []);
         setStats(res.data.stats);
         setTotalOrders(res.data.pagination.totalOrders);
       })

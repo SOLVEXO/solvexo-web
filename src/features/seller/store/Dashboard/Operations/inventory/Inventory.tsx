@@ -74,7 +74,7 @@ export function StoreInventory() {
     apiGetStoreInventory(storeId, page, LIMIT)
       .then(res => {
         if (cancelled) return;
-        setProducts(res.data.products);
+        setProducts(res.data.products ?? []);
         setStats(res.data.stats);
         setTotalProducts(res.data.pagination.totalProducts);
       })
@@ -241,7 +241,7 @@ export function StoreInventory() {
               <span className="text-[11px] text-slate ml-1">(≤ {lowStock.threshold} units left)</span>
             </div>
             <div className="px-5 py-3 flex flex-col divide-y divide-[#F3F2EC]">
-              {lowStock.items.slice(0, 5).map(item => (
+              {(lowStock.items ?? []).slice(0, 5).map(item => (
                 <button
                   key={item.productId}
                   onClick={() => navigate(`/seller/store/${storeId}/products/edit/${item.productId}`)}
@@ -251,8 +251,8 @@ export function StoreInventory() {
                   <Badge color="orange">{item.stock} left</Badge>
                 </button>
               ))}
-              {lowStock.items.length > 5 && (
-                <p className="text-[11px] text-slate pt-2">+ {lowStock.items.length - 5} more</p>
+              {(lowStock.items ?? []).length > 5 && (
+                <p className="text-[11px] text-slate pt-2">+ {(lowStock.items ?? []).length - 5} more</p>
               )}
             </div>
           </Card>

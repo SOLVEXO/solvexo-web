@@ -66,7 +66,7 @@ export function FollowersTab() {
     try {
       const res = await apiGetStoreFollowers(storeId, p, 20);
       if (res.success) {
-        setFollowers(res.data.followers);
+        setFollowers(res.data.followers ?? []);
         setTotal(res.data.total);
         setPages(res.data.pagination.totalPages);
         setPage(p);

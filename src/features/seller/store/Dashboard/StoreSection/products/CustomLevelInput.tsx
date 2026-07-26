@@ -13,7 +13,7 @@ export function CustomLevelInput({ value, onChange }: { value: string; onChange:
     let cancelled = false;
     const id = setTimeout(() => {
       apiGetCustomLevelSuggestions(value)
-        .then(res => { if (!cancelled) setSuggestions(res.data); })
+        .then(res => { if (!cancelled) setSuggestions(res.data ?? []); })
         .catch(() => { if (!cancelled) setSuggestions([]); });
     }, 300);
     return () => { cancelled = true; clearTimeout(id); };

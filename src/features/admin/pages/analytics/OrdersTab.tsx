@@ -54,7 +54,7 @@ export function OrdersTab({ params }: { params: BaseAnalyticsParams }) {
           <DonutChart
             title="Order Status Breakdown"
             centerLabel="Orders"
-            data={Object.entries(s.statusCounts).map(([status, count]) => ({
+            data={Object.entries(s.statusCounts ?? {}).map(([status, count]) => ({
               label: status.charAt(0).toUpperCase() + status.slice(1),
               value: count,
             }))}

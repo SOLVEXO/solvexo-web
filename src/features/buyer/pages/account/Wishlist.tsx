@@ -110,7 +110,7 @@ export function Wishlist() {
       <div className="divide-y divide-[#F5F4EF]">
         {wishlistItems.map(item => {
           const p = item.product;
-          const variant = item.variants[0];
+          const variant = item.variants?.[0];
           const isRemoving = removingId === variant?._id || wishlisting === variant?._id;
           const isAdding = addingId === variant?._id || adding === variant?._id;
 

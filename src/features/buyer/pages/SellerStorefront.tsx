@@ -62,12 +62,13 @@ const SELLER_TYPE_LABEL: Record<string, string> = {
 
 function StoreBadges({ badges, sellerType }: { badges: string[]; sellerType: string | null }) {
   const items: { label: string; icon: React.ReactNode; cls: string }[] = [];
+  const safeBadges = badges ?? [];
 
-  if (badges.includes('top_seller'))
+  if (safeBadges.includes('top_seller'))
     items.push({ label: 'Top Seller', icon: <Award size={10} />, cls: 'bg-amber-100 text-amber-700 border-amber-200' });
-  if (badges.includes('verified'))
+  if (safeBadges.includes('verified'))
     items.push({ label: 'Verified', icon: <BadgeCheck size={10} />, cls: 'bg-blue-50 text-blue-600 border-blue-200' });
-  if (badges.includes('featured'))
+  if (safeBadges.includes('featured'))
     items.push({ label: 'Featured', icon: <Star size={10} />, cls: 'bg-purple-50 text-purple-600 border-purple-200' });
 
   const specialistLabel = sellerType ? SELLER_TYPE_LABEL[sellerType] : null;
@@ -168,7 +169,7 @@ export function SellerStorefront() {
         setStore(res.data);
         // Load filters after store is fetched
         apiGetPublicStoreFilters(res.data.storeId)
-          .then(r => setTags(r.data.tags))
+          .then(r => setTags(r.data.tags ?? []))
           .catch(() => {});
       })
       .catch(() => setStoreError('Store not found'))
@@ -668,7 +669,7 @@ export function SellerStorefront() {
           <div className={clsx('grid gap-5 max-w-[960px] mx-auto', plans.length === 1 ? 'grid-cols-1 max-w-[380px]' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3')}>
             {plans.map((plan, idx) => {
               const price = billingInterval === 'yearly' && plan.displayYearlyPrice != null ? plan.displayYearlyPrice : plan.displayMonthlyPrice;
-              const bullets = plan.benefits.map(benefitLabel).filter(Boolean) as string[];
+              const bullets = (plan.benefits ?? []).map(benefitLabel).filter(Boolean) as string[];
               const isPopular = idx === Math.min(1, plans.length - 1) && plans.length > 1;
               return (
                 <div key={plan._id} className="relative bg-white rounded-2xl p-6 flex flex-col"
@@ -689,7 +690,7 @@ export function SellerStorefront() {
                       <li key={b} className="flex items-start gap-2 text-[12.5px] text-graphite">
                         <Check size={13} className="mt-[2px] shrink-0" style={{ color: cfg.primaryColor }} />{b}
                       </li>
-                    )) : plan.features.map(f => (
+                    )) : (plan.features ?? []).map(f => (
                       <li key={f} className="flex items-start gap-2 text-[12.5px] text-graphite">
                         <Check size={13} className="mt-[2px] shrink-0" style={{ color: cfg.primaryColor }} />{f}
                       </li>

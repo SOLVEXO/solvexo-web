@@ -181,7 +181,7 @@ export function Marketplace() {
 
   const flashDeals = featuredPool
     .map(p => {
-      const dv = p.variants.find(v => v.isDefault) ?? p.variants[0];
+      const dv = (p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0];
       const price = dv?.price ?? 0;
       const compareAt = dv?.compareAtPrice ?? null;
       const pct = compareAt != null && compareAt > price ? Math.round((1 - price / compareAt) * 100) : 0;
@@ -249,13 +249,13 @@ export function Marketplace() {
       const pType = p.productType ?? p.type ?? 'physical';
       if (filters.type.length > 0 && !filters.type.some(t => t.toLowerCase() === pType)) return false;
       if (search && !p.name.toLowerCase().includes(search) && !p.tags?.some(t => t.toLowerCase().includes(search))) return false;
-      const lowestPrice = p.variants.length > 0 ? Math.min(...p.variants.map(v => v.price)) : null;
+      const lowestPrice = p.variants?.length > 0 ? Math.min(...p.variants.map(v => v.price)) : null;
       if (!matchesPriceFilter(lowestPrice)) return false;
       if (!matchesRatingFilter(p.averageRating)) return false;
       return true;
     })
     .sort((a, b) => {
-      const priceOf = (p: MarketplaceProduct) => p.variants.length > 0 ? Math.min(...p.variants.map(v => v.price)) : 0;
+      const priceOf = (p: MarketplaceProduct) => p.variants?.length > 0 ? Math.min(...p.variants.map(v => v.price)) : 0;
       if (sortBy === 'price-asc')  return priceOf(a) - priceOf(b);
       if (sortBy === 'price-desc') return priceOf(b) - priceOf(a);
       if (sortBy === 'best-rated') return b.averageRating - a.averageRating;
@@ -523,7 +523,7 @@ export function Marketplace() {
               {loading
                 ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
                 : filtered.map(p => {
-                    const defVariant = p.variants.find(v => v.isDefault) ?? p.variants[0];
+                    const defVariant = (p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0];
                     const vId = defVariant?._id ?? '';
                     return (
                       <ProductCard

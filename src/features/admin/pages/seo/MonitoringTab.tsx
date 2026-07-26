@@ -52,8 +52,8 @@ export function MonitoringTab() {
   return (
     <div className="flex flex-col gap-5">
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-        <MetricCard label="Bot Hits (30d)" value={(stats?.last30Days.byBot.reduce((s, b) => s + b.hits, 0) ?? 0).toLocaleString()} loading={statsLoading} />
-        <MetricCard label="Error Hits (30d)" value={stats?.last30Days.errorHits ?? 0} loading={statsLoading} />
+        <MetricCard label="Bot Hits (30d)" value={(stats?.last30Days?.byBot ?? []).reduce((s, b) => s + b.hits, 0).toLocaleString()} loading={statsLoading} />
+        <MetricCard label="Error Hits (30d)" value={stats?.last30Days?.errorHits ?? 0} loading={statsLoading} />
       </div>
 
       <Card padding="none">

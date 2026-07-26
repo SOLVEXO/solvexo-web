@@ -90,9 +90,9 @@ export default function StoreAddProduct() {
   const navigate           = useNavigate();
   const { storeId, store } = useStoreWorkspace();
 
-  const supportsPhysical    = !store || store.productTypes.includes('physical_products');
-  const supportsDigital     = !store || store.productTypes.includes('digital_downloads');
-  const supportsEducational = !store || store.productTypes.includes('educational_resources');
+  const supportsPhysical    = !store || (store.productTypes ?? []).includes('physical_products');
+  const supportsDigital     = !store || (store.productTypes ?? []).includes('digital_downloads');
+  const supportsEducational = !store || (store.productTypes ?? []).includes('educational_resources');
 
   const { mainCategory, subcategories, loading: catLoading, refetch: refetchCats } = useStoreSubcategories(store?.categoryId);
 

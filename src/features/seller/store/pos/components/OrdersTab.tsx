@@ -39,7 +39,7 @@ export function OrdersTab() {
     apiGetSales({ storeId, page, status: statusFilter ? (statusFilter as SaleStatus) : undefined })
       .then(res => {
         if (cancelled) return;
-        setSales(res.data.sales);
+        setSales(res.data.sales ?? []);
         setTotalPages(res.data.pagination.totalPages);
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load transactions.'); })
@@ -75,7 +75,7 @@ export function OrdersTab() {
   const dayStats = [
     { label: "Today's Sales",  value: dailyReport ? `$${dailyReport.summary.totalRevenue.toFixed(2)}` : '—', sub: dailyReport ? `${dailyReport.summary.totalTransactions} transactions` : '' },
     { label: 'Avg Ticket',     value: dailyReport ? `$${dailyReport.summary.avgTransactionValue.toFixed(2)}` : '—', sub: '' },
-    { label: 'Top Item',       value: dailyReport?.topProducts[0]?.name ?? '—', sub: dailyReport?.topProducts[0] ? `${dailyReport.topProducts[0].qty} sold today` : '' },
+    { label: 'Top Item',       value: dailyReport?.topProducts?.[0]?.name ?? '—', sub: dailyReport?.topProducts?.[0] ? `${dailyReport.topProducts[0].qty} sold today` : '' },
     { label: 'Cash in Drawer', value: session ? `$${session.expectedCash.toFixed(2)}` : '—', sub: 'Expected (this shift)' },
   ];
 

@@ -30,7 +30,7 @@ export function ReviewsTab() {
     apiGetMyReviews(page)
       .then(res => {
         if (cancelled) return;
-        setReviews(res.data.reviews);
+        setReviews(res.data.reviews ?? []);
         setTotal(res.data.pagination.total);
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load your reviews.'); })
@@ -80,7 +80,7 @@ export function ReviewsTab() {
       key: 'review', header: 'Your Review',
       render: r => (
         <div className="max-w-[320px]">
-          {r.comments.length > 0 ? (
+          {r.comments?.length > 0 ? (
             <p className="text-[13px] text-charcoal leading-[1.5] line-clamp-2">{r.comments[0].text}</p>
           ) : (
             <span className="text-[12px] text-slate italic">No comment</span>
@@ -151,7 +151,7 @@ export function ReviewsTab() {
           mode="edit"
           reviewId={editing.reviewId}
           initialRating={editing.rating ?? 0}
-          initialComment={editing.comments[0]?.text ?? ''}
+          initialComment={editing.comments?.[0]?.text ?? ''}
           initialMedia={editing.media}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); setRefreshKey(k => k + 1); }}

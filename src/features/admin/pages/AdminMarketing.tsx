@@ -226,7 +226,7 @@ function CampaignsTab() {
       align: 'center',
       render: (c) => c.sponsorType === 'platform'
         ? <Badge size="sm" color="orange"><Store size={10} /> All stores</Badge>
-        : <Badge size="sm"><Store size={10} /> {c.participatingStoreIds.length}</Badge>,
+        : <Badge size="sm"><Store size={10} /> {(c.participatingStoreIds ?? []).length}</Badge>,
     },
     {
       key: 'actions',

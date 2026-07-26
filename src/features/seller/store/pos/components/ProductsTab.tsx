@@ -16,8 +16,8 @@ interface FlatRow {
 
 function flatten(products: PosProduct[]): FlatRow[] {
   const rows: FlatRow[] = [];
-  for (const p of products) {
-    for (const v of p.variants) {
+  for (const p of products ?? []) {
+    for (const v of p.variants ?? []) {
       rows.push({ productId: p.productId, variantId: v.variantId, name: p.name, sku: v.sku, image: p.image, price: v.price, stock: v.stock });
     }
   }
@@ -42,8 +42,8 @@ export function ProductsTab() {
     const q = search.trim();
     const timer = setTimeout(() => {
       const request = q
-        ? apiSearchPosProducts(storeId, q).then(res => ({ items: res.data, totalPages: 1 }))
-        : apiGetPosProducts(storeId, { page, limit: 30 }).then(res => ({ items: res.data.products, totalPages: res.data.pagination.totalPages }));
+        ? apiSearchPosProducts(storeId, q).then(res => ({ items: res.data ?? [], totalPages: 1 }))
+        : apiGetPosProducts(storeId, { page, limit: 30 }).then(res => ({ items: res.data.products ?? [], totalPages: res.data.pagination.totalPages }));
 
       request
         .then(({ items, totalPages: tp }) => { if (!cancelled) { setRows(flatten(items)); setTotalPages(tp); } })

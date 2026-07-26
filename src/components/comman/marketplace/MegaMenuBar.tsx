@@ -21,7 +21,7 @@ export function RailCard({ product, onClick, badge, rank, size = 'md', stockLabe
   size?: 'md' | 'sm';
   stockLabel?: string;
 }) {
-  const dv        = product.variants.find(v => v.isDefault) ?? product.variants[0];
+  const dv        = (product.variants ?? []).find(v => v.isDefault) ?? product.variants?.[0];
   const price     = dv?.price ?? null;
   const compareAt = dv?.compareAtPrice ?? null;
   const isSm      = size === 'sm';
@@ -212,7 +212,7 @@ function FlashSaleMegaContent({ flashDeals, countdown, onProductClick }: {
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-6 gap-3">
             {flashDeals.slice(0, 6).map(({ product, pct }) => {
-              const dv = product.variants.find(v => v.isDefault) ?? product.variants[0];
+              const dv = (product.variants ?? []).find(v => v.isDefault) ?? product.variants?.[0];
               const isPhysical = (product.productType ?? product.type ?? 'physical') === 'physical';
               // Real stock only — no fabricated "sold" percentage, since there's
               // no original-stock figure to compute one against honestly.

@@ -74,7 +74,7 @@ export function AdminMarketplace() {
   }
 
   async function toggleEducatorBadge(row: MarketplaceListingRow) {
-    const hasBadge = row.storeBadges.includes('verified_educator');
+    const hasBadge = (row.storeBadges ?? []).includes('verified_educator');
     const ok = await setStoreBadge(row.storeId, 'verified_educator', !hasBadge);
     if (ok) refetch();
   }

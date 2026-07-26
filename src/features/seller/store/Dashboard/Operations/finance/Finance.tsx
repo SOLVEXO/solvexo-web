@@ -274,7 +274,7 @@ export function StoreFinance() {
       apiGetTaxReports(storeId),
       apiGetPayouts(storeId, { limit: 5 }),
     ])
-      .then(([d, m, s, t, p]) => { setDashboard(d); setMethods(m); setSchedule(s); setTaxReports(t); setRecentPayouts(p.payouts); })
+      .then(([d, m, s, t, p]) => { setDashboard(d); setMethods(m ?? []); setSchedule(s); setTaxReports(t ?? []); setRecentPayouts(p.payouts ?? []); })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load finance data.'))
       .finally(() => setLoading(false));
   }, [storeId]);
@@ -282,7 +282,7 @@ export function StoreFinance() {
   const loadTransactions = useCallback(() => {
     if (!storeId) return;
     apiGetFinanceTransactions(storeId, { page: txPage, limit: 10, type: txType || undefined })
-      .then(res => { setTransactions(res.transactions); setTxPages(res.pages); })
+      .then(res => { setTransactions(res.transactions ?? []); setTxPages(res.pages); })
       .catch(() => {});
   }, [storeId, txPage, txType]);
 

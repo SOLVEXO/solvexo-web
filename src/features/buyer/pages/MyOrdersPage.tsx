@@ -280,7 +280,7 @@ function OrderCard({ order, onChanged }: { order: OrderSummary; onChanged: () =>
   const [expanded, setExpanded] = useState(false);
   const [modal, setModal] = useState<'cancel' | 'return' | null>(null);
 
-  const items = order.stores.flatMap(s => s.items);
+  const items = (order.stores ?? []).flatMap(s => s.items ?? []);
   const allDigital = items.every(i => i.type === 'digital');
   const hasDigital = items.some(i => i.type === 'digital');
 

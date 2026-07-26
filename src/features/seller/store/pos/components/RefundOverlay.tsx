@@ -13,7 +13,7 @@ export function RefundOverlay({ sale, actingEmployeeId, onClose, onDone }: Refun
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState('');
 
-  const refundableItems = sale.items.filter(i => i.qty - i.refundedQty > 0);
+  const refundableItems = (sale.items ?? []).filter(i => i.qty - i.refundedQty > 0);
   const hasPartialSelection = Object.values(qtyByItem).some(q => q > 0);
 
   function setQty(itemId: string, max: number, value: string) {

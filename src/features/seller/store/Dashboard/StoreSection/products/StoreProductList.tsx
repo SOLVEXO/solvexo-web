@@ -83,7 +83,7 @@ export default function StoreProductList() {
     apiGetStoreInventory(storeId, fetchPage, fetchLimit)
       .then(res => {
         if (cancelled) return;
-        setProducts(res.data.products);
+        setProducts(res.data.products ?? []);
         setStats(res.data.stats);
         setTotalProducts(res.data.pagination.totalProducts);
       })

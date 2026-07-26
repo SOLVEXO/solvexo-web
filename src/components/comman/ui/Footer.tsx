@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { clsx } from 'clsx';
 import {
   ShieldCheck, Lock, BadgeCheck, CreditCard, Banknote,
-  Truck, Store, ChevronDown, Send, Check,
+  Truck, Store, Send, Check,
 } from 'lucide-react';
 import { SolvexoLogo } from './SolvexoLogo';
 import { apiSubscribeNewsletter } from '../../../api/services/newsletter';
@@ -66,7 +65,6 @@ const SECURITY_BADGES = [
   { label: 'Verified Sellers',  Icon: BadgeCheck },
 ];
 
-const CURRENCIES = ['USD $', 'PKR ₨', 'EUR €'];
 
 /* ── Minimal inline social glyphs — abstract, not brand logo assets ─────────── */
 function FacebookGlyph() {
@@ -108,36 +106,6 @@ const SOCIALS = [
   { label: 'X',         Glyph: XGlyph },
   { label: 'LinkedIn',  Glyph: LinkedinGlyph },
 ];
-
-function PillSelector({ options }: { options: string[] }) {
-  const [open, setOpen]     = useState(false);
-  const [value, setValue]   = useState(options[0]);
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(p => !p)}
-        className="flex items-center gap-[6px] px-3 py-[7px] rounded-lg border border-white/15 bg-white/[0.04] text-[12px] text-white/85 cursor-pointer hover:bg-white/[0.08] transition-colors"
-      >
-        {value}
-        <ChevronDown size={12} className={clsx('transition-transform', open && 'rotate-180')} />
-      </button>
-      {open && (
-        <div className="absolute bottom-[calc(100%+6px)] left-0 w-[160px] bg-charcoal border border-white/15 rounded-lg overflow-hidden z-10">
-          {options.map(o => (
-            <button
-              key={o}
-              onClick={() => { setValue(o); setOpen(false); }}
-              className="w-full flex items-center justify-between px-3 py-[8px] text-[12px] text-white/85 hover:bg-white/[0.06] cursor-pointer bg-transparent border-none text-left"
-            >
-              {o}
-              {o === value && <Check size={12} className="text-brand-orange" />}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function Newsletter() {
   const [email, setEmail]     = useState('');
@@ -280,11 +248,8 @@ export function Footer() {
       </div>
 
       {/* ── Bottom bar ───────────────────────────────────────────────────────── */}
-      <div className="border-t border-white/10 px-4 sm:px-6 lg:px-12 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="border-t border-white/10 px-4 sm:px-6 lg:px-12 py-4 flex items-center justify-center">
         <p className="text-[11px]">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
-        <div className="flex items-center gap-2">
-          <PillSelector options={CURRENCIES} />
-        </div>
       </div>
     </footer>
   );

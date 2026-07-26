@@ -174,7 +174,7 @@ export default function StoreProductDetail() {
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden flex">
           {/* Image */}
           <div className="w-[200px] shrink-0 bg-[#F5F4EF] flex items-center justify-center border-r border-bone">
-            {p.images[0]
+            {p.images?.[0]
               ? <img loading="lazy" decoding="async" src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
               : (
                 <div className="flex flex-col items-center gap-2 p-6">
@@ -228,7 +228,7 @@ export default function StoreProductDetail() {
               </div>
               <div>
                 <p className="text-[10px] text-slate uppercase tracking-[0.06em] font-semibold">Tags</p>
-                <p className="text-[14px] font-bold text-charcoal mt-0.5">{p.tags.length}</p>
+                <p className="text-[14px] font-bold text-charcoal mt-0.5">{(p.tags ?? []).length}</p>
               </div>
               <div>
                 <p className="text-[10px] text-slate uppercase tracking-[0.06em] font-semibold">Created</p>
@@ -294,10 +294,10 @@ export default function StoreProductDetail() {
             {/* Digital delivery */}
             {isDigital && p.digital && (
               <Card title="Digital Delivery" icon={Download}>
-                {p.digital.files.length > 0 ? (
+                {(p.digital.files ?? []).length > 0 ? (
                   <div className="py-3 border-b border-bone">
                     <p className="text-[11px] text-slate mb-2">Attached File</p>
-                    {p.digital.files.map((f, i) => (
+                    {(p.digital.files ?? []).map((f, i) => (
                       <div key={i} className="flex items-center gap-2.5 bg-[#F5F4EF] border border-bone rounded-lg px-3 py-2.5">
                         <Download size={14} className="text-brand-orange shrink-0" />
                         <div className="flex-1 min-w-0">
@@ -330,10 +330,10 @@ export default function StoreProductDetail() {
             )}
 
             {/* Tags */}
-            {p.tags.length > 0 && (
+            {(p.tags ?? []).length > 0 && (
               <Card title="Tags" icon={Tag}>
                 <div className="flex flex-wrap gap-1.5 py-3">
-                  {p.tags.map((t, i) => (
+                  {(p.tags ?? []).map((t, i) => (
                     <span key={i} className="bg-brand-pale-orange text-brand-orange border border-brand-orange/20 rounded-[6px] px-[10px] py-[4px] text-[12px] font-medium">
                       {t}
                     </span>
@@ -347,13 +347,13 @@ export default function StoreProductDetail() {
           <div className="flex flex-col gap-4">
 
             {/* Additional images */}
-            {p.images.length > 1 && (
+            {(p.images ?? []).length > 1 && (
               <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
                 <div className="px-5 py-3.5 border-b border-bone">
                   <p className="text-[12px] font-bold text-charcoal uppercase tracking-[0.06em]">Images</p>
                 </div>
                 <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {p.images.map((img, i) => (
+                  {(p.images ?? []).map((img, i) => (
                     <div key={i} className="aspect-square rounded-lg overflow-hidden bg-[#F5F4EF] border border-bone">
                       <img loading="lazy" decoding="async" src={img} alt={`${p.name} ${i + 1}`} className="w-full h-full object-cover" />
                     </div>

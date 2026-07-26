@@ -104,11 +104,12 @@ export function PosSessionProvider({ storeId, mode, children }: { storeId: strin
   // session on it if needed. No user interaction — no register-picker screen.
   async function resolveRegisterSession(employeeId: string): Promise<{ register: PosRegister; session: RegisterSession }> {
     const regList = await apiListRegisters(storeId);
-    let registers = regList.data.filter(r => r.status === 'active');
-    if (registers.length === 0 && regList.data.length > 0) registers = regList.data;
+    const regListData = regList.data ?? [];
+    let registers = regListData.filter(r => r.status === 'active');
+    if (registers.length === 0 && regListData.length > 0) registers = regListData;
     if (registers.length === 0) {
       const created = await apiAddRegister(storeId, { name: 'Register 1', defaultFloatCash: 0 });
-      registers = created.data;
+      registers = created.data ?? [];
     }
 
     let register: PosRegister = registers[0];
@@ -144,7 +145,7 @@ export function PosSessionProvider({ storeId, mode, children }: { storeId: strin
     const email = user.email.toLowerCase();
 
     const empList = await apiGetEmployees(storeId);
-    let ownerEmployee = empList.data.find(e => e.email.toLowerCase() === email);
+    let ownerEmployee = (empList.data ?? []).find(e => e.email.toLowerCase() === email);
     if (!ownerEmployee) {
       const pin = String(Math.floor(1000 + Math.random() * 9000));
       const created = await apiAddEmployee({ storeId, name, email: user.email, pin, role: 'manager' });

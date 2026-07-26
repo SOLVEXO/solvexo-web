@@ -122,7 +122,7 @@ export function StoreReturnList() {
     apiGetSellerReturns({ storeId, status: status || undefined })
       .then(res => {
         if (cancelled) return;
-        setReturns(res.data.returns);
+        setReturns(res.data.returns ?? []);
         setStats(res.data.stats);
       })
       .catch((err: unknown) => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load returns.'); })

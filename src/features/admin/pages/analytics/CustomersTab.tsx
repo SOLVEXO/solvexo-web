@@ -41,7 +41,7 @@ export function CustomersTab({ params }: { params: BaseAnalyticsParams }) {
       ) : d ? (
         <LineChart
           title="New vs. Returning Customers"
-          data={d.newVsReturning.map(p => ({
+          data={(d.newVsReturning ?? []).map(p => ({
             label: formatBucketLabel(p.date, d.granularity),
             newCustomers: p.newCustomers,
             returningCustomers: p.returningCustomers,

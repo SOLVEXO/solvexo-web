@@ -94,17 +94,17 @@ function physFromEntry(p: StoreProduct, v: ProductVariant): PhysForm {
     stock: String(v.stock), size: v.size ?? '', color: v.color ?? '', shippingWeight: v.shippingWeight ?? '',
     subCategoryId: p.subCategoryId ?? '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
-    scheduledAt: '', tags: [...p.tags], tagInput: '', images: [...p.images],
+    scheduledAt: '', tags: [...(p.tags ?? [])], tagInput: '', images: [...(p.images ?? [])],
   };
 }
 function digFromEntry(p: StoreProduct, v: ProductVariant): DigForm {
-  const d = p.digital, f0 = d?.files[0];
+  const d = p.digital, f0 = d?.files?.[0];
   return {
     name: p.name, description: p.description,
     price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
     subCategoryId: p.subCategoryId ?? '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
-    scheduledAt: '', tags: [...p.tags], tagInput: '', images: [...p.images],
+    scheduledAt: '', tags: [...(p.tags ?? [])], tagInput: '', images: [...(p.images ?? [])],
     fileData: f0 ? { publicId: f0.url, resourceType: 'raw', fileName: f0.name, fileSize: f0.size, mimeType: f0.mimeType } : null,
     downloadLimit: d?.downloadLimit ?? 'unlimited',
     linkExpiryDays: d?.linkExpiryDays != null ? String(d.linkExpiryDays) : '',

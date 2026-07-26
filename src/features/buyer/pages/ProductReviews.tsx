@@ -253,7 +253,7 @@ function ReviewCard({ review: r, storeName, onToggleHelpful, onEdit, onDelete, o
         )}
       </div>
 
-      {r.comments.length > 0 && (
+      {r.comments?.length > 0 && (
         <div className="mt-3">
           {r.comments.map((c, i) => (
             <p key={i} className="text-[13px] text-graphite leading-[1.6] mb-1">{c.text}</p>
@@ -261,7 +261,7 @@ function ReviewCard({ review: r, storeName, onToggleHelpful, onEdit, onDelete, o
         </div>
       )}
 
-      {r.media.length > 0 && (
+      {r.media?.length > 0 && (
         <ReviewPhotoStrip media={r.media} onOpen={onOpenPhoto} />
       )}
 
@@ -328,7 +328,7 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
     apiGetProductReviews(productId, { limit: FETCH_LIMIT })
       .then(res => {
         if (cancelled) return;
-        setAllReviews(res.data.reviews);
+        setAllReviews(res.data.reviews ?? []);
         setStats(res.data.stats);
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load reviews.'); })
@@ -336,12 +336,12 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
     return () => { cancelled = true; };
   }, [productId, refreshKey]);
 
-  const hasPhotoReviews = useMemo(() => allReviews.some(r => r.media.length > 0), [allReviews]);
+  const hasPhotoReviews = useMemo(() => allReviews.some(r => r.media?.length > 0), [allReviews]);
 
   const filteredSorted = useMemo(() => {
     let list = allReviews;
     if (ratingFilter) list = list.filter(r => r.rating === ratingFilter);
-    if (withPhotosOnly) list = list.filter(r => r.media.length > 0);
+    if (withPhotosOnly) list = list.filter(r => r.media?.length > 0);
     return [...list].sort((a, b) => {
       if (sortBy === 'highest') return (b.rating ?? 0) - (a.rating ?? 0);
       if (sortBy === 'lowest') return (a.rating ?? 0) - (b.rating ?? 0);

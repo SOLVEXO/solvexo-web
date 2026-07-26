@@ -141,11 +141,11 @@ export function ProductsTab({ params }: { params: BaseAnalyticsParams }) {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <p className="text-[12px] font-semibold text-charcoal mb-2">Out of Stock ({inventory.data.outOfStockCount})</p>
-                {inventory.data.outOfStock.length === 0 ? (
+                {(inventory.data.outOfStock ?? []).length === 0 ? (
                   <p className="text-[12px] text-slate">None — nice.</p>
                 ) : (
                   <ul className="flex flex-col gap-1.5">
-                    {inventory.data.outOfStock.slice(0, 6).map(p => (
+                    {(inventory.data.outOfStock ?? []).slice(0, 6).map(p => (
                       <li key={p.productId} className="text-[12px] text-graphite truncate">{p.name}</li>
                     ))}
                   </ul>
@@ -153,11 +153,11 @@ export function ProductsTab({ params }: { params: BaseAnalyticsParams }) {
               </div>
               <div>
                 <p className="text-[12px] font-semibold text-charcoal mb-2">Fast Moving</p>
-                {inventory.data.fastMoving.length === 0 ? (
+                {(inventory.data.fastMoving ?? []).length === 0 ? (
                   <p className="text-[12px] text-slate">No fast movers yet.</p>
                 ) : (
                   <ul className="flex flex-col gap-1.5">
-                    {inventory.data.fastMoving.slice(0, 6).map(p => (
+                    {(inventory.data.fastMoving ?? []).slice(0, 6).map(p => (
                       <li key={p.productId} className="text-[12px] text-graphite truncate">{p.name} — {p.sellThroughRatePercent}% sell-through</li>
                     ))}
                   </ul>
@@ -165,11 +165,11 @@ export function ProductsTab({ params }: { params: BaseAnalyticsParams }) {
               </div>
               <div>
                 <p className="text-[12px] font-semibold text-charcoal mb-2">Reorder Suggestions</p>
-                {inventory.data.reorderSuggestions.length === 0 ? (
+                {(inventory.data.reorderSuggestions ?? []).length === 0 ? (
                   <p className="text-[12px] text-slate">Nothing needs reordering.</p>
                 ) : (
                   <ul className="flex flex-col gap-1.5">
-                    {inventory.data.reorderSuggestions.slice(0, 6).map(p => (
+                    {(inventory.data.reorderSuggestions ?? []).slice(0, 6).map(p => (
                       <li key={p.productId} className="text-[12px] text-graphite truncate">{p.name} — ~{p.estimatedWeeksRemaining}w left</li>
                     ))}
                   </ul>

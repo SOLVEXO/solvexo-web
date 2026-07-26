@@ -11,37 +11,40 @@ import {
 } from 'lucide-react';
 
 // ── Page definitions with Lucide icons ───────────────────────────────────────
-interface NavPage { label: string; path: string; Icon: LucideIcon }
+// `prefetch` triggers the lazy page's dynamic import() on hover, so its chunk
+// is already downloaded by the time the user clicks — dynamic import() is
+// cached by the module loader, so hovering repeatedly re-fetches nothing.
+interface NavPage { label: string; path: string; Icon: LucideIcon; prefetch?: () => void }
 
 const PUBLIC_PAGES: NavPage[] = [
   { label: 'Home',       path: '/',                   Icon: Home         },
-  { label: 'Marketplace',    path: '/marketplace',        Icon: ShoppingCart },
+  { label: 'Marketplace',    path: '/marketplace',        Icon: ShoppingCart, prefetch: () => { void import('@/features/buyer/pages/Marketplace'); } },
   // { label: 'Product Detail', path: '/marketplace/1',      Icon: FileText     },
   // { label: 'Storefront',     path: '/store/teacherspro',  Icon: Store        },
   { label: 'Pricing',        path: '/pricing',            Icon: DollarSign   },
   { label: 'For Sellers',    path: '/sellers',            Icon: Users        },
-  { label: 'Edu Listing',    path: '/EducationMarketplace',          Icon: BookOpen     },
+  { label: 'Edu Listing',    path: '/EducationMarketplace',          Icon: BookOpen, prefetch: () => { void import('@/features/buyer/pages/EducationMarketplace'); } },
 ];
 
 const LEGAL_PAGES: NavPage[] = [
-  { label: 'FAQ',            path: '/faq',              Icon: HelpCircle },
-  { label: 'Contact Us',     path: '/contact-us',        Icon: Mail       },
-  { label: 'Privacy Policy', path: '/privacy-policy',    Icon: FileText   },
-  { label: 'Terms',          path: '/terms-of-service',  Icon: FileText   },
-  { label: 'Cookie Policy',  path: '/cookie-policy',     Icon: Cookie     },
+  { label: 'FAQ',            path: '/faq',              Icon: HelpCircle, prefetch: () => { void import('@/features/buyer/pages/FaqPage'); } },
+  { label: 'Contact Us',     path: '/contact-us',        Icon: Mail,       prefetch: () => { void import('@/features/buyer/pages/ContactUsPage'); } },
+  { label: 'Privacy Policy', path: '/privacy-policy',    Icon: FileText,   prefetch: () => { void import('@/features/buyer/pages/PrivacyPolicyPage'); } },
+  { label: 'Terms',          path: '/terms-of-service',  Icon: FileText,   prefetch: () => { void import('@/features/buyer/pages/TermsOfServicePage'); } },
+  { label: 'Cookie Policy',  path: '/cookie-policy',     Icon: Cookie,     prefetch: () => { void import('@/features/buyer/pages/CookiePolicyPage'); } },
 ];
 
 const AUTH_PAGES: NavPage[] = [
   { label: 'Login',        path: '/login',        Icon: LogIn       },
-  { label: 'Onboarding',   path: '/onboard',   Icon: Rocket      },
+  { label: 'Onboarding',   path: '/onboard',   Icon: Rocket, prefetch: () => { void import('@/features/auth/pages/onboard/OnboardingPage'); } },
 ];
 
 const SELLER_PAGES: NavPage[] = [
-  { label: 'Dashboard',      path: '/seller/dashboard',        Icon: LayoutDashboard },
+  { label: 'Dashboard',      path: '/seller/dashboard',        Icon: LayoutDashboard, prefetch: () => { void import('@/features/seller/dashboard/SellerDashboard'); } },
   // { label: 'Products',       path: '/seller/products',         Icon: ShoppingBag     },
   // { label: 'Add Product',  path: '/seller/products/add',     Icon: Plus            },
   // { label: 'Digital Upload', path: '/seller/products/digital', Icon: Upload          },
-  { label: 'Store Builder',  path: '/seller/store',            Icon: Store           },
+  { label: 'Store Builder',  path: '/seller/store',            Icon: Store, prefetch: () => { void import('@/features/seller/dashboard/storemodule/StoreBuilder'); } },
   // { label: 'POS Register',   path: '/seller/pos',              Icon: Monitor         },
   // { label: 'Orders',         path: '/seller/orders',           Icon: Package         },
   // { label: 'Returns',        path: '/seller/returns',          Icon: CornerUpLeft    },
@@ -59,20 +62,21 @@ const SELLER_PAGES: NavPage[] = [
   // { label: 'Reviews',        path: '/seller/reviews',          Icon: Star            },
   // { label: 'Integrations',   path: '/seller/integrations',     Icon: Plug            },
   // { label: 'Activity Log',   path: '/seller/activity',         Icon: Activity        },
-  { label: 'Settings',       path: '/seller/settings',         Icon: Settings        },
+  { label: 'Settings',       path: '/seller/settings',         Icon: Settings, prefetch: () => { void import('@/features/seller/dashboard/settings/SellerSettings'); } },
   // { label: 'Categories',     path: '/seller/categories',       Icon: FolderOpen      },
 ];
 
 const ADMIN_PAGES: NavPage[] = [
-  { label: 'Admin Panel', path: '/admin', Icon: Shield },
+  { label: 'Admin Panel', path: '/admin', Icon: Shield, prefetch: () => { void import('@/features/admin/pages/AdminOverview'); } },
 ];
 
 // ── NavChip with Lucide icon ──────────────────────────────────────────────────
-function NavChip({ label, path, Icon, active, disabled }: NavPage & { active: boolean; disabled?: boolean }) {
+function NavChip({ label, path, Icon, active, disabled, prefetch }: NavPage & { active: boolean; disabled?: boolean }) {
   const navigate = useNavigate();
   return (
     <button
       onClick={() => { if (!disabled) navigate(path); }}
+      onMouseEnter={() => { if (!disabled) prefetch?.(); }}
       title={disabled ? 'Not available for your role' : undefined}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 5,

@@ -246,7 +246,7 @@ export function Homepage() {
 
   const flashDeals = productPool
     .map(p => {
-      const dv = p.variants.find(v => v.isDefault) ?? p.variants[0];
+      const dv = (p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0];
       const price = dv?.price ?? 0;
       const compareAt = dv?.compareAtPrice ?? null;
       const pct = compareAt != null && compareAt > price ? Math.round((1 - price / compareAt) * 100) : 0;

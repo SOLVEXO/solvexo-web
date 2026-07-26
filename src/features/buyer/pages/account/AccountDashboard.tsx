@@ -19,7 +19,7 @@ const STATUS_COLOR: Record<OrderStatus, 'orange' | 'blue' | 'green' | 'red'> = {
 
 function RecentOrderRow({ order }: { order: OrderSummary }) {
   const navigate = useNavigate();
-  const itemCount = order.stores.reduce((n, s) => n + s.itemCount, 0);
+  const itemCount = (order.stores ?? []).reduce((n, s) => n + s.itemCount, 0);
   return (
     <button
       onClick={() => navigate('/account/orders')}

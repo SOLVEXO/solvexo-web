@@ -25,7 +25,7 @@ export function PlatformTab({ params }: { params: BaseAnalyticsParams }) {
           title="Marketplace Growth"
           subtitle="New sellers, stores & products"
           height={260}
-          data={d.marketplaceGrowth.map(p => ({
+          data={(d.marketplaceGrowth ?? []).map(p => ({
             label: formatBucketLabel(p.date, d.granularity),
             newSellers: p.newSellers,
             newStores: p.newStores,

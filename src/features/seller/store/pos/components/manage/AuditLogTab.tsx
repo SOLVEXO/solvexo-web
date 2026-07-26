@@ -18,7 +18,7 @@ export function AuditLogTab({ storeId }: AuditLogTabProps) {
     let cancelled = false;
     setLoading(true);
     apiGetAuditLogs(storeId, { page, limit: 20 })
-      .then(res => { if (!cancelled) { setLogs(res.data.logs); setTotal(res.data.pagination.total); } })
+      .then(res => { if (!cancelled) { setLogs(res.data.logs ?? []); setTotal(res.data.pagination.total); } })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load audit logs.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };

@@ -45,7 +45,7 @@ export function AdminOverview() {
       .then(([overviewRes, categoriesRes]) => {
         if (cancelled) return;
         setOverview(overviewRes.data);
-        setCategories(categoriesRes.data);
+        setCategories(categoriesRes.data ?? []);
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load platform overview.'); })
       .finally(() => { if (!cancelled) setLoading(false); });

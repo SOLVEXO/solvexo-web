@@ -30,7 +30,7 @@ function WebhooksPanel() {
 
   const load = () => {
     setLoading(true);
-    apiAdminGetWebhookHistory({ limit: 50 }).then(res => setEvents(res.data.events)).finally(() => setLoading(false));
+    apiAdminGetWebhookHistory({ limit: 50 }).then(res => setEvents(res.data.events ?? [])).finally(() => setLoading(false));
   };
   useEffect(load, []);
 
@@ -101,7 +101,7 @@ function InsightsPanel() {
   useEffect(() => {
     setLoading(true);
     Promise.all([apiAdminGetLtv(), apiAdminGetRevenueBreakdown(), apiAdminGetChurnCohorts({ months: 6 })])
-      .then(([l, r, c]) => { setLtv(l.data); setRevenue(r.data); setCohorts(c.data); })
+      .then(([l, r, c]) => { setLtv(l.data); setRevenue(r.data); setCohorts(c.data ?? []); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -173,9 +173,9 @@ function InsightsPanel() {
                 </tr>
               </thead>
               <tbody>
-                {revenue.byStore.length === 0 ? (
+                {(revenue.byStore ?? []).length === 0 ? (
                   <tr><td colSpan={5} className="px-3 py-6 text-center text-[12px] text-slate">No revenue in range.</td></tr>
-                ) : revenue.byStore.map(r => (
+                ) : (revenue.byStore ?? []).map(r => (
                   <tr key={r.storeId} className="border-b border-[#F0EEE6]">
                     <td className="px-3 py-2 text-[12.5px] text-charcoal">{r.storeName}</td>
                     <td className="px-3 py-2 text-[12px] font-semibold text-[#2D8A4E]">${r.totalUSD.toFixed(2)}</td>
@@ -239,7 +239,7 @@ function StoreDetailModal({ storeId, onClose }: { storeId: string; onClose: () =
           <div>
             <p className="text-[12px] font-semibold text-charcoal mb-2">Plans</p>
             <div className="flex flex-col gap-2">
-              {data.plans.map(p => (
+              {(data.plans ?? []).map(p => (
                 <div key={p._id} className="flex items-center justify-between bg-cream rounded-lg px-3 py-2.5">
                   <div>
                     <p className="text-[13px] font-semibold text-charcoal">{p.name}</p>
@@ -250,7 +250,7 @@ function StoreDetailModal({ storeId, onClose }: { storeId: string; onClose: () =
                   </Button>
                 </div>
               ))}
-              {data.plans.length === 0 && <p className="text-[12px] text-slate">No plans.</p>}
+              {(data.plans ?? []).length === 0 && <p className="text-[12px] text-slate">No plans.</p>}
             </div>
           </div>
         </div>
@@ -318,7 +318,7 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
           <div>
             <p className="text-[12px] font-semibold text-charcoal mb-2">Payment Attempt History</p>
             <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto">
-              {data.paymentAttempts.map((a: PaymentAttempt) => (
+              {(data.paymentAttempts ?? []).map((a: PaymentAttempt) => (
                 <div key={a._id} className="flex items-center justify-between text-[12px] px-2.5 py-1.5 rounded bg-cream">
                   <span className="text-slate">#{a.attemptNumber} · {a.attemptType} · {new Date(a.createdAt).toLocaleString()}</span>
                   <span className={`font-semibold ${a.outcome === 'success' ? 'text-[#1E7A3C]' : 'text-error'}`}>
@@ -326,7 +326,7 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
                   </span>
                 </div>
               ))}
-              {data.paymentAttempts.length === 0 && <p className="text-[12px] text-slate">No payment attempts recorded.</p>}
+              {(data.paymentAttempts ?? []).length === 0 && <p className="text-[12px] text-slate">No payment attempts recorded.</p>}
             </div>
           </div>
           <div>
@@ -387,8 +387,8 @@ export function AdminSubscriptions() {
     Promise.all([apiAdminGetOverview(), apiAdminGetStoreBreakdown({ limit: 50 }), apiAdminGetPaymentFailures({ limit: 50 })])
       .then(([ov, sb, pf]) => {
         setOverview(ov.data);
-        setStores(sb.data.stores);
-        setFailures(pf.data.failures);
+        setStores(sb.data.stores ?? []);
+        setFailures(pf.data.failures ?? []);
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load subscription data.'))
       .finally(() => setLoading(false));

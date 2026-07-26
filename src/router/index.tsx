@@ -13,6 +13,16 @@ import { AdminLayout }  from '@/components/layouts/AdminLayout';
 import { StoreLayout }  from '@/components/layouts/StoreLayout';
 import { RequireRole }  from './RequireRole';
 
+// Critical conversion-path pages — eagerly imported so the highest-traffic
+// storefront flow (home → login/register → product → cart → checkout)
+// never shows a route-level Suspense spinner.
+import { Homepage }     from '@/features/buyer/pages/Homepage';
+import { ProductDetail } from '@/features/buyer/pages/ProductDetail';
+import { CartPage }     from '@/features/buyer/pages/CartPage';
+import { CheckoutPage } from '@/features/buyer/pages/CheckoutPage';
+import { LoginPage }    from '@/features/auth/pages/LoginPage';
+import { RegisterPage } from '@/features/auth/pages/RegisterPage';
+
 // ── Lazy helpers ──────────────────────────────────────────────────────────────
 const named = <T extends Record<string, unknown>>(
   p: Promise<T>,
@@ -21,11 +31,7 @@ const named = <T extends Record<string, unknown>>(
   p.then(m => ({ default: m[key] }));
 
 // ── Public / Buyer ────────────────────────────────────────────────────────────
-const Homepage             = lazy(() => named(import('@/features/buyer/pages/Homepage'),                         'Homepage'));
 const Marketplace          = lazy(() => named(import('@/features/buyer/pages/Marketplace'),                     'Marketplace'));
-const ProductDetail        = lazy(() => named(import('@/features/buyer/pages/ProductDetail'),                   'ProductDetail'));
-const CartPage             = lazy(() => named(import('@/features/buyer/pages/CartPage'),                        'CartPage'));
-const CheckoutPage         = lazy(() => named(import('@/features/buyer/pages/CheckoutPage'),                    'CheckoutPage'));
 const OrderSuccessPage     = lazy(() => named(import('@/features/buyer/pages/OrderSuccessPage'),                'OrderSuccessPage'));
 const SellerStorefront     = lazy(() => named(import('@/features/buyer/pages/SellerStorefront'),                'SellerStorefront'));
 const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/EducationMarketplace'),            'EducationMarketplace'));
@@ -52,9 +58,7 @@ const AccountMessages      = lazy(() => named(import('@/features/buyer/pages/acc
 const AccountSubscriptions = lazy(() => named(import('@/features/buyer/pages/MySubscriptionsPage'),              'SubscriptionsTab'));
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
-const LoginPage            = lazy(() => named(import('@/features/auth/pages/LoginPage'),                        'LoginPage'));
 const AdminLoginPage       = lazy(() => named(import('@/features/auth/pages/admin/AdminLoginPage'),             'AdminLoginPage'));
-const RegisterPage         = lazy(() => named(import('@/features/auth/pages/RegisterPage'),                     'RegisterPage'));
 const OnboardingPage       = lazy(() => named(import('@/features/auth/pages/onboard/OnboardingPage'),          'OnboardingPage'));
 const ForgotPasswordPage   = lazy(() => named(import('@/features/auth/pages/ForgotPasswordPage'),              'ForgotPasswordPage'));
 const VerifyOTPPage        = lazy(() => named(import('@/features/auth/pages/VerifyOTPPage'),                    'VerifyOTPPage'));

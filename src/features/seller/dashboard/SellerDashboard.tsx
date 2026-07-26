@@ -232,7 +232,7 @@ function PlatformBillingCard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiGetSellerPlatformOverview().then(res => setStores(res.data.stores)).catch(() => {}).finally(() => setLoading(false));
+    apiGetSellerPlatformOverview().then(res => setStores(res.data.stores ?? [])).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="bg-white border border-bone rounded-2xl h-full min-h-[220px] overflow-hidden"><SkeletonBox height="100%" width="100%" rounded="0" /></div>;
@@ -381,9 +381,9 @@ export function SellerDashboard() {
       .then(([overviewRes, revenueRes, productsRes, ordersRes]) => {
         if (cancelled) return;
         setOverview(overviewRes.data);
-        setRevenueSeries(revenueRes.data.series);
-        setTopProducts(productsRes.data);
-        setRecentOrders(ordersRes.data.orders);
+        setRevenueSeries(revenueRes.data.series ?? []);
+        setTopProducts(productsRes.data ?? []);
+        setRecentOrders(ordersRes.data.orders ?? []);
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load dashboard data.'); })
       .finally(() => { if (!cancelled) setLoading(false); });

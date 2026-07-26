@@ -198,7 +198,7 @@ export function PricingPage() {
 
               {/* Features — admin-authored bullets for this plan */}
               <div className="flex flex-col gap-[10px]">
-                {plan.featureBullets.map(f => (
+                {(plan.featureBullets ?? []).map(f => (
                   <div key={f} className="flex gap-2 items-start">
                     <Check size={13} className="text-success flex-shrink-0 mt-[1px]" />
                     <span className={clsx('text-[12px] leading-[1.5]', isFeatured ? 'text-[#D0CEC8]' : 'text-charcoal')}>

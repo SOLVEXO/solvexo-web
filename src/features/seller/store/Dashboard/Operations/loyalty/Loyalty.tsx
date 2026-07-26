@@ -166,11 +166,11 @@ function OverviewTab({ storeId }: { storeId: string }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
           <p className="text-[14px] font-bold text-carbon mb-[18px]">Member Distribution</p>
-          {data.memberDistribution.length === 0 ? (
+          {(data.memberDistribution ?? []).length === 0 ? (
             <p className="text-xs text-slate italic">No tiers configured yet.</p>
           ) : (
             <div className="flex flex-col gap-4">
-              {data.memberDistribution.map(tier => {
+              {(data.memberDistribution ?? []).map(tier => {
                 const style = TIER_ICONS[tier.tier.toLowerCase()] ?? { Icon: Award, color: '#8C8A82' };
                 return (
                   <div key={tier.tier}>
@@ -216,7 +216,7 @@ function OverviewTab({ storeId }: { storeId: string }) {
 // ── Tiers ─────────────────────────────────────────────────────────────────────
 
 function TiersTab({ storeId, program, onSaved }: { storeId: string; program: LoyaltyProgram; onSaved: (p: LoyaltyProgram) => void }) {
-  const [tiers, setTiers] = useState<LoyaltyTier[]>(program.tiers);
+  const [tiers, setTiers] = useState<LoyaltyTier[]>(program.tiers ?? []);
   const [saving, setSaving] = useState(false);
 
   function update(i: number, patch: Partial<LoyaltyTier>) {
@@ -281,7 +281,7 @@ function RewardsTab({ storeId, showCreate, onCloseCreate }: { storeId: string; s
 
   useEffect(() => {
     if (!storeId) return;
-    apiGetRewardsForManagement(storeId).then(res => setRewards(res.data)).finally(() => setLoading(false));
+    apiGetRewardsForManagement(storeId).then(res => setRewards(res.data ?? [])).finally(() => setLoading(false));
   }, [storeId]);
 
   async function handleCreate() {
@@ -415,7 +415,7 @@ function MembersTab({ storeId, onAward }: { storeId: string; onAward: (m: Loyalt
 
   useEffect(() => {
     if (!storeId) return;
-    apiGetLoyaltyMembers(storeId).then(res => { setMembers(res.data.members); setTotal(res.data.pagination.total); }).finally(() => setLoading(false));
+    apiGetLoyaltyMembers(storeId).then(res => { setMembers(res.data.members ?? []); setTotal(res.data.pagination.total); }).finally(() => setLoading(false));
   }, [storeId]);
 
   return (
@@ -573,7 +573,7 @@ function AwardPointsModal({ storeId, member, onClose }: { storeId: string; membe
   const [history, setHistory] = useState<LoyaltyTransaction[]>([]);
 
   useEffect(() => {
-    apiGetMemberTransactions(storeId, member._id).then(res => setHistory(res.data.transactions)).catch(() => {});
+    apiGetMemberTransactions(storeId, member._id).then(res => setHistory(res.data.transactions ?? [])).catch(() => {});
   }, [storeId, member._id]);
 
   async function submit() {

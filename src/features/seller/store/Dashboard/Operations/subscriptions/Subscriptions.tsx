@@ -410,8 +410,8 @@ export function StoreSubscriptions() {
     ])
       .then(([dashRes, plansRes, subsRes]) => {
         setDashboard(dashRes.data);
-        setPlans(plansRes.data);
-        setSubs(subsRes.data.subscriptions);
+        setPlans(plansRes.data ?? []);
+        setSubs(subsRes.data.subscriptions ?? []);
         setSubsTotal(subsRes.data.pagination.total);
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load subscriptions.'))
@@ -563,9 +563,9 @@ export function StoreSubscriptions() {
                 </div>
                 {plan.description && <p className="text-xs text-slate mb-3 leading-[1.6]">{plan.description}</p>}
                 <ul className="flex flex-col gap-1.5 mb-3 p-0 list-none">
-                  {plan.benefits.length > 0
-                    ? plan.benefits.map((b, i) => <li key={i} className="text-[12px] text-graphite">• {benefitSummary(b)}</li>)
-                    : plan.features.slice(0, 4).map(f => <li key={f} className="text-[12px] text-graphite">• {f}</li>)}
+                  {(plan.benefits ?? []).length > 0
+                    ? (plan.benefits ?? []).map((b, i) => <li key={i} className="text-[12px] text-graphite">• {benefitSummary(b)}</li>)
+                    : (plan.features ?? []).slice(0, 4).map(f => <li key={f} className="text-[12px] text-graphite">• {f}</li>)}
                 </ul>
                 {hs && (
                   <div className="flex items-center gap-1.5 px-2.5 py-[6px] rounded-md mb-3" style={{ background: hs.bg }}>
@@ -699,7 +699,7 @@ export function StoreSubscriptions() {
         </div>
 
         {/* Cancellation reasons — churn insight */}
-        {dashboard && dashboard.cancellationReasons.length > 0 && (
+        {dashboard && (dashboard.cancellationReasons ?? []).length > 0 && (
           <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
             <p className="text-[13px] font-bold text-carbon mb-3">Why subscribers cancel</p>
             <div className="flex flex-col gap-2">
@@ -736,7 +736,7 @@ export function StoreSubscriptions() {
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              {advanced.recommendations.map((r, i) => (
+              {(advanced.recommendations ?? []).map((r, i) => (
                 <p key={i} className="text-[12px] text-graphite bg-cream rounded-md px-3 py-2">{r}</p>
               ))}
             </div>

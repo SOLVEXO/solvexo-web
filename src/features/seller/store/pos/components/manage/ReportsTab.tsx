@@ -89,9 +89,9 @@ function DailySection({ storeId }: { storeId: string }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-carbon border border-charcoal rounded-xl p-4">
               <p className="text-[13px] font-semibold text-white mb-3">Top Products</p>
-              {report.topProducts.length === 0 ? (
+              {(report.topProducts ?? []).length === 0 ? (
                 <p className="text-[12px] text-pos-muted">No sales yet for this day.</p>
-              ) : report.topProducts.map(p => (
+              ) : (report.topProducts ?? []).map(p => (
                 <div key={p.productId} className="flex justify-between py-1 border-b border-charcoal last:border-0">
                   <span className="text-[12px] text-white">{p.name}</span>
                   <span className="text-[12px] text-pos-faint">{p.qty} sold · ${p.revenue.toFixed(2)}</span>
@@ -154,7 +154,7 @@ function RangeSection({ storeId }: { storeId: string }) {
           </div>
           <div className="bg-carbon border border-charcoal rounded-xl p-4">
             <p className="text-[13px] font-semibold text-white mb-3">Daily Breakdown</p>
-            {report.dailyBreakdown.map(d => (
+            {(report.dailyBreakdown ?? []).map(d => (
               <div key={d.date} className="flex justify-between py-1 border-b border-charcoal last:border-0">
                 <span className="text-[12px] text-white">{d.date}</span>
                 <span className="text-[12px] text-pos-faint">${d.total.toFixed(2)}</span>
@@ -209,7 +209,7 @@ function RegisterSection({ storeId }: { storeId: string }) {
           </div>
           <div className="bg-carbon border border-charcoal rounded-xl p-4">
             <p className="text-[13px] font-semibold text-white mb-3">Sessions</p>
-            {report.sessions.slice(0, 20).map(s => (
+            {(report.sessions ?? []).slice(0, 20).map(s => (
               <div key={s.sessionId} className="flex justify-between py-1 border-b border-charcoal last:border-0">
                 <span className="text-[12px] text-white">{new Date(s.openedAt).toLocaleString()}</span>
                 <span className="text-[12px] text-pos-faint">${s.totalSales.toFixed(2)} · {s.status}</span>
@@ -264,7 +264,7 @@ function EmployeeSection({ storeId }: { storeId: string }) {
           </div>
           <div className="bg-carbon border border-charcoal rounded-xl p-4">
             <p className="text-[13px] font-semibold text-white mb-3">Recent Sales</p>
-            {report.recentSales.map(s => (
+            {(report.recentSales ?? []).map(s => (
               <div key={s.saleId} className="flex justify-between py-1 border-b border-charcoal last:border-0">
                 <span className="text-[12px] text-white">{s.saleNumber}</span>
                 <span className="text-[12px] text-pos-faint">${s.total.toFixed(2)} · {s.paymentMethod}</span>

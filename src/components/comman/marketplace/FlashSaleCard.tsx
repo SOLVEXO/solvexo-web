@@ -42,9 +42,10 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
   const isDigital  = !isPhysical;
   const typeLabel  = isPhysical ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
 
-  const defaultVariant = product.variants.find(v => v.isDefault) ?? product.variants[0];
-  const lowestPrice    = product.variants.length > 0
-    ? Math.min(...product.variants.map(v => v.price))
+  const variants        = product.variants ?? [];
+  const defaultVariant = variants.find(v => v.isDefault) ?? variants[0];
+  const lowestPrice    = variants.length > 0
+    ? Math.min(...variants.map(v => v.price))
     : null;
   const compareAt   = defaultVariant?.compareAtPrice ?? null;
   const ratingCount = product.totalRatings ?? 0;

@@ -112,7 +112,7 @@ export function MiniWishlist() {
             <>
               <div className="max-h-[264px] overflow-y-auto divide-y divide-[#F5F4EF]">
                 {recent.map(item => {
-                  const variant = item.variants[0];
+                  const variant = item.variants?.[0];
                   return (
                     <div
                       key={item.product._id}

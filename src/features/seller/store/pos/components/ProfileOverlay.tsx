@@ -26,9 +26,9 @@ export function ProfileOverlay({ storeId, employeeId, registerName, openedAt, on
       .then(async res => {
         if (cancelled) return;
         setProfile(res.data);
-        if (res.data.shiftIds.length > 0) {
+        if ((res.data.shiftIds ?? []).length > 0) {
           const results = await Promise.all(
-            res.data.shiftIds.map(id => apiGetShiftById(storeId, id).then(r => r.data).catch(() => null)),
+            (res.data.shiftIds ?? []).map(id => apiGetShiftById(storeId, id).then(r => r.data).catch(() => null)),
           );
           if (!cancelled) setShifts(results.filter((s): s is PosShift => !!s));
         }

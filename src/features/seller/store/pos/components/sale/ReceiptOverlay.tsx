@@ -29,7 +29,7 @@ export function ReceiptOverlay({ sale, resetSale }: ReceiptOverlayProps) {
 
         {/* Line items — styled like a physical receipt slip */}
         <div className="mb-6 rounded-2xl bg-pos-surface border border-pos-border border-dashed p-4">
-          {sale.items.map(item => (
+          {(sale.items ?? []).map(item => (
             <div key={item._id} className="flex justify-between py-[7px] border-b border-pos-border last:border-b-0">
               <span className="text-[12px] text-slate">{item.qty}× {item.name}</span>
               <span className="text-[12px] text-white font-medium">${item.lineTotal.toFixed(2)}</span>

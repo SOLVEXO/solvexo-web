@@ -53,7 +53,7 @@ export function StoreMarketing() {
     if (!storeId) return;
     setLoading(true);
     apiGetCoupons(storeId)
-      .then(res => setCoupons(res.data.coupons))
+      .then(res => setCoupons(res.data.coupons ?? []))
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load coupons.'))
       .finally(() => setLoading(false));
   }, [storeId]);
@@ -68,7 +68,7 @@ export function StoreMarketing() {
     if (!storeId || tab !== 'platform') return;
     setCampaignsLoading(true);
     apiGetJoinableCampaigns(storeId)
-      .then(res => setCampaigns(res.data))
+      .then(res => setCampaigns(res.data ?? []))
       .catch(err => setCampaignsError(err instanceof Error ? err.message : 'Failed to load campaigns.'))
       .finally(() => setCampaignsLoading(false));
   }, [storeId, tab]);

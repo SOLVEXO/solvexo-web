@@ -222,7 +222,7 @@ export function CheckoutPage() {
         setCheckout(res.data.checkout);
         setSummary(res.data.summary);
         setSavingsHints(res.data.subscriptionSavingsHints ?? []);
-        setAllowedMethods(res.data.allowedPaymentMethods.filter(m => m !== 'cash_on_delivery'));
+        setAllowedMethods((res.data.allowedPaymentMethods ?? []).filter(m => m !== 'cash_on_delivery'));
         setStep(3);
       })
       .catch(err => {
@@ -366,7 +366,7 @@ export function CheckoutPage() {
       setCheckout(res.data.checkout);
       setSummary(res.data.summary);
       setSavingsHints(res.data.subscriptionSavingsHints ?? []);
-      setAllowedMethods(res.data.allowedPaymentMethods);
+      setAllowedMethods(res.data.allowedPaymentMethods ?? []);
       setStep(3);
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : 'Failed to create checkout. Please try again.');

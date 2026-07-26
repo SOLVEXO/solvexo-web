@@ -224,7 +224,7 @@ function OrderCard({ order }: { order: PlacedOrder }) {
       {/* Card body */}
       <div className="px-5 py-4 flex flex-col gap-0">
         <OrderItemsSection items={order.items} orderId={order.orderId} />
-        {!allDigital && <AddressSection addr={order.deliveryAddress} />}
+        {!allDigital && order.deliveryAddress && <AddressSection addr={order.deliveryAddress} />}
         {!allDigital && <OrderTimeline currentStatus={order.orderStatus} />}
       </div>
 
