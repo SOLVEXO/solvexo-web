@@ -343,8 +343,8 @@ export function ProductDetail() {
     apiGetPublicStoreProducts(storeId, { limit: 8 })
       .then(res => {
         if (cancelled) return;
-        setSellerProducts(res.data.products.filter(p => p._id !== product?._id));
-        setSellerProductsTotal(res.data.pagination.total);
+        setSellerProducts((res.data?.products ?? []).filter(p => p._id !== product?._id));
+        setSellerProductsTotal(res.data?.pagination?.total ?? 0);
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -362,7 +362,7 @@ export function ProductDetail() {
     if (!product?.categoryId) return;
     let cancelled = false;
     apiGetAllProducts(1, 8, product.categoryId)
-      .then(res => { if (!cancelled) setRelatedProducts(res.data.products.filter(p => p._id !== product._id)); })
+      .then(res => { if (!cancelled) setRelatedProducts((res.data?.products ?? []).filter(p => p._id !== product._id)); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [product?.categoryId, product?._id]);

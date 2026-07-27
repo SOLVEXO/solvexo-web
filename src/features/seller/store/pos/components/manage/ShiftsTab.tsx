@@ -23,7 +23,7 @@ export function ShiftsTab({ storeId }: ShiftsTabProps) {
     let cancelled = false;
     setLoading(true);
     apiListShifts(storeId)
-      .then(res => { if (!cancelled) setShifts(res.data); })
+      .then(res => { if (!cancelled) setShifts(res.data ?? []); })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load shifts.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };

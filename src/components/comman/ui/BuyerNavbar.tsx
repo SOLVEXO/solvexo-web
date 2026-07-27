@@ -175,7 +175,7 @@ function SearchBox({
       poolFetched.current = true;
       setPoolLoading(true);
       apiGetAllProducts(1, 20)
-        .then(res => setPool(res.data.products))
+        .then(res => setPool(res.data?.products ?? []))
         .catch(() => {})
         .finally(() => setPoolLoading(false));
     }

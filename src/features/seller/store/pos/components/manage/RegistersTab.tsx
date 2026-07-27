@@ -20,7 +20,7 @@ export function RegistersTab({ storeId }: RegistersTabProps) {
     let cancelled = false;
     setLoading(true);
     apiListRegisters(storeId)
-      .then(res => { if (!cancelled) setRegisters(res.data); })
+      .then(res => { if (!cancelled) setRegisters(res.data ?? []); })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load registers.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };

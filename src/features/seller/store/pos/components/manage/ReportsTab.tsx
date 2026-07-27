@@ -174,7 +174,7 @@ function RegisterSection({ storeId }: { storeId: string }) {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
 
-  useEffect(() => { apiListRegisters(storeId).then(res => setRegisters(res.data)).catch(() => {}); }, [storeId]);
+  useEffect(() => { apiListRegisters(storeId).then(res => setRegisters(res.data ?? [])).catch(() => {}); }, [storeId]);
 
   useEffect(() => {
     if (!registerId) { setReport(null); return; }
@@ -229,7 +229,7 @@ function EmployeeSection({ storeId }: { storeId: string }) {
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState('');
 
-  useEffect(() => { apiGetEmployees(storeId).then(res => setEmployees(res.data)).catch(() => {}); }, [storeId]);
+  useEffect(() => { apiGetEmployees(storeId).then(res => setEmployees(res.data ?? [])).catch(() => {}); }, [storeId]);
 
   useEffect(() => {
     if (!employeeId) { setReport(null); return; }

@@ -110,7 +110,7 @@ export function Marketplace() {
   useEffect(() => {
     let cancelled = false;
     apiGetCategoryTree()
-      .then(res => { if (!cancelled) setCategories(res.data); })
+      .then(res => { if (!cancelled) setCategories(res.data ?? []); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
@@ -133,7 +133,7 @@ export function Marketplace() {
     if (!campaignFilterId) { setCampaignFilterInfo(null); return; }
     let cancelled = false;
     apiGetPublicActiveCampaigns()
-      .then(res => { if (!cancelled) setCampaignFilterInfo(res.data.find(c => c._id === campaignFilterId) ?? null); })
+      .then(res => { if (!cancelled) setCampaignFilterInfo((res.data ?? []).find(c => c._id === campaignFilterId) ?? null); })
       .catch(() => { if (!cancelled) setCampaignFilterInfo(null); });
     return () => { cancelled = true; };
   }, [campaignFilterId]);
@@ -147,7 +147,7 @@ export function Marketplace() {
   useEffect(() => {
     let cancelled = false;
     apiGetTopStores(10)
-      .then(res => { if (!cancelled) setTopStores(res.data.stores); })
+      .then(res => { if (!cancelled) setTopStores(res.data?.stores ?? []); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
@@ -158,7 +158,7 @@ export function Marketplace() {
     if (!search) { setStoreResults([]); return; }
     let cancelled = false;
     apiSearchStores(search, 1, 6)
-      .then(res => { if (!cancelled) setStoreResults(res.data.stores); })
+      .then(res => { if (!cancelled) setStoreResults(res.data?.stores ?? []); })
       .catch(() => { if (!cancelled) setStoreResults([]); });
     return () => { cancelled = true; };
   }, [search]);

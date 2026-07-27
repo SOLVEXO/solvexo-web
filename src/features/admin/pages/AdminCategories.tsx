@@ -149,7 +149,7 @@ export function AdminCategories() {
     setLoading(true);
     setError('');
     apiGetCategoryTree()
-      .then(res => setTree(res.data))
+      .then(res => setTree(res.data ?? []))
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load categories.'))
       .finally(() => setLoading(false));
   };

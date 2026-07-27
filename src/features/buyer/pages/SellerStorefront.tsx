@@ -210,7 +210,7 @@ export function SellerStorefront() {
 
   useEffect(() => {
     if (!store) return;
-    apiBrowseStorePlans(store.storeId).then(res => setPlans(res.data)).catch(() => {});
+    apiBrowseStorePlans(store.storeId).then(res => setPlans(res.data ?? [])).catch(() => {});
   }, [store]);
 
   const handleSubscribe = async (plan: BuyerPlan, interval: BillingInterval) => {
@@ -222,7 +222,7 @@ export function SellerStorefront() {
       await apiSubscribeToPlan(plan._id, interval);
       setSubscribedMsg(`You're in! Welcome to ${plan.name} — member pricing is already live across the store.`);
       if (store) apiGetPublicStoreProducts(store.storeId, { page, limit: 12, sort: sortBy, tag: activeTag !== 'all' ? activeTag : undefined })
-        .then(res => setProducts(res.data.products)).catch(() => {});
+        .then(res => setProducts(res.data?.products ?? [])).catch(() => {});
     } catch (err) {
       setSubscribeError(err instanceof Error ? err.message : 'Failed to subscribe.');
     } finally {
@@ -259,7 +259,7 @@ export function SellerStorefront() {
     setShowRewards(true);
     if (rewards.length === 0) {
       setRewardsLoading(true);
-      apiGetRewards(store.storeId).then(res => setRewards(res.data)).finally(() => setRewardsLoading(false));
+      apiGetRewards(store.storeId).then(res => setRewards(res.data ?? [])).finally(() => setRewardsLoading(false));
     }
   };
 
@@ -285,9 +285,9 @@ export function SellerStorefront() {
       tag: activeTag !== 'all' ? activeTag : undefined,
     })
       .then(res => {
-        setProducts(res.data.products);
-        setTotal(res.data.pagination.total);
-        setTotalPages(res.data.pagination.totalPages);
+        setProducts(res.data?.products ?? []);
+        setTotal(res.data?.pagination?.total ?? 0);
+        setTotalPages(res.data?.pagination?.totalPages ?? 1);
       })
       .catch(() => {})
       .finally(() => setLoadingProds(false));

@@ -22,8 +22,8 @@ export function useProductsByCategory(
     apiGetAllProducts(page, limit, categoryId, productType, educationLevel, normalizedCustomLevel, campaignId)
       .then(res => {
         if (!cancelled) {
-          setProducts(res.data.products);
-          setTotal(res.data.total);
+          setProducts(res.data?.products ?? []);
+          setTotal(res.data?.total ?? 0);
         }
       })
       .catch((err: unknown) => {

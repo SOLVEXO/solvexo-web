@@ -76,7 +76,7 @@ export function ActivityLogTab() {
       search: search || undefined,
       from,
     })
-      .then(res => { if (!cancelled) { setLogs(res.data.logs); setTotal(res.data.pagination.total); } })
+      .then(res => { if (!cancelled) { setLogs(res.data?.logs ?? []); setTotal(res.data?.pagination?.total ?? 0); } })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load activity.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
 

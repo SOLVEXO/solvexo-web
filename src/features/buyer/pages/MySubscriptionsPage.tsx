@@ -66,7 +66,7 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
     setChangingPlan(true);
     if (sub.store) {
       const res = await apiBrowseStorePlans(sub.store._id).catch(() => null);
-      if (res) setPlans(res.data.filter(p => p._id !== sub.planId));
+      if (res) setPlans((res.data ?? []).filter(p => p._id !== sub.planId));
     }
   }
 

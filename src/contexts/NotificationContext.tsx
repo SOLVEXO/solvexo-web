@@ -63,8 +63,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setNotificationsLoading(true);
     try {
       const res = await apiListNotifications({ unreadOnly, limit: 50 });
-      setNotifications(res.data.items);
-      setUnreadCount(res.data.unreadCount);
+      setNotifications(res.data?.items ?? []);
+      setUnreadCount(res.data?.unreadCount ?? 0);
     } catch {
       // Ignore list fetch errors
     } finally {

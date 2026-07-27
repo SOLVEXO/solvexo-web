@@ -140,7 +140,7 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
   useEffect(() => {
     let cancelled = false;
     apiGetCategoryTree()
-      .then(res => { if (!cancelled) setCategories(res.data); })
+      .then(res => { if (!cancelled) setCategories(res.data ?? []); })
       .catch(() => {})
       .finally(() => { if (!cancelled) setCategoriesLoading(false); });
     return () => { cancelled = true; };
@@ -450,7 +450,7 @@ export function OnboardingPage() {
   return (
     <AuthSplitLayout
       panelGradient="from-carbon via-[#241F1B] to-brand-deep-orange"
-      heading={<>Your store,<br />your way.</>}
+      heading="Your store, your way."
       subtext="A few quick steps and your Solvexo seller dashboard is ready — tools, analytics and AI Studio included."
       highlights={ONBOARDING_HIGHLIGHTS}
       visual={<SellerDashboardMockup />}

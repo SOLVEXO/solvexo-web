@@ -18,7 +18,7 @@ interface NavPage { label: string; path: string; Icon: LucideIcon; prefetch?: ()
 
 const PUBLIC_PAGES: NavPage[] = [
   { label: 'Home',       path: '/',                   Icon: Home         },
-  { label: 'Marketplace',    path: '/marketplace',        Icon: ShoppingCart, prefetch: () => { void import('@/features/buyer/pages/Marketplace'); } },
+  { label: 'Marketplace',    path: '/marketplace',        Icon: ShoppingCart },
   // { label: 'Product Detail', path: '/marketplace/1',      Icon: FileText     },
   // { label: 'Storefront',     path: '/store/teacherspro',  Icon: Store        },
   { label: 'Pricing',        path: '/pricing',            Icon: DollarSign   },
@@ -36,7 +36,7 @@ const LEGAL_PAGES: NavPage[] = [
 
 const AUTH_PAGES: NavPage[] = [
   { label: 'Login',        path: '/login',        Icon: LogIn       },
-  { label: 'Onboarding',   path: '/onboard',   Icon: Rocket, prefetch: () => { void import('@/features/auth/pages/onboard/OnboardingPage'); } },
+  { label: 'Onboarding',   path: '/onboard',   Icon: Rocket },
 ];
 
 const SELLER_PAGES: NavPage[] = [

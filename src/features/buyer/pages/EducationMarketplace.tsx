@@ -290,7 +290,7 @@ export function EducationMarketplace() {
   useEffect(() => {
     let cancelled = false;
     apiGetTopStores(10)
-      .then(res => { if (!cancelled) setTopStores(res.data.stores); })
+      .then(res => { if (!cancelled) setTopStores(res.data?.stores ?? []); })
       .catch(() => { /* non-critical — Featured Sellers panel just stays empty */ });
     return () => { cancelled = true; };
   }, []);

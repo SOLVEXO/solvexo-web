@@ -171,7 +171,7 @@ export default function StoreSettings() {
 
   useEffect(() => {
     apiGetCategoryTree()
-      .then(res => setCategories(res.data))
+      .then(res => setCategories(res.data ?? []))
       .catch(() => {})
       .finally(() => setCategoriesLoading(false));
   }, []);

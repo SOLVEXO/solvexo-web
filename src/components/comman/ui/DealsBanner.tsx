@@ -73,7 +73,7 @@ export function DealsBanner({ className, storeType }: { className?: string; stor
     apiGetPublicActiveCampaigns(storeType)
       .then((res) => {
         if (cancelled) return;
-        setCampaigns(res.data);
+        setCampaigns(res.data ?? []);
       })
       .catch(() => {});
     return () => { cancelled = true; };
