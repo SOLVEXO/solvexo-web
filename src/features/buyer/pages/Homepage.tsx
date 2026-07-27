@@ -8,7 +8,7 @@ import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
-import { AppDownloadBanner, Footer, FloatingAppWidget, SkeletonBox, DealsBanner } from '@/components/comman/ui';
+import { AppDownloadBanner, Footer, FloatingAppWidget, SkeletonBox, DealsBanner, CoverImage } from '@/components/comman/ui';
 import { FlashSaleCard, FlashSaleCardSkeleton } from '@/components/comman/marketplace/FlashSaleCard';
 import {
   ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles,
@@ -59,13 +59,22 @@ function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick:
       {/* Top accent — sweeps in on hover, same language as the Feature Category cards */}
       <div className="h-[4px] shrink-0 bg-gradient-to-r from-brand-orange to-[#F0A57A] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
 
-      <div className="flex-1 flex flex-col p-4">
+      {/* Cover — logo below overlaps up into it, same visual language as StoreFeatureCard */}
+      <CoverImage
+        src={store.coverImage}
+        imgClassName="transition-transform duration-500 group-hover:scale-105"
+        className="h-[64px]"
+      />
+
+      <div className="relative flex-1 flex flex-col px-4 pb-4 -mt-6">
         {/* Logo + name/rating — inline header instead of a stacked layout */}
         <div className="flex items-center gap-[10px] mb-3">
-          <div className="w-11 h-11 rounded-xl bg-brand-pale-orange flex items-center justify-center overflow-hidden shrink-0 transition-transform duration-300 group-hover:scale-105">
-            {store.logo
-              ? <img loading="lazy" decoding="async" src={store.logo} alt="" className="w-full h-full object-cover" />
-              : <Store size={18} className="text-brand-orange" />}
+          <div className="w-11 h-11 rounded-xl bg-white border border-bone p-[3px] shrink-0 transition-transform duration-300 group-hover:scale-105">
+            <div className="w-full h-full rounded-[9px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">
+              {store.logo
+                ? <img loading="lazy" decoding="async" src={store.logo} alt="" className="w-full h-full object-cover" />
+                : <Store size={18} className="text-brand-orange" />}
+            </div>
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-[4px] min-w-0">
@@ -181,7 +190,7 @@ export function Homepage() {
   useEffect(() => {
     let cancelled = false;
     apiGetTopStores(10)
-      .then(res => { if (!cancelled) setTopStores(res.data.stores); })
+      .then(res => { if (!cancelled) setTopStores(res.data?.stores ?? []); })
       .catch(() => { /* non-critical section — homepage still works without it */ })
       .finally(() => { if (!cancelled) setStoresLoading(false); });
     return () => { cancelled = true; };
@@ -220,7 +229,7 @@ export function Homepage() {
   useEffect(() => {
     let cancelled = false;
     apiGetAllProducts(1, 24)
-      .then(res => { if (!cancelled) setProductPool(res.data.products); })
+      .then(res => { if (!cancelled) setProductPool(res.data?.products ?? []); })
       .catch(() => { /* non-critical — flash sale section just stays hidden */ })
       .finally(() => { if (!cancelled) setProductsLoading(false); });
     return () => { cancelled = true; };
@@ -238,7 +247,7 @@ export function Homepage() {
   useEffect(() => {
     let cancelled = false;
     apiGetTestimonials(3)
-      .then(res => { if (!cancelled) setTestimonials(res.data); })
+      .then(res => { if (!cancelled) setTestimonials(res.data ?? []); })
       .catch(() => { /* non-critical — section just stays hidden */ })
       .finally(() => { if (!cancelled) setTestimonialsLoading(false); });
     return () => { cancelled = true; };

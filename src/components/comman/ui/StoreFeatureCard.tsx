@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { clsx } from 'clsx';
 import { Star, Users, Store, TrendingUp, BadgeCheck, PackageCheck, UserPlus, UserCheck } from 'lucide-react';
 import { apiFollowStore, type PublicStoreListItem } from '@/api/services/store';
+import { CoverImage } from './CoverImage';
 
 // ── Featured seller card — cover, avatar, badges, rating/followers/products, follow ──
 export function StoreFeatureCard({ store, onClick, className }: {
@@ -37,19 +38,20 @@ export function StoreFeatureCard({ store, onClick, className }: {
       )}
     >
       {/* Cover */}
-      <div className="relative h-[76px] bg-gradient-to-br from-brand-pale-orange to-[#FDE8DA] overflow-hidden">
-        {store.coverImage && (
-          <img loading="lazy" decoding="async" src={store.coverImage} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        )}
+      <CoverImage
+        src={store.coverImage}
+        imgClassName="transition-transform duration-500 group-hover:scale-105"
+        className="h-[76px]"
+      >
         {isTopSeller && (
           <span className="absolute top-[8px] right-[8px] inline-flex items-center gap-[3px] px-[7px] py-[3px] rounded-full bg-carbon/80 backdrop-blur-sm text-white text-[9.5px] font-bold">
             <TrendingUp size={9} /> Top Seller
           </span>
         )}
-      </div>
+      </CoverImage>
 
       {/* Body */}
-      <div className="px-4 pb-4 -mt-7">
+      <div className="relative px-4 pb-4 -mt-7">
         <div className="flex items-end justify-between mb-2">
           <div className="w-14 h-14 rounded-2xl bg-white border border-bone p-[3px]">
             <div className="w-full h-full rounded-[13px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">

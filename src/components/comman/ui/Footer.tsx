@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  ShieldCheck, Lock, BadgeCheck, CreditCard, Banknote,
-  Truck, Store, Send, Check,
-} from 'lucide-react';
-import { SolvexoLogo } from './SolvexoLogo';
+import { clsx } from 'clsx';
+import { Send, Check, ChevronDown, ChevronRight, ArrowUp, Apple, Play } from 'lucide-react';
+import { SolvexoLogo, SolvexoIcon } from './SolvexoLogo';
 import { apiSubscribeNewsletter } from '../../../api/services/newsletter';
 
 interface FooterLink {
@@ -49,34 +47,17 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
   },
 ];
 
-const PAYMENT_METHODS = [
-  { label: 'Card',    Icon: CreditCard },
-  { label: 'COD',     Icon: Banknote   },
-];
-
-const SHIPPING_CAPABILITIES = [
-  { label: 'Nationwide Delivery', Icon: Truck },
-  { label: 'Store Pickup',        Icon: Store },
-];
-
-const SECURITY_BADGES = [
-  { label: 'SSL Secured',       Icon: Lock },
-  { label: 'Secure Checkout',   Icon: ShieldCheck },
-  { label: 'Verified Sellers',  Icon: BadgeCheck },
-];
-
-
 /* ── Minimal inline social glyphs — abstract, not brand logo assets ─────────── */
 function FacebookGlyph() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
     </svg>
   );
 }
 function InstagramGlyph() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="2" width="20" height="20" rx="5" />
       <circle cx="12" cy="12" r="4" />
       <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
@@ -85,14 +66,14 @@ function InstagramGlyph() {
 }
 function XGlyph() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 4l16 16M20 4L4 20" />
     </svg>
   );
 }
 function LinkedinGlyph() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="9" width="4" height="12" />
       <circle cx="4" cy="4" r="2" />
       <path d="M10 21v-7a3 3 0 0 1 6 0v7M13 12v9" />
@@ -106,6 +87,27 @@ const SOCIALS = [
   { label: 'X',         Glyph: XGlyph },
   { label: 'LinkedIn',  Glyph: LinkedinGlyph },
 ];
+
+// Decorative only — no real store listing to link to yet. `role="img"` (not
+// a button) so screen readers don't announce a control that does nothing.
+function AppBadge({ platform }: { platform: 'ios' | 'android' }) {
+  const isIos = platform === 'ios';
+  return (
+    <div
+      role="img"
+      aria-label={isIos ? 'Download on the App Store' : 'Get it on Google Play'}
+      className="flex items-center gap-2.5 h-11 px-3.5 rounded-[9px] border border-white/[0.12] bg-white/[0.03] select-none"
+    >
+      {isIos
+        ? <Apple size={18} className="text-white shrink-0" />
+        : <Play size={15} className="text-white shrink-0 fill-white" />}
+      <span className="leading-none">
+        <span className="block text-[8px] text-[#8B8985] tracking-[0.04em]">{isIos ? 'Download on the' : 'GET IT ON'}</span>
+        <span className="block text-[12.5px] font-bold text-white mt-[2px]">{isIos ? 'App Store' : 'Google Play'}</span>
+      </span>
+    </div>
+  );
+}
 
 function Newsletter() {
   const [email, setEmail]     = useState('');
@@ -131,16 +133,16 @@ function Newsletter() {
 
   if (subscribed) {
     return (
-      <div className="flex items-center gap-2 text-[12.5px] text-white bg-white/[0.06] border border-white/15 rounded-lg px-3.5 py-[10px]">
-        <Check size={14} className="text-brand-orange shrink-0" />
+      <div className="flex items-center gap-2 text-[13px] text-white bg-white/[0.05] border border-white/[0.12] rounded-lg px-4 py-3">
+        <Check size={15} className="text-brand-orange shrink-0" />
         You're subscribed — welcome aboard!
       </div>
     );
   }
 
   return (
-    <div className="max-w-[360px]">
-      <form onSubmit={submit} className="flex items-stretch gap-2">
+    <div className="w-full sm:max-w-[400px]">
+      <form onSubmit={submit} className="flex items-stretch gap-2.5">
         <input
           value={email}
           onChange={e => setEmail(e.target.value)}
@@ -149,107 +151,150 @@ function Newsletter() {
           placeholder="Your email address"
           aria-label="Email address"
           disabled={loading}
-          className="flex-1 min-w-0 px-3.5 py-[10px] rounded-lg border border-white/15 bg-white/[0.04] text-[12.5px] text-white placeholder:text-[#8B8985] outline-none focus:border-brand-orange transition-colors disabled:opacity-60"
+          className="flex-1 min-w-0 h-11 px-4 rounded-lg border border-white/[0.14] bg-white/[0.03] text-[13px] text-white placeholder:text-[#7A7873] outline-none transition-colors duration-200 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15 disabled:opacity-60"
         />
         <button
           type="submit"
           disabled={loading}
-          className="flex items-center gap-[6px] px-4 rounded-lg bg-brand-orange text-white text-[12.5px] font-semibold border-none cursor-pointer hover:bg-brand-deep-orange transition-colors shrink-0 disabled:opacity-70 disabled:cursor-not-allowed"
+          className="flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-brand-orange text-white text-[13px] font-semibold border-none cursor-pointer hover:bg-brand-deep-orange transition-colors duration-200 shrink-0 disabled:opacity-70 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
         >
-          <Send size={13} /> <span className="hidden sm:inline">{loading ? 'Subscribing…' : 'Subscribe'}</span>
+          <Send size={14} /> <span className="hidden sm:inline">{loading ? 'Subscribing…' : 'Subscribe'}</span>
         </button>
       </form>
-      {error && <p className="mt-1.5 text-[11.5px] text-red-400">{error}</p>}
+      {error && <p className="mt-2 text-[11.5px] text-red-400">{error}</p>}
+    </div>
+  );
+}
+
+// Accordion on mobile (each column independently collapsible, real <button>
+// with aria-expanded/aria-controls), static and always-open at sm: and up —
+// the `open ? 'flex' : 'hidden'` base class is overridden by `sm:flex`, which
+// wins at the sm breakpoint regardless of local state, so no separate
+// desktop/mobile markup is needed.
+function FooterColumn({ heading, links, navigate }: { heading: string; links: FooterLink[]; navigate: (p: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const contentId = `footer-col-${heading.toLowerCase().replace(/\s+/g, '-')}`;
+
+  return (
+    <div className="border-b border-white/[0.08] sm:border-none">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        aria-controls={contentId}
+        className="w-full min-h-11 flex items-center justify-between gap-2 py-3 sm:py-0 sm:pointer-events-none text-left bg-transparent border-none cursor-pointer sm:cursor-default outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
+      >
+        <span className="relative inline-block text-[11px] font-bold text-white uppercase tracking-[0.08em] pb-2 sm:mb-4">
+          {heading}
+          <span className="absolute left-0 bottom-0 w-5 h-[2px] rounded-full bg-brand-orange" />
+        </span>
+        <ChevronDown
+          size={15}
+          className={clsx('text-[#8B8985] transition-transform duration-200 sm:hidden shrink-0', open && 'rotate-180')}
+        />
+      </button>
+
+      <ul
+        id={contentId}
+        className={clsx(open ? 'flex' : 'hidden', 'sm:!flex flex-col gap-3 pb-4 sm:pb-0')}
+      >
+        {links.map(link => (
+          <li key={link.label}>
+            {link.path ? (
+              <button
+                onClick={() => navigate(link.path!)}
+                className="group inline-flex items-center gap-1 min-h-11 sm:min-h-0 text-[12.5px] text-[#B0AEA8] hover:text-white transition-colors duration-200 bg-transparent border-none p-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
+              >
+                <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">{link.label}</span>
+                <ChevronRight
+                  size={12}
+                  className="text-brand-orange opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0"
+                />
+              </button>
+            ) : (
+              <span className="inline-flex items-center min-h-11 sm:min-h-0 text-[12.5px] text-[#5E5C58] cursor-default">{link.label}</span>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 
 export function Footer() {
   const navigate = useNavigate();
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
     <footer className="bg-carbon text-[#B0AEA8]">
 
+      {/* Top accent — a soft cut line from the rest of the page, on-brand instead of a flat border */}
+      <div className="h-[2px] bg-gradient-to-r from-brand-orange via-brand-orange/40 to-transparent" />
+
       {/* ── Newsletter ─────────────────────────────────────────────────────────── */}
-      <div className="border-b border-white/10 bg-gradient-to-r from-white/[0.03] to-transparent">
-        <div className="px-4 sm:px-6 lg:px-12 py-8 sm:py-9 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+      <div className="border-b border-white/10">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div>
-            <p className="font-serif text-[17px] sm:text-[19px] font-bold text-white leading-tight">Get deals before anyone else</p>
-            <p className="text-[12.5px] text-[#8B8985] mt-[6px]">Sign up for exclusive offers, new arrivals and price-drop alerts.</p>
+            <p className="text-[18px] sm:text-[20px] font-bold text-white leading-tight">Get deals before anyone else</p>
+            <p className="text-[13px] text-[#8B8985] mt-2">Sign up for exclusive offers, new arrivals and price-drop alerts.</p>
           </div>
           <Newsletter />
         </div>
       </div>
 
       {/* ── Link columns ─────────────────────────────────────────────────────── */}
-      <div className="px-4 sm:px-6 lg:px-12 py-10 sm:py-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-8">
-        <div className="col-span-2 sm:col-span-3 lg:col-span-1">
-          <SolvexoLogo size={26} variant="light" />
-          <p className="text-[12px] mt-3 leading-relaxed max-w-[240px]">
-            The commerce OS for sellers, creators and educators — one marketplace for physical goods, digital downloads and learning resources.
-          </p>
-          <div className="flex items-center gap-2 mt-4">
-            {SOCIALS.map(({ label, Glyph }) => (
-              <button
-                key={label}
-                aria-label={label}
-                title={label}
-                className="w-8 h-8 rounded-full border border-white/15 bg-white/[0.04] flex items-center justify-center text-[#B0AEA8] hover:text-white hover:border-white/30 hover:bg-white/[0.08] transition-colors cursor-pointer"
-              >
-                <Glyph />
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr] gap-8 lg:gap-6">
 
-        {FOOTER_COLUMNS.map(col => (
-          <div key={col.heading}>
-            <p className="relative inline-block text-[11px] font-bold text-white uppercase tracking-[0.08em] mb-4 pb-2">
-              {col.heading}
-              <span className="absolute left-0 bottom-0 w-5 h-[2px] rounded-full bg-brand-orange" />
+          <div className="sm:col-span-2 lg:col-span-1 pb-2 sm:pb-0">
+            <SolvexoLogo size={26} variant="light" />
+            <p className="text-[12.5px] mt-4 leading-relaxed max-w-[260px] text-[#9A9894]">
+              The commerce OS for sellers, creators and educators — one marketplace for physical goods, digital downloads and learning resources.
             </p>
-            <ul className="flex flex-col gap-[11px]">
-              {col.links.map(link => (
-                <li key={link.label}>
-                  {link.path ? (
-                    <button
-                      onClick={() => navigate(link.path!)}
-                      className="group inline-flex items-center gap-[6px] text-[12px] text-[#B0AEA8] hover:text-white transition-colors bg-transparent border-none p-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
-                    >
-                      <span className="w-0 group-hover:w-[6px] h-px bg-brand-orange transition-all duration-200 overflow-hidden" />
-                      {link.label}
-                    </button>
-                  ) : (
-                    <span className="text-[12px] text-[#6E6C68] cursor-default">{link.label}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
 
-      {/* ── Trust row: payments, shipping, security ─────────────────────────── */}
-      <div className="border-t border-white/10 bg-black/[0.15]">
-        <div className="px-4 sm:px-6 lg:px-12 py-6">
-          <p className="text-[10px] font-bold text-[#8B8985] uppercase tracking-[0.1em] mb-3">Trusted &amp; Secure Shopping</p>
-          <div className="flex flex-wrap items-center gap-2.5">
-            {[...PAYMENT_METHODS, ...SHIPPING_CAPABILITIES, ...SECURITY_BADGES].map(({ label, Icon }) => (
-              <div
-                key={label}
-                className="flex items-center gap-[7px] text-[11.5px] font-medium text-[#C9C7C2] bg-white/[0.04] border border-white/10 rounded-full pl-3 pr-3.5 py-[7px] transition-colors hover:bg-white/[0.08] hover:border-white/20 hover:text-white cursor-default"
-              >
-                <Icon size={13} className="text-brand-orange shrink-0" />
-                {label}
+            <div className="flex items-center gap-2.5 mt-5">
+              {SOCIALS.map(({ label, Glyph }) => (
+                <button
+                  key={label}
+                  aria-label={label}
+                  title={label}
+                  className="w-10 h-10 rounded-full border border-white/[0.12] bg-white/[0.03] flex items-center justify-center text-[#B0AEA8] hover:text-brand-orange hover:border-brand-orange/50 hover:bg-brand-orange/10 transition-colors duration-200 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon"
+                >
+                  <Glyph />
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-6">
+              <p className="text-[10px] font-bold text-[#8B8985] uppercase tracking-[0.1em] mb-3">Get the App</p>
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <AppBadge platform="ios" />
+                <AppBadge platform="android" />
               </div>
-            ))}
+            </div>
           </div>
+
+          {FOOTER_COLUMNS.map(col => (
+            <FooterColumn key={col.heading} heading={col.heading} links={col.links} navigate={navigate} />
+          ))}
         </div>
       </div>
 
       {/* ── Bottom bar ───────────────────────────────────────────────────────── */}
-      <div className="border-t border-white/10 px-4 sm:px-6 lg:px-12 py-4 flex items-center justify-center">
-        <p className="text-[11px]">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
+      <div className="border-t border-white/10">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <SolvexoIcon size={16} />
+            <p className="text-[12px] text-[#8B8985]">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
+          </div>
+          <button
+            type="button"
+            onClick={scrollToTop}
+            className="flex items-center gap-1.5 min-h-11 px-2 -mx-2 text-[12px] text-[#8B8985] hover:text-white transition-colors duration-200 bg-transparent border-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
+          >
+            Back to top <ArrowUp size={13} />
+          </button>
+        </div>
       </div>
     </footer>
   );

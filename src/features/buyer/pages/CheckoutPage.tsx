@@ -13,6 +13,7 @@ import {
   MapPin, Truck, CreditCard, CheckCircle2,
   ChevronRight, AlertCircle, PackageCheck,
   Banknote, ShieldCheck, ArrowDownCircle, Download, Clock, Loader2,
+  SplitSquareHorizontal,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { currencySymbol } from '@/utils/currency';
@@ -94,6 +95,9 @@ function CardPaymentSlot({
 const PAYMENT_LABELS: Record<string, { label: string; desc: string; Icon: React.ElementType }> = {
   stripe:           { label: 'Credit / Debit Card',  desc: 'Secure payment via Stripe',       Icon: CreditCard },
   cash_on_delivery: { label: 'Cash on Delivery',     desc: 'Pay when your order arrives',     Icon: Banknote   },
+  // Mixed carts only — desc is overridden with the real digital/physical
+  // amounts wherever this is rendered (see the payment-method list below).
+  split:            { label: 'Card + Cash on Delivery', desc: 'Pay for digital items now, physical items on delivery', Icon: SplitSquareHorizontal },
 };
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -115,8 +119,8 @@ export function CheckoutPage() {
   // shipping steps", not "no digital items in this order".
   const isDigital  = cartItems.length > 0 && cartItems.every(i => i.type === 'digital');
 
-  // Step: 1 = address, 2 = shipping, 3 = payment
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  // Step: 1 = address, 2 = shipping, 3 = payment method (selection only), 4 = review & confirm
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Address dropdown open state
   const [addrDropOpen, setAddrDropOpen] = useState(false);
@@ -169,6 +173,14 @@ export function CheckoutPage() {
   // Card payment (Stripe) — clientSecret drives the embedded PaymentElement form;
   // pollingStatus drives the "confirming your payment…" state after the buyer submits.
   const [clientSecret,        setClientSecret]        = useState<string | null>(null);
+  // Which mode the current clientSecret's PaymentIntent was created for — lets
+  // the initiate-payment effect below tell "buyer switched stripe↔split" apart
+  // from "nothing changed", since 'full' and 'split' charge different amounts.
+  const [clientSecretMode,    setClientSecretMode]    = useState<'full' | 'split' | null>(null);
+  // The amount actually being charged right now (from the initiate-payment
+  // response) — not the same as `total` once 'split' only charges the
+  // digital portion, so the "Pay $X" button must reflect this, not `total`.
+  const [chargeAmount,        setChargeAmount]        = useState<number | null>(null);
   const [initiatingPayment,   setInitiatingPayment]   = useState(false);
   const [initiatePaymentErr,  setInitiatePaymentErr]  = useState('');
   const [pollingStatus,       setPollingStatus]       = useState(false);
@@ -187,12 +199,14 @@ export function CheckoutPage() {
     ? allowedMethods.filter(m => m !== 'cash_on_delivery')
     : allowedMethods;
 
-  // With no COD choice to make, card is the only option — select it automatically
-  // instead of making the buyer pick a "radio group" with one item in it.
+  // With only one real choice (a pure-digital cart only ever gets 'stripe'),
+  // select it automatically instead of making the buyer pick a "radio group"
+  // with one item in it. A mixed cart gets both 'stripe' and 'split' — that's
+  // a real choice, so it's left for the buyer to pick via the radio list.
   useEffect(() => {
-    if (hasDigital && effectiveMethods.includes('stripe')) setSelectedMethod('stripe');
+    if (effectiveMethods.length === 1) setSelectedMethod(effectiveMethods[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasDigital, allowedMethods.length]);
+  }, [effectiveMethods.length]);
 
   // Fetch addresses (physical only)
   useEffect(() => {
@@ -233,21 +247,36 @@ export function CheckoutPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDigital]);
 
-  // Card selected (forced for any-digital cart, or chosen for an all-physical one)
-  // → get a Stripe clientSecret for this checkout so the PaymentElement can mount.
+  // Card ('stripe') or split ('split') selected → get a Stripe clientSecret
+  // for this checkout so the PaymentElement can mount. Re-fetches if the
+  // buyer switches between 'stripe' and 'split' after one was already
+  // initiated, since those charge different amounts (full vs. digital-only).
+  // For the physical/mixed flow this only fires once the buyer reaches the
+  // Review step (step 4) — picking a method in step 3 no longer immediately
+  // starts payment. The digital-only flow has no step 4 at all (single-step
+  // checkout), so it keeps firing as soon as 'stripe' is selected there.
   useEffect(() => {
-    if (selectedMethod !== 'stripe' || !checkout || clientSecret || !isStripeConfigured()) return;
+    const mode: 'full' | 'split' | null =
+      selectedMethod === 'split' ? 'split' : selectedMethod === 'stripe' ? 'full' : null;
+    if (!mode || !checkout || !isStripeConfigured()) return;
+    if (!isDigital && step !== 4) return;
+    if (clientSecret && clientSecretMode === mode) return;
     let cancelled = false;
     setInitiatingPayment(true);
     setInitiatePaymentErr('');
-    apiInitiatePayment({ checkoutId: checkout._id })
-      .then(res => { if (!cancelled) setClientSecret(res.data.clientSecret); })
+    apiInitiatePayment({ checkoutId: checkout._id, paymentMode: mode })
+      .then(res => {
+        if (cancelled) return;
+        setClientSecret(res.data.clientSecret);
+        setChargeAmount(res.data.amount);
+        setClientSecretMode(mode);
+      })
       .catch(err => {
         if (!cancelled) setInitiatePaymentErr(err instanceof Error ? err.message : 'Failed to start card payment.');
       })
       .finally(() => { if (!cancelled) setInitiatingPayment(false); });
     return () => { cancelled = true; };
-  }, [selectedMethod, checkout, clientSecret]);
+  }, [selectedMethod, checkout, clientSecret, clientSecretMode, isDigital, step]);
 
   // Stop any in-flight poll on unmount (e.g. buyer navigates away mid-confirmation).
   useEffect(() => () => { if (pollTimer.current) clearTimeout(pollTimer.current); }, []);
@@ -468,7 +497,7 @@ export function CheckoutPage() {
                       initiating={initiatingPayment}
                       initiateError={initiatePaymentErr}
                       polling={pollingStatus}
-                      amount={total}
+                      amount={chargeAmount ?? total}
                       currency={checkout?.currency ?? 'USD'}
                       onConfirmed={handleStripeConfirmed}
                     />
@@ -491,9 +520,9 @@ export function CheckoutPage() {
                 </div>
                 <span className={clsx(
                   'text-[11px] font-semibold px-3 py-1 rounded-full',
-                  step === 3 ? 'bg-[#E3F4EA] text-[#1E7A3C]' : 'bg-brand-pale-orange text-brand-orange',
+                  step === 4 ? 'bg-[#E3F4EA] text-[#1E7A3C]' : 'bg-brand-pale-orange text-brand-orange',
                 )}>
-                  Step {step} of 3
+                  Step {step} of 4
                 </span>
               </div>
 
@@ -504,12 +533,13 @@ export function CheckoutPage() {
                 {/* filled line */}
                 <div
                   className="absolute top-3 left-0 h-[2px] bg-success rounded-full transition-all duration-300"
-                  style={{ width: step === 1 ? '0%' : step === 2 ? '50%' : '100%' }}
+                  style={{ width: step === 1 ? '0%' : step === 2 ? '33%' : step === 3 ? '66%' : '100%' }}
                 />
                 {([
                   { n: 1, label: 'Address' },
                   { n: 2, label: 'Shipping' },
                   { n: 3, label: 'Payment' },
+                  { n: 4, label: 'Review' },
                 ] as const).map(({ n, label }) => (
                   <div key={n} className="relative z-10 flex flex-col items-center gap-[6px]">
                     <div className={clsx(
@@ -789,7 +819,7 @@ export function CheckoutPage() {
                           onClick={handleContinueToPayment}
                           className="gap-1"
                         >
-                          {creatingCheckout ? 'Creating checkout…' : 'Continue to Payment'}
+                          {creatingCheckout ? 'Creating checkout…' : 'Continue to Payment Method'}
                         </Button>
                       </div>
                     </div>
@@ -808,12 +838,21 @@ export function CheckoutPage() {
 
             <div className="h-px bg-bone" />
 
-            {/* Step 3: Payment */}
+            {/* Step 3: Payment Method (selection only — payment itself happens after Review) */}
             <div className={clsx('transition-opacity', step < 3 && 'opacity-50 pointer-events-none')}>
               <div className="flex items-center gap-3 px-5 py-4 border-b border-bone">
-                <StepBadge n={3} active={step === 3} done={false} />
+                <StepBadge n={3} active={step === 3} done={step > 3} />
                 <CreditCard size={16} className="text-brand-orange" />
                 <span className="font-semibold text-[14px] text-carbon">Payment Method</span>
+                {step > 3 && (
+                  <Button
+                    variant="ghost" size="sm"
+                    onClick={() => setStep(3)}
+                    className="ml-auto text-[12px] text-brand-orange font-medium cursor-pointer"
+                  >
+                    <ArrowDownCircle size={14} className="inline align-middle mr-1" />Change Payment Method
+                  </Button>
+                )}
               </div>
 
               {step === 3 && (
@@ -827,8 +866,13 @@ export function CheckoutPage() {
                   <div className="flex flex-col gap-3 mb-4">
                     {effectiveMethods.map(method => {
                       const meta = PAYMENT_LABELS[method] ?? { label: method, desc: '', Icon: CreditCard };
-                      const { label, desc, Icon } = meta;
-                      const unavailable = method === 'stripe' && !isStripeConfigured();
+                      const { label, Icon } = meta;
+                      // Real amounts once known, instead of the static "digital items"/
+                      // "physical items" placeholder text in PAYMENT_LABELS.
+                      const desc = method === 'split' && summary?.digitalSubtotal != null && summary?.physicalSubtotal != null
+                        ? `Pay ${currencySymbol(checkout?.currency)} ${summary.digitalSubtotal.toFixed(2)} now, ${currencySymbol(checkout?.currency)} ${summary.physicalSubtotal.toFixed(2)} on delivery`
+                        : meta.desc;
+                      const unavailable = (method === 'stripe' || method === 'split') && !isStripeConfigured();
                       return (
                         <label
                           key={method}
@@ -869,6 +913,67 @@ export function CheckoutPage() {
                     })}
                   </div>
 
+                  <div>
+                    <Button
+                      variant="primary" size="sm"
+                      disabled={!selectedMethod}
+                      onClick={() => setStep(4)}
+                      className="gap-1"
+                    >
+                      Continue to Review <ChevronRight size={14} />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {step > 3 && selectedMethod && (
+                <div className="px-5 py-3 text-[13px] text-carbon">
+                  <span className="font-medium">{PAYMENT_LABELS[selectedMethod]?.label ?? selectedMethod}</span>
+                  {selectedMethod === 'split' && summary?.digitalSubtotal != null && summary?.physicalSubtotal != null ? (
+                    <> {' — '}{currencySymbol(checkout?.currency)} {summary.digitalSubtotal.toFixed(2)} now, {currencySymbol(checkout?.currency)} {summary.physicalSubtotal.toFixed(2)} on delivery</>
+                  ) : (
+                    <> {' — '}{currencySymbol(checkout?.currency)} {(chargeAmount ?? total).toFixed(2)}</>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="h-px bg-bone" />
+
+            {/* Step 4: Review & Confirm */}
+            <div className={clsx('transition-opacity', step < 4 && 'opacity-50 pointer-events-none')}>
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-bone">
+                <StepBadge n={4} active={step === 4} done={false} />
+                <PackageCheck size={16} className="text-brand-orange" />
+                <span className="font-semibold text-[14px] text-carbon">Review &amp; Confirm</span>
+              </div>
+
+              {step === 4 && (
+                <div className="p-5">
+                  {/* Recap — everything the buyer picked in steps 1-3, one place */}
+                  <div className="rounded-[10px] border border-bone bg-cream px-4 py-3 mb-4 flex flex-col gap-2.5">
+                    <div className="flex justify-between gap-3 text-[12.5px]">
+                      <span className="text-slate flex-shrink-0">Deliver to</span>
+                      <span className="font-medium text-carbon text-right">
+                        {selectedAddr?.recipientName} — {selectedAddr?.addressLine1}, {selectedAddr?.city}, {selectedAddr?.state}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-3 text-[12.5px]">
+                      <span className="text-slate flex-shrink-0">Shipping</span>
+                      <span className="font-medium text-carbon text-right">
+                        {selectedZone ? `${selectedZone.city}, ${selectedZone.province} · ${currencySymbol(checkout?.currency)} ${selectedZone.shippingPrice.toLocaleString()}` : '—'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-3 text-[12.5px]">
+                      <span className="text-slate flex-shrink-0">Payment</span>
+                      <span className="font-medium text-carbon text-right">
+                        {!selectedMethod ? '—' : selectedMethod === 'split' && summary?.digitalSubtotal != null && summary?.physicalSubtotal != null
+                          ? `${PAYMENT_LABELS.split.label} · ${currencySymbol(checkout?.currency)} ${summary.digitalSubtotal.toFixed(2)} now, ${currencySymbol(checkout?.currency)} ${summary.physicalSubtotal.toFixed(2)} on delivery`
+                          : `${PAYMENT_LABELS[selectedMethod]?.label ?? selectedMethod} · ${currencySymbol(checkout?.currency)} ${(chargeAmount ?? total).toFixed(2)}`}
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-1 text-[11px] text-slate mb-4">
                     <ShieldCheck size={12} className="text-success" />
                     Your payment info is secure and encrypted
@@ -881,14 +986,14 @@ export function CheckoutPage() {
                     </div>
                   )}
 
-                  {selectedMethod === 'stripe' ? (
+                  {selectedMethod === 'stripe' || selectedMethod === 'split' ? (
                     <CardPaymentSlot
                       checkoutReady={!!checkout}
                       clientSecret={clientSecret}
                       initiating={initiatingPayment}
                       initiateError={initiatePaymentErr}
                       polling={pollingStatus}
-                      amount={total}
+                      amount={chargeAmount ?? total}
                       currency={checkout?.currency ?? 'USD'}
                       onConfirmed={handleStripeConfirmed}
                     />
@@ -901,7 +1006,7 @@ export function CheckoutPage() {
                       onClick={handlePlaceOrder}
                       className="gap-2 w-full justify-center"
                     >
-                      {placing ? 'Placing Order…' : 'Place Order'}
+                      {placing ? 'Placing Order…' : 'Confirm & Pay'}
                     </Button>
                   )}
                 </div>

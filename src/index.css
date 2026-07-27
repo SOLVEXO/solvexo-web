@@ -297,20 +297,37 @@
 .range-thumb::-webkit-slider-thumb {
   -webkit-appearance: none;
   pointer-events: auto;
-  width: 22px;
-  height: 22px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   background: var(--color-brand-orange);
   border: 2px solid white;
+  outline: 1px solid var(--color-bone);
   cursor: pointer;
+  transition: transform 150ms var(--ease-out);
 }
+.range-thumb::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.range-thumb::-webkit-slider-thumb:active { transform: scale(0.95); }
 .range-thumb::-moz-range-track { background: transparent; border: none; }
 .range-thumb::-moz-range-thumb {
   pointer-events: auto;
-  width: 22px;
-  height: 22px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   background: var(--color-brand-orange);
   border: 2px solid white;
+  outline: 1px solid var(--color-bone);
   cursor: pointer;
+  transition: transform 150ms var(--ease-out);
 }
+.range-thumb::-moz-range-thumb:hover { transform: scale(1.15); }
+.range-thumb::-moz-range-thumb:active { transform: scale(0.95); }
+
+/* Filter checkbox "pop" — the custom check mark animates in instead of just
+   appearing, echoing heart-pop's tactile feel for the filter sidebar. */
+@keyframes filter-check-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.filter-check-pop { animation: filter-check-pop 200ms var(--ease-out); }

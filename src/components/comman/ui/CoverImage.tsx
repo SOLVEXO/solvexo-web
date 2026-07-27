@@ -1,0 +1,69 @@
+import { useState, type CSSProperties, type ReactNode } from 'react';
+import { clsx } from 'clsx';
+
+interface CoverImageProps {
+  /** Store cover photo URL. Falsy → the fallback gradient is shown instead. */
+  src?:        string | null;
+  alt?:        string;
+  /** Sizing/rounding for the wrapper (e.g. `h-[220px]`, `rounded-2xl`). */
+  className?:  string;
+  /** Extra classes merged onto the `<img>` itself (e.g. a hover zoom). */
+  imgClassName?: string;
+  /** `eager` for above-the-fold heroes (LCP), `lazy` (default) for cards/tabs further down the page. */
+  loading?:    'lazy' | 'eager';
+  /** Dark gradient layered over the image so overlaid text/controls stay readable. */
+  overlay?:    boolean;
+  overlayClassName?: string;
+  /** Shown in place of the image when there's no cover photo. */
+  fallbackClassName?: string;
+  fallbackStyle?: CSSProperties;
+  /** Content layered above the image/overlay (logo, name, badges, actions…). */
+  children?:   ReactNode;
+}
+
+/**
+ * Store cover-photo primitive shared by every place a store's cover image is
+ * rendered (storefront hero, store dashboard hero, store cards, seller-info
+ * banners…) so the crop/fade/placeholder/fallback behavior stays identical
+ * everywhere instead of being re-implemented per component.
+ */
+export function CoverImage({
+  src, alt = '', className, imgClassName,
+  loading = 'lazy', overlay = false, overlayClassName,
+  fallbackClassName, fallbackStyle, children,
+}: CoverImageProps) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className={clsx('relative overflow-hidden', className)}>
+      {src ? (
+        <>
+          {!loaded && <div className="absolute inset-0 animate-pulse bg-[#EDEBE2]" />}
+          <img
+            src={src}
+            alt={alt}
+            loading={loading}
+            decoding="async"
+            onLoad={() => setLoaded(true)}
+            className={clsx(
+              'absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500',
+              loaded ? 'opacity-100' : 'opacity-0',
+              imgClassName,
+            )}
+          />
+        </>
+      ) : (
+        <div
+          className={clsx('absolute inset-0', fallbackClassName ?? 'bg-gradient-to-br from-brand-pale-orange to-[#FDE8DA]')}
+          style={fallbackStyle}
+        />
+      )}
+
+      {overlay && src && (
+        <div className={clsx('absolute inset-0', overlayClassName ?? 'bg-gradient-to-t from-black/55 via-black/10 to-transparent')} />
+      )}
+
+      {children && <div className="relative">{children}</div>}
+    </div>
+  );
+}

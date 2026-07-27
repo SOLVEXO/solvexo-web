@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
-import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget, DealsBanner } from '@/components/comman/ui';
+import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget, DealsBanner, CoverImage } from '@/components/comman/ui';
 import {
   ShoppingCart, Star, Heart, ArrowLeft, Users,
   Store, Package, Loader2, MessageCircle, BadgeCheck, Award, Gift, RefreshCw, Check, Zap,
@@ -401,15 +401,15 @@ export function SellerStorefront() {
       </div>
 
       {/* ── Store Banner ─────────────────────────────────────────────────────── */}
-      <div
-        className="relative"
-        style={store.coverImage
-          ? { backgroundImage: `url(${store.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#1A3A4A' }
-          : { background: `linear-gradient(135deg, ${cfg.primaryColor}CC, ${cfg.accentColor}CC)` }
-        }
+      <CoverImage
+        src={store.coverImage}
+        loading="eager"
+        overlay
+        overlayClassName="bg-black/40"
+        fallbackClassName=""
+        fallbackStyle={{ background: `linear-gradient(135deg, ${cfg.primaryColor}CC, ${cfg.accentColor}CC)` }}
       >
-        {store.coverImage && <div className="absolute inset-0 bg-black/40" />}
-        <div className="relative px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
+        <div className="px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
 
             {/* Store logo */}
@@ -495,7 +495,7 @@ export function SellerStorefront() {
             </div>
           </div>
         </div>
-      </div>
+      </CoverImage>
 
       {/* ── Category filter tabs ─────────────────────────────────────────────── */}
       {tags.length > 0 && (

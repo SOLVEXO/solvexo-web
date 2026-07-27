@@ -15,7 +15,7 @@ import { Card } from '@/components/comman/ui/Card';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { TabBar } from '@/components/comman/ui/TabBar';
 import { Modal } from '@/components/comman/ui/Modal';
-import { BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget } from '@/components/comman/ui';
+import { BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget, CoverImage } from '@/components/comman/ui';
 import {
   ArrowRight, Package, Download, ClipboardList, CheckCircle, Minus, Plus,
   ShoppingCart, Star, Link2, Share2, ImageOff, Heart, ShieldCheck, Truck,
@@ -648,18 +648,14 @@ export function ProductDetail() {
 
                 {activeTab === 'seller' && (
                   <div>
-                    {storeData?.coverImage && (
-                      <div className="h-[100px] -mx-6 -mt-6 mb-5 overflow-hidden">
-                        <img loading="lazy" decoding="async" src={storeData.coverImage} alt="" className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                    <div className="flex items-start gap-[14px] mb-5 flex-wrap">
+                    <CoverImage src={storeData?.coverImage} className="h-[100px] -mx-6 -mt-6" />
+                    <div className="relative flex items-start gap-[14px] mb-5 flex-wrap -mt-8">
                       <div className="w-[60px] h-[60px] rounded-full bg-success-bg text-success flex items-center justify-center font-bold text-[18px] flex-shrink-0 overflow-hidden border-2 border-white outline outline-1 outline-bone">
                         {storeData?.logo
                           ? <img loading="lazy" decoding="async" src={storeData.logo} alt="" className="w-full h-full object-cover" />
                           : (product.sellerName ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 pt-8">
                         <div className="flex items-center gap-[6px] flex-wrap">
                           <span className="text-[16px] font-bold text-carbon">{storeData?.name ?? product.sellerName ?? 'Unknown Seller'}</span>
                           {storeData?.badges?.includes('verified') && (
@@ -685,7 +681,7 @@ export function ProductDetail() {
                           <p className="text-[12px] text-slate mt-[6px] leading-[1.6] line-clamp-2">{storeData.description}</p>
                         )}
                       </div>
-                      <div className="flex gap-2 shrink-0">
+                      <div className="flex gap-2 shrink-0 pt-8">
                         <Button variant="secondary" size="sm" disabled={!product.storeSlug} onClick={() => product.storeSlug && navigate(`/store/${product.storeSlug}`)}>
                           Visit Store <ArrowRight size={13} className="inline align-middle ml-1" />
                         </Button>

@@ -84,8 +84,11 @@ export function apiPlaceCodOrder(payload: CodPaymentPayload) {
 }
 
 /** POST /api/payment/initiate-payment — creates (or reuses) a Stripe PaymentIntent
- *  for a checkout. Returns a clientSecret for Stripe Elements/PaymentElement. */
-export function apiInitiatePayment(payload: { checkoutId: string }) {
+ *  for a checkout. Returns a clientSecret for Stripe Elements/PaymentElement.
+ *  `paymentMode: 'split'` (mixed carts only) charges just the digital-items
+ *  subtotal now, leaving the physical items to be settled via COD. Omit or
+ *  pass 'full' to charge the whole checkout, same as before this existed. */
+export function apiInitiatePayment(payload: { checkoutId: string; paymentMode?: 'full' | 'split' }) {
   return client.post<never, InitiatePaymentResponse>(ENDPOINTS.PAYMENT.INITIATE_PAYMENT, payload);
 }
 

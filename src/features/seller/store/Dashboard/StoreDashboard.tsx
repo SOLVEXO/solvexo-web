@@ -9,7 +9,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { AreaChart } from '@/components/comman/charts';
-import { MetricCard, SkeletonBox, Button } from '@/components/comman/ui';
+import { MetricCard, SkeletonBox, Button, CoverImage } from '@/components/comman/ui';
 import {
   apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsToday,
   type SellerOverviewData, type RevenuePoint, type SellerTodaySummaryData,
@@ -79,7 +79,15 @@ function StoreHero({ store }: { store: ReturnType<typeof useStoreWorkspace>['sto
   const isLive = store?.status === 'active';
 
   return (
-    <div className="dash-section-enter relative overflow-hidden rounded-2xl bg-gradient-to-br from-carbon via-[#241F1B] to-brand-deep-orange px-6 py-6 sm:px-7 sm:py-7 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
+    <CoverImage
+      src={store?.coverImage}
+      loading="eager"
+      overlay
+      overlayClassName="bg-gradient-to-br from-carbon/92 via-[#241F1B]/88 to-brand-deep-orange/75"
+      fallbackClassName="bg-gradient-to-br from-carbon via-[#241F1B] to-brand-deep-orange"
+      className="dash-section-enter rounded-2xl"
+    >
+      <div className="px-6 py-6 sm:px-7 sm:py-7 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.06]"
         style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '22px 22px' }}
@@ -135,7 +143,8 @@ function StoreHero({ store }: { store: ReturnType<typeof useStoreWorkspace>['sto
           </a>
         )}
       </div>
-    </div>
+      </div>
+    </CoverImage>
   );
 }
 

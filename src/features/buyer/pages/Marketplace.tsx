@@ -10,7 +10,7 @@ import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Pagination, FilterDropdown, BuyerNavbar, AppDownloadBanner, Footer, TrustServiceStrip, FloatingAppWidget, DealsBanner, StoreFeatureCard } from '@/components/comman/ui';
 import { ProductCard, ProductCardSkeleton } from '@/components/comman/marketplace/ProductCard';
-import { FilterAccordionSection, FilterChipPill, FilterCheckboxRow, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
+import { FilterAccordionSection, FilterChipPill, FilterCheckboxRow, FilterStarRow, ActiveFilterChip, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { MegaMenuBar } from '@/components/comman/marketplace/MegaMenuBar';
 import {
@@ -27,9 +27,10 @@ import { apiGetPublicActiveCampaigns, type PublicCampaign } from '@/api/services
 
 
 // ── Filter data ───────────────────────────────────────────────────────────────
-const FILTER_GROUPS = [
-  { key: 'type',   title: 'Product Type', items: ['Physical', 'Digital', 'Educational'] },
-  { key: 'rating', title: 'Rating',       items: ['4★ & up', '3★ & up']                },
+const TYPE_ITEMS = ['Physical', 'Digital', 'Educational'];
+const RATING_ITEMS: { label: string; stars: number }[] = [
+  { label: '4★ & up', stars: 4 },
+  { label: '3★ & up', stars: 3 },
 ];
 
 interface FilterState { priceRange: [number, number]; type: string[]; rating: string[]; }
@@ -46,10 +47,10 @@ function FilterPanel({ filters, onChange, onPriceRangeChange, categories = [], s
     <div>
       {categories.length > 0 && (
         <FilterAccordionSection title="Category">
-          <div className="flex flex-wrap gap-[7px]">
+          <div className="flex flex-wrap gap-2">
             <FilterChipPill label="All" active={selectedCategory === ''} onClick={() => onCategoryChange('')} />
             {categories.map(c => (
-              <FilterChipPill key={c._id} label={c.name} active={selectedCategory === c._id} onClick={() => onCategoryChange(c._id)} />
+              <FilterChipPill key={c._id} label={c.name} active={selectedCategory === c._id} onClick={() => onCategoryChange(c._id)} count={c.productCount} />
             ))}
           </div>
         </FilterAccordionSection>
@@ -57,18 +58,20 @@ function FilterPanel({ filters, onChange, onPriceRangeChange, categories = [], s
       <FilterAccordionSection title="Price Range">
         <PriceRangeSlider value={filters.priceRange} onChange={onPriceRangeChange} />
       </FilterAccordionSection>
-      {FILTER_GROUPS.map(group => (
-        <FilterAccordionSection key={group.key} title={group.title}>
-          <div className="flex flex-col gap-[1px]">
-            {group.items.map(label => {
-              const active = (filters[group.key as 'type' | 'rating'] as string[]).includes(label);
-              return (
-                <FilterCheckboxRow key={label} label={label} active={active} onClick={() => onChange(group.key as 'type' | 'rating', label)} />
-              );
-            })}
-          </div>
-        </FilterAccordionSection>
-      ))}
+      <FilterAccordionSection title="Product Type">
+        <div className="flex flex-col">
+          {TYPE_ITEMS.map(label => (
+            <FilterCheckboxRow key={label} label={label} active={filters.type.includes(label)} onClick={() => onChange('type', label)} />
+          ))}
+        </div>
+      </FilterAccordionSection>
+      <FilterAccordionSection title="Rating">
+        <div className="flex flex-col">
+          {RATING_ITEMS.map(({ label, stars }) => (
+            <FilterStarRow key={label} stars={stars} active={filters.rating.includes(label)} onClick={() => onChange('rating', label)} />
+          ))}
+        </div>
+      </FilterAccordionSection>
     </div>
   );
 }
@@ -214,6 +217,24 @@ export function Marketplace() {
   const setPriceRange = (range: [number, number]) => setFilters(prev => ({ ...prev, priceRange: range }));
 
   const clearFilters = () => setFilters({ priceRange: [PRICE_MIN, PRICE_MAX], type: [], rating: [] });
+
+  // Active filter chip strip — one removable chip per currently-applied facet,
+  // so a shopper can see (and undo) exactly what's narrowing the grid without
+  // opening the sidebar accordion it came from.
+  const activeFilterChips: { key: string; label: string; onRemove: () => void }[] = [
+    ...(selectedCategory
+      ? [{ key: 'category', label: categories.find(c => c._id === selectedCategory)?.name ?? 'Category', onRemove: () => handleCategoryChange('') }]
+      : []),
+    ...(isPriceRangeActive
+      ? [{
+          key: 'price',
+          label: filters.priceRange[1] >= PRICE_MAX ? `$${filters.priceRange[0]}+` : `$${filters.priceRange[0]}–$${filters.priceRange[1]}`,
+          onRemove: () => setPriceRange([PRICE_MIN, PRICE_MAX]),
+        }]
+      : []),
+    ...filters.type.map(t => ({ key: `type-${t}`, label: t, onRemove: () => toggleFilter('type', t) })),
+    ...filters.rating.map(r => ({ key: `rating-${r}`, label: r, onRemove: () => toggleFilter('rating', r) })),
+  ];
 
   const goToPage = (p: number) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
@@ -463,31 +484,38 @@ export function Marketplace() {
         <div className="flex gap-5 lg:gap-6 items-start">
 
           {/* ── Desktop sidebar ───────────────────────────────────────────────── */}
-          <aside className="hidden lg:block w-[210px] xl:w-[230px] shrink-0 sticky top-[68px] self-start">
-            <div className="relative bg-white rounded-2xl border border-bone overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#F0A57A]" />
-              <div className="px-4 pt-5 pb-4 border-b border-bone flex items-center justify-between">
-                <div className="flex items-center gap-2">
+          <aside className="hidden lg:block w-[220px] xl:w-[240px] shrink-0 sticky top-[68px] self-start">
+            <div className="bg-white rounded-[20px] border border-bone overflow-hidden flex flex-col max-h-[calc(100vh-96px)]">
+              {/* Sticky header — stays put while the accordion body below scrolls */}
+              <div className="shrink-0 px-4 py-3 border-b border-bone flex items-center justify-between gap-2">
+                <div className="flex items-center gap-[10px]">
                   <div className="size-7 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
                     <SlidersHorizontal size={13} className="text-brand-orange" strokeWidth={2.2} />
                   </div>
-                  <span className="text-[14px] font-bold text-carbon">Filters</span>
-                  {activeFilterCount > 0 && (
-                    <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
-                      {activeFilterCount}
-                    </span>
-                  )}
+                  <div>
+                    <div className="flex items-center gap-[6px] leading-none">
+                      <span className="text-[13.5px] font-bold text-carbon">Filters</span>
+                      {activeFilterCount > 0 && (
+                        <span className="min-w-[16px] h-4 rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10.5px] text-slate leading-none mt-[5px]">
+                      {!loading && `${total} product${total === 1 ? '' : 's'}`}
+                    </p>
+                  </div>
                 </div>
                 {activeFilterCount > 0 && (
                   <button
                     onClick={clearFilters}
-                    className="text-[11px] font-semibold text-brand-orange hover:opacity-70 transition-opacity cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                    className="shrink-0 flex items-center gap-1 text-[10.5px] font-semibold text-brand-orange hover:opacity-70 transition-opacity duration-200 cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                   >
-                    Clear
+                    <RefreshCcw size={10} /> Reset All
                   </button>
                 )}
               </div>
-              <div className="px-4 py-4">
+              <div className="px-4 py-1 overflow-y-auto">
                 <FilterPanel filters={filters} onChange={toggleFilter} onPriceRangeChange={setPriceRange} categories={categories} selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
               </div>
             </div>
@@ -495,6 +523,15 @@ export function Marketplace() {
 
           {/* ── Products area ─────────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0">
+
+            {/* Active filter chips — one removable chip per applied facet */}
+            {activeFilterChips.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                {activeFilterChips.map(chip => (
+                  <ActiveFilterChip key={chip.key} label={chip.label} onRemove={chip.onRemove} />
+                ))}
+              </div>
+            )}
 
             {/* Desktop: count + sort row */}
             <div className="hidden lg:flex items-center justify-between mb-4">
@@ -589,28 +626,33 @@ export function Marketplace() {
           <div className="w-9 h-[4px] bg-bone rounded-full" />
         </div>
 
-        <div className="flex items-center justify-between px-5 py-3 border-b border-bone">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal size={15} className="text-charcoal" strokeWidth={2} />
-            <span className="text-[15px] font-bold text-carbon">Filters</span>
-            {activeFilterCount > 0 && (
-              <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
-                {activeFilterCount}
-              </span>
-            )}
+        <div className="flex items-start justify-between px-5 py-3 border-b border-bone">
+          <div>
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal size={15} className="text-charcoal" strokeWidth={2} />
+              <span className="text-[15px] font-bold text-carbon">Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
+                  {activeFilterCount}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-slate mt-1 ml-[22px]">
+              {!loading && `${total} product${total === 1 ? '' : 's'}`}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             {activeFilterCount > 0 && (
               <button
                 onClick={clearFilters}
-                className="text-[12px] font-medium text-slate hover:text-brand-orange transition-colors cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                className="flex items-center gap-1 text-[12px] font-medium text-slate hover:text-brand-orange transition-colors duration-200 cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
               >
-                Clear all
+                <RefreshCcw size={12} /> Reset All
               </button>
             )}
             <button
               onClick={() => setMobileFilters(false)}
-              className="size-10 rounded-full bg-cream flex items-center justify-center cursor-pointer hover:bg-bone transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              className="size-11 rounded-full bg-cream flex items-center justify-center cursor-pointer hover:bg-bone transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
             >
               <X size={15} className="text-charcoal" />
             </button>

@@ -56,6 +56,9 @@ export interface CheckoutSummary {
   totalAmount: number;
   subscriberSavingsUSD?: number;
   campaignDiscountUSD?: number;
+  /** Only meaningful for a mixed physical+digital cart — see `allowedPaymentMethods`'s 'split' option. */
+  digitalSubtotal?:  number;
+  physicalSubtotal?: number;
 }
 
 export interface AppliedCampaign {
@@ -72,11 +75,18 @@ export interface ApplyCouponData {
   couponCode: string;
   couponDiscountUSD: number;
   totalAmount: number;
+  digitalSubtotal?:  number;
+  physicalSubtotal?: number;
 }
 
 interface ApplyCouponResponse { success: boolean; message: string; data: ApplyCouponData }
 
-export interface RemoveCouponData { checkoutId: string; totalAmount: number }
+export interface RemoveCouponData {
+  checkoutId: string;
+  totalAmount: number;
+  digitalSubtotal?:  number;
+  physicalSubtotal?: number;
+}
 interface RemoveCouponResponse { success: boolean; message: string; data: RemoveCouponData }
 
 export interface SubscriptionSavingsHint {
@@ -111,6 +121,8 @@ export interface AddShippingData {
   shippingFee:   number;
   subtotal:      number;
   totalAmount:   number;
+  digitalSubtotal?:  number;
+  physicalSubtotal?: number;
 }
 
 interface AddShippingResponse {

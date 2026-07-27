@@ -309,7 +309,7 @@ const ABOUT_QUICK_LINKS = [
   { label: 'AI Commerce',         path: '/sellers' },
   { label: 'POS',                 path: '/sellers' },
   { label: 'Help Center',         path: '/faq' },
-  { label: 'Contact',             path: '/faq' },
+  { label: 'Contact',             path: '/contact-us' },
 ];
 
 function AboutMegaContent({ onNavigate }: { onNavigate: (path: string) => void }) {
@@ -476,7 +476,7 @@ export function MegaMenuBar({
             <button onClick={() => onNavigate('/faq')} className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
               Help Center
             </button>
-            <button onClick={() => onNavigate('/faq')} className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+            <button onClick={() => onNavigate('/contact-us')} className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
               Contact
             </button>
           </div>

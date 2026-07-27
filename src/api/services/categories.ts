@@ -20,6 +20,8 @@ export interface Category {
 
 export interface CategoryNode extends Category {
   children: CategoryNode[];
+  /** Active products in this category plus all of its descendants — attached server-side. */
+  productCount?: number;
 }
 
 export interface CategoryPayload {

@@ -22,6 +22,8 @@ import { CartPage }     from '@/features/buyer/pages/CartPage';
 import { CheckoutPage } from '@/features/buyer/pages/CheckoutPage';
 import { LoginPage }    from '@/features/auth/pages/LoginPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
+import { Marketplace }  from '@/features/buyer/pages/Marketplace';
+import { OnboardingPage } from '@/features/auth/pages/onboard/OnboardingPage';
 
 // ── Lazy helpers ──────────────────────────────────────────────────────────────
 const named = <T extends Record<string, unknown>>(
@@ -31,7 +33,6 @@ const named = <T extends Record<string, unknown>>(
   p.then(m => ({ default: m[key] }));
 
 // ── Public / Buyer ────────────────────────────────────────────────────────────
-const Marketplace          = lazy(() => named(import('@/features/buyer/pages/Marketplace'),                     'Marketplace'));
 const OrderSuccessPage     = lazy(() => named(import('@/features/buyer/pages/OrderSuccessPage'),                'OrderSuccessPage'));
 const SellerStorefront     = lazy(() => named(import('@/features/buyer/pages/SellerStorefront'),                'SellerStorefront'));
 const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/EducationMarketplace'),            'EducationMarketplace'));
@@ -59,7 +60,6 @@ const AccountSubscriptions = lazy(() => named(import('@/features/buyer/pages/MyS
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 const AdminLoginPage       = lazy(() => named(import('@/features/auth/pages/admin/AdminLoginPage'),             'AdminLoginPage'));
-const OnboardingPage       = lazy(() => named(import('@/features/auth/pages/onboard/OnboardingPage'),          'OnboardingPage'));
 const ForgotPasswordPage   = lazy(() => named(import('@/features/auth/pages/ForgotPasswordPage'),              'ForgotPasswordPage'));
 const VerifyOTPPage        = lazy(() => named(import('@/features/auth/pages/VerifyOTPPage'),                    'VerifyOTPPage'));
 const NewPasswordPage      = lazy(() => named(import('@/features/auth/pages/NewPasswordPage'),                  'NewPasswordPage'));
