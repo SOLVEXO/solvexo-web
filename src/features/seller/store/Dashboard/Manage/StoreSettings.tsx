@@ -3,6 +3,7 @@ import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock } from 'luc
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { apiUpdateStore, apiSetCustomDomain, apiSetWhiteLabel, type ProductType } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
+import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { ImageUpload } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
@@ -150,6 +151,10 @@ export default function StoreSettings() {
   const [description,  setDescription]  = useState('');
   const [productTypes, setProductTypes] = useState<ProductType[]>([]);
   const [logo,         setLogo]         = useState('');
+  const [coverImage,   setCoverImage]   = useState('');
+  const [categoryId,   setCategoryId]   = useState('');
+  const [categories,   setCategories]   = useState<CategoryNode[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [saving,       setSaving]       = useState(false);
   const [saveMsg,      setSaveMsg]      = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -160,7 +165,16 @@ export default function StoreSettings() {
     setDescription(store.description ?? '');
     setProductTypes(store.productTypes ?? []);
     setLogo(store.logo ?? '');
+    setCoverImage(store.coverImage ?? '');
+    setCategoryId(store.categoryId ?? '');
   }, [store]);
+
+  useEffect(() => {
+    apiGetCategoryTree()
+      .then(res => setCategories(res.data))
+      .catch(() => {})
+      .finally(() => setCategoriesLoading(false));
+  }, []);
 
   const toggleType = (t: ProductType) =>
     setProductTypes(prev => prev.includes(t) ? prev.filter(p => p !== t) : [...prev, t]);
@@ -170,7 +184,7 @@ export default function StoreSettings() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, productTypes, logo });
+      await apiUpdateStore({ storeId, name, description, productTypes, logo, coverImage, categoryId });
       refetch();
       setSaveMsg({ ok: true, text: 'Store updated successfully.' });
     } catch (err) {
@@ -185,6 +199,8 @@ export default function StoreSettings() {
     (name !== store.name ||
       description !== (store.description ?? '') ||
       logo !== (store.logo ?? '') ||
+      coverImage !== (store.coverImage ?? '') ||
+      categoryId !== (store.categoryId ?? '') ||
       JSON.stringify(productTypes.slice().sort()) !==
         JSON.stringify((store.productTypes ?? []).slice().sort()));
 
@@ -251,19 +267,29 @@ export default function StoreSettings() {
                 <p className="text-[14px] font-semibold text-charcoal">Basic Information</p>
               </div>
 
-              <Field label="Store Logo">
-                <div className="flex items-center gap-4">
-                  <ImageUpload
-                    value={logo ? [logo] : []}
-                    onChange={urls => setLogo(urls[0] ?? '')}
-                    maxFiles={1}
-                  />
-                  <div>
-                    <p className="text-[12px] text-charcoal font-medium">Upload a logo</p>
-                    <p className="text-[11px] text-slate mt-0.5">PNG, JPG or WebP</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
+                <Field label="Store Logo">
+                  <div className="flex items-center gap-3">
+                    <ImageUpload
+                      value={logo ? [logo] : []}
+                      onChange={urls => setLogo(urls[0] ?? '')}
+                      maxFiles={1}
+                    />
+                    <p className="text-[11px] text-slate">PNG, JPG or WebP</p>
                   </div>
-                </div>
-              </Field>
+                </Field>
+
+                <Field label="Cover Image">
+                  <div className="flex items-center gap-3">
+                    <ImageUpload
+                      value={coverImage ? [coverImage] : []}
+                      onChange={urls => setCoverImage(urls[0] ?? '')}
+                      maxFiles={1}
+                    />
+                    <p className="text-[11px] text-slate">PNG, JPG or WebP</p>
+                  </div>
+                </Field>
+              </div>
 
               <Field label="Store Name *">
                 <input
@@ -272,6 +298,17 @@ export default function StoreSettings() {
                   placeholder="Your store name"
                   className={inputCls}
                 />
+              </Field>
+
+              <Field label="Category">
+                <select
+                  value={categoryId}
+                  onChange={e => setCategoryId(e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="">{categoriesLoading ? 'Loading categories…' : 'Select a category…'}</option>
+                  {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                </select>
               </Field>
 
               <Field label="Description">

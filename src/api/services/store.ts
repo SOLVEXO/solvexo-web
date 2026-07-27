@@ -18,6 +18,7 @@ export interface UpdateStorePayload {
   storeId:      string;
   name?:        string;
   logo?:        string;
+  coverImage?:  string | null;
   categoryId?:  string;
   description?: string;
   productTypes?: ProductType[];
@@ -29,6 +30,7 @@ export interface StoreData {
   name:         string;
   slug:         string;
   logo:         string | null;
+  coverImage:   string | null;
   categoryId:   string;
   description:  string;
   sellerType:   SellerType;

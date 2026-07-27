@@ -156,6 +156,7 @@ export interface EditProfilePayload {
   name:    string;
   phone?:  string;
   address?: string;
+  profileImage?: string;
 }
 
 export function apiEditProfile(payload: EditProfilePayload) {

@@ -516,10 +516,10 @@ export function Marketplace() {
               </div>
             )}
 
-            {/* Grid columns step at every breakpoint on purpose (not just sm/xl) so
-                card width never jumps discontinuously when the lg: sidebar appears:
-                2 @ 320-767 → 3 @ md → 4 @ lg → 5 @ xl → 6 @ 1440 → 7 @ 1920 */}
-            <div id="marketplace-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[1440px]:grid-cols-6 min-[1920px]:grid-cols-7 gap-[10px] sm:gap-3 lg:gap-[14px] scroll-mt-[76px]">
+            {/* Capped at 4 columns — cards get wider (not more numerous) past lg,
+                so they stay comfortably readable instead of shrinking indefinitely
+                on very wide screens: 2 @ 320-767 → 3 @ md → 4 @ lg and up. */}
+            <div id="marketplace-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px] scroll-mt-[76px]">
               {loading
                 ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
                 : filtered.map(p => {

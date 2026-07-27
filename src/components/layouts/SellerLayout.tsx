@@ -1,16 +1,18 @@
 import { type ReactNode, useState, useRef, useEffect, createContext, useContext } from 'react';
 import { ActiveStoreProvider, useActiveStore } from '@/contexts/ActiveStoreContext';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
+import { useLogout } from '@/hooks/auth/useLogout';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
+import { Modal, Button } from '@/components/comman/ui';
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Store,
   Settings, BarChart2,
-  ChevronDown, Plus, PanelLeftClose, PanelLeftOpen,
+  ChevronDown, Plus, PanelLeftClose, PanelLeftOpen, LogOut,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { NotificationBell, AnnouncementBanner } from '@/components/comman/ui';
@@ -54,9 +56,14 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'Operations',
+    label: 'Insights',
     items: [
       { id: 'analytics', Icon: BarChart2, label: 'Analytics', path: '/seller/analytics' },
+    ],
+  },
+  {
+    label: 'Account',
+    items: [
       { id: 'settings',  Icon: Settings,  label: 'Settings',  path: '/seller/settings'  },
     ],
   },
@@ -201,6 +208,14 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   const { profile, loading: profileLoading } = useGetProfile();
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
+  const logout = useLogout();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await logout();
+  };
 
   const isActive     = (path: string) => pathname === path || pathname.startsWith(path + '/');
   const toggleDropdown = (id: string) => setOpenDropdowns(prev => ({ ...prev, [id]: !prev[id] }));
@@ -388,7 +403,7 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
 
         {/* User footer */}
         <div className="px-4 py-3 border-t border-dark-active shrink-0">
-          <div className={clsx('flex items-center gap-2', !open && 'justify-center')}>
+          <div className={clsx('flex items-center gap-2', !open && 'flex-col')}>
             <div className="size-7 rounded-full shrink-0 bg-charcoal flex items-center justify-center overflow-hidden">
               {profileLoading
                 ? <div className="animate-pulse w-full h-full bg-[#3C3A38]" />
@@ -412,11 +427,30 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
                 )}
               </div>
             )}
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              title="Logout"
+              aria-label="Logout"
+              className="size-7 rounded-md flex items-center justify-center shrink-0 text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
+            >
+              <LogOut size={14} />
+            </button>
           </div>
         </div>
       </aside>
 
       <CommandPalette items={paletteItems} open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      {showLogoutConfirm && (
+        <Modal title="Log out?" onClose={() => setShowLogoutConfirm(false)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowLogoutConfirm(false)} disabled={loggingOut}>Cancel</Button>
+            <Button variant="primary" onClick={handleLogout} loading={loggingOut}>Logout</Button>
+          </>
+        }>
+          <p className="text-[13px] text-slate">You'll need to sign in again to access your seller dashboard.</p>
+        </Modal>
+      )}
     </>
   );
 }

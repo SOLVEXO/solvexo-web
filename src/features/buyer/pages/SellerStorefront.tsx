@@ -94,6 +94,22 @@ const SORT_OPTIONS = [
   { value: 'best_rated', label: 'Best Rated'      },
 ];
 
+// Mirrors ProductCard.tsx's ProductImage — falls back to the Package icon on
+// a broken/invalid URL too, not just a missing one (a plain <img> with no
+// onError just renders empty here, since there's no browser broken-image
+// icon over this bg-[#EAF4EE] fill).
+function StoreProductImage({ src, alt }: { src: string; alt: string }) {
+  const [errored, setErrored] = useState(false);
+  if (errored) return <Package size={28} className="text-[#5A8A6A]" />;
+  return (
+    <img
+      loading="lazy" decoding="async" src={src} alt={alt}
+      onError={() => setErrored(true)}
+      className="w-full h-full object-cover"
+    />
+  );
+}
+
 function StarRating({ rating, color }: { rating: number; color: string }) {
   return (
     <div className="flex items-center gap-[3px]">
@@ -543,7 +559,7 @@ export function SellerStorefront() {
                   {/* Image */}
                   <div className="relative w-full h-[110px] sm:h-[150px] lg:h-[170px] bg-[#EAF4EE] flex items-center justify-center">
                     {p.images?.[0]
-                      ? <img loading="lazy" decoding="async" src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                      ? <StoreProductImage src={p.images[0]} alt={p.name} />
                       : <Package size={28} className="text-[#5A8A6A]" />
                     }
                     <button

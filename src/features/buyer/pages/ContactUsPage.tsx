@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, LifeBuoy, Clock, Send, Check, ArrowRight } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button, Input, Textarea, Select } from '@/components/comman/ui';
+import { apiSubmitContact } from '@/api/services/contact';
 
 const SERIF = "'Lora', Georgia, serif";
 
@@ -26,10 +27,6 @@ export function ContactUsPage() {
   const [sending, setSending] = useState(false);
   const [sent, setSent]       = useState(false);
 
-  // No contact-submission API exists in this codebase yet — this is a
-  // client-side placeholder confirmation, not a real network request. Wire
-  // this up to a real endpoint once one exists rather than pretending to
-  // hit a backend that isn't there.
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) {
@@ -38,9 +35,14 @@ export function ContactUsPage() {
     }
     setError('');
     setSending(true);
-    await new Promise(r => setTimeout(r, 700));
-    setSending(false);
-    setSent(true);
+    try {
+      await apiSubmitContact({ name, email, topic, message });
+      setSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send your message. Please try again.');
+    } finally {
+      setSending(false);
+    }
   }
 
   return (

@@ -4,13 +4,15 @@ import { clsx } from 'clsx';
 import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, FolderTree, RefreshCw,
-  BarChart3, Layers, Search, Sparkles, Tag,
+  BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
+import { useLogout } from '@/hooks/auth/useLogout';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { CommandPalette } from '@/components/comman/ui/CommandPalette';
+import { Modal, Button } from '@/components/comman/ui';
 
 interface AdminNavItem {
   id:    string;
@@ -35,6 +37,7 @@ const ADMIN_NAV: AdminNavItem[] = [
   { id: 'ai-studio',     Icon: Sparkles,        label: 'AI Studio',       path: '/admin/ai-studio'     },
   { id: 'banners',       Icon: ImageIcon,       label: 'Banners',         path: '/admin/banners'       },
   { id: 'faqs',          Icon: HelpCircle,      label: 'FAQs',            path: '/admin/faqs'          },
+  { id: 'contact',       Icon: MessageCircle,   label: 'Contact Messages',path: '/admin/contact'       },
   { id: 'announcements', Icon: Bell,            label: 'Announcements',   path: '/admin/announcements' },
   { id: 'config',        Icon: Settings,        label: 'Platform Config', path: '/admin/config'        },
   { id: 'settings',      Icon: UserCog,         label: 'My Settings',     path: '/admin/settings'      },
@@ -43,10 +46,12 @@ const ADMIN_NAV: AdminNavItem[] = [
 // Purely visual grouping for the sidebar — does not affect routes, order, or
 // which items exist. Every id above must appear in exactly one group.
 const NAV_GROUPS: { label: string; ids: AdminNavItem['id'][] }[] = [
-  { label: 'Overview', ids: ['overview', 'analytics'] },
+  { label: 'Overview',  ids: ['overview', 'analytics'] },
   { label: 'Community', ids: ['users', 'moderation', 'messages'] },
-  { label: 'Commerce',  ids: ['marketplace', 'categories', 'subscriptions', 'marketing', 'platform-plans', 'finance', 'seo', 'ai-studio'] },
-  { label: 'Content',   ids: ['banners', 'faqs', 'announcements'] },
+  { label: 'Commerce',  ids: ['marketplace', 'categories', 'subscriptions', 'platform-plans'] },
+  { label: 'Growth',    ids: ['marketing', 'seo', 'ai-studio'] },
+  { label: 'Finance',   ids: ['finance'] },
+  { label: 'Content',   ids: ['banners', 'faqs', 'contact', 'announcements'] },
   { label: 'Platform',  ids: ['config', 'settings'] },
 ];
 
@@ -57,6 +62,14 @@ function AdminSidebar({ open, onToggle, onClose }: AdminSidebarProps) {
   const { pathname } = useLocation();
   const { profile, loading: profileLoading } = useGetProfile();
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
+  const logout = useLogout();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await logout('/admin/login');
+  };
 
   const isActive = (path: string) =>
     path === '/admin' ? pathname === '/admin' : pathname.startsWith(path);
@@ -103,12 +116,12 @@ function AdminSidebar({ open, onToggle, onClose }: AdminSidebarProps) {
       )}
 
       <aside className={clsx(
-        'bg-admin-bg flex flex-col h-screen',
+        'bg-admin-bg flex flex-col',
         'transition-all duration-300 ease-in-out',
-        // Mobile: fixed overlay
-        'fixed inset-y-0 left-0 z-50 w-[220px]',
-        // Desktop: static inline with width toggle
-        'lg:static lg:z-auto lg:shrink-0',
+        // Mobile: fixed overlay, starts below ReferenceNav (44px)
+        'fixed top-[44px] bottom-0 left-0 z-50 w-[220px]',
+        // Desktop: static inline, full viewport height, width toggles
+        'lg:static lg:z-auto lg:shrink-0 lg:h-[calc(100vh-44px)] lg:top-auto lg:bottom-auto',
         open
           ? 'translate-x-0 lg:w-[220px]'
           : '-translate-x-full lg:translate-x-0 lg:w-[60px]',
@@ -197,7 +210,7 @@ function AdminSidebar({ open, onToggle, onClose }: AdminSidebarProps) {
 
         {/* User footer (mirrors StoreLayout/SellerLayout's bottom profile card) */}
         <div className="px-4 py-3 border-t border-dark-active shrink-0">
-          <div className={clsx('flex items-center gap-2', !open && 'justify-center')}>
+          <div className={clsx('flex items-center gap-2', !open && 'flex-col')}>
             <div className="size-7 rounded-full shrink-0 bg-error flex items-center justify-center overflow-hidden text-[10px] font-bold text-white">
               {profileLoading
                 ? <div className="animate-pulse w-full h-full bg-charcoal" />
@@ -220,11 +233,30 @@ function AdminSidebar({ open, onToggle, onClose }: AdminSidebarProps) {
                 )}
               </div>
             )}
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              title="Logout"
+              aria-label="Logout"
+              className="size-7 rounded-md flex items-center justify-center shrink-0 text-pos-muted hover:text-white hover:bg-dark-active transition-colors duration-150 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-error/40"
+            >
+              <LogOut size={14} />
+            </button>
           </div>
         </div>
       </aside>
 
       <CommandPalette items={paletteItems} open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      {showLogoutConfirm && (
+        <Modal title="Log out?" onClose={() => setShowLogoutConfirm(false)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowLogoutConfirm(false)} disabled={loggingOut}>Cancel</Button>
+            <Button variant="primary" onClick={handleLogout} loading={loggingOut}>Logout</Button>
+          </>
+        }>
+          <p className="text-[13px] text-slate">You'll need to sign in again to access the admin panel.</p>
+        </Modal>
+      )}
     </>
   );
 }
@@ -252,7 +284,7 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-cream overflow-hidden">
+    <div className="flex h-[calc(100vh-44px)] bg-cream overflow-hidden">
       <AdminSidebar open={sidebarOpen} onToggle={toggle} onClose={onClose} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile-only topbar */}

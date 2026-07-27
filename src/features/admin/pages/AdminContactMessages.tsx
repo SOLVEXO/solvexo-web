@@ -1,0 +1,175 @@
+import { useMemo, useState } from 'react';
+import { MessageCircle, Eye, Trash2 } from 'lucide-react';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { useAdminContact } from '@/hooks/admin/useAdminContact';
+import { apiUpdateContactStatus, apiDeleteContactSubmission, type ContactSubmission, type ContactSubmissionStatus } from '@/api/services/contact';
+import { Button, Modal, StatusBadge, ActionMenu, EmptyState, SkeletonBox } from '@/components/comman/ui';
+
+const STATUS_LABEL: Record<ContactSubmissionStatus, string> = {
+  new: 'New', read: 'Read', resolved: 'Resolved',
+};
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+// ── Detail modal ─────────────────────────────────────────────────────────────
+function DetailModal({ submission, onClose }: { submission: ContactSubmission; onClose: () => void }) {
+  return (
+    <Modal title={submission.topic} width={520} onClose={onClose} footer={<Button variant="outline" onClick={onClose}>Close</Button>}>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[13px] font-semibold text-charcoal">{submission.name}</p>
+            <p className="text-[12px] text-slate">{submission.email}</p>
+          </div>
+          <StatusBadge status={STATUS_LABEL[submission.status]} />
+        </div>
+        <p className="text-[11px] text-slate">{formatDate(submission.createdAt)}</p>
+        <p className="text-[13px] text-charcoal leading-[1.6] whitespace-pre-wrap">{submission.message}</p>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+export function AdminContactMessages() {
+  usePageTitle('Contact Messages');
+  const { submissions, stats, loading, error, refetch } = useAdminContact();
+  const [statusFilter, setStatusFilter] = useState('');
+  const [viewing, setViewing] = useState<ContactSubmission | null>(null);
+  const [deleting, setDeleting] = useState<ContactSubmission | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [actionError, setActionError] = useState('');
+
+  const filtered = useMemo(
+    () => statusFilter ? submissions.filter(s => s.status === statusFilter) : submissions,
+    [submissions, statusFilter],
+  );
+
+  async function handleStatusChange(submission: ContactSubmission, status: ContactSubmissionStatus) {
+    setActionError('');
+    try {
+      await apiUpdateContactStatus(submission._id, status);
+      refetch();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to update status.');
+    }
+  }
+
+  function openDetail(submission: ContactSubmission) {
+    setViewing(submission);
+    if (submission.status === 'new') handleStatusChange(submission, 'read');
+  }
+
+  async function handleDelete() {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setActionError('');
+    try {
+      await apiDeleteContactSubmission(deleting._id);
+      setDeleting(null);
+      refetch();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to delete submission.');
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
+
+  return (
+    <div>
+      <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
+        <div>
+          <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Contact Messages</h1>
+          <p className="text-[12px] text-slate mt-[2px]">{stats.new} new · {stats.read} read · {stats.resolved} resolved</p>
+        </div>
+      </div>
+
+      <div className="px-7 pt-5 pb-8 flex flex-col gap-4">
+        {actionError && (
+          <div className="bg-error-bg border border-[#FECACA] rounded-lg px-4 py-2.5 text-[12.5px] text-error">
+            {actionError}
+          </div>
+        )}
+        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
+          <div className="px-5 py-[14px] border-b border-bone flex items-center gap-[10px] flex-wrap">
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer transition-colors duration-150 hover:border-slate/40 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+              <option value="">All Statuses</option>
+              {(['new', 'read', 'resolved'] as const).map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+            </select>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  {['From', 'Topic', 'Message', 'Received', 'Status', 'Actions'].map(h => (
+                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i} className="border-b border-[#F0EEE6]">
+                      <td className="px-4 py-3" colSpan={6}><SkeletonBox className="h-5 w-full" /></td>
+                    </tr>
+                  ))
+                ) : error ? (
+                  <tr><td colSpan={6} className="px-4 py-6 text-center text-[13px] text-error">{error}</td></tr>
+                ) : filtered.length === 0 ? (
+                  <tr><td colSpan={6}>
+                    <EmptyState icon={<MessageCircle size={28} className="text-slate" />} title="No contact messages found" />
+                  </td></tr>
+                ) : filtered.map(s => (
+                  <tr key={s._id} className="border-b border-[#F0EEE6] transition-colors duration-150 hover:bg-cream cursor-pointer" onClick={() => openDetail(s)}>
+                    <td className="px-4 py-3 text-[13px] text-charcoal max-w-[180px]">
+                      <p className="font-semibold truncate">{s.name}</p>
+                      <p className="text-[11px] text-slate truncate">{s.email}</p>
+                    </td>
+                    <td className="px-4 py-3 text-[13px] text-graphite max-w-[160px] truncate">{s.topic}</td>
+                    <td className="px-4 py-3 text-[12px] text-slate max-w-[280px] truncate">{s.message}</td>
+                    <td className="px-4 py-3 text-[12px] text-slate whitespace-nowrap">{formatDate(s.createdAt)}</td>
+                    <td className="px-4 py-3"><StatusBadge status={STATUS_LABEL[s.status]} /></td>
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                      <ActionMenu
+                        align="right"
+                        items={[
+                          { label: 'View', icon: <Eye size={13} />, onClick: () => openDetail(s) },
+                          ...(s.status !== 'resolved' ? [{ label: 'Mark Resolved', icon: <MessageCircle size={13} />, onClick: () => handleStatusChange(s, 'resolved' as ContactSubmissionStatus) }] : []),
+                          { label: 'Delete', icon: <Trash2 size={13} />, danger: true, onClick: () => { setDeleting(s); setActionError(''); } },
+                        ]}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {viewing && <DetailModal submission={viewing} onClose={() => setViewing(null)} />}
+
+      {deleting && (
+        <Modal
+          title="Delete Submission"
+          onClose={() => setDeleting(null)}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setDeleting(null)}>Cancel</Button>
+              <Button variant="danger" onClick={handleDelete} loading={deleteBusy}>Delete</Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-charcoal leading-[1.6]">
+            Delete the message from "<strong>{deleting.name}</strong>"? This cannot be undone.
+          </p>
+          {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
+        </Modal>
+      )}
+    </div>
+  );
+}

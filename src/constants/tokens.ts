@@ -65,6 +65,8 @@ export const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'blue' | 'gray' 
   Loyal:            'green',
   Returning:        'blue',
   New:              'gray',
+  Read:             'blue',
+  Resolved:         'green',
   'At Risk':        'red',
   Physical:         'orange',
   // Lowercase (API response values)

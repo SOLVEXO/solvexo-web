@@ -8,13 +8,14 @@ import {
   Settings, Sparkles, ChevronLeft, Monitor, Store,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
-  PanelLeftClose, PanelLeftOpen, AlertTriangle, XCircle, Clock,
+  PanelLeftClose, PanelLeftOpen, AlertTriangle, XCircle, Clock, LogOut,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, type StorePlatformSubscription } from '@/api/services/platformPlans';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
-import { NotificationBell, AnnouncementBanner } from '@/components/comman/ui';
+import { useLogout } from '@/hooks/auth/useLogout';
+import { NotificationBell, AnnouncementBanner, Modal, Button } from '@/components/comman/ui';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
@@ -42,45 +43,60 @@ interface NavItem { id: string; Icon: LucideIcon; label: string; path: string }
 
 const NAV: { group: string; items: NavItem[] }[] = [
   {
-    group: 'Store',
+    group: 'Overview',
     items: [
-      { id: 'dashboard',     Icon: LayoutDashboard, label: 'Dashboard',     path: 'dashboard'    },
-      { id: 'orders',        Icon: Package,         label: 'Orders',        path: 'orders'       },
-      { id: 'returns',       Icon: Undo2,           label: 'Returns',       path: 'returns'      },
-      { id: 'products',      Icon: ShoppingBag,     label: 'Products',      path: 'products'     },
-      { id: 'customers',     Icon: Users,           label: 'Customers',     path: 'customer/list' },
-      { id: 'pos',           Icon: Monitor,         label: 'POS Register',  path: 'pos'          },
-      { id: 'store-builder', Icon: Store,           label: 'Store Builder', path: 'storebuilder' },
+      { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', path: 'dashboard' },
+      { id: 'analytics', Icon: BarChart2,       label: 'Analytics', path: 'analytics' },
     ],
   },
   {
-    group: 'Analytics',
+    group: 'Sales',
     items: [
-      { id: 'analytics', Icon: BarChart2, label: 'Analytics', path: 'analytics' },
-      { id: 'seo',        Icon: Search,   label: 'SEO',        path: 'seo'       },
-      { id: 'ai',         Icon: Sparkles, label: 'AI Studio',  path: 'ai/studio' },
+      { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders'  },
+      { id: 'returns',  Icon: Undo2,    label: 'Returns',       path: 'returns' },
+      { id: 'pos',      Icon: Monitor,  label: 'POS Register',  path: 'pos'     },
+      { id: 'shipping', Icon: Truck,    label: 'Shipping',      path: 'shipping' },
     ],
   },
   {
-    group: 'Operations',
+    group: 'Catalog',
     items: [
-      { id: 'reviews',      Icon: Star,          label: 'Reviews',      path: 'reviews'      },
-      { id: 'finance',      Icon: Wallet,        label: 'Finance',      path: 'finance'      },
-      { id: 'inventory',    Icon: ClipboardList, label: 'Inventory',    path: 'inventory'    },
-      { id: 'marketing',    Icon: Megaphone,     label: 'Marketing',    path: 'marketing'    },
-      { id: 'loyalty',      Icon: Star,          label: 'Loyalty',      path: 'loyalty'      },
-      { id: 'subscriptions',Icon: RefreshCw,     label: 'Subscriptions', path: 'subscriptions' },
-      { id: 'integrations', Icon: Plug,           label: 'Integrations', path: 'integrations' },
-      { id: 'shipping',     Icon: Truck,          label: 'Shipping',     path: 'shipping'     },
-      { id: 'messages',     Icon: MessageSquare,  label: 'Messages',     path: 'messages'     },
+      { id: 'products',      Icon: ShoppingBag,   label: 'Products',      path: 'products'     },
+      { id: 'inventory',     Icon: ClipboardList, label: 'Inventory',     path: 'inventory'    },
+      { id: 'categories',    Icon: FolderTree,    label: 'Categories',    path: 'categories'   },
+      { id: 'store-builder', Icon: Store,         label: 'Store Builder', path: 'storebuilder' },
     ],
   },
   {
-    group: 'Manage',
+    group: 'Customers',
     items: [
-      { id: 'categories', Icon: FolderTree, label: 'Categories', path: 'categories' },
+      { id: 'customers', Icon: Users,          label: 'Customers', path: 'customer/list' },
+      { id: 'reviews',   Icon: Star,           label: 'Reviews',   path: 'reviews'        },
+      { id: 'messages',  Icon: MessageSquare,  label: 'Messages',  path: 'messages'       },
+    ],
+  },
+  {
+    group: 'Growth',
+    items: [
+      { id: 'marketing',     Icon: Megaphone, label: 'Marketing',     path: 'marketing'     },
+      { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty'       },
+      { id: 'subscriptions', Icon: RefreshCw, label: 'Subscriptions', path: 'subscriptions' },
+      { id: 'seo',           Icon: Search,    label: 'SEO',           path: 'seo'           },
+      { id: 'ai',            Icon: Sparkles,  label: 'AI Studio',     path: 'ai/studio'     },
+    ],
+  },
+  {
+    group: 'Finance',
+    items: [
+      { id: 'finance',      Icon: Wallet,     label: 'Finance',        path: 'finance'      },
       { id: 'plan-billing', Icon: CreditCard, label: 'Plan & Billing', path: 'plan-billing' },
-      { id: 'settings',   Icon: Settings,   label: 'Settings',   path: 'settings'   },
+    ],
+  },
+  {
+    group: 'Settings',
+    items: [
+      { id: 'integrations', Icon: Plug,     label: 'Integrations', path: 'integrations' },
+      { id: 'settings',     Icon: Settings, label: 'Settings',     path: 'settings'     },
     ],
   },
 ];
@@ -116,6 +132,14 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
   const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
   const paletteItems = buildPaletteItems(navigate, storeId, posEnabled);
+  const logout = useLogout();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await logout();
+  };
 
   const isActive = (seg: string) =>
     seg.startsWith('/')
@@ -333,17 +357,44 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
             </div>
             <div className="flex items-center gap-2">
               <SolvexoIcon size={20} />
-              <p className="text-[11px] text-dark-label">Solvexo Store</p>
+              <p className="text-[11px] text-dark-label flex-1 min-w-0 truncate">Solvexo Store</p>
+              <button
+                onClick={() => setShowLogoutConfirm(true)}
+                title="Logout"
+                aria-label="Logout"
+                className="size-7 rounded-md flex items-center justify-center shrink-0 text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
+              >
+                <LogOut size={14} />
+              </button>
             </div>
           </div>
         ) : (
-          <div className="py-3 border-t border-dark-active flex justify-center shrink-0">
+          <div className="py-3 border-t border-dark-active flex flex-col items-center gap-2 shrink-0">
             <SolvexoIcon size={20} />
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              title="Logout"
+              aria-label="Logout"
+              className="size-7 rounded-md flex items-center justify-center shrink-0 text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
+            >
+              <LogOut size={14} />
+            </button>
           </div>
         )}
       </aside>
 
       <CommandPalette items={paletteItems} open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      {showLogoutConfirm && (
+        <Modal title="Log out?" onClose={() => setShowLogoutConfirm(false)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowLogoutConfirm(false)} disabled={loggingOut}>Cancel</Button>
+            <Button variant="primary" onClick={handleLogout} loading={loggingOut}>Logout</Button>
+          </>
+        }>
+          <p className="text-[13px] text-slate">You'll need to sign in again to access this store's dashboard.</p>
+        </Modal>
+      )}
     </>
   );
 }

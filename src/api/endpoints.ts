@@ -503,6 +503,14 @@ export const ENDPOINTS = {
     DELETE:     (id: string) => `/api/faqs/${id}`,
   },
 
+  // ── CONTACT US ────────────────────────────────────────────────────────────
+  CONTACT: {
+    SUBMIT:       '/api/contact',
+    ADMIN_ALL:    '/api/contact/admin/all',
+    UPDATE_STATUS:(id: string) => `/api/contact/admin/${id}/status`,
+    DELETE:       (id: string) => `/api/contact/admin/${id}`,
+  },
+
   // ── RATING / REVIEWS ──────────────────────────────────────────────────────
   // ── ANALYTICS ─────────────────────────────────────────────────────────────
   ANALYTICS: {

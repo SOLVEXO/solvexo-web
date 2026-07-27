@@ -514,7 +514,7 @@ export function EducationMarketplace() {
               </div>
             )}
 
-            <div className="theme-education grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 min-[1440px]:grid-cols-6 min-[1920px]:grid-cols-7 gap-[10px] sm:gap-3 lg:gap-[14px]">
+            <div className="theme-education grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px]">
               {loading
                 ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
                 : filtered.map(p => {
