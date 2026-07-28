@@ -8,7 +8,7 @@ import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 export function ProductCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-bone overflow-hidden h-full flex flex-col">
+    <div className="bg-white rounded-xl border border-bone overflow-hidden h-full flex flex-col">
       <div className="animate-pulse aspect-square bg-bone" />
       <div className="p-[10px] sm:p-3 flex-1 flex flex-col">
         <div className="animate-pulse h-[10px] bg-bone rounded-md mb-2" />
@@ -16,7 +16,7 @@ export function ProductCardSkeleton() {
         <div className="animate-pulse h-[11px] w-16 bg-bone rounded-full mb-3" />
         <div className="mt-auto flex items-end justify-between">
           <div className="animate-pulse h-[16px] w-14 bg-bone rounded-md" />
-          <div className="animate-pulse h-8 w-8 sm:h-9 sm:w-9 bg-bone rounded-full" />
+          <div className="animate-pulse h-7 w-7 sm:h-8 sm:w-8 bg-bone rounded-lg" />
         </div>
       </div>
     </div>
@@ -137,7 +137,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
     <>
     <div
       onClick={() => onClick(product._id)}
-      className="@container group relative bg-white rounded-2xl border border-bone overflow-hidden h-full flex flex-col cursor-pointer transition-all duration-300 hover:-translate-y-[3px] hover:border-[#DEDBD0]"
+      className="@container group relative bg-white rounded-xl border border-bone overflow-hidden h-full flex flex-col cursor-pointer transition-colors duration-200 hover:border-carbon/25"
     >
       {/* Image — square, consistent at every grid density */}
       <div className="relative overflow-hidden aspect-square">
@@ -153,14 +153,14 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
           disabled={isWishlisting}
           aria-label={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
           className={clsx(
-            'absolute bottom-2 right-2 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white border border-bone',
-            'flex items-center justify-center transition-all duration-200 hover:scale-110 hover:border-brand-orange/40',
+            'absolute bottom-2 right-2 w-7 h-7 rounded-lg bg-white/95 border border-bone',
+            'flex items-center justify-center transition-colors duration-150 hover:border-brand-orange/40',
             isWishlisting ? 'cursor-wait' : 'cursor-pointer',
           )}
         >
           <Heart
             key={isWishlisted ? 'on' : 'off'}
-            size={14}
+            size={13}
             className={clsx('heart-pop transition-colors duration-150', isWishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate')}
           />
         </button>
@@ -172,18 +172,18 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             disabled={previewLoading}
             aria-label="Preview"
             className={clsx(
-              'absolute bottom-2 left-2 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white border border-bone',
-              'flex items-center justify-center transition-all duration-200 hover:scale-110 hover:border-brand-orange/40',
+              'absolute bottom-2 left-2 w-7 h-7 rounded-lg bg-white/95 border border-bone',
+              'flex items-center justify-center transition-colors duration-150 hover:border-brand-orange/40',
               previewLoading ? 'cursor-wait' : 'cursor-pointer',
             )}
           >
-            {previewLoading ? <Loader2 size={14} className="text-brand-orange animate-spin" /> : <Eye size={14} className="text-brand-orange" />}
+            {previewLoading ? <Loader2 size={13} className="text-brand-orange animate-spin" /> : <Eye size={13} className="text-brand-orange" />}
           </button>
         )}
 
         {/* Top-left: product type — the one category signal that matters here */}
         <span className={clsx(
-          'absolute top-2 left-2 px-[6px] py-[2px] rounded-[5px] text-[9px] sm:text-[10px] font-semibold border',
+          'absolute top-2 left-2 px-[6px] py-[1px] rounded-[4px] text-[9px] font-semibold border',
           isDigital
             ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
             : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
@@ -195,16 +195,16 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             campaign in orange with a flame, stacked when both apply. */}
         <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
           {pctOff != null && pctOff > 0 && (
-            <span className="px-[8px] py-[3px] rounded-[6px] text-[10px] sm:text-[11px] font-bold bg-error text-white">
+            <span className="px-[6px] py-[2px] rounded-[4px] text-[10px] font-bold bg-error text-white">
               -{pctOff}%
             </span>
           )}
           {campaignAmount && (
             <span
               title={campaign ? `${campaign.name} — ends ${new Date(campaign.endDate).toLocaleDateString()}` : undefined}
-              className="flex items-center gap-[4px] px-[8px] py-[3px] rounded-[6px] text-[10px] sm:text-[11px] font-bold bg-brand-orange text-white"
+              className="flex items-center gap-[3px] px-[6px] py-[2px] rounded-[4px] text-[10px] font-bold bg-brand-orange text-white"
             >
-              <Flame size={11} className="fill-white shrink-0" />
+              <Flame size={10} className="fill-white shrink-0" />
               -{campaignAmount}
             </span>
           )}
@@ -212,8 +212,8 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
       </div>
 
       {/* Body */}
-      <div className={clsx('flex-1 flex flex-col', compact ? 'px-[9px] pt-[9px] pb-[9px]' : 'px-[10px] pt-[10px] pb-[10px] sm:px-3 sm:pt-3 sm:pb-3')}>
-        <p className={clsx('font-semibold text-carbon mb-[6px] leading-[1.3] tracking-[-0.01em] line-clamp-2', compact ? 'text-[11.5px]' : 'text-[12px] sm:text-[13px]')}>
+      <div className={clsx('flex-1 flex flex-col', compact ? 'px-[9px] pt-[8px] pb-[9px]' : 'px-[10px] pt-[9px] pb-[10px] sm:px-3 sm:pt-[10px] sm:pb-3')}>
+        <p className={clsx('font-semibold text-carbon mb-[5px] leading-[1.3] tracking-[-0.01em] line-clamp-2', compact ? 'text-[11.5px]' : 'text-[12px] sm:text-[13px]')}>
           {product.name}
         </p>
 
@@ -221,8 +221,8 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
 
         {!compact && (product.tags?.length ?? 0) > 0 && (
           <div className="hidden sm:flex flex-wrap gap-1 mt-[6px]">
-            {product.tags!.slice(0, 4).map(tag => (
-              <span key={tag} className="text-[9.5px] px-[6px] py-[1px] rounded-full bg-cream text-slate border border-bone whitespace-nowrap">
+            {product.tags!.slice(0, 2).map(tag => (
+              <span key={tag} className="text-[9px] px-[5px] py-[1px] rounded-[4px] bg-cream text-slate border border-bone whitespace-nowrap">
                 {tag}
               </span>
             ))}
@@ -230,23 +230,23 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
         )}
 
         {subscriberPrice != null && (
-          <p className="text-[9px] sm:text-[10px] font-semibold text-brand-orange mt-[6px]">Members save {discountPercent}%</p>
+          <p className="text-[9px] sm:text-[10px] font-semibold text-brand-orange mt-[5px]">Members save {discountPercent}%</p>
         )}
         {stock <= 0 ? (
-          <p className="text-[9px] sm:text-[10px] font-semibold text-error mt-[6px]">Out of stock</p>
+          <p className="text-[9px] sm:text-[10px] font-semibold text-error mt-[5px]">Out of stock</p>
         ) : stock <= 5 && (
-          <p className="text-[9px] sm:text-[10px] font-semibold text-amber-600 mt-[6px]">Only {stock} left</p>
+          <p className="text-[9px] sm:text-[10px] font-semibold text-amber-600 mt-[5px]">Only {stock} left</p>
         )}
 
-        <div className="flex items-center justify-between gap-2 mt-auto pt-[10px]">
+        <div className="flex items-center justify-between gap-2 mt-auto pt-[9px]">
           <div className="flex items-baseline gap-[5px] min-w-0">
-            <span className={clsx('font-bold whitespace-nowrap tracking-tight', compact ? 'text-[14px]' : 'text-[13px] sm:text-[16px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
+            <span className={clsx('font-bold whitespace-nowrap tracking-tight', compact ? 'text-[15px]' : 'text-[14px] sm:text-[17px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
               {subscriberPrice != null ? `$${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `$${lowestPrice.toLocaleString()}` : '—'}
             </span>
             {subscriberPrice != null && lowestPrice != null ? (
-              <span className="text-[10.5px] text-slate line-through shrink-0">${lowestPrice.toLocaleString()}</span>
+              <span className="text-[10px] text-slate/70 line-through shrink-0">${lowestPrice.toLocaleString()}</span>
             ) : compareAt != null && compareAt > (lowestPrice ?? 0) && (
-              <span className="text-[10.5px] text-slate line-through shrink-0">${compareAt.toLocaleString()}</span>
+              <span className="text-[10px] text-slate/70 line-through shrink-0">${compareAt.toLocaleString()}</span>
             )}
           </div>
 
@@ -263,11 +263,11 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             disabled={stock <= 0}
             aria-label={stock <= 0 ? 'Out of stock' : 'Add to cart'}
             className={clsx(
-              'flex items-center justify-center gap-[6px] shrink-0 rounded-full transition-all duration-200 font-semibold text-[12px]',
-              compact ? 'w-8 h-8 sm:w-9 sm:h-9' : 'w-8 h-8 @[240px]:w-auto @[240px]:h-9 @[240px]:px-[14px] @[240px]:rounded-lg',
+              'flex items-center justify-center gap-[6px] shrink-0 rounded-lg transition-colors duration-150 font-semibold text-[12px]',
+              compact ? 'w-8 h-8' : 'w-8 h-8 @[240px]:w-auto @[240px]:h-9 @[240px]:px-[14px]',
               stock <= 0
                 ? 'bg-bone text-slate cursor-not-allowed'
-                : 'bg-brand-orange text-white hover:bg-brand-deep-orange hover:scale-105 active:scale-90 cursor-pointer',
+                : 'bg-brand-orange text-white hover:bg-brand-deep-orange active:scale-95 cursor-pointer',
             )}
           >
             {isAdding ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}

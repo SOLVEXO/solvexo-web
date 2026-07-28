@@ -12,14 +12,17 @@ import { EDUCATION_LEVELS } from '@/api/services/product';
 import { apiGetTopStores, type PublicStoreListItem } from '@/api/services/store';
 import { Button } from '@/components/comman/ui/Button';
 import { ProductCard, ProductCardSkeleton } from '@/components/comman/marketplace/ProductCard';
-import { FilterAccordionSection, FilterChipPill, FilterCheckboxRow, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
+import { FilterAccordionSection, FilterChipPill, FilterStarRow, ActiveFilterChip, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { MegaMenuBar, RailCard, MegaSectionLabel } from '@/components/comman/marketplace/MegaMenuBar';
 import { BuyerNavbar, AppDownloadBanner, Footer, FilterDropdown, Modal, DealsBanner, TrustServiceStrip } from '@/components/comman/ui';
-import { ArrowRight, Sparkles, SlidersHorizontal, Loader2 } from 'lucide-react';
+import { ArrowRight, Sparkles, SlidersHorizontal, Loader2, RefreshCcw } from 'lucide-react';
 
 const SUBJECTS = ['Math', 'ELA', 'Science', 'Social Studies', 'Art', 'SEL'];
-const RATING_OPTIONS = ['4★ & up', '3★ & up'];
+const RATING_ITEMS: { label: string; stars: number }[] = [
+  { label: '4★ & up', stars: 4 },
+  { label: '3★ & up', stars: 3 },
+];
 
 const SORT_OPTIONS = [
   { value: 'newest',     label: 'Newest'          },
@@ -140,12 +143,13 @@ function EducationFilterPanel({
   return (
     <div>
       <FilterAccordionSection title="Education Level">
-        <div className="flex flex-wrap gap-[7px]">
+        <div className="flex flex-wrap gap-2">
           <FilterChipPill label="All" active={activeLevel === ''} onClick={() => onLevelChange('')} />
           {!facetsLoading && levels.map(l => (
             <FilterChipPill
               key={l.level}
-              label={`${LEVEL_LABEL[l.level] ?? l.level} (${l.count})`}
+              label={LEVEL_LABEL[l.level] ?? l.level}
+              count={l.count}
               active={activeLevel === l.level}
               onClick={() => onLevelChange(l.level)}
             />
@@ -155,12 +159,13 @@ function EducationFilterPanel({
 
       {activeLevel === 'other' && otherLevels.length > 0 && (
         <FilterAccordionSection title="Other">
-          <div className="flex flex-wrap gap-[7px]">
+          <div className="flex flex-wrap gap-2">
             <FilterChipPill label="All" active={activeOtherSlug === ''} onClick={() => onOtherSlugChange('')} />
             {otherLevels.map(o => (
               <FilterChipPill
                 key={o.slug}
-                label={`${o.displayName} (${o.count})`}
+                label={o.displayName}
+                count={o.count}
                 active={activeOtherSlug === o.slug}
                 onClick={() => onOtherSlugChange(o.slug)}
               />
@@ -170,7 +175,7 @@ function EducationFilterPanel({
       )}
 
       <FilterAccordionSection title="Subject">
-        <div className="flex flex-wrap gap-[7px]">
+        <div className="flex flex-wrap gap-2">
           {SUBJECTS.map(s => (
             <FilterChipPill key={s} label={s} active={activeSubjects.includes(s)} onClick={() => onToggleSubject(s)} />
           ))}
@@ -182,9 +187,9 @@ function EducationFilterPanel({
       </FilterAccordionSection>
 
       <FilterAccordionSection title="Rating">
-        <div className="flex flex-col gap-[1px]">
-          {RATING_OPTIONS.map(label => (
-            <FilterCheckboxRow key={label} label={label} active={activeRatings.includes(label)} onClick={() => onToggleRating(label)} />
+        <div className="flex flex-col">
+          {RATING_ITEMS.map(({ label, stars }) => (
+            <FilterStarRow key={label} stars={stars} active={activeRatings.includes(label)} onClick={() => onToggleRating(label)} />
           ))}
         </div>
       </FilterAccordionSection>
@@ -381,6 +386,25 @@ export function EducationMarketplace() {
     setPriceRange([PRICE_MIN, PRICE_MAX]); setActiveRatings([]);
   };
 
+  // Active filter chip strip — mirrors the general Marketplace's sidebar.
+  const activeFilterChips: { key: string; label: string; onRemove: () => void }[] = [
+    ...(activeLevel
+      ? [{ key: 'level', label: LEVEL_LABEL[activeLevel] ?? activeLevel, onRemove: () => { setActiveLevel(''); setActiveOtherSlug(''); } }]
+      : []),
+    ...(activeOtherSlug
+      ? [{ key: 'other', label: otherLevels.find(o => o.slug === activeOtherSlug)?.displayName ?? 'Other', onRemove: () => setActiveOtherSlug('') }]
+      : []),
+    ...(isPriceRangeActive
+      ? [{
+          key: 'price',
+          label: priceRange[1] >= PRICE_MAX ? `$${priceRange[0]}+` : `$${priceRange[0]}–$${priceRange[1]}`,
+          onRemove: () => setPriceRange([PRICE_MIN, PRICE_MAX]),
+        }]
+      : []),
+    ...activeSubjects.map(s => ({ key: `subject-${s}`, label: s, onRemove: () => toggleSubject(s) })),
+    ...activeRatings.map(r => ({ key: `rating-${r}`, label: r, onRemove: () => toggleRating(r) })),
+  ];
+
   return (
     <div className="min-h-screen bg-cream">
 
@@ -461,28 +485,38 @@ export function EducationMarketplace() {
         <div className="flex gap-5 lg:gap-6 items-start">
 
           {/* ── Desktop sidebar ───────────────────────────────────────────────── */}
-          <aside className="hidden lg:block w-[210px] xl:w-[230px] shrink-0 sticky top-[68px] self-start">
-            <div className="theme-education relative bg-white rounded-2xl border border-bone overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#F0A57A]" />
-              <div className="px-5 pt-[18px] pb-4 border-b border-bone flex items-center justify-between">
-                <div className="flex items-center gap-[7px]">
-                  <div className="size-7 rounded-[7px] bg-brand-pale-orange flex items-center justify-center shrink-0">
+          <aside className="hidden lg:block w-[220px] xl:w-[240px] shrink-0 sticky top-[68px] self-start">
+            <div className="theme-education bg-white rounded-[20px] border border-bone overflow-hidden flex flex-col max-h-[calc(100vh-96px)]">
+              {/* Sticky header — stays put while the accordion body below scrolls */}
+              <div className="shrink-0 px-4 py-3 border-b border-bone flex items-center justify-between gap-2">
+                <div className="flex items-center gap-[10px]">
+                  <div className="size-7 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
                     <SlidersHorizontal size={13} className="text-brand-orange" strokeWidth={2.2} />
                   </div>
-                  <span className="text-[14px] font-bold text-carbon">Filters</span>
-                  {activeFilterCount > 0 && (
-                    <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
-                      {activeFilterCount}
-                    </span>
-                  )}
+                  <div>
+                    <div className="flex items-center gap-[6px] leading-none">
+                      <span className="text-[13.5px] font-bold text-carbon">Filters</span>
+                      {activeFilterCount > 0 && (
+                        <span className="min-w-[16px] h-4 rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10.5px] text-slate leading-none mt-[5px]">
+                      {!loading && `${total} product${total === 1 ? '' : 's'}`}
+                    </p>
+                  </div>
                 </div>
                 {activeFilterCount > 0 && (
-                  <button onClick={clearFilters} className="text-[11px] font-medium text-brand-orange hover:opacity-70 transition-opacity cursor-pointer">
-                    Clear
+                  <button
+                    onClick={clearFilters}
+                    className="shrink-0 flex items-center gap-1 text-[10.5px] font-semibold text-brand-orange hover:opacity-70 transition-opacity duration-200 cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                  >
+                    <RefreshCcw size={10} /> Reset All
                   </button>
                 )}
               </div>
-              <div className="px-5 py-5">
+              <div className="px-4 py-1 overflow-y-auto">
                 <EducationFilterPanel
                   levels={levels} otherLevels={otherLevels} facetsLoading={facetsLoading}
                   activeLevel={activeLevel} onLevelChange={l => { setActiveLevel(l); setActiveOtherSlug(''); }}
@@ -497,6 +531,14 @@ export function EducationMarketplace() {
 
           {/* ── Products area ─────────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0">
+
+            {activeFilterChips.length > 0 && (
+              <div className="theme-education flex flex-wrap items-center gap-2 mb-4">
+                {activeFilterChips.map(chip => (
+                  <ActiveFilterChip key={chip.key} label={chip.label} onRemove={chip.onRemove} />
+                ))}
+              </div>
+            )}
 
             <div className="hidden lg:flex items-center justify-between mb-4">
               <span className="text-[13px] text-slate">
@@ -573,8 +615,29 @@ export function EducationMarketplace() {
 
       {/* ── Mobile filter drawer ─────────────────────────────────────────────── */}
       {mobileFilters && (
-        <Modal title="Filters" onClose={() => setMobileFilters(false)}>
+        <Modal
+          title="Filters"
+          onClose={() => setMobileFilters(false)}
+          footer={
+            <>
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-1 text-[12px] font-semibold text-brand-orange hover:opacity-70 transition-opacity duration-200 cursor-pointer p-2 -m-2 mr-auto"
+                >
+                  <RefreshCcw size={12} /> Reset All
+                </button>
+              )}
+              <Button variant="primary" size="sm" onClick={() => setMobileFilters(false)}>
+                Show Results
+              </Button>
+            </>
+          }
+        >
           <div className="theme-education">
+          <p className="text-[11px] text-slate mb-3">
+            {!loading && `${total} product${total === 1 ? '' : 's'}`}
+          </p>
           <EducationFilterPanel
             levels={levels} otherLevels={otherLevels} facetsLoading={facetsLoading}
             activeLevel={activeLevel} onLevelChange={l => { setActiveLevel(l); setActiveOtherSlug(''); }}
