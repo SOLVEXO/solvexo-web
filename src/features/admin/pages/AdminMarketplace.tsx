@@ -102,7 +102,7 @@ export function AdminMarketplace() {
       key: 'actions',
       header: 'Actions',
       render: (r) => {
-        const hasEducatorBadge = r.storeBadges.includes('verified_educator');
+        const hasEducatorBadge = (r.storeBadges ?? []).includes('verified_educator');
         return (
           <div className="flex items-center gap-2">
             <button

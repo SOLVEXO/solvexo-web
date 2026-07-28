@@ -24,7 +24,7 @@ export function SessionsTab({ storeId }: SessionsTabProps) {
 
   useEffect(() => {
     Promise.all([apiListRegisters(storeId), apiGetEmployees(storeId)])
-      .then(([r, e]) => { setRegisters(r.data); setEmployees(e.data); })
+      .then(([r, e]) => { setRegisters(r.data ?? []); setEmployees(e.data ?? []); })
       .catch(() => {});
   }, [storeId]);
 
@@ -33,7 +33,7 @@ export function SessionsTab({ storeId }: SessionsTabProps) {
     setLoading(true);
     setError('');
     apiGetSessionHistory(storeId, { page, status: status ? (status as 'open' | 'closed') : undefined })
-      .then(res => { if (!cancelled) { setSessions(res.data.sessions); setTotal(res.data.pagination.total); } })
+      .then(res => { if (!cancelled) { setSessions(res.data.sessions ?? []); setTotal(res.data.pagination.total); } })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load sessions.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };

@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { Outlet, useLocation, useNavigation } from 'react-router-dom';
 import { ReferenceNav } from './ReferenceNav';
 import { ErrorBoundary } from '@/components/comman/ErrorBoundary';
+import { scrollRootRef } from '@/utils/scrollRoot';
 
 function PageSpinner() {
   return (
@@ -30,10 +31,15 @@ export function RootLayout() {
     <>
       <TopProgressBar />
       <ReferenceNav />
-      {/* height is explicit (not just paddingTop) so full-viewport child pages can
-          size themselves with h-full instead of an independent calc(100vh - 44px),
-          which produced a 1px scrollbar mismatch at some browser zoom levels */}
-      <div style={{ paddingTop: 44, height: '100vh' }}>
+      {/* `fixed ... top-[44px] bottom-0` (not paddingTop + height:100vh) so this
+          wrapper IS the scroll container, confined to the area below the fixed
+          44px ReferenceNav — the previous approach had no overflow container of
+          its own, so tall pages fell back to scrolling the whole document, and
+          the native scrollbar then spanned the full viewport behind the fixed
+          top bar instead of starting under it. Anything that used to read
+          window.scrollY / call window.scrollTo now goes through scrollRootRef
+          (see utils/scrollRoot.ts) instead, since window itself no longer scrolls. */}
+      <div ref={el => { scrollRootRef.current = el; }} className="fixed inset-x-0 top-[44px] bottom-0 overflow-y-auto">
         {/* keyed by pathname so navigating to a new route always remounts past a caught error */}
         <ErrorBoundary key={pathname}>
           <Suspense fallback={<PageSpinner />}>

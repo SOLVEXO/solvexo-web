@@ -8,7 +8,7 @@ import { Input } from '@/components/comman/ui/Input';
 import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import { RoleSegmentedControl } from '@/components/comman/ui/RoleSegmentedControl';
 import { SocialLoginRow } from '@/components/comman/ui/SocialIcons';
-import { Eye, EyeOff, ShieldCheck, Sparkles, Zap, AlertTriangle } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, Sparkles, Zap, AlertTriangle, ShoppingBag, Store } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import type { AppRole } from '@/api/services/auth';
@@ -16,8 +16,8 @@ import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MarketplaceMockup } from '@/features/auth/components/mockups/AuthMockups';
 
 const ROLE_OPTIONS = [
-  { value: 'user',   label: 'Buyer'  },
-  { value: 'seller', label: 'Seller' },
+  { value: 'user',   label: 'Buyer',  Icon: ShoppingBag },
+  { value: 'seller', label: 'Seller', Icon: Store },
 ];
 
 const HIGHLIGHTS = [

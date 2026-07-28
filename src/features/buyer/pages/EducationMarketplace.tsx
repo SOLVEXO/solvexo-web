@@ -12,7 +12,7 @@ import { EDUCATION_LEVELS } from '@/api/services/product';
 import { apiGetTopStores, type PublicStoreListItem } from '@/api/services/store';
 import { Button } from '@/components/comman/ui/Button';
 import { ProductCard, ProductCardSkeleton } from '@/components/comman/marketplace/ProductCard';
-import { FilterAccordionSection, FilterChipPill, FilterStarRow, ActiveFilterChip, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
+import { FilterAccordionSection, FilterChipPill, FilterRadioRow, FilterCheckboxRow, FilterStarRow, ActiveFilterChip, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { MegaMenuBar, RailCard, MegaSectionLabel } from '@/components/comman/marketplace/MegaMenuBar';
 import { BuyerNavbar, AppDownloadBanner, Footer, FilterDropdown, Modal, DealsBanner, TrustServiceStrip } from '@/components/comman/ui';
@@ -143,10 +143,10 @@ function EducationFilterPanel({
   return (
     <div>
       <FilterAccordionSection title="Education Level">
-        <div className="flex flex-wrap gap-2">
-          <FilterChipPill label="All" active={activeLevel === ''} onClick={() => onLevelChange('')} />
+        <div className="flex flex-col">
+          <FilterRadioRow label="All Levels" active={activeLevel === ''} onClick={() => onLevelChange('')} count={levels.reduce((sum, l) => sum + (l.count ?? 0), 0)} />
           {!facetsLoading && levels.map(l => (
-            <FilterChipPill
+            <FilterRadioRow
               key={l.level}
               label={LEVEL_LABEL[l.level] ?? l.level}
               count={l.count}
@@ -159,10 +159,10 @@ function EducationFilterPanel({
 
       {activeLevel === 'other' && otherLevels.length > 0 && (
         <FilterAccordionSection title="Other">
-          <div className="flex flex-wrap gap-2">
-            <FilterChipPill label="All" active={activeOtherSlug === ''} onClick={() => onOtherSlugChange('')} />
+          <div className="flex flex-col">
+            <FilterRadioRow label="All" active={activeOtherSlug === ''} onClick={() => onOtherSlugChange('')} />
             {otherLevels.map(o => (
-              <FilterChipPill
+              <FilterRadioRow
                 key={o.slug}
                 label={o.displayName}
                 count={o.count}
@@ -175,9 +175,9 @@ function EducationFilterPanel({
       )}
 
       <FilterAccordionSection title="Subject">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col">
           {SUBJECTS.map(s => (
-            <FilterChipPill key={s} label={s} active={activeSubjects.includes(s)} onClick={() => onToggleSubject(s)} />
+            <FilterCheckboxRow key={s} label={s} active={activeSubjects.includes(s)} onClick={() => onToggleSubject(s)} />
           ))}
         </div>
       </FilterAccordionSection>
@@ -489,30 +489,16 @@ export function EducationMarketplace() {
             <div className="theme-education bg-white rounded-[20px] border border-bone overflow-hidden flex flex-col max-h-[calc(100vh-96px)]">
               {/* Sticky header — stays put while the accordion body below scrolls */}
               <div className="shrink-0 px-4 py-3 border-b border-bone flex items-center justify-between gap-2">
-                <div className="flex items-center gap-[10px]">
-                  <div className="size-7 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
-                    <SlidersHorizontal size={13} className="text-brand-orange" strokeWidth={2.2} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-[6px] leading-none">
-                      <span className="text-[13.5px] font-bold text-carbon">Filters</span>
-                      {activeFilterCount > 0 && (
-                        <span className="min-w-[16px] h-4 rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
-                          {activeFilterCount}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10.5px] text-slate leading-none mt-[5px]">
-                      {!loading && `${total} product${total === 1 ? '' : 's'}`}
-                    </p>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal size={15} className="text-charcoal" strokeWidth={2} />
+                  <span className="text-[14px] font-bold text-carbon">Filters</span>
                 </div>
                 {activeFilterCount > 0 && (
                   <button
                     onClick={clearFilters}
-                    className="shrink-0 flex items-center gap-1 text-[10.5px] font-semibold text-brand-orange hover:opacity-70 transition-opacity duration-200 cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                    className="shrink-0 text-[11.5px] font-semibold text-brand-orange hover:opacity-70 transition-opacity duration-200 cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                   >
-                    <RefreshCcw size={10} /> Reset All
+                    Clear all
                   </button>
                 )}
               </div>

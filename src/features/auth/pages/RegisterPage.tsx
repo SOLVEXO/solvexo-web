@@ -15,8 +15,8 @@ import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MarketplaceMockup, DashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
 
 const ROLE_OPTIONS = [
-  { value: 'user',   label: 'Buyer',  description: 'Browse and purchase from the marketplace' },
-  { value: 'seller', label: 'Seller', description: 'Create a store and sell to thousands of buyers' },
+  { value: 'user',   label: 'Buyer',  description: 'Browse and purchase from the marketplace', Icon: ShoppingBag },
+  { value: 'seller', label: 'Seller', description: 'Create a store and sell to thousands of buyers', Icon: Store },
 ];
 
 const HIGHLIGHTS = [

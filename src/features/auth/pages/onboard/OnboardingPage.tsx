@@ -24,6 +24,12 @@ const ONBOARDING_HIGHLIGHTS = [
 
 const STEPS = ['Store Info', 'Seller Type', 'What You Sell', 'Go Live'];
 
+// Every step shares this exact outer width so the progress header (badge +
+// bar + circles) renders at the same size on every tab — only the narrower
+// steps (Store Info, Go Live) constrain their inner content below it.
+const STEP_WIDTH = 'max-w-[760px]';
+const NARROW_CONTENT = 'max-w-[480px] mx-auto';
+
 const SELLER_TYPES: { id: SellerType; Icon: React.ElementType; title: string; desc: string }[] = [
   { id: 'creator',  Icon: Palette,   title: 'Creator',          desc: 'Sell digital art, templates, fonts, music, presets' },
   { id: 'creator',  Icon: BookOpen,  title: 'Educator',         desc: 'Worksheets, lesson plans, curriculum, assessments' },
@@ -53,48 +59,53 @@ interface StoreForm {
   productTypes: ProductType[];
 }
 
-// ── Step Progress ─────────────────────────────────────────────────────────────
-function StepProgress({ current, maxReached, onStepClick }: { current: number; maxReached: number; onStepClick: (step: number) => void }) {
+// ── Step Progress header — lives inside each step's card, same badge +
+// progress-line + circle treatment as CheckoutPage's step header, instead of
+// a standalone bar pinned above the card.
+function OnboardingStepHeader({ step, maxReached, onStepClick }: { step: number; maxReached: number; onStepClick: (step: number) => void }) {
   return (
-    <div className="flex items-center justify-center">
-      {STEPS.map((label, i) => {
-        const n = i + 1;
-        const done = n <= maxReached && n !== current;
-        const active = n === current;
-        const clickable = n <= maxReached && n !== current;
-        return (
-          <div key={n} className="flex items-center">
+    <div className="pb-4 mb-7 border-b border-bone">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[13px] font-bold text-carbon">{STEPS[step - 1]}</p>
+        <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-brand-pale-orange text-brand-orange">
+          Step {step} of {STEPS.length}
+        </span>
+      </div>
+      <div className="relative flex justify-between items-start w-full">
+        <div className="absolute top-3 left-0 right-0 h-[2px] bg-bone rounded-full" />
+        <div
+          className="absolute top-3 left-0 h-[2px] bg-brand-orange rounded-full transition-all duration-300"
+          style={{ width: `${((step - 1) / (STEPS.length - 1)) * 100}%` }}
+        />
+        {STEPS.map((label, i) => {
+          const n = i + 1;
+          const done = n <= maxReached && n !== step;
+          const active = n === step;
+          const clickable = n <= maxReached && n !== step;
+          return (
             <div
-              className={clsx(
-                'flex flex-col items-center transition-transform duration-200 ease-out',
-                clickable ? 'cursor-pointer hover:-translate-y-px' : 'cursor-default',
-              )}
+              key={n}
+              className={clsx('relative z-10 flex flex-col items-center gap-[6px]', clickable ? 'cursor-pointer' : 'cursor-default')}
               onClick={() => clickable && onStepClick(n)}
             >
               <div className={clsx(
-                'size-7 sm:size-8 rounded-full flex items-center justify-center text-[12px] sm:text-[13px] font-bold transition-all duration-300 ease-out',
-                done    ? 'bg-success text-white'      : '',
-                active  ? 'bg-brand-orange text-white outline outline-4 outline-brand-pale-orange' : '',
-                !done && !active ? 'bg-bone text-slate' : '',
+                'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-200',
+                done ? 'bg-success text-white' :
+                  active ? 'bg-brand-orange text-white ring-4 ring-brand-pale-orange' :
+                    'bg-bone text-slate',
               )}>
                 {done ? <Check size={12} /> : n}
               </div>
               <span className={clsx(
-                'hidden sm:block mt-[6px] text-[10px] font-medium whitespace-nowrap transition-colors duration-200',
+                'hidden sm:block text-[10px] font-semibold whitespace-nowrap',
                 active ? 'text-brand-orange' : done ? 'text-success' : 'text-slate',
               )}>
                 {label}
               </span>
             </div>
-            {i < STEPS.length - 1 && (
-              <div className={clsx(
-                'w-6 sm:w-[60px] h-0.5 mx-1 sm:mx-1.5 sm:mb-4 rounded-sm transition-colors duration-300 ease-out',
-                n < maxReached ? 'bg-success' : 'bg-bone',
-              )} />
-            )}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -130,7 +141,10 @@ function StepPane({ step, children }: { step: number; children: ReactNode }) {
 }
 
 // ── Step 1 — Store Info ───────────────────────────────────────────────────────
-function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void }) {
+function Step1({ form, setForm, onNext, step, maxReached, onStepClick }: {
+  form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void;
+  step: number; maxReached: number; onStepClick: (step: number) => void;
+}) {
   const [preview, setPreview] = useState('');
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -162,12 +176,13 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
   };
 
   return (
-    <div className="max-w-[520px] w-full mx-auto">
-      <div className="text-center mb-9">
+    <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
+      <OnboardingStepHeader step={step} maxReached={maxReached} onStepClick={onStepClick} />
+      <div className={clsx(NARROW_CONTENT, 'text-center mb-9')}>
         <h1 className="text-[28px] font-bold text-carbon mb-2">Set up your store</h1>
         <p className="text-[14px] text-slate">You can always update these details later from Settings.</p>
       </div>
-      <div className="bg-white rounded-2xl p-5 md:p-8 border border-bone w-full">
+      <div className={NARROW_CONTENT}>
         <div className="flex gap-5 items-center p-4 bg-cream rounded-xl mb-6">
           <label className={clsx(
             'size-[72px] rounded-2xl bg-brand-pale-orange border-2 border-dashed border-brand-orange flex items-center justify-center shrink-0 overflow-hidden',
@@ -226,9 +241,13 @@ function Step1({ form, setForm, onNext }: { form: StoreForm; setForm: (f: StoreF
 }
 
 // ── Step 2 — Seller Type ──────────────────────────────────────────────────────
-function Step2({ form, setForm, onNext, onBack }: { form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void; onBack: () => void }) {
+function Step2({ form, setForm, onNext, onBack, step, maxReached, onStepClick }: {
+  form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void; onBack: () => void;
+  step: number; maxReached: number; onStepClick: (step: number) => void;
+}) {
   return (
-    <div className="max-w-[760px] w-full mx-auto">
+    <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
+      <OnboardingStepHeader step={step} maxReached={maxReached} onStepClick={onStepClick} />
       <div className="text-center mb-9">
         <h1 className="text-[28px] font-bold text-carbon mb-2">What kind of seller are you?</h1>
         <p className="text-[14px] text-slate">We'll personalise your dashboard and tools based on your answer.</p>
@@ -272,16 +291,18 @@ function Step2({ form, setForm, onNext, onBack }: { form: StoreForm; setForm: (f
 }
 
 // ── Step 3 — What You Sell ────────────────────────────────────────────────────
-function Step3({ form, setForm, onNext, onBack, loading, error }: {
+function Step3({ form, setForm, onNext, onBack, loading, error, step, maxReached, onStepClick }: {
   form: StoreForm; setForm: (f: StoreForm) => void;
   onNext: () => void; onBack: () => void;
   loading: boolean; error: string;
+  step: number; maxReached: number; onStepClick: (step: number) => void;
 }) {
   const toggle = (id: ProductType) =>
     setForm({ ...form, productTypes: form.productTypes.includes(id) ? form.productTypes.filter(x => x !== id) : [...form.productTypes, id] });
 
   return (
-    <div className="max-w-[700px] w-full mx-auto">
+    <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
+      <OnboardingStepHeader step={step} maxReached={maxReached} onStepClick={onStepClick} />
       <div className="text-center mb-9">
         <h1 className="text-[28px] font-bold text-carbon mb-2">What will you sell?</h1>
         <p className="text-[14px] text-slate">Select all that apply — we'll activate the right tools for you.</p>
@@ -362,14 +383,15 @@ function Step4({ store, categoryName }: { store: StoreData | null; categoryName:
   const toolLabels    = (store?.enabledTools ?? []).map(t => t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())).join(', ');
 
   return (
-    <div className="max-w-[580px] w-full mx-auto">
-      <div className="bg-white rounded-2xl border border-bone w-full text-center px-6 py-8 md:px-10 md:py-12">
+    <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
+      <OnboardingStepHeader step={4} maxReached={4} onStepClick={() => {}} />
+      <div className={clsx(NARROW_CONTENT, 'text-center')}>
         <h1 className="text-[30px] font-bold text-carbon mb-[10px]">Your store is ready!</h1>
         <p className="text-[14px] text-slate leading-[1.7] mb-8 max-w-[400px] mx-auto">
           Welcome to Solvexo. Your seller dashboard is set up and your tools are activated.
         </p>
 
-        <div className="bg-cream rounded-[14px] p-5 mb-7 text-left">
+        <div className="bg-white border border-bone rounded-[14px] p-5 mb-7 text-left">
           <p className="text-[12px] font-semibold text-carbon mb-[14px]">Your Solvexo Setup</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-[10px]">
             {[
@@ -456,21 +478,16 @@ export function OnboardingPage() {
       visual={<SellerDashboardMockup />}
       bare
     >
-      <div className="bg-white border-b border-bone px-4 md:px-10 py-3 shrink-0">
-        <div className="max-w-[500px] mx-auto">
-          <StepProgress current={step} maxReached={maxReached} onStepClick={jumpTo} />
-        </div>
-      </div>
-
-      <div className="flex-1 flex items-start justify-center px-6 pt-8 pb-[60px]">
+      <div className="flex-1 flex items-start justify-center px-6 py-6">
         <StepPane step={step}>
-          {step === 1 && <Step1 form={form} setForm={setForm} onNext={next} />}
-          {step === 2 && <Step2 form={form} setForm={setForm} onNext={next} onBack={back} />}
+          {step === 1 && <Step1 form={form} setForm={setForm} onNext={next} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
+          {step === 2 && <Step2 form={form} setForm={setForm} onNext={next} onBack={back} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
           {step === 3 && (
             <Step3
               form={form} setForm={setForm}
               onNext={handleStep3Next} onBack={back}
               loading={createStore.loading} error={createStore.error}
+              step={step} maxReached={maxReached} onStepClick={jumpTo}
             />
           )}
           {step === 4 && <Step4 store={createStore.store} categoryName={form.categoryName} />}

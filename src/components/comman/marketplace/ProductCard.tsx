@@ -1,7 +1,7 @@
 import { useState, memo } from 'react';
 import { clsx } from 'clsx';
 import { Modal } from '@/components/comman/ui/Modal';
-import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame } from 'lucide-react';
+import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame, BadgeCheck } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 
@@ -9,8 +9,10 @@ import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 export function ProductCardSkeleton() {
   return (
     <div className="bg-white rounded-xl border border-bone overflow-hidden h-full flex flex-col">
-      <div className="animate-pulse aspect-square bg-bone" />
-      <div className="p-[10px] sm:p-3 flex-1 flex flex-col">
+      <div className="p-2">
+        <div className="animate-pulse aspect-square rounded-lg bg-bone" />
+      </div>
+      <div className="px-[10px] pb-[10px] sm:px-3 sm:pb-3 flex-1 flex flex-col">
         <div className="animate-pulse h-[10px] bg-bone rounded-md mb-2" />
         <div className="animate-pulse h-[10px] w-2/3 bg-bone rounded-md mb-[10px]" />
         <div className="animate-pulse h-[11px] w-16 bg-bone rounded-full mb-3" />
@@ -79,10 +81,11 @@ export function StarRating({ rating, count }: { rating: number; count?: number }
 // ── Product Card ──────────────────────────────────────────────────────────────
 // Shared by every marketplace-style product grid — Marketplace, Education
 // Marketplace, Seller Store, and product/search/category listings generally.
-// One flat, production-grade tile: square image, a single discount badge, a
-// tight rating row, and a solid circular Add-to-Cart action — same visual
-// language as FlashSaleCard's Homepage rail tile, just in a grid-card shape
-// instead of a rail-card shape. Fix bugs here once, they're fixed everywhere.
+// One flat, production-grade tile: framed square image, a single discount
+// badge, a tight rating row, and a full-width outlined Add-to-Cart action —
+// same visual language as FlashSaleCard's Homepage rail tile, just in a
+// grid-card shape instead of a rail-card shape. Fix bugs here once, they're
+// fixed everywhere.
 export const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, isWishlisting, onToggleWishlist, compact = false }: {
   product:          MarketplaceProduct;
   onClick:          (id: string) => void;
@@ -137,23 +140,52 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
     <>
     <div
       onClick={() => onClick(product._id)}
-      className="@container group relative bg-white rounded-xl border border-bone overflow-hidden h-full flex flex-col cursor-pointer transition-colors duration-200 hover:border-carbon/25"
+      className="group relative bg-white rounded-xl border border-bone overflow-hidden h-full flex flex-col cursor-pointer transition-colors duration-200 hover:border-carbon/25"
     >
-      {/* Image — square, consistent at every grid density */}
-      <div className="relative overflow-hidden aspect-square">
-        <ProductImage
-          images={product.images ?? []}
-          name={product.name}
-          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]"
-        />
+      {/* Image — framed with a consistent inset, own rounded corners */}
+      <div className="relative p-2">
+        <div className="relative overflow-hidden aspect-square rounded-lg bg-bone">
+          <ProductImage
+            images={product.images ?? []}
+            name={product.name}
+            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]"
+          />
+        </div>
 
-        {/* Wishlist — small, always reachable (not hover-only, so it works on touch) */}
+        {/* Top-left: product type + discount/campaign badge(s), stacked —
+            plain markdown in red, live sale campaign in orange with a flame. */}
+        <div className="absolute top-3 left-3 flex flex-col items-start gap-1">
+          <span className={clsx(
+            'px-[6px] py-[1px] rounded-[4px] text-[9px] font-semibold border',
+            isDigital
+              ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
+              : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
+          )}>
+            {typeLabel}
+          </span>
+          {pctOff != null && pctOff > 0 && (
+            <span className="px-[6px] py-[2px] rounded-[4px] text-[10px] font-bold bg-error text-white">
+              -{pctOff}%
+            </span>
+          )}
+          {campaignAmount && (
+            <span
+              title={campaign ? `${campaign.name} — ends ${new Date(campaign.endDate).toLocaleDateString()}` : undefined}
+              className="flex items-center gap-[3px] px-[6px] py-[2px] rounded-[4px] text-[10px] font-bold bg-brand-orange text-white"
+            >
+              <Flame size={10} className="fill-white shrink-0" />
+              -{campaignAmount}
+            </span>
+          )}
+        </div>
+
+        {/* Top-right: wishlist — small, always reachable (not hover-only, so it works on touch) */}
         <button
           onClick={e => onToggleWishlist(e, product._id, vId)}
           disabled={isWishlisting}
           aria-label={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
           className={clsx(
-            'absolute bottom-2 right-2 w-7 h-7 rounded-lg bg-white/95 border border-bone',
+            'absolute top-3 right-3 w-7 h-7 rounded-lg bg-white/95 border border-bone',
             'flex items-center justify-center transition-colors duration-150 hover:border-brand-orange/40',
             isWishlisting ? 'cursor-wait' : 'cursor-pointer',
           )}
@@ -172,7 +204,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             disabled={previewLoading}
             aria-label="Preview"
             className={clsx(
-              'absolute bottom-2 left-2 w-7 h-7 rounded-lg bg-white/95 border border-bone',
+              'absolute bottom-3 left-3 w-7 h-7 rounded-lg bg-white/95 border border-bone',
               'flex items-center justify-center transition-colors duration-150 hover:border-brand-orange/40',
               previewLoading ? 'cursor-wait' : 'cursor-pointer',
             )}
@@ -180,42 +212,22 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             {previewLoading ? <Loader2 size={13} className="text-brand-orange animate-spin" /> : <Eye size={13} className="text-brand-orange" />}
           </button>
         )}
-
-        {/* Top-left: product type — the one category signal that matters here */}
-        <span className={clsx(
-          'absolute top-2 left-2 px-[6px] py-[1px] rounded-[4px] text-[9px] font-semibold border',
-          isDigital
-            ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
-            : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
-        )}>
-          {typeLabel}
-        </span>
-
-        {/* Top-right: discount badge(s) — plain markdown in red, live sale
-            campaign in orange with a flame, stacked when both apply. */}
-        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-          {pctOff != null && pctOff > 0 && (
-            <span className="px-[6px] py-[2px] rounded-[4px] text-[10px] font-bold bg-error text-white">
-              -{pctOff}%
-            </span>
-          )}
-          {campaignAmount && (
-            <span
-              title={campaign ? `${campaign.name} — ends ${new Date(campaign.endDate).toLocaleDateString()}` : undefined}
-              className="flex items-center gap-[3px] px-[6px] py-[2px] rounded-[4px] text-[10px] font-bold bg-brand-orange text-white"
-            >
-              <Flame size={10} className="fill-white shrink-0" />
-              -{campaignAmount}
-            </span>
-          )}
-        </div>
       </div>
 
       {/* Body */}
-      <div className={clsx('flex-1 flex flex-col', compact ? 'px-[9px] pt-[8px] pb-[9px]' : 'px-[10px] pt-[9px] pb-[10px] sm:px-3 sm:pt-[10px] sm:pb-3')}>
-        <p className={clsx('font-semibold text-carbon mb-[5px] leading-[1.3] tracking-[-0.01em] line-clamp-2', compact ? 'text-[11.5px]' : 'text-[12px] sm:text-[13px]')}>
+      <div className={clsx('flex-1 flex flex-col', compact ? 'px-[9px] pb-[9px]' : 'px-[10px] pb-[10px] sm:px-3 sm:pb-3')}>
+        <p className={clsx('font-semibold text-carbon mb-[2px] leading-[1.3] tracking-[-0.01em] line-clamp-2', compact ? 'text-[11.5px]' : 'text-[12px] sm:text-[13px]')}>
           {product.name}
         </p>
+
+        {!compact && product.sellerName && (
+          <p className="flex items-center gap-[3px] text-[10px] sm:text-[11px] text-slate mb-[6px] truncate">
+            by {product.sellerName}
+            {product.sellerVerified && (
+              <BadgeCheck size={12} className="text-brand-orange fill-brand-pale-orange shrink-0" />
+            )}
+          </p>
+        )}
 
         <StarRating rating={product.averageRating} count={ratingCount} />
 
@@ -238,46 +250,39 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
           <p className="text-[9px] sm:text-[10px] font-semibold text-amber-600 mt-[5px]">Only {stock} left</p>
         )}
 
-        <div className="flex items-center justify-between gap-2 mt-auto pt-[9px]">
-          <div className="flex items-baseline gap-[5px] min-w-0">
-            <span className={clsx('font-bold whitespace-nowrap tracking-tight', compact ? 'text-[15px]' : 'text-[14px] sm:text-[17px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
-              {subscriberPrice != null ? `$${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `$${lowestPrice.toLocaleString()}` : '—'}
-            </span>
-            {subscriberPrice != null && lowestPrice != null ? (
-              <span className="text-[10px] text-slate/70 line-through shrink-0">${lowestPrice.toLocaleString()}</span>
-            ) : compareAt != null && compareAt > (lowestPrice ?? 0) && (
-              <span className="text-[10px] text-slate/70 line-through shrink-0">${compareAt.toLocaleString()}</span>
-            )}
-          </div>
-
-          {/* Add to Cart — a container query (not a viewport breakpoint)
-              decides icon-only vs. icon+label, so it's the card's own
-              rendered width that matters, not the screen size. That's the
-              only way to get this right regardless of sidebar/column count:
-              a "big screen" 4-up grid can still hand this card only ~170px,
-              while a narrower screen's 2-up grid can hand it 300px+. Below
-              ~240px of card width it's icon-only; at/above that it expands
-              to a labeled pill. compact grids stay icon-only always. */}
-          <button
-            onClick={e => onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital')}
-            disabled={stock <= 0}
-            aria-label={stock <= 0 ? 'Out of stock' : 'Add to cart'}
-            className={clsx(
-              'flex items-center justify-center gap-[6px] shrink-0 rounded-lg transition-colors duration-150 font-semibold text-[12px]',
-              compact ? 'w-8 h-8' : 'w-8 h-8 @[240px]:w-auto @[240px]:h-9 @[240px]:px-[14px]',
-              stock <= 0
-                ? 'bg-bone text-slate cursor-not-allowed'
-                : 'bg-brand-orange text-white hover:bg-brand-deep-orange active:scale-95 cursor-pointer',
-            )}
-          >
-            {isAdding ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
-            {!compact && (
-              <span className="hidden @[240px]:inline whitespace-nowrap">
-                {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}
-              </span>
-            )}
-          </button>
+        <div className="flex items-baseline gap-[5px] min-w-0 mt-auto pt-[9px]">
+          <span className={clsx('font-bold whitespace-nowrap tracking-tight', compact ? 'text-[15px]' : 'text-[14px] sm:text-[17px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
+            {subscriberPrice != null ? `$${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `$${lowestPrice.toLocaleString()}` : '—'}
+          </span>
+          {subscriberPrice != null && lowestPrice != null ? (
+            <span className="text-[10px] text-slate/70 line-through shrink-0">${lowestPrice.toLocaleString()}</span>
+          ) : compareAt != null && compareAt > (lowestPrice ?? 0) && (
+            <span className="text-[10px] text-slate/70 line-through shrink-0">${compareAt.toLocaleString()}</span>
+          )}
         </div>
+
+        {/* Add to Cart — full-width beneath the price, standard marketplace
+            CTA placement. Compact grids (denser/narrower tiles) keep a small
+            icon-only square docked to the right instead. */}
+        <button
+          onClick={e => onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital')}
+          disabled={stock <= 0}
+          aria-label={stock <= 0 ? 'Out of stock' : 'Add to cart'}
+          className={clsx(
+            'flex items-center justify-center gap-[6px] rounded-lg border transition-colors duration-150 font-semibold text-[12px] mt-[9px]',
+            compact ? 'w-8 h-8 self-end' : 'w-full h-9',
+            stock <= 0
+              ? 'bg-bone text-slate border-bone cursor-not-allowed'
+              : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.98] cursor-pointer',
+          )}
+        >
+          {isAdding ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
+          {!compact && (
+            <span className="whitespace-nowrap">
+              {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}
+            </span>
+          )}
+        </button>
       </div>
     </div>
 

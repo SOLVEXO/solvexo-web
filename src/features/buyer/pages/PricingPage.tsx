@@ -53,7 +53,7 @@ export function PricingPage() {
 
   useEffect(() => {
     apiBrowsePlatformPlans()
-      .then(res => setPlans(res.data))
+      .then(res => setPlans(res.data ?? []))
       .catch(() => {}) // non-critical — page still works, just without live plan cards
       .finally(() => setPlansLoading(false));
   }, []);

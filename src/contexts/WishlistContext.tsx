@@ -76,10 +76,18 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     try {
       const res = await apiAddToWishlist(productId, variantId);
       idMap.current.set(k, res.data.wishlist._id);
-      setWishlistItems(prev => {
-        if (prev.some(i => i.product._id === productId)) return prev;
-        return [...prev, { product: res.data.product, variants: [res.data.variant] }];
-      });
+      // The "already in wishlist" branch of this endpoint re-fetches the
+      // product/variant by id and can come back null if either was since
+      // deleted/unlisted — unlike the initial GET /wishlist list, which
+      // already filters those out server-side. Skip pushing a broken item
+      // into state rather than crash every consumer that reads
+      // item.product.* downstream.
+      if (res.data.product && res.data.variant) {
+        setWishlistItems(prev => {
+          if (prev.some(i => i.product._id === productId)) return prev;
+          return [...prev, { product: res.data.product, variants: [res.data.variant] }];
+        });
+      }
     } catch {
       setWishlistedKeys(prev => { const s = new Set(prev); s.delete(k); return s; });
     } finally {
@@ -97,7 +105,11 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       let wishlistId = idMap.current.get(k);
       if (!wishlistId) {
         const r = await apiGetWishlistItem(productId, variantId);
-        wishlistId = r.data.wishlist._id;
+        wishlistId = r.data?.wishlist?._id;
+        // Backend found no matching wishlist entry — it's already not
+        // wishlisted server-side, so the optimistic removal above was
+        // correct; nothing left to do (and nothing to roll back).
+        if (!wishlistId) return;
         idMap.current.set(k, wishlistId);
       }
       await apiRemoveFromWishlist(wishlistId);

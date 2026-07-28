@@ -148,7 +148,7 @@ export function OrdersTab() {
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-[12px] text-pos-faint">{s.items.reduce((sum, i) => sum + i.qty, 0)}</span>
+                  <span className="text-[12px] text-pos-faint">{(s.items ?? []).reduce((sum, i) => sum + i.qty, 0)}</span>
                 </td>
                 <td className="px-4 py-3">
                   <span className="text-[13px] font-semibold text-white">${s.total.toFixed(2)}</span>

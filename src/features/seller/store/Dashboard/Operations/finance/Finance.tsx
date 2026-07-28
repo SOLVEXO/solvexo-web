@@ -218,7 +218,7 @@ function PayoutDetailModal({ onClose, storeId, payoutId }: { onClose: () => void
         <div className="flex flex-col gap-2.5">
           {[
             ['Amount', fmt(payout.amount)],
-            ['Status', payout.status[0].toUpperCase() + payout.status.slice(1)],
+            ['Status', payout.status ? payout.status[0].toUpperCase() + payout.status.slice(1) : '—'],
             ['Method', payout.payoutMethodSnapshot ? `${METHOD_LABEL[payout.payoutMethodSnapshot.type as PayoutMethodType] ?? payout.payoutMethodSnapshot.type}${payout.payoutMethodSnapshot.accountLast4 ? ` ••${payout.payoutMethodSnapshot.accountLast4}` : ''}` : '—'],
             ['Requested', new Date(payout.createdAt).toLocaleString()],
             ['Processed', payout.processedAt ? new Date(payout.processedAt).toLocaleString() : '—'],
@@ -310,7 +310,7 @@ export function StoreFinance() {
       const q = Math.floor(now.getMonth() / 3) + 1;
       await apiGenerateTaxReport(storeId, now.getFullYear(), `q${q}` as 'q1' | 'q2' | 'q3' | 'q4');
       const reports = await apiGetTaxReports(storeId);
-      setTaxReports(reports);
+      setTaxReports(reports ?? []);
     } finally {
       setGeneratingTax(false);
     }
@@ -319,7 +319,7 @@ export function StoreFinance() {
   async function handleSetDefaultMethod(methodId: string) {
     await apiSetDefaultPayoutMethod(storeId, methodId);
     const m = await apiGetPayoutMethods(storeId);
-    setMethods(m);
+    setMethods(m ?? []);
   }
 
   async function confirmDeleteMethod() {
@@ -329,7 +329,7 @@ export function StoreFinance() {
     try {
       await apiDeletePayoutMethod(storeId, deletingMethodId);
       const m = await apiGetPayoutMethods(storeId);
-      setMethods(m);
+      setMethods(m ?? []);
       setDeletingMethodId(null);
     } catch (err) {
       setDeleteMethodError(err instanceof Error ? err.message : 'Failed to delete payout method.');
@@ -538,7 +538,7 @@ export function StoreFinance() {
                 <p className="text-[13px] font-semibold text-carbon mb-3">Payout Schedule</p>
                 <div className="flex flex-col gap-2.5">
                   {[
-                    ['Frequency', schedule.frequency[0].toUpperCase() + schedule.frequency.slice(1)],
+                    ['Frequency', schedule.frequency ? schedule.frequency[0].toUpperCase() + schedule.frequency.slice(1) : '—'],
                     ['Status', schedule.isEnabled ? 'Enabled' : 'Disabled'],
                     ['Minimum', fmt(schedule.minimumAmount)],
                     ['Next Payout', schedule.nextPayoutAt ? new Date(schedule.nextPayoutAt).toLocaleDateString() : '—'],

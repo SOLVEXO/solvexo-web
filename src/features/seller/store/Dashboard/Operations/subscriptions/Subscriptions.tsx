@@ -72,7 +72,12 @@ function BenefitEditor({ benefit, onChange, onRemove, categories }: {
   categories: { _id: string; name: string }[];
 }) {
   const set = <K extends keyof PlanBenefit>(k: K, v: PlanBenefit[K]) => onChange({ ...benefit, [k]: v });
-  const menuEntry = BENEFIT_MENU.find(m => m.type === benefit.type)!;
+  // Falls back instead of crashing if this plan has an older benefit `type`
+  // that's since been removed/renamed in BENEFIT_MENU (e.g. a plan created
+  // before a benefit type was deprecated) — production data can outlive the
+  // current menu list even though every benefit is only ever authored via it.
+  const menuEntry = BENEFIT_MENU.find(m => m.type === benefit.type)
+    ?? { type: benefit.type, label: benefit.label || benefit.type, Icon: AlertTriangle, desc: '' };
 
   return (
     <div className="border border-bone rounded-lg p-3 flex flex-col gap-2.5 bg-cream">

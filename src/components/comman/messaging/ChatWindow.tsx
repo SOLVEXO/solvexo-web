@@ -48,7 +48,7 @@ interface ChatWindowProps {
 function payloadFromMessage(m: OptimisticMessage): SendMessagePayload | null {
   if (m.type === 'text') return { type: 'text', text: m.text ?? '', ...(m.replyTo ? { replyTo: m.replyTo } : {}) };
   if (m.type === 'product_share' && m.productShare) return { type: 'product_share', productShare: { productId: m.productShare.productId } };
-  if (['image', 'video', 'pdf', 'document', 'voice'].includes(m.type) && m.attachments.length) {
+  if (['image', 'video', 'pdf', 'document', 'voice'].includes(m.type) && (m.attachments?.length ?? 0)) {
     return { type: m.type as 'image' | 'video' | 'pdf' | 'document' | 'voice', attachments: m.attachments, ...(m.replyTo ? { replyTo: m.replyTo } : {}) };
   }
   return null;

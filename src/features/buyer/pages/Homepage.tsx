@@ -467,7 +467,8 @@ export function Homepage() {
                     </div>
                   ))
                 : flashDeals.map(({ product }) => {
-                    const defVariant = product.variants.find(v => v.isDefault) ?? product.variants[0];
+                    const variants = product.variants ?? [];
+                    const defVariant = variants.find(v => v.isDefault) ?? variants[0];
                     const vId = defVariant?._id ?? '';
                     return (
                       <div key={product._id} className="shrink-0 snap-start w-[150px] sm:w-[calc((100%-40px)/3)] lg:w-[calc((100%-100px)/6)]">

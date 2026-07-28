@@ -88,6 +88,7 @@ export interface MarketplaceProduct {
   updatedAt:         string;
   variants:          ProductVariant[];
   sellerName?:       string;
+  sellerVerified?:   boolean;
   activeCampaign?:   ActiveCampaignBadge | null;
 }
 

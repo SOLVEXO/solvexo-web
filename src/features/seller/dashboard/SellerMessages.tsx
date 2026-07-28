@@ -23,7 +23,7 @@ type FilterId = 'all' | 'unread' | 'pinned' | 'archived';
 function toEntry(c: Conversation, online: Record<string, boolean>): ChatListEntry {
   return {
     id:          c._id,
-    name:        c.buyer?.name ?? `Buyer #${c.buyerId.slice(-6).toUpperCase()}`,
+    name:        c.buyer?.name ?? `Buyer #${c.buyerId?.slice(-6).toUpperCase() ?? '——'}`,
     image:       c.buyer?.profileImage,
     preview:     c.lastMessage ? (c.lastMessage.type === 'text' ? (c.lastMessage.text ?? '') : (TYPE_PREVIEW[c.lastMessage.type] ?? 'Message')) : 'No messages yet',
     previewType: c.lastMessage?.type,
@@ -185,7 +185,7 @@ export function SellerMessages() {
 
         <ChatWindow
           open={!!active}
-          headerName={active ? (active.buyer?.name ?? `Buyer #${active.buyerId.slice(-6).toUpperCase()}`) : ''}
+          headerName={active ? (active.buyer?.name ?? `Buyer #${active.buyerId?.slice(-6).toUpperCase() ?? '——'}`) : ''}
           headerImage={active?.buyer?.profileImage}
           subtitleOverride={active ? (active.isArchived ? 'Archived' : active.isMuted ? 'Muted' : undefined) : undefined}
           menuItems={menuItems}

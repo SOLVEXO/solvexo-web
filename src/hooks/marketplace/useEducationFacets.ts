@@ -21,8 +21,8 @@ export function useEducationFacets() {
     apiGetEducationFacets()
       .then(res => {
         if (!cancelled) {
-          setLevels(res.data.levels);
-          setOtherLevels(res.data.otherLevels);
+          setLevels(res.data?.levels ?? []);
+          setOtherLevels(res.data?.otherLevels ?? []);
         }
       })
       .catch((err: unknown) => {

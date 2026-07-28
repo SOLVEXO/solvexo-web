@@ -158,7 +158,7 @@ export function Messages() {
 
           <ChatWindow
             open={!!active}
-            headerName={active ? (active.store?.name ?? `Seller #${active.sellerId.slice(-6).toUpperCase()}`) : ''}
+            headerName={active ? (active.store?.name ?? `Seller #${active.sellerId?.slice(-6).toUpperCase() ?? '——'}`) : ''}
             headerImage={active?.store?.logo}
             headerVerified={active?.store?.badges?.includes('verified')}
             menuItems={menuItems}

@@ -33,7 +33,7 @@ function mergeTypes(cart: Cart): Cart {
   const stored = getStoredTypes();
   return {
     ...cart,
-    items: cart.items.map(item => ({
+    items: (cart.items ?? []).map(item => ({
       ...item,
       type: item.type ?? stored[item.productVariantId],
     })),
@@ -80,7 +80,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { fetchCart(); }, [fetchCart]);
 
-  const cartCount = cart?.items.reduce((s, i) => s + i.quantity, 0) ?? 0;
+  const cartCount = cart?.items?.reduce((s, i) => s + i.quantity, 0) ?? 0;
 
   const addToCart = useCallback(async (
     productId: string,
@@ -105,7 +105,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   ) => {
     setCart(prev => {
       if (!prev) return prev;
-      const items = prev.items.map(item => {
+      const items = (prev.items ?? []).map(item => {
         if (item.productVariantId !== productVariantId) return item;
         const newQty    = action === 'increase' ? item.quantity + 1 : Math.max(1, item.quantity - 1);
         const unitPrice = item.unitPrice ?? item.price ?? 0;
@@ -130,7 +130,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     removeType(productVariantId);
     setCart(prev => {
       if (!prev) return prev;
-      const items      = prev.items.filter(i => i.productVariantId !== productVariantId);
+      const items      = (prev.items ?? []).filter(i => i.productVariantId !== productVariantId);
       const totalItems = items.reduce((s, i) => s + i.quantity, 0);
       const totalPrice = items.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
       return { ...prev, items, totalItems, totalPrice };

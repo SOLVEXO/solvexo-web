@@ -511,7 +511,7 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
           mode="edit"
           reviewId={editingReview.reviewId}
           initialRating={editingReview.rating ?? 0}
-          initialComment={editingReview.comments[0]?.text ?? ''}
+          initialComment={editingReview.comments?.[0]?.text ?? ''}
           initialMedia={editingReview.media}
           onClose={() => setEditingReview(null)}
           onSaved={() => { setEditingReview(null); setRefreshKey(k => k + 1); }}

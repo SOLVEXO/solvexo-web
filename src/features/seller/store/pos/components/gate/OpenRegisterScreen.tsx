@@ -30,8 +30,8 @@ export function OpenRegisterScreen({ storeId, employeeId, employeeName, onSucces
     Promise.all([apiListRegisters(storeId), apiListShifts(storeId)])
       .then(([regRes, shiftRes]) => {
         if (cancelled) return;
-        setRegisters(regRes.data.filter(r => r.status === 'active'));
-        setShifts(shiftRes.data.filter(s => s.status === 'active'));
+        setRegisters((regRes.data ?? []).filter(r => r.status === 'active'));
+        setShifts((shiftRes.data ?? []).filter(s => s.status === 'active'));
       })
       .catch(err => { if (!cancelled) setLoadError(err instanceof Error ? err.message : 'Failed to load registers.'); })
       .finally(() => { if (!cancelled) setLoading(false); });

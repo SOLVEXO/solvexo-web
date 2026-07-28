@@ -107,7 +107,7 @@ export function SellerFinancialDetailsModal({ storeId, onClose }: SellerFinancia
             </div>
           )}
 
-          <Table columns={payoutColumns} data={d.recentPayouts} keyExtractor={(p) => p._id} />
+          <Table columns={payoutColumns} data={d.recentPayouts ?? []} keyExtractor={(p) => p._id} />
 
           <p className="text-[13px] font-bold text-charcoal">Transactions</p>
           {transactions.loading ? (

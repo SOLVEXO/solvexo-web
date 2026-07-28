@@ -4,6 +4,7 @@ import { clsx } from 'clsx';
 import { Send, Check, ChevronDown, ChevronRight, ArrowUp, Apple, Play } from 'lucide-react';
 import { SolvexoLogo, SolvexoIcon } from './SolvexoLogo';
 import { apiSubscribeNewsletter } from '../../../api/services/newsletter';
+import { scrollRootToTop } from '@/utils/scrollRoot';
 
 interface FooterLink {
   label: string;
@@ -223,7 +224,7 @@ function FooterColumn({ heading, links, navigate }: { heading: string; links: Fo
 
 export function Footer() {
   const navigate = useNavigate();
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollToTop = () => scrollRootToTop('smooth');
 
   return (
     <footer className="bg-carbon text-[#B0AEA8]">

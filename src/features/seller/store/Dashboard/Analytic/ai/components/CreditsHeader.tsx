@@ -18,7 +18,7 @@ export function CreditsHeader({ storeId, credits, loading, onCreditsChanged }: C
 
   const balance = credits?.balance ?? 0;
   const allowance = credits?.monthlyAllowance ?? 0;
-  const usedPct = allowance > 0 ? Math.min(100, Math.round((credits!.usedThisMonth / allowance) * 100)) : 0;
+  const usedPct = allowance > 0 ? Math.min(100, Math.round(((credits?.usedThisMonth ?? 0) / allowance) * 100)) : 0;
 
   const handleBuyCredits = async () => {
     setBuying(true);

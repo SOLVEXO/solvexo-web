@@ -10,7 +10,7 @@ import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Pagination, FilterDropdown, BuyerNavbar, AppDownloadBanner, Footer, TrustServiceStrip, FloatingAppWidget, DealsBanner, StoreFeatureCard } from '@/components/comman/ui';
 import { ProductCard, ProductCardSkeleton } from '@/components/comman/marketplace/ProductCard';
-import { FilterAccordionSection, FilterChipPill, FilterCheckboxRow, FilterStarRow, ActiveFilterChip, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
+import { FilterAccordionSection, FilterRadioRow, FilterCheckboxRow, FilterStarRow, ActiveFilterChip, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { MegaMenuBar } from '@/components/comman/marketplace/MegaMenuBar';
 import {
@@ -22,6 +22,7 @@ import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { apiGetTopStores, type PublicStoreListItem } from '@/api/services/store';
 import { apiSearchStores } from '@/api/services/search';
+import { scrollRootToTop } from '@/utils/scrollRoot';
 import { apiGetPublicActiveCampaigns, type PublicCampaign } from '@/api/services/marketing/publicCampaigns';
 
 
@@ -47,10 +48,10 @@ function FilterPanel({ filters, onChange, onPriceRangeChange, categories = [], s
     <div>
       {categories.length > 0 && (
         <FilterAccordionSection title="Category">
-          <div className="flex flex-wrap gap-2">
-            <FilterChipPill label="All" active={selectedCategory === ''} onClick={() => onCategoryChange('')} />
+          <div className="flex flex-col">
+            <FilterRadioRow label="All Categories" active={selectedCategory === ''} onClick={() => onCategoryChange('')} count={categories.reduce((sum, c) => sum + (c.productCount ?? 0), 0)} />
             {categories.map(c => (
-              <FilterChipPill key={c._id} label={c.name} active={selectedCategory === c._id} onClick={() => onCategoryChange(c._id)} count={c.productCount} />
+              <FilterRadioRow key={c._id} label={c.name} active={selectedCategory === c._id} onClick={() => onCategoryChange(c._id)} count={c.productCount} />
             ))}
           </div>
         </FilterAccordionSection>
@@ -236,7 +237,7 @@ export function Marketplace() {
     ...filters.rating.map(r => ({ key: `rating-${r}`, label: r, onRemove: () => toggleFilter('rating', r) })),
   ];
 
-  const goToPage = (p: number) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const goToPage = (p: number) => { setPage(p); scrollRootToTop('smooth'); };
 
   const handleCardClick = useCallback((id: string) => navigate(`/marketplace/${id}`), [navigate]);
   const handleAddToCart = useCallback((e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => {
@@ -488,30 +489,16 @@ export function Marketplace() {
             <div className="bg-white rounded-[20px] border border-bone overflow-hidden flex flex-col max-h-[calc(100vh-96px)]">
               {/* Sticky header — stays put while the accordion body below scrolls */}
               <div className="shrink-0 px-4 py-3 border-b border-bone flex items-center justify-between gap-2">
-                <div className="flex items-center gap-[10px]">
-                  <div className="size-7 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
-                    <SlidersHorizontal size={13} className="text-brand-orange" strokeWidth={2.2} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-[6px] leading-none">
-                      <span className="text-[13.5px] font-bold text-carbon">Filters</span>
-                      {activeFilterCount > 0 && (
-                        <span className="min-w-[16px] h-4 rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
-                          {activeFilterCount}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10.5px] text-slate leading-none mt-[5px]">
-                      {!loading && `${total} product${total === 1 ? '' : 's'}`}
-                    </p>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal size={15} className="text-charcoal" strokeWidth={2} />
+                  <span className="text-[14px] font-bold text-carbon">Filters</span>
                 </div>
                 {activeFilterCount > 0 && (
                   <button
                     onClick={clearFilters}
-                    className="shrink-0 flex items-center gap-1 text-[10.5px] font-semibold text-brand-orange hover:opacity-70 transition-opacity duration-200 cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                    className="shrink-0 text-[11.5px] font-semibold text-brand-orange hover:opacity-70 transition-opacity duration-200 cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                   >
-                    <RefreshCcw size={10} /> Reset All
+                    Clear all
                   </button>
                 )}
               </div>

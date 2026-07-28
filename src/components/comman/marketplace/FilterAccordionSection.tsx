@@ -92,6 +92,38 @@ export function FilterCheckboxRow({ label, active, onClick, count }: { label: st
   );
 }
 
+/** Radio-style filter row — used for the Category facet as a single-select
+ *  vertical list (Amazon/Etsy faceted-search pattern) instead of a pill
+ *  cloud, so a long category list reads as one scannable column with counts
+ *  right-aligned rather than a wrapping cloud. */
+export function FilterRadioRow({ label, active, onClick, count }: { label: string; active: boolean; onClick: () => void; count?: number }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={clsx(
+        'w-full min-h-8 flex items-center gap-2 px-2 -mx-2 rounded-lg text-left bg-transparent border-none cursor-pointer group transition-colors duration-200',
+        active ? 'bg-brand-pale-orange/60' : 'hover:bg-cream',
+      )}
+    >
+      <span
+        className={clsx(
+          'shrink-0 w-[15px] h-[15px] rounded-full border flex items-center justify-center transition-colors duration-200',
+          active ? 'border-brand-orange' : 'border-bone group-hover:border-brand-orange/50',
+        )}
+      >
+        {active && <span className="w-[7px] h-[7px] rounded-full bg-brand-orange filter-check-pop" />}
+      </span>
+      <span className={clsx('flex-1 text-[12px] transition-colors duration-200', active ? 'text-carbon font-semibold' : 'text-charcoal font-medium')}>
+        {label}
+      </span>
+      {count != null && (
+        <span className="text-[10.5px] text-slate tabular-nums">{count}</span>
+      )}
+    </button>
+  );
+}
+
 /** Star-rating filter row ("4★ & up") — real icons, not a unicode star
  *  baked into a label string, so the row reads at a glance like Amazon's
  *  rating facet. `stars` is the threshold (e.g. 4 → four filled + one
@@ -192,9 +224,9 @@ export function PriceRangeSlider({ value, onChange }: { value: [number, number];
           aria-label="Maximum price"
         />
       </div>
-      <div className="flex items-center justify-between mt-3">
-        <span className="text-[11px] font-bold text-carbon tabular-nums bg-cream rounded-md px-[6px] py-[2px]">${lo}</span>
-        <span className="text-[11px] font-bold text-carbon tabular-nums bg-cream rounded-md px-[6px] py-[2px]">{hi >= PRICE_MAX ? `$${PRICE_MAX}+` : `$${hi}`}</span>
+      <div className="flex items-center justify-between mt-3 gap-2">
+        <span className="flex-1 text-[11.5px] font-semibold text-carbon tabular-nums bg-white border border-bone rounded-md px-[8px] py-[5px] text-center">${lo}</span>
+        <span className="flex-1 text-[11.5px] font-semibold text-carbon tabular-nums bg-white border border-bone rounded-md px-[8px] py-[5px] text-center">{hi >= PRICE_MAX ? `$${PRICE_MAX}+` : `$${hi}`}</span>
       </div>
     </div>
   );

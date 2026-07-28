@@ -143,7 +143,7 @@ export function MessageThread({
                         message={m}
                         own={own}
                         isLastInGroup={isLast}
-                        seenByOther={m.seenBy.some(s => s.userId === otherPartyId)}
+                        seenByOther={(m.seenBy ?? []).some(s => s.userId === otherPartyId)}
                         showAvatar={!own && isLast}
                         avatarName={otherPartyName}
                         avatarImage={otherPartyImage}

@@ -1,9 +1,12 @@
 import { clsx } from 'clsx';
+import { CheckCircle2 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 export interface RoleSegmentOption {
   value:        string;
   label:        string;
   description?: string;
+  Icon?:        LucideIcon;
 }
 
 interface RoleSegmentedControlProps {
@@ -14,10 +17,11 @@ interface RoleSegmentedControlProps {
   className?: string;
 }
 
-// Animated Buyer/Seller selector — replaces the plain pill toggle (LoginPage)
-// and the RadioButton card group (RegisterPage) with one shared component: a
-// sliding highlight `thumb` animates between segments instead of just
-// swapping background classes on click.
+// Buyer/Seller switch — one track, a sliding thumb animates between segments.
+// The thumb is a flat brand-pale-orange fill — same "secondary" fill Button.tsx
+// already uses (bg-brand-pale-orange/text-brand-deep-orange). This app's
+// components are flat-filled; gradients only appear on large hero panels, so
+// a gradient thumb here always read as off-theme no matter the color stops.
 export function RoleSegmentedControl({
   options,
   value,
@@ -41,7 +45,7 @@ export function RoleSegmentedControl({
         {/* Sliding thumb */}
         <div
           aria-hidden
-          className="absolute top-1 bottom-1 rounded-[14px] bg-white transition-[transform,width] duration-[280ms] ease-out"
+          className="absolute top-1 bottom-1 rounded-[14px] bg-brand-pale-orange shadow-sm transition-[transform,width] duration-[280ms] ease-out"
           style={{
             width: `calc(${100 / options.length}% - 4px)`,
             transform: `translateX(calc(${activeIndex * 100}% + ${activeIndex * 4}px))`,
@@ -49,6 +53,7 @@ export function RoleSegmentedControl({
         />
         {options.map((opt) => {
           const active = opt.value === value;
+          const Icon = opt.Icon;
           return (
             <button
               key={opt.value}
@@ -57,18 +62,32 @@ export function RoleSegmentedControl({
               aria-checked={active}
               onClick={() => onChange(opt.value)}
               className={clsx(
-                'relative z-10 flex-1 flex flex-col items-center justify-center gap-0.5 py-[10px] px-3 rounded-[14px]',
+                'relative z-10 flex-1 flex flex-col gap-0.5 py-[10px] px-3 rounded-[14px]',
                 'border-none bg-transparent cursor-pointer select-none outline-none',
                 'transition-colors duration-200 ease-out',
-                hasDescriptions ? 'text-left items-start' : '',
-                active ? 'text-carbon' : 'text-slate hover:text-charcoal',
+                hasDescriptions ? 'text-left items-start' : 'items-center',
               )}
             >
-              <span className={clsx('text-[13px] leading-tight', active ? 'font-semibold' : 'font-medium')}>
-                {opt.label}
+              <span className={clsx('flex items-center gap-1.5 w-full', !hasDescriptions && 'justify-center')}>
+                {Icon && (
+                  <Icon
+                    size={14}
+                    strokeWidth={2.25}
+                    className={clsx('shrink-0 transition-colors duration-150', active ? 'text-brand-deep-orange' : 'text-slate')}
+                  />
+                )}
+                <span className={clsx('text-[13px] leading-tight', active ? 'font-semibold text-carbon' : 'font-medium text-slate')}>
+                  {opt.label}
+                </span>
+                {hasDescriptions && (
+                  <CheckCircle2
+                    size={15}
+                    className={clsx('ml-auto shrink-0 transition-opacity duration-150', active ? 'text-brand-orange opacity-100' : 'opacity-0')}
+                  />
+                )}
               </span>
               {opt.description && (
-                <span className={clsx('text-[10.5px] leading-[1.3] transition-colors duration-200', active ? 'text-slate' : 'text-slate/70')}>
+                <span className={clsx('text-[10.5px] leading-[1.35] transition-colors duration-150', active ? 'text-slate' : 'text-slate/70')}>
                   {opt.description}
                 </span>
               )}
