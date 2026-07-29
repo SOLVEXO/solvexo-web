@@ -69,7 +69,7 @@ export function SellersTab({ params }: { params: BaseAnalyticsParams }) {
             />
           )}
         </div>
-        <MetricCard label="Total Sellers (cumulative)" value={latestCumulative != null ? formatNumber(latestCumulative) : '—'} loading={trends.loading} />
+        <MetricCard label="Seller Accounts (Cumulative)" value={latestCumulative != null ? formatNumber(latestCumulative) : '—'} loading={trends.loading} />
       </div>
 
       <div className="bg-white border border-bone rounded-[10px]">

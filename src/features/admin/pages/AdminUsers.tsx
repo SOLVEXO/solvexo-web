@@ -175,8 +175,8 @@ export function AdminUsers() {
             Array.from({ length: 3 }).map((_, i) => <SkeletonBox key={i} height={92} rounded="10px" />)
           ) : stats ? (
             <>
-              <MetricCard label="Total Users" value={formatNumber(stats.totalUsers)} />
-              <MetricCard label="Active Sellers" value={formatNumber(stats.activeSellers)} />
+              <MetricCard label="Total Buyer Accounts" value={formatNumber(stats.totalBuyers)} />
+              <MetricCard label="Active Seller Accounts" value={formatNumber(stats.activeSellerAccounts)} />
               <MetricCard label="Suspended" value={formatNumber(stats.suspended)} sub="Under review" />
             </>
           ) : null}

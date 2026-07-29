@@ -53,10 +53,12 @@ export function AdminOverview() {
   }, []);
 
   const metrics = overview ? [
-    { label: 'Total Sellers',  value: formatNumber(overview.totalSellers),   trend: undefined, trendUp: true, sub: undefined, icon: <Users size={16} />, color: '#8B5CF6' },
-    { label: 'Active Sellers', value: formatNumber(overview.activeSellers),  trend: overview.activeSellersChange ? formatPercent(overview.activeSellersChange, { signed: true }) : undefined, trendUp: (overview.activeSellersChange ?? 0) >= 0, sub: undefined, icon: <UserCheck size={16} />, color: '#22C55E' },
-    { label: 'GMV (30 days)',  value: formatCurrency(overview.totalGMV),     trend: overview.totalRevenueChangePercent != null ? formatPercent(overview.totalRevenueChangePercent, { signed: true }) : undefined, trendUp: (overview.totalRevenueChangePercent ?? 0) >= 0, sub: undefined, icon: <DollarSign size={16} />, color: '#D97757' },
-    { label: 'New Users',      value: formatNumber(overview.newUsers),       trend: undefined, trendUp: true, sub: `${formatNumber(overview.totalCustomers)} total customers`, icon: <UserPlus size={16} />, color: '#0EA5E9' },
+    { label: 'Seller Accounts',        value: formatNumber(overview.totalSellers),             trend: undefined, trendUp: true, sub: undefined, icon: <Users size={16} />, color: '#8B5CF6' },
+    { label: 'Sellers Active This Month', value: formatNumber(overview.sellersActiveThisMonth), trend: overview.sellersActiveThisMonthChange ? formatPercent(overview.sellersActiveThisMonthChange, { signed: true }) : undefined, trendUp: (overview.sellersActiveThisMonthChange ?? 0) >= 0, sub: undefined, icon: <UserCheck size={16} />, color: '#22C55E' },
+    { label: 'Total Stores',           value: formatNumber(overview.totalStores),              trend: undefined, trendUp: true, sub: undefined, icon: <Store size={16} />, color: '#0D9488' },
+    { label: 'Active Stores',          value: formatNumber(overview.activeStores),             trend: undefined, trendUp: true, sub: undefined, icon: <Store size={16} />, color: '#0EA5E9' },
+    { label: 'GMV (30 days)',          value: formatCurrency(overview.totalGMV),                trend: overview.totalRevenueChangePercent != null ? formatPercent(overview.totalRevenueChangePercent, { signed: true }) : undefined, trendUp: (overview.totalRevenueChangePercent ?? 0) >= 0, sub: undefined, icon: <DollarSign size={16} />, color: '#D97757' },
+    { label: 'New Users',              value: formatNumber(overview.newUsers),                  trend: undefined, trendUp: true, sub: `${formatNumber(overview.totalCustomers)} total customers`, icon: <UserPlus size={16} />, color: '#0EA5E9' },
   ] : [];
 
   const maxCategoryRevenue = Math.max(1, ...categories.map(c => c.revenue));
@@ -92,9 +94,9 @@ export function AdminOverview() {
       )}
 
       {/* ── Metrics Row ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {loading ? (
-          Array.from({ length: 4 }).map((_, i) => <MetricCard key={i} label="" value="" loading />)
+          Array.from({ length: 6 }).map((_, i) => <MetricCard key={i} label="" value="" loading />)
         ) : metrics.map((m) => (
           <MetricCard key={m.label} label={m.label} value={m.value} trend={m.trend} trendUp={m.trendUp} sub={m.sub} icon={m.icon} color={m.color} />
         ))}

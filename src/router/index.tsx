@@ -47,16 +47,11 @@ const MaintenancePage      = lazy(() => named(import('@/features/buyer/pages/Mai
 
 // ── Account (buyer) ───────────────────────────────────────────────────────────
 const AccountDashboard     = lazy(() => named(import('@/features/buyer/pages/account/AccountDashboard'),        'AccountDashboard'));
-const PersonalInfo         = lazy(() => named(import('@/features/buyer/pages/account/PersonalInfo'),             'PersonalInfo'));
 const AccountOrders        = lazy(() => named(import('@/features/buyer/pages/MyOrdersPage'),                     'OrdersTab'));
 const AccountWishlist      = lazy(() => named(import('@/features/buyer/pages/account/Wishlist'),                 'Wishlist'));
-const AccountAddresses     = lazy(() => named(import('@/features/buyer/pages/account/Addresses'),                'Addresses'));
 const AccountReviews       = lazy(() => named(import('@/features/buyer/pages/MyReviewsPage'),                    'ReviewsTab'));
-const AccountNotifications = lazy(() => named(import('@/features/buyer/pages/account/Notifications'),           'Notifications'));
-const AccountSecurity      = lazy(() => named(import('@/features/buyer/pages/account/Security'),                 'Security'));
 const AccountSettings      = lazy(() => named(import('@/features/buyer/pages/account/Settings'),                 'Settings'));
 const AccountMessages      = lazy(() => named(import('@/features/buyer/pages/account/Messages'),                 'Messages'));
-const AccountSubscriptions = lazy(() => named(import('@/features/buyer/pages/MySubscriptionsPage'),              'SubscriptionsTab'));
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 const AdminLoginPage       = lazy(() => named(import('@/features/auth/pages/admin/AdminLoginPage'),             'AdminLoginPage'));
@@ -152,16 +147,11 @@ export const router = createBrowserRouter([
             children: [
               { index: true,          element: <Navigate to="dashboard" replace /> },
               { path: 'dashboard',     element: <AccountDashboard /> },
-              { path: 'profile',       element: <PersonalInfo /> },
               { path: 'orders',        element: <AccountOrders /> },
               { path: 'wishlist',      element: <AccountWishlist /> },
-              { path: 'addresses',     element: <AccountAddresses /> },
               { path: 'reviews',       element: <AccountReviews /> },
-              { path: 'notifications', element: <AccountNotifications /> },
-              { path: 'security',      element: <AccountSecurity /> },
               { path: 'settings',      element: <AccountSettings /> },
               { path: 'messages',      element: <AccountMessages /> },
-              { path: 'subscriptions', element: <AccountSubscriptions /> },
             ],
           },
           // Pages with their own embedded navbar (no PublicLayout wrapper needed)

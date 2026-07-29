@@ -51,7 +51,7 @@ export function ForSellersPage() {
   const statItems = stats ? [
     { value: `${compactNumber.format(stats.sellersCount)}+`, label: 'Active Sellers' },
     { value: `${compactCurrency.format(stats.gmv)}+`,        label: 'GMV Processed'  },
-    { value: `${compactNumber.format(stats.buyersCount)}+`,  label: 'Active Buyers'  },
+    { value: `${compactNumber.format(stats.buyersCount)}+`,  label: 'Registered Buyers' },
     { value: stats.ratingCount > 0 ? `${stats.avgRating.toFixed(1)} ★` : '—', label: 'Average Rating' },
   ] : [];
 

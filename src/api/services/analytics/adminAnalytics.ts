@@ -72,7 +72,7 @@ export interface AdminOverviewPreviousPeriod {
   totalGMV: number;
   totalRevenue: number;
   totalOrders: number;
-  activeSellers: number;
+  sellersActiveThisMonth: number;
   totalRefunds: number;
   cancelledOrders: number;
 }
@@ -88,8 +88,10 @@ export interface AdminOverviewData {
   totalOrders: number;
   totalOrdersChange: number;
   totalSellers: number;
-  activeSellers: number;
-  activeSellersChange: number;
+  sellersActiveThisMonth: number;
+  sellersActiveThisMonthChange: number;
+  totalStores: number;
+  activeStores: number;
   totalCustomers: number;
   newUsers: number;
   totalRefunds: number;

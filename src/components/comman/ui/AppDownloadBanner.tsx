@@ -223,7 +223,7 @@ export function AppDownloadBanner({ className }: { className?: string }) {
   const trustStats = [
     { Icon: ShoppingBag, value: stats ? `${compactNumber.format(stats.buyersCount)}+` : '—', label: 'Happy Shoppers' },
     { Icon: ShieldCheck, value: '100%', label: 'Secure Shopping' },
-    { Icon: Award,       value: stats ? `${compactNumber.format(stats.sellersCount)}+` : '—', label: 'Verified Stores' },
+    { Icon: Award,       value: stats ? `${compactNumber.format(stats.storesCount)}+` : '—', label: 'Verified Stores' },
     { Icon: Headphones,  value: '24/7', label: 'Customer Support' },
   ];
 

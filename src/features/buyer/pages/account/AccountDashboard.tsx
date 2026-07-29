@@ -218,7 +218,7 @@ export function AccountDashboard() {
                 : 'Complete your profile for a smoother checkout experience.'}
             </p>
             {completionPct < 100 && (
-              <Button variant="outline" size="sm" fullWidth className="mt-3" onClick={() => navigate('/account/profile')}>
+              <Button variant="outline" size="sm" fullWidth className="mt-3" onClick={() => navigate('/account/settings?tab=profile')}>
                 Complete Profile
               </Button>
             )}
@@ -241,7 +241,7 @@ export function AccountDashboard() {
               <span className="text-[12px] text-graphite flex-1">Password protection</span>
               <Badge color="green" size="sm">Active</Badge>
             </div>
-            <Button variant="outline" size="sm" fullWidth onClick={() => navigate('/account/security')}>
+            <Button variant="outline" size="sm" fullWidth onClick={() => navigate('/account/settings?tab=security')}>
               Manage Security
             </Button>
           </Card>
@@ -253,10 +253,10 @@ export function AccountDashboard() {
             </p>
             <div className="flex flex-col gap-1.5">
               {[
-                { label: 'Edit Profile',      path: '/account/profile' },
-                { label: 'Add New Address',   path: '/account/addresses' },
+                { label: 'Edit Profile',      path: '/account/settings?tab=profile' },
+                { label: 'Add New Address',   path: '/account/settings?tab=addresses' },
                 { label: 'Track Orders',      path: '/account/orders' },
-                { label: 'Notification Settings', path: '/account/notifications' },
+                { label: 'Notification Settings', path: '/account/settings?tab=notifications' },
                 { label: 'Browse Marketplace', path: '/marketplace' },
               ].map(a => (
                 <button

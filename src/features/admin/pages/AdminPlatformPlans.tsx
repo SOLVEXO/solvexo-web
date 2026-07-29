@@ -317,7 +317,7 @@ export function AdminPlatformPlans() {
   const metrics = revenue ? [
     { label: 'Platform MRR', value: `$${revenue.mrr.toFixed(2)}`, Icon: TrendingUp },
     { label: 'Platform ARR', value: `$${revenue.arr.toFixed(2)}`, Icon: DollarSign },
-    { label: 'Active Sellers', value: String(revenue.activeSubscribers), Icon: Users },
+    { label: 'Active Subscribers', value: String(revenue.activeSubscribers), Icon: Users },
   ] : [];
 
   return (

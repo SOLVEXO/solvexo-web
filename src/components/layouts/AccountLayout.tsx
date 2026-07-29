@@ -2,12 +2,11 @@ import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
-  LayoutDashboard, User, ShoppingBag, Heart, MapPin, Star, Shield,
-  Settings as SettingsIcon, Bell, MessageSquare, RefreshCw, Menu,
+  LayoutDashboard, ShoppingBag, Heart, Star,
+  Settings as SettingsIcon, MessageSquare, Menu,
   ChevronLeft, PanelLeftClose, PanelLeftOpen, type LucideIcon,
 } from 'lucide-react';
 import { useWishlistContext } from '@/contexts/WishlistContext';
-import { useNotification } from '@/contexts/NotificationContext';
 import { useConversations } from '@/hooks/messaging/useConversations';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 
@@ -17,10 +16,9 @@ interface NavGroup { group: string; items: NavItem[] }
 
 function useNavGroups(): NavGroup[] {
   const { wishlistCount } = useWishlistContext();
-  const { unreadCount } = useNotification();
   // Reuses the same live-updating (socket-backed) conversations hook the
   // Messages page itself uses, so this badge tracks in real time just like
-  // the Wishlist/Notifications ones already do.
+  // the Wishlist badge already does.
   const { conversations } = useConversations();
   const messagesUnread = conversations.reduce((n, c) => n + c.buyerUnread, 0);
 
@@ -40,20 +38,15 @@ function useNavGroups(): NavGroup[] {
       ],
     },
     {
-      group: 'Account',
+      group: 'Updates',
       items: [
-        { id: 'profile',   label: 'Personal Information', Icon: User,         path: 'profile' },
-        { id: 'addresses', label: 'Addresses',             Icon: MapPin,       path: 'addresses' },
-        { id: 'security',  label: 'Security',              Icon: Shield,       path: 'security' },
-        { id: 'settings',  label: 'Settings',               Icon: SettingsIcon, path: 'settings' },
+        { id: 'messages', label: 'Messages', Icon: MessageSquare, path: 'messages', badge: messagesUnread },
       ],
     },
     {
-      group: 'Updates',
+      group: 'Account',
       items: [
-        { id: 'notifications', label: 'Notifications', Icon: Bell,           path: 'notifications', badge: unreadCount },
-        { id: 'messages',      label: 'Messages',       Icon: MessageSquare, path: 'messages', badge: messagesUnread },
-        { id: 'subscriptions', label: 'Subscriptions',  Icon: RefreshCw,      path: 'subscriptions' },
+        { id: 'settings', label: 'Settings', Icon: SettingsIcon, path: 'settings' },
       ],
     },
   ];

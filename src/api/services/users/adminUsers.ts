@@ -7,8 +7,8 @@ import { ENDPOINTS } from '../../endpoints';
 export type AccountRole = 'buyer' | 'seller';
 
 export interface AdminUsersStats {
-  totalUsers: number;
-  activeSellers: number;
+  totalBuyers: number;
+  activeSellerAccounts: number;
   suspended: number;
 }
 

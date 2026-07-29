@@ -251,6 +251,7 @@ export function apiGetTopStores(limit = 10) {
 }
 
 export interface PlatformStats {
+  storesCount:  number;
   sellersCount: number;
   buyersCount:  number;
   gmv:          number;

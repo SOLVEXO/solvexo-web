@@ -276,9 +276,9 @@ export function Homepage() {
   }, [toggleWishlist]);
 
   const statItems = stats ? [
-    { value: `${compactNumber.format(stats.sellersCount)}+`, label: 'Active Sellers' },
+    { value: `${compactNumber.format(stats.storesCount)}+`,  label: 'Active Stores'  },
     { value: `${compactCurrency.format(stats.gmv)}+`,        label: 'GMV Processed'  },
-    { value: stats.ratingCount > 0 ? `${stats.avgRating.toFixed(1)}★` : '—', label: 'Seller Rating' },
+    { value: stats.ratingCount > 0 ? `${stats.avgRating.toFixed(1)}★` : '—', label: 'Store Rating' },
   ] : [];
 
   return (

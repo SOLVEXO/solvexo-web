@@ -284,9 +284,9 @@ function FeaturedSellersMegaContent({ topStores, onStoreClick }: {
 }) {
   return (
     <div>
-      <MegaSectionLabel>Featured Sellers</MegaSectionLabel>
+      <MegaSectionLabel>Featured Stores</MegaSectionLabel>
       {topStores.length === 0 ? (
-        <p className="text-[12px] text-slate">No featured sellers yet.</p>
+        <p className="text-[12px] text-slate">No featured stores yet.</p>
       ) : (
         <div className="flex flex-wrap gap-4">
           {topStores.slice(0, 4).map(s => <StoreFeatureCard key={s.storeId} store={s} onClick={onStoreClick} />)}
@@ -498,7 +498,7 @@ export function MegaMenuBar({
             {([
               { key: 'flash-sale',       label: 'Flash Sale',          chevron: true,  className: '' },
               { key: 'top-picks',        label: 'Top Picks',           chevron: true,  className: '' },
-              { key: 'featured-sellers', label: 'Featured Sellers',    chevron: true,  className: 'hidden sm:flex' },
+              { key: 'featured-sellers', label: 'Featured Stores',    chevron: true,  className: 'hidden sm:flex' },
               { key: 'about',            label: 'About Solvexo.store', chevron: false, className: 'hidden sm:flex' },
             ] as const).map(item => (
               <button
