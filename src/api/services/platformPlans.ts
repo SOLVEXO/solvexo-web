@@ -12,6 +12,7 @@ export interface PlatformPlanLimits {
   slaUptimePercent?: number;
   advancedSeoToolsAllowed?: boolean; seoAiSuggestionsAllowed?: boolean;
   searchConsoleIntegrationAllowed?: boolean; customRedirectsAllowed?: boolean;
+  maxActiveStoreBanners?: number; maxActivePromotions?: number;
 }
 
 export interface PlatformPlan {

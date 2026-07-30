@@ -1,14 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   useCampaigns, useCampaignActions, usePlatformCoupons, usePlatformCouponActions,
 } from '@/hooks/admin/useAdminMarketing';
 import type { Campaign, CampaignStatus, DiscountType, CampaignSponsorType, PlatformCoupon } from '@/api/services/marketing/adminMarketing';
-import { Button, Modal, Input, Textarea, Select, Table, StatusBadge, Badge, Toggle, TabBar, ImageUpload, ActionMenu } from '@/components/comman/ui';
+import { Button, Modal, Input, Textarea, Select, Table, StatusBadge, Badge, Toggle, TabBar, ImageUpload, ActionMenu, EmptyState } from '@/components/comman/ui';
 import type { TableColumn, Tab } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate, formatCurrency } from '@/components/comman/analytics/format';
-import { Tag, Percent, Trash2, Plus, Store, Building2, User, Pencil, Play, Square } from 'lucide-react';
+import { Tag, Percent, Trash2, Plus, Store, Building2, User, Pencil, Play, Square, Rocket, Check, X, Calendar as CalendarIcon, AlertTriangle, GraduationCap, LayoutGrid, Megaphone, ShieldCheck } from 'lucide-react';
+import {
+  apiAdminListPromotionRequests, apiAdminApprovePromotionRequest, apiAdminRejectPromotionRequest, apiAdminCheckPromotionConflicts,
+  apiGetAdminPromotionAnalytics, apiAdminPromotionCalendar,
+  type PromotionRequest, type PromotionAnalyticsData, type CalendarPromotionItem, type CalendarCampaignItem,
+} from '@/api/services/promotions';
+import type { PromotionPlacement } from '@/api/services/banner';
+import { useAdminConfig, useUpdatePlacementLimits, useUpdatePromotionPricing } from '@/hooks/admin/useAdminConfig';
+import type { PlacementLimits, PlacementRateCard } from '@/api/services/config/adminConfig';
+import { Settings } from 'lucide-react';
 
 // datetime-local inputs need "YYYY-MM-DDTHH:mm" in local time, not the raw ISO string.
 function toDatetimeLocalValue(iso: string): string {
@@ -20,7 +29,12 @@ function toDatetimeLocalValue(iso: string): string {
 const TABS: Tab[] = [
   { id: 'campaigns', label: 'Sale Campaigns', icon: <Tag size={14} /> },
   { id: 'coupons', label: 'Platform Coupons', icon: <Percent size={14} /> },
+  { id: 'promotions', label: 'Promotion Requests', icon: <Rocket size={14} /> },
 ];
+
+const PLACEMENT_LABEL: Record<PromotionPlacement, string> = {
+  homepageHero: 'Homepage Hero', marketplaceHero: 'Marketplace Hero', educationHero: 'Education Marketplace Hero', categoryHero: 'Category Hero',
+};
 
 // ═══════════════════════════════ Campaigns ═══════════════════════════════════
 
@@ -447,6 +461,449 @@ function CouponsTab() {
   );
 }
 
+// ═══════════════════════════════ Promotion Requests ═══════════════════════════
+
+function RejectPromotionModal({ request, onClose, onRejected }: { request: PromotionRequest; onClose: () => void; onRejected: () => void }) {
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit() {
+    if (!reason.trim()) { setError('A rejection reason is required.'); return; }
+    setSubmitting(true);
+    setError('');
+    try {
+      await apiAdminRejectPromotionRequest(request._id, reason.trim());
+      onRejected();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reject request.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal title="Reject Promotion Request" onClose={onClose} footer={<>
+      <Button variant="outline" onClick={onClose}>Cancel</Button>
+      <Button variant="danger" onClick={submit} loading={submitting}>Reject</Button>
+    </>}>
+      <div className="flex flex-col gap-3">
+        <Textarea label="Reason (shown to the seller)" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Creative doesn't meet image guidelines" />
+        {error && <p className="text-[12px] text-error">{error}</p>}
+      </div>
+    </Modal>
+  );
+}
+
+const PLACEMENT_STYLE: Record<PromotionPlacement, { Icon: typeof Store; accent: string; bg: string }> = {
+  homepageHero: { Icon: Store, accent: '#8C8A82', bg: '#F0EEE6' },
+  marketplaceHero: { Icon: Store, accent: '#1D5EAE', bg: '#EAF1FB' },
+  educationHero: { Icon: GraduationCap, accent: '#7B3DAE', bg: '#F4EAFB' },
+  categoryHero: { Icon: LayoutGrid, accent: '#1E7A8C', bg: '#E6F5F5' },
+};
+
+function daysBetween(a: string, b: string) {
+  return Math.max(1, Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86_400_000));
+}
+
+function PromotionCalendarModal({ onClose }: { onClose: () => void }) {
+  const [data, setData] = useState<{ promotions: CalendarPromotionItem[]; campaigns: CalendarCampaignItem[] } | null>(null);
+  const [error, setError] = useState('');
+  const rangeStart = new Date();
+  const rangeEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+  useEffect(() => {
+    apiAdminPromotionCalendar(rangeStart.toISOString(), rangeEnd.toISOString())
+      .then((res) => setData(res.data))
+      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load calendar.'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const groups = new Map<PromotionPlacement, CalendarPromotionItem[]>();
+  (data?.promotions ?? []).forEach((p) => {
+    const list = groups.get(p.placement) ?? [];
+    list.push(p);
+    groups.set(p.placement, list);
+  });
+
+  function overlaps(a: CalendarPromotionItem, b: CalendarPromotionItem) {
+    return a._id !== b._id && new Date(a.startAt) < new Date(b.endAt) && new Date(a.endAt) > new Date(b.startAt);
+  }
+
+  const totalPromotions = data?.promotions.length ?? 0;
+  const totalRevenue = (data?.promotions ?? []).reduce((s, p) => s + p.priceUSD, 0);
+  const conflictCount = (data?.promotions ?? []).filter((p, _, all) => all.some((o) => overlaps(p, o))).length;
+
+  return (
+    <Modal title="Promotion Calendar" onClose={onClose} width={680}>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2 text-[12px] text-slate">
+          <CalendarIcon size={13} className="text-brand-orange" />
+          {formatDate(rangeStart.toISOString())} – {formatDate(rangeEnd.toISOString())} <span className="text-bone">·</span> next 30 days
+        </div>
+
+        {error ? (
+          <p className="text-[13px] text-error">{error}</p>
+        ) : !data ? (
+          <p className="text-[13px] text-slate">Loading…</p>
+        ) : (
+          <>
+            {/* Summary strip */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-white border border-bone rounded-[10px] px-3.5 py-3">
+                <p className="text-[10px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Scheduled</p>
+                <p className="text-[18px] font-bold text-carbon leading-[1.15]">{totalPromotions}</p>
+              </div>
+              <div className="bg-white border border-bone rounded-[10px] px-3.5 py-3">
+                <p className="text-[10px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Revenue in Window</p>
+                <p className="text-[18px] font-bold text-carbon leading-[1.15]">{formatCurrency(totalRevenue)}</p>
+              </div>
+              <div className="rounded-[10px] px-3.5 py-3 border" style={{ background: conflictCount > 0 ? '#FDF3E7' : '#EAF7EF', borderColor: conflictCount > 0 ? '#F5D9A8' : '#CFEEDA' }}>
+                <p className="text-[10px] font-medium uppercase tracking-[0.06em] mb-1" style={{ color: conflictCount > 0 ? '#9A6A17' : '#1E7A3C' }}>Conflicts</p>
+                <p className="text-[18px] font-bold leading-[1.15]" style={{ color: conflictCount > 0 ? '#9A6A17' : '#1E7A3C' }}>{conflictCount}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-5 max-h-[50vh] overflow-y-auto pr-1">
+              {groups.size === 0 ? (
+                <EmptyState
+                  icon={<CalendarIcon size={28} className="text-slate/50" />}
+                  title="Nothing scheduled"
+                  description="No approved or active platform promotions fall in the next 30 days."
+                />
+              ) : (
+                [...groups.entries()].map(([placement, items]) => {
+                  const style = PLACEMENT_STYLE[placement];
+                  return (
+                    <div key={placement}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: style.bg }}>
+                          <style.Icon size={13} style={{ color: style.accent }} />
+                        </span>
+                        <p className="text-[12.5px] font-bold text-carbon">{PLACEMENT_LABEL[placement]}</p>
+                        <span className="text-[11px] text-slate">{items.length} scheduled</span>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {[...items].sort((a, b) => a.startAt.localeCompare(b.startAt)).map((p) => {
+                          const conflicted = items.some((other) => overlaps(p, other));
+                          return (
+                            <div
+                              key={p._id}
+                              className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg border-l-[3px] bg-white border border-bone"
+                              style={{ borderLeftColor: conflicted ? '#E0A64A' : style.accent }}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[12.5px] text-charcoal font-medium whitespace-nowrap">{formatDate(p.startAt)} – {formatDate(p.endAt)}</p>
+                                <p className="text-[11px] text-slate">{daysBetween(p.startAt, p.endAt)} day{daysBetween(p.startAt, p.endAt) !== 1 ? 's' : ''}</p>
+                              </div>
+                              <span className="text-[12.5px] font-semibold text-charcoal shrink-0">{formatCurrency(p.priceUSD)}</span>
+                              {conflicted ? (
+                                <span className="flex items-center gap-1 text-[11px] font-medium text-[#9A6A17] bg-[#FDF3E7] px-2 py-1 rounded-md shrink-0"><AlertTriangle size={11} /> Overlap</span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-[11px] font-medium text-success bg-success-bg px-2 py-1 rounded-md shrink-0"><ShieldCheck size={11} /> Clear</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+
+              {data.campaigns.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 bg-brand-pale-orange">
+                      <Megaphone size={13} className="text-brand-deep-orange" />
+                    </span>
+                    <p className="text-[12.5px] font-bold text-carbon">Sale Campaigns</p>
+                    <span className="text-[11px] text-slate">{data.campaigns.length} running</span>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    {data.campaigns.map((c) => (
+                      <div key={c._id} className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg border-l-[3px] border-brand-orange bg-white border border-bone">
+                        <span className="text-[12.5px] text-charcoal font-medium truncate">{c.name}</span>
+                        <span className="text-[11.5px] text-slate whitespace-nowrap">{formatDate(c.startDate)} – {formatDate(c.endDate)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+// Homepage Hero is deliberately excluded below — the buyer-facing Homepage has
+// no hero banner surface wired up at all, so it's kept out of every
+// seller/admin-facing placement picker (see SELECTABLE_PROMOTION_PLACEMENTS).
+const PLACEMENT_LIMIT_META: { key: keyof PlacementLimits; label: string }[] = [
+  { key: 'marketplaceHero', label: 'Marketplace Hero' },
+  { key: 'educationHero', label: 'Education Marketplace Hero' },
+  { key: 'categoryHero', label: 'Category Hero' },
+  { key: 'storeHero', label: 'Store Hero (per store)' },
+  { key: 'storeFeaturedProducts', label: 'Store Featured Products' },
+];
+
+const PRICING_PLACEMENTS: { key: 'marketplaceHero' | 'educationHero' | 'categoryHero'; label: string }[] = [
+  { key: 'marketplaceHero', label: 'Marketplace Hero' },
+  { key: 'educationHero', label: 'Education Marketplace Hero' },
+  { key: 'categoryHero', label: 'Category Hero' },
+];
+
+const RATE_INPUT_CLS = 'w-full px-2 py-1.5 text-[12.5px] border border-bone rounded-md outline-none text-charcoal bg-white text-right transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/30 focus:border-brand-orange/50';
+
+// ── Promotion Settings modal — placement visible-limits + the pricing rate card,
+// tucked away here (not on the general Platform Config page) since both only
+// matter in the context of reviewing/approving promotion requests. ──────────
+function PromotionSettingsModal({ onClose }: { onClose: () => void }) {
+  const { data, loading, refetch } = useAdminConfig();
+  const { update: updateLimits, submitting: savingLimits, error: limitsError } = useUpdatePlacementLimits();
+  const { update: updatePricing, submitting: savingPricing, error: pricingError } = useUpdatePromotionPricing();
+
+  const [limits, setLimits] = useState<PlacementLimits | null>(null);
+  const [rates, setRates] = useState<Record<string, PlacementRateCard>>({});
+  const [limitsSaved, setLimitsSaved] = useState(false);
+  const [pricingSaved, setPricingSaved] = useState(false);
+
+  const [synced, setSynced] = useState<typeof data>(null);
+  if (data && data !== synced) {
+    setSynced(data);
+    setLimits(data.placementLimits);
+    setRates(data.promotionPricing ?? {});
+  }
+
+  function setRateField(placement: string, field: keyof PlacementRateCard, value: number) {
+    setPricingSaved(false);
+    setRates((r) => ({ ...r, [placement]: { ...r[placement], [field]: value } }));
+  }
+
+  async function saveLimits() {
+    if (!limits) return;
+    const ok = await updateLimits(limits);
+    if (ok) { setLimitsSaved(true); refetch(); }
+  }
+
+  async function savePricing() {
+    const ok = await updatePricing(rates);
+    if (ok) { setPricingSaved(true); refetch(); }
+  }
+
+  return (
+    <Modal title="Promotion Settings" onClose={onClose} width={640}>
+      {loading || !limits ? (
+        <p className="text-[13px] text-slate">Loading…</p>
+      ) : (
+        <div className="flex flex-col gap-6 max-h-[65vh] overflow-y-auto pr-1">
+          {/* Placement Limits */}
+          <div>
+            <p className="text-[13px] font-bold text-carbon mb-1">Placement Limits</p>
+            <p className="text-[11.5px] text-slate mb-3">How many banners rotate at once per placement. Creating banners is always unlimited — this only bounds the display.</p>
+            <div className="flex flex-col divide-y divide-bone rounded-lg border border-bone overflow-hidden">
+              {PLACEMENT_LIMIT_META.map((p) => (
+                <div key={p.key} className="flex items-center justify-between gap-3 px-3.5 py-2 bg-white">
+                  <span className="text-[12.5px] text-charcoal">{p.label}</span>
+                  <input
+                    type="number" min={1}
+                    value={limits[p.key] ?? ''}
+                    onChange={(e) => { setLimitsSaved(false); setLimits((v) => v && ({ ...v, [p.key]: Number(e.target.value) })); }}
+                    className="w-16 px-2 py-1 text-[12.5px] border border-bone rounded-md outline-none text-right focus:ring-2 focus:ring-brand-orange/30 focus:border-brand-orange/50"
+                  />
+                </div>
+              ))}
+            </div>
+            {limitsError && <p className="text-[12px] text-error mt-2">{limitsError}</p>}
+            <div className="flex items-center gap-2 mt-2.5">
+              <Button size="sm" onClick={saveLimits} loading={savingLimits}>Save Limits</Button>
+              {limitsSaved && <span className="text-[12px] text-success">Saved</span>}
+            </div>
+          </div>
+
+          {/* Promotion Pricing */}
+          <div>
+            <p className="text-[13px] font-bold text-carbon mb-1">Promotion Pricing</p>
+            <p className="text-[11.5px] text-slate mb-3">Rate card sellers are quoted/charged for a paid placement. A blank rate stays unset (quotes show $0 for that unit).</p>
+            <div className="overflow-x-auto rounded-lg border border-bone">
+              <table className="w-full border-collapse text-[12px]">
+                <thead>
+                  <tr className="bg-cream">
+                    <th className="text-left font-semibold text-slate px-3 py-2 whitespace-nowrap">Placement</th>
+                    <th className="font-semibold text-slate px-2 py-2 whitespace-nowrap">Hourly</th>
+                    <th className="font-semibold text-slate px-2 py-2 whitespace-nowrap">Daily</th>
+                    <th className="font-semibold text-slate px-2 py-2 whitespace-nowrap">Weekly</th>
+                    <th className="font-semibold text-slate px-2 py-2 whitespace-nowrap">Monthly</th>
+                    <th className="font-semibold text-slate px-2 py-2 whitespace-nowrap">Weekend ×</th>
+                    <th className="font-semibold text-slate px-2 py-2 whitespace-nowrap">Peak ×</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {PRICING_PLACEMENTS.map((p) => {
+                    const card = rates[p.key] ?? {};
+                    return (
+                      <tr key={p.key} className="border-t border-bone">
+                        <td className="px-3 py-2 text-charcoal font-medium whitespace-nowrap">{p.label}</td>
+                        <td className="px-1.5 py-1.5"><input type="number" min={0} value={card.hourly ?? ''} onChange={(e) => setRateField(p.key, 'hourly', Number(e.target.value))} className={RATE_INPUT_CLS} /></td>
+                        <td className="px-1.5 py-1.5"><input type="number" min={0} value={card.daily ?? ''} onChange={(e) => setRateField(p.key, 'daily', Number(e.target.value))} className={RATE_INPUT_CLS} /></td>
+                        <td className="px-1.5 py-1.5"><input type="number" min={0} value={card.weekly ?? ''} onChange={(e) => setRateField(p.key, 'weekly', Number(e.target.value))} className={RATE_INPUT_CLS} /></td>
+                        <td className="px-1.5 py-1.5"><input type="number" min={0} value={card.monthly ?? ''} onChange={(e) => setRateField(p.key, 'monthly', Number(e.target.value))} className={RATE_INPUT_CLS} /></td>
+                        <td className="px-1.5 py-1.5"><input type="number" min={1} step="0.1" value={card.weekendMultiplier ?? ''} onChange={(e) => setRateField(p.key, 'weekendMultiplier', Number(e.target.value))} className={RATE_INPUT_CLS} /></td>
+                        <td className="px-1.5 py-1.5"><input type="number" min={1} step="0.1" value={card.peakMultiplier ?? ''} onChange={(e) => setRateField(p.key, 'peakMultiplier', Number(e.target.value))} className={RATE_INPUT_CLS} /></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {pricingError && <p className="text-[12px] text-error mt-2">{pricingError}</p>}
+            <div className="flex items-center gap-2 mt-2.5">
+              <Button size="sm" onClick={savePricing} loading={savingPricing}>Save Pricing</Button>
+              {pricingSaved && <span className="text-[12px] text-success">Saved</span>}
+            </div>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function PromotionsTab() {
+  const [requests, setRequests] = useState<PromotionRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [statusFilter, setStatusFilter] = useState('pending');
+  const [rejecting, setRejecting] = useState<PromotionRequest | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [conflictNote, setConflictNote] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<(PromotionAnalyticsData & { platformRevenueUSD: number }) | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    apiGetAdminPromotionAnalytics().then((res) => setAnalytics(res.data)).catch(() => {});
+  }, []);
+
+  function refetch() {
+    setLoading(true);
+    apiAdminListPromotionRequests(statusFilter || undefined)
+      .then((res) => setRequests(res.data ?? []))
+      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load promotion requests.'))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter]);
+
+  async function approve(r: PromotionRequest) {
+    setBusyId(r._id);
+    setConflictNote(null);
+    try {
+      const conflicts = await apiAdminCheckPromotionConflicts(r.placement, r.startAt, r.endAt, r._id);
+      if (conflicts.data.isOversubscribed) {
+        setConflictNote(`Heads up: ${conflicts.data.overlappingCount} other request(s) already overlap this window for ${PLACEMENT_LABEL[r.placement]} (visible slots: ${conflicts.data.visibleLimit}). Approving will oversubscribe the placement.`);
+      }
+      await apiAdminApprovePromotionRequest(r._id);
+      refetch();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to approve request.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  const columns: TableColumn<PromotionRequest>[] = [
+    { key: 'creative', header: '', render: (r) => <img src={r.creativeUrl} alt="" className="w-16 h-9 object-cover rounded-md bg-cream" /> },
+    { key: 'placement', header: 'Placement', render: (r) => <span className="text-[13px] font-medium text-charcoal">{PLACEMENT_LABEL[r.placement]}</span> },
+    { key: 'window', header: 'Window', render: (r) => <span className="text-[12px] text-graphite whitespace-nowrap">{formatDate(r.startAt)} – {formatDate(r.endAt)}</span> },
+    { key: 'price', header: 'Price', render: (r) => <span className="text-[13px] font-semibold text-charcoal">{formatCurrency(r.priceUSD)}</span> },
+    { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
+    {
+      key: 'actions', header: 'Actions', align: 'center',
+      render: (r) => r.status === 'pending' ? (
+        <div className="flex items-center gap-1.5 justify-center">
+          <button onClick={() => approve(r)} disabled={busyId === r._id}
+            className="px-2.5 py-1 rounded-md text-[11px] font-semibold text-white bg-success border-0 cursor-pointer disabled:opacity-50 flex items-center gap-1">
+            <Check size={12} /> Approve
+          </button>
+          <button onClick={() => setRejecting(r)} disabled={busyId === r._id}
+            className="px-2.5 py-1 rounded-md text-[11px] font-semibold text-error bg-error-bg border-0 cursor-pointer disabled:opacity-50 flex items-center gap-1">
+            <X size={12} /> Reject
+          </button>
+        </div>
+      ) : <span className="text-[11px] text-slate text-center block">—</span>,
+    },
+  ];
+
+  return (
+    <div className="flex flex-col gap-4 pt-4">
+      {analytics && (
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
+          {[
+            ['Impressions', analytics.impressions.toLocaleString()],
+            ['Clicks', analytics.clicks.toLocaleString()],
+            ['CTR', `${analytics.ctr.toFixed(1)}%`],
+            ['Orders', analytics.orders.toLocaleString()],
+            ['Buyer Revenue', formatCurrency(analytics.revenueUSD)],
+            ['Ad Revenue', formatCurrency(analytics.platformRevenueUSD)],
+          ].map(([label, value]) => (
+            <div key={label} className="bg-white border border-bone rounded-[10px] px-3.5 py-3">
+              <p className="text-[10px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{label}</p>
+              <p className="text-[18px] font-bold text-carbon leading-[1.15]">{value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-auto">
+          <option value="pending">Pending Review</option>
+          <option value="approved">Approved</option>
+          <option value="active">Live</option>
+          <option value="rejected">Rejected</option>
+          <option value="expired">Ended</option>
+          <option value="">All</option>
+        </Select>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" icon={<CalendarIcon size={13} />} onClick={() => setShowCalendar(true)}>View Calendar</Button>
+          <Button variant="outline" size="sm" icon={<Settings size={13} />} onClick={() => setShowSettings(true)}>Pricing & Limits</Button>
+        </div>
+      </div>
+
+      {conflictNote && <div className="bg-[#FDF3E7] border border-[#F5D9A8] rounded-lg px-4 py-2.5 text-[12.5px] text-[#9A6A17]">{conflictNote}</div>}
+
+      <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
+        {error ? (
+          <div className="p-5"><AnalyticsErrorState message={error} onRetry={refetch} /></div>
+        ) : (
+          <Table
+            columns={columns}
+            data={requests}
+            keyExtractor={(r) => r._id}
+            loading={loading}
+            emptyState={{ icon: <Rocket size={28} className="text-slate/50" />, title: 'No promotion requests', description: 'Seller-submitted requests for paid placements will show up here.' }}
+          />
+        )}
+      </div>
+
+      {rejecting && (
+        <RejectPromotionModal
+          request={rejecting}
+          onClose={() => setRejecting(null)}
+          onRejected={() => { setRejecting(null); refetch(); }}
+        />
+      )}
+
+      {showCalendar && <PromotionCalendarModal onClose={() => setShowCalendar(false)} />}
+      {showSettings && <PromotionSettingsModal onClose={() => setShowSettings(false)} />}
+    </div>
+  );
+}
+
 // ═══════════════════════════════ Page ════════════════════════════════════════
 
 export function AdminMarketing() {
@@ -462,7 +919,7 @@ export function AdminMarketing() {
 
       <TabBar tabs={TABS} active={tab} onChange={setTab} />
 
-      {tab === 'campaigns' ? <CampaignsTab /> : <CouponsTab />}
+      {tab === 'campaigns' ? <CampaignsTab /> : tab === 'coupons' ? <CouponsTab /> : <PromotionsTab />}
     </div>
   );
 }

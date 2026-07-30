@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { ArrowRight } from 'lucide-react';
 import { apiGetPublicActiveCampaigns, type PublicCampaign } from '@/api/services/marketing/publicCampaigns';
+import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 
 // Exported so other one-off campaign banners (e.g. SellerStorefront's single-
 // campaign strip) can share the exact same countdown behavior/markup instead
@@ -143,7 +144,15 @@ export function DealsBanner({ className, storeType }: { className?: string; stor
           <span className="relative mx-auto h-16 w-full max-w-[220px] shrink-0 sm:mx-0 sm:h-16 sm:w-[150px] lg:w-[160px]">
             <span className="pointer-events-none absolute -inset-1.5 rounded-2xl bg-[#FFB88C]/35 blur-md" />
             <span className="relative block h-full w-full overflow-hidden rounded-xl border border-white/25">
-              <img src={campaign.bannerImage} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+              <img
+                src={cloudinaryUrl(campaign.bannerImage, 320)}
+                srcSet={cloudinarySrcSet(campaign.bannerImage, [160, 320, 480])}
+                sizes="(min-width: 1024px) 160px, (min-width: 640px) 150px, 220px"
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
             </span>
           </span>

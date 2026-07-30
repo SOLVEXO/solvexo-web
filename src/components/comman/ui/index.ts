@@ -60,7 +60,7 @@ export type { ActionMenuItem }               from './ActionMenu';
 export type { TablePagination }              from './Table';
 export type { TableSort }                    from './Table';
 
-export { ImageUpload, FileUpload }           from './Upload';
+export { ImageUpload, FileUpload, FileDropSelect } from './Upload';
 export type { PrivateUploadData }            from './Upload';
 
 export { DateTimePickerModal }               from './DateTimePickerModal';
@@ -74,6 +74,7 @@ export { StarRating }                        from './StarRating';
 export { ComingSoonBanner }                  from './ComingSoonBanner';
 
 export { AnnouncementBanner }                 from './AnnouncementBanner';
+export { StoreAnnouncementBar }               from './StoreAnnouncementBar';
 
 export { DealsBanner, useCountdown, CountdownUnit } from './DealsBanner';
 

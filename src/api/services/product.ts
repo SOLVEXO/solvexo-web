@@ -1,5 +1,6 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
+import type { PublicStoreProduct } from './store';
 
 // ── Education taxonomy ──────────────────────────────────────────────────────────
 
@@ -331,5 +332,27 @@ export function apiGetCustomLevelSuggestions(q: string) {
   return client.get<never, ApiResponse<string[]>>(
     `${ENDPOINTS.PRODUCT.EDUCATION_CUSTOM_LEVEL_SUGGESTIONS}?q=${encodeURIComponent(q)}`,
   );
+}
+
+// ── Storefront promotion sections (public) ─────────────────────────────────────
+interface StorefrontProductsData { products: PublicStoreProduct[] }
+
+/** Seller-pinned products ("Manual Pin"/"Seller Featured"), in the seller's chosen order. */
+export function apiGetPinnedProducts(storeId: string) {
+  return client.get<never, ApiResponse<StorefrontProductsData>>(ENDPOINTS.PRODUCT.STORE_PINNED(storeId));
+}
+
+export function apiGetNewArrivals(storeId: string, limit = 12) {
+  return client.get<never, ApiResponse<StorefrontProductsData>>(ENDPOINTS.PRODUCT.STORE_NEW_ARRIVALS(storeId), { params: { limit } });
+}
+
+/** All-time unit-sales leaderboard for the store. */
+export function apiGetBestSellers(storeId: string, limit = 12) {
+  return client.get<never, ApiResponse<StorefrontProductsData>>(ENDPOINTS.PRODUCT.STORE_BEST_SELLERS(storeId), { params: { limit } });
+}
+
+/** Same leaderboard narrowed to the last 7 days. */
+export function apiGetTrendingProducts(storeId: string, limit = 12) {
+  return client.get<never, ApiResponse<StorefrontProductsData>>(ENDPOINTS.PRODUCT.STORE_TRENDING(storeId), { params: { limit } });
 }
 

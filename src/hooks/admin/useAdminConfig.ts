@@ -6,9 +6,13 @@ import {
   apiUpdateAiConfig,
   apiUpdateEmailConfig,
   apiUpdateMaintenanceMode,
+  apiUpdatePlacementLimits,
+  apiUpdatePromotionPricing,
   type FeatureFlags,
   type AiConfig,
   type EmailConfig,
+  type PlacementLimits,
+  type PromotionPricing,
 } from '@/api/services/config/adminConfig';
 
 export function useAdminConfig() {
@@ -69,6 +73,48 @@ export function useUpdateEmailConfig() {
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update email config.');
+      return false;
+    } finally {
+      setSubmitting(false);
+    }
+  }, []);
+
+  return { update, submitting, error };
+}
+
+export function useUpdatePlacementLimits() {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const update = useCallback(async (payload: Partial<PlacementLimits>) => {
+    setSubmitting(true);
+    setError('');
+    try {
+      await apiUpdatePlacementLimits(payload);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update placement limits.');
+      return false;
+    } finally {
+      setSubmitting(false);
+    }
+  }, []);
+
+  return { update, submitting, error };
+}
+
+export function useUpdatePromotionPricing() {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const update = useCallback(async (payload: PromotionPricing) => {
+    setSubmitting(true);
+    setError('');
+    try {
+      await apiUpdatePromotionPricing(payload);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update promotion pricing.');
       return false;
     } finally {
       setSubmitting(false);

@@ -1,5 +1,6 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
+import { getCheckoutAttributionFields } from '@/utils/promotionAttribution';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -139,7 +140,10 @@ interface DeleteCheckoutResponse {
 // ── API ───────────────────────────────────────────────────────────────────────
 
 export function apiCreateCheckout(payload: CreateCheckoutPayload) {
-  return client.post<never, CreateCheckoutResponse>(ENDPOINTS.CHECKOUT.CREATE, payload);
+  // Forwards a click-attribution token (if the buyer arrived via a promoted
+  // banner within the last 48h) so promotion analytics can attribute the
+  // resulting order — every checkout-creation call site benefits automatically.
+  return client.post<never, CreateCheckoutResponse>(ENDPOINTS.CHECKOUT.CREATE, { ...payload, ...getCheckoutAttributionFields() });
 }
 
 export function apiAddShippingToCheckout(payload: AddShippingPayload) {

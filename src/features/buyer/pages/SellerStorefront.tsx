@@ -1,13 +1,19 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
-import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget, DealsBanner, CoverImage } from '@/components/comman/ui';
+import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget, DealsBanner, CoverImage, StoreAnnouncementBar } from '@/components/comman/ui';
+import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
+import { ProductImage, StarRating as SharedStarRating } from '@/components/comman/marketplace/ProductCard';
+import { useStoreBanners } from '@/hooks/useStoreBanners';
+import { useStorefrontProductSection } from '@/hooks/useStorefrontProductSections';
+import { useCartContext } from '@/contexts/CartContext';
+import { useWishlistContext } from '@/contexts/WishlistContext';
 import {
-  ShoppingCart, Star, Heart, ArrowLeft, Users,
-  Store, Package, Loader2, MessageCircle, BadgeCheck, Award, Gift, RefreshCw, Check, Zap,
+  Star, ArrowLeft, Users, ShoppingCart, Heart, Zap, ChevronDown,
+  Store, Package, Loader2, MessageCircle, BadgeCheck, Award, Gift, RefreshCw, Check,
 } from 'lucide-react';
 import {
   apiGetPublicStore, apiGetPublicStoreProducts,
@@ -94,10 +100,10 @@ const SORT_OPTIONS = [
   { value: 'best_rated', label: 'Best Rated'      },
 ];
 
-// Mirrors ProductCard.tsx's ProductImage — falls back to the Package icon on
-// a broken/invalid URL too, not just a missing one (a plain <img> with no
-// onError just renders empty here, since there's no browser broken-image
-// icon over this bg-[#EAF4EE] fill).
+// Main-grid product tile is governed by the Store Builder (layout/columns/
+// show-ratings-price-cart toggles are seller-configurable there), so it keeps
+// its own original wide-image look instead of Marketplace's fixed square
+// card — only the wishlist/cart handlers below are wired to real context state.
 function StoreProductImage({ src, alt }: { src: string; alt: string }) {
   const [errored, setErrored] = useState(false);
   if (errored) return <Package size={28} className="text-[#5A8A6A]" />;
@@ -110,7 +116,7 @@ function StoreProductImage({ src, alt }: { src: string; alt: string }) {
   );
 }
 
-function StarRating({ rating, color }: { rating: number; color: string }) {
+function StoreStarRating({ rating, color }: { rating: number; color: string }) {
   return (
     <div className="flex items-center gap-[3px]">
       {[1, 2, 3, 4, 5].map(i => (
@@ -140,9 +146,10 @@ export function SellerStorefront() {
   const [followStatusLoaded, setFollowStatusLoaded] = useState(false);
   const [msgLoading,         setMsgLoading]        = useState(false);
   const [msgError,           setMsgError]          = useState('');
-  const [wishlisted,     setWishlisted]    = useState<Set<string>>(new Set());
   const [tags,           setTags]          = useState<string[]>([]);
   const [activeTag,      setActiveTag]     = useState<string>('all');
+  const [openSection,    setOpenSection]   = useState<string | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loyalty,        setLoyalty]       = useState<LoyaltyBalance | null>(null);
   const [showRewards,    setShowRewards]   = useState(false);
   const [rewards,        setRewards]       = useState<Reward[]>([]);
@@ -156,6 +163,9 @@ export function SellerStorefront() {
 
   const isLoggedIn = TokenStorage.isLoggedIn();
 
+  const { addToCart, adding } = useCartContext();
+  const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
+
   // Resolve config (real or default)
   const cfg = useMemo(() => getCfg(store?.builderConfig ?? null), [store?.builderConfig]);
 
@@ -168,6 +178,12 @@ export function SellerStorefront() {
     '--store-font':     cfg.font,
     fontFamily:         `${cfg.font}, sans-serif`,
   } as React.CSSProperties), [cfg]);
+
+  const { banners: storeBanners } = useStoreBanners(store?.storeId);
+  const { products: pinnedProducts } = useStorefrontProductSection(store?.storeId, 'pinned');
+  const { products: bestSellers } = useStorefrontProductSection(store?.storeId, 'bestSellers');
+  const { products: newArrivals } = useStorefrontProductSection(store?.storeId, 'newArrivals');
+  const { products: trendingProducts } = useStorefrontProductSection(store?.storeId, 'trending');
 
   // Product grid columns class
   const colClass = useMemo(() => {
@@ -330,15 +346,6 @@ export function SellerStorefront() {
     }
   };
 
-  const toggleWishlist = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    setWishlisted(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
   // ── Loading / Error states ──────────────────────────────────────────────────
   if (loadingStore) {
     return (
@@ -392,6 +399,16 @@ export function SellerStorefront() {
 
       <DealsBanner />
 
+      {store.announcementBar?.message && (
+        <StoreAnnouncementBar
+          storeId={store.storeId}
+          message={store.announcementBar.message}
+          type={store.announcementBar.type}
+          ctaLabel={store.announcementBar.ctaLabel}
+          ctaLink={store.announcementBar.ctaLink}
+        />
+      )}
+
       <div className="px-4 sm:px-6 lg:px-10 pt-3 bg-white border-b border-bone">
         <Breadcrumb items={[
           { label: 'Home', path: '/' },
@@ -400,14 +417,18 @@ export function SellerStorefront() {
         ]} />
       </div>
 
-      {/* ── Store Banner ─────────────────────────────────────────────────────── */}
+      {/* ── Store Banner ─ same full-bleed hero height as the Marketplace hero ── */}
       <CoverImage
+        className="min-h-[300px] sm:min-h-[360px] lg:min-h-[420px] flex items-end"
         src={store.coverImage}
         loading="eager"
         overlay
         overlayClassName="bg-black/40"
         fallbackClassName=""
         fallbackStyle={{ background: `linear-gradient(135deg, ${cfg.primaryColor}CC, ${cfg.accentColor}CC)` }}
+        backgroundOverride={storeBanners.length > 0
+          ? <BannerCarousel entityType="store_banner" banners={storeBanners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.imageUrl, linkUrl: b.linkTarget, mobileImageUrl: b.mobileImageUrl }))} />
+          : undefined}
       >
         <div className="px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
@@ -497,32 +518,128 @@ export function SellerStorefront() {
         </div>
       </CoverImage>
 
-      {/* ── Category filter tabs ─────────────────────────────────────────────── */}
-      {tags.length > 0 && (
-        <div className="border-b border-bone bg-white">
-          <div className="px-4 sm:px-6 lg:px-10">
-            <div className="flex items-center gap-0 overflow-x-auto scrollbar-none">
-              {['all', ...tags].map(tag => {
-                const label = tag === 'all' ? 'All Products' : tag;
-                const active = activeTag === tag;
-                return (
-                  <button
-                    key={tag}
-                    onClick={() => { setActiveTag(tag); setPage(1); }}
-                    className="shrink-0 px-4 py-[13px] text-[13px] font-medium cursor-pointer bg-transparent border-none relative whitespace-nowrap transition-colors"
-                    style={{
-                      color: active ? cfg.primaryColor : '#8C8A82',
-                      borderBottom: active ? `2px solid ${cfg.primaryColor}` : '2px solid transparent',
-                    }}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+      {/* ── Category + Featured bar — one line: tags on the left styled like
+          Marketplace's "All Categories" trigger, Featured/Best Sellers/
+          Trending/New Arrivals as dropdown triggers at the right corner,
+          sharing one hover-open panel underneath (same pattern as
+          MegaMenuBar) instead of always-visible image strips. ── */}
+      {(tags.length > 0 || pinnedProducts.length > 0 || bestSellers.length > 0 || newArrivals.length > 0 || trendingProducts.length > 0) && (() => {
+        const sections = [
+          { key: 'pinned',    label: 'Featured',     products: pinnedProducts    },
+          { key: 'bestSellers', label: 'Best Sellers', products: bestSellers    },
+          { key: 'trending',  label: 'Trending Now',  products: trendingProducts },
+          { key: 'newArrivals', label: 'New Arrivals', products: newArrivals    },
+        ].filter(s => s.products.length > 0);
+        const activeSection = sections.find(s => s.key === openSection);
+
+        const clearCloseTimer = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } };
+        const scheduleClose = () => { clearCloseTimer(); closeTimer.current = setTimeout(() => setOpenSection(null), 150); };
+        const openMenu = (key: string) => { clearCloseTimer(); setOpenSection(key); };
+
+        return (
+          <div className="relative bg-white border-b border-bone" onMouseLeave={scheduleClose}>
+            <div className="px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
+              {tags.length > 0 && (
+                <div className="flex items-center gap-5 overflow-x-auto scrollbar-none">
+                  {['all', ...tags].map(tag => {
+                    const label  = tag === 'all' ? 'All Products' : tag;
+                    const active = activeTag === tag;
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => { setActiveTag(tag); setPage(1); }}
+                        className="group relative shrink-0 py-[13px] text-[13px] font-semibold bg-transparent border-none cursor-pointer whitespace-nowrap transition-colors duration-150"
+                        style={{ color: active ? cfg.primaryColor : undefined }}
+                      >
+                        <span className={clsx(!active && 'text-charcoal group-hover:opacity-80')}>{label}</span>
+                        <span
+                          className="absolute left-0 right-0 -bottom-[1px] h-[2px] rounded-full origin-left transition-transform duration-200"
+                          style={{
+                            background: cfg.primaryColor,
+                            transform: active ? 'scaleX(1)' : 'scaleX(0)',
+                          }}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {sections.length > 0 && (
+                <div className="hidden sm:flex items-center gap-5 shrink-0 whitespace-nowrap">
+                  {sections.map(section => (
+                    <button
+                      key={section.key}
+                      aria-haspopup="true"
+                      aria-expanded={openSection === section.key}
+                      onMouseEnter={() => openMenu(section.key)}
+                      onClick={() => setOpenSection(s => s === section.key ? null : section.key)}
+                      className="group relative flex items-center gap-[5px] py-[13px] text-[12.5px] font-semibold bg-transparent border-none cursor-pointer transition-colors duration-150"
+                      style={{ color: openSection === section.key ? cfg.primaryColor : '#8C8A82' }}
+                    >
+                      {section.label}
+                      <ChevronDown size={12} className={clsx('transition-transform duration-200', openSection === section.key && 'rotate-180')} />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Shared dropdown panel */}
+            <div
+              onMouseEnter={clearCloseTimer}
+              className={clsx(
+                'absolute left-0 right-0 top-full z-30 bg-white border-b border-bone shadow-lg transition-all duration-200 origin-top',
+                activeSection ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none',
+              )}
+            >
+              {activeSection && (
+                <div className="px-4 sm:px-6 lg:px-10 py-5">
+                  <div className="flex gap-3 overflow-x-auto scrollbar-none pb-1">
+                    {activeSection.products.map(p => {
+                      const pType     = p.productType ?? p.type ?? 'physical';
+                      const isDigital = pType !== 'physical';
+                      const typeLabel = pType === 'physical' ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
+                      return (
+                        <button
+                          key={p._id}
+                          onClick={() => navigate(`/marketplace/${p._id}`)}
+                          className="group shrink-0 w-[140px] text-left bg-white border border-bone rounded-xl overflow-hidden cursor-pointer transition-colors duration-200 hover:border-carbon/25"
+                        >
+                          <div className="relative p-2">
+                            <div className="relative overflow-hidden aspect-square rounded-lg bg-bone">
+                              <ProductImage
+                                images={p.images ?? []}
+                                name={p.name}
+                                className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]"
+                              />
+                            </div>
+                            <span className={clsx(
+                              'absolute top-3 left-3 px-[6px] py-[1px] rounded-[4px] text-[9px] font-semibold border',
+                              isDigital
+                                ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
+                                : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
+                            )}>
+                              {typeLabel}
+                            </span>
+                          </div>
+                          <div className="px-[10px] pb-[10px]">
+                            <p className="text-[12px] font-semibold text-carbon mb-[3px] line-clamp-2 leading-[1.3]">{p.name}</p>
+                            <SharedStarRating rating={p.averageRating ?? 0} />
+                            {p.defaultVariantPrice != null && (
+                              <p className="text-[14px] font-bold text-carbon mt-[6px]">${p.defaultVariantPrice.toLocaleString()}</p>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Products ─────────────────────────────────────────────────────────── */}
       <div className="px-4 sm:px-6 lg:px-10 py-4 sm:py-5 lg:py-6">
@@ -551,9 +668,10 @@ export function SellerStorefront() {
           <>
             <div className={clsx('grid gap-[10px] sm:gap-3 lg:gap-[14px]', colClass)}>
               {products.map((p: PublicStoreProduct) => {
-                const pType = p.productType ?? p.type ?? 'physical';
+                const pType      = p.productType ?? p.type ?? 'physical';
                 const isPhysical = pType === 'physical';
-                const typeLabel = isPhysical ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
+                const typeLabel  = isPhysical ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
+                const vId        = p.variantId ?? p._id;
                 return (
                 <Card key={p._id} padding="none" hover onClick={() => navigate(`/marketplace/${p._id}`)} className="overflow-hidden bg-white">
                   {/* Image */}
@@ -563,10 +681,12 @@ export function SellerStorefront() {
                       : <Package size={28} className="text-[#5A8A6A]" />
                     }
                     <button
-                      onClick={e => toggleWishlist(e, p._id)}
+                      onClick={e => { e.stopPropagation(); toggleWishlist(p._id, vId); }}
+                      disabled={wishlisting === vId}
+                      aria-label={isWishlisted(p._id, vId) ? 'Remove from wishlist' : 'Save to wishlist'}
                       className="absolute bottom-[6px] right-[6px] w-6 h-6 rounded-full bg-[rgba(255,255,255,0.92)] flex items-center justify-center cursor-pointer border-none"
                     >
-                      <Heart size={11} className={clsx(wishlisted.has(p._id) ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')} />
+                      <Heart size={11} className={clsx(isWishlisted(p._id, vId) ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')} />
                     </button>
                     <div className="absolute top-[6px] left-[6px]">
                       <span className={clsx(
@@ -595,7 +715,7 @@ export function SellerStorefront() {
                     <p className="font-bold text-[11px] sm:text-[13px] mb-[3px] leading-[1.4] line-clamp-2" style={{ color: cfg.textColor }}>
                       {p.name}
                     </p>
-                    {cfg.showRatings && (p.averageRating ?? 0) > 0 && <StarRating rating={p.averageRating!} color={cfg.primaryColor} />}
+                    {cfg.showRatings && (p.averageRating ?? 0) > 0 && <StoreStarRating rating={p.averageRating!} color={cfg.primaryColor} />}
                     {cfg.showPrice && p.subscriberPrice != null && (
                       <p className="text-[9px] sm:text-[10px] font-semibold mt-1" style={{ color: cfg.primaryColor }}>
                         Members save {p.discountPercent}%
@@ -617,10 +737,11 @@ export function SellerStorefront() {
                       {cfg.showAddToCart && (
                         <Button
                           variant="secondary" size="sm" className="inline-flex"
-                          onClick={e => { e.stopPropagation(); navigate(`/marketplace/${p._id}`); }}
+                          disabled={adding === vId}
+                          onClick={e => { e.stopPropagation(); if (vId) addToCart(p._id, vId, isPhysical ? 'physical' : 'digital'); }}
                         >
-                          <ShoppingCart size={11} />
-                          <span className="hidden lg:inline">Add to Cart</span>
+                          {adding === vId ? <Loader2 size={11} className="animate-spin" /> : <ShoppingCart size={11} />}
+                          <span className="hidden lg:inline">{adding === vId ? 'Adding…' : 'Add to Cart'}</span>
                         </Button>
                       )}
                     </div>

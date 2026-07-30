@@ -44,6 +44,8 @@ export interface StoreData {
   isDelete:     boolean;
   registers:    unknown[];
   shifts:       unknown[];
+  pinnedProductIds: string[];
+  announcementBar: StoreAnnouncementBar;
   createdAt:    string;
   updatedAt:    string;
 }
@@ -89,6 +91,28 @@ export function apiSetCustomDomain(storeId: string, domain: string | null) {
 /** PATCH /api/store/:storeId/white-label */
 export function apiSetWhiteLabel(storeId: string, enabled: boolean) {
   return client.patch<never, ApiResponse<{ whiteLabelEnabled: boolean }>>(ENDPOINTS.STORE.WHITE_LABEL(storeId), { enabled });
+}
+
+export type StoreAnnouncementType = 'info' | 'sale' | 'coupon' | 'warning' | 'shipping' | 'holiday';
+
+export interface StoreAnnouncementBar {
+  message:  string | null;
+  type:     StoreAnnouncementType;
+  ctaLabel: string | null;
+  ctaLink:  string | null;
+  isActive: boolean;
+  startAt:  string | null;
+  endAt:    string | null;
+}
+
+/** PATCH /api/store/:storeId/pinned-products */
+export function apiUpdatePinnedProducts(storeId: string, productIds: string[]) {
+  return client.patch<never, ApiResponse<{ pinnedProductIds: string[] }>>(ENDPOINTS.STORE.PINNED_PRODUCTS(storeId), { productIds });
+}
+
+/** PATCH /api/store/:storeId/announcement */
+export function apiUpdateAnnouncementBar(storeId: string, payload: Partial<StoreAnnouncementBar>) {
+  return client.patch<never, ApiResponse<StoreAnnouncementBar>>(ENDPOINTS.STORE.ANNOUNCEMENT(storeId), payload);
 }
 
 /** GET /api/store/my-stores */
@@ -139,6 +163,7 @@ export interface PublicStoreData {
   badges:         string[];
   createdAt:      string;
   activeCampaign: ActiveCampaignBadge | null;
+  announcementBar: { message: string | null; type: StoreAnnouncementType; ctaLabel: string | null; ctaLink: string | null } | null;
 }
 
 export interface PublicStoreProductsParams {
@@ -159,6 +184,11 @@ export interface PublicStoreProduct {
   tags?:       string[];
   averageRating?: number;
   defaultVariantPrice: number | null;
+  // Cheapest active variant's own id/stock/compare-at — needed to drive a
+  // real Add-to-Cart/wishlist action via the shared ProductCard component.
+  variantId?:          string | null;
+  stock?:              number | null;
+  compareAtPrice?:     number | null;
   // Present only when the requester has an active, discount-granting
   // subscription to this store — resolved server-side only.
   subscriberPrice?:    number;

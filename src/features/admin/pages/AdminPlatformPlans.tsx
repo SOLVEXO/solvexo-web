@@ -24,6 +24,7 @@ const DEFAULT_LIMITS: PlatformPlanLimits = {
   advancedAnalyticsAllowed: false, abandonedCartRecoveryAllowed: false, emailCampaignsAllowed: false,
   apiWebhooksAllowed: false, dedicatedAccountManager: false, prioritySupport: false, marketplaceFeaturedBadge: false,
   advancedSeoToolsAllowed: false, seoAiSuggestionsAllowed: false, searchConsoleIntegrationAllowed: false, customRedirectsAllowed: false,
+  maxActiveStoreBanners: 4, maxActivePromotions: 1,
 };
 
 type BooleanKeys<T> = { [K in keyof T]-?: NonNullable<T[K]> extends boolean ? K : never }[keyof T];
@@ -128,6 +129,8 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
             <Input label="AI credits/mo" type="number" value={limits.aiCreditsPerMonth ?? ''} onChange={e => setLimit('aiCreditsPerMonth', Number(e.target.value))} />
             <Input label="Txn fee (0-1)" type="number" step="0.01" min={0} max={1} value={limits.transactionFeeRate ?? ''} onChange={e => setLimit('transactionFeeRate', Number(e.target.value))} />
             <Input label="SLA uptime %" type="number" value={limits.slaUptimePercent ?? ''} onChange={e => setLimit('slaUptimePercent', Number(e.target.value))} />
+            <Input label="Max store banners (-1=∞)" type="number" value={limits.maxActiveStoreBanners ?? ''} onChange={e => setLimit('maxActiveStoreBanners', Number(e.target.value))} />
+            <Input label="Max active promotions (-1=∞)" type="number" value={limits.maxActivePromotions ?? ''} onChange={e => setLimit('maxActivePromotions', Number(e.target.value))} />
           </div>
           <div className="flex flex-wrap gap-2">
             {BOOL_FLAGS.map(f => {

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, type ReactNode, type CSSPrope
 import { useParams } from 'react-router-dom';
 import {
   Palette, LayoutGrid, PanelTop, Package, PanelBottom, Globe,
-  Monitor, Smartphone, Lock, Plus, Trash2, RotateCcw, Check, Loader2,
+  Monitor, Smartphone, Tablet, Lock, Plus, Trash2, RotateCcw, Check, Loader2,
   ShoppingCart, Star,
   type LucideIcon,
 } from 'lucide-react';
@@ -16,7 +16,7 @@ import { apiSaveBuilderConfig, apiGetBuilderConfig, apiGetMyStores, type MyStore
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type Section     = 'theme' | 'layout' | 'header' | 'products' | 'footer' | 'seo';
-type Device      = 'desktop' | 'mobile';
+type Device      = 'desktop' | 'tablet' | 'mobile';
 type LayoutStyle = 'Grid' | 'Magazine' | 'Minimal';
 type HeaderStyle = 'dark' | 'light' | 'transparent';
 type SortOrder   = 'default' | 'newest' | 'price_asc' | 'price_desc';
@@ -449,6 +449,8 @@ function StorePreview({ cfg, device }: { cfg: Config; device: Device }) {
 
   const wrapStyle: CSSProperties = device === 'mobile'
     ? { maxWidth: 375, margin: '0 auto', fontSize: '0.88em' }
+    : device === 'tablet'
+    ? { maxWidth: 768, margin: '0 auto', fontSize: '0.94em' }
     : {};
 
   return (
@@ -468,7 +470,7 @@ function StorePreview({ cfg, device }: { cfg: Config; device: Device }) {
                 {cfg.storeName}
               </span>
             </div>
-            {device === 'desktop' && cfg.navLinks.length > 0 && (
+            {device !== 'mobile' && cfg.navLinks.length > 0 && (
               <nav className="flex items-center gap-4">
                 {cfg.navLinks.map(link => (
                   <span key={link.id} className="text-[11px] cursor-pointer" style={{ color: hdrMuted }}>
@@ -512,16 +514,23 @@ function StorePreview({ cfg, device }: { cfg: Config; device: Device }) {
           </button>
         </section>
 
-        {/* Magazine hero slot */}
+        {/* Magazine hero slot — previews the seller's actual Pinned Products
+           (Marketing → Featured & Collections), not decorative placeholder text.
+           Uses the same sample data as the grid below since this is a
+           theme/layout preview, not a live-bound view. */}
         {cfg.layoutStyle === 'Magazine' && (
           <section className="p-5">
-            <div
-              className="rounded-xl overflow-hidden flex items-center justify-center"
-              style={{ height: 100, background: cfg.primaryColor + '22' }}
-            >
-              <p className="text-[12px] font-semibold" style={{ color: cfg.primaryColor }}>
-                ★ Featured Highlight
-              </p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.06em] mb-2" style={{ color: cfg.primaryColor }}>
+              ★ Featured Products
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {SAMPLE_PRODUCTS.slice(0, 3).map(p => (
+                <div key={p.name} className="rounded-lg overflow-hidden" style={{ height: 72, background: p.bg }}>
+                  <div className="w-full h-full flex items-end p-1.5">
+                    <span className="text-[9px] font-semibold truncate" style={{ color: p.fg }}>{p.name}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
         )}
@@ -875,16 +884,18 @@ export function StoreBuilder() {
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              {(['desktop', 'mobile'] as Device[]).map(d => (
+              {(['desktop', 'tablet', 'mobile'] as Device[]).map(d => (
                 <button
                   key={d}
                   onClick={() => setDevice(d)}
-                  title={d === 'desktop' ? 'Desktop view' : 'Mobile view'}
+                  title={d === 'desktop' ? 'Desktop view' : d === 'tablet' ? 'Tablet view' : 'Mobile view'}
                   className="w-7 h-7 rounded-[6px] flex items-center justify-center border-0 cursor-pointer transition-colors"
                   style={{ background: device === d ? '#FBECE4' : '#E8E6DC' }}
                 >
                   {d === 'desktop'
                     ? <Monitor    size={13} style={{ color: device === d ? '#B95A3A' : '#8C8A82' }} />
+                    : d === 'tablet'
+                    ? <Tablet     size={13} style={{ color: device === d ? '#B95A3A' : '#8C8A82' }} />
                     : <Smartphone size={13} style={{ color: device === d ? '#B95A3A' : '#8C8A82' }} />
                   }
                 </button>

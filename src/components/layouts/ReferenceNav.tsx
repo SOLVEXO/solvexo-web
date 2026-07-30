@@ -23,7 +23,7 @@ const PUBLIC_PAGES: NavPage[] = [
   // { label: 'Storefront',     path: '/store/teacherspro',  Icon: Store        },
   { label: 'Pricing',        path: '/pricing',            Icon: DollarSign   },
   { label: 'For Sellers',    path: '/sellers',            Icon: Users        },
-  { label: 'Edu Listing',    path: '/EducationMarketplace',          Icon: BookOpen, prefetch: () => { void import('@/features/buyer/pages/EducationMarketplace'); } },
+  { label: 'Education',    path: '/EducationMarketplace',          Icon: BookOpen, prefetch: () => { void import('@/features/buyer/pages/EducationMarketplace'); } },
 ];
 
 const LEGAL_PAGES: NavPage[] = [

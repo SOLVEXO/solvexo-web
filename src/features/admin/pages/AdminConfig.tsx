@@ -22,6 +22,7 @@ const FLAG_META: { key: keyof FeatureFlags; label: string; desc: string }[] = [
   { key: 'posMode',            label: 'POS Mode',             desc: 'Enable point-of-sale register for sellers' },
   { key: 'storeBuilder',       label: 'Store Builder',        desc: 'Let sellers customize their storefront' },
   { key: 'bulkProductImport',  label: 'Bulk Product Import',  desc: 'Allow CSV import for product listings' },
+  { key: 'promotions',         label: 'Promotions',           desc: 'Store banners, promotion requests, and paid placements' },
 ];
 
 const AI_MODELS = ['claude-sonnet-5', 'claude-haiku-4-5', 'claude-opus-4-8'];

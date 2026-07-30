@@ -16,7 +16,7 @@ import { FilterAccordionSection, FilterChipPill, FilterRadioRow, FilterCheckboxR
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { MegaMenuBar, RailCard, MegaSectionLabel } from '@/components/comman/marketplace/MegaMenuBar';
 import { BuyerNavbar, AppDownloadBanner, Footer, FilterDropdown, Modal, DealsBanner, TrustServiceStrip } from '@/components/comman/ui';
-import { ArrowRight, Sparkles, SlidersHorizontal, Loader2, RefreshCcw } from 'lucide-react';
+import { ArrowRight, Sparkles, SlidersHorizontal, Loader2, RefreshCcw, GraduationCap, ShieldCheck, BadgeCheck } from 'lucide-react';
 
 const SUBJECTS = ['Math', 'ELA', 'Science', 'Social Studies', 'Art', 'SEL'];
 const RATING_ITEMS: { label: string; stars: number }[] = [
@@ -288,7 +288,7 @@ export function EducationMarketplace() {
   const [mobileFilters,   setMobileFilters]   = useState(false);
 
   const { levels, otherLevels, loading: facetsLoading } = useEducationFacets();
-  const { banners } = useBanners();
+  const { banners } = useBanners('educationHero');
   const countdown = useCountdownToMidnight();
   const [topStores, setTopStores] = useState<PublicStoreListItem[]>([]);
 
@@ -414,14 +414,48 @@ export function EducationMarketplace() {
 
       <DealsBanner storeType="educational_resources" />
 
-      {/* ── Admin-managed promo banners — same platform-wide Banner list shown on
-          Homepage/Marketplace; there's no per-page scoping, so whatever admin
-          uploads there shows here too. Hidden entirely when none are active. ── */}
-      {banners.length > 0 && (
-        <div className="relative overflow-hidden h-[300px] sm:h-[360px] lg:h-[420px] border-b border-[#F5D5C2]">
-          <BannerCarousel banners={banners} />
+      {/* ── Hero — same admin-managed Banner list shown on Marketplace (scoped to
+          the `educationHero` placement), with the same always-rendered
+          fallback Marketplace's hero has, instead of collapsing to zero
+          height when no `educationHero` banner is currently active. ── */}
+      <div className="relative overflow-hidden h-[300px] sm:h-[360px] lg:h-[420px] border-b border-[#F5D5C2]">
+
+        {banners.length > 0 ? (
+          <BannerCarousel entityType="banner" banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))} />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#FBECE4] via-[#FDF1E9] to-[#FFF5EE]">
+            <div className="absolute -top-16 -right-16 size-64 rounded-full bg-brand-orange/[0.08] blur-3xl pointer-events-none" />
+            <GraduationCap size={220} className="absolute -bottom-10 -right-10 text-brand-orange/[0.08] hidden sm:block" />
+          </div>
+        )}
+
+        <div className={`absolute inset-0 pointer-events-none ${banners.length > 0 ? 'bg-gradient-to-r from-black/65 via-black/30 to-transparent' : ''}`} />
+
+        <div className="relative z-[1] h-full flex items-center px-4 sm:px-6 lg:px-10">
+          <div className="min-w-0 max-w-[520px]">
+            <span className={`inline-block text-[10px] font-bold uppercase tracking-[0.12em] rounded-full px-3 py-1 mb-3 border ${
+              banners.length > 0 ? 'text-white bg-white/15 border-white/25 backdrop-blur-sm' : 'text-brand-deep-orange bg-white/60 border-brand-orange/20'
+            }`}>
+              Curriculum, courses & worksheets
+            </span>
+            <h1 className={`font-serif text-[26px] sm:text-[32px] lg:text-[40px] font-bold mb-3 leading-[1.12] tracking-tight ${banners.length > 0 ? 'text-white' : 'text-carbon'}`}>
+              Learning Resources<br className="hidden sm:block" /> Made by Educators
+            </h1>
+            <p className={`text-[12px] sm:text-[13px] mb-5 leading-[1.6] ${banners.length > 0 ? 'text-white/85' : 'text-slate'}`}>
+              Lesson plans, courses, and worksheets from verified educators — ready to teach or take.
+            </p>
+            <Button variant="primary" size="md" onClick={() => document.getElementById('education-grid')?.scrollIntoView({ behavior: 'smooth' })}>
+              Browse Resources <span className="ml-1">→</span>
+            </Button>
+
+            <div className={`flex flex-wrap items-center gap-x-4 gap-y-2 mt-5 text-[11px] font-medium ${banners.length > 0 ? 'text-white/80' : 'text-charcoal/70'}`}>
+              <span className="flex items-center gap-[5px]"><ShieldCheck size={13} className="text-brand-orange" /> Secure Checkout</span>
+              <span className="flex items-center gap-[5px]"><BadgeCheck size={13} className="text-brand-orange" /> Verified Educators</span>
+              <span className="flex items-center gap-[5px]"><RefreshCcw size={13} className="text-brand-orange" /> Easy Returns</span>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
       {/* ── Trust & Service strip ────────────────────────────────────────────── */}
       <TrustServiceStrip />
@@ -542,7 +576,7 @@ export function EducationMarketplace() {
               </div>
             )}
 
-            <div className="theme-education grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px]">
+            <div id="education-grid" className="theme-education grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px] scroll-mt-[76px]">
               {loading
                 ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
                 : filtered.map(p => {

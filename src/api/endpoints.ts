@@ -27,6 +27,8 @@ export const ENDPOINTS = {
     UPDATE_AI:            '/api/admin/platform-config/ai',
     UPDATE_EMAIL:         '/api/admin/platform-config/email',
     UPDATE_MAINTENANCE:   '/api/admin/platform-config/maintenance',
+    UPDATE_PLACEMENT_LIMITS: '/api/admin/platform-config/placement-limits',
+    UPDATE_PROMOTION_PRICING: '/api/admin/platform-config/promotion-pricing',
   },
 
   // ── ANNOUNCEMENTS (Admin) ───────────────────────────────────────────────────
@@ -98,6 +100,8 @@ export const ENDPOINTS = {
     MY_STORES: '/api/store/my-stores',
     CUSTOM_DOMAIN: (storeId: string) => `/api/store/${storeId}/custom-domain`,
     WHITE_LABEL:   (storeId: string) => `/api/store/${storeId}/white-label`,
+    PINNED_PRODUCTS: (storeId: string) => `/api/store/${storeId}/pinned-products`,
+    ANNOUNCEMENT:    (storeId: string) => `/api/store/${storeId}/announcement`,
 
     // Builder
     SAVE_BUILDER_CONFIG: '/api/store/save-builder-config',
@@ -255,6 +259,10 @@ export const ENDPOINTS = {
     GET_MY_PRODUCT_BY_ID: (id: string) => `/api/products/get-my-product/${id}`,
     EDUCATION_FACETS: '/api/products/education/facets',
     EDUCATION_CUSTOM_LEVEL_SUGGESTIONS: '/api/products/education/custom-level-suggestions',
+    STORE_PINNED:        (storeId: string) => `/api/products/store/${storeId}/pinned`,
+    STORE_NEW_ARRIVALS:  (storeId: string) => `/api/products/store/${storeId}/new-arrivals`,
+    STORE_BEST_SELLERS:  (storeId: string) => `/api/products/store/${storeId}/best-sellers`,
+    STORE_TRENDING:      (storeId: string) => `/api/products/store/${storeId}/trending`,
   },
 
   // ── MARKETPLACE ───────────────────────────────────────────────────────────
@@ -488,7 +496,49 @@ export const ENDPOINTS = {
     CREATE: '/api/banners',
     UPLOAD: '/api/banners/upload',
     UPDATE: (id: string) => `/api/banners/${id}`,
+    PAUSE:  (id: string) => `/api/banners/${id}/pause`,
+    RESUME: (id: string) => `/api/banners/${id}/resume`,
     DELETE: (id: string) => `/api/banners/${id}`,
+  },
+
+  // ── STORE BANNERS (seller-owned storefront banners) ───────────────────────
+  STORE_BANNER: {
+    PUBLIC:   (storeId: string) => `/api/public/store-banners/${storeId}`,
+    LIST:     (storeId: string) => `/api/store-banner/${storeId}`,
+    CREATE:   (storeId: string) => `/api/store-banner/${storeId}`,
+    UPDATE:   (storeId: string, bannerId: string) => `/api/store-banner/${storeId}/${bannerId}`,
+    PAUSE:    (storeId: string, bannerId: string) => `/api/store-banner/${storeId}/${bannerId}/pause`,
+    RESUME:   (storeId: string, bannerId: string) => `/api/store-banner/${storeId}/${bannerId}/resume`,
+    TIMELINE: (storeId: string, bannerId: string) => `/api/store-banner/${storeId}/${bannerId}/timeline`,
+    DELETE:   (storeId: string, bannerId: string) => `/api/store-banner/${storeId}/${bannerId}`,
+  },
+
+  // ── MEDIA LIBRARY (reusable promotional creatives) ────────────────────────
+  MEDIA_LIBRARY: {
+    LIST: '/api/media-library',
+  },
+
+  // ── PROMOTIONS (seller-requested paid platform placements) ────────────────
+  PROMOTIONS: {
+    PREVIEW_PRICE: '/api/promotions/preview-price',
+    LIST:          (storeId: string) => `/api/promotions/${storeId}`,
+    CREATE:        (storeId: string) => `/api/promotions/${storeId}`,
+    ANALYTICS:     (storeId: string) => `/api/promotions/${storeId}/analytics`,
+    PAY:           (id: string) => `/api/promotions/${id}/pay`,
+    CONFIRM:       (id: string) => `/api/promotions/${id}/confirm`,
+    CANCEL:        (id: string) => `/api/promotions/${id}/cancel`,
+    TIMELINE:      (id: string) => `/api/promotions/${id}/timeline`,
+    TRACK_IMPRESSION: '/api/promotions/track/impression',
+    TRACK_CLICK:      '/api/promotions/track/click',
+
+    ADMIN: {
+      LIST:      '/api/admin/marketing/promotions',
+      ANALYTICS: '/api/admin/marketing/promotions/analytics',
+      CALENDAR:  '/api/admin/marketing/promotions/calendar',
+      CONFLICTS: '/api/admin/marketing/promotions/conflicts',
+      APPROVE:   (id: string) => `/api/admin/marketing/promotions/${id}/approve`,
+      REJECT:    (id: string) => `/api/admin/marketing/promotions/${id}/reject`,
+    },
   },
 
   // ── FAQS ──────────────────────────────────────────────────────────────────

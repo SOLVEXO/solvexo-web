@@ -13,6 +13,7 @@ export interface FeatureFlags {
   posMode: boolean;
   storeBuilder: boolean;
   bulkProductImport: boolean;
+  promotions: boolean;
 }
 
 export interface AiConfig {
@@ -27,12 +28,42 @@ export interface EmailConfig {
   provider: string;
 }
 
+export interface PlacementLimits {
+  homepageHero: number;
+  marketplaceHero: number;
+  educationHero: number;
+  categoryHero: number;
+  storeHero: number;
+  storeFeaturedProducts: number;
+}
+
+export interface FestivalPricingOverride {
+  name: string;
+  startAt: string;
+  endAt: string;
+  rate: number;
+}
+
+export interface PlacementRateCard {
+  hourly?: number;
+  daily?: number;
+  weekly?: number;
+  monthly?: number;
+  weekendMultiplier?: number;
+  peakMultiplier?: number;
+  festivalOverrides?: FestivalPricingOverride[];
+}
+
+export type PromotionPricing = Partial<Record<'homepageHero' | 'marketplaceHero' | 'educationHero' | 'categoryHero', PlacementRateCard>>;
+
 export interface PlatformConfig {
   _id: string;
   maintenanceMode: boolean;
   featureFlags: FeatureFlags;
   aiConfig: AiConfig;
   emailConfig: EmailConfig;
+  placementLimits: PlacementLimits;
+  promotionPricing: PromotionPricing;
   createdAt: string;
   updatedAt: string;
 }
@@ -60,4 +91,12 @@ export function apiUpdateEmailConfig(payload: Partial<EmailConfig>) {
 
 export function apiUpdateMaintenanceMode(maintenanceMode: boolean) {
   return client.patch<never, ApiResponse<PlatformConfig>>(ENDPOINTS.PLATFORM_CONFIG.UPDATE_MAINTENANCE, { maintenanceMode });
+}
+
+export function apiUpdatePlacementLimits(payload: Partial<PlacementLimits>) {
+  return client.put<never, ApiResponse<PlatformConfig>>(ENDPOINTS.PLATFORM_CONFIG.UPDATE_PLACEMENT_LIMITS, payload);
+}
+
+export function apiUpdatePromotionPricing(payload: PromotionPricing) {
+  return client.put<never, ApiResponse<PlatformConfig>>(ENDPOINTS.PLATFORM_CONFIG.UPDATE_PROMOTION_PRICING, payload);
 }

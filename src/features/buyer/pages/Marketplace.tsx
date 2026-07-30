@@ -175,7 +175,12 @@ export function Marketplace() {
   );
   const { addToCart, adding }    = useCartContext();
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
-  const { banners } = useBanners();
+  const { banners: marketplaceBanners } = useBanners('marketplaceHero');
+  // Category Hero — same hero region, but scoped to the `categoryHero`
+  // placement whenever the shopper is browsing a specific category (via the
+  // mega-menu/sidebar/?category= link), instead of the generic marketplace-wide banner.
+  const { banners: categoryBanners } = useBanners('categoryHero');
+  const banners = selectedCategory ? categoryBanners : marketplaceBanners;
   const countdown = useCountdownToMidnight();
 
   // Marketplace-wide pool (unfiltered by the user's current category/search) used to
@@ -312,7 +317,7 @@ export function Marketplace() {
 
         {/* Background: live promo banner if available, else brand gradient */}
         {banners.length > 0 ? (
-          <BannerCarousel banners={banners} />
+          <BannerCarousel entityType="banner" banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))} />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-[#FBECE4] via-[#FDF1E9] to-[#FFF5EE]">
             <div className="absolute -top-16 -right-16 size-64 rounded-full bg-brand-orange/[0.08] blur-3xl pointer-events-none" />

@@ -1,5 +1,6 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { clsx } from 'clsx';
+import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 
 interface CoverImageProps {
   /** Store cover photo URL. Falsy → the fallback gradient is shown instead. */
@@ -17,6 +18,14 @@ interface CoverImageProps {
   /** Shown in place of the image when there's no cover photo. */
   fallbackClassName?: string;
   fallbackStyle?: CSSProperties;
+  /** Replaces the `src`/fallback image entirely (e.g. a rotating `BannerCarousel`)
+   *  while keeping the overlay/children layering identical — used by the
+   *  storefront hero when a store has its own `StoreBanner`s. */
+  backgroundOverride?: ReactNode;
+  /** `sizes` attribute for the responsive Cloudinary `srcset` — defaults to
+   *  `100vw` (correct for full-bleed heroes); narrower contexts like store
+   *  cards should pass their actual rendered width. */
+  sizes?: string;
   /** Content layered above the image/overlay (logo, name, badges, actions…). */
   children?:   ReactNode;
 }
@@ -30,19 +39,24 @@ interface CoverImageProps {
 export function CoverImage({
   src, alt = '', className, imgClassName,
   loading = 'lazy', overlay = false, overlayClassName,
-  fallbackClassName, fallbackStyle, children,
+  fallbackClassName, fallbackStyle, backgroundOverride, sizes = '100vw', children,
 }: CoverImageProps) {
   const [loaded, setLoaded] = useState(false);
 
   return (
     <div className={clsx('relative overflow-hidden', className)}>
-      {src ? (
+      {backgroundOverride ? (
+        backgroundOverride
+      ) : src ? (
         <>
           {!loaded && <div className="absolute inset-0 animate-pulse bg-[#EDEBE2]" />}
           <img
-            src={src}
+            src={cloudinaryUrl(src, 1920)}
+            srcSet={cloudinarySrcSet(src)}
+            sizes={sizes}
             alt={alt}
             loading={loading}
+            fetchPriority={loading === 'eager' ? 'high' : undefined}
             decoding="async"
             onLoad={() => setLoaded(true)}
             className={clsx(
@@ -59,7 +73,7 @@ export function CoverImage({
         />
       )}
 
-      {overlay && src && (
+      {overlay && (src || backgroundOverride) && (
         <div className={clsx('absolute inset-0', overlayClassName ?? 'bg-gradient-to-t from-black/55 via-black/10 to-transparent')} />
       )}
 

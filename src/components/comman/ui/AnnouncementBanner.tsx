@@ -1,17 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Megaphone, X } from 'lucide-react';
 import { useActiveAnnouncements } from '@/hooks/useActiveAnnouncements';
-
-const DISMISSED_KEY = 'dismissedAnnouncementIds';
-
-function getDismissed(): string[] {
-  try { return JSON.parse(localStorage.getItem(DISMISSED_KEY) ?? '[]'); } catch { return []; }
-}
-
-function dismiss(id: string) {
-  const next = [...new Set([...getDismissed(), id])];
-  localStorage.setItem(DISMISSED_KEY, JSON.stringify(next));
-}
+import { getDismissedBannerIds, dismissBanner } from '@/utils/dismissedBanners';
 
 interface AnnouncementBannerProps {
   audience: 'buyers' | 'sellers';
@@ -24,9 +14,9 @@ interface AnnouncementBannerProps {
  * will. */
 export function AnnouncementBanner({ audience, className }: AnnouncementBannerProps) {
   const announcements = useActiveAnnouncements(audience);
-  const [dismissedIds, setDismissedIds] = useState<string[]>(getDismissed());
+  const [dismissedIds, setDismissedIds] = useState<string[]>(getDismissedBannerIds());
 
-  useEffect(() => { setDismissedIds(getDismissed()); }, [announcements]);
+  useEffect(() => { setDismissedIds(getDismissedBannerIds()); }, [announcements]);
 
   const active = announcements.find((a) => !dismissedIds.includes(a._id));
   if (!active) return null;
@@ -39,7 +29,7 @@ export function AnnouncementBanner({ audience, className }: AnnouncementBannerPr
         <p className="text-[12.5px] text-brand-deep-orange/80 truncate">{active.message}</p>
       </div>
       <button
-        onClick={() => { dismiss(active._id); setDismissedIds((d) => [...d, active._id]); }}
+        onClick={() => { dismissBanner(active._id); setDismissedIds((d) => [...d, active._id]); }}
         aria-label="Dismiss announcement"
         className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md bg-transparent border-0 cursor-pointer text-brand-deep-orange/70 hover:bg-white/50"
       >
