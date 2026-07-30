@@ -263,7 +263,7 @@ function ProductCard({
             >
               {variants.map(v => (
                 <option key={v.variantId} value={v.variantId}>
-                  {[v.size, v.color].filter(Boolean).join(' / ') || v.sku}
+                  {(v.options ?? []).map(o => o.value).join(' / ') || v.sku}
                 </option>
               ))}
             </select>

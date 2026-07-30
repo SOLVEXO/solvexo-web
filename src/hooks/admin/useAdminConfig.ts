@@ -8,11 +8,13 @@ import {
   apiUpdateMaintenanceMode,
   apiUpdatePlacementLimits,
   apiUpdatePromotionPricing,
+  apiUpdateManualPaymentConfig,
   type FeatureFlags,
   type AiConfig,
   type EmailConfig,
   type PlacementLimits,
   type PromotionPricing,
+  type ManualPaymentConfig,
 } from '@/api/services/config/adminConfig';
 
 export function useAdminConfig() {
@@ -115,6 +117,27 @@ export function useUpdatePromotionPricing() {
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update promotion pricing.');
+      return false;
+    } finally {
+      setSubmitting(false);
+    }
+  }, []);
+
+  return { update, submitting, error };
+}
+
+export function useUpdateManualPaymentConfig() {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const update = useCallback(async (payload: Partial<ManualPaymentConfig>) => {
+    setSubmitting(true);
+    setError('');
+    try {
+      await apiUpdateManualPaymentConfig(payload);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update manual payment config.');
       return false;
     } finally {
       setSubmitting(false);

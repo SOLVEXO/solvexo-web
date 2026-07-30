@@ -8,7 +8,7 @@ import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
-import { AppDownloadBanner, Footer, FloatingAppWidget, SkeletonBox, DealsBanner, CoverImage } from '@/components/comman/ui';
+import { AppDownloadBanner, Footer, SkeletonBox, DealsBanner, CoverImage } from '@/components/comman/ui';
 import { FlashSaleCard, FlashSaleCardSkeleton } from '@/components/comman/marketplace/FlashSaleCard';
 import {
   ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles,
@@ -596,7 +596,7 @@ export function Homepage() {
                   ))
                 : topStores.map(s => (
                     <div key={s.storeId} className="shrink-0 snap-start w-[210px] sm:w-[calc((100%-24px)/3)] md:w-[calc((100%-36px)/4)] lg:w-[calc((100%-48px)/5)]">
-                      <TopStoreCard store={s} onClick={() => navigate(`/store/${s.slug}`)} />
+                      <TopStoreCard store={s} onClick={() => navigate(`/${s.slug}`)} />
                     </div>
                   ))}
             </div>
@@ -710,7 +710,6 @@ export function Homepage() {
       </section>
 
       <Footer />
-      <FloatingAppWidget />
     </div>
   );
 }

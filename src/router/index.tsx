@@ -50,6 +50,7 @@ const AccountDashboard     = lazy(() => named(import('@/features/buyer/pages/acc
 const AccountOrders        = lazy(() => named(import('@/features/buyer/pages/MyOrdersPage'),                     'OrdersTab'));
 const AccountWishlist      = lazy(() => named(import('@/features/buyer/pages/account/Wishlist'),                 'Wishlist'));
 const AccountReviews       = lazy(() => named(import('@/features/buyer/pages/MyReviewsPage'),                    'ReviewsTab'));
+const AccountPayments      = lazy(() => named(import('@/features/buyer/pages/account/Payments'),                 'Payments'));
 const AccountSettings      = lazy(() => named(import('@/features/buyer/pages/account/Settings'),                 'Settings'));
 const AccountMessages      = lazy(() => named(import('@/features/buyer/pages/account/Messages'),                 'Messages'));
 
@@ -109,6 +110,8 @@ const AdminAnnouncements = lazy(() => named(import('@/features/admin/pages/Admin
 const AdminBanners       = lazy(() => named(import('@/features/admin/pages/AdminBanners'),                       'AdminBanners'));
 const AdminFaqs          = lazy(() => named(import('@/features/admin/pages/AdminFaqs'),                          'AdminFaqs'));
 const AdminContactMessages = lazy(() => named(import('@/features/admin/pages/AdminContactMessages'),             'AdminContactMessages'));
+const AdminManualPayments = lazy(() => named(import('@/features/admin/pages/AdminManualPayments'),               'AdminManualPayments'));
+const AdminCommissionRules = lazy(() => named(import('@/features/admin/pages/AdminCommissionRules'),             'AdminCommissionRules'));
 const AdminConfig        = lazy(() => named(import('@/features/admin/pages/AdminConfig'),                       'AdminConfig'));
 const AdminMarketing     = lazy(() => named(import('@/features/admin/pages/AdminMarketing'),                     'AdminMarketing'));
 const AdminSettings      = lazy(() => named(import('@/features/admin/pages/settings/AdminSettings'),           'AdminSettings'));
@@ -150,6 +153,7 @@ export const router = createBrowserRouter([
               { path: 'orders',        element: <AccountOrders /> },
               { path: 'wishlist',      element: <AccountWishlist /> },
               { path: 'reviews',       element: <AccountReviews /> },
+              { path: 'payments',      element: <AccountPayments /> },
               { path: 'settings',      element: <AccountSettings /> },
               { path: 'messages',      element: <AccountMessages /> },
             ],
@@ -160,7 +164,7 @@ export const router = createBrowserRouter([
           { path: 'checkout',        element: <CheckoutPage /> },
           { path: 'order-success',   element: <OrderSuccessPage /> },
           { path: 'marketplace/:id', element: <ProductDetail /> },
-          { path: 'store/:slug', element: <SellerStorefront /> },
+          { path: ':slug', element: <SellerStorefront /> },
           { path: 'EducationMarketplace',   element: <EducationMarketplace /> },
         ],
       },
@@ -247,6 +251,8 @@ export const router = createBrowserRouter([
           { path: 'subscriptions',element: <AdminSubscriptions /> },
           { path: 'platform-plans',element: <AdminPlatformPlans /> },
           { path: 'finance',      element: <RequireRole role="admin"><AdminFinance /></RequireRole> },
+          { path: 'manual-payments', element: <RequireRole role="admin"><AdminManualPayments /></RequireRole> },
+          { path: 'commission-rules', element: <RequireRole role="admin"><AdminCommissionRules /></RequireRole> },
           { path: 'announcements',element: <RequireRole role="admin"><AdminAnnouncements /></RequireRole> },
           { path: 'banners',      element: <AdminBanners /> },
           { path: 'faqs',         element: <AdminFaqs /> },

@@ -477,7 +477,7 @@ export function EducationMarketplace() {
         topStores={topStores}
         countdown={countdown}
         onProductClick={handleCardClick}
-        onStoreClick={slug => navigate(`/store/${slug}`)}
+        onStoreClick={slug => navigate(`/${slug}`)}
         onNavigate={navigate}
       />
 

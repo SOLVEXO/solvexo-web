@@ -22,6 +22,7 @@ export interface UpdateStorePayload {
   categoryId?:  string;
   description?: string;
   productTypes?: ProductType[];
+  codEnabled?:  boolean;
 }
 
 export interface StoreData {
@@ -35,6 +36,10 @@ export interface StoreData {
   description:  string;
   sellerType:   SellerType;
   productTypes: ProductType[];
+  /** Per-seller Cash-on-Delivery opt-out — defaults to true. Not yet enforced
+   *  by checkout (a multi-vendor cart's COD eligibility isn't scoped per
+   *  seller there yet); this only persists the seller's preference so far. */
+  codEnabled:   boolean;
   enabledTools: string[];
   plan:         string;
   aiCredits:    number;

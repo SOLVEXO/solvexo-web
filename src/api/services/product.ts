@@ -42,15 +42,23 @@ export interface DigitalMeta {
   preview?:             DigitalPreviewMeta;
 }
 
+/** A single seller-defined attribute on a variant, e.g. {name:'Color', value:'Red'} — a
+ *  product's variants can mix any attributes (Color, Size, Material…), up to 3 each,
+ *  as long as every variant on the same product uses the same set of attribute names. */
+export interface VariantOption {
+  name:  string;
+  value: string;
+}
+
 export interface ProductVariant {
   _id:            string;
   productId:      string;
   sku:            string;
   price:          number;
   compareAtPrice: number | null;
-  size:           string | null;
-  color:          string | null;
+  options:        VariantOption[];
   stock:          number;
+  unlimitedStock: boolean;
   shippingWeight: string | null;
   images:         string[];
   isDefault:      boolean;
@@ -58,6 +66,19 @@ export interface ProductVariant {
   isDelete:       boolean;
   createdAt:      string;
   updatedAt:      string;
+}
+
+/** Payload for creating (or editing) one variant via the dedicated variant-CRUD endpoints. */
+export interface VariantInput {
+  price:          number;
+  compareAtPrice?: number | null;
+  options?:       VariantOption[];
+  stock?:         number;
+  unlimitedStock?: boolean;
+  shippingWeight?: string;
+  images?:        string[];
+  sku?:           string;
+  isDefault?:     boolean;
 }
 
 export interface StoreProduct {
@@ -101,12 +122,9 @@ export interface CreatePhysicalPayload {
   isListedOnSolvexo: boolean;
   status:            'draft' | 'active' | 'scheduled';
   scheduledAt?:      string | null;
-  price:             number;
-  compareAtPrice:    number | null;
-  size:              string;
-  color:             string;
-  stock:             number;
-  shippingWeight:    string;
+  // At least one variant is required — every variant must share the same
+  // set of attribute names (e.g. all "Color"+"Size", not a mix).
+  variants:          VariantInput[];
 }
 
 export interface CreateDigitalPayload {
@@ -127,6 +145,9 @@ export interface CreateDigitalPayload {
   digital:           DigitalMeta;
 }
 
+// Physical products manage price/stock/options per-variant exclusively through
+// the variant CRUD endpoints below now — this payload only touches
+// product-level fields (name/images/status/etc), never price or variants.
 export interface EditPhysicalPayload {
   productId:         string;
   name:              string;
@@ -137,12 +158,6 @@ export interface EditPhysicalPayload {
   isListedOnSolvexo: boolean;
   status:            'draft' | 'active' | 'scheduled';
   scheduledAt?:      string | null;
-  price:             number;
-  compareAtPrice:    number | null;
-  size:              string;
-  color:             string;
-  stock:             number;
-  shippingWeight:    string | number;
 }
 
 export interface EditDigitalPayload {
@@ -258,6 +273,27 @@ export function apiGetMyProductById(id: string) {
   return client.get<never, ApiResponse<GetProductData>>(
     ENDPOINTS.PRODUCT.GET_MY_PRODUCT_BY_ID(id),
   );
+}
+
+// ── Variant CRUD (physical products only, seller-owned) ────────────────────────
+// Add/edit/remove a variant after the product already exists — used by the
+// "Manage Variants" section on the Edit Product page. Creation of the first
+// variant(s) happens inline as part of apiCreatePhysicalProduct above.
+
+export function apiListVariants(productId: string) {
+  return client.get<never, ApiResponse<ProductVariant[]>>(ENDPOINTS.PRODUCT.VARIANTS.LIST(productId));
+}
+
+export function apiCreateVariant(productId: string, payload: VariantInput) {
+  return client.post<never, ApiResponse<ProductVariant>>(ENDPOINTS.PRODUCT.VARIANTS.CREATE(productId), payload);
+}
+
+export function apiUpdateVariant(productId: string, variantId: string, payload: Partial<VariantInput>) {
+  return client.patch<never, ApiResponse<ProductVariant>>(ENDPOINTS.PRODUCT.VARIANTS.UPDATE(productId, variantId), payload);
+}
+
+export function apiDeleteVariant(productId: string, variantId: string) {
+  return client.delete<never, ApiResponse<ProductVariant[]>>(ENDPOINTS.PRODUCT.VARIANTS.DELETE(productId, variantId));
 }
 
 export function apiGetStoreInventory(storeId: string, page = 1, limit = 10) {

@@ -407,7 +407,7 @@ export function SubscriptionsTab() {
     {
       key: 'store', header: 'Store', width: '220px',
       render: s => (
-        <button onClick={() => s.store && navigate(`/store/${s.store.slug}`)} className="flex items-center gap-[10px] bg-transparent border-0 cursor-pointer text-left p-0">
+        <button onClick={() => s.store && navigate(`/${s.store.slug}`)} className="flex items-center gap-[10px] bg-transparent border-0 cursor-pointer text-left p-0">
           <div className="w-9 h-9 rounded-lg bg-cream border border-bone overflow-hidden shrink-0 flex items-center justify-center">
             {s.store?.logo ? <img loading="lazy" decoding="async" src={s.store.logo} alt="" className="w-full h-full object-cover" /> : <ImageOff size={13} className="text-slate" />}
           </div>

@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard, ShoppingBag, Heart, Star,
-  Settings as SettingsIcon, MessageSquare, Menu,
+  Settings as SettingsIcon, MessageSquare, Menu, Landmark,
   ChevronLeft, PanelLeftClose, PanelLeftOpen, type LucideIcon,
 } from 'lucide-react';
 import { useWishlistContext } from '@/contexts/WishlistContext';
@@ -35,6 +35,7 @@ function useNavGroups(): NavGroup[] {
         { id: 'orders',   label: 'Orders',   Icon: ShoppingBag, path: 'orders' },
         { id: 'wishlist', label: 'Wishlist', Icon: Heart,       path: 'wishlist', badge: wishlistCount },
         { id: 'reviews',  label: 'Reviews',  Icon: Star,        path: 'reviews' },
+        { id: 'payments', label: 'Bank Transfers', Icon: Landmark, path: 'payments' },
       ],
     },
     {

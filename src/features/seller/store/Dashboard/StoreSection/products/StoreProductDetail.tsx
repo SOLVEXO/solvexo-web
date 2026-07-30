@@ -68,7 +68,7 @@ export default function StoreProductDetail() {
     apiGetMyProductById(productId)
       .then(res => setEntry({
         product: res.data.product,
-        variant: { _id: '', productId, sku: '—', price: 0, compareAtPrice: null, size: null, color: null, stock: 0, shippingWeight: null, images: [], isDefault: true, status: 'active', isDelete: false, createdAt: '', updatedAt: '' },
+        variant: { _id: '', productId, sku: '—', price: 0, compareAtPrice: null, options: [], stock: 0, unlimitedStock: false, shippingWeight: null, images: [], isDefault: true, status: 'active', isDelete: false, createdAt: '', updatedAt: '' },
       }))
       .catch(() => navigate(`/seller/store/${storeId}/products`, { replace: true }))
       .finally(() => setFetching(false));
@@ -285,8 +285,9 @@ export default function StoreProductDetail() {
               <Card title="Inventory & Shipping" icon={Package}>
                 <InfoRow label="SKU"             value={<code className="text-[11px] bg-bone px-[6px] py-[2px] rounded font-mono">{v.sku}</code>} />
                 <InfoRow label="Stock"           value={`${v.stock} units`} />
-                <InfoRow label="Size"            value={v.size || '—'} />
-                <InfoRow label="Color"           value={v.color || '—'} />
+                {(v.options ?? []).map(o => (
+                  <InfoRow key={o.name} label={o.name} value={o.value} />
+                ))}
                 <InfoRow label="Shipping Weight" value={v.shippingWeight || '—'} />
               </Card>
             )}

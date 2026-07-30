@@ -8,7 +8,7 @@ import { useCountdownToMidnight } from '@/hooks/useCountdownToMidnight';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
-import { Pagination, FilterDropdown, BuyerNavbar, AppDownloadBanner, Footer, TrustServiceStrip, FloatingAppWidget, DealsBanner, StoreFeatureCard } from '@/components/comman/ui';
+import { Pagination, FilterDropdown, BuyerNavbar, AppDownloadBanner, Footer, TrustServiceStrip, DealsBanner, StoreFeatureCard } from '@/components/comman/ui';
 import { ProductCard, ProductCardSkeleton } from '@/components/comman/marketplace/ProductCard';
 import { FilterAccordionSection, FilterRadioRow, FilterCheckboxRow, FilterStarRow, ActiveFilterChip, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
@@ -389,7 +389,7 @@ export function Marketplace() {
         countdown={countdown}
         onShopCategory={handleCategoryChange}
         onProductClick={handleCardClick}
-        onStoreClick={slug => navigate(`/store/${slug}`)}
+        onStoreClick={slug => navigate(`/${slug}`)}
         onTrendingTerm={term => { setSearchInput(term); setSearch(term); }}
         onNavigate={navigate}
       />
@@ -428,7 +428,7 @@ export function Marketplace() {
             </p>
             <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
               {storeResults.map(s => (
-                <StoreFeatureCard key={s.storeId} store={s} onClick={slug => navigate(`/store/${slug}`)} />
+                <StoreFeatureCard key={s.storeId} store={s} onClick={slug => navigate(`/${slug}`)} />
               ))}
             </div>
           </div>
@@ -595,7 +595,6 @@ export function Marketplace() {
         <AppDownloadBanner />
       </div>
       <Footer />
-      <FloatingAppWidget />
 
       {/* ── Mobile filter bottom sheet ────────────────────────────────────────── */}
       <div

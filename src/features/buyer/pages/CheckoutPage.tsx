@@ -6,14 +6,18 @@ import { useShippingZones } from '@/hooks/shipping/useShippingZones';
 import { apiGetMyAddresses, type Address } from '@/api/services/address';
 import { apiCreateCheckout, apiApplyCoupon, apiRemoveCoupon, type Checkout, type CheckoutSummary, type SubscriptionSavingsHint } from '@/api/services/checkout';
 import { apiPlaceCodOrder, apiInitiatePayment, apiGetPaymentStatus } from '@/api/services/payment';
+import {
+  apiGetManualPaymentBankDetails, apiSubmitManualPayment,
+  type ManualPaymentBankDetails, type ManualPaymentOrderSummary,
+} from '@/api/services/manualPayment';
 import { Button } from '@/components/comman/ui/Button';
-import { SkeletonBox, BuyerNavbar, Breadcrumb } from '@/components/comman/ui';
+import { SkeletonBox, BuyerNavbar, Breadcrumb, Input } from '@/components/comman/ui';
 import { StripeCardPayment, isStripeConfigured } from '@/features/buyer/components/StripeCardPayment';
 import {
   MapPin, Truck, CreditCard, CheckCircle2,
   ChevronRight, AlertCircle, PackageCheck,
   Banknote, ShieldCheck, ArrowDownCircle, Download, Clock, Loader2,
-  SplitSquareHorizontal,
+  SplitSquareHorizontal, Landmark, UploadCloud,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { currencySymbol } from '@/utils/currency';
@@ -91,6 +95,140 @@ function CardPaymentSlot({
   return <StripeCardPayment clientSecret={clientSecret} amount={amount} currency={currency} onConfirmed={onConfirmed} />;
 }
 
+// ── Manual Bank Transfer slot — Pakistan track. Fetches the admin-configured
+// bank details, shows the PKR amount to transfer, and submits the buyer's
+// proof (order is created + proof recorded in one call, `paymentStatus:
+// 'pending_verification'` until an admin reviews it). ───────────────────────
+function ManualBankTransferSlot({
+  checkoutId, amountUSD, onSubmitted,
+}: {
+  checkoutId:  string;
+  amountUSD:   number;
+  onSubmitted: (orders: ManualPaymentOrderSummary[], amountPKR: number) => void;
+}) {
+  const [bankDetails, setBankDetails]   = useState<ManualPaymentBankDetails | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(true);
+  const [detailsError, setDetailsError] = useState('');
+  const [file, setFile]                 = useState<File | null>(null);
+  const [transactionReference, setTransactionReference] = useState('');
+  const [senderName, setSenderName]     = useState('');
+  const [submitting, setSubmitting]     = useState(false);
+  const [error, setError]               = useState('');
+  // Unique per mount, not per checkout — a fixed key would let one
+  // interrupted submit permanently block every retry via the backend's
+  // IdempotencyInterceptor ("already being processed" forever).
+  const [idempotencyKey] = useState(() => `manual-pay-${checkoutId}-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetManualPaymentBankDetails()
+      .then(res => { if (!cancelled) setBankDetails(res.data); })
+      .catch(err => { if (!cancelled) setDetailsError(err instanceof Error ? err.message : 'Bank transfer is not available right now.'); })
+      .finally(() => { if (!cancelled) setLoadingDetails(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  async function handleSubmit() {
+    if (!file) { setError('Please upload a screenshot or photo of your transfer receipt.'); return; }
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await apiSubmitManualPayment(
+        checkoutId, file,
+        { transactionReference: transactionReference || undefined, senderName: senderName || undefined },
+        idempotencyKey,
+      );
+      onSubmitted(res.data.orders, res.data.proof.amountPKR);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit payment proof. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (loadingDetails) {
+    return (
+      <div className="flex flex-col gap-3">
+        <SkeletonBox height={140} rounded="10px" />
+        <SkeletonBox height={44} rounded="8px" />
+      </div>
+    );
+  }
+
+  if (detailsError || !bankDetails) {
+    return (
+      <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2">
+        <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
+        {detailsError || 'Bank transfer is not available right now.'}
+      </div>
+    );
+  }
+
+  const amountPKR = amountUSD * bankDetails.usdToPkrRate;
+  const rows: [string, string | null][] = [
+    ['Bank', bankDetails.bankName],
+    ['Account Title', bankDetails.accountTitle],
+    ['Account Number', bankDetails.accountNumber],
+    ['IBAN', bankDetails.iban],
+    ['JazzCash', bankDetails.jazzcashNumber],
+    ['Easypaisa', bankDetails.easypaisaNumber],
+  ];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="rounded-[10px] border border-bone bg-cream px-4 py-3 flex flex-col gap-2">
+        <div className="flex justify-between items-baseline">
+          <span className="text-[12px] text-slate">Amount to transfer</span>
+          <span className="text-[18px] font-bold text-brand-deep-orange">
+            PKR {amountPKR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </span>
+        </div>
+        <p className="text-[10.5px] text-slate">
+          ≈ {currencySymbol('USD')}{amountUSD.toFixed(2)} at PKR {bankDetails.usdToPkrRate}/USD
+        </p>
+        <div className="h-px bg-bone my-1" />
+        {rows.filter(([, v]) => v).map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-3 text-[12px]">
+            <span className="text-slate flex-shrink-0">{label}</span>
+            <span className="font-medium text-carbon text-right font-mono">{value}</span>
+          </div>
+        ))}
+        {bankDetails.instructions && <p className="text-[11px] text-slate mt-1">{bankDetails.instructions}</p>}
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div>
+          <label className="block text-[12px] font-medium text-charcoal mb-1.5">Payment proof (screenshot or receipt photo)</label>
+          <label className="flex items-center gap-2 border border-dashed border-bone rounded-[8px] px-3 py-3 cursor-pointer hover:border-brand-orange/50 transition-colors">
+            <UploadCloud size={16} className="text-slate flex-shrink-0" />
+            <span className="text-[12px] text-slate truncate">{file ? file.name : 'Choose an image…'}</span>
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          </label>
+        </div>
+        <Input label="Transaction reference (optional)" value={transactionReference} onChange={(e) => setTransactionReference(e.target.value)} placeholder="TXN123456789" />
+        <Input label="Sender name (optional, if different from your account)" value={senderName} onChange={(e) => setSenderName(e.target.value)} />
+      </div>
+
+      {error && (
+        <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2">
+          <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
+          {error}
+        </div>
+      )}
+
+      <Button
+        variant="primary" size="lg" fullWidth
+        loading={submitting}
+        icon={!submitting && <PackageCheck size={16} />}
+        onClick={handleSubmit}
+        className="gap-2 justify-center"
+      >
+        {submitting ? 'Submitting…' : "I've Made the Transfer"}
+      </Button>
+    </div>
+  );
+}
+
 // ── Payment method labels ─────────────────────────────────────────────────────
 const PAYMENT_LABELS: Record<string, { label: string; desc: string; Icon: React.ElementType }> = {
   stripe:           { label: 'Credit / Debit Card',  desc: 'Secure payment via Stripe',       Icon: CreditCard },
@@ -98,7 +236,71 @@ const PAYMENT_LABELS: Record<string, { label: string; desc: string; Icon: React.
   // Mixed carts only — desc is overridden with the real digital/physical
   // amounts wherever this is rendered (see the payment-method list below).
   split:            { label: 'Card + Cash on Delivery', desc: 'Pay for digital items now, physical items on delivery', Icon: SplitSquareHorizontal },
+  manual_bank_transfer: { label: 'Bank Transfer', desc: 'Transfer to our account and upload your receipt', Icon: Landmark },
 };
+
+// ── Shared payment-method radio list — used by both the digital single-step
+// flow and the physical flow's step 3 (their surrounding layout differs, but
+// the list of options and how a method is selected is identical). ──────────
+function PaymentMethodOptions({
+  methods, selectedMethod, onSelect, summary, currency,
+}: {
+  methods:        string[];
+  selectedMethod: string | null;
+  onSelect:       (m: string) => void;
+  summary:        CheckoutSummary | null;
+  currency:       string | undefined;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {methods.map(method => {
+        const meta = PAYMENT_LABELS[method] ?? { label: method, desc: '', Icon: CreditCard };
+        const { label, Icon } = meta;
+        const desc = method === 'split' && summary?.digitalSubtotal != null && summary?.physicalSubtotal != null
+          ? `Pay ${currencySymbol(currency)} ${summary.digitalSubtotal.toFixed(2)} now, ${currencySymbol(currency)} ${summary.physicalSubtotal.toFixed(2)} on delivery`
+          : meta.desc;
+        const unavailable = (method === 'stripe' || method === 'split') && !isStripeConfigured();
+        return (
+          <label
+            key={method}
+            className={clsx(
+              'flex gap-3 p-4 rounded-[10px] border transition-colors',
+              unavailable
+                ? 'cursor-not-allowed opacity-60 border-bone bg-cream'
+                : selectedMethod === method
+                  ? 'cursor-pointer border-brand-orange bg-brand-pale-orange'
+                  : 'cursor-pointer border-bone bg-cream hover:border-[#c5c4bc]',
+            )}
+          >
+            <input
+              type="radio" name="payment"
+              className="mt-[3px] accent-brand-orange flex-shrink-0 disabled:cursor-not-allowed"
+              checked={selectedMethod === method}
+              disabled={unavailable}
+              onChange={() => onSelect(method)}
+            />
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-9 h-9 rounded-[8px] bg-bone flex items-center justify-center flex-shrink-0">
+                <Icon size={17} className="text-graphite" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-[13px] font-semibold text-carbon">{label}</p>
+                  {unavailable && (
+                    <span className="text-[10px] font-semibold px-2 py-[1px] rounded-full bg-bone text-slate">
+                      Coming soon
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate">{desc}</p>
+              </div>
+            </div>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function CheckoutPage() {
@@ -169,6 +371,13 @@ export function CheckoutPage() {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [placing,     setPlacing]     = useState(false);
   const [placeError,  setPlaceError]  = useState('');
+
+  // Manual bank transfer — set once the buyer submits their proof; short-
+  // circuits the whole page to a confirmation screen instead of reusing
+  // /order-success, since that page expects a richer PlacedOrder shape than
+  // this flow's response provides (order created + proof recorded in one
+  // call, no per-item/address breakdown returned).
+  const [manualPaymentResult, setManualPaymentResult] = useState<{ orders: ManualPaymentOrderSummary[]; amountPKR: number } | null>(null);
 
   // Card payment (Stripe) — clientSecret drives the embedded PaymentElement form;
   // pollingStatus drives the "confirming your payment…" state after the buyer submits.
@@ -421,6 +630,40 @@ export function CheckoutPage() {
     }
   };
 
+  const handleManualPaymentSubmitted = async (orders: ManualPaymentOrderSummary[], amountPKR: number) => {
+    await clearCart();
+    setManualPaymentResult({ orders, amountPKR });
+  };
+
+  if (manualPaymentResult) {
+    return (
+      <div className="min-h-screen bg-cream">
+        <BuyerNavbar variant="minimal" backTo={{ label: 'Back to Cart', path: '/cart' }} />
+        <div className="max-w-[560px] mx-auto px-4 py-14 text-center">
+          <div className="w-14 h-14 rounded-full bg-[#FFF4DC] flex items-center justify-center mx-auto mb-5">
+            <Clock size={26} className="text-[#B36200]" />
+          </div>
+          <h1 className="text-[20px] font-bold text-carbon mb-2">We're verifying your payment</h1>
+          <p className="text-[13px] text-slate mb-6">
+            Your order has been placed and your transfer proof of <span className="font-semibold text-carbon">PKR {manualPaymentResult.amountPKR.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> was received.
+            We'll notify you as soon as it's confirmed — usually within a few hours.
+          </p>
+          <div className="bg-white border border-bone rounded-[10px] divide-y divide-bone text-left mb-8">
+            {manualPaymentResult.orders.map(o => (
+              <div key={o.orderId} className="flex justify-between items-center px-4 py-3 text-[13px]">
+                <span className="font-mono font-semibold text-brand-deep-orange">{o.orderNumber}</span>
+                <span className="text-slate">{currencySymbol(o.currency)}{o.totalAmount.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+          <Button variant="primary" size="lg" onClick={() => navigate('/account/orders')} className="gap-2">
+            View My Orders <ChevronRight size={14} />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-cream">
       <BuyerNavbar variant="minimal" backTo={{ label: 'Back to Cart', path: '/cart' }} />
@@ -491,16 +734,41 @@ export function CheckoutPage() {
                       </div>
                     )}
 
-                    <CardPaymentSlot
-                      checkoutReady={!!checkout}
-                      clientSecret={clientSecret}
-                      initiating={initiatingPayment}
-                      initiateError={initiatePaymentErr}
-                      polling={pollingStatus}
-                      amount={chargeAmount ?? total}
-                      currency={checkout?.currency ?? 'USD'}
-                      onConfirmed={handleStripeConfirmed}
-                    />
+                    {/* A pure-digital cart usually only ever gets 'stripe' (auto-selected,
+                        see the effect above) — but if an admin has enabled manual bank
+                        transfer, there's a real choice to make here. */}
+                    {effectiveMethods.length > 1 && (
+                      <div className="mb-4">
+                        <PaymentMethodOptions
+                          methods={effectiveMethods}
+                          selectedMethod={selectedMethod}
+                          onSelect={setSelectedMethod}
+                          summary={summary}
+                          currency={checkout?.currency}
+                        />
+                      </div>
+                    )}
+
+                    {selectedMethod === 'manual_bank_transfer' ? (
+                      checkout && (
+                        <ManualBankTransferSlot
+                          checkoutId={checkout._id}
+                          amountUSD={chargeAmount ?? total}
+                          onSubmitted={handleManualPaymentSubmitted}
+                        />
+                      )
+                    ) : (
+                      <CardPaymentSlot
+                        checkoutReady={!!checkout}
+                        clientSecret={clientSecret}
+                        initiating={initiatingPayment}
+                        initiateError={initiatePaymentErr}
+                        polling={pollingStatus}
+                        amount={chargeAmount ?? total}
+                        currency={checkout?.currency ?? 'USD'}
+                        onConfirmed={handleStripeConfirmed}
+                      />
+                    )}
                   </>
                 )}
               </div>
@@ -863,54 +1131,14 @@ export function CheckoutPage() {
                       No payment method is available for this order right now. Please try again shortly or contact support.
                     </div>
                   )}
-                  <div className="flex flex-col gap-3 mb-4">
-                    {effectiveMethods.map(method => {
-                      const meta = PAYMENT_LABELS[method] ?? { label: method, desc: '', Icon: CreditCard };
-                      const { label, Icon } = meta;
-                      // Real amounts once known, instead of the static "digital items"/
-                      // "physical items" placeholder text in PAYMENT_LABELS.
-                      const desc = method === 'split' && summary?.digitalSubtotal != null && summary?.physicalSubtotal != null
-                        ? `Pay ${currencySymbol(checkout?.currency)} ${summary.digitalSubtotal.toFixed(2)} now, ${currencySymbol(checkout?.currency)} ${summary.physicalSubtotal.toFixed(2)} on delivery`
-                        : meta.desc;
-                      const unavailable = (method === 'stripe' || method === 'split') && !isStripeConfigured();
-                      return (
-                        <label
-                          key={method}
-                          className={clsx(
-                            'flex gap-3 p-4 rounded-[10px] border transition-colors',
-                            unavailable
-                              ? 'cursor-not-allowed opacity-60 border-bone bg-cream'
-                              : selectedMethod === method
-                                ? 'cursor-pointer border-brand-orange bg-brand-pale-orange'
-                                : 'cursor-pointer border-bone bg-cream hover:border-[#c5c4bc]',
-                          )}
-                        >
-                          <input
-                            type="radio" name="payment"
-                            className="mt-[3px] accent-brand-orange flex-shrink-0 disabled:cursor-not-allowed"
-                            checked={selectedMethod === method}
-                            disabled={unavailable}
-                            onChange={() => setSelectedMethod(method)}
-                          />
-                          <div className="flex items-center gap-3 flex-1">
-                            <div className="w-9 h-9 rounded-[8px] bg-bone flex items-center justify-center flex-shrink-0">
-                              <Icon size={17} className="text-graphite" />
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <p className="text-[13px] font-semibold text-carbon">{label}</p>
-                                {unavailable && (
-                                  <span className="text-[10px] font-semibold px-2 py-[1px] rounded-full bg-bone text-slate">
-                                    Coming soon
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[11px] text-slate">{desc}</p>
-                            </div>
-                          </div>
-                        </label>
-                      );
-                    })}
+                  <div className="mb-4">
+                    <PaymentMethodOptions
+                      methods={effectiveMethods}
+                      selectedMethod={selectedMethod}
+                      onSelect={setSelectedMethod}
+                      summary={summary}
+                      currency={checkout?.currency}
+                    />
                   </div>
 
                   <div>
@@ -997,6 +1225,14 @@ export function CheckoutPage() {
                       currency={checkout?.currency ?? 'USD'}
                       onConfirmed={handleStripeConfirmed}
                     />
+                  ) : selectedMethod === 'manual_bank_transfer' ? (
+                    checkout && (
+                      <ManualBankTransferSlot
+                        checkoutId={checkout._id}
+                        amountUSD={chargeAmount ?? total}
+                        onSubmitted={handleManualPaymentSubmitted}
+                      />
+                    )
                   ) : (
                     <Button
                       variant="primary" size="lg"
@@ -1146,7 +1382,7 @@ export function CheckoutPage() {
                 {savingsHints.map(hint => (
                   <button
                     key={hint.storeId}
-                    onClick={() => hint.storeSlug && navigate(`/store/${hint.storeSlug}`)}
+                    onClick={() => hint.storeSlug && navigate(`/${hint.storeSlug}`)}
                     className="w-full text-left px-3.5 py-3 rounded-lg bg-brand-pale-orange border border-brand-orange/20 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                   >
                     <p className="text-[12.5px] font-semibold text-brand-deep-orange">

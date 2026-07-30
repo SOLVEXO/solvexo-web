@@ -29,6 +29,36 @@ export const ENDPOINTS = {
     UPDATE_MAINTENANCE:   '/api/admin/platform-config/maintenance',
     UPDATE_PLACEMENT_LIMITS: '/api/admin/platform-config/placement-limits',
     UPDATE_PROMOTION_PRICING: '/api/admin/platform-config/promotion-pricing',
+    UPDATE_PAYOUT: '/api/admin/platform-config/payout',
+    UPDATE_MANUAL_PAYMENT: '/api/admin/platform-config/manual-payment',
+  },
+
+  // ── MANUAL BANK TRANSFER (buyer, Pakistan track) ───────────────────────────
+  MANUAL_PAYMENT: {
+    BANK_DETAILS: '/api/payment/manual-transfer/bank-details',
+    SUBMIT:       '/api/payment/manual-transfer/submit',
+    LIST_MINE:    '/api/payment/manual-transfer',
+    STATUS:       (proofId: string) => `/api/payment/manual-transfer/${proofId}`,
+    REUPLOAD:     (proofId: string) => `/api/payment/manual-transfer/${proofId}/reupload`,
+
+    ADMIN: {
+      LIST:    '/api/admin/manual-payments',
+      GET:     (proofId: string) => `/api/admin/manual-payments/${proofId}`,
+      APPROVE: (proofId: string) => `/api/admin/manual-payments/${proofId}/approve`,
+      REJECT:  (proofId: string) => `/api/admin/manual-payments/${proofId}/reject`,
+    },
+  },
+
+  // ── COMMISSION RULES (admin-managed seller commission overrides) ──────────
+  COMMISSION_RULES: {
+    GLOBAL:         '/api/admin/commission-rules/global',
+    GLOBAL_HISTORY: '/api/admin/commission-rules/global/history',
+    SELLERS:        '/api/admin/commission-rules/sellers',
+    RESOLVE:        (storeId: string) => `/api/admin/commission-rules/sellers/${storeId}`,
+    // GET has an /override suffix (returns the current override row); PUT/DELETE act on the bare :storeId route — these are NOT the same path.
+    SELLER_OVERRIDE_GET: (storeId: string) => `/api/admin/commission-rules/sellers/${storeId}/override`,
+    SELLER_OVERRIDE_SET: (storeId: string) => `/api/admin/commission-rules/sellers/${storeId}`,
+    SELLER_HISTORY:  (storeId: string) => `/api/admin/commission-rules/sellers/${storeId}/history`,
   },
 
   // ── ANNOUNCEMENTS (Admin) ───────────────────────────────────────────────────
@@ -263,6 +293,12 @@ export const ENDPOINTS = {
     STORE_NEW_ARRIVALS:  (storeId: string) => `/api/products/store/${storeId}/new-arrivals`,
     STORE_BEST_SELLERS:  (storeId: string) => `/api/products/store/${storeId}/best-sellers`,
     STORE_TRENDING:      (storeId: string) => `/api/products/store/${storeId}/trending`,
+    VARIANTS: {
+      LIST:   (productId: string) => `/api/products/${productId}/variants`,
+      CREATE: (productId: string) => `/api/products/${productId}/variants`,
+      UPDATE: (productId: string, variantId: string) => `/api/products/${productId}/variants/${variantId}`,
+      DELETE: (productId: string, variantId: string) => `/api/products/${productId}/variants/${variantId}`,
+    },
   },
 
   // ── MARKETPLACE ───────────────────────────────────────────────────────────
@@ -631,6 +667,9 @@ export const ENDPOINTS = {
       REJECT_PAYOUT:         (payoutId: string) => `/api/admin/finance/payouts/${payoutId}/reject`,
       RETRY_PAYOUT:          (payoutId: string) => `/api/admin/finance/payouts/${payoutId}/retry`,
       PROCESS_CLEARING:      '/api/admin/finance/process-clearing',
+      PROCESS_SCHEDULED_PAYOUTS: '/api/admin/finance/process-scheduled-payouts',
+      PENDING_VERIFICATION_METHODS: '/api/admin/finance/payout-methods/pending-verification',
+      VERIFY_PAYOUT_METHOD:  (storeId: string, methodId: string) => `/api/admin/finance/sellers/${storeId}/payout-methods/${methodId}/verify`,
       REFUND_REPORT:         '/api/admin/finance/reports/refunds',
       TAX_REPORTS:           '/api/admin/finance/reports/tax',
       SETTLEMENT_REPORT:     '/api/admin/finance/reports/settlement',

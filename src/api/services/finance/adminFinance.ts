@@ -115,7 +115,7 @@ export interface PayoutMethodRow {
   _id: string;
   storeId: string;
   sellerId: string;
-  type: 'bank_transfer' | 'paypal' | 'stripe';
+  type: 'bank_transfer' | 'jazzcash' | 'easypaisa' | 'paypal' | 'stripe';
   isDefault: boolean;
   bankName: string | null;
   accountHolder: string | null;
@@ -123,6 +123,13 @@ export interface PayoutMethodRow {
   routingNumber: string | null;
   externalAccountId: string | null;
   status: 'active' | 'inactive' | 'pending_verification';
+}
+
+export interface PendingPayoutMethodRow extends PayoutMethodRow {
+  storeName: string;
+  createdAt: string;
+  accountTitleMismatchFlagged: boolean;
+  accountTitleMismatchNote: string | null;
 }
 
 export interface PayoutRow {
@@ -323,6 +330,22 @@ export function apiAdminRetryPayout(payoutId: string) {
 
 export function apiAdminProcessClearing() {
   return client.post<never, ApiResponse<ClearingResultData>>(ENDPOINTS.FINANCE.ADMIN.PROCESS_CLEARING);
+}
+
+export function apiAdminTriggerScheduledPayouts() {
+  return client.post<never, ApiResponse<{ schedulesChecked: number; payoutsCreated: number; totalAmount: number; skipped: number }>>(
+    ENDPOINTS.FINANCE.ADMIN.PROCESS_SCHEDULED_PAYOUTS,
+  );
+}
+
+// ── Payout method verification ──────────────────────────────────────────────
+
+export function apiAdminPendingVerificationMethods() {
+  return client.get<never, ApiResponse<PendingPayoutMethodRow[]>>(ENDPOINTS.FINANCE.ADMIN.PENDING_VERIFICATION_METHODS);
+}
+
+export function apiAdminVerifyPayoutMethod(storeId: string, methodId: string, approve: boolean, note?: string) {
+  return client.patch<never, ApiResponse<PayoutMethodRow>>(ENDPOINTS.FINANCE.ADMIN.VERIFY_PAYOUT_METHOD(storeId, methodId), { approve, note });
 }
 
 // ── G. Reports ────────────────────────────────────────────────────────────────────

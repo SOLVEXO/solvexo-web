@@ -1,5 +1,6 @@
 import client from '../../client';
 import { ENDPOINTS } from '../../endpoints';
+import type { VariantOption } from '../product';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -9,8 +10,7 @@ export interface PosProductVariant {
   price:          number;
   compareAtPrice?: number | null;
   stock:          number;
-  size?:          string | null;
-  color?:         string | null;
+  options?:       VariantOption[];
   isDefault?:     boolean;
   images?:        string[];
 }

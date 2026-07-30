@@ -133,7 +133,7 @@ function StoreHero({ store }: { store: ReturnType<typeof useStoreWorkspace>['sto
         </Button>
         {store?.slug && (
           <a
-            href={`/store/${store.slug}`}
+            href={`/${store.slug}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-[6px] px-[14px] py-[9px] rounded-lg bg-white text-brand-deep-orange text-[13px] font-bold no-underline transition-transform duration-150 hover:scale-[1.03]"
@@ -258,7 +258,7 @@ function StoreInfoCard() {
         </button>
         {store?.slug && (
           <a
-            href={`/store/${store.slug}`}
+            href={`/${store.slug}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2.5 px-[10px] py-[9px] rounded-lg text-[12px] font-medium text-charcoal no-underline transition-colors duration-150 hover:bg-[#F7F6F1]"

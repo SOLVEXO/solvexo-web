@@ -56,6 +56,18 @@ export interface PlacementRateCard {
 
 export type PromotionPricing = Partial<Record<'homepageHero' | 'marketplaceHero' | 'educationHero' | 'categoryHero', PlacementRateCard>>;
 
+export interface ManualPaymentConfig {
+  enabled: boolean;
+  bankName: string | null;
+  accountTitle: string | null;
+  accountNumber: string | null;
+  iban: string | null;
+  jazzcashNumber: string | null;
+  easypaisaNumber: string | null;
+  instructions: string | null;
+  usdToPkrRate: number;
+}
+
 export interface PlatformConfig {
   _id: string;
   maintenanceMode: boolean;
@@ -64,6 +76,7 @@ export interface PlatformConfig {
   emailConfig: EmailConfig;
   placementLimits: PlacementLimits;
   promotionPricing: PromotionPricing;
+  manualPaymentConfig: ManualPaymentConfig;
   createdAt: string;
   updatedAt: string;
 }
@@ -99,4 +112,8 @@ export function apiUpdatePlacementLimits(payload: Partial<PlacementLimits>) {
 
 export function apiUpdatePromotionPricing(payload: PromotionPricing) {
   return client.put<never, ApiResponse<PlatformConfig>>(ENDPOINTS.PLATFORM_CONFIG.UPDATE_PROMOTION_PRICING, payload);
+}
+
+export function apiUpdateManualPaymentConfig(payload: Partial<ManualPaymentConfig>) {
+  return client.put<never, ApiResponse<PlatformConfig>>(ENDPOINTS.PLATFORM_CONFIG.UPDATE_MANUAL_PAYMENT, payload);
 }

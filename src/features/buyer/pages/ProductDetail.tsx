@@ -15,7 +15,7 @@ import { Card } from '@/components/comman/ui/Card';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { TabBar } from '@/components/comman/ui/TabBar';
 import { Modal } from '@/components/comman/ui/Modal';
-import { BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget, CoverImage } from '@/components/comman/ui';
+import { BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, CoverImage } from '@/components/comman/ui';
 import {
   ArrowRight, Package, Download, ClipboardList, CheckCircle, Minus, Plus,
   ShoppingCart, Star, Link2, Share2, ImageOff, Heart, ShieldCheck, Truck,
@@ -128,52 +128,51 @@ function ImageGallery({ images, name }: { images: string[]; name: string }) {
 }
 
 // ── Variant Selector ──────────────────────────────────────────────────────────
+// Generic — groups every variant's options by attribute name (Color, Size,
+// Material…) and renders one chip-row per distinct attribute, instead of
+// hardcoding Color/Size blocks.
 function VariantSelector({ variants, selected, onSelect }: {
   variants: ProductVariant[]; selected: ProductVariant | null; onSelect: (v: ProductVariant) => void;
 }) {
   if (!variants.length) return null;
+
+  const attributeNames = Array.from(new Set(variants.flatMap(v => (v.options ?? []).map(o => o.name))));
+  if (!attributeNames.length) return null;
+
+  const valueOf = (v: ProductVariant | null, name: string) => v?.options?.find(o => o.name === name)?.value;
+
+  function pickVariant(name: string, value: string) {
+    const match =
+      variants.find(v => valueOf(v, name) === value && attributeNames.every(n => n === name || valueOf(v, n) === valueOf(selected, n))) ??
+      variants.find(v => valueOf(v, name) === value);
+    if (match) onSelect(match);
+  }
+
   return (
     <div className="flex flex-col gap-3 mb-4">
-      {variants.some(v => v.color) && (
-        <div>
-          <p className="text-[12px] font-semibold text-charcoal mb-[6px]">
-            Color: <span className="font-normal text-slate">{selected?.color ?? '—'}</span>
-          </p>
-          <div className="flex flex-wrap gap-[6px]">
-            {variants.map(v => (
-              <button
-                key={v._id} onClick={() => onSelect(v)}
-                className={clsx(
-                  'px-[10px] py-1 rounded-[6px] text-[12px] cursor-pointer border-[1.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
-                  selected?._id === v._id ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange font-semibold' : 'border-bone bg-white text-charcoal font-normal',
-                )}
-              >
-                {v.color}
-              </button>
-            ))}
+      {attributeNames.map(name => {
+        const values = Array.from(new Set(variants.map(v => valueOf(v, name)).filter((x): x is string => !!x)));
+        return (
+          <div key={name}>
+            <p className="text-[12px] font-semibold text-charcoal mb-[6px]">
+              {name}: <span className="font-normal text-slate">{valueOf(selected, name) ?? '—'}</span>
+            </p>
+            <div className="flex flex-wrap gap-[6px]">
+              {values.map(val => (
+                <button
+                  key={val} onClick={() => pickVariant(name, val)}
+                  className={clsx(
+                    'px-[10px] py-1 rounded-[6px] text-[12px] cursor-pointer border-[1.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                    valueOf(selected, name) === val ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange font-semibold' : 'border-bone bg-white text-charcoal font-normal',
+                  )}
+                >
+                  {val}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-      {variants.some(v => v.size) && (
-        <div>
-          <p className="text-[12px] font-semibold text-charcoal mb-[6px]">
-            Size: <span className="font-normal text-slate">{selected?.size ?? '—'}</span>
-          </p>
-          <div className="flex flex-wrap gap-[6px]">
-            {variants.map(v => (
-              <button
-                key={v._id} onClick={() => onSelect(v)}
-                className={clsx(
-                  'px-[10px] py-1 rounded-[6px] text-[12px] cursor-pointer border-[1.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
-                  selected?._id === v._id ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange font-semibold' : 'border-bone bg-white text-charcoal font-normal',
-                )}
-              >
-                {v.size}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 }
@@ -402,8 +401,7 @@ export function ProductDetail() {
   const specs: { label: string; value: string }[] = product ? [
     { label: 'Product Type', value: typeLabel },
     ...(activeVariant?.sku ? [{ label: 'SKU', value: activeVariant.sku }] : []),
-    ...(activeVariant?.color ? [{ label: 'Color', value: activeVariant.color }] : []),
-    ...(activeVariant?.size ? [{ label: 'Size', value: activeVariant.size }] : []),
+    ...(activeVariant?.options ?? []).map(o => ({ label: o.name, value: o.value })),
     ...(activeVariant?.shippingWeight ? [{ label: 'Weight', value: activeVariant.shippingWeight }] : []),
     ...(product.digital?.licenseType ? [{ label: 'License', value: product.digital.licenseType }] : []),
     ...(product.digital?.downloadLimit ? [{ label: 'Download Limit', value: String(product.digital.downloadLimit) }] : []),
@@ -682,7 +680,7 @@ export function ProductDetail() {
                         )}
                       </div>
                       <div className="flex gap-2 shrink-0 pt-8">
-                        <Button variant="secondary" size="sm" disabled={!product.storeSlug} onClick={() => product.storeSlug && navigate(`/store/${product.storeSlug}`)}>
+                        <Button variant="secondary" size="sm" disabled={!product.storeSlug} onClick={() => product.storeSlug && navigate(`/${product.storeSlug}`)}>
                           Visit Store <ArrowRight size={13} className="inline align-middle ml-1" />
                         </Button>
                         {storeId && (
@@ -811,7 +809,6 @@ export function ProductDetail() {
         </div>
       )}
 
-      <FloatingAppWidget mobileBottomClass="bottom-[150px]" />
 
       {previewOpen && (
         <Modal title="Preview" onClose={() => { setPreviewOpen(false); resetPreview(); }} width={560}>

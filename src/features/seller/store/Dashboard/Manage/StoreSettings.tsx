@@ -4,7 +4,7 @@ import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLa
 import { apiUpdateStore, apiSetCustomDomain, apiSetWhiteLabel, type ProductType } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
-import { ImageUpload } from '@/components/comman/ui';
+import { ImageUpload, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { ActivityLogTab } from './tabs/ActivityLogTab';
@@ -153,6 +153,7 @@ export default function StoreSettings() {
   const [logo,         setLogo]         = useState('');
   const [coverImage,   setCoverImage]   = useState('');
   const [categoryId,   setCategoryId]   = useState('');
+  const [codEnabled,   setCodEnabled]   = useState(true);
   const [categories,   setCategories]   = useState<CategoryNode[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [saving,       setSaving]       = useState(false);
@@ -167,6 +168,7 @@ export default function StoreSettings() {
     setLogo(store.logo ?? '');
     setCoverImage(store.coverImage ?? '');
     setCategoryId(store.categoryId ?? '');
+    setCodEnabled(store.codEnabled !== false);
   }, [store]);
 
   useEffect(() => {
@@ -184,7 +186,7 @@ export default function StoreSettings() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, productTypes, logo, coverImage, categoryId });
+      await apiUpdateStore({ storeId, name, description, productTypes, logo, coverImage, categoryId, codEnabled });
       refetch();
       setSaveMsg({ ok: true, text: 'Store updated successfully.' });
     } catch (err) {
@@ -202,7 +204,8 @@ export default function StoreSettings() {
       coverImage !== (store.coverImage ?? '') ||
       categoryId !== (store.categoryId ?? '') ||
       JSON.stringify(productTypes.slice().sort()) !==
-        JSON.stringify((store.productTypes ?? []).slice().sort()));
+        JSON.stringify((store.productTypes ?? []).slice().sort()) ||
+      codEnabled !== (store.codEnabled !== false));
 
   return (
     <div>
@@ -375,6 +378,18 @@ export default function StoreSettings() {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Payment methods */}
+              <div className="mt-6 border-t border-bone pt-[18px]">
+                <p className="text-[12px] font-semibold text-charcoal mb-3">Payment Methods</p>
+                <div className="flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
+                  <div>
+                    <p className="text-[13px] font-medium text-charcoal">Cash on Delivery</p>
+                    <p className="text-[11px] text-slate">Let buyers pay in cash when their physical order arrives.</p>
+                  </div>
+                  <Toggle checked={codEnabled} onChange={setCodEnabled} />
+                </div>
               </div>
 
               {/* Read-only info */}

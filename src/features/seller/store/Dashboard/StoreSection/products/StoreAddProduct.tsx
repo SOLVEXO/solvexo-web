@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Download, GraduationCap, Loader2, CalendarClock } from 'lucide-react';
+import { Package, Download, GraduationCap, Loader2, CalendarClock, Plus, X } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { apiCreatePhysicalProduct, apiCreateDigitalProduct, EDUCATION_LEVELS, type EducationLevel } from '@/api/services/product';
+import { apiCreatePhysicalProduct, apiCreateDigitalProduct, EDUCATION_LEVELS, type EducationLevel, type VariantOption } from '@/api/services/product';
 import { addCachedProduct } from './_cache';
 import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
@@ -67,9 +67,68 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
   );
 }
 
+const MAX_VARIANT_OPTIONS = 3;
+
+// ── Variant attributes builder — replaces the old fixed Size/Color inputs with
+// any combination of seller-defined attributes (Color, Size, Material…), up to
+// 3, matching what the variant-CRUD backend now accepts. ─────────────────────
+function VariantOptionsField({ options, onChange }: { options: VariantOption[]; onChange: (next: VariantOption[]) => void }) {
+  const [name, setName] = useState('');
+  const [value, setValue] = useState('');
+
+  function add() {
+    if (!name.trim() || !value.trim() || options.length >= MAX_VARIANT_OPTIONS) return;
+    onChange([...options, { name: name.trim(), value: value.trim() }]);
+    setName(''); setValue('');
+  }
+
+  const canAdd = !!name.trim() && !!value.trim();
+
+  return (
+    <div className="flex flex-col gap-2">
+      {options.length > 0 && (
+        <div className="flex flex-col gap-[6px]">
+          {options.map((o, i) => (
+            <div key={i} className="flex items-center gap-2 bg-brand-pale-orange border border-brand-orange/20 rounded-lg pl-3 pr-2 py-[7px]">
+              <span className="flex-1 min-w-0 text-[12px] text-charcoal truncate">
+                <span className="font-semibold text-brand-deep-orange">{o.name}</span>
+                <span className="text-brand-orange/40 mx-[6px]">/</span>
+                {o.value}
+              </span>
+              <button type="button" onClick={() => onChange(options.filter((_, idx) => idx !== i))}
+                aria-label={`Remove ${o.name} ${o.value}`}
+                className="bg-transparent border-none cursor-pointer p-1 rounded-md text-brand-orange/50 shrink-0 flex items-center hover:text-brand-orange hover:bg-white/70 transition-colors">
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {options.length < MAX_VARIANT_OPTIONS && (
+        <div className="flex flex-col gap-[7px] p-2.5 rounded-lg border border-dashed border-[#D9D6CC] bg-cream/50">
+          <div className="grid grid-cols-2 gap-[7px]">
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="Attribute"
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+              className={`${inp} px-2.5 py-[7px] text-[12px] bg-white`} />
+            <input value={value} onChange={e => setValue(e.target.value)} placeholder="Value"
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+              className={`${inp} px-2.5 py-[7px] text-[12px] bg-white`} />
+          </div>
+          <button type="button" onClick={add} disabled={!canAdd}
+            className="flex items-center justify-center gap-1.5 py-[7px] rounded-md border-none text-[12px] font-semibold transition-colors"
+            style={{ background: canAdd ? '#D97757' : '#E8E6DC', color: canAdd ? '#fff' : '#A8A6A0', cursor: canAdd ? 'pointer' : 'not-allowed' }}>
+            <Plus size={13} /> Add Attribute
+          </button>
+        </div>
+      )}
+      <p className="text-[11px] text-slate">Optional — leave empty for a single plain variant, or add up to 3 like Color, Size, Material.</p>
+    </div>
+  );
+}
+
 const initPhys = {
   name: '', description: '', price: '', compareAtPrice: '',
-  stock: '', size: '', color: '', shippingWeight: '', subCategoryId: '',
+  stock: '', options: [] as VariantOption[], shippingWeight: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
 };
@@ -131,8 +190,13 @@ export default function StoreAddProduct() {
           subCategoryId: phys.subCategoryId || null, images: phys.images, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
-          price: Number(phys.price), compareAtPrice: phys.compareAtPrice ? Number(phys.compareAtPrice) : null,
-          size: phys.size, color: phys.color, stock: Number(phys.stock), shippingWeight: phys.shippingWeight,
+          variants: [{
+            price: Number(phys.price),
+            compareAtPrice: phys.compareAtPrice ? Number(phys.compareAtPrice) : null,
+            options: phys.options,
+            stock: Number(phys.stock),
+            shippingWeight: phys.shippingWeight,
+          }],
         });
         addCachedProduct(storeId, { product: res.data.product, variant: res.data.defaultVariant });
       } else {
@@ -387,14 +451,9 @@ export default function StoreAddProduct() {
                 <F label="Stock Quantity" req>
                   <input type="number" min="0" value={phys.stock} onChange={e => sp('stock', e.target.value)} placeholder="0" className={inp} />
                 </F>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <F label="Size">
-                    <input value={phys.size} onChange={e => sp('size', e.target.value)} placeholder="L, XL…" className={inp} />
-                  </F>
-                  <F label="Color">
-                    <input value={phys.color} onChange={e => sp('color', e.target.value)} placeholder="Red…" className={inp} />
-                  </F>
-                </div>
+                <F label="Variant Attributes">
+                  <VariantOptionsField options={phys.options} onChange={v => sp('options', v)} />
+                </F>
                 <F label="Shipping Weight">
                   <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg" className={inp} />
                 </F>

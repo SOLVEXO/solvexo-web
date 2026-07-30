@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
-import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, FloatingAppWidget, DealsBanner, CoverImage, StoreAnnouncementBar } from '@/components/comman/ui';
+import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, DealsBanner, CoverImage, StoreAnnouncementBar } from '@/components/comman/ui';
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { ProductImage, StarRating as SharedStarRating } from '@/components/comman/marketplace/ProductCard';
 import { useStoreBanners } from '@/hooks/useStoreBanners';
@@ -853,7 +853,6 @@ export function SellerStorefront() {
         <AppDownloadBanner />
       </div>
       <Footer />
-      <FloatingAppWidget />
 
       {showRewards && (
         <Modal title="Rewards Catalog" onClose={() => setShowRewards(false)}>

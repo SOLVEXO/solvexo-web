@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, FolderTree, RefreshCw,
-  BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle,
+  BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle, Landmark, Percent,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -33,6 +33,8 @@ const ADMIN_NAV: AdminNavItem[] = [
   { id: 'marketing',     Icon: Tag,             label: 'Marketing',       path: '/admin/marketing'     },
   { id: 'platform-plans',Icon: Layers,          label: 'Platform Plans',  path: '/admin/platform-plans' },
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
+  { id: 'manual-payments', Icon: Landmark,      label: 'Manual Payments', path: '/admin/manual-payments' },
+  { id: 'commission-rules', Icon: Percent,      label: 'Commission Rules', path: '/admin/commission-rules' },
   { id: 'seo',           Icon: Search,          label: 'SEO',             path: '/admin/seo'           },
   { id: 'ai-studio',     Icon: Sparkles,        label: 'AI Studio',       path: '/admin/ai-studio'     },
   { id: 'banners',       Icon: ImageIcon,       label: 'Banners',         path: '/admin/banners'       },
@@ -50,7 +52,7 @@ const NAV_GROUPS: { label: string; ids: AdminNavItem['id'][] }[] = [
   { label: 'Community', ids: ['users', 'moderation', 'messages'] },
   { label: 'Commerce',  ids: ['marketplace', 'categories', 'subscriptions', 'platform-plans'] },
   { label: 'Growth',    ids: ['marketing', 'seo', 'ai-studio'] },
-  { label: 'Finance',   ids: ['finance'] },
+  { label: 'Finance',   ids: ['finance', 'manual-payments', 'commission-rules'] },
   { label: 'Content',   ids: ['banners', 'faqs', 'contact', 'announcements'] },
   { label: 'Platform',  ids: ['config', 'settings'] },
 ];

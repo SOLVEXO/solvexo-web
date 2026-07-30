@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   apiAdminFinanceOverview,
   apiAdminFinanceRevenueOverTime,
@@ -13,6 +13,9 @@ import {
   apiAdminRetryPayout,
   apiAdminCreateManualPayout,
   apiAdminProcessClearing,
+  apiAdminTriggerScheduledPayouts,
+  apiAdminPendingVerificationMethods,
+  apiAdminVerifyPayoutMethod,
   apiAdminRefundReport,
   apiAdminTaxReports,
   apiAdminSettlementReport,
@@ -24,6 +27,7 @@ import {
   type SellerBalancesParams,
   type AdminFinanceExportParams,
   type ManualPayoutPayload,
+  type PendingPayoutMethodRow,
 } from '@/api/services/finance/adminFinance';
 import { useAnalyticsQuery } from '@/hooks/useAnalyticsQuery';
 
@@ -167,6 +171,70 @@ export function useAdminProcessClearing() {
   }, []);
 
   return { triggerClearing, processing, error, result };
+}
+
+export function useAdminTriggerScheduledPayouts() {
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState<{ schedulesChecked: number; payoutsCreated: number; totalAmount: number; skipped: number } | null>(null);
+
+  const trigger = useCallback(async () => {
+    setProcessing(true);
+    setError('');
+    try {
+      const res = await apiAdminTriggerScheduledPayouts();
+      setResult(res.data);
+      return res.data;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to process scheduled payouts.');
+      return null;
+    } finally {
+      setProcessing(false);
+    }
+  }, []);
+
+  return { trigger, processing, error, result };
+}
+
+// ── Payout method verification ──────────────────────────────────────────────
+
+export function useAdminPendingVerificationMethods() {
+  const [methods, setMethods] = useState<PendingPayoutMethodRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const refetch = useCallback(() => {
+    setLoading(true);
+    return apiAdminPendingVerificationMethods()
+      .then(res => setMethods(res.data ?? []))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load pending payout methods.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { refetch(); }, [refetch]);
+
+  return { methods, loading, error, refetch };
+}
+
+export function useAdminVerifyPayoutMethod() {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const verify = useCallback(async (storeId: string, methodId: string, approve: boolean, note?: string) => {
+    setSubmitting(true);
+    setError('');
+    try {
+      await apiAdminVerifyPayoutMethod(storeId, methodId, approve, note);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to verify payout method.');
+      return false;
+    } finally {
+      setSubmitting(false);
+    }
+  }, []);
+
+  return { verify, submitting, error };
 }
 
 // ── G. Reports ────────────────────────────────────────────────────────────────────

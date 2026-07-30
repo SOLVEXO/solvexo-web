@@ -5,10 +5,11 @@ import {
   useUpdateFeatureFlags,
   useUpdateAiConfig,
   useUpdateEmailConfig,
+  useUpdateManualPaymentConfig,
   useUpdateMaintenanceMode,
 } from '@/hooks/admin/useAdminConfig';
-import type { PlatformConfig, FeatureFlags, AiConfig, EmailConfig } from '@/api/services/config/adminConfig';
-import { Toggle, Input, Select, Button, Modal, SkeletonBox } from '@/components/comman/ui';
+import type { PlatformConfig, FeatureFlags, AiConfig, EmailConfig, ManualPaymentConfig } from '@/api/services/config/adminConfig';
+import { Toggle, Input, Textarea, Select, Button, Modal, SkeletonBox } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { AlertCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
@@ -256,6 +257,80 @@ function EmailConfigCard({ config, onSaved }: { config: PlatformConfig; onSaved:
   );
 }
 
+// ── Manual Bank Transfer (Pakistan track) card ────────────────────────────────
+function ManualPaymentConfigCard({ config, onSaved }: { config: PlatformConfig; onSaved: (c: PlatformConfig) => void }) {
+  const { update, submitting, error } = useUpdateManualPaymentConfig();
+  const { saved, flash } = useSavedFlash();
+  const [form, setForm] = useState(config.manualPaymentConfig);
+  const [validationError, setValidationError] = useState('');
+
+  // See AiConfigCard above — re-seeded during render, not via effect.
+  const [synced, setSynced] = useState(config.manualPaymentConfig);
+  if (config.manualPaymentConfig !== synced) {
+    setSynced(config.manualPaymentConfig);
+    setForm(config.manualPaymentConfig);
+  }
+
+  function setField<K extends keyof ManualPaymentConfig>(key: K, value: ManualPaymentConfig[K]) {
+    setForm(f => ({ ...f, [key]: value }));
+  }
+
+  async function save() {
+    if (form.enabled && (!form.bankName || !form.accountTitle || !form.accountNumber)) {
+      setValidationError('Bank name, account title, and account number are required to enable bank transfer.');
+      return;
+    }
+    if (!form.usdToPkrRate || form.usdToPkrRate <= 0) {
+      setValidationError('USD → PKR rate must be a positive number.');
+      return;
+    }
+    setValidationError('');
+    const ok = await update(form);
+    if (ok) { onSaved({ ...config, manualPaymentConfig: form }); flash(); }
+  }
+
+  return (
+    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div>
+          <p className="text-[14px] font-bold text-charcoal">Manual Bank Transfer</p>
+          <p className="text-[11px] text-slate">Pakistan track — buyers transfer into your account and upload proof, reviewed here before an order is marked paid.</p>
+        </div>
+        <Toggle checked={form.enabled} onChange={(next) => setField('enabled', next)} />
+      </div>
+      <div className="flex flex-col gap-[14px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
+          <Input label="Bank Name" value={form.bankName ?? ''} onChange={(e) => setField('bankName', e.target.value)} placeholder="Meezan Bank" />
+          <Input label="Account Title" value={form.accountTitle ?? ''} onChange={(e) => setField('accountTitle', e.target.value)} placeholder="Solvexo Marketplace Pvt Ltd" />
+          <Input label="Account Number" value={form.accountNumber ?? ''} onChange={(e) => setField('accountNumber', e.target.value)} placeholder="01234567890123" />
+          <Input label="IBAN" value={form.iban ?? ''} onChange={(e) => setField('iban', e.target.value)} placeholder="PK00MEZN0001234567890123" />
+          <Input label="JazzCash Number (optional)" value={form.jazzcashNumber ?? ''} onChange={(e) => setField('jazzcashNumber', e.target.value)} />
+          <Input label="Easypaisa Number (optional)" value={form.easypaisaNumber ?? ''} onChange={(e) => setField('easypaisaNumber', e.target.value)} />
+        </div>
+        <Input
+          label="USD → PKR Rate"
+          type="number"
+          min={1}
+          value={String(form.usdToPkrRate)}
+          onChange={(e) => setField('usdToPkrRate', Number(e.target.value) || 0)}
+        />
+        <Textarea
+          label="Instructions shown to buyer (optional)"
+          value={form.instructions ?? ''}
+          onChange={(e) => setField('instructions', e.target.value)}
+          placeholder="Transfer the exact amount shown and upload your receipt."
+          rows={2}
+        />
+        {(validationError || error) && <p className="text-[12px] text-error">{validationError || error}</p>}
+        <div className="flex items-center gap-3">
+          <Button onClick={save} loading={submitting} size="sm" className="self-start">Save Manual Payment Config</Button>
+          <SavedHint show={saved} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 function ConfigSkeleton() {
   return (
@@ -307,6 +382,7 @@ export function AdminConfig() {
               <EmailConfigCard config={config} onSaved={setConfig} />
             </div>
           </div>
+          <ManualPaymentConfigCard config={config} onSaved={setConfig} />
         </>
       ) : null}
     </div>

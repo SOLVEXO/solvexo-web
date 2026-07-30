@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { LayoutDashboard, DollarSign, Store, Send, Receipt, FileText } from 'lucide-react';
+import { LayoutDashboard, DollarSign, Store, Send, Receipt, FileText, Landmark } from 'lucide-react';
 import { Button, Input, TabBar, type Tab } from '@/components/comman/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminFinanceExport } from '@/hooks/admin/useAdminFinance';
@@ -15,6 +15,7 @@ import { FinanceOverviewTab } from './finance/FinanceOverviewTab';
 import { FinanceRevenueTab } from './finance/FinanceRevenueTab';
 import { FinanceSellersTab } from './finance/FinanceSellersTab';
 import { FinancePayoutsTab } from './finance/FinancePayoutsTab';
+import { FinancePayoutMethodsTab } from './finance/FinancePayoutMethodsTab';
 import { FinanceTransactionsTab } from './finance/FinanceTransactionsTab';
 import { FinanceReportsTab } from './finance/FinanceReportsTab';
 
@@ -23,6 +24,7 @@ const TABS: Tab[] = [
   { id: 'revenue', label: 'Revenue', icon: <DollarSign size={14} /> },
   { id: 'sellers', label: 'Sellers', icon: <Store size={14} /> },
   { id: 'payouts', label: 'Payouts', icon: <Send size={14} /> },
+  { id: 'payout-methods', label: 'Payout Methods', icon: <Landmark size={14} /> },
   { id: 'transactions', label: 'Transactions', icon: <Receipt size={14} /> },
   { id: 'reports', label: 'Reports', icon: <FileText size={14} /> },
 ];
@@ -90,6 +92,7 @@ export function AdminFinance() {
       {activeTab === 'revenue' && <FinanceRevenueTab params={params} />}
       {activeTab === 'sellers' && <FinanceSellersTab />}
       {activeTab === 'payouts' && <FinancePayoutsTab />}
+      {activeTab === 'payout-methods' && <FinancePayoutMethodsTab />}
       {activeTab === 'transactions' && <FinanceTransactionsTab params={params} />}
       {activeTab === 'reports' && <FinanceReportsTab params={params} />}
     </div>

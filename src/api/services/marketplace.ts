@@ -1,5 +1,8 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
+import type { VariantOption } from './product';
+
+export type { VariantOption };
 
 export interface ProductVariant {
   _id:            string;
@@ -7,9 +10,9 @@ export interface ProductVariant {
   sku:            string;
   price:          number;
   compareAtPrice: number | null;
-  size:           string | null;
-  color:          string | null;
+  options:        VariantOption[];
   stock:          number;
+  unlimitedStock?: boolean;
   shippingWeight: string | null;
   images:         string[];
   isDefault?:     boolean;

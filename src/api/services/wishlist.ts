@@ -1,5 +1,6 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
+import type { VariantOption } from './product';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -7,8 +8,7 @@ export interface WishlistVariant {
   _id:            string;
   productId:      string;
   sku:            string;
-  size:           string | null;
-  color:          string | null;
+  options:        VariantOption[];
   price:          number;
   stock:          number;
   images:         string[];

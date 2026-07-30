@@ -147,10 +147,11 @@ export function Wishlist() {
                   )}
                 </div>
 
-                {variant && (variant.color || variant.size) && (
-                  <div className="flex items-center gap-[5px]">
-                    {variant.color && <span className="text-[11px] px-[8px] py-[2px] rounded-[6px] bg-[#F2F0EA] text-slate font-medium">{variant.color}</span>}
-                    {variant.size && <span className="text-[11px] px-[8px] py-[2px] rounded-[6px] bg-[#F2F0EA] text-slate font-medium">{variant.size}</span>}
+                {variant && variant.options?.length > 0 && (
+                  <div className="flex items-center gap-[5px] flex-wrap">
+                    {variant.options.map(o => (
+                      <span key={o.name} className="text-[11px] px-[8px] py-[2px] rounded-[6px] bg-[#F2F0EA] text-slate font-medium">{o.value}</span>
+                    ))}
                   </div>
                 )}
 

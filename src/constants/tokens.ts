@@ -67,6 +67,7 @@ export const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'blue' | 'gray' 
   New:              'gray',
   Read:             'blue',
   Resolved:         'green',
+  Rejected:         'red',
   'At Risk':        'red',
   Physical:         'orange',
   // Lowercase (API response values)
@@ -85,6 +86,7 @@ export const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'blue' | 'gray' 
   expired:          'gray',
   cancelled:        'red',
   suspended:        'red',
+  rejected:         'red',
   'out of stock':   'red',
   digital:          'blue',
   physical:         'orange',

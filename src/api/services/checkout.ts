@@ -1,6 +1,7 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
 import { getCheckoutAttributionFields } from '@/utils/promotionAttribution';
+import type { VariantOption } from './product';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -8,13 +9,14 @@ export interface CheckoutItem {
   productId:    string;
   variantId:    string;
   sellerId:     string;
+  sellerName?:  string | null;
+  sellerVerified?: boolean;
   storeId:      string;
   type:         string;
   name:         string;
   image:        string | null;
   sku:          string;
-  size:         string | null;
-  color:        string | null;
+  options:      VariantOption[];
   licenseType:  string | null;
   quantity:     number;
   price:        number;
