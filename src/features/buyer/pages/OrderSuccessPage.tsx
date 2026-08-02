@@ -10,6 +10,7 @@ import { apiGetDownloadUrl } from '@/api/services/orders';
 import { clsx } from 'clsx';
 import { Button } from '@/components/comman/ui/Button';
 import { BuyerNavbar, Footer } from '@/components/comman/ui';
+import { currencySymbol } from '@/utils/currency';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DownloadBtn
@@ -52,7 +53,7 @@ function DownloadBtn({ orderId, productId }: { orderId: string; productId: strin
 // ─────────────────────────────────────────────────────────────────────────────
 // OrderItemRow
 // ─────────────────────────────────────────────────────────────────────────────
-function OrderItemRow({ item, orderId }: { item: OrderItem; orderId: string }) {
+function OrderItemRow({ item, orderId, currency }: { item: OrderItem; orderId: string; currency: string }) {
   const isDigital = item.type === 'digital';
   return (
     <div className="flex items-center justify-between gap-3 py-3 border-b border-bone last:border-0">
@@ -81,7 +82,7 @@ function OrderItemRow({ item, orderId }: { item: OrderItem; orderId: string }) {
         </div>
       </div>
       <div className="flex flex-col items-end gap-1.5 shrink-0">
-        <p className="text-[13px] font-bold text-charcoal">${item.totalPrice.toLocaleString()}</p>
+        <p className="text-[13px] font-bold text-charcoal">{currencySymbol(currency)}{item.totalPrice.toLocaleString()}</p>
         {isDigital && item.productId && (
           <DownloadBtn orderId={orderId} productId={item.productId} />
         )}
@@ -93,7 +94,7 @@ function OrderItemRow({ item, orderId }: { item: OrderItem; orderId: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // OrderItemsSection
 // ─────────────────────────────────────────────────────────────────────────────
-function OrderItemsSection({ items, orderId }: { items: OrderItem[]; orderId: string }) {
+function OrderItemsSection({ items, orderId, currency }: { items: OrderItem[]; orderId: string; currency: string }) {
   return (
     <section>
       <div className="flex items-center gap-2 mb-1">
@@ -104,7 +105,7 @@ function OrderItemsSection({ items, orderId }: { items: OrderItem[]; orderId: st
       </div>
       <div>
         {items.map((item, i) => (
-          <OrderItemRow key={i} item={item} orderId={orderId} />
+          <OrderItemRow key={i} item={item} orderId={orderId} currency={currency} />
         ))}
       </div>
     </section>
@@ -223,29 +224,31 @@ function OrderCard({ order }: { order: PlacedOrder }) {
 
       {/* Card body */}
       <div className="px-5 py-4 flex flex-col gap-0">
-        <OrderItemsSection items={order.items} orderId={order.orderId} />
+        <OrderItemsSection items={order.items} orderId={order.orderId} currency={order.currency} />
         {!allDigital && order.deliveryAddress && <AddressSection addr={order.deliveryAddress} />}
         {!allDigital && <OrderTimeline currentStatus={order.orderStatus} />}
       </div>
 
-      {/* Price footer */}
+      {/* Price footer — always the order's own real charged currency
+          (never the buyer's current display preference, which may have
+          changed since this order was placed). */}
       <footer className="px-5 py-4 bg-cream border-t border-bone">
         <div className="flex flex-col gap-2">
           <div className="flex justify-between text-[12px]">
             <span className="text-slate">Subtotal</span>
-            <span className="font-medium text-charcoal">${order.summary.subtotal.toLocaleString()}</span>
+            <span className="font-medium text-charcoal">{currencySymbol(order.currency)}{order.summary.subtotal.toLocaleString()}</span>
           </div>
           {!allDigital && (
             <div className="flex justify-between text-[12px]">
               <span className="text-slate">Shipping</span>
               <span className="font-medium text-charcoal">
-                {order.summary.shipping === 0 ? 'Free' : `$${order.summary.shipping.toLocaleString()}`}
+                {order.summary.shipping === 0 ? 'Free' : `${currencySymbol(order.currency)}${order.summary.shipping.toLocaleString()}`}
               </span>
             </div>
           )}
           <div className="flex justify-between text-[14px] font-bold pt-2 border-t border-bone">
             <span className="text-charcoal">Total</span>
-            <span className="text-charcoal">${order.summary.total.toLocaleString()}</span>
+            <span className="text-charcoal">{currencySymbol(order.currency)}{order.summary.total.toLocaleString()}</span>
           </div>
         </div>
       </footer>
@@ -340,14 +343,14 @@ function SummaryPanel({ orders, navigate }: { orders: PlacedOrder[]; navigate: (
               <p className="text-[11px] font-bold text-brand-deep-orange font-mono leading-tight">{order.orderNumber}</p>
               <p className="text-[10px] text-slate mt-[1px]">{order.items.length} item{order.items.length !== 1 ? 's' : ''}</p>
             </div>
-            <p className="text-[12px] font-semibold text-charcoal shrink-0">${order.summary.total.toLocaleString()}</p>
+            <p className="text-[12px] font-semibold text-charcoal shrink-0">{currencySymbol(order.currency)}{order.summary.total.toLocaleString()}</p>
           </div>
         ))}
       </div>
 
       <div className="px-5 py-4 flex justify-between items-center border-b border-bone">
         <span className="text-[13px] font-bold text-charcoal">Grand Total</span>
-        <span className="text-[15px] font-bold text-carbon">${grandTotal.toLocaleString()}</span>
+        <span className="text-[15px] font-bold text-carbon">{currencySymbol(orders[0]?.currency)}{grandTotal.toLocaleString()}</span>
       </div>
 
       <div className="px-5 py-4 flex flex-col gap-2">

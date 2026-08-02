@@ -2,6 +2,8 @@ import { clsx } from 'clsx';
 import { ShoppingCart, Heart, Loader2, Star } from 'lucide-react';
 import { ProductImage } from './ProductCard';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
+import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+import { currencySymbol } from '@/utils/currency';
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 export function FlashSaleCardSkeleton() {
@@ -44,13 +46,20 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
 
   const variants        = product.variants ?? [];
   const defaultVariant = variants.find(v => v.isDefault) ?? variants[0];
-  const lowestPrice    = variants.length > 0
+  const nativeLowestPrice = variants.length > 0
     ? Math.min(...variants.map(v => v.price))
     : null;
-  const compareAt   = defaultVariant?.compareAtPrice ?? null;
+  const nativeCompareAt = defaultVariant?.compareAtPrice ?? null;
   const ratingCount = product.totalRatings ?? 0;
   const vId         = defaultVariant?._id ?? '';
-  const subscriberPrice = defaultVariant?.subscriberPrice;
+  const nativeSubscriberPrice = defaultVariant?.subscriberPrice;
+
+  const { currency: displayCurrency, convert } = useCurrencyPreference();
+  const nativeCurrency = defaultVariant?.currency;
+  const priceSymbol = currencySymbol(displayCurrency);
+  const lowestPrice = nativeLowestPrice != null ? convert(nativeLowestPrice, nativeCurrency) : null;
+  const compareAt = nativeCompareAt != null ? convert(nativeCompareAt, nativeCurrency) : null;
+  const subscriberPrice = nativeSubscriberPrice != null ? convert(nativeSubscriberPrice, nativeCurrency) : undefined;
   const displayPrice    = subscriberPrice ?? lowestPrice;
   const pctOff = compareAt != null && displayPrice != null && compareAt > displayPrice
     ? Math.round((1 - displayPrice / compareAt) * 100)
@@ -58,8 +67,9 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
   const savings = compareAt != null && displayPrice != null && compareAt > displayPrice
     ? compareAt - displayPrice
     : null;
-  // Stock tracking only applies to physical goods — digital/educational products are always available.
-  const stock = isDigital ? Infinity : (defaultVariant?.stock ?? 0);
+  // Stock tracking only applies to physical goods with tracking enabled — digital/educational
+  // products, and any physical variant marked unlimitedStock, are always available.
+  const stock = isDigital || defaultVariant?.unlimitedStock ? Infinity : (defaultVariant?.stock ?? 0);
 
   return (
     <div
@@ -138,14 +148,14 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
           <div className="min-w-0">
             <div className="flex items-baseline gap-[6px] flex-wrap">
               <span className={clsx('text-[16px] font-bold tracking-tight', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
-                {displayPrice != null ? `$${displayPrice.toLocaleString()}` : '—'}
+                {displayPrice != null ? `${priceSymbol}${displayPrice.toLocaleString()}` : '—'}
               </span>
               {compareAt != null && compareAt > (displayPrice ?? 0) && (
-                <span className="text-[10.5px] text-slate line-through">${compareAt.toLocaleString()}</span>
+                <span className="text-[10.5px] text-slate line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
               )}
             </div>
             {savings != null && savings > 0 && (
-              <p className="text-[9.5px] font-semibold text-success mt-[2px]">Save ${savings.toLocaleString()}</p>
+              <p className="text-[9.5px] font-semibold text-success mt-[2px]">Save {priceSymbol}{savings.toLocaleString()}</p>
             )}
             {stock <= 0 ? (
               <p className="text-[9.5px] font-semibold text-error mt-[2px]">Out of stock</p>

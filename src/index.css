@@ -201,6 +201,14 @@
 }
 .banner-slide-down { animation: banner-slide-down 260ms var(--ease-out); }
 
+/* Slow ambient zoom on the active Hero/storefront carousel slide — subtle
+   "Ken Burns" drift so a static photo doesn't feel inert while it's on screen. */
+@keyframes hero-kenburns {
+  from { transform: scale(1.06); }
+  to   { transform: scale(1); }
+}
+.hero-kenburns { animation: hero-kenburns 7s var(--ease-out) forwards; }
+
 /* Periodic light sweep across the deals ribbon — reads as "live sale", not distracting */
 @keyframes banner-shimmer {
   0%   { transform: translateX(-120%); }

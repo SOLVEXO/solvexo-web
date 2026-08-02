@@ -43,6 +43,9 @@ export interface PlacedOrder {
   paymentMethod:   string;
   isPaid:          boolean;
   orderStatus:     string;
+  /** The currency this order was actually placed/charged in — permanent,
+   *  never re-derived from the buyer's current display preference. */
+  currency:        string;
   deliveryAddress: OrderDeliveryAddress;
   items:           OrderItem[];
   summary:         OrderSummary;

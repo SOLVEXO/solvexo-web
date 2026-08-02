@@ -5,6 +5,8 @@ import type { ActiveCampaignBadge } from './marketplace';
 export type SellerType  = 'creator' | 'reseller' | 'brand' | 'retailer';
 export type ProductType = 'physical_products' | 'digital_downloads' | 'educational_resources' | 'services' | 'in_person_pos';
 
+export type SupportedCurrency = 'PKR' | 'USD';
+
 export interface CreateStorePayload {
   name:         string;
   logo?:        string;
@@ -12,6 +14,10 @@ export interface CreateStorePayload {
   description?: string;
   sellerType:   SellerType;
   productTypes: ProductType[];
+  /** The currency this seller prices their products in — chosen once here,
+   *  required, and locked forever the moment the store has its first
+   *  product (see backend StoreService.createStore's comment). */
+  baseCurrency: SupportedCurrency;
 }
 
 export interface UpdateStorePayload {
@@ -36,6 +42,7 @@ export interface StoreData {
   description:  string;
   sellerType:   SellerType;
   productTypes: ProductType[];
+  baseCurrency: SupportedCurrency;
   /** Per-seller Cash-on-Delivery opt-out — defaults to true. Not yet enforced
    *  by checkout (a multi-vendor cart's COD eligibility isn't scoped per
    *  seller there yet); this only persists the seller's preference so far. */
@@ -164,6 +171,10 @@ export interface PublicStoreData {
   averageRating:  number;
   reviewCount:    number;
   builderConfig:  Record<string, unknown> | null;
+  /** Every product in this storefront is priced in this currency (locked
+   *  per store) — use this to convert listed prices to the buyer's chosen
+   *  display currency. */
+  baseCurrency:   SupportedCurrency;
   sellerType:     string | null;
   badges:         string[];
   createdAt:      string;

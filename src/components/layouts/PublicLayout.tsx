@@ -1,7 +1,7 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { TokenStorage } from '@/api/services/auth';
-import { NotificationBell, ProfileAvatar } from '@/components/comman/ui';
+import { NotificationBell, ProfileAvatar, CurrencySelector } from '@/components/comman/ui';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data
@@ -94,6 +94,7 @@ function NavActions() {
   if (TokenStorage.isLoggedIn()) {
     return (
       <div className="flex items-center gap-3">
+        <CurrencySelector />
         <NotificationBell />
         <ProfileAvatar />
       </div>
@@ -103,16 +104,20 @@ function NavActions() {
     <>
       {/* Desktop: both buttons */}
       <div className="hidden md:flex items-center gap-[10px]">
+        <CurrencySelector />
         <NavBtn variant="ghost"   onClick={() => navigate('/login')}>Sign In</NavBtn>
         <NavBtn variant="primary" onClick={() => navigate('/onboard')}>Start Selling</NavBtn>
       </div>
-      {/* Mobile: compact sign in only */}
-      <button
-        onClick={() => navigate('/login')}
-        className="md:hidden text-[13px] font-medium text-charcoal border border-bone rounded-md px-3 py-[6px] bg-transparent cursor-pointer hover:bg-cream transition-colors"
-      >
-        Sign In
-      </button>
+      {/* Mobile: compact currency toggle + sign in */}
+      <div className="md:hidden flex items-center gap-2">
+        <CurrencySelector />
+        <button
+          onClick={() => navigate('/login')}
+          className="text-[13px] font-medium text-charcoal border border-bone rounded-md px-3 py-[6px] bg-transparent cursor-pointer hover:bg-cream transition-colors"
+        >
+          Sign In
+        </button>
+      </div>
     </>
   );
 }

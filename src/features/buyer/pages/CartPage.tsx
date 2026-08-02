@@ -9,6 +9,8 @@ import {
   Loader2, Package, Download, ChevronRight,
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { currencySymbol } from '@/utils/currency';
+import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 
 function CartItemImage({ images, name }: { images?: string[]; name: string }) {
   const [errored, setErrored] = useState(false);
@@ -62,6 +64,21 @@ export function CartPage() {
   const digitalCount  = items.filter(i => i.type === 'digital').reduce((s, i) => s + i.quantity, 0);
 
   const isEmpty = !loading && !items.length;
+
+  // Every line is converted from its OWN native (seller) currency into the
+  // buyer's currently-selected display currency — this is what makes the
+  // navbar PKR/USD switch actually update prices here, and it's also what
+  // lets a cart with items from different-currency sellers still show one
+  // real, correctly-summed total instead of an ambiguous "confirmed at
+  // checkout" placeholder. The authoritative amount is still always
+  // recomputed fresh, server-side, at checkout creation regardless.
+  const { currency: displayCurrency, convert } = useCurrencyPreference();
+  const displaySymbol = currencySymbol(displayCurrency);
+  const displayTotal = items.reduce((s, i) => {
+    const unit = i.unitPrice ?? i.price ?? 0;
+    const lineTotal = i.itemTotal ?? unit * i.quantity;
+    return s + convert(lineTotal, i.currency);
+  }, 0);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -143,8 +160,10 @@ export function CartPage() {
               {!loading && items.map((item, idx) => {
                 const key        = item.productVariantId;
                 const imgs       = item.image ?? item.images;
-                const price      = item.unitPrice ?? item.price ?? 0;
-                const lineTotal  = item.itemTotal ?? price * item.quantity;
+                const nativePrice = item.unitPrice ?? item.price ?? 0;
+                const nativeLineTotal = item.itemTotal ?? nativePrice * item.quantity;
+                const price      = convert(nativePrice, item.currency);
+                const lineTotal  = convert(nativeLineTotal, item.currency);
                 const isRemoving = removingId === key;
                 const isUpdating = updatingId === key;
                 const isLast     = idx === (items.length - 1);
@@ -177,7 +196,7 @@ export function CartPage() {
                         )}
                       </div>
                       <p className="text-[12px] text-slate mb-3">
-                        ${price.toLocaleString()} each
+                        {displaySymbol}{price.toLocaleString()} each
                       </p>
 
                       {/* Qty controls — 40x40px min hit area for touch */}
@@ -228,7 +247,7 @@ export function CartPage() {
 
                     {/* Line total */}
                     <p className="font-bold text-[15px] text-carbon shrink-0">
-                      ${lineTotal.toLocaleString()}
+                      {displaySymbol}{lineTotal.toLocaleString()}
                     </p>
                   </div>
                 );
@@ -257,15 +276,16 @@ export function CartPage() {
               {!loading && (
                 <div className="flex flex-col gap-2">
                   {items.map(item => {
-                    const price = item.unitPrice ?? item.price ?? 0;
-                    const ttl   = item.itemTotal ?? price * item.quantity;
+                    const nativePrice = item.unitPrice ?? item.price ?? 0;
+                    const nativeTtl   = item.itemTotal ?? nativePrice * item.quantity;
+                    const ttl = convert(nativeTtl, item.currency);
                     return (
                       <div key={item.productVariantId} className="flex justify-between text-[12px] gap-2">
                         <span className="text-carbon truncate">
                           {item.name}
                           <span className="text-slate ml-1">×{item.quantity}</span>
                         </span>
-                        <span className="font-medium text-carbon shrink-0">${ttl.toLocaleString()}</span>
+                        <span className="font-medium text-carbon shrink-0">{displaySymbol}{ttl.toLocaleString()}</span>
                       </div>
                     );
                   })}
@@ -277,7 +297,7 @@ export function CartPage() {
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-[13px]">
                   <span className="text-slate">Subtotal ({cartCount} items)</span>
-                  <span className="font-semibold text-carbon">${(cart?.totalPrice ?? 0).toLocaleString()}</span>
+                  <span className="font-semibold text-carbon">{displaySymbol}{displayTotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-[13px]">
                   <span className="text-slate">{hasPhysical ? 'Shipping' : 'Delivery'}</span>
@@ -291,7 +311,7 @@ export function CartPage() {
 
               <div className="flex justify-between text-[16px] font-bold">
                 <span className="text-carbon">Total</span>
-                <span className="text-carbon">${(cart?.totalPrice ?? 0).toLocaleString()}</span>
+                <span className="text-carbon">{displaySymbol}{displayTotal.toLocaleString()}</span>
               </div>
 
               {/* ── Checkout ── One order for the whole cart, mixed physical +

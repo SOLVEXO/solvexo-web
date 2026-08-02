@@ -143,6 +143,10 @@ export interface ProfileData {
   profileImage: string | null;
   status:       string;
   role:         AppRole;
+  /** Explicit buyer currency choice — null until the buyer picks one, in
+   *  which case it's the cross-device source of truth for checkout/display
+   *  currency (see CurrencyPreferenceContext). */
+  currencyPreference: 'PKR' | 'USD' | null;
   createdAt:    string;
   updatedAt:    string;
 }
@@ -153,10 +157,11 @@ export function apiGetProfile() {
 
 /** POST /auth/edit-profile — updates the logged-in user's profile */
 export interface EditProfilePayload {
-  name:    string;
+  name?:    string;
   phone?:  string;
   address?: string;
   profileImage?: string;
+  currencyPreference?: 'PKR' | 'USD';
 }
 
 export function apiEditProfile(payload: EditProfilePayload) {

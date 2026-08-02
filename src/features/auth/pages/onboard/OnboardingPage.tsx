@@ -11,7 +11,7 @@ import {
   ArrowRight, ArrowLeft, Check, AlertTriangle, Loader2,
 } from 'lucide-react';
 import { useUpload } from '@/hooks/upload/useUpload';
-import type { SellerType, ProductType, StoreData } from '@/api/services/store';
+import type { SellerType, ProductType, StoreData, SupportedCurrency } from '@/api/services/store';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { SellerDashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
@@ -57,7 +57,17 @@ interface StoreForm {
   sellerType:   SellerType | '';
   sellerKey:    string;
   productTypes: ProductType[];
+  /** Set automatically (no form field — see DEFAULT_CURRENCY), sent to the
+   *  backend as part of store creation. Locked forever once the store has
+   *  its first product (see CreateStorePayload.baseCurrency). */
+  baseCurrency: SupportedCurrency;
 }
+
+// Solvexo is Pakistan-origin, so every store defaults to PKR pricing
+// automatically — no picker shown during onboarding. A real IP/locale-based
+// default can replace this constant later without touching anything else,
+// since the rest of the app only ever reads `store.baseCurrency`.
+const DEFAULT_CURRENCY: SupportedCurrency = 'PKR';
 
 // ── Step Progress header — lives inside each step's card, same badge +
 // progress-line + circle treatment as CheckoutPage's step header, instead of
@@ -447,7 +457,7 @@ export function OnboardingPage() {
   const [maxReached, setMaxReached] = useState(1);
   const [form, setForm] = useState<StoreForm>({
     storeName: '', categoryId: '', categoryName: '', description: '', logo: '',
-    sellerType: '', sellerKey: '', productTypes: [],
+    sellerType: '', sellerKey: '', productTypes: [], baseCurrency: DEFAULT_CURRENCY,
   });
 
   const next   = () => setStep(s => { const n = Math.min(s + 1, 4); setMaxReached(m => Math.max(m, n)); return n; });
@@ -462,6 +472,7 @@ export function OnboardingPage() {
       description:  form.description,
       sellerType:   form.sellerType as SellerType,
       productTypes: [...new Set(form.productTypes)],
+      baseCurrency: form.baseCurrency,
     });
     if (result) {
       setMaxReached(4);

@@ -68,6 +68,15 @@ export interface ManualPaymentConfig {
   usdToPkrRate: number;
 }
 
+export interface FxConfig {
+  autoRefreshEnabled: boolean;
+  refreshIntervalHours: number;
+  staleRateAlertThresholdHours: number;
+  sanityBandMinPKR: number;
+  sanityBandMaxPKR: number;
+  abnormalJumpAlertPercent: number;
+}
+
 export interface PlatformConfig {
   _id: string;
   maintenanceMode: boolean;
@@ -77,6 +86,7 @@ export interface PlatformConfig {
   placementLimits: PlacementLimits;
   promotionPricing: PromotionPricing;
   manualPaymentConfig: ManualPaymentConfig;
+  fxConfig: FxConfig;
   createdAt: string;
   updatedAt: string;
 }
@@ -116,4 +126,8 @@ export function apiUpdatePromotionPricing(payload: PromotionPricing) {
 
 export function apiUpdateManualPaymentConfig(payload: Partial<ManualPaymentConfig>) {
   return client.put<never, ApiResponse<PlatformConfig>>(ENDPOINTS.PLATFORM_CONFIG.UPDATE_MANUAL_PAYMENT, payload);
+}
+
+export function apiUpdateFxConfig(payload: Partial<FxConfig>) {
+  return client.put<never, ApiResponse<PlatformConfig>>(ENDPOINTS.PLATFORM_CONFIG.UPDATE_FX, payload);
 }

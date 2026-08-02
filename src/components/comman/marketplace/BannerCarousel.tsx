@@ -103,7 +103,10 @@ export function BannerCarousel({ banners, entityType }: BannerCarouselProps) {
               decoding="async"
               alt=""
               onLoad={() => setLoadedIds((prev) => (prev.has(banner._id) ? prev : new Set(prev).add(banner._id)))}
-              className="absolute inset-0 w-full h-full object-cover"
+              className={clsx(
+                'absolute inset-0 w-full h-full object-cover',
+                isActive && !prefersReducedMotion && 'hero-kenburns',
+              )}
             />
           </picture>
         );
@@ -113,7 +116,7 @@ export function BannerCarousel({ banners, entityType }: BannerCarouselProps) {
             key={banner._id}
             aria-hidden={!isActive}
             className={clsx(
-              'absolute inset-0 transition-opacity duration-700 ease-out',
+              'absolute inset-0 transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] duration-[900ms]',
               isActive ? 'opacity-100 z-[1]' : 'opacity-0 pointer-events-none',
             )}
           >
@@ -133,14 +136,14 @@ export function BannerCarousel({ banners, entityType }: BannerCarouselProps) {
           <button
             onClick={() => go(-1)}
             aria-label="Previous banner"
-            className="absolute left-3 top-1/2 -translate-y-1/2 size-10 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity z-10"
+            className="absolute left-3 top-1/2 -translate-y-1/2 size-10 rounded-full bg-white/85 shadow-[0_4px_14px_rgba(20,15,10,0.12)] backdrop-blur-sm hover:bg-white hover:scale-105 flex items-center justify-center border-none cursor-pointer opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-[opacity,transform,background-color] duration-200 z-10"
           >
             <ChevronLeft size={16} className="text-charcoal" />
           </button>
           <button
             onClick={() => go(1)}
             aria-label="Next banner"
-            className="absolute right-3 top-1/2 -translate-y-1/2 size-10 rounded-full bg-white/80 hover:bg-white flex items-center justify-center border-none cursor-pointer opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity z-10"
+            className="absolute right-3 top-1/2 -translate-y-1/2 size-10 rounded-full bg-white/85 shadow-[0_4px_14px_rgba(20,15,10,0.12)] backdrop-blur-sm hover:bg-white hover:scale-105 flex items-center justify-center border-none cursor-pointer opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-[opacity,transform,background-color] duration-200 z-10"
           >
             <ChevronRight size={16} className="text-charcoal" />
           </button>
@@ -154,8 +157,8 @@ export function BannerCarousel({ banners, entityType }: BannerCarouselProps) {
                 className="p-2 -m-2 flex items-center cursor-pointer"
               >
                 <span
-                  className="block h-[6px] rounded-full transition-all"
-                  style={{ width: i === index ? 18 : 6, background: i === index ? '#D97757' : 'rgba(255,255,255,0.7)' }}
+                  className="block h-[6px] rounded-full transition-all duration-300 ease-out"
+                  style={{ width: i === index ? 20 : 6, background: i === index ? '#D97757' : 'rgba(255,255,255,0.7)' }}
                 />
               </button>
             ))}

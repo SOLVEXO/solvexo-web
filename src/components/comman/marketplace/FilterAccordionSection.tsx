@@ -10,20 +10,20 @@ import { ChevronDown, Check, Star, X } from 'lucide-react';
 export function FilterAccordionSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="py-3 border-b border-bone last:border-b-0 last:pb-0">
+    <div className="py-3.5 border-b border-bone last:border-b-0 last:pb-0">
       <button
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
         className="w-full min-h-9 flex items-center justify-between gap-2 bg-transparent border-none cursor-pointer p-0 group"
       >
-        <span className="text-[11px] font-semibold text-charcoal uppercase tracking-[0.04em] group-hover:text-brand-orange transition-colors duration-200">
+        <span className="text-[11.5px] font-bold text-charcoal uppercase tracking-[0.05em] group-hover:text-brand-orange transition-colors duration-200">
           {title}
         </span>
         <span className="w-6 h-6 rounded-full flex items-center justify-center bg-cream group-hover:bg-brand-pale-orange transition-colors duration-200">
           <ChevronDown size={12} className={clsx('text-slate group-hover:text-brand-orange transition-transform duration-200', open && 'rotate-180')} />
         </span>
       </button>
-      <div className={clsx('grid transition-all duration-200 ease-out', open ? 'grid-rows-[1fr] opacity-100 mt-3' : 'grid-rows-[0fr] opacity-0 mt-0')}>
+      <div className={clsx('grid transition-all duration-200 ease-out', open ? 'grid-rows-[1fr] opacity-100 mt-3.5' : 'grid-rows-[0fr] opacity-0 mt-0')}>
         <div className="overflow-hidden">
           {children}
         </div>
@@ -70,13 +70,13 @@ export function FilterCheckboxRow({ label, active, onClick, count }: { label: st
       onClick={onClick}
       aria-pressed={active}
       className={clsx(
-        'w-full min-h-8 flex items-center gap-2 px-2 -mx-2 rounded-lg text-left bg-transparent border-none cursor-pointer group transition-colors duration-200',
+        'w-full min-h-9 flex items-center gap-[9px] px-2 -mx-2 rounded-lg text-left bg-transparent border-none cursor-pointer group transition-colors duration-200',
         active ? 'bg-brand-pale-orange/60' : 'hover:bg-cream',
       )}
     >
       <span
         className={clsx(
-          'shrink-0 w-[15px] h-[15px] rounded-[5px] border flex items-center justify-center transition-colors duration-200',
+          'shrink-0 w-4 h-4 rounded-[5px] border flex items-center justify-center transition-colors duration-200',
           active ? 'bg-brand-orange border-brand-orange' : 'bg-white border-bone group-hover:border-brand-orange/50',
         )}
       >
@@ -102,13 +102,13 @@ export function FilterRadioRow({ label, active, onClick, count }: { label: strin
       onClick={onClick}
       aria-pressed={active}
       className={clsx(
-        'w-full min-h-8 flex items-center gap-2 px-2 -mx-2 rounded-lg text-left bg-transparent border-none cursor-pointer group transition-colors duration-200',
+        'w-full min-h-9 flex items-center gap-[9px] px-2 -mx-2 rounded-lg text-left bg-transparent border-none cursor-pointer group transition-colors duration-200',
         active ? 'bg-brand-pale-orange/60' : 'hover:bg-cream',
       )}
     >
       <span
         className={clsx(
-          'shrink-0 w-[15px] h-[15px] rounded-full border flex items-center justify-center transition-colors duration-200',
+          'shrink-0 w-4 h-4 rounded-full border flex items-center justify-center transition-colors duration-200',
           active ? 'border-brand-orange' : 'border-bone group-hover:border-brand-orange/50',
         )}
       >
@@ -134,13 +134,13 @@ export function FilterStarRow({ stars, active, onClick, count }: { stars: number
       onClick={onClick}
       aria-pressed={active}
       className={clsx(
-        'w-full min-h-8 flex items-center gap-2 px-2 -mx-2 rounded-lg text-left bg-transparent border-none cursor-pointer group transition-colors duration-200',
+        'w-full min-h-9 flex items-center gap-[9px] px-2 -mx-2 rounded-lg text-left bg-transparent border-none cursor-pointer group transition-colors duration-200',
         active ? 'bg-brand-pale-orange/60' : 'hover:bg-cream',
       )}
     >
       <span
         className={clsx(
-          'shrink-0 w-[15px] h-[15px] rounded-[5px] border flex items-center justify-center transition-colors duration-200',
+          'shrink-0 w-4 h-4 rounded-[5px] border flex items-center justify-center transition-colors duration-200',
           active ? 'bg-brand-orange border-brand-orange' : 'bg-white border-bone group-hover:border-brand-orange/50',
         )}
       >
@@ -201,8 +201,8 @@ export function PriceRangeSlider({ value, onChange }: { value: [number, number];
   return (
     <div>
       <div className="relative h-5 flex items-center">
-        <div className="absolute inset-x-0 h-[3px] rounded-full bg-bone" />
-        <div className="absolute h-[3px] rounded-full bg-brand-orange" style={{ left: `${pctLo}%`, right: `${100 - pctHi}%` }} />
+        <div className="absolute inset-x-0 h-1 rounded-full bg-bone" />
+        <div className="absolute h-1 rounded-full bg-brand-orange" style={{ left: `${pctLo}%`, right: `${100 - pctHi}%` }} />
         <input
           type="range"
           min={PRICE_MIN}
@@ -224,9 +224,10 @@ export function PriceRangeSlider({ value, onChange }: { value: [number, number];
           aria-label="Maximum price"
         />
       </div>
-      <div className="flex items-center justify-between mt-3 gap-2">
-        <span className="flex-1 text-[11.5px] font-semibold text-carbon tabular-nums bg-white border border-bone rounded-md px-[8px] py-[5px] text-center">${lo}</span>
-        <span className="flex-1 text-[11.5px] font-semibold text-carbon tabular-nums bg-white border border-bone rounded-md px-[8px] py-[5px] text-center">{hi >= PRICE_MAX ? `$${PRICE_MAX}+` : `$${hi}`}</span>
+      <div className="flex items-center justify-between mt-3.5 gap-2">
+        <span className="flex-1 text-[11.5px] font-semibold text-carbon tabular-nums bg-cream border border-bone rounded-[7px] px-[8px] py-[6px] text-center">${lo}</span>
+        <span className="text-bone text-[10px]">—</span>
+        <span className="flex-1 text-[11.5px] font-semibold text-carbon tabular-nums bg-cream border border-bone rounded-[7px] px-[8px] py-[6px] text-center">{hi >= PRICE_MAX ? `$${PRICE_MAX}+` : `$${hi}`}</span>
       </div>
     </div>
   );

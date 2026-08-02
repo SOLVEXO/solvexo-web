@@ -5,6 +5,8 @@ import { Heart, ImageOff, Star, ShoppingCart, Loader2 } from 'lucide-react';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { Card, EmptyState, SkeletonBox, PageHeader, Modal, Button } from '@/components/comman/ui';
+import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+import { currencySymbol } from '@/utils/currency';
 
 function WishlistImg({ images, name }: { images?: string[]; name: string }) {
   const [err, setErr] = useState(false);
@@ -26,6 +28,8 @@ export function Wishlist() {
   const navigate = useNavigate();
   const { wishlistItems, wishlistCount, loading: wLoading, wishlisting, removeFromWishlist, clearWishlist, clearing } = useWishlistContext();
   const { addToCart, adding } = useCartContext();
+  const { currency: displayCurrency, convert } = useCurrencyPreference();
+  const displaySymbol = currencySymbol(displayCurrency);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
@@ -157,9 +161,9 @@ export function Wishlist() {
 
                 {variant && (
                   <div className="flex items-center gap-[8px]">
-                    <span className="font-bold text-[16px] text-carbon">${variant.price.toLocaleString()}</span>
+                    <span className="font-bold text-[16px] text-carbon">{displaySymbol}{convert(variant.price, variant.currency).toLocaleString()}</span>
                     {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
-                      <span className="text-[12px] line-through text-[#B0AEAA]">${variant.compareAtPrice.toLocaleString()}</span>
+                      <span className="text-[12px] line-through text-[#B0AEAA]">{displaySymbol}{convert(variant.compareAtPrice, variant.currency).toLocaleString()}</span>
                     )}
                     {discount && (
                       <span className="text-[10px] font-bold px-[7px] py-[2px] rounded-[5px] bg-[#DCFCE7] text-[#15803D]">Save {discount}%</span>

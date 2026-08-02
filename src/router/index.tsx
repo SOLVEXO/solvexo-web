@@ -113,6 +113,7 @@ const AdminContactMessages = lazy(() => named(import('@/features/admin/pages/Adm
 const AdminManualPayments = lazy(() => named(import('@/features/admin/pages/AdminManualPayments'),               'AdminManualPayments'));
 const AdminCommissionRules = lazy(() => named(import('@/features/admin/pages/AdminCommissionRules'),             'AdminCommissionRules'));
 const AdminConfig        = lazy(() => named(import('@/features/admin/pages/AdminConfig'),                       'AdminConfig'));
+const AdminFxSettings    = lazy(() => named(import('@/features/admin/pages/AdminFxSettings'),                   'AdminFxSettings'));
 const AdminMarketing     = lazy(() => named(import('@/features/admin/pages/AdminMarketing'),                     'AdminMarketing'));
 const AdminSettings      = lazy(() => named(import('@/features/admin/pages/settings/AdminSettings'),           'AdminSettings'));
 const AdminSEO           = lazy(() => named(import('@/features/admin/pages/AdminSEO'),                          'AdminSEO'));
@@ -252,6 +253,7 @@ export const router = createBrowserRouter([
           { path: 'platform-plans',element: <AdminPlatformPlans /> },
           { path: 'finance',      element: <RequireRole role="admin"><AdminFinance /></RequireRole> },
           { path: 'manual-payments', element: <RequireRole role="admin"><AdminManualPayments /></RequireRole> },
+          { path: 'fx-settings', element: <RequireRole role="admin"><AdminFxSettings /></RequireRole> },
           { path: 'commission-rules', element: <RequireRole role="admin"><AdminCommissionRules /></RequireRole> },
           { path: 'announcements',element: <RequireRole role="admin"><AdminAnnouncements /></RequireRole> },
           { path: 'banners',      element: <AdminBanners /> },

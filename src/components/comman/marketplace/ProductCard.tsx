@@ -4,15 +4,30 @@ import { Modal } from '@/components/comman/ui/Modal';
 import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame, BadgeCheck } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
+import { currencySymbol } from '@/utils/currency';
+import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
-export function ProductCardSkeleton() {
+export function ProductCardSkeleton({ layout = 'grid' }: { layout?: 'grid' | 'list' }) {
+  if (layout === 'list') {
+    return (
+      <div className="bg-white rounded-xl border border-bone overflow-hidden flex flex-row items-stretch">
+        <div className="w-[112px] sm:w-[168px] shrink-0 animate-pulse bg-bone" />
+        <div className="flex-1 p-3 sm:p-4 flex flex-col justify-center gap-[8px]">
+          <div className="animate-pulse h-[11px] w-3/4 bg-bone rounded-md" />
+          <div className="animate-pulse h-[10px] w-1/3 bg-bone rounded-md" />
+          <div className="flex items-center justify-between gap-3 mt-2 pt-2 border-t border-bone/70">
+            <div className="animate-pulse h-[16px] w-14 bg-bone rounded-md" />
+            <div className="animate-pulse h-9 w-28 bg-bone rounded-lg" />
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="bg-white rounded-xl border border-bone overflow-hidden h-full flex flex-col">
-      <div className="p-2">
-        <div className="animate-pulse aspect-square rounded-lg bg-bone" />
-      </div>
-      <div className="px-[10px] pb-[10px] sm:px-3 sm:pb-3 flex-1 flex flex-col">
+      <div className="animate-pulse aspect-square bg-bone" />
+      <div className="px-[10px] pb-[10px] sm:px-3 sm:pb-3 pt-[10px] flex-1 flex flex-col">
         <div className="animate-pulse h-[10px] bg-bone rounded-md mb-2" />
         <div className="animate-pulse h-[10px] w-2/3 bg-bone rounded-md mb-[10px]" />
         <div className="animate-pulse h-[11px] w-16 bg-bone rounded-full mb-3" />
@@ -86,7 +101,7 @@ export function StarRating({ rating, count }: { rating: number; count?: number }
 // same visual language as FlashSaleCard's Homepage rail tile, just in a
 // grid-card shape instead of a rail-card shape. Fix bugs here once, they're
 // fixed everywhere.
-export const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, isWishlisting, onToggleWishlist, compact = false }: {
+export const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, isWishlisting, onToggleWishlist, compact = false, layout = 'grid' }: {
   product:          MarketplaceProduct;
   onClick:          (id: string) => void;
   onAddToCart:      (e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => void;
@@ -98,7 +113,12 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   // type scale only; the image stays square and the CTA stays icon-only
   // regardless, so there's no narrow-column truncation risk to design around.
   compact?: boolean;
+  /** 'list' lays the same card out as a horizontal row (image left, details
+   *  right) for the product-header view toggle — same data/sub-elements,
+   *  just reflowed, not a separate card design. */
+  layout?: 'grid' | 'list';
 }) {
+  const isList     = layout === 'list';
   const pType      = product.productType ?? product.type ?? 'physical';
   const isPhysical = pType === 'physical';
   const isDigital  = !isPhysical;
@@ -111,19 +131,36 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
 
   const variants        = product.variants ?? [];
   const defaultVariant = variants.find(v => v.isDefault) ?? variants[0];
-  const lowestPrice    = variants.length > 0
+  const nativeLowestPrice = variants.length > 0
     ? Math.min(...variants.map(v => v.price))
     : null;
-  const compareAt   = defaultVariant?.compareAtPrice ?? null;
+  const nativeCompareAt = defaultVariant?.compareAtPrice ?? null;
   const ratingCount = product.totalRatings ?? 0;
   const vId         = defaultVariant?._id ?? '';
-  const subscriberPrice = defaultVariant?.subscriberPrice;
+  const nativeSubscriberPrice = defaultVariant?.subscriberPrice;
   const discountPercent = defaultVariant?.discountPercent;
+
+  // Every price is converted from this product's own native (store)
+  // currency into the buyer's currently-selected display currency — this is
+  // what makes the navbar PKR/USD switch actually change what's shown here,
+  // not just its symbol. Real checkout amounts are computed fresh
+  // server-side regardless; this conversion is purely for display before
+  // any checkout exists.
+  const { currency: displayCurrency, convert } = useCurrencyPreference();
+  const nativeCurrency = defaultVariant?.currency;
+  const lowestPrice = nativeLowestPrice != null ? convert(nativeLowestPrice, nativeCurrency) : null;
+  const compareAt = nativeCompareAt != null ? convert(nativeCompareAt, nativeCurrency) : null;
+  const subscriberPrice = nativeSubscriberPrice != null ? convert(nativeSubscriberPrice, nativeCurrency) : undefined;
+  const priceSymbol = currencySymbol(displayCurrency);
   const pctOff = compareAt != null && lowestPrice != null && compareAt > lowestPrice
     ? Math.round((1 - lowestPrice / compareAt) * 100)
     : null;
-  // Stock tracking only applies to physical goods — digital/educational products are always available.
-  const stock = isDigital ? Infinity : (defaultVariant?.stock ?? 0);
+  // Stock tracking only applies to physical goods with tracking enabled —
+  // digital/educational products, and any physical variant the seller marked
+  // unlimitedStock, are always available. Previously this fell through to
+  // `?? 0`, which read an untracked (unlimitedStock) variant's stock as 0 and
+  // incorrectly showed it as out of stock / disabled Add to Cart.
+  const stock = isDigital || defaultVariant?.unlimitedStock ? Infinity : (defaultVariant?.stock ?? 0);
 
   // Two distinct signals, both worth surfacing: a plain compareAtPrice
   // markdown (this item itself is discounted) and an active platform/seller
@@ -140,23 +177,29 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
     <>
     <div
       onClick={() => onClick(product._id)}
-      className="group relative bg-white rounded-xl border border-bone overflow-hidden h-full flex flex-col cursor-pointer transition-colors duration-200 hover:border-carbon/25"
+      className={clsx(
+        'group relative bg-white rounded-xl border border-bone overflow-hidden cursor-pointer',
+        'transition-[transform,border-color] duration-300 ease-out',
+        'hover:-translate-y-[3px] hover:border-brand-orange/40',
+        isList ? 'flex flex-row items-stretch' : 'h-full flex flex-col',
+      )}
     >
-      {/* Image — framed with a consistent inset, own rounded corners */}
-      <div className="relative p-2">
-        <div className="relative overflow-hidden aspect-square rounded-lg bg-bone">
+      {/* Image — full-bleed to the card's own rounded top corners (parent's
+          overflow-hidden clips it), Amazon/Alibaba-style rather than an inset frame. */}
+      <div className={clsx('relative shrink-0', isList ? 'w-[112px] sm:w-[168px]' : '')}>
+        <div className={clsx('relative overflow-hidden bg-bone', isList ? 'w-full h-full' : 'aspect-square')}>
           <ProductImage
             images={product.images ?? []}
             name={product.name}
-            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]"
+            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
           />
         </div>
 
         {/* Top-left: product type + discount/campaign badge(s), stacked —
             plain markdown in red, live sale campaign in orange with a flame. */}
-        <div className="absolute top-3 left-3 flex flex-col items-start gap-1">
+        <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1">
           <span className={clsx(
-            'px-[6px] py-[1px] rounded-[4px] text-[9px] font-semibold border',
+            'px-[6px] py-[1px] rounded-md text-[9px] font-semibold border',
             isDigital
               ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
               : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
@@ -164,14 +207,14 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             {typeLabel}
           </span>
           {pctOff != null && pctOff > 0 && (
-            <span className="px-[6px] py-[2px] rounded-[4px] text-[10px] font-bold bg-error text-white">
+            <span className="px-[6px] py-[2px] rounded-md text-[10px] font-bold bg-error text-white">
               -{pctOff}%
             </span>
           )}
           {campaignAmount && (
             <span
               title={campaign ? `${campaign.name} — ends ${new Date(campaign.endDate).toLocaleDateString()}` : undefined}
-              className="flex items-center gap-[3px] px-[6px] py-[2px] rounded-[4px] text-[10px] font-bold bg-brand-orange text-white"
+              className="flex items-center gap-[3px] px-[6px] py-[2px] rounded-md text-[10px] font-bold bg-brand-orange text-white"
             >
               <Flame size={10} className="fill-white shrink-0" />
               -{campaignAmount}
@@ -185,8 +228,8 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
           disabled={isWishlisting}
           aria-label={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
           className={clsx(
-            'absolute top-3 right-3 w-7 h-7 rounded-lg bg-white/95 border border-bone',
-            'flex items-center justify-center transition-colors duration-150 hover:border-brand-orange/40',
+            'absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white border border-bone',
+            'flex items-center justify-center transition-[transform,border-color] duration-150 hover:border-brand-orange/50 hover:scale-[1.06]',
             isWishlisting ? 'cursor-wait' : 'cursor-pointer',
           )}
         >
@@ -204,8 +247,8 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             disabled={previewLoading}
             aria-label="Preview"
             className={clsx(
-              'absolute bottom-3 left-3 w-7 h-7 rounded-lg bg-white/95 border border-bone',
-              'flex items-center justify-center transition-colors duration-150 hover:border-brand-orange/40',
+              'absolute bottom-2.5 left-2.5 w-8 h-8 rounded-full bg-white border border-bone',
+              'flex items-center justify-center transition-[transform,border-color] duration-150 hover:border-brand-orange/50 hover:scale-[1.06]',
               previewLoading ? 'cursor-wait' : 'cursor-pointer',
             )}
           >
@@ -215,13 +258,16 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
       </div>
 
       {/* Body */}
-      <div className={clsx('flex-1 flex flex-col', compact ? 'px-[9px] pb-[9px]' : 'px-[10px] pb-[10px] sm:px-3 sm:pb-3')}>
-        <p className={clsx('font-semibold text-carbon mb-[2px] leading-[1.3] tracking-[-0.01em] line-clamp-2', compact ? 'text-[11.5px]' : 'text-[12px] sm:text-[13px]')}>
+      <div className={clsx(
+        'flex-1 flex min-w-0',
+        isList ? 'flex-col justify-center gap-[3px] p-3 sm:p-4' : clsx('flex-col', compact ? 'px-[9px] pb-[9px]' : 'px-[10px] pb-[10px] sm:px-3 sm:pb-3'),
+      )}>
+        <p className={clsx('font-semibold text-carbon leading-[1.35] tracking-[-0.01em]', isList ? 'text-[13px] sm:text-[14px] line-clamp-1' : clsx('mb-[2px] line-clamp-2', compact ? 'text-[11.5px]' : 'text-[12px] sm:text-[13px]'))}>
           {product.name}
         </p>
 
         {!compact && product.sellerName && (
-          <p className="flex items-center gap-[3px] text-[10px] sm:text-[11px] text-slate mb-[6px] truncate">
+          <p className={clsx('flex items-center gap-[3px] text-[10px] sm:text-[11px] text-slate truncate', isList ? '' : 'mb-[6px]')}>
             by {product.sellerName}
             {product.sellerVerified && (
               <BadgeCheck size={12} className="text-brand-orange fill-brand-pale-orange shrink-0" />
@@ -231,10 +277,10 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
 
         <StarRating rating={product.averageRating} count={ratingCount} />
 
-        {!compact && (product.tags?.length ?? 0) > 0 && (
+        {!compact && !isList && (product.tags?.length ?? 0) > 0 && (
           <div className="hidden sm:flex flex-wrap gap-1 mt-[6px]">
             {product.tags!.slice(0, 2).map(tag => (
-              <span key={tag} className="text-[9px] px-[5px] py-[1px] rounded-[4px] bg-cream text-slate border border-bone whitespace-nowrap">
+              <span key={tag} className="text-[9px] px-[5px] py-[1px] rounded-md bg-cream text-slate border border-bone whitespace-nowrap">
                 {tag}
               </span>
             ))}
@@ -250,39 +296,60 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
           <p className="text-[9px] sm:text-[10px] font-semibold text-amber-600 mt-[5px]">Only {stock} left</p>
         )}
 
-        <div className="flex items-baseline gap-[5px] min-w-0 mt-auto pt-[9px]">
-          <span className={clsx('font-bold whitespace-nowrap tracking-tight', compact ? 'text-[15px]' : 'text-[14px] sm:text-[17px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
-            {subscriberPrice != null ? `$${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `$${lowestPrice.toLocaleString()}` : '—'}
-          </span>
-          {subscriberPrice != null && lowestPrice != null ? (
-            <span className="text-[10px] text-slate/70 line-through shrink-0">${lowestPrice.toLocaleString()}</span>
-          ) : compareAt != null && compareAt > (lowestPrice ?? 0) && (
-            <span className="text-[10px] text-slate/70 line-through shrink-0">${compareAt.toLocaleString()}</span>
+        <div className={clsx('flex items-center gap-3 min-w-0', isList ? 'justify-between flex-wrap mt-2 pt-2 border-t border-bone/70' : 'justify-start mt-auto pt-[9px]')}>
+          <div className="flex items-baseline gap-[5px] min-w-0">
+            <span className={clsx('font-bold whitespace-nowrap tracking-tight', compact ? 'text-[15px]' : 'text-[14px] sm:text-[17px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
+              {subscriberPrice != null ? `${priceSymbol} ${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `${priceSymbol} ${lowestPrice.toLocaleString()}` : '—'}
+            </span>
+            {subscriberPrice != null && lowestPrice != null ? (
+              <span className="text-[10px] text-slate/70 line-through shrink-0">{priceSymbol} {lowestPrice.toLocaleString()}</span>
+            ) : compareAt != null && compareAt > (lowestPrice ?? 0) && (
+              <span className="text-[10px] text-slate/70 line-through shrink-0">{priceSymbol}{compareAt.toLocaleString()}</span>
+            )}
+          </div>
+
+          {/* Add to Cart — full-width beneath the price in the standard grid
+              card. Compact grids keep a small icon-only square docked to the
+              right; list rows keep a labeled button docked to the row's end. */}
+          {isList && (
+            <button
+              onClick={e => onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital')}
+              disabled={stock <= 0}
+              aria-label={stock <= 0 ? 'Out of stock' : 'Add to cart'}
+              className={clsx(
+                'flex items-center justify-center gap-[6px] rounded-lg border transition-colors duration-150 font-semibold text-[12px] h-9 px-4 shrink-0',
+                stock <= 0
+                  ? 'bg-bone text-slate border-bone cursor-not-allowed'
+                  : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.98] cursor-pointer',
+              )}
+            >
+              {isAdding ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
+              <span className="whitespace-nowrap">{stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}</span>
+            </button>
           )}
         </div>
 
-        {/* Add to Cart — full-width beneath the price, standard marketplace
-            CTA placement. Compact grids (denser/narrower tiles) keep a small
-            icon-only square docked to the right instead. */}
-        <button
-          onClick={e => onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital')}
-          disabled={stock <= 0}
-          aria-label={stock <= 0 ? 'Out of stock' : 'Add to cart'}
-          className={clsx(
-            'flex items-center justify-center gap-[6px] rounded-lg border transition-colors duration-150 font-semibold text-[12px] mt-[9px]',
-            compact ? 'w-8 h-8 self-end' : 'w-full h-9',
-            stock <= 0
-              ? 'bg-bone text-slate border-bone cursor-not-allowed'
-              : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.98] cursor-pointer',
-          )}
-        >
-          {isAdding ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
-          {!compact && (
-            <span className="whitespace-nowrap">
-              {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}
-            </span>
-          )}
-        </button>
+        {!isList && (
+          <button
+            onClick={e => onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital')}
+            disabled={stock <= 0}
+            aria-label={stock <= 0 ? 'Out of stock' : 'Add to cart'}
+            className={clsx(
+              'flex items-center justify-center gap-[6px] rounded-lg border transition-colors duration-150 font-semibold text-[12px] mt-[9px]',
+              compact ? 'w-8 h-8 self-end' : 'w-full h-9',
+              stock <= 0
+                ? 'bg-bone text-slate border-bone cursor-not-allowed'
+                : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.98] cursor-pointer',
+            )}
+          >
+            {isAdding ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
+            {!compact && (
+              <span className="whitespace-nowrap">
+                {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}
+              </span>
+            )}
+          </button>
+        )}
       </div>
     </div>
 

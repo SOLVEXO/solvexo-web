@@ -15,7 +15,7 @@ import {
   ChevronDown, Plus, PanelLeftClose, PanelLeftOpen, LogOut,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
-import { NotificationBell, AnnouncementBanner } from '@/components/comman/ui';
+import { NotificationBell, AnnouncementBanner, CurrencySelector } from '@/components/comman/ui';
 
 // ── Sidebar context (lets SellerPageHeader consume the toggle) ────────────────
 const SellerSidebarCtx = createContext<{ toggle: () => void }>({ toggle: () => {} });
@@ -481,6 +481,7 @@ export function SellerPageHeader({ title, subtitle, actions }: SellerPageHeaderP
       </div>
       <div className="flex items-center gap-[10px]">
         {actions}
+        <CurrencySelector />
         <NotificationBell />
       </div>
     </div>

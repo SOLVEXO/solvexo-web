@@ -1,0 +1,209 @@
+import { useEffect, useState, useCallback } from 'react';
+import { RefreshCw, History, AlertTriangle } from 'lucide-react';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { Button, Input, Toggle, StatusBadge, SkeletonBox, EmptyState } from '@/components/comman/ui';
+import { apiGetPlatformConfig, apiUpdateFxConfig, type FxConfig } from '@/api/services/config/adminConfig';
+import { apiGetCurrentRates, apiGetFxHistory, apiGetFxStaleness, apiOverrideFxRate, type CurrentRatesMap, type ExchangeRateHistoryRow } from '@/api/services/exchangeRate';
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+// ── Current rate cards ────────────────────────────────────────────────────────
+function RateCard({ currency, rate, staleness }: {
+  currency: string;
+  rate: CurrentRatesMap[string];
+  staleness?: { hoursOld: number; isStale: boolean } | null;
+}) {
+  return (
+    <div className="bg-white border border-bone rounded-[10px] px-5 py-4 flex-1 min-w-[220px]">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[13px] font-bold text-carbon">{currency}</p>
+        {staleness?.isStale && <StatusBadge status="Stale" />}
+        {rate?.source === 'admin' && !staleness?.isStale && <StatusBadge status="Admin Override" />}
+      </div>
+      {rate ? (
+        <>
+          <p className="text-[22px] font-bold text-charcoal leading-tight">
+            {currency === 'USD' ? '1.00' : rate.ratePerUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            <span className="text-[12px] font-medium text-slate ml-1">per USD</span>
+          </p>
+          <p className="text-[11px] text-slate mt-1">
+            Updated {formatDate(rate.effectiveFrom)} · {rate.source === 'admin' ? 'manual override' : 'auto-refreshed'}
+          </p>
+        </>
+      ) : (
+        <p className="text-[13px] text-error">No rate available</p>
+      )}
+    </div>
+  );
+}
+
+// ── Manual override form ──────────────────────────────────────────────────────
+function OverrideForm({ onDone }: { onDone: () => void }) {
+  const [currency, setCurrency] = useState('PKR');
+  const [rate, setRate] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit() {
+    const value = Number(rate);
+    if (!value || value <= 0) { setError('Enter a valid rate'); return; }
+    setSubmitting(true);
+    setError('');
+    try {
+      await apiOverrideFxRate(currency, value);
+      setRate('');
+      onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to set rate — it may be outside the allowed sane band.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
+      <p className="text-[13px] font-bold text-carbon mb-1">Set Manual Rate</p>
+      <p className="text-[11px] text-slate mb-3">Overrides the auto-refreshed rate immediately. Only applies to checkouts created after this change.</p>
+      <div className="flex items-end gap-3 flex-wrap">
+        <div className="w-[110px]">
+          <label className="block text-[11px] font-medium text-charcoal mb-1">Currency</label>
+          <select value={currency} onChange={e => setCurrency(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+            <option value="PKR">PKR</option>
+          </select>
+        </div>
+        <div className="w-[160px]">
+          <Input label="Rate (per 1 USD)" type="number" min="1" value={rate} onChange={e => setRate(e.target.value)} placeholder="278" />
+        </div>
+        <Button variant="primary" loading={submitting} onClick={submit}>Apply</Button>
+      </div>
+      {error && <p className="text-[12px] text-error mt-2 flex items-center gap-1"><AlertTriangle size={13} />{error}</p>}
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+export function AdminFxSettings() {
+  usePageTitle('FX Settings');
+  const [rates, setRates] = useState<CurrentRatesMap>({});
+  const [staleness, setStaleness] = useState<Record<string, { hoursOld: number; isStale: boolean } | null>>({});
+  const [fxConfig, setFxConfig] = useState<FxConfig | null>(null);
+  const [history, setHistory] = useState<ExchangeRateHistoryRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [savingConfig, setSavingConfig] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [ratesRes, staleRes, configRes, historyRes] = await Promise.all([
+        apiGetCurrentRates(),
+        apiGetFxStaleness(),
+        apiGetPlatformConfig(),
+        apiGetFxHistory({ limit: 15 }),
+      ]);
+      setRates(ratesRes.data);
+      setStaleness(staleRes.data);
+      setFxConfig(configRes.data.fxConfig);
+      setHistory(historyRes.data.items);
+    } catch {
+      // handled per-section below via empty states
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function toggleAutoRefresh(value: boolean) {
+    if (!fxConfig) return;
+    setSavingConfig(true);
+    try {
+      const res = await apiUpdateFxConfig({ autoRefreshEnabled: value });
+      setFxConfig(res.data.fxConfig);
+    } finally {
+      setSavingConfig(false);
+    }
+  }
+
+  return (
+    <div>
+      <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
+        <div>
+          <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">FX Settings</h1>
+          <p className="text-[12px] text-slate mt-[2px]">The single authoritative PKR/USD exchange rate used across checkout, settlement, and refunds.</p>
+        </div>
+        <Button variant="outline" size="sm" icon={<RefreshCw size={14} />} onClick={load}>Refresh</Button>
+      </div>
+
+      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+        <div className="flex gap-4 flex-wrap">
+          {loading ? (
+            <SkeletonBox className="h-24 w-full" />
+          ) : (
+            Object.keys(rates).length === 0 ? (
+              <EmptyState icon={<AlertTriangle size={28} className="text-slate" />} title="No rates configured" description="Set a manual rate below to get started." />
+            ) : (
+              Object.entries(rates).map(([currency, rate]) => (
+                <RateCard key={currency} currency={currency} rate={rate} staleness={staleness[currency]} />
+              ))
+            )
+          )}
+        </div>
+
+        <OverrideForm onDone={load} />
+
+        {fxConfig && (
+          <div className="bg-white border border-bone rounded-[10px] px-5 py-4 flex items-center justify-between">
+            <div>
+              <p className="text-[13px] font-bold text-carbon">Auto-refresh from provider</p>
+              <p className="text-[11px] text-slate mt-[2px]">Daily automatic rate refresh (sanity-band + abnormal-jump checked before ever becoming current).</p>
+            </div>
+            <Toggle checked={fxConfig.autoRefreshEnabled} onChange={toggleAutoRefresh} disabled={savingConfig} />
+          </div>
+        )}
+
+        <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
+          <div className="px-5 py-[14px] border-b border-bone flex items-center gap-2">
+            <History size={14} className="text-slate" />
+            <p className="text-[13px] font-bold text-carbon">Rate History</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  {['Currency', 'Rate (per USD)', 'Source', 'Effective From', 'Status'].map(h => (
+                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i} className="border-b border-[#F0EEE6]"><td className="px-4 py-3" colSpan={5}><SkeletonBox className="h-5 w-full" /></td></tr>
+                  ))
+                ) : history.length === 0 ? (
+                  <tr><td colSpan={5}><EmptyState icon={<History size={28} className="text-slate" />} title="No history yet" description="Rate changes will appear here." /></td></tr>
+                ) : history.map(h => (
+                  <tr key={h._id} className="border-b border-[#F0EEE6]">
+                    <td className="px-4 py-3 text-[13px] font-semibold text-charcoal">{h.currency}</td>
+                    <td className="px-4 py-3 text-[12.5px] text-graphite">{h.ratePerUSD}</td>
+                    <td className="px-4 py-3 text-[12px] text-slate capitalize">{h.source}</td>
+                    <td className="px-4 py-3 text-[12px] text-slate whitespace-nowrap">{formatDate(h.effectiveFrom)}</td>
+                    <td className="px-4 py-3">
+                      {!h.isRejected ? <StatusBadge status="Active" />
+                        : h.rejectionReason === 'abnormal_jump' ? <StatusBadge status="Flagged" />
+                        : h.rejectionReason === 'sanity_band' ? <StatusBadge status="Suspended" />
+                        : <StatusBadge status="Held" />}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

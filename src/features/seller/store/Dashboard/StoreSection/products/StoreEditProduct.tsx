@@ -181,6 +181,9 @@ export default function StoreEditProduct() {
   const { state }          = useLocation() as { state: { entry?: ProductEntry } | null };
   const { productId = '' } = useParams<{ productId: string }>();
   const { storeId, store } = useStoreWorkspace();
+  // Every price on this form is in the STORE's own currency (locked at
+  // onboarding) — never assume PKR.
+  const currencySymbol = store?.baseCurrency === 'USD' ? '$' : 'Rs';
   const { mainCategory, subcategories, loading: catLoading, refetch: refetchCats } = useStoreSubcategories(store?.categoryId);
 
   const [fetching,          setFetching]          = useState(true);
@@ -508,12 +511,12 @@ export default function StoreEditProduct() {
           {/* Pricing */}
           <Card title="Pricing">
             <div className="flex flex-col gap-3">
-              <F label="Price (Rs)" req>
+              <F label={`Price (${currencySymbol})`} req>
                 <input type="number" min="0" value={cur.price}
                   onChange={e => pType === 'physical' ? sp('price', e.target.value) : sd('price', e.target.value)}
                   placeholder="0.00" className={inp} />
               </F>
-              <F label="Compare-at Price (Rs)">
+              <F label={`Compare-at Price (${currencySymbol})`}>
                 <input type="number" min="0" value={cur.compareAtPrice}
                   onChange={e => pType === 'physical' ? sp('compareAtPrice', e.target.value) : sd('compareAtPrice', e.target.value)}
                   placeholder="0.00" className={inp} />

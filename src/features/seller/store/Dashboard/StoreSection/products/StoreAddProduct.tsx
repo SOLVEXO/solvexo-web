@@ -148,6 +148,9 @@ type DigForm  = typeof initDig;
 export default function StoreAddProduct() {
   const navigate           = useNavigate();
   const { storeId, store } = useStoreWorkspace();
+  // Every price on this form is in the STORE's own currency (locked at
+  // onboarding, see OnboardingPage's currency selector) — never assume PKR.
+  const currencySymbol = store?.baseCurrency === 'USD' ? '$' : 'Rs';
 
   const supportsPhysical    = !store || (store.productTypes ?? []).includes('physical_products');
   const supportsDigital     = !store || (store.productTypes ?? []).includes('digital_downloads');
@@ -425,12 +428,12 @@ export default function StoreAddProduct() {
           {/* Pricing */}
           <Card title="Pricing">
             <div className="flex flex-col gap-3">
-              <F label="Price (Rs)" req>
+              <F label={`Price (${currencySymbol})`} req>
                 <input type="number" min="0" value={cur.price}
                   onChange={e => pType === 'physical' ? sp('price', e.target.value) : sd('price', e.target.value)}
                   placeholder="0.00" className={inp} />
               </F>
-              <F label="Compare-at Price (Rs)">
+              <F label={`Compare-at Price (${currencySymbol})`}>
                 <input type="number" min="0" value={cur.compareAtPrice}
                   onChange={e => pType === 'physical' ? sp('compareAtPrice', e.target.value) : sd('compareAtPrice', e.target.value)}
                   placeholder="0.00" className={inp} />

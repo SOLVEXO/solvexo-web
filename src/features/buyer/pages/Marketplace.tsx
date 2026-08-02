@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -15,7 +15,7 @@ import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { MegaMenuBar } from '@/components/comman/marketplace/MegaMenuBar';
 import {
   ShoppingBag,
-  SlidersHorizontal, X, Zap,
+  SlidersHorizontal, X, Zap, LayoutGrid, LayoutList,
   ShieldCheck, BadgeCheck, RefreshCcw,
 } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
@@ -91,12 +91,15 @@ export function Marketplace() {
   const [searchParams, setSearchParams] = useSearchParams();
   usePageTitle('Marketplace');
 
-  const [sortBy,        setSortBy]        = useState('newest');
-  const [page,          setPage]          = useState(1);
+  // Every one of these is seeded from the URL on first mount so a shared/
+  // bookmarked/back-button link reproduces the exact same browse state.
+  const [sortBy,        setSortBy]        = useState(() => searchParams.get('sort') ?? 'newest');
+  const [viewMode,      setViewMode]      = useState<'grid' | 'list'>('grid');
+  const [page,          setPage]          = useState(() => { const p = Number(searchParams.get('page')); return p > 0 ? p : 1; });
   const [mobileFilters, setMobileFilters] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ priceRange: [PRICE_MIN, PRICE_MAX], type: [], rating: [] });
-  const [searchInput, setSearchInput] = useState('');
-  const [search,      setSearch]      = useState('');
+  const [searchInput, setSearchInput] = useState(() => searchParams.get('search') ?? '');
+  const [search,      setSearch]      = useState(() => (searchParams.get('search') ?? '').trim().toLowerCase());
   const [categories,       setCategories]       = useState<CategoryNode[]>([]);
   // Seeded from ?category= so links from the mega menu / other pages land
   // pre-filtered to that category.
@@ -116,14 +119,23 @@ export function Marketplace() {
     return () => { cancelled = true; };
   }, []);
 
-  // Re-sync when ?category= changes while already on this page (mega menu
-  // link clicked from here) — the initial-mount case is covered by the
-  // useState initializer above.
+  // Re-sync category/campaign when ?category=/?campaign= change while already
+  // on this page from a raw navigate() elsewhere (e.g. DealsBanner's "Shop the
+  // Sale") — the initial-mount case is covered by the useState initializers
+  // above. Tracked against a ref of the last URL values we ourselves saw (not
+  // against current state) so this doesn't fight the write-back effect below,
+  // which echoes state into the URL on every change and would otherwise
+  // re-trigger this effect and stomp the page number back to 1 forever.
+  const lastUrlFilters = useRef({ category: selectedCategory, campaign: campaignFilterId });
   useEffect(() => {
     const fromUrl = searchParams.get('category') ?? '';
-    setSelectedCategory(fromUrl);
-    setCampaignFilterId(searchParams.get('campaign') ?? '');
-    setPage(1);
+    const fromUrlCampaign = searchParams.get('campaign') ?? '';
+    if (fromUrl !== lastUrlFilters.current.category || fromUrlCampaign !== lastUrlFilters.current.campaign) {
+      setSelectedCategory(fromUrl);
+      setCampaignFilterId(fromUrlCampaign);
+      setPage(1);
+    }
+    lastUrlFilters.current = { category: fromUrl, campaign: fromUrlCampaign };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -164,10 +176,37 @@ export function Marketplace() {
     return () => { cancelled = true; };
   }, [search]);
 
+  // Reset to page 1 whenever the active facet set actually changes (new
+  // category/campaign/search/sort) — not on every page-number change itself,
+  // which would otherwise loop with the URL write-back effect below.
+  const isFirstFacetRun = useRef(true);
+  useEffect(() => {
+    if (isFirstFacetRun.current) { isFirstFacetRun.current = false; return; }
+    setPage(1);
+  }, [selectedCategory, campaignFilterId, search, sortBy]);
+
+  // Write the current browse state into the URL — shareable/bookmarkable,
+  // and what lets a back/forward navigation or a pasted link reproduce this
+  // exact view. `replace` so typing/paging doesn't spam browser history.
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (selectedCategory)    next.set('category', selectedCategory);
+    if (campaignFilterId)    next.set('campaign', campaignFilterId);
+    if (search)              next.set('search', search);
+    if (sortBy !== 'newest') next.set('sort', sortBy);
+    if (page > 1)            next.set('page', String(page));
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory, campaignFilterId, search, sortBy, page]);
+
   const handleCategoryChange = (id: string) => {
     setSelectedCategory(id);
-    setPage(1);
   };
+
+  // Browsing (an active search, category, or campaign filter) replaces the
+  // homepage-style landing view (Hero + Trust Strip) with results, immediately
+  // — same behavior Amazon/Alibaba use once a shopper has committed to a query.
+  const isBrowsing = !!search || !!selectedCategory || !!campaignFilterId;
 
   const LIMIT = 20;
   const { products, total, loading, error, refetch } = useProductsByCategory(
@@ -290,12 +329,14 @@ export function Marketplace() {
     });
 
   // Filters/search only narrow down the current page's results (not a fresh
-  // server query), so "X of {total}" would misreport the total once any are
+  // server query), so a page range would misreport the total once any are
   // active — total describes the unfiltered category, not the filtered set.
   const isNarrowedView = activeFilterCount > 0 || !!search;
+  const rangeStart = total === 0 ? 0 : (page - 1) * LIMIT + 1;
+  const rangeEnd   = Math.min(page * LIMIT, total);
   const countLabel = isNarrowedView
     ? `${filtered.length} matching on this page`
-    : `${filtered.length} of ${total} products`;
+    : `${rangeStart}–${rangeEnd} of ${total} Products`;
 
   return (
     <div className="min-h-screen bg-cream">
@@ -312,8 +353,24 @@ export function Marketplace() {
 
       <DealsBanner />
 
-      {/* ── Hero ─ full-bleed banner with overlaid copy ─────────────────────── */}
-      <div className="relative overflow-hidden h-[300px] sm:h-[360px] lg:h-[420px] border-b border-[#F5D5C2]">
+      {/* ── Marketplace navigation — single merged row (All Categories + utility links) ── */}
+      <MegaMenuBar
+        categories={categories}
+        topPicks={topPicks}
+        flashDeals={flashDeals}
+        topStores={topStores}
+        countdown={countdown}
+        onShopCategory={handleCategoryChange}
+        onProductClick={handleCardClick}
+        onStoreClick={slug => navigate(`/${slug}`)}
+        onTrendingTerm={term => { setSearchInput(term); setSearch(term); }}
+        onNavigate={navigate}
+        extraTriggers={[]}
+      />
+
+      {/* ── Hero ─ always visible, including while browsing a search/category —
+         only the old promotional nav triggers were removed, not this. ── */}
+      <div className="relative overflow-hidden h-[320px] sm:h-[400px] lg:h-[460px] border-b border-[#F5D5C2]">
 
         {/* Background: live promo banner if available, else brand gradient */}
         {banners.length > 0 ? (
@@ -329,15 +386,15 @@ export function Marketplace() {
         <div className={clsx(
           'absolute inset-0 pointer-events-none',
           banners.length > 0
-            ? 'bg-gradient-to-r from-black/65 via-black/30 to-transparent'
+            ? 'bg-gradient-to-r from-black/70 via-black/35 to-transparent'
             : '',
         )} />
 
         {/* Overlaid copy */}
         <div className="relative z-[1] h-full flex items-center px-4 sm:px-6 lg:px-10">
-          <div className="min-w-0 max-w-[520px]">
+          <div className="min-w-0 max-w-[560px]">
             <span className={clsx(
-              'inline-block text-[10px] font-bold uppercase tracking-[0.12em] rounded-full px-3 py-1 mb-3 border',
+              'inline-block text-[10px] font-bold uppercase tracking-[0.14em] rounded-full px-3 py-1 mb-4 border',
               banners.length > 0
                 ? 'text-white bg-white/15 border-white/25 backdrop-blur-sm'
                 : 'text-brand-deep-orange bg-white/60 border-brand-orange/20',
@@ -345,13 +402,13 @@ export function Marketplace() {
               The marketplace for makers
             </span>
             <h1 className={clsx(
-              'font-serif text-[26px] sm:text-[32px] lg:text-[40px] font-bold mb-3 leading-[1.12] tracking-tight',
+              'font-serif text-[28px] sm:text-[36px] lg:text-[46px] font-bold mb-4 leading-[1.1] tracking-tight',
               banners.length > 0 ? 'text-white' : 'text-carbon',
             )}>
               Discover Something<br className="hidden sm:block" /> Made with Love
             </h1>
             <p className={clsx(
-              'text-[12px] sm:text-[13px] mb-5 leading-[1.6]',
+              'text-[13px] sm:text-[14.5px] mb-6 leading-[1.65] max-w-[440px]',
               banners.length > 0 ? 'text-white/85' : 'text-slate',
             )}>
               Shop unique products from independent sellers, creators, and educators.
@@ -359,6 +416,7 @@ export function Marketplace() {
             <Button
               variant="primary"
               size="md"
+              className="shadow-[0_8px_20px_rgba(224,127,87,0.28)] hover:shadow-[0_10px_26px_rgba(224,127,87,0.36)] transition-shadow duration-200"
               onClick={() => document.getElementById('marketplace-grid')?.scrollIntoView({ behavior: 'smooth' })}
             >
               Shop Now <span className="ml-1">→</span>
@@ -366,12 +424,12 @@ export function Marketplace() {
 
             {/* Trust indicators — real capability statements, not fabricated stats */}
             <div className={clsx(
-              'flex flex-wrap items-center gap-x-4 gap-y-2 mt-5 text-[11px] font-medium',
+              'flex flex-wrap items-center gap-x-5 gap-y-2 mt-6 text-[11px] font-medium',
               banners.length > 0 ? 'text-white/80' : 'text-charcoal/70',
             )}>
-              <span className="flex items-center gap-[5px]"><ShieldCheck size={13} className="text-brand-orange" /> Secure Checkout</span>
-              <span className="flex items-center gap-[5px]"><BadgeCheck size={13} className="text-brand-orange" /> Verified Sellers</span>
-              <span className="flex items-center gap-[5px]"><RefreshCcw size={13} className="text-brand-orange" /> Easy Returns</span>
+              <span className="flex items-center gap-[6px]"><ShieldCheck size={13} className="text-brand-orange" /> Secure Checkout</span>
+              <span className="flex items-center gap-[6px]"><BadgeCheck size={13} className="text-brand-orange" /> Verified Sellers</span>
+              <span className="flex items-center gap-[6px]"><RefreshCcw size={13} className="text-brand-orange" /> Easy Returns</span>
             </div>
           </div>
         </div>
@@ -380,22 +438,20 @@ export function Marketplace() {
       {/* ── Trust & Service strip ────────────────────────────────────────────── */}
       <TrustServiceStrip />
 
-      {/* ── Full-width mega-menu bar — All Categories / Flash Sale / Top Picks / Featured Sellers / About ── */}
-      <MegaMenuBar
-        categories={categories}
-        topPicks={topPicks}
-        flashDeals={flashDeals}
-        topStores={topStores}
-        countdown={countdown}
-        onShopCategory={handleCategoryChange}
-        onProductClick={handleCardClick}
-        onStoreClick={slug => navigate(`/${slug}`)}
-        onTrendingTerm={term => { setSearchInput(term); setSearch(term); }}
-        onNavigate={navigate}
-      />
-
       {/* ── Main content ─────────────────────────────────────────────────────── */}
       <div className="px-4 sm:px-6 lg:px-10 py-4 sm:py-5 lg:py-6">
+
+        {/* Results heading — only when browsing (search/category/campaign), so
+            a shopper always knows what narrowed the grid they're looking at.
+            Category/campaign already get their own indicator further down
+            (the removable category chip / the campaign banner) — this only
+            fills the one real gap: there was no visible confirmation of what
+            was typed into the search box. */}
+        {isBrowsing && search && (
+          <p className="text-[13px] text-slate mb-4">
+            Search results for <span className="font-semibold text-carbon">"{search}"</span>
+          </p>
+        )}
 
         {/* Mobile: filter + sort bar */}
         <div className="lg:hidden flex items-center justify-between gap-3 mb-4">
@@ -490,13 +546,13 @@ export function Marketplace() {
         <div className="flex gap-5 lg:gap-6 items-start">
 
           {/* ── Desktop sidebar ───────────────────────────────────────────────── */}
-          <aside className="hidden lg:block w-[220px] xl:w-[240px] shrink-0 sticky top-[68px] self-start">
-            <div className="bg-white rounded-[20px] border border-bone overflow-hidden flex flex-col max-h-[calc(100vh-96px)]">
+          <aside className="hidden lg:block w-[228px] xl:w-[252px] shrink-0 sticky top-[76px] self-start">
+            <div className="bg-white rounded-[18px] border border-bone overflow-hidden flex flex-col max-h-[calc(100vh-100px)] shadow-[0_1px_2px_rgba(20,15,10,0.03)]">
               {/* Sticky header — stays put while the accordion body below scrolls */}
-              <div className="shrink-0 px-4 py-3 border-b border-bone flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
+              <div className="shrink-0 px-[18px] py-[14px] border-b border-bone flex items-center justify-between gap-2">
+                <div className="flex items-center gap-[9px]">
                   <SlidersHorizontal size={15} className="text-charcoal" strokeWidth={2} />
-                  <span className="text-[14px] font-bold text-carbon">Filters</span>
+                  <span className="text-[14.5px] font-bold text-carbon tracking-[-0.01em]">Filters</span>
                 </div>
                 {activeFilterCount > 0 && (
                   <button
@@ -507,7 +563,7 @@ export function Marketplace() {
                   </button>
                 )}
               </div>
-              <div className="px-4 py-1 overflow-y-auto">
+              <div className="px-[18px] py-[6px] overflow-y-auto">
                 <FilterPanel filters={filters} onChange={toggleFilter} onPriceRangeChange={setPriceRange} categories={categories} selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
               </div>
             </div>
@@ -525,12 +581,38 @@ export function Marketplace() {
               </div>
             )}
 
-            {/* Desktop: count + sort row */}
-            <div className="hidden lg:flex items-center justify-between mb-4">
-              <span className="text-[13px] text-slate">
-                {!loading && (error ? 'Error loading' : `Showing ${countLabel}`)}
+            {/* Desktop: count + sort + view-toggle row */}
+            <div className="hidden lg:flex items-center justify-between mb-5">
+              <span className="text-[13px] font-medium text-slate">
+                {!loading && (error ? 'Error loading' : <>Showing <span className="text-carbon font-semibold">{countLabel}</span></>)}
               </span>
-              <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+              <div className="flex items-center gap-3">
+                <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+                <div className="flex items-center gap-[2px] rounded-lg border border-bone bg-white p-[3px]">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    aria-label="Grid view"
+                    aria-pressed={viewMode === 'grid'}
+                    className={clsx(
+                      'flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                      viewMode === 'grid' ? 'bg-brand-pale-orange text-brand-orange' : 'bg-transparent text-slate hover:text-charcoal',
+                    )}
+                  >
+                    <LayoutGrid size={15} />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    aria-label="List view"
+                    aria-pressed={viewMode === 'list'}
+                    className={clsx(
+                      'flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                      viewMode === 'list' ? 'bg-brand-pale-orange text-brand-orange' : 'bg-transparent text-slate hover:text-charcoal',
+                    )}
+                  >
+                    <LayoutList size={15} />
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Mobile: product count */}
@@ -547,16 +629,26 @@ export function Marketplace() {
 
             {/* Capped at 4 columns — cards get wider (not more numerous) past lg,
                 so they stay comfortably readable instead of shrinking indefinitely
-                on very wide screens: 2 @ 320-767 → 3 @ md → 4 @ lg and up. */}
-            <div id="marketplace-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px] scroll-mt-[76px]">
+                on very wide screens: 2 @ 320-767 → 3 @ md → 4 @ lg and up.
+                List view collapses to a single column of horizontal rows. */}
+            <div
+              id="marketplace-grid"
+              className={clsx(
+                'scroll-mt-[76px]',
+                viewMode === 'list'
+                  ? 'flex flex-col gap-3'
+                  : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px]',
+              )}
+            >
               {loading
-                ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
+                ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} layout={viewMode} />)
                 : filtered.map(p => {
                     const defVariant = (p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0];
                     const vId = defVariant?._id ?? '';
                     return (
                       <ProductCard
                         key={p._id}
+                        layout={viewMode}
                         product={p}
                         onClick={handleCardClick}
                         isAdding={adding === vId}

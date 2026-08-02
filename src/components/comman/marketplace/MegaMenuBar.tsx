@@ -11,6 +11,8 @@ import { type CategoryNode } from '@/api/services/categories';
 import { type PublicStoreListItem } from '@/api/services/store';
 import { QrGlyph } from '@/components/comman/ui/AppPromoParts';
 import { StoreFeatureCard } from '@/components/comman/ui';
+import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+import { currencySymbol } from '@/utils/currency';
 
 // ── Compact rail card — dense Flash Sale / Top Picks strip card ────────────────
 export function RailCard({ product, onClick, badge, rank, size = 'md', stockLabel }: {
@@ -21,9 +23,13 @@ export function RailCard({ product, onClick, badge, rank, size = 'md', stockLabe
   size?: 'md' | 'sm';
   stockLabel?: string;
 }) {
-  const dv        = (product.variants ?? []).find(v => v.isDefault) ?? product.variants?.[0];
-  const price     = dv?.price ?? null;
-  const compareAt = dv?.compareAtPrice ?? null;
+  const dv              = (product.variants ?? []).find(v => v.isDefault) ?? product.variants?.[0];
+  const nativePrice     = dv?.price ?? null;
+  const nativeCompareAt = dv?.compareAtPrice ?? null;
+  const { currency: displayCurrency, convert } = useCurrencyPreference();
+  const priceSymbol = currencySymbol(displayCurrency);
+  const price     = nativePrice != null ? convert(nativePrice, dv?.currency) : null;
+  const compareAt = nativeCompareAt != null ? convert(nativeCompareAt, dv?.currency) : null;
   const isSm      = size === 'sm';
   return (
     <button
@@ -54,9 +60,9 @@ export function RailCard({ product, onClick, badge, rank, size = 'md', stockLabe
       <div className={isSm ? 'px-[7px] py-[6px]' : 'px-[9px] py-[8px]'}>
         <p className={clsx('font-semibold text-carbon leading-tight line-clamp-2', isSm ? 'text-[10px] mb-[3px] min-h-[24px]' : 'text-[11px] mb-[5px] min-h-[28px]')}>{product.name}</p>
         <div className="flex items-baseline gap-[4px]">
-          <span className={clsx('font-bold text-carbon', isSm ? 'text-[11px]' : 'text-[12px]')}>{price != null ? `$${price.toLocaleString()}` : '—'}</span>
+          <span className={clsx('font-bold text-carbon', isSm ? 'text-[11px]' : 'text-[12px]')}>{price != null ? `${priceSymbol}${price.toLocaleString()}` : '—'}</span>
           {compareAt != null && compareAt > (price ?? 0) && (
-            <span className="text-[9.5px] text-slate line-through">${compareAt.toLocaleString()}</span>
+            <span className="text-[9.5px] text-slate line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
           )}
         </div>
         <span className="flex items-center gap-[2px] text-[9.5px] text-slate mt-[3px]">
@@ -198,7 +204,7 @@ function CategoriesMegaContent({
   );
 }
 
-function FlashSaleMegaContent({ flashDeals, countdown, onProductClick }: {
+export function FlashSaleMegaContent({ flashDeals, countdown, onProductClick }: {
   flashDeals: { product: MarketplaceProduct; pct: number }[];
   countdown:  { h: string; m: string; s: string };
   onProductClick: (id: string) => void;
@@ -215,8 +221,9 @@ function FlashSaleMegaContent({ flashDeals, countdown, onProductClick }: {
               const dv = (product.variants ?? []).find(v => v.isDefault) ?? product.variants?.[0];
               const isPhysical = (product.productType ?? product.type ?? 'physical') === 'physical';
               // Real stock only — no fabricated "sold" percentage, since there's
-              // no original-stock figure to compute one against honestly.
-              const stock = isPhysical ? (dv?.stock ?? 0) : null;
+              // no original-stock figure to compute one against honestly. A
+              // variant marked unlimitedStock is never "low stock" either.
+              const stock = isPhysical && !dv?.unlimitedStock ? (dv?.stock ?? 0) : null;
               return (
                 <RailCard
                   key={product._id}
@@ -249,7 +256,7 @@ function FlashSaleMegaContent({ flashDeals, countdown, onProductClick }: {
   );
 }
 
-function TopPicksMegaContent({ topPicks, onProductClick }: {
+export function TopPicksMegaContent({ topPicks, onProductClick }: {
   topPicks: MarketplaceProduct[];
   onProductClick: (id: string) => void;
 }) {
@@ -278,7 +285,7 @@ function TopPicksMegaContent({ topPicks, onProductClick }: {
   );
 }
 
-function FeaturedSellersMegaContent({ topStores, onStoreClick }: {
+export function FeaturedSellersMegaContent({ topStores, onStoreClick }: {
   topStores: PublicStoreListItem[];
   onStoreClick: (slug: string) => void;
 }) {
@@ -392,10 +399,27 @@ function AboutMegaContent({ onNavigate }: { onNavigate: (path: string) => void }
 // and closes only once the mouse leaves both. ──
 type MegaMenuKey = 'categories' | 'flash-sale' | 'top-picks' | 'featured-sellers' | 'about';
 
+interface MegaMenuExtraTrigger {
+  key: Exclude<MegaMenuKey, 'categories'>;
+  label: string;
+  chevron: boolean;
+  className: string;
+}
+
+// Default trigger set (Flash Sale / Top Picks / Featured Stores / About) — Education
+// keeps these via the default; Marketplace now passes `extraTriggers={[]}` since that
+// content moved to standalone Discovery sections on the page instead of a hover menu.
+const DEFAULT_EXTRA_TRIGGERS: MegaMenuExtraTrigger[] = [
+  { key: 'flash-sale',       label: 'Flash Sale',          chevron: true,  className: '' },
+  { key: 'top-picks',        label: 'Top Picks',           chevron: true,  className: '' },
+  { key: 'featured-sellers', label: 'Featured Stores',    chevron: true,  className: 'hidden sm:flex' },
+  { key: 'about',            label: 'About Solvexo.store', chevron: false, className: 'hidden sm:flex' },
+];
+
 export function MegaMenuBar({
   categories = [], topPicks, flashDeals, topStores, countdown,
   onShopCategory = () => {}, onProductClick, onStoreClick, onTrendingTerm = () => {}, onNavigate,
-  categoriesLabel = 'All Categories', categoriesContent,
+  categoriesLabel = 'All Categories', categoriesContent, extraTriggers = DEFAULT_EXTRA_TRIGGERS,
 }: {
   categories?: CategoryNode[];
   topPicks:   MarketplaceProduct[];
@@ -414,6 +438,10 @@ export function MegaMenuBar({
    *  CategoryNode tree, so it passes its own grade-level/subject panel here
    *  instead of forcing facet data into a category shape it doesn't have. */
   categoriesContent?: ReactNode;
+  /** Triggers rendered after "All Categories" — defaults to Flash Sale/Top
+   *  Picks/Featured Stores/About. Pass `[]` to render just the categories
+   *  trigger (Marketplace, once that content has its own page sections). */
+  extraTriggers?: MegaMenuExtraTrigger[];
 }) {
   const [active, setActive] = useState<MegaMenuKey | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -443,64 +471,33 @@ export function MegaMenuBar({
 
   return (
     <div className="relative" onMouseLeave={scheduleClose}>
-      {/* ── Category line — "All Categories" trigger (left), utility links (right) ── */}
+      {/* ── Merged navigation row — "All Categories" + Flash Sale/Top Picks/Featured
+         Stores/About triggers (left), Verified Sellers/Verified Stores/Track
+         Order/Help Center/Contact (right). Previously two separate white rows
+         (a "category line" and a "welcome line") that duplicated the same
+         navigational weight — merged into one to remove that redundancy. ── */}
       <div className="bg-white border-b border-bone">
-        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-10">
-          <div className="flex items-center min-w-0 flex-1 py-[11px]">
+        <div className="flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-10 py-[11px]">
+          <div className="flex items-center gap-5 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
             <button
               aria-haspopup="true"
               aria-expanded={active === 'categories'}
               onMouseEnter={() => openMenu('categories')}
               onClick={() => setActive(a => a === 'categories' ? null : 'categories')}
-              className={triggerCls('categories')}
+              className={triggerCls('categories', 'shrink-0')}
             >
               {categoriesLabel}
               <ChevronDown size={14} className={clsx('transition-transform duration-200', active === 'categories' && 'rotate-180')} />
               <span className={triggerUnderlineCls('categories')} />
             </button>
-          </div>
 
-          <div className="hidden lg:flex items-center gap-4 shrink-0 text-[12.5px] text-slate whitespace-nowrap py-3">
-            <span className="flex items-center gap-1">
-              <BadgeCheck size={13} className="text-success" /> Verified Sellers
-            </span>
-            <span className="flex items-center gap-1">
-              <ShieldCheck size={13} className="text-success" /> Verified Stores
-            </span>
-            <button
-              onClick={() => onNavigate(TokenStorage.isLoggedIn() ? '/account/orders' : '/login')}
-              className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-            >
-              Track Order
-            </button>
-            <button onClick={() => onNavigate('/faq')} className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-              Help Center
-            </button>
-            <button onClick={() => onNavigate('/contact-us')} className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-              Contact
-            </button>
-          </div>
-        </div>
-      </div>
+            {extraTriggers.length > 0 && <span className="hidden sm:block w-px h-4 bg-bone shrink-0" />}
 
-      {/* ── Welcome line — brand message (left), Deals + About triggers (right) ── */}
-      <div className="bg-white border-b border-bone">
-        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-10 py-[10px]">
-          <p className="text-[15px] text-charcoal tracking-[-0.1px]">
-            Welcome to <span className="font-bold text-brand-orange">Solvexo Store</span>
-          </p>
-
-          {/* Segmented nav — one consistent trigger style/spacing/animation
-             instead of plain text links separated by dividers; each trigger
-             gets a color transition plus an animated underline (full-width on
-             active, a shorter peek on hover) rather than a filled pill. */}
-          <div className="flex items-center gap-5 whitespace-nowrap">
-            {([
-              { key: 'flash-sale',       label: 'Flash Sale',          chevron: true,  className: '' },
-              { key: 'top-picks',        label: 'Top Picks',           chevron: true,  className: '' },
-              { key: 'featured-sellers', label: 'Featured Stores',    chevron: true,  className: 'hidden sm:flex' },
-              { key: 'about',            label: 'About Solvexo.store', chevron: false, className: 'hidden sm:flex' },
-            ] as const).map(item => (
+            {/* Segmented nav — one consistent trigger style/spacing/animation
+               instead of plain text links separated by dividers; each trigger
+               gets a color transition plus an animated underline (full-width on
+               active, a shorter peek on hover) rather than a filled pill. */}
+            {extraTriggers.map(item => (
               <button
                 key={item.key}
                 aria-haspopup="true"
@@ -508,7 +505,7 @@ export function MegaMenuBar({
                 onMouseEnter={() => openMenu(item.key)}
                 onClick={() => setActive(a => a === item.key ? null : item.key)}
                 className={clsx(
-                  'group relative flex items-center gap-[5px] py-2 text-[12.5px] font-semibold whitespace-nowrap border-none bg-transparent cursor-pointer transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                  'group relative flex items-center gap-[5px] py-2 text-[12.5px] font-semibold whitespace-nowrap shrink-0 border-none bg-transparent cursor-pointer transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                   active === item.key ? 'text-brand-orange' : 'text-slate hover:text-charcoal',
                   item.className,
                 )}
@@ -523,6 +520,28 @@ export function MegaMenuBar({
                 />
               </button>
             ))}
+          </div>
+
+          <div className="hidden lg:flex items-center gap-4 shrink-0 text-[12.5px] text-slate whitespace-nowrap">
+            <span className="flex items-center gap-1">
+              <BadgeCheck size={13} className="text-success" /> Verified Sellers
+            </span>
+            <span className="flex items-center gap-1">
+              <ShieldCheck size={13} className="text-success" /> Verified Stores
+            </span>
+            <span className="w-px h-4 bg-bone" />
+            <button
+              onClick={() => onNavigate(TokenStorage.isLoggedIn() ? '/account/orders' : '/login')}
+              className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+            >
+              Track Order
+            </button>
+            <button onClick={() => onNavigate('/faq')} className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+              Help Center
+            </button>
+            <button onClick={() => onNavigate('/contact-us')} className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+              Contact
+            </button>
           </div>
         </div>
       </div>

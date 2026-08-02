@@ -24,3 +24,17 @@ export function currencySymbol(code?: string | null): string {
 export function formatMoney(amount: number, code?: string | null): string {
   return `${currencySymbol(code)} ${amount.toLocaleString()}`;
 }
+
+/** Same abbreviation style as the admin analytics `formatCurrency` helper
+ *  (K/M suffixes) but with the correct symbol for [code] instead of always
+ *  hardcoding "$" — for admin finance figures that must stay currency-aware
+ *  (a PKR total should never render with a $ prefix). */
+export function formatMoneyCompact(amount: number | null | undefined, code?: string | null): string {
+  if (amount == null || Number.isNaN(amount)) return '—';
+  const symbol = currencySymbol(code);
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? '-' : '';
+  if (abs >= 1_000_000) return `${sign}${symbol}${(abs / 1_000_000).toFixed(2)}M`;
+  if (abs >= 1_000) return `${sign}${symbol}${(abs / 1_000).toFixed(1)}k`;
+  return `${sign}${symbol}${abs.toFixed(2)}`;
+}

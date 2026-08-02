@@ -9,6 +9,9 @@ export interface ProductVariant {
   productId:      string;
   sku:            string;
   price:          number;
+  /** The currency `price`/`compareAtPrice` are denominated in — the owning
+   *  store's own Store.baseCurrency. */
+  currency?:      'PKR' | 'USD' | null;
   compareAtPrice: number | null;
   options:        VariantOption[];
   stock:          number;

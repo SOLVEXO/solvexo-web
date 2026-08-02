@@ -23,6 +23,8 @@ import {
   FileText, Store as StoreIcon, Eye, Loader2, Zap,
 } from 'lucide-react';
 import { ProductReviewsSection } from './ProductReviews';
+import { currencySymbol } from '@/utils/currency';
+import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function DetailSkeleton() {
@@ -205,12 +207,17 @@ function QuantityStepper({ qty, max, onChange }: { qty: number; max: number; onC
 // ── Compact rail card — Related / More-from-seller strips ─────────────────────
 interface RelatedCardProps {
   id: string; name: string; image: string | null; price: number | null; compareAtPrice?: number | null;
+  currency?: string | null;
   rating?: number; reviewCount?: number; sold?: number; isNew?: boolean; isBestseller?: boolean;
   onClick: (id: string) => void;
   wishlist?: { active: boolean; onToggle: () => void };
 }
-function RelatedCard({ id, name, image, price, compareAtPrice, rating, reviewCount, sold, isNew, isBestseller, onClick, wishlist }: RelatedCardProps) {
+function RelatedCard({ id, name, image, price: nativePrice, compareAtPrice: nativeCompareAt, currency: nativeCurrency, rating, reviewCount, sold, isNew, isBestseller, onClick, wishlist }: RelatedCardProps) {
   const [errored, setErrored] = useState(false);
+  const { currency: displayCurrency, convert } = useCurrencyPreference();
+  const symbol = currencySymbol(displayCurrency);
+  const price = nativePrice != null ? convert(nativePrice, nativeCurrency) : null;
+  const compareAtPrice = nativeCompareAt != null ? convert(nativeCompareAt, nativeCurrency) : null;
   const pctOff = compareAtPrice != null && price != null && compareAtPrice > price
     ? Math.round((1 - price / compareAtPrice) * 100)
     : null;
@@ -254,9 +261,9 @@ function RelatedCard({ id, name, image, price, compareAtPrice, rating, reviewCou
         <p className="text-[11.5px] font-semibold text-carbon leading-tight line-clamp-2 mb-1 min-h-[28px]">{name}</p>
         <div className="flex items-center justify-between gap-1">
           <span className="flex items-baseline gap-1">
-            <span className="text-[12.5px] font-bold text-carbon">{price != null ? `$${price.toLocaleString()}` : '—'}</span>
+            <span className="text-[12.5px] font-bold text-carbon">{price != null ? `${symbol}${price.toLocaleString()}` : '—'}</span>
             {compareAtPrice != null && price != null && compareAtPrice > price && (
-              <span className="text-[10px] text-slate line-through">${compareAtPrice.toLocaleString()}</span>
+              <span className="text-[10px] text-slate line-through">{symbol}{compareAtPrice.toLocaleString()}</span>
             )}
           </span>
           {!!rating && rating > 0 && (
@@ -324,10 +331,23 @@ export function ProductDetail() {
   const isPhysical = pType === 'physical';
   const isDigital  = !isPhysical;
   const typeLabel  = isPhysical ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
-  const stock = isDigital ? Infinity : (activeVariant?.stock ?? 0);
+  // A physical variant marked unlimitedStock (seller disabled inventory
+  // tracking for it) is always available — previously this fell through to
+  // `?? 0` and incorrectly showed/disabled the page as out of stock.
+  const stock = isDigital || activeVariant?.unlimitedStock ? Infinity : (activeVariant?.stock ?? 0);
   const pctOff = activeVariant?.compareAtPrice != null && activeVariant.compareAtPrice > activeVariant.price
     ? Math.round((1 - activeVariant.price / activeVariant.compareAtPrice) * 100)
     : null;
+
+  // Converted from the variant's own native (store) currency into the
+  // buyer's currently-selected display currency — this is what makes the
+  // navbar PKR/USD switch actually change the prices shown on this page,
+  // not just their symbol. The real checkout amount is always computed
+  // fresh, server-side, at checkout creation regardless of this.
+  const { currency: displayCurrency, convert } = useCurrencyPreference();
+  const displaySymbol = currencySymbol(displayCurrency);
+  const displayPrice = activeVariant ? convert(activeVariant.price, activeVariant.currency) : null;
+  const displayCompareAt = activeVariant?.compareAtPrice != null ? convert(activeVariant.compareAtPrice, activeVariant.currency) : null;
 
   useEffect(() => { setQty(1); }, [activeVariant?._id]);
 
@@ -488,15 +508,15 @@ export function ProductDetail() {
                   {/* Price */}
                   <div className="flex items-baseline gap-[10px] mb-1">
                     <span className="text-[30px] font-extrabold text-carbon tracking-[-0.5px]">
-                      {activeVariant ? `$${activeVariant.price.toLocaleString()}` : '—'}
+                      {displayPrice != null ? `${displaySymbol}${displayPrice.toLocaleString()}` : '—'}
                     </span>
-                    {activeVariant?.compareAtPrice != null && activeVariant.compareAtPrice > activeVariant.price && (
-                      <span className="text-[14px] text-slate line-through">${activeVariant.compareAtPrice.toLocaleString()}</span>
+                    {displayCompareAt != null && displayPrice != null && displayCompareAt > displayPrice && (
+                      <span className="text-[14px] text-slate line-through">{displaySymbol}{displayCompareAt.toLocaleString()}</span>
                     )}
                   </div>
                   {activeVariant?.subscriberPrice != null && (
                     <p className="text-[11.5px] font-semibold text-brand-orange mb-2">
-                      Members pay ${activeVariant.subscriberPrice.toLocaleString()} — save {activeVariant.discountPercent}%
+                      Members pay {displaySymbol}{convert(activeVariant.subscriberPrice, activeVariant.currency).toLocaleString()} — save {activeVariant.discountPercent}%
                     </p>
                   )}
 
@@ -536,7 +556,7 @@ export function ProductDetail() {
                       disabled={stock <= 0} loading={adding === activeVariant?._id}
                       onClick={() => handleAddToCart(true)}
                     >
-                      {stock <= 0 ? 'Out of Stock' : <>Buy Now <ArrowRight size={14} className="inline align-middle ml-[6px]" />{activeVariant ? ` $${(activeVariant.price * qty).toLocaleString()}` : ''}</>}
+                      {stock <= 0 ? 'Out of Stock' : <>Buy Now <ArrowRight size={14} className="inline align-middle ml-[6px]" />{displayPrice != null ? ` ${displaySymbol}${(displayPrice * qty).toLocaleString()}` : ''}</>}
                     </Button>
                     <div className="flex gap-2">
                       <Button
@@ -751,7 +771,14 @@ export function ProductDetail() {
               {sellerProducts.map(p => (
                 <RelatedCard
                   key={p._id} id={p._id} name={p.name} image={p.images?.[0] ?? null}
-                  price={p.subscriberPrice ?? p.defaultVariantPrice} rating={p.averageRating}
+                  price={p.subscriberPrice ?? p.defaultVariantPrice}
+                  // Every product from this same seller shares the seller's
+                  // one locked Store.baseCurrency — there's no per-item
+                  // currency field on this "other products from this store"
+                  // endpoint response, so the store's own currency is the
+                  // correct native currency to convert from here.
+                  currency={storeData?.baseCurrency}
+                  rating={p.averageRating}
                   onClick={pid => navigate(`/marketplace/${pid}`)}
                 />
               ))}
@@ -770,7 +797,7 @@ export function ProductDetail() {
                   return (
                     <RelatedCard
                       key={p._id} id={p._id} name={p.name} image={p.images?.[0] ?? null}
-                      price={dv?.price ?? null} compareAtPrice={dv?.compareAtPrice ?? null}
+                      price={dv?.price ?? null} compareAtPrice={dv?.compareAtPrice ?? null} currency={dv?.currency}
                       rating={p.averageRating} reviewCount={p.totalRatings} sold={p.purchaseCount}
                       isNew={new Date(p.createdAt).getTime() >= fourteenDaysAgo}
                       isBestseller={topSeller > 0 && p.purchaseCount === topSeller}
@@ -797,7 +824,7 @@ export function ProductDetail() {
         <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-white border-t border-bone px-4 py-3 flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-[10px] text-slate leading-none mb-[3px]">Price</p>
-            <p className="text-[17px] font-extrabold text-carbon leading-none truncate">${activeVariant.price.toLocaleString()}</p>
+            <p className="text-[17px] font-extrabold text-carbon leading-none truncate">{displaySymbol}{displayPrice?.toLocaleString()}</p>
           </div>
           <Button
             variant="primary" size="md" className="justify-center flex-1 max-w-[220px]"

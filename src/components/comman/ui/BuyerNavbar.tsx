@@ -1,16 +1,20 @@
 import { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { ArrowLeft, Search, Clock, LayoutGrid, X, TrendingUp, Tag, Star, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Search, Clock, LayoutGrid, X, TrendingUp, Tag, Star, Sparkles, ChevronDown, Check, Store as StoreIcon, Lightbulb, Trash2 } from 'lucide-react';
 import { TokenStorage } from '@/api/services/auth';
-import { apiGetRecentSearches } from '@/api/services/search';
+import { apiGetRecentSearches, apiSearchStores } from '@/api/services/search';
 import { apiGetAllProducts, type MarketplaceProduct } from '@/api/services/marketplace';
+import type { PublicStoreListItem } from '@/api/services/store';
 import { ProductImage } from '@/components/comman/marketplace/ProductCard';
 import { Button } from './Button';
 import { SolvexoLogo } from './SolvexoLogo';
 import { SkeletonBox } from './SkeletonBox';
 import { NotificationBell } from './NotificationBell';
 import { ProfileAvatar } from './ProfileAvatar';
+import { ActionMenu } from './ActionMenu';
+import { useCurrencyPreference, type SupportedCurrency } from '@/contexts/CurrencyPreferenceContext';
+import { currencySymbol } from '@/utils/currency';
 import { SignInPreview } from './SignInPreview';
 import { MiniCart } from './MiniCart';
 import { MiniWishlist } from './MiniWishlist';
@@ -79,7 +83,7 @@ function SearchSectionLabel({ icon, tone = 'neutral', children }: { icon: React.
 
 // ── Compact suggestion row — Recent/Trending searches as a real row (icon +
 // term, full-width, hover fill), not a chip cloud. ──
-function SuggestionRow({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+function SuggestionRow({ icon, label, onClick }: { icon: React.ReactNode; label: React.ReactNode; onClick: () => void }) {
   return (
     <button
       data-search-item
@@ -94,15 +98,35 @@ function SuggestionRow({ icon, label, onClick }: { icon: React.ReactNode; label:
   );
 }
 
+// ── Highlighted match — wraps the first occurrence of `query` inside `text`
+// in a real <mark>, restyled to the brand palette instead of the browser's
+// default yellow. Used across every grouped typing-state result row. ──
+function HighlightMatch({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-brand-pale-orange text-brand-deep-orange rounded-[2px]">{text.slice(idx, idx + query.length)}</mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
+
 // ── Recommended product row — 56×56 thumbnail + title + category + rating +
 // price, not a cropped image strip. Reuses ProductImage (same component
 // ProductCard/MegaMenuBar use) inside a fixed-size frame — ProductImage's
 // own base classes force `w-full`, so it must be wrapped in a sized box
 // rather than sized directly, or it stretches to its flex row's full width. ──
-function RecommendedProductRow({ product, categoryName, onClick }: { product: MarketplaceProduct; categoryName: string; onClick: () => void }) {
-  const dv        = (product.variants ?? []).find(v => v.isDefault) ?? product.variants?.[0];
-  const price     = dv?.price ?? null;
-  const compareAt = dv?.compareAtPrice ?? null;
+function RecommendedProductRow({ product, categoryName, query, onClick }: { product: MarketplaceProduct; categoryName: string; query: string; onClick: () => void }) {
+  const dv              = (product.variants ?? []).find(v => v.isDefault) ?? product.variants?.[0];
+  const nativePrice     = dv?.price ?? null;
+  const nativeCompareAt = dv?.compareAtPrice ?? null;
+  const { currency: displayCurrency, convert } = useCurrencyPreference();
+  const priceSymbol = currencySymbol(displayCurrency);
+  const price     = nativePrice != null ? convert(nativePrice, dv?.currency) : null;
+  const compareAt = nativeCompareAt != null ? convert(nativeCompareAt, dv?.currency) : null;
   return (
     <button
       data-search-item
@@ -114,7 +138,7 @@ function RecommendedProductRow({ product, categoryName, onClick }: { product: Ma
       </span>
       <div className="flex-1 min-w-0">
         <p className="text-[12.5px] font-semibold text-carbon leading-snug line-clamp-1 group-hover:text-brand-deep-orange transition-colors">
-          {product.name}
+          <HighlightMatch text={product.name} query={query} />
         </p>
         <div className="flex items-center gap-[6px] mt-[3px] min-w-0">
           <span className="text-[10.5px] text-slate truncate">{categoryName}</span>
@@ -126,11 +150,39 @@ function RecommendedProductRow({ product, categoryName, onClick }: { product: Ma
         </div>
       </div>
       <div className="flex flex-col items-end gap-[2px] shrink-0">
-        <span className="text-[13px] font-bold text-carbon">{price != null ? `$${price.toLocaleString()}` : '—'}</span>
+        <span className="text-[13px] font-bold text-carbon">{price != null ? `${priceSymbol}${price.toLocaleString()}` : '—'}</span>
         {compareAt != null && price != null && compareAt > price && (
-          <span className="text-[10px] text-slate line-through">${compareAt.toLocaleString()}</span>
+          <span className="text-[10px] text-slate line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
         )}
       </div>
+    </button>
+  );
+}
+
+// ── Store match row — same 56×56 thumbnail/title layout language as
+// RecommendedProductRow, so "Stores" reads as a sibling group, not a
+// different design. ──
+function StoreMatchRow({ store, query, onClick }: { store: PublicStoreListItem; query: string; onClick: () => void }) {
+  return (
+    <button
+      data-search-item
+      onClick={onClick}
+      className="group w-full flex items-center gap-3 px-2 py-2 rounded-xl bg-transparent border-none text-left cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:bg-cream"
+    >
+      <span className="w-14 h-14 rounded-[10px] overflow-hidden shrink-0 bg-brand-pale-orange flex items-center justify-center">
+        {store.logo
+          ? <img loading="lazy" decoding="async" src={store.logo} alt="" className="w-full h-full object-cover" />
+          : <StoreIcon size={20} className="text-brand-orange opacity-50" />}
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-[12.5px] font-semibold text-carbon leading-snug line-clamp-1 group-hover:text-brand-deep-orange transition-colors">
+          <HighlightMatch text={store.name} query={query} />
+        </p>
+        <p className="text-[10.5px] text-slate truncate mt-[3px]">
+          {store.followersCount > 0 ? `${store.followersCount.toLocaleString()} followers` : 'Store'}
+        </p>
+      </div>
+      <ChevronDown size={13} className="text-slate/50 -rotate-90 shrink-0" />
     </button>
   );
 }
@@ -144,28 +196,37 @@ function SearchBox({
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
-  const [recent, setRecent] = useState<string[]>([]);
+  // Kept separate (rather than one merged "recent" array) so "Clear History"
+  // can actually clear what it controls — the on-device list — without
+  // pretending to delete account-synced server history it has no delete
+  // endpoint for.
+  const [syncedRecent, setSyncedRecent] = useState<string[]>([]);
+  const [localRecent,  setLocalRecent]  = useState<string[]>([]);
   const [pool, setPool] = useState<MarketplaceProduct[]>([]);
   const [poolLoading, setPoolLoading] = useState(false);
   const poolFetched = useRef(false);
+  const [storeMatches, setStoreMatches] = useState<PublicStoreListItem[]>([]);
+  const [storesLoading, setStoresLoading] = useState(false);
   const [isMac] = useState(() => typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.userAgent));
+
+  const recent = [...syncedRecent, ...localRecent.filter(t => !syncedRecent.some(s => s.toLowerCase() === t.toLowerCase()))].slice(0, 5);
+
+  const clearHistory = () => {
+    try { localStorage.removeItem(RECENT_KEY); } catch { /* storage unavailable */ }
+    setLocalRecent([]);
+  };
 
   useEffect(() => {
     if (!open) return;
 
-    const local = getLocalRecentSearches();
+    setLocalRecent(getLocalRecentSearches());
     if (TokenStorage.isLoggedIn()) {
-      // Account-synced history when the backend has it; merge in anything
-      // typed this session that hasn't round-tripped to the server yet.
+      // Account-synced history when the backend has it.
       apiGetRecentSearches(5)
-        .then(res => {
-          const synced = res.data.map(r => r.query);
-          const extra = local.filter(t => !synced.some(s => s.toLowerCase() === t.toLowerCase()));
-          setRecent([...synced, ...extra].slice(0, 5));
-        })
-        .catch(() => setRecent(local));
+        .then(res => setSyncedRecent(res.data.map(r => r.query)))
+        .catch(() => setSyncedRecent([]));
     } else {
-      setRecent(local);
+      setSyncedRecent([]);
     }
 
     // Recommended-products pool — fetched once per mount (not on every open),
@@ -187,6 +248,24 @@ function SearchBox({
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
+
+  // Store matches for the typing state's "Stores" group — same public
+  // search endpoint the Marketplace page already uses for its own below-hero
+  // store row, just a smaller top-N here. Debounced locally since this fires
+  // on every keystroke rather than sharing the host page's debounce.
+  useEffect(() => {
+    const query = value.trim();
+    if (!open || query.length < 2) { setStoreMatches([]); return; }
+    let cancelled = false;
+    setStoresLoading(true);
+    const id = setTimeout(() => {
+      apiSearchStores(query, 1, 3)
+        .then(res => { if (!cancelled) setStoreMatches(res.data?.stores ?? []); })
+        .catch(() => { if (!cancelled) setStoreMatches([]); })
+        .finally(() => { if (!cancelled) setStoresLoading(false); });
+    }, 250);
+    return () => { cancelled = true; clearTimeout(id); };
+  }, [open, value]);
 
   // Global ⌘K / Ctrl+K — focuses and opens the search from anywhere on the page.
   useEffect(() => {
@@ -210,6 +289,11 @@ function SearchBox({
   const goToProduct = (id: string) => {
     setOpen(false);
     navigate(`/marketplace/${id}`);
+  };
+
+  const goToStore = (slug: string) => {
+    setOpen(false);
+    navigate(`/${slug}`);
   };
 
   // Arrow-key navigation across every suggestion — moves real DOM focus (not
@@ -236,11 +320,12 @@ function SearchBox({
   };
 
   const query = value.trim().toLowerCase();
-  const recommended = query
-    ? pool.filter(p => p.name.toLowerCase().includes(query)).slice(0, 4)
-    : [...pool]
-        .sort((a, b) => (b.purchaseCount + b.averageRating * 10) - (a.purchaseCount + a.averageRating * 10))
-        .slice(0, 4);
+  const isTyping = query.length > 0;
+
+  // Typing state — grouped, deliberately capped small (this is a preview,
+  // not a results page; "View all results" is what a shopper wants for more).
+  const matchingProducts = isTyping ? pool.filter(p => p.name.toLowerCase().includes(query)).slice(0, 4) : [];
+  const matchingCategories = isTyping ? (categories ?? []).filter(c => c.name.toLowerCase().includes(query)).slice(0, 5) : [];
 
   const typeLabel = (p: MarketplaceProduct) => {
     const t = p.productType ?? p.type ?? 'physical';
@@ -252,7 +337,9 @@ function SearchBox({
   // raw id or goes blank.
   const categoryNameFor = (p: MarketplaceProduct) => categories?.find(c => c.id === p.categoryId)?.name ?? typeLabel(p);
 
-  const hasSuggestions = recent.length > 0 || TRENDING_SEARCHES.length > 0 || (categories?.length ?? 0) > 0 || recommended.length > 0 || poolLoading;
+  const hasEmptyStateContent = recent.length > 0 || TRENDING_SEARCHES.length > 0 || (categories?.length ?? 0) > 0;
+  const hasTypingContent = matchingProducts.length > 0 || matchingCategories.length > 0 || storeMatches.length > 0 || poolLoading || storesLoading;
+  const hasSuggestions = isTyping ? hasTypingContent : hasEmptyStateContent;
 
   return (
     <div ref={ref} className="relative flex-1 flex justify-center px-2 sm:px-4" onKeyDown={handleKeyDown}>
@@ -310,72 +397,149 @@ function SearchBox({
             aria-label="Search suggestions"
             className="dropdown-enter absolute left-0 right-0 top-[calc(100%+6px)] bg-white border border-bone rounded-2xl overflow-y-auto overscroll-contain shadow-[0_6px_20px_-4px_rgba(20,15,10,0.08)] max-h-[460px]"
           >
-            {recent.length > 0 && (
-              <div className="px-3 py-3 border-b border-bone">
-                <div className="px-1"><SearchSectionLabel icon={<Clock size={10} />}>Recent Searches</SearchSectionLabel></div>
-                <div className="flex flex-col">
-                  {recent.map(term => (
-                    <SuggestionRow key={term} icon={<Clock size={13} />} label={term} onClick={() => pick(term)} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="px-3 py-3 border-b border-bone">
-              <div className="px-1"><SearchSectionLabel icon={<TrendingUp size={10} />} tone="brand">Trending Searches</SearchSectionLabel></div>
-              <div className="flex flex-col">
-                {TRENDING_SEARCHES.map(term => (
-                  <SuggestionRow key={term} icon={<TrendingUp size={13} />} label={term} onClick={() => pick(term)} />
-                ))}
-              </div>
-            </div>
-
-            {categories && categories.length > 0 && (
-              <div className="px-4 py-3 border-b border-bone">
-                <SearchSectionLabel icon={<LayoutGrid size={10} />}>Popular Categories</SearchSectionLabel>
-                <div className="flex flex-wrap gap-[7px]">
-                  {categories.slice(0, 8).map(cat => (
-                    <button
-                      key={cat.id}
-                      data-search-item
-                      onClick={() => {
-                        if (onCategorySelect) { onCategorySelect(cat.id); setOpen(false); }
-                        else pick(cat.name);
-                      }}
-                      className="flex items-center gap-[6px] max-w-[170px] px-[12px] py-[7px] rounded-full text-[11.5px] font-medium bg-white text-charcoal border border-bone hover:border-brand-orange hover:bg-brand-pale-orange hover:text-brand-deep-orange focus-visible:outline-none focus-visible:border-brand-orange focus-visible:bg-brand-pale-orange transition-colors duration-150 cursor-pointer"
-                      title={cat.name}
-                    >
-                      <Tag size={11} className="shrink-0 text-brand-orange" />
-                      <span className="truncate">{cat.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {(recommended.length > 0 || poolLoading) && (
-              <div className="px-3 py-3">
-                <div className="px-1"><SearchSectionLabel icon={<Sparkles size={10} />}>{query ? 'Matching Products' : 'Recommended Products'}</SearchSectionLabel></div>
-                {poolLoading && recommended.length === 0 ? (
-                  <div className="flex flex-col gap-2">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="flex items-center gap-3 px-2 py-2">
-                        <SkeletonBox width={56} height={56} rounded="10px" />
-                        <div className="flex-1 flex flex-col gap-[6px]">
-                          <SkeletonBox width="70%" height={11} rounded="4px" />
-                          <SkeletonBox width="35%" height={9} rounded="4px" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-[2px]">
-                    {recommended.map(p => (
-                      <RecommendedProductRow key={p._id} product={p} categoryName={categoryNameFor(p)} onClick={() => goToProduct(p._id)} />
-                    ))}
+            {!isTyping ? (
+              <>
+                {/* ── Empty state: Recent Searches / Popular Categories / Trending / Tips ── */}
+                {recent.length > 0 && (
+                  <div className="px-3 py-3 border-b border-bone">
+                    <div className="px-1 flex items-center justify-between gap-2">
+                      <SearchSectionLabel icon={<Clock size={10} />}>Recent Searches</SearchSectionLabel>
+                      <button
+                        data-search-item
+                        onClick={clearHistory}
+                        className="flex items-center gap-1 text-[10.5px] font-semibold text-slate hover:text-brand-orange transition-colors cursor-pointer bg-transparent border-none p-1 -m-1"
+                      >
+                        <Trash2 size={11} /> Clear History
+                      </button>
+                    </div>
+                    <div className="flex flex-col">
+                      {recent.map(term => (
+                        <SuggestionRow key={term} icon={<Clock size={13} />} label={term} onClick={() => pick(term)} />
+                      ))}
+                    </div>
                   </div>
                 )}
-              </div>
+
+                {categories && categories.length > 0 && (
+                  <div className="px-4 py-3 border-b border-bone">
+                    <SearchSectionLabel icon={<LayoutGrid size={10} />}>Popular Categories</SearchSectionLabel>
+                    <div className="flex flex-wrap gap-[7px]">
+                      {categories.slice(0, 8).map(cat => (
+                        <button
+                          key={cat.id}
+                          data-search-item
+                          onClick={() => {
+                            if (onCategorySelect) { onCategorySelect(cat.id); setOpen(false); }
+                            else pick(cat.name);
+                          }}
+                          className="flex items-center gap-[6px] max-w-[170px] px-[12px] py-[7px] rounded-full text-[11.5px] font-medium bg-white text-charcoal border border-bone hover:border-brand-orange hover:bg-brand-pale-orange hover:text-brand-deep-orange focus-visible:outline-none focus-visible:border-brand-orange focus-visible:bg-brand-pale-orange transition-colors duration-150 cursor-pointer"
+                          title={cat.name}
+                        >
+                          <Tag size={11} className="shrink-0 text-brand-orange" />
+                          <span className="truncate">{cat.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="px-3 py-3 border-b border-bone">
+                  <div className="px-1"><SearchSectionLabel icon={<TrendingUp size={10} />} tone="brand">Trending Searches</SearchSectionLabel></div>
+                  <div className="flex flex-col">
+                    {TRENDING_SEARCHES.map(term => (
+                      <SuggestionRow key={term} icon={<TrendingUp size={13} />} label={term} onClick={() => pick(term)} />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="px-3 py-3">
+                  <div className="px-1"><SearchSectionLabel icon={<Lightbulb size={10} />}>Search Tips</SearchSectionLabel></div>
+                  <ul className="flex flex-col gap-[7px] px-1 text-[11.5px] text-slate leading-snug">
+                    <li>Search a store's name to jump straight to its page.</li>
+                    <li>Try a category name (e.g. "Digital Planner") to browse fast.</li>
+                    <li>Keep it short — one or two words find more matches.</li>
+                  </ul>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* ── Typing state: grouped Products / Stores / Categories, then "View all results" ── */}
+                {(matchingProducts.length > 0 || poolLoading) && (
+                  <div className="px-3 py-3 border-b border-bone">
+                    <div className="px-1"><SearchSectionLabel icon={<Sparkles size={10} />}>Products</SearchSectionLabel></div>
+                    {poolLoading && matchingProducts.length === 0 ? (
+                      <div className="flex flex-col gap-2">
+                        {[1, 2].map(i => (
+                          <div key={i} className="flex items-center gap-3 px-2 py-2">
+                            <SkeletonBox width={56} height={56} rounded="10px" />
+                            <div className="flex-1 flex flex-col gap-[6px]">
+                              <SkeletonBox width="70%" height={11} rounded="4px" />
+                              <SkeletonBox width="35%" height={9} rounded="4px" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-[2px]">
+                        {matchingProducts.map(p => (
+                          <RecommendedProductRow key={p._id} product={p} categoryName={categoryNameFor(p)} query={query} onClick={() => goToProduct(p._id)} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {(storeMatches.length > 0 || storesLoading) && (
+                  <div className="px-3 py-3 border-b border-bone">
+                    <div className="px-1"><SearchSectionLabel icon={<StoreIcon size={10} />} tone="brand">Stores</SearchSectionLabel></div>
+                    {storesLoading && storeMatches.length === 0 ? (
+                      <div className="flex items-center gap-3 px-2 py-2">
+                        <SkeletonBox width={56} height={56} rounded="10px" />
+                        <div className="flex-1 flex flex-col gap-[6px]">
+                          <SkeletonBox width="60%" height={11} rounded="4px" />
+                          <SkeletonBox width="30%" height={9} rounded="4px" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-[2px]">
+                        {storeMatches.map(s => (
+                          <StoreMatchRow key={s.storeId} store={s} query={query} onClick={() => goToStore(s.slug)} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {matchingCategories.length > 0 && (
+                  <div className="px-4 py-3 border-b border-bone">
+                    <SearchSectionLabel icon={<LayoutGrid size={10} />}>Categories</SearchSectionLabel>
+                    <div className="flex flex-col">
+                      {matchingCategories.map(cat => (
+                        <SuggestionRow
+                          key={cat.id}
+                          icon={<Tag size={13} />}
+                          label={<HighlightMatch text={cat.name} query={query} />}
+                          onClick={() => {
+                            if (onCategorySelect) { onCategorySelect(cat.id); setOpen(false); }
+                            else pick(cat.name);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  data-search-item
+                  onClick={() => { onSubmit(value); setOpen(false); }}
+                  className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-transparent border-none text-left cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:bg-cream"
+                >
+                  <span className="text-[12.5px] font-semibold text-brand-orange">
+                    View all results for "{value.trim()}"
+                  </span>
+                  <ArrowRight size={13} className="text-brand-orange shrink-0" />
+                </button>
+              </>
             )}
           </div>
         )}
@@ -384,19 +548,90 @@ function SearchBox({
   );
 }
 
+// Real SVG flags, not emoji — Windows has no built-in flag glyphs for
+// regional-indicator emoji (it falls back to showing literal "PK"/"US"
+// letter codes instead of a flag), so emoji flags render inconsistently
+// across platforms. A small inline SVG renders identically everywhere.
+function FlagPK({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 14" className={className} aria-hidden>
+      <rect width="20" height="14" fill="#01411C" />
+      <rect width="5" height="14" fill="#fff" />
+      <circle cx="13.5" cy="7" r="3.6" fill="#fff" />
+      <circle cx="14.6" cy="7" r="2.9" fill="#01411C" />
+      <path d="M15.8 4.4l.5 1.5 1.5.1-1.2 1 .4 1.5-1.2-.9-1.2.9.4-1.5-1.2-1 1.5-.1z" fill="#fff" />
+    </svg>
+  );
+}
+function FlagUS({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 14" className={className} aria-hidden>
+      <rect width="20" height="14" fill="#fff" />
+      {[0, 2, 4, 6, 8, 10, 12].map(y => (
+        <rect key={y} y={y} width="20" height="1.077" fill="#B22234" />
+      ))}
+      <rect width="9" height="7.54" fill="#3C3B6E" />
+    </svg>
+  );
+}
+
+const CURRENCY_OPTIONS: { code: SupportedCurrency; Flag: typeof FlagPK; label: string }[] = [
+  { code: 'PKR', Flag: FlagPK, label: 'Pakistani Rupee' },
+  { code: 'USD', Flag: FlagUS, label: 'US Dollar' },
+];
+
+// PKR/USD dropdown, country flag + code in the trigger — built on the
+// shared ActionMenu (same portal/positioning/keyboard-nav/click-outside
+// mechanics used by every other dropdown in the app, e.g. admin table row
+// actions) rather than a one-off implementation. Manual selection here
+// always wins and persists — location detection only ever sets the
+// initial default, never overrides an explicit choice.
+export function CurrencySelector() {
+  const { currency, setCurrency } = useCurrencyPreference();
+  const active = CURRENCY_OPTIONS.find(c => c.code === currency) ?? CURRENCY_OPTIONS[0];
+
+  return (
+    <ActionMenu
+      ariaLabel={`Currency: ${active.code}. Change currency`}
+      trigger={
+        <>
+          <active.Flag className="w-4 h-3 rounded-[2px] shrink-0 object-cover" />
+          <span>{active.code}</span>
+          <ChevronDown size={12} className="text-slate" />
+        </>
+      }
+      triggerClassName="flex items-center gap-1.5 text-[12px] font-semibold text-charcoal border border-bone rounded-md pl-2 pr-[7px] py-1 bg-white hover:bg-cream transition-colors cursor-pointer shrink-0"
+      items={CURRENCY_OPTIONS.map(c => ({
+        label: (
+          <span className="flex items-center gap-2 flex-1">
+            <span className="flex-1">{c.code} — {c.label}</span>
+            {c.code === active.code && <Check size={13} className="text-brand-orange shrink-0" />}
+          </span>
+        ),
+        onClick: () => setCurrency(c.code),
+        icon: <c.Flag className="w-4 h-3 rounded-[2px] shrink-0 object-cover" />,
+      }))}
+    />
+  );
+}
+
 function AccountActions() {
   const navigate = useNavigate();
   if (TokenStorage.isLoggedIn()) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
+        <CurrencySelector />
         <NotificationBell />
         <ProfileAvatar />
       </div>
     );
   }
   return (
-    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+    <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
       <SignInPreview />
+      {/* Currency sits directly beside Start Selling now, not off on its own
+         next to the wishlist/cart icons. */}
+      <CurrencySelector />
       <div className="hidden md:inline-flex">
         <Button variant="primary" size="sm" onClick={() => navigate('/onboard')}>
           Start Selling
@@ -451,7 +686,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
       scrolled ? 'bg-white border-bone' : 'bg-white/90 border-transparent',
     )}>
       <div className={clsx(
-        'flex items-center gap-2 sm:gap-3 px-4 sm:px-6 lg:px-10 transition-[height] duration-200',
+        'flex items-center gap-3 sm:gap-5 px-4 sm:px-6 lg:px-10 transition-[height] duration-200',
         scrolled ? 'h-[52px]' : 'h-[60px]',
       )}>
 
@@ -518,7 +753,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
             )}
 
             {/* Actions — hidden on mobile while search is expanded so the input gets full width */}
-            <div className={clsx('items-center gap-1 sm:gap-2 shrink-0', mobileSearchOpen ? 'hidden sm:flex' : 'flex')}>
+            <div className={clsx('items-center gap-1.5 sm:gap-2.5 shrink-0', mobileSearchOpen ? 'hidden sm:flex' : 'flex')}>
               {backTo && (
                 <div className="hidden md:inline-flex">
                   <Button variant="ghost" size="sm" onClick={() => navigate(backTo.path)}>

@@ -63,8 +63,11 @@ interface ApiResponse<T> { success: boolean; message?: string; data: T }
 
 // ── A. Dashboard overview ───────────────────────────────────────────────────────
 
-export interface AdminFinanceOverviewData {
-  period: FinancePeriod;
+/** One entry per settlement currency actually present in the data — PKR and
+ *  USD figures are never blended into a single number (see the backend's
+ *  AdminFinanceService#getOverview comment). */
+export interface AdminFinanceOverviewCurrencyRow {
+  currency: string;
   gmv: number;
   netRevenue: number;
   refunds: number;
@@ -73,18 +76,29 @@ export interface AdminFinanceOverviewData {
   platformCommission: number;
   subscriptionRevenue: number;
   paymentProcessingFees: number;
-  sellerBalances: { totalAvailable: number; totalPending: number; sellersWithBalance: number };
+  sellerBalances: { totalAvailable: number; totalPending: number };
   lifetimeTotals: { totalRevenue: number; totalFees: number; totalRefunds: number; totalPayouts: number };
+}
+
+export interface AdminFinanceOverviewData {
+  period: FinancePeriod;
+  byCurrency: AdminFinanceOverviewCurrencyRow[];
+  sellersWithBalance: number;
+  flaggedSellersCount: number;
+  pendingVerificationMethodsCount: number;
+  pendingManualPaymentsCount: number;
   payoutQueue: Record<PayoutStatus, { count: number; amount: number }>;
   note: string;
 }
 
 // ── B. Revenue / commission trends ──────────────────────────────────────────────
 
-export interface RevenuePoint { date: string; grossRevenue: number; netRevenue: number }
+export interface RevenueByCurrency { currency: string; grossRevenue: number; netRevenue: number }
+export interface RevenuePoint { date: string; byCurrency: RevenueByCurrency[] }
 export interface AdminFinanceRevenueOverTimeData { granularity: AnalyticsGranularity; series: RevenuePoint[] }
 
-export interface CommissionPoint { date: string; commission: number; processingFees: number }
+export interface CommissionByCurrency { currency: string; commission: number; processingFees: number }
+export interface CommissionPoint { date: string; byCurrency: CommissionByCurrency[] }
 export interface AdminFinanceCommissionOverTimeData { granularity: AnalyticsGranularity; series: CommissionPoint[] }
 
 // ── C. Seller balances ───────────────────────────────────────────────────────────
@@ -207,11 +221,11 @@ export interface ClearingResultData { processed: number; totalAmount: number }
 
 // ── H. Reports ────────────────────────────────────────────────────────────────────
 
-export interface RefundByStoreRow { storeId: string; storeName: string; totalRefunded: number; count: number }
+export interface RefundByStoreRow { storeId: string; storeName: string; currency: string; totalRefunded: number; count: number }
+export interface RefundByCurrencyRow { currency: string; totalRefunded: number; count: number }
 export interface AdminRefundReportData {
   period: FinancePeriod;
-  totalRefunded: number;
-  totalRefundCount: number;
+  byCurrency: RefundByCurrencyRow[];
   byStore: RefundByStoreRow[];
   note: string;
 }
@@ -236,19 +250,23 @@ export interface TaxReportRow {
   generatedAt: string | null;
 }
 
-export interface AdminSettlementReportData {
-  period: FinancePeriod;
+export interface SettlementByCurrencyRow {
+  currency: string;
   grossSales: number;
   platformFeesCollected: number;
   refundsIssued: number;
   payoutsDisbursed: number;
   adjustments: number;
   outstandingObligation: { availableBalance: number; pendingBalance: number; totalOwedToSellers: number };
+}
+export interface AdminSettlementReportData {
+  period: FinancePeriod;
+  byCurrency: SettlementByCurrencyRow[];
   note: string;
 }
 
-export interface MonthlyReportRow {
-  month: string;
+export interface MonthlyReportByCurrency {
+  currency: string;
   gmv: number;
   refunds: number;
   payouts: number;
@@ -256,8 +274,47 @@ export interface MonthlyReportRow {
   subscriptionRevenue: number;
   platformEarnings: number;
 }
+export interface MonthlyReportRow {
+  month: string;
+  byCurrency: MonthlyReportByCurrency[];
+}
 
 export interface AdminMonthlyReportData { monthly: MonthlyReportRow[] }
+
+// ── Reconciliation & FX exposure ────────────────────────────────────────────────
+
+export interface ReconciliationCurrencyResult {
+  currency: string;
+  buyerCollected: number;
+  orderCount: number;
+  ledgerNet: number;
+  fees: number;
+  refunds: number;
+  expectedFromLedger: number;
+  drift: number;
+  hasDiscrepancy: boolean;
+}
+export interface AdminReconciliationData {
+  windowDays: number;
+  byCurrency: ReconciliationCurrencyResult[];
+  hasAnyDiscrepancy: boolean;
+}
+export interface ReconciliationRunRow {
+  _id: string;
+  runAt: string;
+  results: ReconciliationCurrencyResult[];
+  hasAnyDiscrepancy: boolean;
+  createdAt: string;
+}
+
+export interface FxExposureCurrencyRow { currency: string; pendingAmount: number; count: number; pendingUSDEquivalent: number | null }
+export interface AdminFxExposureData {
+  byCurrency: FxExposureCurrencyRow[];
+  totalUSDEquivalent: number;
+  threshold: number;
+  breached: boolean;
+  asOf: string;
+}
 
 // ── Query-string helper (mirrors the convention in services/analytics/*) ────────
 
@@ -364,6 +421,18 @@ export function apiAdminSettlementReport(params: AdminFinanceParams = {}) {
 
 export function apiAdminMonthlyReport(params: { months?: number } = {}) {
   return client.get<never, ApiResponse<AdminMonthlyReportData>>(`${ENDPOINTS.FINANCE.ADMIN.MONTHLY_REPORT}${qs(params)}`);
+}
+
+export function apiAdminReconciliation(days = 1) {
+  return client.get<never, ApiResponse<AdminReconciliationData>>(`${ENDPOINTS.FINANCE.ADMIN.RECONCILIATION}${qs({ days })}`);
+}
+
+export function apiAdminReconciliationHistory(limit = 30) {
+  return client.get<never, ApiResponse<ReconciliationRunRow[]>>(`${ENDPOINTS.FINANCE.ADMIN.RECONCILIATION_HISTORY}${qs({ limit })}`);
+}
+
+export function apiAdminFxExposure() {
+  return client.get<never, ApiResponse<AdminFxExposureData>>(ENDPOINTS.FINANCE.ADMIN.FX_EXPOSURE);
 }
 
 // ── H. Export ─────────────────────────────────────────────────────────────────────

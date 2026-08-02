@@ -83,7 +83,7 @@ export { NotificationsPanel }                 from './NotificationsPanel';
 
 export { ProfileAvatar }                     from './ProfileAvatar';
 
-export { BuyerNavbar }                       from './BuyerNavbar';
+export { BuyerNavbar, CurrencySelector }     from './BuyerNavbar';
 export type { BuyerNavbarProps }             from './BuyerNavbar';
 
 export { Breadcrumb }                        from './Breadcrumb';

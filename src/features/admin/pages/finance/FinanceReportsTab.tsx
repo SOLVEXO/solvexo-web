@@ -1,27 +1,49 @@
-import { MetricCard, Table, type TableColumn } from '@/components/comman/ui';
+import { MetricCard, Table, type TableColumn, StatusBadge } from '@/components/comman/ui';
 import { BarChart } from '@/components/comman/charts';
 import {
   useAdminRefundReport,
   useAdminSettlementReport,
   useAdminMonthlyReport,
   useAdminTaxReports,
+  useAdminReconciliationHistory,
+  useAdminFxExposure,
 } from '@/hooks/admin/useAdminFinance';
-import type { AdminFinanceParams, RefundByStoreRow, TaxReportRow } from '@/api/services/finance/adminFinance';
+import type { AdminFinanceParams, RefundByStoreRow, TaxReportRow, ReconciliationRunRow } from '@/api/services/finance/adminFinance';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { ChartCardSkeleton, TableCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
 import { formatCurrency } from '@/components/comman/analytics/format';
-import { Undo2, FileText } from 'lucide-react';
+import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
+import { Undo2, FileText, ShieldAlert } from 'lucide-react';
 
 export function FinanceReportsTab({ params }: { params: AdminFinanceParams }) {
   const refunds = useAdminRefundReport(params);
   const settlement = useAdminSettlementReport(params);
   const monthly = useAdminMonthlyReport({ months: 6 });
   const taxReports = useAdminTaxReports({});
+  const reconciliation = useAdminReconciliationHistory(14);
+  const exposure = useAdminFxExposure();
+
+  const reconciliationColumns: TableColumn<ReconciliationRunRow>[] = [
+    { key: 'runAt', header: 'Run', render: (r) => new Date(r.runAt).toLocaleString() },
+    {
+      key: 'hasAnyDiscrepancy', header: 'Status', render: (r) => (
+        <StatusBadge status={r.hasAnyDiscrepancy ? 'Flagged' : 'Active'} />
+      ),
+    },
+    {
+      key: 'results', header: 'Drift', render: (r) => (
+        <span className="text-[12px]">
+          {r.results.map((c) => `${c.currency}: ${formatMoneyCompact(c.drift, c.currency)}`).join(' · ')}
+        </span>
+      ),
+    },
+  ];
 
   const refundColumns: TableColumn<RefundByStoreRow>[] = [
     { key: 'storeName', header: 'Store' },
+    { key: 'currency', header: 'Currency' },
     { key: 'count', header: 'Refunds', align: 'right' },
-    { key: 'totalRefunded', header: 'Total Refunded', align: 'right', render: (r) => formatCurrency(r.totalRefunded) },
+    { key: 'totalRefunded', header: 'Total Refunded', align: 'right', render: (r) => formatMoneyCompact(r.totalRefunded, r.currency) },
   ];
 
   const taxColumns: TableColumn<TaxReportRow>[] = [
@@ -34,42 +56,93 @@ export function FinanceReportsTab({ params }: { params: AdminFinanceParams }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Settlement */}
+      {/* Settlement — one block per settlement currency, never blended */}
       {settlement.loading ? (
         <TableCardSkeleton rows={4} />
       ) : settlement.error ? (
         <AnalyticsErrorState message={settlement.error} onRetry={settlement.refetch} />
       ) : settlement.data ? (
-        <div className="bg-white border border-bone rounded-[10px] px-5 py-5">
-          <p className="text-[14px] font-bold text-charcoal mb-4">Settlement Report</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-            <MetricCard label="Gross Sales" value={formatCurrency(settlement.data.grossSales)} />
-            <MetricCard label="Fees Collected" value={formatCurrency(settlement.data.platformFeesCollected)} />
-            <MetricCard label="Refunds Issued" value={formatCurrency(settlement.data.refundsIssued)} />
-            <MetricCard label="Payouts Disbursed" value={formatCurrency(settlement.data.payoutsDisbursed)} />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <MetricCard label="Available Balance Owed" value={formatCurrency(settlement.data.outstandingObligation.availableBalance)} />
-            <MetricCard label="Pending Balance Owed" value={formatCurrency(settlement.data.outstandingObligation.pendingBalance)} />
-          </div>
-          <p className="text-[11px] text-slate mt-3">{settlement.data.note}</p>
+        <div className="bg-white border border-bone rounded-[10px] px-5 py-5 flex flex-col gap-4">
+          <p className="text-[14px] font-bold text-charcoal">Settlement Report</p>
+          {settlement.data.byCurrency.map((c) => (
+            <div key={c.currency}>
+              <p className="text-[12px] font-semibold text-slate uppercase tracking-[0.06em] mb-2">{c.currency}</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                <MetricCard label="Gross Sales" value={formatMoneyCompact(c.grossSales, c.currency)} />
+                <MetricCard label="Fees Collected" value={formatMoneyCompact(c.platformFeesCollected, c.currency)} />
+                <MetricCard label="Refunds Issued" value={formatMoneyCompact(c.refundsIssued, c.currency)} />
+                <MetricCard label="Payouts Disbursed" value={formatMoneyCompact(c.payoutsDisbursed, c.currency)} />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <MetricCard label="Available Balance Owed" value={formatMoneyCompact(c.outstandingObligation.availableBalance, c.currency)} />
+                <MetricCard label="Pending Balance Owed" value={formatMoneyCompact(c.outstandingObligation.pendingBalance, c.currency)} />
+              </div>
+            </div>
+          ))}
+          <p className="text-[11px] text-slate">{settlement.data.note}</p>
         </div>
       ) : null}
 
-      {/* Monthly */}
+      {/* Monthly — one bar chart per settlement currency, never blended */}
       {monthly.loading ? (
         <ChartCardSkeleton />
       ) : monthly.error ? (
         <AnalyticsErrorState message={monthly.error} onRetry={monthly.refetch} />
       ) : (
-        <BarChart
-          title="Monthly GMV"
-          subtitle="Last 6 months"
-          data={(monthly.data?.monthly ?? []).map((m) => ({ label: m.month, gmv: m.gmv }))}
-          dataKey="gmv"
-          valuePrefix="$"
-        />
+        [...new Set((monthly.data?.monthly ?? []).flatMap((m) => m.byCurrency.map((c) => c.currency)))].map((currency) => (
+          <BarChart
+            key={currency}
+            title={`Monthly GMV (${currency})`}
+            subtitle="Last 6 months"
+            data={(monthly.data?.monthly ?? []).map((m) => ({
+              label: m.month,
+              gmv: m.byCurrency.find((c) => c.currency === currency)?.gmv ?? 0,
+            }))}
+            dataKey="gmv"
+            valuePrefix={currencySymbol(currency)}
+          />
+        ))
       )}
+
+      {/* FX Exposure — platform's open non-settlement-currency position */}
+      {exposure.loading ? (
+        <TableCardSkeleton rows={2} />
+      ) : exposure.error ? (
+        <AnalyticsErrorState message={exposure.error} onRetry={exposure.refetch} />
+      ) : exposure.data ? (
+        <div className="bg-white border border-bone rounded-[10px] px-5 py-5">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[14px] font-bold text-charcoal">FX Exposure</p>
+            <StatusBadge status={exposure.data.breached ? 'Flagged' : 'Active'} />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+            {exposure.data.byCurrency.map((c) => (
+              <MetricCard key={c.currency} label={c.currency} value={formatMoneyCompact(c.pendingAmount, c.currency)} sub={`≈ $${(c.pendingUSDEquivalent ?? 0).toFixed(2)}`} />
+            ))}
+            <MetricCard label="Total (USD-equivalent)" value={`$${exposure.data.totalUSDEquivalent.toFixed(2)}`} sub={`Threshold $${exposure.data.threshold.toFixed(2)}`} />
+          </div>
+          <p className="text-[11px] text-slate">Pending-settlement balances converted to USD at today's rate — a daily check alerts admins if this crosses the configured threshold. Visibility only, no automatic hedging.</p>
+        </div>
+      ) : null}
+
+      {/* Reconciliation — daily buyer-collected vs. ledger comparison */}
+      <div className="bg-white border border-bone rounded-[10px]">
+        <div className="px-5 pt-4 pb-3">
+          <p className="text-[14px] font-bold text-charcoal">Reconciliation Runs</p>
+          <p className="text-[12px] text-slate">Daily comparison of buyer collections against the finance ledger, per currency.</p>
+        </div>
+        {reconciliation.error ? (
+          <div className="px-5 pb-5"><AnalyticsErrorState message={reconciliation.error} onRetry={reconciliation.refetch} /></div>
+        ) : (
+          <Table
+            columns={reconciliationColumns}
+            data={reconciliation.data ?? []}
+            keyExtractor={(r) => r._id}
+            loading={reconciliation.loading}
+            emptyState={{ icon: <ShieldAlert size={28} className="text-slate/50" />, title: 'No reconciliation runs yet', description: 'The daily reconciliation job hasn’t run yet — check back tomorrow.' }}
+          />
+        )}
+      </div>
 
       {/* Refunds */}
       <div className="bg-white border border-bone rounded-[10px]">

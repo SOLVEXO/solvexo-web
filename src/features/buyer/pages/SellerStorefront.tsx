@@ -26,6 +26,8 @@ import { apiGetMyBalance, apiGetRewards, apiRedeemReward, type LoyaltyBalance, t
 import { apiBrowseStorePlans, apiSubscribeToPlan, type BuyerPlan, type BillingInterval, type PlanBenefit } from '@/api/services/subscriptions';
 import { Modal } from '@/components/comman/ui/Modal';
 import { TokenStorage } from '@/api/services/auth';
+import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+import { currencySymbol } from '@/utils/currency';
 
 // ── Builder config default (mirrors StoreBuilder DEFAULT) ─────────────────────
 const CFG_DEFAULT = {
@@ -132,6 +134,10 @@ export function SellerStorefront() {
   const { slug }     = useParams<{ slug: string }>();
   usePageTitle('Store');
 
+  // Every product in this storefront shares the store's own baseCurrency —
+  // convert every listed price into the buyer's chosen display currency.
+  const { currency: displayCurrency, convert } = useCurrencyPreference();
+  const displaySymbol = currencySymbol(displayCurrency);
   const [store,          setStore]         = useState<PublicStoreData | null>(null);
   const [products,       setProducts]      = useState<PublicStoreProduct[]>([]);
   const [total,          setTotal]         = useState(0);
@@ -627,7 +633,7 @@ export function SellerStorefront() {
                             <p className="text-[12px] font-semibold text-carbon mb-[3px] line-clamp-2 leading-[1.3]">{p.name}</p>
                             <SharedStarRating rating={p.averageRating ?? 0} />
                             {p.defaultVariantPrice != null && (
-                              <p className="text-[14px] font-bold text-carbon mt-[6px]">${p.defaultVariantPrice.toLocaleString()}</p>
+                              <p className="text-[14px] font-bold text-carbon mt-[6px]">{displaySymbol}{convert(p.defaultVariantPrice, store?.baseCurrency).toLocaleString()}</p>
                             )}
                           </div>
                         </button>
@@ -725,11 +731,14 @@ export function SellerStorefront() {
                       {cfg.showPrice && (
                         <span className="flex items-baseline gap-[6px] shrink-0">
                           <span className="font-bold text-[12px] sm:text-[15px]" style={{ color: p.subscriberPrice != null ? cfg.primaryColor : cfg.textColor }}>
-                            ${(p.subscriberPrice ?? p.defaultVariantPrice ?? '—').toLocaleString()}
+                            {(() => {
+                              const shown = p.subscriberPrice ?? p.defaultVariantPrice;
+                              return shown != null ? `${displaySymbol}${convert(shown, store?.baseCurrency).toLocaleString()}` : '—';
+                            })()}
                           </span>
-                          {p.subscriberPrice != null && (
+                          {p.subscriberPrice != null && p.defaultVariantPrice != null && (
                             <span className="text-[10px] sm:text-[11px] line-through opacity-60" style={{ color: cfg.textColor }}>
-                              ${p.defaultVariantPrice?.toLocaleString()}
+                              {displaySymbol}{convert(p.defaultVariantPrice, store?.baseCurrency).toLocaleString()}
                             </span>
                           )}
                         </span>

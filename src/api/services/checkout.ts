@@ -101,6 +101,17 @@ export interface CreateCheckoutPayload {
   shippingZoneId?: string;
 }
 
+// Same key CurrencyPreferenceContext writes to — read directly here rather
+// than threading the value through every apiCreateCheckout call site.
+// Server-validated regardless (see CheckoutService.resolveCheckoutCurrency);
+// omitting/tampering with this just falls back to the buyer's saved account
+// preference or the platform default, it's never trusted blindly.
+const CURRENCY_STORAGE_KEY = 'solvexo_currency_preference';
+function getCurrencyPreference(): string | undefined {
+  const saved = localStorage.getItem(CURRENCY_STORAGE_KEY);
+  return saved === 'PKR' || saved === 'USD' ? saved : undefined;
+}
+
 interface CreateCheckoutResponse {
   success: boolean;
   message: string;
@@ -145,7 +156,13 @@ export function apiCreateCheckout(payload: CreateCheckoutPayload) {
   // Forwards a click-attribution token (if the buyer arrived via a promoted
   // banner within the last 48h) so promotion analytics can attribute the
   // resulting order — every checkout-creation call site benefits automatically.
-  return client.post<never, CreateCheckoutResponse>(ENDPOINTS.CHECKOUT.CREATE, { ...payload, ...getCheckoutAttributionFields() });
+  // Also forwards the buyer's currency preference the same way, so every
+  // call site gets multi-currency checkout without individually wiring it.
+  return client.post<never, CreateCheckoutResponse>(ENDPOINTS.CHECKOUT.CREATE, {
+    ...payload,
+    ...getCheckoutAttributionFields(),
+    currencyPreference: getCurrencyPreference(),
+  });
 }
 
 export function apiAddShippingToCheckout(payload: AddShippingPayload) {

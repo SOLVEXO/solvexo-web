@@ -4,7 +4,7 @@ import { MoreVertical } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export interface ActionMenuItem {
-  label:     string;
+  label:     ReactNode;
   onClick:   () => void;
   icon?:     ReactNode;
   danger?:   boolean;
@@ -16,6 +16,12 @@ interface ActionMenuProps {
   items:      ActionMenuItem[];
   align?:     'left' | 'right';
   className?: string;
+  /** Replaces the default kebab-icon trigger button's content (e.g. a
+   *  currency chip with a flag) — the button itself, its open/close
+   *  state, positioning, and accessibility wiring are unchanged. */
+  trigger?:        ReactNode;
+  triggerClassName?: string;
+  ariaLabel?:      string;
 }
 
 interface DropdownPos {
@@ -107,7 +113,7 @@ function getContainerRect(el: HTMLElement): DOMRect {
 }
 
 // ── ActionMenu ────────────────────────────────────────────────────────────────
-export function ActionMenu({ items, align = 'right', className }: ActionMenuProps) {
+export function ActionMenu({ items, align = 'right', className, trigger, triggerClassName, ariaLabel }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const [pos,  setPos]  = useState<DropdownPos>({});
 
@@ -174,16 +180,16 @@ export function ActionMenu({ items, align = 'right', className }: ActionMenuProp
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
-        aria-label="Open actions menu"
+        aria-label={ariaLabel ?? 'Open actions menu'}
         onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
-        className={clsx(
+        className={triggerClassName ?? clsx(
           'w-8 h-8 rounded-[7px] border flex items-center justify-center transition-colors cursor-pointer',
           open
             ? 'bg-brand-pale-orange border-brand-orange text-brand-orange'
             : 'bg-white border-bone text-slate hover:bg-cream hover:border-[#c5c4bc]',
         )}
       >
-        <MoreVertical size={15} />
+        {trigger ?? <MoreVertical size={15} />}
       </button>
 
       {open && (

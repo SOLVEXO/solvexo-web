@@ -6,6 +6,7 @@ import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
 import { SkeletonBox } from '@/components/comman/ui';
+import { currencySymbol } from '@/utils/currency';
 import {
   apiGetFinanceDashboard, apiGetFinanceTransactions, apiExportFinanceTransactions,
   apiRequestPayout, apiGetPayouts, apiGetPayoutById,
@@ -35,13 +36,18 @@ const PAYOUT_STATUS_STYLE: Record<PayoutStatus, { bg: string; color: string }> =
   failed:     { bg: '#FDECEA', color: '#C0392B' },
 };
 
-function fmt(n: number) { return `$${n.toFixed(2)}`; }
+// Every wallet/balance/transaction figure must be shown in ITS OWN currency
+// — never summed across a seller's separate PKR/USD wallets into one
+// misleading number (see FinanceDashboard.wallets, StoreFinance's wallet
+// selector).
+function fmt(n: number, currency?: string | null) { return `${currencySymbol(currency)}${n.toFixed(2)}`; }
 
 // ── Payout method modal (add or edit) ────────────────────────────────────────
 function PayoutMethodModal({
-  onClose, onSaved, storeId, editing,
-}: { onClose: () => void; onSaved: () => void; storeId: string; editing?: PayoutMethod | null }) {
+  onClose, onSaved, storeId, editing, defaultCurrency,
+}: { onClose: () => void; onSaved: () => void; storeId: string; editing?: PayoutMethod | null; defaultCurrency?: string }) {
   const [type, setType] = useState<PayoutMethodType>(editing?.type ?? 'bank_transfer');
+  const [currency, setCurrency] = useState(editing?.currency ?? defaultCurrency ?? 'PKR');
   const [bankName, setBankName] = useState(editing?.bankName ?? '');
   const [accountHolder, setAccountHolder] = useState(editing?.accountHolder ?? '');
   const [accountNumber, setAccountNumber] = useState('');
@@ -54,7 +60,7 @@ function PayoutMethodModal({
   async function handleSave() {
     setSaving(true); setError('');
     const payload = {
-      type, setAsDefault,
+      type, currency, setAsDefault,
       ...(type === 'bank_transfer'
         ? { bankName, accountHolder, ...(accountNumber ? { accountNumber } : {}), routingNumber }
         : { externalAccountId }),
@@ -82,6 +88,20 @@ function PayoutMethodModal({
               {METHOD_LABEL[t]}
             </button>
           ))}
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium text-charcoal mb-1">
+            Wallet / Currency{editing && ' (locked — this method already belongs to a wallet)'}
+          </label>
+          <div className="flex gap-2">
+            {(['PKR', 'USD'] as const).map(c => (
+              <button key={c} disabled={!!editing} onClick={() => setCurrency(c)}
+                className="flex-1 px-2.5 py-2 rounded-lg text-[12px] font-semibold border disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                style={{ borderColor: currency === c ? '#D97757' : '#E8E6DC', background: currency === c ? '#FBECE4' : '#fff', color: currency === c ? '#B95A3A' : '#5A5852' }}>
+                {c}
+              </button>
+            ))}
+          </div>
         </div>
         {type === 'bank_transfer' ? (
           <>
@@ -112,9 +132,14 @@ function PayoutMethodModal({
 
 // ── Request payout modal ─────────────────────────────────────────────────────
 function RequestPayoutModal({
-  onClose, onRequested, storeId, availableBalance, methods,
-}: { onClose: () => void; onRequested: () => void; storeId: string; availableBalance: number; methods: PayoutMethod[] }) {
-  const defaultMethod = methods.find(m => m.isDefault) ?? methods[0] ?? null;
+  onClose, onRequested, storeId, availableBalance, currency, methods,
+}: { onClose: () => void; onRequested: () => void; storeId: string; availableBalance: number; currency: string; methods: PayoutMethod[] }) {
+  // Only methods for THIS wallet's currency are ever offered — a payout
+  // must always match the wallet it's drawn from (see backend
+  // FinanceService.requestPayout, which derives currency from the chosen
+  // method itself).
+  const eligibleMethods = methods.filter(m => m.currency === currency);
+  const defaultMethod = eligibleMethods.find(m => m.isDefault) ?? eligibleMethods[0] ?? null;
   const [methodId, setMethodId] = useState(defaultMethod?._id ?? '');
   const [amount, setAmount] = useState(String(availableBalance));
   const [notes, setNotes] = useState('');
@@ -125,7 +150,7 @@ function RequestPayoutModal({
     const amt = parseFloat(amount);
     if (!methodId) { setError('Select a payout method.'); return; }
     if (!amt || amt < 1) { setError('Enter a valid amount.'); return; }
-    if (amt > availableBalance) { setError(`Amount exceeds available balance (${fmt(availableBalance)}).`); return; }
+    if (amt > availableBalance) { setError(`Amount exceeds available balance (${fmt(availableBalance, currency)}).`); return; }
     setSaving(true); setError('');
     try {
       await apiRequestPayout(storeId, amt, methodId, notes || undefined);
@@ -141,13 +166,18 @@ function RequestPayoutModal({
     <Modal title="Request Payout" width={420} onClose={onClose}>
       <div className="flex flex-col gap-3">
         {error && <p className="text-[12px] text-error">{error}</p>}
-        <p className="text-[12px] text-slate">Available balance: <span className="font-semibold text-carbon">{fmt(availableBalance)}</span></p>
+        <p className="text-[12px] text-slate">Available balance: <span className="font-semibold text-carbon">{fmt(availableBalance, currency)}</span></p>
+        {eligibleMethods.length === 0 && methods.length > 0 && (
+          <p className="text-[11px] text-warning bg-warning-bg rounded-md px-2 py-1">
+            None of your saved payout methods are set up for {currency} — add one to withdraw this wallet.
+          </p>
+        )}
         <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Amount"
           className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none" />
         <select value={methodId} onChange={e => setMethodId(e.target.value)}
           className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none bg-white">
           <option value="">Select payout method…</option>
-          {methods.map(m => (
+          {eligibleMethods.map(m => (
             <option key={m._id} value={m._id}>
               {METHOD_LABEL[m.type]}{m.bankName ? ` — ${m.bankName}` : ''}{m.accountLast4 ? ` ••${m.accountLast4}` : ''}{m.isDefault ? ' (default)' : ''}
             </option>
@@ -155,8 +185,8 @@ function RequestPayoutModal({
         </select>
         <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes (optional)"
           className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none" />
-        <Button size="sm" loading={saving} disabled={!methods.length} onClick={handleSubmit}>
-          {methods.length ? 'Request Payout' : 'Add a payout method first'}
+        <Button size="sm" loading={saving} disabled={!eligibleMethods.length} onClick={handleSubmit}>
+          {eligibleMethods.length ? 'Request Payout' : 'Add a payout method first'}
         </Button>
       </div>
     </Modal>
@@ -174,7 +204,10 @@ function ScheduleModal({ onClose, onSaved, storeId, schedule }: { onClose: () =>
   async function handleSave() {
     setSaving(true); setError('');
     try {
-      await apiUpdatePayoutSchedule(storeId, { frequency, minimumAmount: parseFloat(minimumAmount) || 1, isEnabled });
+      // currency must always be sent — it's what tells the backend WHICH
+      // wallet's schedule this update applies to (a store can have one
+      // schedule per currency it holds a balance in).
+      await apiUpdatePayoutSchedule(storeId, { currency: schedule.currency, frequency, minimumAmount: parseFloat(minimumAmount) || 1, isEnabled });
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update schedule.');
@@ -184,7 +217,7 @@ function ScheduleModal({ onClose, onSaved, storeId, schedule }: { onClose: () =>
   }
 
   return (
-    <Modal title="Payout Schedule" width={380} onClose={onClose}>
+    <Modal title={`Payout Schedule — ${schedule.currency}`} width={380} onClose={onClose}>
       <div className="flex flex-col gap-3">
         {error && <p className="text-[12px] text-error">{error}</p>}
         <select value={frequency} onChange={e => setFrequency(e.target.value as typeof frequency)}
@@ -217,7 +250,7 @@ function PayoutDetailModal({ onClose, storeId, payoutId }: { onClose: () => void
       ) : (
         <div className="flex flex-col gap-2.5">
           {[
-            ['Amount', fmt(payout.amount)],
+            ['Amount', fmt(payout.amount, payout.currency)],
             ['Status', payout.status ? payout.status[0].toUpperCase() + payout.status.slice(1) : '—'],
             ['Method', payout.payoutMethodSnapshot ? `${METHOD_LABEL[payout.payoutMethodSnapshot.type as PayoutMethodType] ?? payout.payoutMethodSnapshot.type}${payout.payoutMethodSnapshot.accountLast4 ? ` ••${payout.payoutMethodSnapshot.accountLast4}` : ''}` : '—'],
             ['Requested', new Date(payout.createdAt).toLocaleString()],
@@ -242,6 +275,9 @@ export function StoreFinance() {
   const { storeId } = useStoreWorkspace();
 
   const [dashboard, setDashboard] = useState<FinanceDashboard | null>(null);
+  // Which wallet/currency is currently shown — a seller can hold more than
+  // one (see FinanceDashboard.wallets); never summed into a single number.
+  const [activeCurrency, setActiveCurrency] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [txPage, setTxPage] = useState(1);
   const [txPages, setTxPages] = useState(1);
@@ -264,29 +300,48 @@ export function StoreFinance() {
   const [deleteMethodBusy, setDeleteMethodBusy] = useState(false);
   const [deleteMethodError, setDeleteMethodError] = useState('');
 
+  // Dashboard/methods/tax-reports are currency-agnostic reads (the dashboard
+  // itself returns every wallet; tax reports already list all currencies).
+  // Schedule and recent-payouts are PER-WALLET, though, so they're fetched
+  // separately below, once the active wallet is actually known — a
+  // wallet-scoped fetch fired before we know which currency is selected
+  // would silently always return the USD one (the backend's own default).
   const loadCore = useCallback(() => {
     if (!storeId) return;
     setLoading(true); setError('');
     Promise.all([
       apiGetFinanceDashboard(storeId),
       apiGetPayoutMethods(storeId),
-      apiGetPayoutSchedule(storeId),
       apiGetTaxReports(storeId),
-      apiGetPayouts(storeId, { limit: 5 }),
     ])
-      .then(([d, m, s, t, p]) => { setDashboard(d); setMethods(m ?? []); setSchedule(s); setTaxReports(t ?? []); setRecentPayouts(p.payouts ?? []); })
+      .then(([d, m, t]) => {
+        setDashboard(d);
+        setActiveCurrency(prev => prev && d.wallets.some(w => w.currency === prev) ? prev : (d.wallets[0]?.currency ?? null));
+        setMethods(m ?? []); setTaxReports(t ?? []);
+      })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load finance data.'))
       .finally(() => setLoading(false));
   }, [storeId]);
 
+  const loadWalletScoped = useCallback(() => {
+    if (!storeId || !activeCurrency) return;
+    Promise.all([
+      apiGetPayoutSchedule(storeId, activeCurrency),
+      apiGetPayouts(storeId, { limit: 5, currency: activeCurrency }),
+    ])
+      .then(([s, p]) => { setSchedule(s); setRecentPayouts(p.payouts ?? []); })
+      .catch(() => {});
+  }, [storeId, activeCurrency]);
+
   const loadTransactions = useCallback(() => {
     if (!storeId) return;
-    apiGetFinanceTransactions(storeId, { page: txPage, limit: 10, type: txType || undefined })
+    apiGetFinanceTransactions(storeId, { page: txPage, limit: 10, type: txType || undefined, currency: activeCurrency || undefined })
       .then(res => { setTransactions(res.transactions ?? []); setTxPages(res.pages); })
       .catch(() => {});
-  }, [storeId, txPage, txType]);
+  }, [storeId, txPage, txType, activeCurrency]);
 
   useEffect(loadCore, [loadCore]);
+  useEffect(loadWalletScoped, [loadWalletScoped]);
   useEffect(loadTransactions, [loadTransactions]);
 
   async function handleExport() {
@@ -308,7 +363,7 @@ export function StoreFinance() {
     try {
       const now = new Date();
       const q = Math.floor(now.getMonth() / 3) + 1;
-      await apiGenerateTaxReport(storeId, now.getFullYear(), `q${q}` as 'q1' | 'q2' | 'q3' | 'q4');
+      await apiGenerateTaxReport(storeId, now.getFullYear(), `q${q}` as 'q1' | 'q2' | 'q3' | 'q4', activeCurrency || undefined);
       const reports = await apiGetTaxReports(storeId);
       setTaxReports(reports ?? []);
     } finally {
@@ -361,6 +416,16 @@ export function StoreFinance() {
     );
   }
 
+  const activeWallet = dashboard.wallets.find(w => w.currency === activeCurrency) ?? dashboard.wallets[0] ?? null;
+
+  if (!activeWallet) {
+    return (
+      <div className="px-7 pt-5 pb-8">
+        <p className="text-[13px] text-slate">No sales yet — your wallet will appear here once you make your first sale.</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <SellerPageHeader
@@ -371,7 +436,7 @@ export function StoreFinance() {
             <Button size="sm" variant="outline" icon={<Plus size={13} />} onClick={() => setMethodModal(true)}>
               Add Payout Method
             </Button>
-            <Button size="sm" onClick={() => setPayoutModal(true)} disabled={dashboard.availableBalance <= 0}>
+            <Button size="sm" onClick={() => setPayoutModal(true)} disabled={activeWallet.availableBalance <= 0}>
               Request Payout
             </Button>
           </>
@@ -380,27 +445,48 @@ export function StoreFinance() {
 
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
 
+        {/* Wallet selector — a seller can hold more than one currency
+            (e.g. a PKR wallet from bank-transfer/COD sales and a USD wallet
+            from Stripe sales); these are NEVER summed into one number. */}
+        {dashboard.wallets.length > 1 && (
+          <div className="flex gap-2">
+            {dashboard.wallets.map(w => (
+              <button
+                key={w.currency}
+                onClick={() => setActiveCurrency(w.currency)}
+                className={
+                  w.currency === activeWallet.currency
+                    ? 'px-3 py-[6px] rounded-lg text-[12px] font-semibold bg-carbon text-white cursor-pointer'
+                    : 'px-3 py-[6px] rounded-lg text-[12px] font-semibold bg-white border border-bone text-charcoal cursor-pointer hover:bg-cream'
+                }
+              >
+                {w.currency} Wallet
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Balance Card */}
         <div className="bg-carbon rounded-xl px-7 py-6 flex flex-wrap justify-between items-center gap-4">
           <div>
-            <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.1em] mb-2">Available Balance</p>
-            <p className="text-[32px] font-bold text-white leading-[1.1] mb-3">{fmt(dashboard.availableBalance)}</p>
+            <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.1em] mb-2">Available Balance ({activeWallet.currency})</p>
+            <p className="text-[32px] font-bold text-white leading-[1.1] mb-3">{fmt(activeWallet.availableBalance, activeWallet.currency)}</p>
             <div className="flex items-center gap-6 flex-wrap">
-              <span className="text-[11px] text-slate">Pending: <span className="text-white font-medium">{fmt(dashboard.pendingBalance)}</span></span>
-              {dashboard.nextPayout.scheduledAt && (
+              <span className="text-[11px] text-slate">Pending: <span className="text-white font-medium">{fmt(activeWallet.pendingBalance, activeWallet.currency)}</span></span>
+              {activeWallet.nextPayout.scheduledAt && (
                 <span className="text-[11px] text-brand-orange font-medium">
-                  Next Payout: {new Date(dashboard.nextPayout.scheduledAt).toLocaleDateString()}
+                  Next Payout: {new Date(activeWallet.nextPayout.scheduledAt).toLocaleDateString()}
                 </span>
               )}
-              {dashboard.nextPayout.method && (
+              {activeWallet.nextPayout.method && (
                 <span className="text-[11px] text-slate">
-                  Method: {METHOD_LABEL[dashboard.nextPayout.method.type as PayoutMethodType] ?? dashboard.nextPayout.method.type}
-                  {dashboard.nextPayout.method.last4 ? ` ••${dashboard.nextPayout.method.last4}` : ''}
+                  Method: {METHOD_LABEL[activeWallet.nextPayout.method.type as PayoutMethodType] ?? activeWallet.nextPayout.method.type}
+                  {activeWallet.nextPayout.method.last4 ? ` ••${activeWallet.nextPayout.method.last4}` : ''}
                 </span>
               )}
             </div>
           </div>
-          <Button size="md" onClick={() => setPayoutModal(true)} disabled={dashboard.availableBalance <= 0} iconRight={<ArrowRight size={14} />}>
+          <Button size="md" onClick={() => setPayoutModal(true)} disabled={activeWallet.availableBalance <= 0} iconRight={<ArrowRight size={14} />}>
             Request Payout
           </Button>
         </div>
@@ -408,10 +494,10 @@ export function StoreFinance() {
         {/* Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: 'This Month Revenue', value: fmt(dashboard.summary.thisMonthRevenue), trend: `${dashboard.summary.revenueGrowthPercent >= 0 ? '+' : ''}${dashboard.summary.revenueGrowthPercent}% vs last month` },
-            { label: 'Platform Fees', value: fmt(dashboard.summary.platformFees), sub: 'This month' },
-            { label: 'Total Paid Out', value: fmt(dashboard.summary.totalPaidOut), sub: 'All time' },
-            { label: 'Pending Tax', value: fmt(dashboard.summary.pendingTax), sub: 'Estimated' },
+            { label: 'This Month Revenue', value: fmt(activeWallet.summary.thisMonthRevenue, activeWallet.currency), trend: `${activeWallet.summary.revenueGrowthPercent >= 0 ? '+' : ''}${activeWallet.summary.revenueGrowthPercent}% vs last month` },
+            { label: 'Platform Fees', value: fmt(activeWallet.summary.platformFees, activeWallet.currency), sub: 'This month' },
+            { label: 'Total Paid Out', value: fmt(activeWallet.summary.totalPaidOut, activeWallet.currency), sub: 'All time' },
+            { label: 'Pending Tax', value: fmt(activeWallet.summary.pendingTax, activeWallet.currency), sub: 'Estimated' },
           ].map(m => (
             <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
@@ -468,9 +554,9 @@ export function StoreFinance() {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-[13px] font-semibold whitespace-nowrap" style={{ color: t.amount >= 0 ? '#2D8A4E' : '#C13030' }}>
-                            {t.amount >= 0 ? '+' : ''}{fmt(t.amount)}
+                            {t.amount >= 0 ? '+' : ''}{fmt(t.amount, t.currency)}
                           </td>
-                          <td className="px-4 py-3 text-[13px] font-medium text-carbon whitespace-nowrap">{fmt(t.balanceAfter)}</td>
+                          <td className="px-4 py-3 text-[13px] font-medium text-carbon whitespace-nowrap">{fmt(t.balanceAfter, t.currency)}</td>
                         </tr>
                       );
                     })}
@@ -540,7 +626,7 @@ export function StoreFinance() {
                   {[
                     ['Frequency', schedule.frequency ? schedule.frequency[0].toUpperCase() + schedule.frequency.slice(1) : '—'],
                     ['Status', schedule.isEnabled ? 'Enabled' : 'Disabled'],
-                    ['Minimum', fmt(schedule.minimumAmount)],
+                    ['Minimum', fmt(schedule.minimumAmount, schedule.currency)],
                     ['Next Payout', schedule.nextPayoutAt ? new Date(schedule.nextPayoutAt).toLocaleDateString() : '—'],
                   ].map(([label, val]) => (
                     <div key={label} className="flex justify-between items-center">
@@ -594,7 +680,7 @@ export function StoreFinance() {
                     <div key={r._id} className="flex items-center justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-medium text-graphite leading-[1.3] capitalize">{r.period} {r.year}</p>
-                        <p className="text-[11px] text-slate mt-0.5">Net {fmt(r.netRevenue)} · Est. tax {fmt(r.estimatedTax)}</p>
+                        <p className="text-[11px] text-slate mt-0.5">Net {fmt(r.netRevenue, r.currency)} · Est. tax {fmt(r.estimatedTax, r.currency)}</p>
                       </div>
                       {r.pdfUrl && (
                         <a href={r.pdfUrl} target="_blank" rel="noreferrer"
@@ -618,7 +704,7 @@ export function StoreFinance() {
                     return (
                       <button key={p._id} onClick={() => setSelectedPayoutId(p._id)}
                         className="flex items-center justify-between gap-2 bg-transparent border-none p-0 cursor-pointer text-left">
-                        <span className="text-xs text-graphite">{fmt(p.amount)}</span>
+                        <span className="text-xs text-graphite">{fmt(p.amount, p.currency)}</span>
                         <span className="px-2 py-[2px] rounded-full text-[10px] font-semibold capitalize" style={{ background: ps.bg, color: ps.color }}>
                           {p.status}
                         </span>
@@ -634,17 +720,17 @@ export function StoreFinance() {
       </div>
 
       {methodModal && (
-        <PayoutMethodModal storeId={storeId} onClose={() => setMethodModal(false)} onSaved={() => { setMethodModal(false); loadCore(); }} />
+        <PayoutMethodModal storeId={storeId} defaultCurrency={activeWallet.currency} onClose={() => setMethodModal(false)} onSaved={() => { setMethodModal(false); loadCore(); loadWalletScoped(); }} />
       )}
       {editingMethod && (
-        <PayoutMethodModal storeId={storeId} editing={editingMethod} onClose={() => setEditingMethod(null)} onSaved={() => { setEditingMethod(null); loadCore(); }} />
+        <PayoutMethodModal storeId={storeId} editing={editingMethod} defaultCurrency={activeWallet.currency} onClose={() => setEditingMethod(null)} onSaved={() => { setEditingMethod(null); loadCore(); loadWalletScoped(); }} />
       )}
       {payoutModal && (
-        <RequestPayoutModal storeId={storeId} availableBalance={dashboard.availableBalance} methods={methods}
-          onClose={() => setPayoutModal(false)} onRequested={() => { setPayoutModal(false); loadCore(); loadTransactions(); }} />
+        <RequestPayoutModal storeId={storeId} availableBalance={activeWallet.availableBalance} currency={activeWallet.currency} methods={methods}
+          onClose={() => setPayoutModal(false)} onRequested={() => { setPayoutModal(false); loadCore(); loadWalletScoped(); loadTransactions(); }} />
       )}
       {scheduleModal && schedule && (
-        <ScheduleModal storeId={storeId} schedule={schedule} onClose={() => setScheduleModal(false)} onSaved={() => { setScheduleModal(false); loadCore(); }} />
+        <ScheduleModal storeId={storeId} schedule={schedule} onClose={() => setScheduleModal(false)} onSaved={() => { setScheduleModal(false); loadWalletScoped(); }} />
       )}
       {selectedPayoutId && (
         <PayoutDetailModal storeId={storeId} payoutId={selectedPayoutId} onClose={() => setSelectedPayoutId(null)} />

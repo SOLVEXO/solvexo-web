@@ -31,6 +31,15 @@ export const ENDPOINTS = {
     UPDATE_PROMOTION_PRICING: '/api/admin/platform-config/promotion-pricing',
     UPDATE_PAYOUT: '/api/admin/platform-config/payout',
     UPDATE_MANUAL_PAYMENT: '/api/admin/platform-config/manual-payment',
+    UPDATE_FX: '/api/admin/platform-config/fx',
+  },
+
+  // ── EXCHANGE RATE ───────────────────────────────────────────────────────────
+  EXCHANGE_RATE: {
+    CURRENT: '/api/exchange-rate/current',
+    ADMIN_HISTORY: '/api/admin/fx/history',
+    ADMIN_STALENESS: '/api/admin/fx/staleness',
+    ADMIN_OVERRIDE: '/api/admin/fx/override',
   },
 
   // ── MANUAL BANK TRANSFER (buyer, Pakistan track) ───────────────────────────
@@ -675,6 +684,9 @@ export const ENDPOINTS = {
       SETTLEMENT_REPORT:     '/api/admin/finance/reports/settlement',
       MONTHLY_REPORT:        '/api/admin/finance/reports/monthly',
       EXPORT:                '/api/admin/finance/export',
+      RECONCILIATION:        '/api/admin/finance/reconciliation',
+      RECONCILIATION_HISTORY: '/api/admin/finance/reconciliation/history',
+      FX_EXPOSURE:           '/api/admin/finance/fx-exposure',
     },
   },
 

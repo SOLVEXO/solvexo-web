@@ -11,6 +11,9 @@ export interface CartItem {
   images?:          string[];
   unitPrice?:       number;
   price?:           number;
+  /** Display-only snapshot of the owning store's currency at add-to-cart
+   *  time — the authoritative conversion only happens at checkout creation. */
+  currency?:        string | null;
   quantity:         number;
   itemTotal?:       number;
   type?:            'physical' | 'digital';

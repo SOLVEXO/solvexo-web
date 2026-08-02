@@ -3,10 +3,16 @@ import { ENDPOINTS } from '../endpoints';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export interface FinanceDashboard {
+// One entry per currency the seller actually holds a balance in — a seller
+// can simultaneously have a PKR wallet (bank-transfer/COD sales) and a USD
+// wallet (Stripe sales). These are NEVER summed into one number; the UI
+// must show them separately (see StoreFinance's wallet selector).
+export interface FinanceWallet {
+  currency:         string;
   availableBalance: number;
   pendingBalance:   number;
-  currency:         string;
+  isFlaggedForReview: boolean;
+  flaggedReason:    string | null;
   nextPayout: {
     pendingAmount: number | null;
     scheduledAt:   string | null;
@@ -25,9 +31,14 @@ export interface FinanceDashboard {
     minimumAmount: number;
     nextPayoutAt:  string | null;
   };
+}
+
+export interface FinanceDashboard {
+  wallets: FinanceWallet[];
   feeBreakdown: {
     marketplaceListingFee: string;
     transactionFee:        string;
+    transactionFeeSource?:  string;
     paymentProcessing:     string;
     digitalDelivery:       string;
     aiCredits:              string;
@@ -43,6 +54,7 @@ export interface Transaction {
   sellerId:       string;
   type:           TransactionType;
   amount:         number;
+  currency:       string;
   balanceBefore:  number;
   balanceAfter:   number;
   description:    string;
@@ -55,7 +67,7 @@ export interface Transaction {
 
 export interface TransactionsQuery {
   page?: number; limit?: number; type?: TransactionType; status?: TransactionStatus;
-  from?: string; to?: string;
+  from?: string; to?: string; currency?: string;
 }
 
 export interface FinanceAnalytics {
@@ -88,6 +100,9 @@ export interface PayoutMethod {
   _id:               string;
   storeId:           string;
   type:              PayoutMethodType;
+  /** Which wallet/currency this method pays out — a payout can only ever be
+   *  requested against the wallet matching this exact currency. */
+  currency:          string;
   isDefault:         boolean;
   bankName:          string | null;
   accountHolder:     string | null;
@@ -100,6 +115,10 @@ export interface PayoutMethod {
 
 export interface AddPayoutMethodPayload {
   type:               PayoutMethodType;
+  /** Which wallet this method pays out — defaults sensibly server-side if
+   *  omitted, but should be set explicitly whenever the seller is adding a
+   *  method for a specific wallet (see StoreFinance's wallet selector). */
+  currency?:          string;
   bankName?:          string;
   accountHolder?:     string;
   accountNumber?:     string;
@@ -111,6 +130,7 @@ export interface AddPayoutMethodPayload {
 export interface PayoutSchedule {
   _id:                    string;
   storeId:                string;
+  currency:               string;
   frequency:              'daily' | 'weekly' | 'biweekly' | 'monthly' | 'manual';
   dayOfWeek:              number;
   dayOfMonth:             number;
@@ -121,6 +141,7 @@ export interface PayoutSchedule {
 }
 
 export interface UpdatePayoutSchedulePayload {
+  currency?:              string;
   frequency?:             'daily' | 'weekly' | 'biweekly' | 'monthly' | 'manual';
   dayOfWeek?:             number;
   dayOfMonth?:            number;
@@ -132,6 +153,7 @@ export interface UpdatePayoutSchedulePayload {
 export interface TaxReport {
   _id:              string;
   storeId:          string;
+  currency:         string;
   period:           'q1' | 'q2' | 'q3' | 'q4' | 'annual';
   year:             number;
   fromDate:         string;
@@ -184,7 +206,7 @@ export function apiRequestPayout(storeId: string, amount: number, payoutMethodId
   return client.post<never, Payout>(ENDPOINTS.FINANCE.SELLER.REQUEST_PAYOUT(storeId), { amount, payoutMethodId, notes });
 }
 
-export function apiGetPayouts(storeId: string, query: { page?: number; limit?: number; status?: PayoutStatus } = {}) {
+export function apiGetPayouts(storeId: string, query: { page?: number; limit?: number; status?: PayoutStatus; currency?: string } = {}) {
   return client.get<never, Paginated & { payouts: Payout[] }>(`${ENDPOINTS.FINANCE.SELLER.PAYOUTS(storeId)}${qs(query)}`);
 }
 
@@ -214,8 +236,12 @@ export function apiDeletePayoutMethod(storeId: string, methodId: string) {
 }
 
 // ── Payout schedule ───────────────────────────────────────────────────────────
-export function apiGetPayoutSchedule(storeId: string) {
-  return client.get<never, PayoutSchedule>(ENDPOINTS.FINANCE.SELLER.PAYOUT_SCHEDULE(storeId));
+// Each currency wallet has its own independent payout schedule (see backend
+// PayoutSchedule.currency's unique index on {storeId, currency}) — defaults
+// to 'USD' server-side if omitted, so every call site showing a specific
+// wallet must pass that wallet's own currency explicitly.
+export function apiGetPayoutSchedule(storeId: string, currency?: string) {
+  return client.get<never, PayoutSchedule>(`${ENDPOINTS.FINANCE.SELLER.PAYOUT_SCHEDULE(storeId)}${qs({ currency })}`);
 }
 
 export function apiUpdatePayoutSchedule(storeId: string, payload: UpdatePayoutSchedulePayload) {
@@ -227,6 +253,6 @@ export function apiGetTaxReports(storeId: string) {
   return client.get<never, TaxReport[]>(ENDPOINTS.FINANCE.SELLER.TAX_REPORTS(storeId));
 }
 
-export function apiGenerateTaxReport(storeId: string, year: number, period: 'q1' | 'q2' | 'q3' | 'q4' | 'annual') {
-  return client.post<never, TaxReport>(`${ENDPOINTS.FINANCE.SELLER.GENERATE_TAX_REPORT(storeId)}${qs({ year, period })}`);
+export function apiGenerateTaxReport(storeId: string, year: number, period: 'q1' | 'q2' | 'q3' | 'q4' | 'annual', currency?: string) {
+  return client.post<never, TaxReport>(`${ENDPOINTS.FINANCE.SELLER.GENERATE_TAX_REPORT(storeId)}${qs({ year, period, currency })}`);
 }

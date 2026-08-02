@@ -21,6 +21,9 @@ import {
   apiAdminSettlementReport,
   apiAdminMonthlyReport,
   apiAdminFinanceExport,
+  apiAdminReconciliation,
+  apiAdminReconciliationHistory,
+  apiAdminFxExposure,
   type AdminFinanceParams,
   type AdminTransactionsParams,
   type PayoutQueueParams,
@@ -253,6 +256,40 @@ export function useAdminSettlementReport(params: AdminFinanceParams) {
 
 export function useAdminMonthlyReport(params: { months?: number }) {
   return useAnalyticsQuery(apiAdminMonthlyReport, params);
+}
+
+// ── Reconciliation & FX exposure ────────────────────────────────────────────────
+
+export function useAdminReconciliationHistory(limit = 30) {
+  return useAnalyticsQuery((p: { limit: number }) => apiAdminReconciliationHistory(p.limit), { limit });
+}
+
+export function useAdminFxExposure() {
+  return useAnalyticsQuery(() => apiAdminFxExposure(), {});
+}
+
+/** Manual "run now" trigger — same underlying call the daily cron makes,
+ *  useful for an admin who wants a fresh reconciliation without waiting for
+ *  the next scheduled tick. */
+export function useAdminRunReconciliation() {
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState('');
+
+  const run = useCallback(async (days = 1) => {
+    setRunning(true);
+    setError('');
+    try {
+      const res = await apiAdminReconciliation(days);
+      return res.data;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to run reconciliation.');
+      return null;
+    } finally {
+      setRunning(false);
+    }
+  }, []);
+
+  return { run, running, error };
 }
 
 // ── H. Export ─────────────────────────────────────────────────────────────────────
