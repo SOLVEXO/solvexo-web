@@ -3,11 +3,12 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { Modal, Textarea, Button, SkeletonBox } from '@/components/comman/ui';
+import { Modal, Textarea, Button, Table, type TableColumn } from '@/components/comman/ui';
 import {
   apiGetSellerReturns, apiReturnAction,
   type SellerReturnItem, type ReturnStatus,
 } from '@/api/services/orders';
+import { currencySymbol } from '@/utils/currency';
 
 const statusStyle: Record<string, { bg: string; color: string }> = {
   requested:          { bg: '#FFF4DC', color: '#B36200' },
@@ -25,11 +26,12 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 
 // ── Approve/Reject modal ─────────────────────────────────────────────────────
 function ReturnActionModal({
-  item, onClose, onDone,
+  item, onClose, onDone, currency,
 }: {
   item: SellerReturnItem;
   onClose: () => void;
   onDone: () => void;
+  currency?: string | null;
 }) {
   const [action, setAction] = useState<'approve' | 'reject' | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -78,7 +80,7 @@ function ReturnActionModal({
         <div>
           <p className="text-[13px] font-semibold text-charcoal">{item.productName}</p>
           <p className="text-[12px] text-slate mt-[2px]">Customer: {item.customer.name}</p>
-          <p className="text-[12px] text-slate">Amount: ${item.amount.toLocaleString()}</p>
+          <p className="text-[12px] text-slate">Amount: {currencySymbol(currency)}{item.amount.toLocaleString()}</p>
         </div>
         <div className="bg-cream rounded-[9px] px-3 py-[10px]">
           <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.05em] mb-1">Customer's Reason</p>
@@ -102,7 +104,7 @@ function ReturnActionModal({
 // ── Component ─────────────────────────────────────────────────────────────────
 export function StoreReturnList() {
   usePageTitle('Returns');
-  const { storeId } = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
 
   const [returns, setReturns] = useState<SellerReturnItem[]>([]);
   const [stats, setStats]     = useState<{ openRequests: number; returnRate: string; totalRefunded: number } | null>(null);
@@ -136,6 +138,38 @@ export function StoreReturnList() {
     return true;
   });
 
+  const columns: TableColumn<SellerReturnItem>[] = [
+    { key: 'orderNumber', header: 'Order', render: r => <span className="font-bold text-[#B95A3A] whitespace-nowrap">{r.orderNumber}</span> },
+    { key: 'customer', header: 'Customer', render: r => <span className="text-graphite whitespace-nowrap">{r.customer.name}</span> },
+    { key: 'productName', header: 'Product', render: r => <span className="text-graphite max-w-[180px] truncate block">{r.productName}</span> },
+    { key: 'returnReason', header: 'Reason', render: r => <span className="text-slate max-w-[180px] truncate block">{r.returnReason}</span> },
+    { key: 'amount', header: 'Amount', render: r => <span className="font-semibold text-carbon whitespace-nowrap">{currencySymbol(store?.baseCurrency)}{r.amount.toLocaleString()}</span> },
+    {
+      key: 'returnStatus', header: 'Status',
+      render: r => {
+        const st = statusStyle[r.returnStatus] ?? { bg: '#F0EEE6', color: '#5A5852' };
+        return (
+          <span className="inline-block px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold whitespace-nowrap capitalize" style={{ background: st.bg, color: st.color }}>
+            {r.returnStatus.replace('_', ' ')}
+          </span>
+        );
+      },
+    },
+    { key: 'returnRequestedAt', header: 'Requested', render: r => <span className="text-xs text-slate whitespace-nowrap">{new Date(r.returnRequestedAt).toLocaleDateString('en-PK', { month: 'short', day: 'numeric' })}</span> },
+    {
+      key: 'actions', header: 'Actions',
+      render: r => (
+        <button
+          onClick={() => setReviewing(r)}
+          disabled={r.returnStatus !== 'requested' && r.returnStatus !== ('partial_requested' as ReturnStatus)}
+          className="px-[14px] py-1 bg-white border border-bone rounded-[6px] text-xs text-graphite cursor-pointer whitespace-nowrap transition-colors duration-150 hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+        >
+          Review
+        </button>
+      ),
+    },
+  ];
+
   return (
     <>
       <SellerPageHeader
@@ -150,7 +184,7 @@ export function StoreReturnList() {
           {[
             { label: 'Open Requests',  value: stats?.openRequests ?? 0 },
             { label: 'Return Rate',    value: stats?.returnRate ?? '—' },
-            { label: 'Total Refunded (30d)', value: stats ? `$${stats.totalRefunded.toLocaleString()}` : '—' },
+            { label: 'Total Refunded (30d)', value: stats ? `${currencySymbol(store?.baseCurrency)}${stats.totalRefunded.toLocaleString()}` : '—' },
           ].map(m => (
             <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
@@ -210,81 +244,13 @@ export function StoreReturnList() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    {['Order','Customer','Product','Reason','Amount','Status','Requested','Actions'].map(h => (
-                      <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    Array.from({ length: 5 }).map((_, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #F0EEE6' }}>
-                        <td className="px-4 py-[13px]"><SkeletonBox height={13} width={70} /></td>
-                        <td className="px-4 py-[13px]"><SkeletonBox height={13} width={90} /></td>
-                        <td className="px-4 py-[13px]"><SkeletonBox height={13} width={120} /></td>
-                        <td className="px-4 py-[13px]"><SkeletonBox height={13} width={100} /></td>
-                        <td className="px-4 py-[13px]"><SkeletonBox height={13} width={60} /></td>
-                        <td className="px-4 py-[13px]"><SkeletonBox height={20} width={70} rounded="5px" /></td>
-                        <td className="px-4 py-[13px]"><SkeletonBox height={13} width={60} /></td>
-                        <td className="px-4 py-[13px]"><SkeletonBox height={26} width={70} rounded="6px" /></td>
-                      </tr>
-                    ))
-                  ) : filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="px-4 py-[40px] text-center text-[13px] text-slate">
-                        No return requests match your filters.
-                      </td>
-                    </tr>
-                  ) : filtered.map((r, i) => {
-                    const st = statusStyle[r.returnStatus] ?? { bg: '#F0EEE6', color: '#5A5852' };
-                    return (
-                      <tr
-                        key={r.itemId}
-                        className="transition-colors duration-150 hover:bg-cream"
-                        style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none' }}
-                      >
-                        <td className="px-4 py-[13px] whitespace-nowrap">
-                          <span className="text-[13px] font-bold text-[#B95A3A]">{r.orderNumber}</span>
-                        </td>
-                        <td className="px-4 py-[13px] text-[13px] text-graphite whitespace-nowrap">{r.customer.name}</td>
-                        <td className="px-4 py-[13px] text-[13px] text-graphite max-w-[180px]">
-                          <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{r.productName}</span>
-                        </td>
-                        <td className="px-4 py-[13px] text-[13px] text-slate max-w-[180px]">
-                          <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{r.returnReason}</span>
-                        </td>
-                        <td className="px-4 py-[13px] text-[13px] font-semibold text-carbon whitespace-nowrap">
-                          ${r.amount.toLocaleString()}
-                        </td>
-                        <td className="px-4 py-[13px]">
-                          <span className="inline-block px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold whitespace-nowrap capitalize" style={{ background: st.bg, color: st.color }}>
-                            {r.returnStatus.replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td className="px-4 py-[13px] text-xs text-slate whitespace-nowrap">
-                          {new Date(r.returnRequestedAt).toLocaleDateString('en-PK', { month: 'short', day: 'numeric' })}
-                        </td>
-                        <td className="px-4 py-[13px]">
-                          <button
-                            onClick={() => setReviewing(r)}
-                            disabled={r.returnStatus !== 'requested' && r.returnStatus !== ('partial_requested' as ReturnStatus)}
-                            className="px-[14px] py-1 bg-white border border-bone rounded-[6px] text-xs text-graphite cursor-pointer whitespace-nowrap transition-colors duration-150 hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
-                          >
-                            Review
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <Table
+              columns={columns}
+              data={filtered}
+              keyExtractor={r => r.itemId}
+              loading={loading}
+              emptyState={{ title: 'No return requests match your filters.' }}
+            />
 
             <div className="px-5 py-3 border-t border-bone">
               <span className="text-xs text-slate">
@@ -296,7 +262,7 @@ export function StoreReturnList() {
       </div>
 
       {reviewing && (
-        <ReturnActionModal item={reviewing} onClose={() => setReviewing(null)} onDone={refetch} />
+        <ReturnActionModal item={reviewing} onClose={() => setReviewing(null)} onDone={refetch} currency={store?.baseCurrency} />
       )}
     </>
   );

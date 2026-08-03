@@ -28,7 +28,7 @@ export function MarketplaceAppPromo({ tone = 'dark', className }: { tone?: Tone;
         </div>
         <div className="min-w-0">
           <p className={clsx('text-[11.5px] font-bold leading-tight', t.heading)}>Shop faster in the app</p>
-          <RatingRow label="4.8 · 500K+ downloads" />
+          <RatingRow />
         </div>
       </div>
       <div className="flex items-center gap-2.5">
@@ -76,7 +76,7 @@ export function EducationAppPromo({ className }: { className?: string }) {
         </div>
         <div className="min-w-0">
           <p className="text-[12px] font-bold text-white leading-tight">Learn on the go</p>
-          <RatingRow label="4.8 · downloads by educators" />
+          <RatingRow label="Coming soon for educators" />
         </div>
       </div>
       <div className="flex items-center gap-2.5">
@@ -107,7 +107,7 @@ export function AuthAppPromo({ className }: { className?: string }) {
         </FloatingMiniCard>
 
         <FloatingMiniCard className="right-0 bottom-6 hidden sm:flex">
-          <RatingRow label="4.8 rating" />
+          <RatingRow />
         </FloatingMiniCard>
 
         <PhoneMockup size="lg" />

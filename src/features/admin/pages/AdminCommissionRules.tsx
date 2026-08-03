@@ -8,7 +8,7 @@ import {
 } from '@/hooks/admin/useCommissionRules';
 import { useAdminSellerBalances } from '@/hooks/admin/useAdminFinance';
 import type { CommissionRateSource, SellerOverrideRow } from '@/api/services/commissionRules';
-import { Button, Modal, Input, Textarea, ActionMenu, EmptyState, SkeletonBox, SearchInput } from '@/components/comman/ui';
+import { Button, Modal, Input, Textarea, ActionMenu, SkeletonBox, SearchInput, Table, type TableColumn } from '@/components/comman/ui';
 
 const SOURCE_LABEL: Record<CommissionRateSource, string> = {
   seller_override: 'Seller override',
@@ -216,6 +216,21 @@ export function AdminCommissionRules() {
     else setRemoveError('Failed to remove override.');
   }
 
+  const columns: TableColumn<SellerOverrideRow>[] = [
+    { key: 'storeName', header: 'Store', render: r => <span className="font-medium text-charcoal">{r.storeName}</span> },
+    { key: 'rate', header: 'Rate', render: r => <span className="font-semibold text-carbon">{pct(r.rate)}</span> },
+    { key: 'notes', header: 'Notes', render: r => <span className="text-slate max-w-[220px] truncate block">{r.notes || '—'}</span> },
+    { key: 'createdAt', header: 'Set', render: r => <span className="text-slate whitespace-nowrap">{formatDate(r.createdAt)}</span> },
+    {
+      key: 'actions', header: '',
+      render: r => (
+        <ActionMenu align="right" items={[
+          { label: 'Remove Override', icon: <Trash2 size={13} />, danger: true, onClick: () => { setRemovingRow(r); setRemoveError(''); } },
+        ]} />
+      ),
+    },
+  ];
+
   return (
     <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       <div>
@@ -234,49 +249,17 @@ export function AdminCommissionRules() {
           <Button icon={<Plus size={14} />} size="sm" onClick={() => setAdding(true)}>Add Override</Button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                {['Store', 'Rate', 'Notes', 'Set', ''].map(h => (
-                  <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <tr key={i} className="border-b border-[#F0EEE6]"><td className="px-4 py-3" colSpan={5}><SkeletonBox className="h-5 w-full" /></td></tr>
-                ))
-              ) : error ? (
-                <tr><td colSpan={5} className="px-4 py-6 text-center text-[13px] text-error">{error}</td></tr>
-              ) : (data?.rules.length ?? 0) === 0 ? (
-                <tr><td colSpan={5}>
-                  <EmptyState icon={<Percent size={28} className="text-slate" />} title="No seller overrides yet" description="Every store currently follows its platform-plan tier rate or the global default." />
-                </td></tr>
-              ) : data!.rules.map(r => (
-                <tr key={r._id} className="border-b border-[#F0EEE6]">
-                  <td className="px-4 py-3 text-[13px] font-medium text-charcoal">{r.storeName}</td>
-                  <td className="px-4 py-3 text-[13px] font-semibold text-carbon">{pct(r.rate)}</td>
-                  <td className="px-4 py-3 text-[12px] text-slate max-w-[220px] truncate">{r.notes || '—'}</td>
-                  <td className="px-4 py-3 text-[12px] text-slate whitespace-nowrap">{formatDate(r.createdAt)}</td>
-                  <td className="px-4 py-3">
-                    <ActionMenu align="right" items={[
-                      { label: 'Remove Override', icon: <Trash2 size={13} />, danger: true, onClick: () => { setRemovingRow(r); setRemoveError(''); } },
-                    ]} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {data && data.pages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-bone">
-            <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
-            <span className="text-[12px] text-slate">Page {page} of {data.pages}</span>
-            <Button variant="ghost" size="sm" disabled={page >= data.pages} onClick={() => setPage(p => p + 1)}>Next</Button>
-          </div>
+        {error ? (
+          <p className="px-4 py-6 text-center text-[13px] text-error">{error}</p>
+        ) : (
+          <Table
+            columns={columns}
+            data={data?.rules ?? []}
+            keyExtractor={r => r._id}
+            loading={loading}
+            emptyState={{ icon: <Percent size={28} className="text-slate" />, title: 'No seller overrides yet', description: 'Every store currently follows its platform-plan tier rate or the global default.' }}
+            pagination={data ? { page, total: data.total, perPage: data.limit, onChange: setPage, label: 'overrides' } : undefined}
+          />
         )}
       </div>
 

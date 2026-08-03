@@ -20,6 +20,8 @@ export const CSV_SECTION_OPTIONS = [
   { value: 'sellers', label: 'Sellers' },
   { value: 'products', label: 'Products' },
   { value: 'customers', label: 'Customers' },
+  { value: 'payments', label: 'Payments' },
+  { value: 'platform', label: 'Platform' },
 ];
 
 /** Maps the active tab to a sensible default CSV section — still fully overridable by the user via the filter bar's dropdown. */
@@ -30,8 +32,8 @@ export const TAB_TO_CSV_SECTION: Record<string, string> = {
   customers: 'customers',
   products: 'products',
   orders: 'orders',
-  payments: 'revenue',
-  platform: 'revenue',
+  payments: 'payments',
+  platform: 'platform',
 };
 
 /** Admin-specific UI filter shape — adds the optional storeId/sellerId drill-down and the granularity override on top of the shared date-range fields. */

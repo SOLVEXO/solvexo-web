@@ -102,6 +102,7 @@ const AdminUsers         = lazy(() => named(import('@/features/admin/pages/Admin
 const AdminModeration    = lazy(() => named(import('@/features/admin/pages/AdminModeration'),                   'AdminModeration'));
 const AdminMessaging     = lazy(() => named(import('@/features/admin/pages/AdminMessaging'),                    'AdminMessaging'));
 const AdminMarketplace   = lazy(() => named(import('@/features/admin/pages/AdminMarketplace'),                  'AdminMarketplace'));
+const AdminLeads         = lazy(() => named(import('@/features/admin/pages/AdminLeads'),                        'AdminLeads'));
 const AdminCategories    = lazy(() => named(import('@/features/admin/pages/AdminCategories'),                    'AdminCategories'));
 const AdminSubscriptions = lazy(() => named(import('@/features/admin/pages/AdminSubscriptions'),                 'AdminSubscriptions'));
 const AdminPlatformPlans = lazy(() => named(import('@/features/admin/pages/AdminPlatformPlans'),                 'AdminPlatformPlans'));
@@ -247,6 +248,7 @@ export const router = createBrowserRouter([
           { path: 'users',        element: <RequireRole role="admin"><AdminUsers /></RequireRole> },
           { path: 'moderation',   element: <RequireRole role="admin"><AdminModeration /></RequireRole> },
           { path: 'messages',     element: <AdminMessaging /> },
+          { path: 'leads',        element: <RequireRole role="admin"><AdminLeads /></RequireRole> },
           { path: 'marketplace',  element: <RequireRole role="admin"><AdminMarketplace /></RequireRole> },
           { path: 'categories',   element: <AdminCategories /> },
           { path: 'subscriptions',element: <AdminSubscriptions /> },

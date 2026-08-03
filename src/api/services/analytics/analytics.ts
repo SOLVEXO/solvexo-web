@@ -78,6 +78,12 @@ export interface SellerOverviewData {
   previousPeriod?: SellerOverviewPreviousPeriod;
   /** Only present on the cross-store "my" overview — how many stores the totals were aggregated across. */
   storeCount?: number;
+  /** The scope's single currency (every figure above is denominated in it), or
+   *  `null` when a cross-store scope spans stores with different
+   *  `baseCurrency` values — in that case these totals are a blended sum
+   *  across incompatible currencies and must not be labeled with any one
+   *  currency's symbol. */
+  currency: string | null;
 }
 
 // ── B. Revenue over time ─────────────────────────────────────────────────────────
@@ -85,7 +91,7 @@ export interface SellerOverviewData {
 export type AnalyticsGranularity = 'day' | 'week' | 'month';
 
 export interface RevenuePoint { date: string; grossRevenue: number; netRevenue: number }
-export interface SellerRevenueOverTimeData { granularity: AnalyticsGranularity; series: RevenuePoint[] }
+export interface SellerRevenueOverTimeData { granularity: AnalyticsGranularity; currency: string | null; series: RevenuePoint[] }
 
 // ── C. Orders over time ──────────────────────────────────────────────────────────
 

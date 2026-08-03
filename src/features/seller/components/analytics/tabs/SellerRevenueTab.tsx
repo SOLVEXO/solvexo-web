@@ -4,9 +4,10 @@ import { useSellerAnalyticsRevenueOverTime, useSellerAnalyticsRevenueBreakdown }
 import type { SellerAnalyticsParams } from '@/api/services/analytics/analytics';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
-import { formatCurrency, formatBucketLabel } from '@/components/comman/analytics/format';
+import { formatBucketLabel } from '@/components/comman/analytics/format';
+import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
 
-export function SellerRevenueTab({ params }: { params: SellerAnalyticsParams }) {
+export function SellerRevenueTab({ params, currency }: { params: SellerAnalyticsParams; currency?: string | null }) {
   const revenue = useSellerAnalyticsRevenueOverTime(params);
   const breakdown = useSellerAnalyticsRevenueBreakdown(params);
 
@@ -30,7 +31,7 @@ export function SellerRevenueTab({ params }: { params: SellerAnalyticsParams }) 
             { dataKey: 'gross', label: 'Gross Revenue', color: '#8C8A82' },
             { dataKey: 'net', label: 'Net Revenue', color: '#D97757' },
           ]}
-          valuePrefix="$"
+          valuePrefix={currencySymbol(currency)}
         />
       )}
 
@@ -53,9 +54,9 @@ export function SellerRevenueTab({ params }: { params: SellerAnalyticsParams }) 
             ]}
           />
           <div className="grid grid-cols-1 gap-3">
-            <MetricCard label="One-Time Order Revenue" value={formatCurrency(breakdown.data.oneTimeOrderRevenue)} />
-            <MetricCard label="Recurring Subscription Revenue" value={formatCurrency(breakdown.data.recurringSubscriptionRevenue)} />
-            <MetricCard label="Total Revenue" value={formatCurrency(breakdown.data.totalRevenue)} />
+            <MetricCard label="One-Time Order Revenue" value={formatMoneyCompact(breakdown.data.oneTimeOrderRevenue, currency)} />
+            <MetricCard label="Recurring Subscription Revenue" value={formatMoneyCompact(breakdown.data.recurringSubscriptionRevenue, currency)} />
+            <MetricCard label="Total Revenue" value={formatMoneyCompact(breakdown.data.totalRevenue, currency)} />
           </div>
         </div>
       ) : null}

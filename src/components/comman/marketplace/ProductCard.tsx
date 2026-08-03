@@ -1,7 +1,7 @@
 import { useState, memo } from 'react';
 import { clsx } from 'clsx';
 import { Modal } from '@/components/comman/ui/Modal';
-import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame, BadgeCheck } from 'lucide-react';
+import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame, BadgeCheck, Store, ScanEye } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 import { currencySymbol } from '@/utils/currency';
@@ -27,13 +27,13 @@ export function ProductCardSkeleton({ layout = 'grid' }: { layout?: 'grid' | 'li
   return (
     <div className="bg-white rounded-xl border border-bone overflow-hidden h-full flex flex-col">
       <div className="animate-pulse aspect-square bg-bone" />
-      <div className="px-[10px] pb-[10px] sm:px-3 sm:pb-3 pt-[10px] flex-1 flex flex-col">
-        <div className="animate-pulse h-[10px] bg-bone rounded-md mb-2" />
-        <div className="animate-pulse h-[10px] w-2/3 bg-bone rounded-md mb-[10px]" />
-        <div className="animate-pulse h-[11px] w-16 bg-bone rounded-full mb-3" />
+      <div className="px-[9px] pb-2 sm:px-[10px] sm:pb-[10px] pt-2 flex-1 flex flex-col">
+        <div className="animate-pulse h-[10px] bg-bone rounded-md mb-[6px]" />
+        <div className="animate-pulse h-[10px] w-2/3 bg-bone rounded-md mb-2" />
+        <div className="animate-pulse h-[11px] w-16 bg-bone rounded-full mb-2" />
         <div className="mt-auto flex items-end justify-between">
-          <div className="animate-pulse h-[16px] w-14 bg-bone rounded-md" />
-          <div className="animate-pulse h-7 w-7 sm:h-8 sm:w-8 bg-bone rounded-lg" />
+          <div className="animate-pulse h-[14px] w-14 bg-bone rounded-md" />
+          <div className="animate-pulse h-7 w-7 bg-bone rounded-lg" />
         </div>
       </div>
     </div>
@@ -118,18 +118,34 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
    *  just reflowed, not a separate card design. */
   layout?: 'grid' | 'list';
 }) {
-  const isList     = layout === 'list';
-  const pType      = product.productType ?? product.type ?? 'physical';
-  const isPhysical = pType === 'physical';
-  const isDigital  = !isPhysical;
-  const typeLabel  = isPhysical ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
+  const isList       = layout === 'list';
+  const pType        = product.productType ?? product.type ?? 'physical';
+  const isPhysical   = pType === 'physical';
+  const isEducational = pType === 'educational';
+  const isDigital    = !isPhysical;
+  const typeLabel    = isPhysical ? 'Physical' : isEducational ? 'Educational' : 'Digital';
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const { data: previewData, loading: previewLoading, error: previewError, load: loadPreview, reset: resetPreview } = useProductPreview(product._id);
   const openPreview = (e: React.MouseEvent) => { e.stopPropagation(); setPreviewOpen(true); loadPreview(); };
   const closePreview = () => { setPreviewOpen(false); resetPreview(); };
 
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
+  const openQuickView = (e: React.MouseEvent) => { e.stopPropagation(); setQuickViewOpen(true); };
+
   const variants        = product.variants ?? [];
+
+  // Variant preview swatches — real per-variant photos (when a product's
+  // variants actually have distinct images), not a fabricated color/size
+  // picker. Selecting one only swaps which photo the card shows; the real
+  // variant selection still happens on the product page.
+  const [activeVariantImage, setActiveVariantImage] = useState<string | null>(null);
+  const variantSwatchImages = Array.from(new Set(
+    variants.map(v => v.images?.[0]).filter((img): img is string => Boolean(img)),
+  ));
+  const showVariantSwatches = !isList && variantSwatchImages.length > 1;
+  const activeImageSrc = activeVariantImage ?? product.images?.[0];
+  const secondImage = !activeVariantImage ? (product.images ?? [])[1] : undefined;
   const defaultVariant = variants.find(v => v.isDefault) ?? variants[0];
   const nativeLowestPrice = variants.length > 0
     ? Math.min(...variants.map(v => v.price))
@@ -170,7 +186,9 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   // to earn a badge on its own.
   const campaign = product.activeCampaign;
   const campaignAmount = campaign?.discountType && campaign.discountValue != null
-    ? (campaign.discountType === 'percentage' ? `${campaign.discountValue}%` : `$${campaign.discountValue}`)
+    ? (campaign.discountType === 'percentage'
+        ? `${campaign.discountValue}%`
+        : `${priceSymbol}${convert(campaign.discountValue, campaign.currency ?? 'USD')}`)
     : null;
 
   return (
@@ -178,9 +196,11 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
     <div
       onClick={() => onClick(product._id)}
       className={clsx(
+        // 1px border, color-only on hover — premium here comes from the lift
+        // + color shift, never a shadow.
         'group relative bg-white rounded-xl border border-bone overflow-hidden cursor-pointer',
-        'transition-[transform,border-color] duration-300 ease-out',
-        'hover:-translate-y-[3px] hover:border-brand-orange/40',
+        'transition-[transform,border-color] duration-200 ease-out',
+        'hover:-translate-y-[2px] hover:border-brand-orange/45',
         isList ? 'flex flex-row items-stretch' : 'h-full flex flex-col',
       )}
     >
@@ -189,32 +209,87 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
       <div className={clsx('relative shrink-0', isList ? 'w-[112px] sm:w-[168px]' : '')}>
         <div className={clsx('relative overflow-hidden bg-bone', isList ? 'w-full h-full' : 'aspect-square')}>
           <ProductImage
-            images={product.images ?? []}
+            images={activeImageSrc ? [activeImageSrc] : []}
             name={product.name}
-            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+            className={clsx(
+              'absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-out',
+              secondImage ? 'group-hover:opacity-0' : 'group-hover:scale-[1.06]',
+            )}
           />
+          {/* Second-image swap on hover — real product photo, not a fake effect;
+              only rendered when the product actually has a second image and no
+              variant swatch is actively selected. */}
+          {secondImage && (
+            <img
+              src={secondImage}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 w-full h-full object-cover opacity-0 scale-[1.03] transition-opacity duration-500 ease-out group-hover:opacity-100"
+            />
+          )}
+
+          {/* Variant swatches — real per-variant photos, fade out on hover so
+              they never collide with the Quick View bar sliding up. */}
+          {showVariantSwatches && (
+            <div className="absolute bottom-2 right-2 flex items-center gap-[3px] transition-opacity duration-200 group-hover:opacity-0">
+              {variantSwatchImages.slice(0, 2).map((img) => (
+                <button
+                  key={img}
+                  onClick={e => { e.stopPropagation(); setActiveVariantImage(img); }}
+                  aria-label="View this variant"
+                  className={clsx(
+                    'w-6 h-6 rounded-[6px] overflow-hidden border-2 cursor-pointer',
+                    activeImageSrc === img ? 'border-brand-orange' : 'border-white',
+                  )}
+                >
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+              {variantSwatchImages.length > 2 && (
+                <span className="w-6 h-6 rounded-[6px] bg-carbon/75 text-white text-[9px] font-bold flex items-center justify-center">
+                  +{variantSwatchImages.length - 2}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Quick View — reveals on hover, opens a modal with the data already
+              on this card (no extra fetch). Desktop-hover affordance; still
+              reachable via the card's own click on touch. */}
+          {!isList && (
+            <button
+              onClick={openQuickView}
+              aria-label="Quick view"
+              className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 flex items-center justify-center gap-[6px] py-[7px] bg-carbon/80 backdrop-blur-sm text-white text-[10.5px] font-semibold border-none cursor-pointer transition-transform duration-[250ms] ease-out"
+            >
+              <ScanEye size={13} /> Quick View
+            </button>
+          )}
         </div>
 
         {/* Top-left: product type + discount/campaign badge(s), stacked —
             plain markdown in red, live sale campaign in orange with a flame. */}
-        <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1">
+        <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
           <span className={clsx(
-            'px-[6px] py-[1px] rounded-md text-[9px] font-semibold border',
-            isDigital
-              ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
-              : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
+            'px-[6px] py-[2px] rounded-md text-[9px] font-bold tracking-[0.01em] border',
+            isEducational
+              ? 'bg-info-bg text-info border-info/25'
+              : isDigital
+                ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
+                : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
           )}>
             {typeLabel}
           </span>
           {pctOff != null && pctOff > 0 && (
-            <span className="px-[6px] py-[2px] rounded-md text-[10px] font-bold bg-error text-white">
+            <span className="px-[6px] py-[2px] rounded-md text-[9px] font-bold bg-error text-white">
               -{pctOff}%
             </span>
           )}
           {campaignAmount && (
             <span
               title={campaign ? `${campaign.name} — ends ${new Date(campaign.endDate).toLocaleDateString()}` : undefined}
-              className="flex items-center gap-[3px] px-[6px] py-[2px] rounded-md text-[10px] font-bold bg-brand-orange text-white"
+              className="flex items-center gap-[3px] px-[6px] py-[2px] rounded-md text-[9px] font-bold bg-brand-orange text-white"
             >
               <Flame size={10} className="fill-white shrink-0" />
               -{campaignAmount}
@@ -228,7 +303,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
           disabled={isWishlisting}
           aria-label={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
           className={clsx(
-            'absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white border border-bone',
+            'absolute top-2 right-2 w-7 h-7 rounded-full bg-white border border-bone',
             'flex items-center justify-center transition-[transform,border-color] duration-150 hover:border-brand-orange/50 hover:scale-[1.06]',
             isWishlisting ? 'cursor-wait' : 'cursor-pointer',
           )}
@@ -247,7 +322,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             disabled={previewLoading}
             aria-label="Preview"
             className={clsx(
-              'absolute bottom-2.5 left-2.5 w-8 h-8 rounded-full bg-white border border-bone',
+              'absolute bottom-2 left-2 w-7 h-7 rounded-full bg-white border border-bone',
               'flex items-center justify-center transition-[transform,border-color] duration-150 hover:border-brand-orange/50 hover:scale-[1.06]',
               previewLoading ? 'cursor-wait' : 'cursor-pointer',
             )}
@@ -257,48 +332,59 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
         )}
       </div>
 
-      {/* Body */}
+      {/* Body — Title / Seller / Rating / Price row / Add to Cart. Tags dropped
+          entirely here (not part of the compact card layout) to keep the card
+          short; still shown in Quick View for anyone who wants that detail. */}
       <div className={clsx(
         'flex-1 flex min-w-0',
-        isList ? 'flex-col justify-center gap-[3px] p-3 sm:p-4' : clsx('flex-col', compact ? 'px-[9px] pb-[9px]' : 'px-[10px] pb-[10px] sm:px-3 sm:pb-3'),
+        isList ? 'flex-col justify-center gap-[3px] p-3 sm:p-4' : clsx('flex-col pt-2', compact ? 'px-[9px] pb-2' : 'px-[9px] pb-2 sm:px-[10px] sm:pb-[10px]'),
       )}>
-        <p className={clsx('font-semibold text-carbon leading-[1.35] tracking-[-0.01em]', isList ? 'text-[13px] sm:text-[14px] line-clamp-1' : clsx('mb-[2px] line-clamp-2', compact ? 'text-[11.5px]' : 'text-[12px] sm:text-[13px]'))}>
+        <p className={clsx('font-semibold text-carbon leading-[1.3] tracking-[-0.01em]', isList ? 'text-[13px] sm:text-[14px] line-clamp-1' : clsx('mb-[2px] line-clamp-2', compact ? 'text-[11.5px]' : 'text-[12px]'))}>
           {product.name}
         </p>
 
+        {!compact && !isList && product.description && (
+          <p className="text-[9.5px] text-slate/85 leading-[1.35] line-clamp-1 mb-1">
+            {product.description}
+          </p>
+        )}
+
         {!compact && product.sellerName && (
-          <p className={clsx('flex items-center gap-[3px] text-[10px] sm:text-[11px] text-slate truncate', isList ? '' : 'mb-[6px]')}>
-            by {product.sellerName}
+          <p className={clsx('flex items-center gap-[4px] text-[10px] text-slate truncate', isList ? '' : 'mb-1')}>
+            <Store size={9} className="text-slate/60 shrink-0" />
+            {product.sellerName}
             {product.sellerVerified && (
-              <BadgeCheck size={12} className="text-brand-orange fill-brand-pale-orange shrink-0" />
+              <BadgeCheck size={11} className="text-brand-orange fill-brand-pale-orange shrink-0" />
             )}
           </p>
         )}
 
-        <StarRating rating={product.averageRating} count={ratingCount} />
-
-        {!compact && !isList && (product.tags?.length ?? 0) > 0 && (
-          <div className="hidden sm:flex flex-wrap gap-1 mt-[6px]">
-            {product.tags!.slice(0, 2).map(tag => (
-              <span key={tag} className="text-[9px] px-[5px] py-[1px] rounded-md bg-cream text-slate border border-bone whitespace-nowrap">
-                {tag}
-              </span>
-            ))}
+        <div className="flex items-center justify-between gap-[6px]">
+          <div className="flex items-center gap-[6px] min-w-0">
+            <StarRating rating={product.averageRating} count={ratingCount} />
+            {!compact && product.purchaseCount > 0 && (
+              <span className="text-[9.5px] text-slate hidden sm:inline whitespace-nowrap">· {product.purchaseCount}+ sold</span>
+            )}
           </div>
-        )}
+          {/* Stock status — merged into the rating row instead of its own
+              paragraph line, so real inventory signal doesn't cost extra height. */}
+          {!compact && (
+            <span className={clsx(
+              'shrink-0 text-[9px] font-bold px-[6px] py-[1.5px] rounded-full whitespace-nowrap',
+              stock <= 0 ? 'bg-error-bg text-error' : stock <= 5 ? 'bg-warning-bg text-warning' : 'bg-success-bg text-success',
+            )}>
+              {stock <= 0 ? 'Out of stock' : stock <= 5 ? `${stock} left` : 'In Stock'}
+            </span>
+          )}
+        </div>
 
         {subscriberPrice != null && (
-          <p className="text-[9px] sm:text-[10px] font-semibold text-brand-orange mt-[5px]">Members save {discountPercent}%</p>
-        )}
-        {stock <= 0 ? (
-          <p className="text-[9px] sm:text-[10px] font-semibold text-error mt-[5px]">Out of stock</p>
-        ) : stock <= 5 && (
-          <p className="text-[9px] sm:text-[10px] font-semibold text-amber-600 mt-[5px]">Only {stock} left</p>
+          <p className="text-[9px] font-semibold text-brand-orange mt-[3px]">Members save {discountPercent}%</p>
         )}
 
-        <div className={clsx('flex items-center gap-3 min-w-0', isList ? 'justify-between flex-wrap mt-2 pt-2 border-t border-bone/70' : 'justify-start mt-auto pt-[9px]')}>
+        <div className={clsx('flex items-center gap-3 min-w-0', isList ? 'justify-between flex-wrap mt-2 pt-2 border-t border-bone/70' : 'justify-start mt-auto pt-2')}>
           <div className="flex items-baseline gap-[5px] min-w-0">
-            <span className={clsx('font-bold whitespace-nowrap tracking-tight', compact ? 'text-[15px]' : 'text-[14px] sm:text-[17px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
+            <span className={clsx('font-bold whitespace-nowrap tracking-tight', compact ? 'text-[14px]' : 'text-[14px] sm:text-[16px]', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
               {subscriberPrice != null ? `${priceSymbol} ${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `${priceSymbol} ${lowestPrice.toLocaleString()}` : '—'}
             </span>
             {subscriberPrice != null && lowestPrice != null ? (
@@ -320,7 +406,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
                 'flex items-center justify-center gap-[6px] rounded-lg border transition-colors duration-150 font-semibold text-[12px] h-9 px-4 shrink-0',
                 stock <= 0
                   ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                  : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.98] cursor-pointer',
+                  : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white hover:border-brand-orange active:scale-[0.98] cursor-pointer',
               )}
             >
               {isAdding ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
@@ -330,28 +416,104 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
         </div>
 
         {!isList && (
-          <button
-            onClick={e => onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital')}
-            disabled={stock <= 0}
-            aria-label={stock <= 0 ? 'Out of stock' : 'Add to cart'}
-            className={clsx(
-              'flex items-center justify-center gap-[6px] rounded-lg border transition-colors duration-150 font-semibold text-[12px] mt-[9px]',
-              compact ? 'w-8 h-8 self-end' : 'w-full h-9',
-              stock <= 0
-                ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.98] cursor-pointer',
-            )}
-          >
-            {isAdding ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
+          <div className={clsx('flex items-stretch gap-[6px] mt-2', compact && 'justify-end')}>
+            <button
+              onClick={e => onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital')}
+              disabled={stock <= 0}
+              aria-label={stock <= 0 ? 'Out of stock' : 'Add to cart'}
+              className={clsx(
+                'flex items-center justify-center gap-[6px] rounded-lg border transition-colors duration-150 font-semibold text-[11.5px]',
+                compact ? 'w-7 h-7' : 'flex-1 h-8',
+                stock <= 0
+                  ? 'bg-bone text-slate border-bone cursor-not-allowed'
+                  : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white hover:border-brand-orange active:scale-[0.98] cursor-pointer',
+              )}
+            >
+              {isAdding ? <Loader2 size={13} className="animate-spin" /> : <ShoppingCart size={13} />}
+              {!compact && (
+                <span className="whitespace-nowrap">
+                  {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}
+                </span>
+              )}
+            </button>
+            {/* Persistent Quick View — same action as the image's hover-reveal
+                bar, but always reachable, which matters on touch devices
+                that have no hover state at all. */}
             {!compact && (
-              <span className="whitespace-nowrap">
-                {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}
-              </span>
+              <button
+                onClick={openQuickView}
+                aria-label="Quick view"
+                className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg border border-bone text-charcoal bg-white hover:border-brand-orange/50 hover:text-brand-orange transition-colors duration-150 cursor-pointer"
+              >
+                <ScanEye size={14} />
+              </button>
             )}
-          </button>
+          </div>
         )}
       </div>
     </div>
+
+    {quickViewOpen && (
+      <Modal title="Quick View" onClose={() => setQuickViewOpen(false)} width={640}>
+        <div className="flex flex-col sm:flex-row gap-5">
+          <div className="w-full sm:w-[220px] shrink-0 aspect-[4/5] rounded-xl overflow-hidden bg-bone">
+            <ProductImage images={product.images ?? []} name={product.name} className="w-full h-full object-cover" />
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col">
+            <span className={clsx(
+              'self-start px-[7px] py-[2px] rounded-md text-[9.5px] font-bold tracking-[0.01em] border mb-2',
+              isEducational
+                ? 'bg-info-bg text-info border-info/25'
+                : isDigital
+                  ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
+                  : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
+            )}>
+              {typeLabel}
+            </span>
+            <p className="text-[16px] font-bold text-carbon leading-snug mb-1">{product.name}</p>
+            {product.sellerName && (
+              <p className="flex items-center gap-[4px] text-[12px] text-slate mb-2">
+                <Store size={11} className="text-slate/60 shrink-0" /> {product.sellerName}
+                {product.sellerVerified && <BadgeCheck size={13} className="text-brand-orange fill-brand-pale-orange shrink-0" />}
+              </p>
+            )}
+            <StarRating rating={product.averageRating} count={ratingCount} />
+            <div className="flex items-baseline gap-[6px] mt-3">
+              <span className={clsx('font-bold text-[22px] tracking-tight', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
+                {subscriberPrice != null ? `${priceSymbol} ${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `${priceSymbol} ${lowestPrice.toLocaleString()}` : '—'}
+              </span>
+              {compareAt != null && compareAt > (lowestPrice ?? 0) && (
+                <span className="text-[13px] text-slate/70 line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
+              )}
+            </div>
+            <p className={clsx('text-[11.5px] font-semibold mt-2', stock <= 0 ? 'text-error' : stock <= 5 ? 'text-amber-600' : 'text-success')}>
+              {stock <= 0 ? 'Out of stock' : stock <= 5 ? `Only ${stock} left in stock` : 'In stock'}
+            </p>
+            <div className="flex items-center gap-2 mt-auto pt-5">
+              <button
+                onClick={e => { onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital'); }}
+                disabled={stock <= 0}
+                className={clsx(
+                  'flex-1 flex items-center justify-center gap-[7px] rounded-lg border h-11 font-semibold text-[13px] transition-colors duration-150',
+                  stock <= 0
+                    ? 'bg-bone text-slate border-bone cursor-not-allowed'
+                    : 'bg-brand-orange text-white border-brand-orange hover:bg-brand-deep-orange cursor-pointer',
+                )}
+              >
+                {isAdding ? <Loader2 size={15} className="animate-spin" /> : <ShoppingCart size={15} />}
+                {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}
+              </button>
+              <button
+                onClick={() => { setQuickViewOpen(false); onClick(product._id); }}
+                className="flex items-center justify-center gap-[6px] rounded-lg border border-bone h-11 px-4 text-[13px] font-semibold text-charcoal bg-white hover:bg-cream transition-colors duration-150 cursor-pointer"
+              >
+                View Full Details
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+    )}
 
     {previewOpen && (
       <Modal title="Preview" onClose={closePreview} width={560}>

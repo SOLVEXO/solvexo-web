@@ -1,24 +1,29 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useId } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductsByCategory } from '@/hooks/marketplace/useProductsByCategory';
+import { useProductSearch } from '@/hooks/marketplace/useProductSearch';
+import type { MarketplaceSortBy } from '@/api/services/marketplace';
 import { useBanners } from '@/hooks/useBanners';
 import { useCountdownToMidnight } from '@/hooks/useCountdownToMidnight';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
-import { Pagination, FilterDropdown, BuyerNavbar, AppDownloadBanner, Footer, TrustServiceStrip, DealsBanner, StoreFeatureCard } from '@/components/comman/ui';
+import { Pagination, FilterDropdown, BuyerNavbar, SearchBox, AppDownloadBanner, Footer, TrustServiceStrip, StoreFeatureCard, FloatingAppWidget, EmptyState } from '@/components/comman/ui';
+import { useFocusTrap } from '@/components/comman/ui/useFocusTrap';
 import { ProductCard, ProductCardSkeleton } from '@/components/comman/marketplace/ProductCard';
+import { FlashSaleCard } from '@/components/comman/marketplace/FlashSaleCard';
 import { FilterAccordionSection, FilterRadioRow, FilterCheckboxRow, FilterStarRow, ActiveFilterChip, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
-import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { MegaMenuBar } from '@/components/comman/marketplace/MegaMenuBar';
+import { WelcomeStrip } from '@/components/comman/marketplace/WelcomeStrip';
 import {
   ShoppingBag,
   SlidersHorizontal, X, Zap, LayoutGrid, LayoutList,
-  ShieldCheck, BadgeCheck, RefreshCcw,
+  RefreshCcw,
 } from 'lucide-react';
-import type { MarketplaceProduct } from '@/api/services/marketplace';
+import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+import { currencySymbol } from '@/utils/currency';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { apiGetTopStores, type PublicStoreListItem } from '@/api/services/store';
 import { apiSearchStores } from '@/api/services/search';
@@ -97,7 +102,16 @@ export function Marketplace() {
   const [viewMode,      setViewMode]      = useState<'grid' | 'list'>('grid');
   const [page,          setPage]          = useState(() => { const p = Number(searchParams.get('page')); return p > 0 ? p : 1; });
   const [mobileFilters, setMobileFilters] = useState(false);
+  const mobileFilterPanelRef = useRef<HTMLDivElement>(null);
+  const mobileFilterTitleId = useId();
+  useFocusTrap(mobileFilterPanelRef, () => setMobileFilters(false), mobileFilters);
+  // Flash Sale rail auto-advances one card at a time — paused on hover/touch
+  // so a shopper reading or reaching for a card never has it slide away
+  // mid-interaction.
+  const flashSaleTrackRef = useRef<HTMLDivElement>(null);
+  const [flashSalePaused, setFlashSalePaused] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ priceRange: [PRICE_MIN, PRICE_MAX], type: [], rating: [] });
+  const isPriceRangeActive = filters.priceRange[0] !== PRICE_MIN || filters.priceRange[1] !== PRICE_MAX;
   const [searchInput, setSearchInput] = useState(() => searchParams.get('search') ?? '');
   const [search,      setSearch]      = useState(() => (searchParams.get('search') ?? '').trim().toLowerCase());
   const [categories,       setCategories]       = useState<CategoryNode[]>([]);
@@ -183,7 +197,11 @@ export function Marketplace() {
   useEffect(() => {
     if (isFirstFacetRun.current) { isFirstFacetRun.current = false; return; }
     setPage(1);
-  }, [selectedCategory, campaignFilterId, search, sortBy]);
+    // Price/rating/type are now real server-side facets (see serverMinPrice/
+    // serverMinRating/serverProductType above), so changing them must reset
+    // the page like every other facet — otherwise a filter change while on
+    // page 3 would fetch page 3 of the NEW filtered set instead of page 1.
+  }, [selectedCategory, campaignFilterId, search, sortBy, filters.priceRange[0], filters.priceRange[1], filters.type.join(','), filters.rating.join(',')]);
 
   // Write the current browse state into the URL — shareable/bookmarkable,
   // and what lets a back/forward navigation or a pasted link reproduce this
@@ -209,11 +227,40 @@ export function Marketplace() {
   const isBrowsing = !!search || !!selectedCategory || !!campaignFilterId;
 
   const LIMIT = 20;
-  const { products, total, loading, error, refetch } = useProductsByCategory(
-    page, LIMIT, selectedCategory || undefined, undefined, undefined, undefined, campaignFilterId || undefined,
+
+  // Real server-side facets — the backend's products-by-category endpoint
+  // already supports minPrice/maxPrice/minRating/sortBy (see
+  // ProductsController), it just wasn't being sent. `productType` only goes
+  // server-side when exactly one type is checked (the endpoint takes a
+  // single value, not a set) — with 0 or 2+ types checked, `filtered` below
+  // still does a light client-side pass on top of the (now-correct) fetched
+  // page, same as before for that one edge case only.
+  const serverSortBy: MarketplaceSortBy | undefined =
+    sortBy === 'price-asc' ? 'price_asc' :
+    sortBy === 'price-desc' ? 'price_desc' :
+    sortBy === 'best-rated' ? 'rating' : undefined;
+  const serverProductType = filters.type.length === 1
+    ? (filters.type[0].toLowerCase() as 'physical' | 'digital' | 'educational')
+    : undefined;
+  const serverMinPrice = isPriceRangeActive ? filters.priceRange[0] : undefined;
+  const serverMaxPrice = isPriceRangeActive && filters.priceRange[1] < PRICE_MAX ? filters.priceRange[1] : undefined;
+  const serverMinRating = filters.rating.includes('4★ & up') ? 4 : filters.rating.includes('3★ & up') ? 3 : undefined;
+
+  // A real search term switches the data source entirely to the dedicated
+  // full-catalog search endpoint (useProductSearch) instead of narrowing
+  // whatever single category-scoped page happened to already be loaded —
+  // that endpoint doesn't support category/price/rating/type facets, so an
+  // active search intentionally takes priority over those for now.
+  const browseResult = useProductsByCategory(
+    page, LIMIT, selectedCategory || undefined, serverProductType, undefined, undefined, campaignFilterId || undefined,
+    serverMinPrice, serverMaxPrice, serverMinRating, serverSortBy,
   );
+  const searchResult = useProductSearch(search, page, LIMIT);
+  const { products, total, loading, error, refetch } = search ? searchResult : browseResult;
   const { addToCart, adding }    = useCartContext();
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
+  const { currency: displayCurrency, convert } = useCurrencyPreference();
+  const priceSymbol = currencySymbol(displayCurrency);
   const { banners: marketplaceBanners } = useBanners('marketplaceHero');
   // Category Hero — same hero region, but scoped to the `categoryHero`
   // placement whenever the shopper is browsing a specific category (via the
@@ -243,8 +290,30 @@ export function Marketplace() {
     .sort((a, b) => (b.purchaseCount + b.averageRating * 10) - (a.purchaseCount + a.averageRating * 10))
     .slice(0, 10);
 
+  // Distinct real signal from topPicks — pure rating (tie-broken by review
+  // count), not the purchase+rating blend, so Top Picks' second section
+  // isn't just the same list under a different name.
+  const bestRated = [...featuredPool]
+    .filter(p => p.averageRating > 0)
+    .sort((a, b) => b.averageRating - a.averageRating || (b.totalRatings ?? 0) - (a.totalRatings ?? 0))
+    .slice(0, 10);
+
+  // Auto-scroll the Flash Sale rail one card at a time, looping back to the
+  // start at the end — pauses on hover/touch (see the handlers on the rail
+  // below) so it never fights a shopper's own scroll/tap.
+  useEffect(() => {
+    const track = flashSaleTrackRef.current;
+    if (!track || flashSalePaused || flashDeals.length === 0) return;
+    const id = setInterval(() => {
+      const card = track.firstElementChild as HTMLElement | null;
+      const step = (card?.offsetWidth ?? 140) + 12; // card width + the rail's gap-3
+      const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+      track.scrollTo({ left: atEnd ? 0 : track.scrollLeft + step, behavior: 'smooth' });
+    }, 2200);
+    return () => clearInterval(id);
+  }, [flashSalePaused, flashDeals.length]);
+
   const totalPages = Math.ceil(total / LIMIT) || 1;
-  const isPriceRangeActive = filters.priceRange[0] !== PRICE_MIN || filters.priceRange[1] !== PRICE_MAX;
   const activeFilterCount = (isPriceRangeActive ? 1 : 0) + filters.type.length + filters.rating.length;
 
   useEffect(() => {
@@ -293,45 +362,26 @@ export function Marketplace() {
     if (variantId) toggleWishlist(id, variantId);
   }, [toggleWishlist]);
 
-  const matchesPriceFilter = (price: number | null) => {
-    if (!isPriceRangeActive || price == null) return true;
-    const [min, max] = filters.priceRange;
-    if (price < min) return false;
-    if (max < PRICE_MAX && price > max) return false; // max at the slider's cap means "and up" — no upper bound
-    return true;
-  };
+  // Price/rating/sort/search/single-selected-type are all real server-side
+  // facets now (see serverMinPrice/serverMaxPrice/serverMinRating/
+  // serverSortBy/serverProductType above and useProductSearch for the search
+  // path) — `products`/`total` already reflect the correctly filtered full
+  // result set, not just today's page. The only thing still applied
+  // client-side here is the 2-or-more-types-checked case, since the backend
+  // only accepts one `productType` value at a time.
+  const multiTypeSelected = filters.type.length > 1;
+  const filtered = multiTypeSelected
+    ? products.filter(p => {
+        const pType = p.productType ?? p.type ?? 'physical';
+        return filters.type.some(t => t.toLowerCase() === pType);
+      })
+    : products;
 
-  const matchesRatingFilter = (rating: number) => {
-    if (filters.rating.length === 0) return true;
-    return filters.rating.some(label => {
-      if (label === '4★ & up') return rating >= 4;
-      if (label === '3★ & up') return rating >= 3;
-      return true;
-    });
-  };
-
-  const filtered = products
-    .filter(p => {
-      const pType = p.productType ?? p.type ?? 'physical';
-      if (filters.type.length > 0 && !filters.type.some(t => t.toLowerCase() === pType)) return false;
-      if (search && !p.name.toLowerCase().includes(search) && !p.tags?.some(t => t.toLowerCase().includes(search))) return false;
-      const lowestPrice = p.variants?.length > 0 ? Math.min(...p.variants.map(v => v.price)) : null;
-      if (!matchesPriceFilter(lowestPrice)) return false;
-      if (!matchesRatingFilter(p.averageRating)) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      const priceOf = (p: MarketplaceProduct) => p.variants?.length > 0 ? Math.min(...p.variants.map(v => v.price)) : 0;
-      if (sortBy === 'price-asc')  return priceOf(a) - priceOf(b);
-      if (sortBy === 'price-desc') return priceOf(b) - priceOf(a);
-      if (sortBy === 'best-rated') return b.averageRating - a.averageRating;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-
-  // Filters/search only narrow down the current page's results (not a fresh
-  // server query), so a page range would misreport the total once any are
-  // active — total describes the unfiltered category, not the filtered set.
-  const isNarrowedView = activeFilterCount > 0 || !!search;
+  // Only the multi-type-select edge case still only narrows the current
+  // page rather than the full result set — everything else (search, price,
+  // rating, sort, a single selected type) is a real server query, so the
+  // total/range below is accurate for it.
+  const isNarrowedView = multiTypeSelected;
   const rangeStart = total === 0 ? 0 : (page - 1) * LIMIT + 1;
   const rangeEnd   = Math.min(page * LIMIT, total);
   const countLabel = isNarrowedView
@@ -342,21 +392,27 @@ export function Marketplace() {
     <div className="min-h-screen bg-cream">
 
       <BuyerNavbar
+        hideSearch
         search={{
           value: searchInput,
           onChange: setSearchInput,
           placeholder: 'Search marketplace...',
           categories: categories.map(c => ({ id: c._id, name: c.name })),
           onCategorySelect: handleCategoryChange,
+          popularStores: topStores,
         }}
       />
 
-      <DealsBanner />
-
-      {/* ── Marketplace navigation — single merged row (All Categories + utility links) ── */}
+      {/* ── Marketplace navigation — single merged row: All Categories + Flash
+         Sale/Top Picks/Featured Stores/About (real discovery features, kept —
+         not removed), plus the utility links on the right. Sits above the
+         hero banner/search bar, not below, so the full navigation is visible
+         before a shopper ever scrolls past the hero. ── */}
       <MegaMenuBar
+        compact
         categories={categories}
         topPicks={topPicks}
+        bestRated={bestRated}
         flashDeals={flashDeals}
         topStores={topStores}
         countdown={countdown}
@@ -365,78 +421,92 @@ export function Marketplace() {
         onStoreClick={slug => navigate(`/${slug}`)}
         onTrendingTerm={term => { setSearchInput(term); setSearch(term); }}
         onNavigate={navigate}
-        extraTriggers={[]}
       />
 
-      {/* ── Hero ─ always visible, including while browsing a search/category —
-         only the old promotional nav triggers were removed, not this. ── */}
-      <div className="relative overflow-hidden h-[320px] sm:h-[400px] lg:h-[460px] border-b border-[#F5D5C2]">
-
-        {/* Background: live promo banner if available, else brand gradient */}
-        {banners.length > 0 ? (
-          <BannerCarousel entityType="banner" banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))} />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#FBECE4] via-[#FDF1E9] to-[#FFF5EE]">
-            <div className="absolute -top-16 -right-16 size-64 rounded-full bg-brand-orange/[0.08] blur-3xl pointer-events-none" />
-            <ShoppingBag size={220} className="absolute -bottom-10 -right-10 text-brand-orange/[0.08] hidden sm:block" />
-          </div>
-        )}
-
-        {/* Legibility scrim — always present so overlaid text reads over any banner image */}
-        <div className={clsx(
-          'absolute inset-0 pointer-events-none',
-          banners.length > 0
-            ? 'bg-gradient-to-r from-black/70 via-black/35 to-transparent'
-            : '',
-        )} />
-
-        {/* Overlaid copy */}
-        <div className="relative z-[1] h-full flex items-center px-4 sm:px-6 lg:px-10">
-          <div className="min-w-0 max-w-[560px]">
-            <span className={clsx(
-              'inline-block text-[10px] font-bold uppercase tracking-[0.14em] rounded-full px-3 py-1 mb-4 border',
-              banners.length > 0
-                ? 'text-white bg-white/15 border-white/25 backdrop-blur-sm'
-                : 'text-brand-deep-orange bg-white/60 border-brand-orange/20',
-            )}>
-              The marketplace for makers
-            </span>
-            <h1 className={clsx(
-              'font-serif text-[28px] sm:text-[36px] lg:text-[46px] font-bold mb-4 leading-[1.1] tracking-tight',
-              banners.length > 0 ? 'text-white' : 'text-carbon',
-            )}>
-              Discover Something<br className="hidden sm:block" /> Made with Love
-            </h1>
-            <p className={clsx(
-              'text-[13px] sm:text-[14.5px] mb-6 leading-[1.65] max-w-[440px]',
-              banners.length > 0 ? 'text-white/85' : 'text-slate',
-            )}>
-              Shop unique products from independent sellers, creators, and educators.
-            </p>
-            <Button
-              variant="primary"
-              size="md"
-              className="shadow-[0_8px_20px_rgba(224,127,87,0.28)] hover:shadow-[0_10px_26px_rgba(224,127,87,0.36)] transition-shadow duration-200"
-              onClick={() => document.getElementById('marketplace-grid')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              Shop Now <span className="ml-1">→</span>
-            </Button>
-
-            {/* Trust indicators — real capability statements, not fabricated stats */}
-            <div className={clsx(
-              'flex flex-wrap items-center gap-x-5 gap-y-2 mt-6 text-[11px] font-medium',
-              banners.length > 0 ? 'text-white/80' : 'text-charcoal/70',
-            )}>
-              <span className="flex items-center gap-[6px]"><ShieldCheck size={13} className="text-brand-orange" /> Secure Checkout</span>
-              <span className="flex items-center gap-[6px]"><BadgeCheck size={13} className="text-brand-orange" /> Verified Sellers</span>
-              <span className="flex items-center gap-[6px]"><RefreshCcw size={13} className="text-brand-orange" /> Easy Returns</span>
-            </div>
-          </div>
-        </div>
+      {/* ── Big search bar — the real navbar SearchBox (same suggestions
+         dropdown, same searchInput/search state), just rendered at its `lg`
+         scale as a standalone hero search. The navbar's own compact copy is
+         hidden on this page (hideSearch above) so this is the one and only
+         search entry point, not a second, disconnected one. ── */}
+      <div className="bg-gradient-to-b from-brand-pale-orange/60 via-brand-pale-orange/25 to-transparent px-4 sm:px-6 lg:px-10 py-7 sm:py-9 flex justify-center">
+        <SearchBox
+          size="lg"
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder="Search for products, brands, and stores..."
+          categories={categories.map(c => ({ id: c._id, name: c.name }))}
+          onCategorySelect={handleCategoryChange}
+          popularStores={topStores}
+          onSubmit={term => setSearch((term ?? searchInput).trim().toLowerCase())}
+        />
       </div>
 
-      {/* ── Trust & Service strip ────────────────────────────────────────────── */}
+      {/* ── "Welcome to Solvexo" discovery strip — Categories for you, plus
+         the real Hero Banner and DealsBanner side by side. Replaces the old
+         separately-stacked DealsBanner + full-bleed hero sections that used
+         to sit here. ── */}
+      <div className="px-4 sm:px-6 lg:px-10 pb-5">
+        <WelcomeStrip
+          categories={categories}
+          banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))}
+          onShopCategory={handleCategoryChange}
+          onNavigate={navigate}
+        />
+      </div>
+
+      {/* ── Trust & Service strip — now below the hero, not right after the
+         navbar, so the hero image is the first thing a visitor sees. ── */}
       <TrustServiceStrip />
+
+      {/* ── Flash Sale — a compact, always-visible rail (real discount signal
+         from the same `flashDeals` pool the mega-menu dropdown already uses),
+         not just hidden behind a hover trigger. Hidden while actively
+         browsing/searching — a discovery rail doesn't belong above a
+         shopper's own filtered results. Reuses FlashSaleCard as-is (already
+         used by Homepage's rail) rather than a new component. ── */}
+      {!isBrowsing && flashDeals.length > 0 && (
+        <div className="px-4 sm:px-6 lg:px-10 pt-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-error-bg text-error">
+                <Zap size={14} className="fill-error" />
+              </span>
+              <h2 className="font-serif text-[16px] sm:text-[19px] font-bold text-carbon tracking-[-0.01em]">Flash Sale</h2>
+            </div>
+            <div className="flex items-center gap-[6px] text-[11px] sm:text-[12px] font-semibold text-slate">
+              <span className="hidden sm:inline">Ends in</span>
+              <span className="tabular-nums text-error font-bold">{countdown.h}:{countdown.m}:{countdown.s}</span>
+            </div>
+          </div>
+          <div
+            ref={flashSaleTrackRef}
+            onMouseEnter={() => setFlashSalePaused(true)}
+            onMouseLeave={() => setFlashSalePaused(false)}
+            onTouchStart={() => setFlashSalePaused(true)}
+            onTouchEnd={() => setTimeout(() => setFlashSalePaused(false), 1500)}
+            className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 snap-x snap-mandatory scroll-smooth"
+          >
+            {flashDeals.map(({ product: p }) => {
+              const dv = (p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0];
+              const vId = dv?._id ?? '';
+              return (
+                <div key={p._id} className="w-[118px] sm:w-[132px] lg:w-[144px] shrink-0 snap-start">
+                  <FlashSaleCard
+                    compact
+                    product={p}
+                    onClick={handleCardClick}
+                    isAdding={adding === vId}
+                    onAddToCart={handleAddToCart}
+                    isWishlisted={isWishlisted(p._id, vId)}
+                    isWishlisting={wishlisting === vId}
+                    onToggleWishlist={handleToggleWishlist}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
       <div className="px-4 sm:px-6 lg:px-10 py-4 sm:py-5 lg:py-6">
@@ -512,7 +582,7 @@ export function Marketplace() {
                 <p className="text-[12px] sm:text-[13px] text-white/85 mt-1">
                   {!loading && `${total} product${total === 1 ? '' : 's'} from participating stores`}
                   {campaignFilterInfo.discountType && campaignFilterInfo.discountValue != null && (
-                    <> · {campaignFilterInfo.discountType === 'percentage' ? `Up to ${campaignFilterInfo.discountValue}% off` : `$${campaignFilterInfo.discountValue} off`}</>
+                    <> · {campaignFilterInfo.discountType === 'percentage' ? `Up to ${campaignFilterInfo.discountValue}% off` : `${priceSymbol}${convert(campaignFilterInfo.discountValue as number, campaignFilterInfo.currency ?? 'USD')} off`}</>
                   )}
                 </p>
               </div>
@@ -529,7 +599,7 @@ export function Marketplace() {
                 <p className="text-[11.5px] text-charcoal/70">
                   {!loading && `${total} product${total === 1 ? '' : 's'} from participating stores`}
                   {campaignFilterInfo?.discountType && campaignFilterInfo.discountValue != null && (
-                    <> · {campaignFilterInfo.discountType === 'percentage' ? `Up to ${campaignFilterInfo.discountValue}% off` : `$${campaignFilterInfo.discountValue} off`}</>
+                    <> · {campaignFilterInfo.discountType === 'percentage' ? `Up to ${campaignFilterInfo.discountValue}% off` : `${priceSymbol}${convert(campaignFilterInfo.discountValue as number, campaignFilterInfo.currency ?? 'USD')} off`}</>
                   )}
                 </p>
               </div>
@@ -547,7 +617,7 @@ export function Marketplace() {
 
           {/* ── Desktop sidebar ───────────────────────────────────────────────── */}
           <aside className="hidden lg:block w-[228px] xl:w-[252px] shrink-0 sticky top-[76px] self-start">
-            <div className="bg-white rounded-[18px] border border-bone overflow-hidden flex flex-col max-h-[calc(100vh-100px)] shadow-[0_1px_2px_rgba(20,15,10,0.03)]">
+            <div className="bg-white rounded-[18px] border border-bone overflow-hidden flex flex-col max-h-[calc(100vh-100px)]">
               {/* Sticky header — stays put while the accordion body below scrolls */}
               <div className="shrink-0 px-[18px] py-[14px] border-b border-bone flex items-center justify-between gap-2">
                 <div className="flex items-center gap-[9px]">
@@ -637,7 +707,7 @@ export function Marketplace() {
                 'scroll-mt-[76px]',
                 viewMode === 'list'
                   ? 'flex flex-col gap-3'
-                  : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px]',
+                  : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5',
               )}
             >
               {loading
@@ -663,11 +733,22 @@ export function Marketplace() {
             </div>
 
             {!loading && !error && filtered.length === 0 && (
-              <div className="text-center py-[60px] text-slate text-[14px]">
-                {search || activeFilterCount > 0
-                  ? 'No products match your search or filters.'
-                  : 'No products found in this category yet.'}
-              </div>
+              <EmptyState
+                icon={<ShoppingBag size={30} className="text-brand-orange" />}
+                title={search || activeFilterCount > 0 ? 'No products match' : 'No products yet'}
+                description={
+                  search || activeFilterCount > 0
+                    ? 'No products match your search or filters.'
+                    : 'No products found in this category yet.'
+                }
+                action={
+                  search
+                    ? { label: 'Clear search', onClick: () => { setSearchInput(''); setSearch(''); } }
+                    : activeFilterCount > 0
+                    ? { label: 'Clear filters', onClick: clearFilters }
+                    : undefined
+                }
+              />
             )}
 
             {!loading && !error && totalPages > 1 && (
@@ -687,6 +768,7 @@ export function Marketplace() {
         <AppDownloadBanner />
       </div>
       <Footer />
+      <FloatingAppWidget />
 
       {/* ── Mobile filter bottom sheet ────────────────────────────────────────── */}
       <div
@@ -698,8 +780,14 @@ export function Marketplace() {
       />
 
       <div
+        ref={mobileFilterPanelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={mobileFilterTitleId}
+        aria-hidden={!mobileFilters}
+        tabIndex={-1}
         className={clsx(
-          'fixed bottom-0 left-0 right-0 z-[60] bg-white lg:hidden',
+          'fixed bottom-0 left-0 right-0 z-[60] bg-white lg:hidden outline-none',
           'rounded-t-[20px]',
           'transition-transform duration-300 ease-out',
           mobileFilters ? 'translate-y-0' : 'translate-y-full',
@@ -713,7 +801,7 @@ export function Marketplace() {
           <div>
             <div className="flex items-center gap-2">
               <SlidersHorizontal size={15} className="text-charcoal" strokeWidth={2} />
-              <span className="text-[15px] font-bold text-carbon">Filters</span>
+              <span id={mobileFilterTitleId} className="text-[15px] font-bold text-carbon">Filters</span>
               {activeFilterCount > 0 && (
                 <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
                   {activeFilterCount}

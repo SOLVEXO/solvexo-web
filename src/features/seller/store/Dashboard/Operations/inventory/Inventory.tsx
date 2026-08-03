@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShoppingBag, Plus, Package, Download,
+  ShoppingBag, Plus,
   AlertCircle, RefreshCw,
-  CheckCircle2, AlertTriangle, XCircle,
+  AlertTriangle,
   Eye, Pencil,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   Table,      type TableColumn,
-  MetricCard,
   Badge,      StatusBadge,
   EmptyState,
   Card,
@@ -24,31 +23,14 @@ import {
   type LowStockSummaryData,
 } from '@/api/services/product';
 import { usePageTitle } from '@/hooks/usePageTitle';
-
-// ── Product thumbnail ─────────────────────────────────────────────────────────
-function ProductCell({ p }: { p: InventoryProduct }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="w-9 h-9 rounded-lg shrink-0 bg-brand-pale-orange border border-[#EDEBE2] flex items-center justify-center overflow-hidden">
-        {p.image
-          ? <img loading="lazy" decoding="async" src={p.image} alt="" className="w-full h-full object-cover" />
-          : p.type === 'digital'
-            ? <Download size={14} className="text-brand-orange" />
-            : <Package  size={14} className="text-brand-orange" />}
-      </div>
-      <div>
-        <p className="text-[13px] font-medium text-charcoal mb-[1px]">{p.name}</p>
-        <p className="text-[11px] text-slate">SKU: {p.sku}</p>
-      </div>
-    </div>
-  );
-}
+import { currencySymbol } from '@/utils/currency';
+import { ProductCell, ProductStatsGrid } from '../../components/ProductListShared';
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function StoreInventory() {
   usePageTitle('Inventory');
   const navigate    = useNavigate();
-  const { storeId } = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
 
   const [products,      setProducts]      = useState<InventoryProduct[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -145,7 +127,7 @@ export function StoreInventory() {
     {
       key: 'price', header: 'Price', align: 'right',
       render: p => (
-        <span className="font-semibold text-charcoal">${p.price.toLocaleString()}</span>
+        <span className="font-semibold text-charcoal">{currencySymbol(store?.baseCurrency)}{p.price.toLocaleString()}</span>
       ),
     },
     {
@@ -203,32 +185,7 @@ export function StoreInventory() {
       <div className="px-7 py-5 flex flex-col gap-5">
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <MetricCard
-            label="Total Products"
-            value={stats?.totalProducts ?? 0}
-            icon={<ShoppingBag size={16} />}
-            loading={loading && !stats}
-          />
-          <MetricCard
-            label="In Stock"
-            value={stats?.inStock ?? 0}
-            icon={<CheckCircle2 size={16} />}
-            loading={loading && !stats}
-          />
-          <MetricCard
-            label="Low Stock"
-            value={stats?.lowStock ?? 0}
-            icon={<AlertTriangle size={16} />}
-            loading={loading && !stats}
-          />
-          <MetricCard
-            label="Out of Stock"
-            value={stats?.outOfStock ?? 0}
-            icon={<XCircle size={16} />}
-            loading={loading && !stats}
-          />
-        </div>
+        <ProductStatsGrid stats={stats} loading={loading} />
 
         {/* Low stock detail */}
         {!!lowStock?.count && (

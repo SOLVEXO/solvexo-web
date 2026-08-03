@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useVerifyOtp } from '@/hooks/auth/useVerifyOtp';
 import { Button } from '@/components/comman/ui/Button';
@@ -24,12 +24,19 @@ const IDENTITY_HIGHLIGHTS = [
 ];
 
 function ResendTimer({ email, role }: { email: string; role: AppRole }) {
-  const [seconds,   setSeconds]   = useState(59);
-  const [canResend, setCanResend] = useState(false);
-  const [sending,   setSending]   = useState(false);
-  const [error,     setError]     = useState('');
+  const [seconds,    setSeconds]    = useState(59);
+  const [canResend,  setCanResend]  = useState(false);
+  const [sending,    setSending]    = useState(false);
+  const [error,      setError]      = useState('');
+  // Bumped on every successful resend so the countdown effect below re-runs
+  // and starts a fresh interval — previously the interval was only ever
+  // created once (inside a useState initializer, whose cleanup was never
+  // actually invoked since only useEffect cleanup functions are), so after
+  // the first countdown finished, resetting `seconds` to 59 froze the
+  // display forever with no running timer to count it back down.
+  const [resendKey,  setResendKey]  = useState(0);
 
-  useState(() => {
+  useEffect(() => {
     const t = setInterval(() => {
       setSeconds(s => {
         if (s <= 1) { clearInterval(t); setCanResend(true); return 0; }
@@ -37,7 +44,7 @@ function ResendTimer({ email, role }: { email: string; role: AppRole }) {
       });
     }, 1000);
     return () => clearInterval(t);
-  });
+  }, [resendKey]);
 
   const handleResend = async () => {
     setSending(true);
@@ -46,6 +53,7 @@ function ResendTimer({ email, role }: { email: string; role: AppRole }) {
       await apiResendOtp({ email, role });
       setSeconds(59);
       setCanResend(false);
+      setResendKey(k => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to resend code.');
     } finally {
@@ -119,7 +127,7 @@ export function VerifyOTPPage() {
       </div>
 
       {(error || verifyOtp.error) && (
-        <div className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 flex items-center gap-2">
+        <div role="alert" className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 flex items-center gap-2">
           <AlertTriangle size={14} className="text-error shrink-0" />
           <span className="text-[13px] text-error">{error || verifyOtp.error}</span>
         </div>

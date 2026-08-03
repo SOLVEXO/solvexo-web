@@ -4,7 +4,8 @@ import { RefreshCw, Wallet } from 'lucide-react';
 import { useAdminPayoutQueue, useAdminPayoutActions, useAdminProcessClearing } from '@/hooks/admin/useAdminFinance';
 import type { PayoutRow } from '@/api/services/finance/adminFinance';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
-import { formatCurrency, formatDate } from '@/components/comman/analytics/format';
+import { formatDate } from '@/components/comman/analytics/format';
+import { formatMoneyCompact } from '@/utils/currency';
 import { FinanceStatusBadge } from '../../components/finance/FinanceStatusBadge';
 
 const STATUS_OPTIONS = [
@@ -46,7 +47,7 @@ export function FinancePayoutsTab() {
 
   const columns: TableColumn<PayoutRow>[] = [
     { key: 'storeName', header: 'Store', render: (p) => p.storeName ?? p.storeId },
-    { key: 'amount', header: 'Amount', align: 'right', render: (p) => formatCurrency(p.amount) },
+    { key: 'amount', header: 'Amount', align: 'right', render: (p) => formatMoneyCompact(p.amount, p.currency) },
     { key: 'method', header: 'Method', render: (p) => p.payoutMethodSnapshot?.bankName || p.payoutMethodSnapshot?.type || '—' },
     { key: 'status', header: 'Status', render: (p) => <FinanceStatusBadge status={p.status} /> },
     { key: 'createdAt', header: 'Requested', render: (p) => formatDate(p.createdAt) },
@@ -77,7 +78,9 @@ export function FinancePayoutsTab() {
 
       {clearing.result && (
         <p className="text-[12px] text-slate bg-cream border border-bone rounded-lg px-3 py-2">
-          Cleared {clearing.result.processed} transaction(s), {formatCurrency(clearing.result.totalAmount)} moved to available balance.
+          Cleared {clearing.result.processed} transaction(s), {clearing.result.byCurrency.length === 0
+            ? 'nothing'
+            : clearing.result.byCurrency.map((c) => formatMoneyCompact(c.amount, c.currency)).join(' + ')} moved to available balance.
         </p>
       )}
       {(error || clearing.error) && <p className="text-[12px] text-error">{error || clearing.error}</p>}

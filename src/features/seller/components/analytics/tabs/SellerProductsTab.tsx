@@ -9,14 +9,14 @@ import {
 import type { SellerAnalyticsParams, ProductPerformanceRow, TopProductRow } from '@/api/services/analytics/analytics';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { TableCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
-import { formatCurrency } from '@/components/comman/analytics/format';
+import { formatMoneyCompact } from '@/utils/currency';
 
 const SORT_OPTIONS = [
   { value: 'revenue', label: 'Sort by revenue' },
   { value: 'units_sold', label: 'Sort by units sold' },
 ];
 
-export function SellerProductsTab({ params }: { params: SellerAnalyticsParams }) {
+export function SellerProductsTab({ params, currency }: { params: SellerAnalyticsParams; currency?: string | null }) {
   const [sort, setSort] = useState<'revenue' | 'units_sold'>('revenue');
   const [page, setPage] = useState(1);
 
@@ -28,7 +28,7 @@ export function SellerProductsTab({ params }: { params: SellerAnalyticsParams })
     { key: 'name', header: 'Product' },
     { key: 'orderCount', header: 'Orders', align: 'right' },
     { key: 'unitsSold', header: 'Units Sold', align: 'right' },
-    { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatCurrency(r.revenue) },
+    { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatMoneyCompact(r.revenue, currency) },
   ];
 
   const performanceColumns: TableColumn<ProductPerformanceRow>[] = [
@@ -41,7 +41,7 @@ export function SellerProductsTab({ params }: { params: SellerAnalyticsParams })
     { key: 'unitsSold', header: 'Units Sold', align: 'right' },
     { key: 'currentStock', header: 'Stock', align: 'right' },
     { key: 'refundRatePercent', header: 'Refund Rate', align: 'right', render: r => `${r.refundRatePercent}%` },
-    { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatCurrency(r.revenue) },
+    { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatMoneyCompact(r.revenue, currency) },
   ];
 
   return (

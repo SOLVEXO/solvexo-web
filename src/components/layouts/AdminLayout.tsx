@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, FolderTree, RefreshCw,
-  BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle, Landmark, Percent, Coins,
+  BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle, Landmark, Percent, Coins, UserPlus,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -27,6 +27,7 @@ const ADMIN_NAV: AdminNavItem[] = [
   { id: 'users',         Icon: Users,           label: 'Users & Sellers', path: '/admin/users'         },
   { id: 'moderation',    Icon: Shield,          label: 'Moderation',      path: '/admin/moderation'    },
   { id: 'messages',      Icon: MessageSquare,   label: 'Messaging',       path: '/admin/messages'      },
+  { id: 'leads',         Icon: UserPlus,        label: 'Leads',           path: '/admin/leads'         },
   { id: 'marketplace',   Icon: Store,           label: 'Marketplace',     path: '/admin/marketplace'   },
   { id: 'categories',    Icon: FolderTree,      label: 'Categories',      path: '/admin/categories'    },
   { id: 'subscriptions', Icon: RefreshCw,       label: 'Subscriptions',   path: '/admin/subscriptions' },
@@ -51,7 +52,7 @@ const ADMIN_NAV: AdminNavItem[] = [
 const NAV_GROUPS: { label: string; ids: AdminNavItem['id'][] }[] = [
   { label: 'Overview',  ids: ['overview', 'analytics'] },
   { label: 'Community', ids: ['users', 'moderation', 'messages'] },
-  { label: 'Commerce',  ids: ['marketplace', 'categories', 'subscriptions', 'platform-plans'] },
+  { label: 'Commerce',  ids: ['leads', 'marketplace', 'categories', 'subscriptions', 'platform-plans'] },
   { label: 'Growth',    ids: ['marketing', 'seo', 'ai-studio'] },
   { label: 'Finance',   ids: ['finance', 'manual-payments', 'commission-rules', 'fx-settings'] },
   { label: 'Content',   ids: ['banners', 'faqs', 'contact', 'announcements'] },
@@ -265,6 +266,7 @@ function AdminSidebar({ open, onToggle, onClose }: AdminSidebarProps) {
 }
 
 export function AdminLayout() {
+  const { pathname: currentPath } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
 
   useEffect(() => {
@@ -283,7 +285,7 @@ export function AdminLayout() {
 
   const user = TokenStorage.getUser<{ role?: AppRole }>();
   if (!TokenStorage.isLoggedIn() || user?.role !== 'admin') {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to={`/admin/login?redirect=${encodeURIComponent(currentPath)}`} replace />;
   }
 
   return (

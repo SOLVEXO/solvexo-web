@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { X, MessageSquare, Flag, Paperclip, Inbox, FlagOff } from 'lucide-react';
 import { useAdminConversations, useAdminReports, useAdminConversationDetail } from '@/hooks/messaging/useAdminMessaging';
 import { useMessages } from '@/hooks/messaging/useMessages';
-import type { ReportStatus, TargetType } from '@/api/services/messaging';
-import { EmptyState } from '@/components/comman/ui/EmptyState';
+import type { ReportStatus, TargetType, Conversation, Report } from '@/api/services/messaging';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
+import { useFocusTrap } from '@/components/comman/ui/useFocusTrap';
+import { Table, type TableColumn } from '@/components/comman/ui/Table';
 
 type MainTab = 'conversations' | 'reports';
 
@@ -15,16 +16,26 @@ function fmt(iso?: string) { return iso ? new Date(iso).toLocaleString() : '—'
 function ConversationDrawer({ conversationId, onClose }: { conversationId: string; onClose: () => void }) {
   const { messages, loading } = useMessages(conversationId);
   const { conversation } = useAdminConversationDetail(conversationId);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useFocusTrap(panelRef, onClose);
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-[420px] max-w-[92vw] h-full bg-white border-l border-bone flex flex-col">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="relative w-[420px] max-w-[92vw] h-full bg-white border-l border-bone flex flex-col outline-none"
+      >
         <div className="px-5 py-4 border-b border-bone flex items-center justify-between shrink-0">
           <div>
-            <p className="text-[14px] font-bold text-charcoal">{conversation?.buyer?.name ?? 'Conversation'} · {conversation?.store?.name ?? conversationId.slice(-6).toUpperCase()}</p>
+            <p id={titleId} className="text-[14px] font-bold text-charcoal">{conversation?.buyer?.name ?? 'Conversation'} · {conversation?.store?.name ?? conversationId.slice(-6).toUpperCase()}</p>
             {conversation?.buyer?.email && <p className="text-[11px] text-slate">{conversation.buyer.email}</p>}
           </div>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-full bg-bone border-none cursor-pointer outline-none transition-colors duration-150 hover:bg-slate/20 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
+          <button onClick={onClose} aria-label="Close conversation" className="w-7 h-7 flex items-center justify-center rounded-full bg-bone border-none cursor-pointer outline-none transition-colors duration-150 hover:bg-slate/20 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
             <X size={13} className="text-charcoal" />
           </button>
         </div>
@@ -83,6 +94,31 @@ function ConversationsPanel() {
   });
   const [viewingId, setViewingId] = useState<string | null>(null);
 
+  const columns: TableColumn<Conversation>[] = [
+    { key: '_id', header: 'Conversation', render: c => <span className="font-bold text-[#B95A3A] whitespace-nowrap">{c._id.slice(-8).toUpperCase()}</span> },
+    { key: 'storeId', header: 'Store', render: c => <span className="text-graphite whitespace-nowrap">{c.storeId?.slice(-8) ?? '—'}</span> },
+    { key: 'buyerId', header: 'Buyer', render: c => <span className="text-graphite whitespace-nowrap">{c.buyerId?.slice(-8) ?? '—'}</span> },
+    { key: 'sellerId', header: 'Seller', render: c => <span className="text-graphite whitespace-nowrap">{c.sellerId?.slice(-8) ?? '—'}</span> },
+    {
+      key: 'isArchived', header: 'Status',
+      render: c => (
+        <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
+          style={{ background: c.isArchived ? '#F0EEE6' : '#EAF7EF', color: c.isArchived ? '#5A5852' : '#1E7A3C' }}>
+          {c.isArchived ? 'Archived' : 'Active'}
+        </span>
+      ),
+    },
+    { key: 'updatedAt', header: 'Updated', render: c => <span className="text-slate whitespace-nowrap">{fmt(c.updatedAt)}</span> },
+    {
+      key: 'actions', header: '',
+      render: c => (
+        <button onClick={() => setViewingId(c._id)} className="px-[10px] py-1 rounded-[6px] text-[11px] font-medium text-white border-none cursor-pointer bg-[#1A72C2] flex items-center gap-1 outline-none transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
+          <MessageSquare size={11} /> View
+        </button>
+      ),
+    },
+  ];
+
   return (
     <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
       <div className="px-5 py-[14px] border-b border-bone flex gap-[10px] items-center flex-wrap">
@@ -98,51 +134,17 @@ function ConversationsPanel() {
         <button onClick={refetch} className="px-3 py-2 rounded-lg border border-bone text-[13px] bg-cream cursor-pointer outline-none transition-colors duration-150 hover:bg-bone focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">Apply</button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              {['Conversation','Store','Buyer','Seller','Status','Updated',''].map(h => (
-                <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <tr key={i} className="border-b border-[#F0EEE6]">
-                  <td className="px-4 py-3" colSpan={7}><SkeletonBox className="h-5 w-full" /></td>
-                </tr>
-              ))
-            ) : error ? (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-[13px] text-error">{error}</td></tr>
-            ) : conversations.length === 0 ? (
-              <tr><td colSpan={7}>
-                <EmptyState icon={<Inbox size={28} className="text-slate" />} title="No conversations found" description="Try adjusting the filters above." />
-              </td></tr>
-            ) : conversations.map(c => (
-              <tr key={c._id} className="border-b border-[#F0EEE6] transition-colors duration-150 hover:bg-cream">
-                <td className="px-4 py-3 text-[13px] font-bold text-[#B95A3A] whitespace-nowrap">{c._id.slice(-8).toUpperCase()}</td>
-                <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{c.storeId?.slice(-8) ?? '—'}</td>
-                <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{c.buyerId?.slice(-8) ?? '—'}</td>
-                <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{c.sellerId?.slice(-8) ?? '—'}</td>
-                <td className="px-4 py-3">
-                  <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
-                    style={{ background: c.isArchived ? '#F0EEE6' : '#EAF7EF', color: c.isArchived ? '#5A5852' : '#1E7A3C' }}>
-                    {c.isArchived ? 'Archived' : 'Active'}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-[13px] text-slate whitespace-nowrap">{fmt(c.updatedAt)}</td>
-                <td className="px-4 py-3">
-                  <button onClick={() => setViewingId(c._id)} className="px-[10px] py-1 rounded-[6px] text-[11px] font-medium text-white border-none cursor-pointer bg-[#1A72C2] flex items-center gap-1 outline-none transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
-                    <MessageSquare size={11} /> View
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {error ? (
+        <p className="px-4 py-6 text-center text-[13px] text-error">{error}</p>
+      ) : (
+        <Table
+          columns={columns}
+          data={conversations}
+          keyExtractor={c => c._id}
+          loading={loading}
+          emptyState={{ icon: <Inbox size={28} className="text-slate" />, title: 'No conversations found', description: 'Try adjusting the filters above.' }}
+        />
+      )}
 
       {viewingId && <ConversationDrawer conversationId={viewingId} onClose={() => setViewingId(null)} />}
     </div>
@@ -163,6 +165,27 @@ function ReportsPanel() {
     page, limit: 30,
   });
 
+  const columns: TableColumn<Report>[] = [
+    { key: '_id', header: 'Report', render: r => <span className="font-bold text-[#B95A3A] whitespace-nowrap flex items-center gap-1"><Flag size={11} /> {r._id.slice(-8).toUpperCase()}</span> },
+    { key: 'targetType', header: 'Type', render: r => <span className="text-graphite capitalize whitespace-nowrap">{r.targetType}</span> },
+    { key: 'targetId', header: 'Target', render: r => <span className="text-graphite whitespace-nowrap">{r.targetId.slice(-8)}</span> },
+    { key: 'reporterId', header: 'Reporter', render: r => <span className="text-graphite whitespace-nowrap">{r.reporterId?.slice(-8) ?? '—'}</span> },
+    { key: 'reason', header: 'Reason', render: r => <span className="text-graphite max-w-[220px] truncate block">{r.reason}{r.details ? ` — ${r.details}` : ''}</span> },
+    {
+      key: 'status', header: 'Status',
+      render: r => (
+        <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
+          style={{
+            background: r.status === 'pending' ? '#FFF4DC' : r.status === 'reviewed' ? '#EAF3FB' : '#EAF7EF',
+            color:      r.status === 'pending' ? '#B36200' : r.status === 'reviewed' ? '#2156A8' : '#1E7A3C',
+          }}>
+          {r.status}
+        </span>
+      ),
+    },
+    { key: 'createdAt', header: 'Created', render: r => <span className="text-slate whitespace-nowrap">{fmt(r.createdAt)}</span> },
+  ];
+
   return (
     <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
       <div className="px-5 py-[14px] border-b border-bone flex gap-[10px] items-center flex-wrap">
@@ -176,50 +199,17 @@ function ReportsPanel() {
         </select>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              {['Report','Type','Target','Reporter','Reason','Status','Created'].map(h => (
-                <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <tr key={i} className="border-b border-[#F0EEE6]">
-                  <td className="px-4 py-3" colSpan={7}><SkeletonBox className="h-5 w-full" /></td>
-                </tr>
-              ))
-            ) : error ? (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-[13px] text-error">{error}</td></tr>
-            ) : reports.length === 0 ? (
-              <tr><td colSpan={7}>
-                <EmptyState icon={<FlagOff size={28} className="text-slate" />} title="No reports found" description="Try adjusting the filters above." />
-              </td></tr>
-            ) : reports.map(r => (
-              <tr key={r._id} className="border-b border-[#F0EEE6] transition-colors duration-150 hover:bg-cream">
-                <td className="px-4 py-3 text-[13px] font-bold text-[#B95A3A] whitespace-nowrap flex items-center gap-1"><Flag size={11} /> {r._id.slice(-8).toUpperCase()}</td>
-                <td className="px-4 py-3 text-[13px] text-graphite capitalize whitespace-nowrap">{r.targetType}</td>
-                <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{r.targetId.slice(-8)}</td>
-                <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{r.reporterId?.slice(-8) ?? '—'}</td>
-                <td className="px-4 py-3 text-[13px] text-graphite max-w-[220px] truncate">{r.reason}{r.details ? ` — ${r.details}` : ''}</td>
-                <td className="px-4 py-3">
-                  <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
-                    style={{
-                      background: r.status === 'pending' ? '#FFF4DC' : r.status === 'reviewed' ? '#EAF3FB' : '#EAF7EF',
-                      color:      r.status === 'pending' ? '#B36200' : r.status === 'reviewed' ? '#2156A8' : '#1E7A3C',
-                    }}>
-                    {r.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-[13px] text-slate whitespace-nowrap">{fmt(r.createdAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {error ? (
+        <p className="px-4 py-6 text-center text-[13px] text-error">{error}</p>
+      ) : (
+        <Table
+          columns={columns}
+          data={reports}
+          keyExtractor={r => r._id}
+          loading={loading}
+          emptyState={{ icon: <FlagOff size={28} className="text-slate" />, title: 'No reports found', description: 'Try adjusting the filters above.' }}
+        />
+      )}
 
       <div className="px-5 py-3 border-t border-bone flex items-center justify-end gap-2">
         <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}

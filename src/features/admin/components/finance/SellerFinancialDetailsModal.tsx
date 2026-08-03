@@ -4,7 +4,8 @@ import { useAdminSellerFinancialDetails, useAdminSellerTransactions, useAdminMan
 import type { PayoutRow, TransactionRow } from '@/api/services/finance/adminFinance';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { TableCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
-import { formatCurrency, formatDate } from '@/components/comman/analytics/format';
+import { formatDate } from '@/components/comman/analytics/format';
+import { formatMoneyCompact } from '@/utils/currency';
 import { FinanceStatusBadge } from './FinanceStatusBadge';
 
 interface SellerFinancialDetailsModalProps {
@@ -38,7 +39,7 @@ export function SellerFinancialDetailsModal({ storeId, onClose }: SellerFinancia
   };
 
   const payoutColumns: TableColumn<PayoutRow>[] = [
-    { key: 'amount', header: 'Amount', align: 'right', render: (p) => formatCurrency(p.amount) },
+    { key: 'amount', header: 'Amount', align: 'right', render: (p) => formatMoneyCompact(p.amount, p.currency) },
     { key: 'status', header: 'Status', render: (p) => <FinanceStatusBadge status={p.status} /> },
     { key: 'createdAt', header: 'Requested', render: (p) => formatDate(p.createdAt) },
   ];
@@ -46,7 +47,7 @@ export function SellerFinancialDetailsModal({ storeId, onClose }: SellerFinancia
   const txColumns: TableColumn<TransactionRow>[] = [
     { key: 'description', header: 'Description' },
     { key: 'type', header: 'Type' },
-    { key: 'amount', header: 'Amount', align: 'right', render: (t) => `${t.amount >= 0 ? '+' : ''}${formatCurrency(t.amount)}` },
+    { key: 'amount', header: 'Amount', align: 'right', render: (t) => `${t.amount >= 0 ? '+' : ''}${formatMoneyCompact(t.amount, t.currency)}` },
     { key: 'status', header: 'Status', render: (t) => <FinanceStatusBadge status={t.status} /> },
     { key: 'createdAt', header: 'Date', render: (t) => formatDate(t.createdAt) },
   ];
@@ -62,19 +63,19 @@ export function SellerFinancialDetailsModal({ storeId, onClose }: SellerFinancia
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-cream rounded-lg px-3 py-2">
               <p className="text-[11px] text-slate uppercase tracking-[0.05em]">Available</p>
-              <p className="text-[16px] font-bold text-charcoal">{formatCurrency(d.balance.availableBalance)}</p>
+              <p className="text-[16px] font-bold text-charcoal">{formatMoneyCompact(d.balance.availableBalance, d.balance.currency)}</p>
             </div>
             <div className="bg-cream rounded-lg px-3 py-2">
               <p className="text-[11px] text-slate uppercase tracking-[0.05em]">Pending</p>
-              <p className="text-[16px] font-bold text-charcoal">{formatCurrency(d.balance.pendingBalance)}</p>
+              <p className="text-[16px] font-bold text-charcoal">{formatMoneyCompact(d.balance.pendingBalance, d.balance.currency)}</p>
             </div>
             <div className="bg-cream rounded-lg px-3 py-2">
               <p className="text-[11px] text-slate uppercase tracking-[0.05em]">Lifetime Revenue</p>
-              <p className="text-[16px] font-bold text-charcoal">{formatCurrency(d.balance.totalRevenue)}</p>
+              <p className="text-[16px] font-bold text-charcoal">{formatMoneyCompact(d.balance.totalRevenue, d.balance.currency)}</p>
             </div>
             <div className="bg-cream rounded-lg px-3 py-2">
               <p className="text-[11px] text-slate uppercase tracking-[0.05em]">Lifetime Payouts</p>
-              <p className="text-[16px] font-bold text-charcoal">{formatCurrency(d.balance.totalPayouts)}</p>
+              <p className="text-[16px] font-bold text-charcoal">{formatMoneyCompact(d.balance.totalPayouts, d.balance.currency)}</p>
             </div>
           </div>
 
@@ -92,7 +93,7 @@ export function SellerFinancialDetailsModal({ storeId, onClose }: SellerFinancia
           {showManualForm && (
             <div className="border border-bone rounded-lg p-3 flex flex-col gap-2">
               <Input
-                label={`Amount (available: ${formatCurrency(d.balance.availableBalance)})`}
+                label={`Amount (available: ${formatMoneyCompact(d.balance.availableBalance, d.balance.currency)})`}
                 type="number"
                 min={0.01}
                 step={0.01}

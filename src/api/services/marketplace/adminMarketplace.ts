@@ -44,6 +44,40 @@ export interface MarketplaceListingsData {
   limit: number;
 }
 
+// ── Leads (new-store approval queue) ────────────────────────────────────────
+export interface LeadsQuery {
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface LeadRow {
+  id: string;
+  storeName: string;
+  logo: string | null;
+  description: string | null;
+  categoryId: string | null;
+  categoryName: string | null;
+  sellerType: string | null;
+  productTypes: string[];
+  baseCurrency: string | null;
+  submittedAt: string;
+  seller: {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+  };
+}
+
+export interface LeadsData {
+  items: LeadRow[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -70,4 +104,16 @@ export function apiSetStoreBadge(storeId: string, badge: GrantableStoreBadge, gr
   return client.patch<never, ApiResponse<{ badges: string[] }>>(
     ENDPOINTS.MARKETPLACE.ADMIN.SET_STORE_BADGE(storeId), { badge, grant },
   );
+}
+
+export function apiGetLeads(query: LeadsQuery = {}) {
+  return client.get<never, ApiResponse<LeadsData>>(ENDPOINTS.MARKETPLACE.ADMIN.LEADS, { params: query });
+}
+
+export function apiApproveLead(id: string) {
+  return client.patch<never, ApiResponse<null>>(ENDPOINTS.MARKETPLACE.ADMIN.APPROVE_LEAD(id));
+}
+
+export function apiRejectLead(id: string, reason?: string) {
+  return client.patch<never, ApiResponse<null>>(ENDPOINTS.MARKETPLACE.ADMIN.REJECT_LEAD(id), { reason });
 }

@@ -93,7 +93,11 @@ export function SellerShipping() {
                       <p className="text-xs text-slate">{zone.country} · Est. delivery {zone.estimatedDeliveryTime}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-sm font-bold text-brand-orange">${zone.shippingPrice.toLocaleString()}</span>
+                      {/* Shipping zones are a Pakistan-domestic geography feature — always
+                          PKR-priced regardless of a store's own baseCurrency (see
+                          checkout.service.ts's SHIPPING_ZONE_CURRENCY constant), so this
+                          is intentionally never store-currency-dependent. */}
+                      <span className="text-sm font-bold text-brand-orange">Rs {zone.shippingPrice.toLocaleString()}</span>
                       <span className={`px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold ${zone.status === 'active' ? 'bg-[#E3F4EA] text-[#1E7A3C]' : 'bg-bone text-slate'}`}>
                         {zone.status === 'active' ? 'Active' : 'Inactive'}
                       </span>

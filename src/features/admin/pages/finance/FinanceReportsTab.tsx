@@ -117,9 +117,9 @@ export function FinanceReportsTab({ params }: { params: AdminFinanceParams }) {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
             {exposure.data.byCurrency.map((c) => (
-              <MetricCard key={c.currency} label={c.currency} value={formatMoneyCompact(c.pendingAmount, c.currency)} sub={`≈ $${(c.pendingUSDEquivalent ?? 0).toFixed(2)}`} />
+              <MetricCard key={c.currency} label={c.currency} value={formatMoneyCompact(c.pendingAmount, c.currency)} sub={`≈ ${formatMoneyCompact(c.pendingUSDEquivalent ?? 0, 'USD')}`} />
             ))}
-            <MetricCard label="Total (USD-equivalent)" value={`$${exposure.data.totalUSDEquivalent.toFixed(2)}`} sub={`Threshold $${exposure.data.threshold.toFixed(2)}`} />
+            <MetricCard label="Total (USD-equivalent)" value={formatMoneyCompact(exposure.data.totalUSDEquivalent, 'USD')} sub={`Threshold ${formatMoneyCompact(exposure.data.threshold, 'USD')}`} />
           </div>
           <p className="text-[11px] text-slate">Pending-settlement balances converted to USD at today's rate — a daily check alerts admins if this crosses the configured threshold. Visibility only, no automatic hedging.</p>
         </div>

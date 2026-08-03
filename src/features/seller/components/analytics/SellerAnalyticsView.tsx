@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { LayoutDashboard, DollarSign, Package, Users, Globe2 } from 'lucide-react';
 import { TabBar, type Tab } from '@/components/comman/ui';
 import { AnalyticsFilterBar } from '@/components/comman/analytics/AnalyticsFilterBar';
+import { useActiveStore } from '@/contexts/ActiveStoreContext';
 import { useSellerAnalyticsExport } from '@/hooks/seller/useSellerAnalytics';
 import type { SellerExportSection } from '@/api/services/analytics/analytics';
 import {
@@ -43,6 +44,15 @@ export function SellerAnalyticsView({ storeId }: SellerAnalyticsViewProps) {
   const [filters, setFilters] = useState(DEFAULT_SELLER_ANALYTICS_FILTERS);
   const [csvSection, setCsvSection] = useState(TAB_TO_CSV_SECTION.overview);
   const { exportReport, exporting } = useSellerAnalyticsExport();
+  // `null` (cross-store "All Stores" view) means no single currency can be
+  // shown correctly — tabs fall back to a plain "$" in that case, same as
+  // before this fix, since the underlying analytics aggregation itself
+  // doesn't yet convert/group multi-store amounts by currency (see
+  // analytics.service.ts — a real backend gap, not something this display
+  // fix alone can safely resolve without changing what revenue number a
+  // multi-currency seller is shown).
+  const { activeStore } = useActiveStore();
+  const currency = storeId ? activeStore?.baseCurrency : null;
 
   useEffect(() => { setCsvSection(TAB_TO_CSV_SECTION[activeTab] ?? 'revenue'); }, [activeTab]);
 
@@ -64,11 +74,11 @@ export function SellerAnalyticsView({ storeId }: SellerAnalyticsViewProps) {
 
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
-      {activeTab === 'overview'  && <SellerOverviewTab params={params} compareToPreviousPeriod={filters.compareToPreviousPeriod} />}
-      {activeTab === 'revenue'   && <SellerRevenueTab params={params} />}
-      {activeTab === 'products'  && <SellerProductsTab params={params} />}
-      {activeTab === 'customers' && <SellerCustomersTab params={params} />}
-      {activeTab === 'traffic'   && <SellerTrafficPaymentsTab params={params} />}
+      {activeTab === 'overview'  && <SellerOverviewTab params={params} compareToPreviousPeriod={filters.compareToPreviousPeriod} currency={currency} />}
+      {activeTab === 'revenue'   && <SellerRevenueTab params={params} currency={currency} />}
+      {activeTab === 'products'  && <SellerProductsTab params={params} currency={currency} />}
+      {activeTab === 'customers' && <SellerCustomersTab params={params} currency={currency} />}
+      {activeTab === 'traffic'   && <SellerTrafficPaymentsTab params={params} currency={currency} />}
     </div>
   );
 }

@@ -50,7 +50,7 @@ export function FloatingAppWidget({ mobileBottomClass = 'bottom-[84px]' }: { mob
           <div className="px-4 pt-3 pb-4">
             <p className="text-[14px] font-bold text-white leading-tight">Take Solvexo with you</p>
             <p className="text-[11.5px] text-white/55 mt-[4px] leading-relaxed">
-              Scan the code, or search "Solvexo" on your app store.
+              The Solvexo app is on its way — check back soon.
             </p>
 
             <div className="flex items-center gap-3 mt-3.5 mb-3.5">

@@ -15,7 +15,8 @@ import {
   type SellerOverviewData, type RevenuePoint, type SellerTodaySummaryData,
 } from '@/api/services/analytics/analytics';
 import { apiGetStoreInventory } from '@/api/services/product';
-import { formatCurrency, formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
+import { formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
+import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
 
 interface StoreMetrics {
   overview:      SellerOverviewData;
@@ -315,7 +316,7 @@ function QuickActionsRow({ storeId }: { storeId: string }) {
 }
 
 // ── Today Snapshot ────────────────────────────────────────────────────────────
-function TodaySnapshot({ today }: { today: SellerTodaySummaryData }) {
+function TodaySnapshot({ today, currency }: { today: SellerTodaySummaryData; currency?: string | null }) {
   const up = today.revenueChangePercent >= 0;
   const TrendIcon = up ? TrendingUp : TrendingDown;
 
@@ -328,7 +329,7 @@ function TodaySnapshot({ today }: { today: SellerTodaySummaryData }) {
 
       <div className="flex items-center gap-2">
         <span className="text-[11px] text-slate">Revenue</span>
-        <span className="text-[14px] font-bold text-carbon">{formatCurrency(today.revenue)}</span>
+        <span className="text-[14px] font-bold text-carbon">{formatMoneyCompact(today.revenue, currency)}</span>
         <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold px-[6px] py-[1px] rounded-full ${up ? 'text-success bg-success-bg' : 'text-error bg-error-bg'}`}>
           <TrendIcon size={11} />
           {Math.abs(today.revenueChangePercent).toFixed(0)}%
@@ -342,7 +343,7 @@ function TodaySnapshot({ today }: { today: SellerTodaySummaryData }) {
 
       <div className="flex items-center gap-2">
         <span className="text-[11px] text-slate">Avg. Order Value</span>
-        <span className="text-[14px] font-bold text-carbon">{formatCurrency(today.avgOrderValue)}</span>
+        <span className="text-[14px] font-bold text-carbon">{formatMoneyCompact(today.avgOrderValue, currency)}</span>
       </div>
 
       <span className="text-[10px] text-slate/70 ml-auto shrink-0">vs. this time yesterday</span>
@@ -419,12 +420,12 @@ export default function StoreDashboard() {
             </div>
           )}
 
-          {metrics?.today && <TodaySnapshot today={metrics.today} />}
+          {metrics?.today && <TodaySnapshot today={metrics.today} currency={store?.baseCurrency} />}
 
           {/* Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
-              label="Revenue (30 days)" value={formatCurrency(metrics?.overview.totalRevenue ?? 0)}
+              label="Revenue (30 days)" value={formatMoneyCompact(metrics?.overview.totalRevenue ?? 0, store?.baseCurrency)}
               sub={metrics?.overview.totalRevenue ? 'vs previous period' : 'No sales yet'} icon={<TrendingUp size={16} />} color="#D97757"
               sparkline={revenueSparkline}
             />
@@ -451,8 +452,8 @@ export default function StoreDashboard() {
               title="Revenue Overview"
               subtitle="Monthly revenue trend — last 6 months"
               height={300}
-              valuePrefix="$"
-              yTickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`}
+              valuePrefix={currencySymbol(store?.baseCurrency)}
+              yTickFormatter={v => v >= 1000 ? `${currencySymbol(store?.baseCurrency)}${(v / 1000).toFixed(0)}k` : `${currencySymbol(store?.baseCurrency)}${v}`}
             />
             <StoreInfoCard />
           </div>

@@ -5,11 +5,12 @@ import { useSellerAnalyticsOverview, useSellerAnalyticsRevenueOverTime, useSelle
 import type { SellerAnalyticsParams } from '@/api/services/analytics/analytics';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
-import { formatCurrency, formatNumber, formatPercent, formatBucketLabel, formatDate } from '@/components/comman/analytics/format';
+import { formatNumber, formatPercent, formatBucketLabel, formatDate } from '@/components/comman/analytics/format';
+import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
 
 interface ComparisonRow { metric: string; current: string; previous: string }
 
-export function SellerOverviewTab({ params, compareToPreviousPeriod }: { params: SellerAnalyticsParams; compareToPreviousPeriod: boolean }) {
+export function SellerOverviewTab({ params, compareToPreviousPeriod, currency }: { params: SellerAnalyticsParams; compareToPreviousPeriod: boolean; currency?: string | null }) {
   const overview = useSellerAnalyticsOverview(params);
   const revenue = useSellerAnalyticsRevenueOverTime(params);
   const orders = useSellerAnalyticsOrdersOverTime(params);
@@ -23,17 +24,17 @@ export function SellerOverviewTab({ params, compareToPreviousPeriod }: { params:
 
   const metrics = d && [
     {
-      label: 'Total Revenue (net)', value: formatCurrency(d.totalRevenue), icon: <DollarSign size={16} />,
+      label: 'Total Revenue (net)', value: formatMoneyCompact(d.totalRevenue, currency), icon: <DollarSign size={16} />,
       trend: d.totalRevenueChangePercent != null ? formatPercent(d.totalRevenueChangePercent, { signed: true }) : undefined,
       trendUp: (d.totalRevenueChangePercent ?? 0) >= 0,
     },
-    { label: 'Gross Revenue', value: formatCurrency(d.grossRevenue), icon: <DollarSign size={16} /> },
+    { label: 'Gross Revenue', value: formatMoneyCompact(d.grossRevenue, currency), icon: <DollarSign size={16} /> },
     {
       label: 'Total Orders', value: formatNumber(d.totalOrders), icon: <ShoppingCart size={16} />,
       trend: `${d.totalOrdersChange >= 0 ? '+' : ''}${d.totalOrdersChange} vs prev.`, trendUp: d.totalOrdersChange >= 0,
     },
     {
-      label: 'Avg. Order Value', value: formatCurrency(d.avgOrderValue), icon: <DollarSign size={16} />,
+      label: 'Avg. Order Value', value: formatMoneyCompact(d.avgOrderValue, currency), icon: <DollarSign size={16} />,
       trend: d.avgOrderValueChangePercent != null ? formatPercent(d.avgOrderValueChangePercent, { signed: true }) : undefined,
       trendUp: (d.avgOrderValueChangePercent ?? 0) >= 0,
     },
@@ -44,7 +45,7 @@ export function SellerOverviewTab({ params, compareToPreviousPeriod }: { params:
     },
     { label: 'New Customers', value: formatNumber(d.newCustomersCount), icon: <Users size={16} /> },
     { label: 'Returning Customers', value: formatNumber(d.returningCustomersCount), icon: <Users size={16} /> },
-    { label: 'Refunds', value: formatCurrency(d.totalRefunds), icon: <RotateCcw size={16} />, sub: `${formatPercent(d.refundRatePercent)} of gross` },
+    { label: 'Refunds', value: formatMoneyCompact(d.totalRefunds, currency), icon: <RotateCcw size={16} />, sub: `${formatPercent(d.refundRatePercent)} of gross` },
     { label: 'Cancelled Orders', value: formatNumber(d.cancelledOrders), icon: <ShoppingCart size={16} /> },
   ];
 
@@ -55,12 +56,12 @@ export function SellerOverviewTab({ params, compareToPreviousPeriod }: { params:
   ];
 
   const comparisonRows: ComparisonRow[] = d?.previousPeriod ? [
-    { metric: 'Gross Revenue', current: formatCurrency(d.grossRevenue), previous: formatCurrency(d.previousPeriod.grossRevenue) },
-    { metric: 'Total Revenue (net)', current: formatCurrency(d.totalRevenue), previous: formatCurrency(d.previousPeriod.totalRevenue) },
+    { metric: 'Gross Revenue', current: formatMoneyCompact(d.grossRevenue, currency), previous: formatMoneyCompact(d.previousPeriod.grossRevenue, currency) },
+    { metric: 'Total Revenue (net)', current: formatMoneyCompact(d.totalRevenue, currency), previous: formatMoneyCompact(d.previousPeriod.totalRevenue, currency) },
     { metric: 'Total Orders', current: formatNumber(d.totalOrders), previous: formatNumber(d.previousPeriod.totalOrders) },
-    { metric: 'Avg. Order Value', current: formatCurrency(d.avgOrderValue), previous: formatCurrency(d.previousPeriod.avgOrderValue) },
+    { metric: 'Avg. Order Value', current: formatMoneyCompact(d.avgOrderValue, currency), previous: formatMoneyCompact(d.previousPeriod.avgOrderValue, currency) },
     { metric: 'Repeat Buyers', current: formatPercent(d.repeatBuyerPercent), previous: formatPercent(d.previousPeriod.repeatBuyerPercent) },
-    { metric: 'Refunds', current: formatCurrency(d.totalRefunds), previous: formatCurrency(d.previousPeriod.totalRefunds) },
+    { metric: 'Refunds', current: formatMoneyCompact(d.totalRefunds, currency), previous: formatMoneyCompact(d.previousPeriod.totalRefunds, currency) },
     { metric: 'Cancelled Orders', current: formatNumber(d.cancelledOrders), previous: formatNumber(d.previousPeriod.cancelledOrders) },
   ] : [];
 
@@ -102,7 +103,7 @@ export function SellerOverviewTab({ params, compareToPreviousPeriod }: { params:
               { dataKey: 'gross', label: 'Gross Revenue', color: '#8C8A82' },
               { dataKey: 'net', label: 'Net Revenue', color: '#D97757' },
             ]}
-            valuePrefix="$"
+            valuePrefix={currencySymbol(currency)}
           />
         )}
 

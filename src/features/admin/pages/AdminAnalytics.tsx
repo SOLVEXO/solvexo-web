@@ -114,7 +114,7 @@ export function AdminAnalytics() {
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
       {activeTab === 'overview'  && <OverviewTab params={params} compareToPreviousPeriod={filters.compareToPreviousPeriod} />}
-      {activeTab === 'revenue'   && <RevenueTab params={params} />}
+      {activeTab === 'revenue'   && <RevenueTab params={params} compareToPreviousPeriod={filters.compareToPreviousPeriod} />}
       {activeTab === 'sellers'   && <SellersTab params={params} />}
       {activeTab === 'customers' && <CustomersTab params={params} />}
       {activeTab === 'products'  && <ProductsTab params={params} />}

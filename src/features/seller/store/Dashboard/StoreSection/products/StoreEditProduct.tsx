@@ -11,6 +11,7 @@ import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
 import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal, SkeletonBox } from '@/components/comman/ui';
+import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 
 type ProductStatus = 'draft' | 'active' | 'scheduled';
 type LicenseType   = 'personal' | 'single_classroom' | 'school' | 'commercial';
@@ -182,8 +183,10 @@ export default function StoreEditProduct() {
   const { productId = '' } = useParams<{ productId: string }>();
   const { storeId, store } = useStoreWorkspace();
   // Every price on this form is in the STORE's own currency (locked at
-  // onboarding) — never assume PKR.
-  const currencySymbol = store?.baseCurrency === 'USD' ? '$' : 'Rs';
+  // onboarding) — never assume PKR. Uses the shared currencySymbol() util
+  // (supports every SupportedCurrency, not just a PKR/USD ternary that
+  // mislabeled any other currency as "Rs").
+  const currencySymbol = symbolForCurrency(store?.baseCurrency);
   const { mainCategory, subcategories, loading: catLoading, refetch: refetchCats } = useStoreSubcategories(store?.categoryId);
 
   const [fetching,          setFetching]          = useState(true);
@@ -295,7 +298,7 @@ export default function StoreEditProduct() {
         </div>
 
         {/* ── 2-column body skeleton ── */}
-        <div className="px-7 py-6 grid grid-cols-[1fr_296px] gap-5 items-start">
+        <div className="px-4 sm:px-7 py-6 grid grid-cols-1 lg:grid-cols-[1fr_296px] gap-5 items-start">
           {/* Left column */}
           <div className="flex flex-col gap-5">
             <div className="bg-white border border-bone rounded-[10px] p-5 flex flex-col gap-4">
@@ -359,7 +362,7 @@ export default function StoreEditProduct() {
       </div>
 
       {/* ── 2-column body ── */}
-      <div className="px-7 py-6 grid grid-cols-[1fr_296px] gap-5 items-start">
+      <div className="px-4 sm:px-7 py-6 grid grid-cols-1 lg:grid-cols-[1fr_296px] gap-5 items-start">
 
         {/* Left column */}
         <div className="flex flex-col gap-5">

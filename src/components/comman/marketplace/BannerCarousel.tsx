@@ -26,6 +26,12 @@ interface BannerCarouselProps {
   /** Which collection these ids belong to — tags impression/click tracking and
    *  the click-attribution token read back at checkout. */
   entityType: 'banner' | 'store_banner';
+  /** 'cover' (default) fills the box edge-to-edge, cropping as needed — right
+   *  for a full-bleed page hero. 'contain' instead shows the whole image
+   *  un-cropped (letterboxed if its aspect ratio doesn't match the box) — for
+   *  a fixed-size showcase slot where any uploaded image, small or large,
+   *  needs to display in full (e.g. Marketplace's WelcomeStrip hero cell). */
+  fit?: 'cover' | 'contain';
 }
 
 const ROTATE_MS = 5000;
@@ -36,7 +42,7 @@ const ROTATE_MS = 5000;
  *  a handful of images) and crossfades via opacity — swapping `src` on an
  *  interval instead would re-fetch/re-decode each slide on every rotation and
  *  flash blank on a slow connection. */
-export function BannerCarousel({ banners, entityType }: BannerCarouselProps) {
+export function BannerCarousel({ banners, entityType, fit = 'cover' }: BannerCarouselProps) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [loadedIds, setLoadedIds] = useState<Set<string>>(() => new Set());
@@ -87,6 +93,11 @@ export function BannerCarousel({ banners, entityType }: BannerCarouselProps) {
       {/* Skeleton — visible only until the currently-active slide has painted at least once */}
       {!activeLoaded && <div className="absolute inset-0 animate-pulse bg-[#EDEBE2]" />}
 
+      {/* Bottom legibility scrim — keeps the dot indicators readable regardless
+          of how light the active slide's image is, without touching the image
+          itself or adding any text content. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent z-[2]" />
+
       {sorted.map((banner, i) => {
         const isActive = i === index;
         const img = (
@@ -104,8 +115,9 @@ export function BannerCarousel({ banners, entityType }: BannerCarouselProps) {
               alt=""
               onLoad={() => setLoadedIds((prev) => (prev.has(banner._id) ? prev : new Set(prev).add(banner._id)))}
               className={clsx(
-                'absolute inset-0 w-full h-full object-cover',
-                isActive && !prefersReducedMotion && 'hero-kenburns',
+                'absolute inset-0 w-full h-full',
+                fit === 'contain' ? 'object-contain bg-cream' : 'object-cover',
+                fit === 'cover' && isActive && !prefersReducedMotion && 'hero-kenburns',
               )}
             />
           </picture>
@@ -157,8 +169,8 @@ export function BannerCarousel({ banners, entityType }: BannerCarouselProps) {
                 className="p-2 -m-2 flex items-center cursor-pointer"
               >
                 <span
-                  className="block h-[6px] rounded-full transition-all duration-300 ease-out"
-                  style={{ width: i === index ? 20 : 6, background: i === index ? '#D97757' : 'rgba(255,255,255,0.7)' }}
+                  className="block h-[6px] rounded-full border border-black/10 transition-all duration-300 ease-out"
+                  style={{ width: i === index ? 22 : 6, background: i === index ? '#D97757' : 'rgba(255,255,255,0.75)' }}
                 />
               </button>
             ))}

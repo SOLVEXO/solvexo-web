@@ -9,6 +9,7 @@ import {
   Clock, Package, MessageSquare, Star, Sparkles, Filter
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { getNotificationIcon } from './notificationIcon';
 
 function formatFullTime(dateStr: string): string {
   try {
@@ -25,14 +26,6 @@ function formatFullTime(dateStr: string): string {
   }
 }
 
-function getNotificationIcon(type: string) {
-  const t = type.toLowerCase();
-  if (t.includes('order')) return <Package size={16} className="text-brand-orange" />;
-  if (t.includes('message') || t.includes('chat')) return <MessageSquare size={16} className="text-[#1A65A8]" />;
-  if (t.includes('loyalty') || t.includes('points') || t.includes('tier')) return <Star size={16} className="text-[#D4AF37]" />;
-  if (t.includes('subscription') || t.includes('plan')) return <Sparkles size={16} className="text-[#7C3AED]" />;
-  return <Bell size={16} className="text-slate" />;
-}
 
 export function NotificationsPanel() {
   const {
@@ -283,7 +276,7 @@ export function NotificationsPanel() {
               >
                 {/* Category Icon */}
                 <div className="size-9 rounded-lg bg-bone flex items-center justify-center shrink-0 border border-bone">
-                  {getNotificationIcon(notif.type)}
+                  {getNotificationIcon(notif.type, 16)}
                 </div>
 
                 {/* Content */}

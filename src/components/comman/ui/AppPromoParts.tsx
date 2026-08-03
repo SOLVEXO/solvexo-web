@@ -1,4 +1,4 @@
-import { Apple, Play, Star } from 'lucide-react';
+import { Apple, Play, Sparkles } from 'lucide-react';
 import { clsx } from 'clsx';
 
 // Shared, unbranded building blocks for the app-promotion surfaces
@@ -35,7 +35,12 @@ export function QrGlyph({ size = 74 }: { size?: number }) {
     1, 1, 0, 1, 0, 1, 0, 0, 1,
   ];
   return (
-    <div className="relative bg-white rounded-[14px] p-[9px] shrink-0" style={{ width: size, height: size }}>
+    <div
+      role="img"
+      aria-label="Decorative QR code pattern — not a real scannable code yet"
+      className="relative bg-white rounded-[14px] p-[9px] shrink-0"
+      style={{ width: size, height: size }}
+    >
       <div className="grid grid-cols-9 grid-rows-9 gap-[1.5px] w-full h-full">
         {noise.map((v, i) => <div key={i} className={clsx('rounded-[0.5px]', v && 'bg-carbon')} />)}
       </div>
@@ -72,14 +77,14 @@ export function StoreBadgeChip({ platform, compact = false }: { platform: 'ios' 
   );
 }
 
-export function RatingRow({ label = '4.8 · 500K+ downloads' }: { label?: string }) {
+// No app exists to rate yet — this deliberately does NOT render a star
+// rating or a download count (both would be fabricated numbers with no
+// backing data). `label` lets a caller supply real, honest copy instead
+// (e.g. "Coming soon").
+export function RatingRow({ label = 'Coming soon to iOS & Android' }: { label?: string }) {
   return (
     <div className="flex items-center gap-1.5">
-      <div className="flex items-center gap-[1px]">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Star key={i} size={11} className="text-brand-orange fill-brand-orange" />
-        ))}
-      </div>
+      <Sparkles size={12} className="text-brand-orange" />
       <span className="text-[10.5px] text-white/60">{label}</span>
     </div>
   );

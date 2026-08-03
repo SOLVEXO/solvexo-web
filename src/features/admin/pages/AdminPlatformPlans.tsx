@@ -4,7 +4,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { Input, Textarea } from '@/components/comman/ui/Input';
-import { SkeletonBox } from '@/components/comman/ui';
+import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
 import {
   apiAdminListPlatformPlans, apiAdminCreatePlatformPlan, apiAdminUpdatePlatformPlan, apiAdminArchivePlatformPlan,
   apiAdminGetPlatformPlanRevenue, apiAdminGetPlatformPlanSubscribers, apiAdminListAddonPurchases,
@@ -245,34 +245,23 @@ function AddonsPanel() {
     apiAdminListAddonPurchases({ limit: 50 }).then(res => setAddons(res.data.addons ?? [])).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="px-5 py-4 flex flex-col gap-2">{Array.from({ length: 4 }).map((_, i) => <SkeletonBox key={i} height={36} rounded="6px" />)}</div>;
+  const columns: TableColumn<AddonPurchase>[] = [
+    { key: 'storeId', header: 'Store', render: a => <span className="text-charcoal">{a.storeId.slice(-6).toUpperCase()}</span> },
+    { key: 'addonType', header: 'Add-on', render: a => <span className="text-graphite">{ADDON_LABELS[a.addonType] ?? a.addonType}</span> },
+    { key: 'quantity', header: 'Qty', render: a => <span className="text-graphite">{a.quantity}</span> },
+    { key: 'amountUSD', header: 'Amount', render: a => <span className="font-semibold text-[#2D8A4E]">${a.amountUSD.toFixed(2)}</span> },
+    { key: 'status', header: 'Status', render: a => <span className="text-slate capitalize">{a.status}</span> },
+    { key: 'createdAt', header: 'Date', render: a => <span className="text-slate whitespace-nowrap">{new Date(a.createdAt).toLocaleDateString()}</span> },
+  ];
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr>
-            {['STORE', 'ADD-ON', 'QTY', 'AMOUNT', 'STATUS', 'DATE'].map(h => (
-              <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {addons.length === 0 ? (
-            <tr><td colSpan={6} className="px-4 py-8 text-center text-[13px] text-slate">No add-on purchases yet.</td></tr>
-          ) : addons.map(a => (
-            <tr key={a._id} className="border-b border-[#F0EEE6]">
-              <td className="px-4 py-3 text-[13px] text-charcoal">{a.storeId.slice(-6).toUpperCase()}</td>
-              <td className="px-4 py-3 text-[13px] text-graphite">{ADDON_LABELS[a.addonType] ?? a.addonType}</td>
-              <td className="px-4 py-3 text-[13px] text-graphite">{a.quantity}</td>
-              <td className="px-4 py-3 text-[13px] font-semibold text-[#2D8A4E]">${a.amountUSD.toFixed(2)}</td>
-              <td className="px-4 py-3 text-[12px] text-slate capitalize">{a.status}</td>
-              <td className="px-4 py-3 text-[12px] text-slate whitespace-nowrap">{new Date(a.createdAt).toLocaleDateString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table
+      columns={columns}
+      data={addons}
+      keyExtractor={a => a._id}
+      loading={loading}
+      emptyState={{ title: 'No add-on purchases yet.' }}
+    />
   );
 }
 

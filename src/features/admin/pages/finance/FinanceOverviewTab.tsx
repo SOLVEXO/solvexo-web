@@ -5,7 +5,7 @@ import { useAdminFinanceOverview, useAdminFinanceRevenueOverTime } from '@/hooks
 import type { AdminFinanceParams, PayoutStatus } from '@/api/services/finance/adminFinance';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
-import { formatCurrency, formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
+import { formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
 import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
 
 const PAYOUT_STATUSES: PayoutStatus[] = ['pending', 'processing', 'completed', 'failed'];
@@ -14,18 +14,17 @@ export function FinanceOverviewTab({ params }: { params: AdminFinanceParams }) {
   const overview = useAdminFinanceOverview(params);
   const revenue = useAdminFinanceRevenueOverTime(params);
 
-  if (overview.error) {
-    return <AnalyticsErrorState message={overview.error} onRetry={overview.refetch} />;
-  }
-
   const d = overview.data;
   const loading = overview.loading;
 
   return (
     <div className="flex flex-col gap-4">
-      {/* One metric-card row per settlement currency actually present —
-          PKR and USD totals are never blended into one figure. */}
-      {loading || !d ? (
+      {/* Each section fails independently — an overview-metrics error no
+          longer blanks the whole tab, including the separately-fetched
+          revenue chart below. */}
+      {overview.error ? (
+        <AnalyticsErrorState message={overview.error} onRetry={overview.refetch} />
+      ) : loading || !d ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => <MetricCard key={i} label="" value="" loading />)}
         </div>
@@ -57,7 +56,10 @@ export function FinanceOverviewTab({ params }: { params: AdminFinanceParams }) {
             <div key={status} className="bg-white border border-bone rounded-[10px] px-4 py-3">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{status} payouts</p>
               <p className="text-[20px] font-bold text-charcoal">{d.payoutQueue[status].count}</p>
-              <p className="text-[12px] text-slate">{formatCurrency(d.payoutQueue[status].amount)}</p>
+              {/* Never a blended sum — one line per currency actually present */}
+              {d.payoutQueue[status].byCurrency.map((c) => (
+                <p key={c.currency} className="text-[12px] text-slate">{formatMoneyCompact(c.amount, c.currency)}</p>
+              ))}
             </div>
           ))}
         </div>

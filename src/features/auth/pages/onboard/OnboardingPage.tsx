@@ -8,7 +8,7 @@ import {
   Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
   Package, Download, Calendar, Repeat, MonitorSmartphone,
   Sparkles, User, CreditCard, Plus, Wrench, ShoppingCart,
-  ArrowRight, ArrowLeft, Check, AlertTriangle, Loader2,
+  ArrowRight, ArrowLeft, Check, AlertTriangle, Loader2, Clock,
 } from 'lucide-react';
 import { useUpload } from '@/hooks/upload/useUpload';
 import type { SellerType, ProductType, StoreData, SupportedCurrency } from '@/api/services/store';
@@ -396,15 +396,16 @@ function Step4({ store, categoryName }: { store: StoreData | null; categoryName:
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
       <OnboardingStepHeader step={4} maxReached={4} onStepClick={() => {}} />
       <div className={clsx(NARROW_CONTENT, 'text-center')}>
-        <h1 className="text-[30px] font-bold text-carbon mb-[10px]">Your store is ready!</h1>
+        <h1 className="text-[30px] font-bold text-carbon mb-[10px]">Submitted for review</h1>
         <p className="text-[14px] text-slate leading-[1.7] mb-8 max-w-[400px] mx-auto">
-          Welcome to Solvexo. Your seller dashboard is set up and your tools are activated.
+          Welcome to Solvexo. Your seller dashboard and tools are ready now — your store will go live on the marketplace as soon as our team approves it.
         </p>
 
         <div className="bg-white border border-bone rounded-[14px] p-5 mb-7 text-left">
           <p className="text-[12px] font-semibold text-carbon mb-[14px]">Your Solvexo Setup</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-[10px]">
             {[
+              { Icon: Clock,      label: 'Status',       value: 'Pending Review' },
               { Icon: Store,      label: 'Store',        value: store?.name ?? '—' },
               { Icon: Globe,      label: 'Store URL',    value: store?.slug ? `${store.slug}.solvexo.store` : '—' },
               { Icon: User,       label: 'Seller type',  value: sellerLabel },

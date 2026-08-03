@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   ShoppingCart, AlertCircle, RefreshCw,
-  DollarSign, Clock, TrendingUp, Eye, CheckCheck, Truck,
+  DollarSign, Clock, TrendingUp, CheckCheck, Truck,
 } from 'lucide-react';
 import { apiMarkOrderPaid, apiUpdateOrderStatus } from '@/api/services/orders';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
@@ -22,6 +22,7 @@ import {
   type SellerOrderStats,
 } from '@/api/services/product';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { currencySymbol } from '@/utils/currency';
 
 // ── Customer cell ──────────────────────────────────────────────────────────────
 function CustomerCell({ name, email }: { name: string; email: string }) {
@@ -39,13 +40,14 @@ function CustomerCell({ name, email }: { name: string; email: string }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function StoreOrderList() {
   usePageTitle('Orders');
-  const { storeId } = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
 
   const [orders,      setOrders]      = useState<SellerOrder[]>([]);
   const [totalOrders, setTotalOrders] = useState(0);
   const [stats,       setStats]       = useState<SellerOrderStats | null>(null);
   const [page,        setPage]        = useState(1);
   const [search,      setSearch]      = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusF,     setStatusF]     = useState('');
   const [typeF,       setTypeF]       = useState('');
   const [loading,       setLoading]       = useState(true);
@@ -55,12 +57,25 @@ export function StoreOrderList() {
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
   const LIMIT = 10;
+  // No server-side order search endpoint exists — when searching, fetch a
+  // much larger page instead of the normal small one so the search covers
+  // (up to) the whole order list rather than silently only ever matching
+  // whatever 10 rows happened to already be on screen (same pattern as
+  // StoreProductList's SEARCH_LIMIT).
+  const SEARCH_LIMIT = 1000;
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(id);
+  }, [search]);
 
   useEffect(() => {
     if (!storeId) return;
     let cancelled = false;
+    const isSearching = debouncedSearch.trim().length > 0;
+    const [fetchPage, fetchLimit] = isSearching ? [1, SEARCH_LIMIT] : [page, LIMIT];
 
-    apiGetSellerOrders(storeId, page, LIMIT)
+    apiGetSellerOrders(storeId, fetchPage, fetchLimit)
       .then(res => {
         if (cancelled) return;
         setOrders(res.data.orders ?? []);
@@ -73,7 +88,7 @@ export function StoreOrderList() {
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [storeId, page, refreshKey]);
+  }, [storeId, page, refreshKey, debouncedSearch]);
 
   const handlePageChange = (p: number) => {
     setLoading(true);
@@ -148,7 +163,7 @@ export function StoreOrderList() {
       key: 'amount', header: 'Amount', align: 'right',
       render: o => (
         <span className="text-[13px] font-bold text-charcoal whitespace-nowrap">
-          ${o.amount.toLocaleString()}
+          {currencySymbol(store?.baseCurrency)}{o.amount.toLocaleString()}
         </span>
       ),
     },
@@ -192,7 +207,6 @@ export function StoreOrderList() {
           <ActionMenu
             align="right"
             items={[
-              { label: 'View Order', onClick: () => {}, icon: <Eye size={13} />, disabled: true, title: 'Order detail view is not available yet' },
               ...(!o.isPaid ? [{
                 label: markingPaidId === o.orderId ? 'Marking…' : 'Mark as Paid',
                 icon: <CheckCheck size={13} />,
@@ -252,7 +266,7 @@ export function StoreOrderList() {
           />
           <MetricCard
             label="Revenue"
-            value={stats ? `$${stats.revenue.toLocaleString()}` : 0}
+            value={stats ? `${currencySymbol(store?.baseCurrency)}${stats.revenue.toLocaleString()}` : 0}
             icon={<DollarSign size={16} />}
             loading={loading && !stats}
           />
@@ -264,7 +278,7 @@ export function StoreOrderList() {
           />
           <MetricCard
             label="Avg. Order"
-            value={stats ? `$${stats.avgOrder.toLocaleString()}` : 0}
+            value={stats ? `${currencySymbol(store?.baseCurrency)}${stats.avgOrder.toLocaleString()}` : 0}
             icon={<TrendingUp size={16} />}
             loading={loading && !stats}
           />

@@ -156,7 +156,7 @@ export function useAdminManualPayout() {
 export function useAdminProcessClearing() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
-  const [result, setResult] = useState<{ processed: number; totalAmount: number } | null>(null);
+  const [result, setResult] = useState<{ processed: number; totalAmount: number; byCurrency: { currency: string; amount: number }[] } | null>(null);
 
   const triggerClearing = useCallback(async () => {
     setProcessing(true);

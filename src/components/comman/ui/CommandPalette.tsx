@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useFocusTrap } from './useFocusTrap';
+import { DialogShell } from './DialogShell';
 
 export interface CommandPaletteItem {
   id:       string;
@@ -21,11 +21,8 @@ export interface CommandPaletteProps {
 export function CommandPalette({ items, open, onClose }: CommandPaletteProps) {
   const [query, setQuery]                 = useState('');
   const [highlighted, setHighlighted]     = useState(0);
-  const dialogRef                         = useRef<HTMLDivElement>(null);
   const inputRef                          = useRef<HTMLInputElement>(null);
   const [wasOpen, setWasOpen]             = useState(open);
-
-  useFocusTrap(dialogRef, onClose);
 
   // Reset the query/highlight when the palette transitions from closed to
   // open. Adjusted during render (not in an effect) per React's guidance for
@@ -88,18 +85,13 @@ export function CommandPalette({ items, open, onClose }: CommandPaletteProps) {
   let flatIndex = -1;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-[12vh] p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Command palette"
-        tabIndex={-1}
-        onKeyDown={onKeyDown}
-        className="relative flex flex-col w-full max-w-[560px] max-h-[70vh] bg-white rounded-2xl border border-bone overflow-hidden outline-none"
-      >
+    <DialogShell
+      onClose={onClose}
+      align="top"
+      ariaLabel="Command palette"
+      onKeyDown={onKeyDown}
+      className="max-w-[560px] max-h-[70vh]"
+    >
         <div className="flex items-center gap-[10px] px-4 py-3 border-b border-bone shrink-0">
           <Search size={16} className="text-slate shrink-0" />
           <input
@@ -160,7 +152,6 @@ export function CommandPalette({ items, open, onClose }: CommandPaletteProps) {
             </div>
           ))}
         </div>
-      </div>
-    </div>
+    </DialogShell>
   );
 }

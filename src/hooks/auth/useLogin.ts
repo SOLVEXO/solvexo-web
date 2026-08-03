@@ -7,7 +7,12 @@ export function useLogin() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
 
-  async function execute(payload: LoginPayload) {
+  // `redirectTo` is the page the user was trying to reach before being
+  // bounced to login (see client.ts's 401 interceptor / RequireRole guards,
+  // which both append `?redirect=`) — only ever a same-origin relative path
+  // (validated by the caller), so a successful login returns them to where
+  // they actually were instead of always the role's default dashboard.
+  async function execute(payload: LoginPayload, redirectTo?: string | null) {
     setError('');
     setLoading(true);
     try {
@@ -16,7 +21,7 @@ export function useLogin() {
       TokenStorage.save(token.accessToken, token.refreshToken);
       TokenStorage.saveUser(user);
       const serverRole = (user.role ?? payload.role) as AppRole;
-      navigate(getRoleRedirect(serverRole), { replace: true });
+      navigate(redirectTo || getRoleRedirect(serverRole), { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid credentials. Please try again.');
     } finally {

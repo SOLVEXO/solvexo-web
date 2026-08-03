@@ -8,6 +8,7 @@ import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { apiGetMyProductById } from '@/api/services/product';
 import { getCachedProducts, type ProductEntry } from './_cache';
 import { SkeletonBox } from '@/components/comman/ui';
+import { currencySymbol } from '@/utils/currency';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatDate(iso: string) {
@@ -56,7 +57,7 @@ export default function StoreProductDetail() {
   const navigate           = useNavigate();
   const { state }          = useLocation() as { state: { entry?: ProductEntry } | null };
   const { productId = '' } = useParams<{ productId: string }>();
-  const { storeId }        = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
 
   const [entry,    setEntry]    = useState<ProductEntry | null>(state?.entry ?? null);
   const [fetching, setFetching] = useState(!state?.entry);
@@ -107,7 +108,7 @@ export default function StoreProductDetail() {
           </div>
 
           {/* ── Content grid skeleton ── */}
-          <div className="grid grid-cols-[1fr_280px] gap-4 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 items-start">
 
             {/* Left column */}
             <div className="flex flex-col gap-4">
@@ -199,9 +200,9 @@ export default function StoreProductDetail() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-[24px] font-bold text-brand-orange">${v.price.toLocaleString()}</p>
+                  <p className="text-[24px] font-bold text-brand-orange">{currencySymbol(store?.baseCurrency)}{v.price.toLocaleString()}</p>
                   {v.compareAtPrice != null && (
-                    <p className="text-[12px] text-slate line-through mt-0.5">${v.compareAtPrice.toLocaleString()}</p>
+                    <p className="text-[12px] text-slate line-through mt-0.5">{currencySymbol(store?.baseCurrency)}{v.compareAtPrice.toLocaleString()}</p>
                   )}
                   {discountPct !== null && (
                     <span className="inline-block text-[11px] font-bold text-[#1E7A3C] bg-[#E3F4EA] px-2 py-0.5 rounded-[5px] mt-1">{discountPct}% OFF</span>
@@ -239,7 +240,7 @@ export default function StoreProductDetail() {
         </div>
 
         {/* ── Content grid ── */}
-        <div className="grid grid-cols-[1fr_280px] gap-4 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 items-start">
 
           {/* ── Left column ── */}
           <div className="flex flex-col gap-4">
@@ -266,11 +267,11 @@ export default function StoreProductDetail() {
             {/* Pricing */}
             <Card title="Pricing" icon={Tag}>
               <InfoRow label="Selling Price" value={
-                <span className="font-bold text-charcoal">${v.price.toLocaleString()}</span>
+                <span className="font-bold text-charcoal">{currencySymbol(store?.baseCurrency)}{v.price.toLocaleString()}</span>
               } />
               <InfoRow label="Compare At Price" value={
                 v.compareAtPrice != null
-                  ? <span className="line-through text-slate">${v.compareAtPrice.toLocaleString()}</span>
+                  ? <span className="line-through text-slate">{currencySymbol(store?.baseCurrency)}{v.compareAtPrice.toLocaleString()}</span>
                   : '—'
               } />
               {discountPct !== null && (

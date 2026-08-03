@@ -3,7 +3,7 @@ import { TrendingUp, Users, AlertTriangle, Store as StoreIcon, ShieldAlert } fro
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
-import { SkeletonBox } from '@/components/comman/ui';
+import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
 import {
   apiAdminGetOverview, apiAdminGetStoreBreakdown, apiAdminGetStoreDetail,
   apiAdminGetPaymentFailures, apiAdminGetSubscriptionDetail, apiAdminSuspendPlan, apiAdminUnsuspendPlan,
@@ -14,6 +14,7 @@ import {
 } from '@/api/services/subscriptions';
 
 type Tab = 'stores' | 'failures' | 'webhooks' | 'insights';
+type FailureRow = PaymentAttempt & { store: { name: string } | null; customer: { name: string; email: string } | null };
 
 const WEBHOOK_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   processed: { bg: '#E3F4EA', color: '#1E7A3C' },
@@ -26,11 +27,16 @@ const WEBHOOK_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
 function WebhooksPanel() {
   const [events, setEvents] = useState<WebhookEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [retryingId, setRetryingId] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
-    apiAdminGetWebhookHistory({ limit: 50 }).then(res => setEvents(res.data.events ?? [])).finally(() => setLoading(false));
+    setError('');
+    apiAdminGetWebhookHistory({ limit: 50 })
+      .then(res => setEvents(res.data.events ?? []))
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load webhook history.'))
+      .finally(() => setLoading(false));
   };
   useEffect(load, []);
 
@@ -39,55 +45,45 @@ function WebhooksPanel() {
     try { await apiAdminRetryWebhook(id); load(); } finally { setRetryingId(null); }
   }
 
-  if (loading) return (
-    <div className="px-5 py-4 flex flex-col gap-3">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4">
-          <SkeletonBox width="15%" height={12} />
-          <SkeletonBox width="20%" height={12} />
-          <SkeletonBox width={70} height={20} rounded="5px" />
-          <SkeletonBox width="8%" height={12} />
-          <SkeletonBox width="25%" height={12} />
-        </div>
-      ))}
-    </div>
-  );
+  const columns: TableColumn<WebhookEvent>[] = [
+    { key: 'createdAt', header: 'Received', render: ev => <span className="text-slate whitespace-nowrap">{new Date(ev.createdAt).toLocaleString()}</span> },
+    { key: 'type', header: 'Type', render: ev => <span className="text-charcoal">{ev.type}</span> },
+    {
+      key: 'status', header: 'Status',
+      render: ev => {
+        const st = WEBHOOK_STATUS_STYLE[ev.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
+        return <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: st.bg, color: st.color }}>{ev.status}</span>;
+      },
+    },
+    { key: 'processingAttempts', header: 'Attempts', render: ev => <span className="text-slate">{ev.processingAttempts}</span> },
+    { key: 'error', header: 'Error', render: ev => <span className="text-slate max-w-[220px] truncate block">{ev.error ?? '—'}</span> },
+    {
+      key: 'actions', header: '',
+      render: ev => ev.status === 'failed' ? (
+        <button disabled={retryingId === ev._id} onClick={() => retry(ev._id)} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer disabled:opacity-50">
+          {retryingId === ev._id ? 'Retrying…' : 'Retry'}
+        </button>
+      ) : null,
+    },
+  ];
+
+  if (error) {
+    return (
+      <div className="px-4 py-8 text-center">
+        <p className="text-[13px] text-error mb-2">{error}</p>
+        <Button variant="outline" size="sm" onClick={load}>Try Again</Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr>
-            {['RECEIVED', 'TYPE', 'STATUS', 'ATTEMPTS', 'ERROR', ''].map(h => (
-              <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {events.length === 0 ? (
-            <tr><td colSpan={6} className="px-4 py-8 text-center text-[13px] text-slate">No webhook events yet.</td></tr>
-          ) : events.map(ev => {
-            const st = WEBHOOK_STATUS_STYLE[ev.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
-            return (
-              <tr key={ev._id} className="border-b border-[#F0EEE6]">
-                <td className="px-4 py-3 text-[12px] text-slate whitespace-nowrap">{new Date(ev.createdAt).toLocaleString()}</td>
-                <td className="px-4 py-3 text-[12.5px] text-charcoal">{ev.type}</td>
-                <td className="px-4 py-3"><span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: st.bg, color: st.color }}>{ev.status}</span></td>
-                <td className="px-4 py-3 text-[12px] text-slate">{ev.processingAttempts}</td>
-                <td className="px-4 py-3 text-[12px] text-slate max-w-[220px] truncate">{ev.error ?? '—'}</td>
-                <td className="px-4 py-3">
-                  {ev.status === 'failed' && (
-                    <button disabled={retryingId === ev._id} onClick={() => retry(ev._id)} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer disabled:opacity-50">
-                      {retryingId === ev._id ? 'Retrying…' : 'Retry'}
-                    </button>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <Table
+      columns={columns}
+      data={events}
+      keyExtractor={ev => ev._id}
+      loading={loading}
+      emptyState={{ title: 'No webhook events yet.' }}
+    />
   );
 }
 
@@ -97,13 +93,17 @@ function InsightsPanel() {
   const [revenue, setRevenue] = useState<RevenueBreakdown | null>(null);
   const [cohorts, setCohorts] = useState<ChurnCohort[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
+    setError('');
     Promise.all([apiAdminGetLtv(), apiAdminGetRevenueBreakdown(), apiAdminGetChurnCohorts({ months: 6 })])
       .then(([l, r, c]) => { setLtv(l.data); setRevenue(r.data); setCohorts(c.data ?? []); })
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load insights.'))
       .finally(() => setLoading(false));
   }, []);
+  useEffect(load, [load]);
 
   if (loading) {
     return (
@@ -112,6 +112,15 @@ function InsightsPanel() {
           {Array.from({ length: 2 }).map((_, i) => <SkeletonBox key={i} height={70} rounded="8px" />)}
         </div>
         <SkeletonBox height={180} rounded="8px" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="px-5 py-8 flex flex-col items-center gap-3 text-center">
+        <p className="text-[13px] text-error">{error}</p>
+        <Button variant="outline" size="sm" onClick={load}>Try Again</Button>
       </div>
     );
   }
@@ -136,57 +145,34 @@ function InsightsPanel() {
       {cohorts.length > 0 && (
         <div>
           <p className="text-[12px] font-semibold text-charcoal mb-2">Monthly Cohort Retention</p>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  {['COHORT', 'STARTED', 'STILL ACTIVE', 'RETENTION'].map(h => (
-                    <th key={h} className="text-left px-3 py-2 text-[10.5px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {cohorts.map(c => (
-                  <tr key={c.cohort} className="border-b border-[#F0EEE6]">
-                    <td className="px-3 py-2 text-[12px] text-charcoal">{c.cohort}</td>
-                    <td className="px-3 py-2 text-[12px] text-graphite">{c.totalStarted}</td>
-                    <td className="px-3 py-2 text-[12px] text-graphite">{c.stillActive}</td>
-                    <td className="px-3 py-2 text-[12px] font-semibold text-[#2D8A4E]">{c.retentionPercent}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            columns={[
+              { key: 'cohort', header: 'Cohort', render: c => <span className="text-charcoal">{c.cohort}</span> },
+              { key: 'totalStarted', header: 'Started', render: c => <span className="text-graphite">{c.totalStarted}</span> },
+              { key: 'stillActive', header: 'Still Active', render: c => <span className="text-graphite">{c.stillActive}</span> },
+              { key: 'retentionPercent', header: 'Retention', render: c => <span className="font-semibold text-[#2D8A4E]">{c.retentionPercent}%</span> },
+            ] as TableColumn<ChurnCohort>[]}
+            data={cohorts}
+            keyExtractor={c => c.cohort}
+          />
         </div>
       )}
 
       {revenue && (
         <div>
           <p className="text-[12px] font-semibold text-charcoal mb-2">Revenue by Store (last 90 days)</p>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  {['STORE', 'TOTAL', 'INVOICES', 'SELLER PAYOUT', 'PLATFORM COMMISSION'].map(h => (
-                    <th key={h} className="text-left px-3 py-2 text-[10.5px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(revenue.byStore ?? []).length === 0 ? (
-                  <tr><td colSpan={5} className="px-3 py-6 text-center text-[12px] text-slate">No revenue in range.</td></tr>
-                ) : (revenue.byStore ?? []).map(r => (
-                  <tr key={r.storeId} className="border-b border-[#F0EEE6]">
-                    <td className="px-3 py-2 text-[12.5px] text-charcoal">{r.storeName}</td>
-                    <td className="px-3 py-2 text-[12px] font-semibold text-[#2D8A4E]">${r.totalUSD.toFixed(2)}</td>
-                    <td className="px-3 py-2 text-[12px] text-graphite">{r.invoiceCount}</td>
-                    <td className="px-3 py-2 text-[12px] text-graphite">${r.sellerPayoutUSD.toFixed(2)}</td>
-                    <td className="px-3 py-2 text-[12px] text-graphite">${r.platformCommissionUSD.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            columns={[
+              { key: 'storeName', header: 'Store', render: r => <span className="text-charcoal">{r.storeName}</span> },
+              { key: 'totalUSD', header: 'Total', render: r => <span className="font-semibold text-[#2D8A4E]">${r.totalUSD.toFixed(2)}</span> },
+              { key: 'invoiceCount', header: 'Invoices', render: r => <span className="text-graphite">{r.invoiceCount}</span> },
+              { key: 'sellerPayoutUSD', header: 'Seller Payout', render: r => <span className="text-graphite">${r.sellerPayoutUSD.toFixed(2)}</span> },
+              { key: 'platformCommissionUSD', header: 'Platform Commission', render: r => <span className="text-graphite">${r.platformCommissionUSD.toFixed(2)}</span> },
+            ] as TableColumn<RevenueBreakdown['byStore'][number]>[]}
+            data={revenue.byStore ?? []}
+            keyExtractor={r => r.storeId}
+            emptyState={{ title: 'No revenue in range.' }}
+          />
           <p className="text-[11px] text-slate mt-2">{revenue.note}</p>
         </div>
       )}
@@ -198,22 +184,45 @@ function InsightsPanel() {
 function StoreDetailModal({ storeId, onClose }: { storeId: string; onClose: () => void }) {
   const [data, setData] = useState<(DashboardData & { store: { name: string; slug: string }; plans: SellerPlan[] }) | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  const [confirmingSuspendId, setConfirmingSuspendId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
-    apiAdminGetStoreDetail(storeId).then(res => setData(res.data)).finally(() => setLoading(false));
+    setLoadError('');
+    apiAdminGetStoreDetail(storeId)
+      .then(res => setData(res.data))
+      .catch(err => setLoadError(err instanceof Error ? err.message : 'Failed to load store detail.'))
+      .finally(() => setLoading(false));
   }, [storeId]);
   useEffect(load, [load]);
 
+  // Suspend blocks a seller's plan and is confirmed before firing; unsuspend
+  // is corrective/restorative, not destructive, so it fires immediately.
   async function toggleSuspend(plan: SellerPlan) {
-    if (plan.status === 'suspended') await apiAdminUnsuspendPlan(plan._id);
-    else await apiAdminSuspendPlan(plan._id);
+    if (plan.status === 'suspended') {
+      await apiAdminUnsuspendPlan(plan._id);
+      load();
+      return;
+    }
+    if (confirmingSuspendId !== plan._id) {
+      setConfirmingSuspendId(plan._id);
+      return;
+    }
+    setConfirmingSuspendId(null);
+    await apiAdminSuspendPlan(plan._id);
     load();
   }
 
   return (
     <Modal title={data?.store.name ?? 'Store'} width={560} onClose={onClose}>
-      {loading || !data ? (
+      {loadError ? (
+        <div className="flex flex-col items-center gap-3 py-6 text-center">
+          <p className="text-[13px] text-error">{loadError}</p>
+          <Button variant="outline" size="sm" onClick={load}>Try Again</Button>
+        </div>
+      ) : loading || !data ? (
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-3 gap-2">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -245,9 +254,14 @@ function StoreDetailModal({ storeId, onClose }: { storeId: string; onClose: () =
                     <p className="text-[13px] font-semibold text-charcoal">{p.name}</p>
                     <p className="text-[11px] text-slate">${p.monthlyPriceUSD}/mo · {p.subscriberCount} subscribers · status: {p.status}</p>
                   </div>
-                  <Button size="xs" variant={p.status === 'suspended' ? 'outline' : 'danger'} onClick={() => toggleSuspend(p)}>
-                    {p.status === 'suspended' ? 'Unsuspend' : 'Suspend'}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {confirmingSuspendId === p._id && (
+                      <Button size="xs" variant="ghost" onClick={() => setConfirmingSuspendId(null)}>Cancel</Button>
+                    )}
+                    <Button size="xs" variant={p.status === 'suspended' ? 'outline' : 'danger'} onClick={() => toggleSuspend(p)}>
+                      {p.status === 'suspended' ? 'Unsuspend' : confirmingSuspendId === p._id ? 'Confirm Suspend' : 'Suspend'}
+                    </Button>
+                  </div>
                 </div>
               ))}
               {(data.plans ?? []).length === 0 && <p className="text-[12px] text-slate">No plans.</p>}
@@ -265,13 +279,18 @@ type SubscriptionDetailData = Awaited<ReturnType<typeof apiAdminGetSubscriptionD
 function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: () => void }) {
   const [data, setData] = useState<SubscriptionDetailData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [refundingId, setRefundingId] = useState<string | null>(null);
   const [confirmingRefund, setConfirmingRefund] = useState<SubscriptionInvoice | null>(null);
   const [refundError, setRefundError] = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
-    apiAdminGetSubscriptionDetail(subId).then(res => setData(res.data)).finally(() => setLoading(false));
+    setLoadError('');
+    apiAdminGetSubscriptionDetail(subId)
+      .then(res => setData(res.data))
+      .catch(err => setLoadError(err instanceof Error ? err.message : 'Failed to load subscription detail.'))
+      .finally(() => setLoading(false));
   }, [subId]);
   useEffect(load, [load]);
 
@@ -292,7 +311,12 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
 
   return (
     <Modal title="Subscription Detail" width={600} onClose={onClose}>
-      {loading || !data ? (
+      {loadError ? (
+        <div className="flex flex-col items-center gap-3 py-6 text-center">
+          <p className="text-[13px] text-error">{loadError}</p>
+          <Button variant="outline" size="sm" onClick={load}>Try Again</Button>
+        </div>
+      ) : loading || !data ? (
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-2">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -375,7 +399,7 @@ export function AdminSubscriptions() {
   const [tab, setTab] = useState<Tab>('stores');
   const [overview, setOverview] = useState<Awaited<ReturnType<typeof apiAdminGetOverview>>['data'] | null>(null);
   const [stores, setStores] = useState<StoreBreakdownRow[]>([]);
-  const [failures, setFailures] = useState<Array<PaymentAttempt & { store: { name: string } | null; customer: { name: string; email: string } | null }>>([]);
+  const [failures, setFailures] = useState<FailureRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [viewingStore, setViewingStore] = useState<string | null>(null);
@@ -401,6 +425,30 @@ export function AdminSubscriptions() {
     { label: 'Failed Payments (30d)', value: String(overview.failedPaymentsLast30Days), Icon: AlertTriangle },
     { label: 'Past Due Subs', value: String(overview.pastDueSubscriptionsCount), Icon: ShieldAlert },
   ] : [];
+
+  const storeColumns: TableColumn<StoreBreakdownRow>[] = [
+    { key: 'storeName', header: 'Store', render: s => <span className="font-semibold text-charcoal">{s.storeName}</span> },
+    { key: 'subscriberCount', header: 'Subscribers', render: s => <span className="text-graphite">{s.subscriberCount}</span> },
+    { key: 'mrrUSD', header: 'MRR', render: s => <span className="font-semibold text-[#2D8A4E]">${s.mrrUSD.toFixed(2)}</span> },
+    { key: 'planCount', header: 'Plans', render: s => <span className="text-graphite">{s.planCount}</span> },
+    {
+      key: 'actions', header: '',
+      render: s => <button onClick={() => setViewingStore(s.storeId)} className="px-3 py-1 bg-white border border-bone rounded-[6px] text-xs text-graphite cursor-pointer">View</button>,
+    },
+  ];
+
+  const failureColumns: TableColumn<FailureRow>[] = [
+    { key: 'createdAt', header: 'Date', render: f => <span className="text-slate whitespace-nowrap">{new Date(f.createdAt).toLocaleString()}</span> },
+    { key: 'store', header: 'Store', render: f => <span className="text-charcoal">{f.store?.name ?? '—'}</span> },
+    { key: 'customer', header: 'Customer', render: f => <span className="text-graphite">{f.customer?.name ?? '—'}</span> },
+    { key: 'attemptType', header: 'Type', render: f => <span className="text-slate">{f.attemptType} #{f.attemptNumber}</span> },
+    { key: 'amountUSD', header: 'Amount', render: f => <span className="font-semibold text-error">${f.amountUSD.toFixed(2)}</span> },
+    { key: 'failureReason', header: 'Reason', render: f => <span className="text-slate max-w-[180px] truncate block">{f.failureReason ?? '—'}</span> },
+    {
+      key: 'actions', header: '',
+      render: f => <button onClick={() => setViewingSub(f.subscriptionId)} className="px-3 py-1 bg-white border border-bone rounded-[6px] text-xs text-graphite cursor-pointer">Inspect</button>,
+    },
+  ];
 
   return (
     <div>
@@ -438,74 +486,22 @@ export function AdminSubscriptions() {
             <WebhooksPanel />
           ) : tab === 'insights' ? (
             <InsightsPanel />
-          ) : loading ? (
-            <div className="px-5 py-4 flex flex-col gap-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <SkeletonBox width="20%" height={12} />
-                  <SkeletonBox width="15%" height={12} />
-                  <SkeletonBox width="12%" height={12} />
-                  <SkeletonBox width="10%" height={12} />
-                  <SkeletonBox width="20%" height={12} />
-                </div>
-              ))}
-            </div>
           ) : tab === 'stores' ? (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    {['STORE', 'SUBSCRIBERS', 'MRR', 'PLANS', ''].map(h => (
-                      <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {stores.length === 0 ? (
-                    <tr><td colSpan={5} className="px-4 py-8 text-center text-[13px] text-slate">No stores with active plans yet.</td></tr>
-                  ) : stores.map(s => (
-                    <tr key={s.storeId} className="border-b border-[#F0EEE6]">
-                      <td className="px-4 py-3 text-[13px] font-semibold text-charcoal">{s.storeName}</td>
-                      <td className="px-4 py-3 text-[13px] text-graphite">{s.subscriberCount}</td>
-                      <td className="px-4 py-3 text-[13px] font-semibold text-[#2D8A4E]">${s.mrrUSD.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-[13px] text-graphite">{s.planCount}</td>
-                      <td className="px-4 py-3">
-                        <button onClick={() => setViewingStore(s.storeId)} className="px-3 py-1 bg-white border border-bone rounded-[6px] text-xs text-graphite cursor-pointer">View</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table
+              columns={storeColumns}
+              data={stores}
+              keyExtractor={s => s.storeId}
+              loading={loading}
+              emptyState={{ title: 'No stores with active plans yet.' }}
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    {['DATE', 'STORE', 'CUSTOMER', 'TYPE', 'AMOUNT', 'REASON', ''].map(h => (
-                      <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {failures.length === 0 ? (
-                    <tr><td colSpan={7} className="px-4 py-8 text-center text-[13px] text-slate">No payment failures. 🎉</td></tr>
-                  ) : failures.map(f => (
-                    <tr key={f._id} className="border-b border-[#F0EEE6]">
-                      <td className="px-4 py-3 text-[12px] text-slate whitespace-nowrap">{new Date(f.createdAt).toLocaleString()}</td>
-                      <td className="px-4 py-3 text-[13px] text-charcoal">{f.store?.name ?? '—'}</td>
-                      <td className="px-4 py-3 text-[13px] text-graphite">{f.customer?.name ?? '—'}</td>
-                      <td className="px-4 py-3 text-[12px] text-slate">{f.attemptType} #{f.attemptNumber}</td>
-                      <td className="px-4 py-3 text-[13px] font-semibold text-error">${f.amountUSD.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-[12px] text-slate max-w-[180px] truncate">{f.failureReason ?? '—'}</td>
-                      <td className="px-4 py-3">
-                        <button onClick={() => setViewingSub(f.subscriptionId)} className="px-3 py-1 bg-white border border-bone rounded-[6px] text-xs text-graphite cursor-pointer">Inspect</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table
+              columns={failureColumns}
+              data={failures}
+              keyExtractor={f => f._id}
+              loading={loading}
+              emptyState={{ title: 'No payment failures. 🎉' }}
+            />
           )}
         </div>
       </div>

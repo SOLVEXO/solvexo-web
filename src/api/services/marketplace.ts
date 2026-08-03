@@ -59,6 +59,8 @@ export interface ActiveCampaignBadge {
   name:          string;
   discountType:  'percentage' | 'fixed' | null;
   discountValue: number | null;
+  /** Only meaningful when discountType === 'fixed' — always 'USD' (the platform pivot). */
+  currency:      string | null;
   endDate:       string;
 }
 
@@ -98,7 +100,7 @@ export interface MarketplaceProduct {
   activeCampaign?:   ActiveCampaignBadge | null;
 }
 
-interface ProductsByCategoryResponse {
+export interface ProductsByCategoryResponse {
   message: string;
   success: boolean;
   data: {
@@ -119,11 +121,14 @@ interface ProductByIdResponse {
   };
 }
 
+export type MarketplaceSortBy = 'newest' | 'price_asc' | 'price_desc' | 'rating';
+
 export function apiGetAllProducts(
   page = 1, limit = 10, categoryId?: string,
   productType?: 'physical' | 'digital' | 'educational',
   educationLevel?: string, normalizedCustomLevel?: string,
   campaignId?: string,
+  minPrice?: number, maxPrice?: number, minRating?: number, sortBy?: MarketplaceSortBy,
 ) {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (categoryId) params.set('id', categoryId);
@@ -131,6 +136,10 @@ export function apiGetAllProducts(
   if (educationLevel) params.set('educationLevel', educationLevel);
   if (normalizedCustomLevel) params.set('normalizedCustomLevel', normalizedCustomLevel);
   if (campaignId) params.set('campaignId', campaignId);
+  if (minPrice != null) params.set('minPrice', String(minPrice));
+  if (maxPrice != null) params.set('maxPrice', String(maxPrice));
+  if (minRating != null) params.set('minRating', String(minRating));
+  if (sortBy) params.set('sortBy', sortBy);
   return client.get<never, ProductsByCategoryResponse>(
     `${ENDPOINTS.MARKETPLACE.PRODUCTS_BY_CATEGORY}?${params.toString()}`,
   );

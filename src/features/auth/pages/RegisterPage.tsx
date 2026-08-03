@@ -129,7 +129,7 @@ export function RegisterPage() {
       </Button>
 
       {(register.error || social.error) && (
-        <div className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
+        <div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
           <AlertTriangle size={14} className="shrink-0" />
           <span>{register.error || social.error}</span>
         </div>

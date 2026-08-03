@@ -14,8 +14,13 @@ function getFocusable(container: HTMLElement): HTMLElement[] {
  * dialog opened when it unmounts. Shared by every modal-style overlay in the app
  * so the trap logic isn't reimplemented (and forgotten) per component.
  */
-export function useFocusTrap(containerRef: RefObject<HTMLElement | null>, onClose: () => void) {
+export function useFocusTrap(
+  containerRef: RefObject<HTMLElement | null>,
+  onClose: () => void,
+  enabled: boolean = true,
+) {
   useEffect(() => {
+    if (!enabled) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
     // Don't steal focus from an element that already auto-focused itself
     // (e.g. an input with `autoFocus`) inside the same dialog.
@@ -48,5 +53,5 @@ export function useFocusTrap(containerRef: RefObject<HTMLElement | null>, onClos
       previouslyFocused?.focus?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onClose]);
+  }, [onClose, enabled]);
 }

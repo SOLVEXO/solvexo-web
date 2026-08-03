@@ -30,7 +30,7 @@ export function FlashSaleCardSkeleton() {
 // one shared component would mean two designs fighting inside the same
 // markup. Same product data, same handlers/signatures as ProductCard —
 // only the presentation is different. ──
-export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishlisted, isWishlisting, onToggleWishlist }: {
+export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishlisted, isWishlisting, onToggleWishlist, compact = false }: {
   product:          MarketplaceProduct;
   onClick:          (id: string) => void;
   onAddToCart:      (e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => void;
@@ -38,6 +38,10 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
   isWishlisted:     boolean;
   isWishlisting:    boolean;
   onToggleWishlist: (e: React.MouseEvent, id: string, variantId: string) => void;
+  /** Smaller, denser proportions for a rail with more cards per row (e.g.
+   *  Marketplace's Flash Sale strip) — default (false) is the original size,
+   *  unchanged for existing callers like Homepage's Flash Sale rail. */
+  compact?: boolean;
 }) {
   const pType      = product.productType ?? product.type ?? 'physical';
   const isPhysical = pType === 'physical';
@@ -74,19 +78,25 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
   return (
     <div
       onClick={() => onClick(product._id)}
-      className="group relative bg-white rounded-2xl border border-bone overflow-hidden h-full flex flex-col cursor-pointer transition-all duration-300 hover:-translate-y-[3px] hover:border-brand-orange/35"
+      className={clsx(
+        'group relative bg-white rounded-2xl border border-bone overflow-hidden cursor-pointer transition-all duration-300 hover:border-brand-orange/35',
+        !compact && 'h-full flex flex-col hover:-translate-y-[3px]',
+      )}
     >
-      {/* Image — square, the card's focal point without dominating the whole card */}
+      {/* Image — square, the card's focal point without dominating the whole card.
+          Compact: stays fixed-size on hover (no zoom) — hover instead reveals the
+          price/rating overlay below. */}
       <div className="relative overflow-hidden aspect-square">
         <ProductImage
           images={product.images ?? []}
           name={product.name}
-          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+          className={clsx('w-full h-full object-cover transition-transform duration-500 ease-out', !compact && 'group-hover:scale-[1.06]')}
         />
 
         {/* Category badge — compact, opaque (no blur/glass) */}
         <span className={clsx(
-          'absolute top-[7px] left-[7px] px-[6px] py-[1.5px] rounded-full text-[8px] font-bold tracking-[0.02em] border bg-white',
+          'absolute rounded-full font-bold tracking-[0.02em] border bg-white',
+          compact ? 'top-[5px] left-[5px] px-[5px] py-[1px] text-[7px]' : 'top-[7px] left-[7px] px-[6px] py-[1.5px] text-[8px]',
           isDigital ? 'text-[#7C3AED] border-[#DDD6FE]' : 'text-brand-deep-orange border-[#F5D0BC]',
         )}>
           {typeLabel}
@@ -94,7 +104,10 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
 
         {/* Discount — premium sale chip */}
         {pctOff != null && pctOff > 0 && (
-          <span className="absolute top-[7px] right-[7px] px-[7px] py-[2.5px] rounded-full text-[9px] font-bold bg-error text-white">
+          <span className={clsx(
+            'absolute rounded-full font-bold bg-error text-white',
+            compact ? 'top-[5px] right-[5px] px-[6px] py-[2px] text-[8px]' : 'top-[7px] right-[7px] px-[7px] py-[2.5px] text-[9px]',
+          )}>
             -{pctOff}%
           </span>
         )}
@@ -104,81 +117,130 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
           onClick={e => onToggleWishlist(e, product._id, vId)}
           disabled={isWishlisting}
           className={clsx(
-            'absolute bottom-2 right-2 w-9 h-9 rounded-full bg-white border border-bone flex items-center justify-center',
+            'absolute rounded-full bg-white border border-bone flex items-center justify-center z-[1]',
+            compact ? 'bottom-[6px] right-[6px] w-7 h-7' : 'bottom-2 right-2 w-9 h-9',
             'transition-all duration-200 hover:scale-110 hover:border-brand-orange/40',
             isWishlisting ? 'cursor-wait' : 'cursor-pointer',
           )}
         >
           <Heart
             key={isWishlisted ? 'on' : 'off'}
-            size={12}
+            size={compact ? 10 : 12}
             className={clsx('heart-pop transition-colors duration-150', isWishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate')}
           />
         </button>
+
+        {/* Compact only — rating/price/savings/add-to-cart live in a bottom
+            overlay hidden until hover, so the resting card is pure image (image
+            stays small; details reveal on hover instead of a static body area). */}
+        {compact && (
+          <div className="absolute inset-x-0 bottom-0 flex flex-col gap-[4px] bg-white/95 backdrop-blur-[2px] px-[7px] py-[7px] translate-y-full opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+            <div className="flex items-center gap-[4px]">
+              <div className="flex items-center gap-[1px]">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <Star
+                    key={i}
+                    size={8}
+                    className={i <= Math.round(product.averageRating) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone'}
+                  />
+                ))}
+              </div>
+              <span className="text-[9px] font-semibold text-carbon">
+                {product.averageRating > 0 ? product.averageRating.toFixed(1) : 'New'}
+              </span>
+            </div>
+            <div className="flex items-end justify-between gap-1">
+              <div className="min-w-0">
+                <div className="flex items-baseline gap-[4px] flex-wrap">
+                  <span className={clsx('text-[13px] font-bold tracking-tight', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
+                    {displayPrice != null ? `${priceSymbol}${displayPrice.toLocaleString()}` : '—'}
+                  </span>
+                  {compareAt != null && compareAt > (displayPrice ?? 0) && (
+                    <span className="text-[9px] text-slate line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
+                  )}
+                </div>
+                {savings != null && savings > 0 && (
+                  <p className="text-[8px] font-semibold text-success">Save {priceSymbol}{savings.toLocaleString()}</p>
+                )}
+              </div>
+              <button
+                onClick={e => onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital')}
+                disabled={stock <= 0}
+                aria-label={stock <= 0 ? 'Out of stock' : 'Add to cart'}
+                className={clsx(
+                  'shrink-0 flex items-center justify-center w-6 h-6 rounded-full border transition-all duration-200',
+                  stock <= 0
+                    ? 'bg-bone text-slate border-bone cursor-not-allowed'
+                    : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.95] cursor-pointer',
+                )}
+              >
+                {isAdding ? <Loader2 size={11} className="animate-spin" /> : <ShoppingCart size={11} />}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Body */}
-      <div className="flex-1 flex flex-col p-3.5">
-        {/* Rating */}
-        <div className="flex items-center gap-[5px] mb-[7px]">
-          <div className="flex items-center gap-[1px]">
-            {[1, 2, 3, 4, 5].map(i => (
-              <Star
-                key={i}
-                size={10}
-                className={i <= Math.round(product.averageRating) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone'}
-              />
-            ))}
+      {/* Body — unchanged, non-compact only (compact's equivalent content lives
+          in the hover overlay above instead). */}
+      {!compact && (
+        <div className="flex-1 flex flex-col p-3.5">
+          {/* Rating */}
+          <div className="flex items-center gap-[5px] mb-[7px]">
+            <div className="flex items-center gap-[1px]">
+              {[1, 2, 3, 4, 5].map(i => (
+                <Star
+                  key={i}
+                  size={10}
+                  className={i <= Math.round(product.averageRating) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone'}
+                />
+              ))}
+            </div>
+            <span className="text-[10px] font-semibold text-carbon">
+              {product.averageRating > 0 ? product.averageRating.toFixed(1) : 'New'}
+            </span>
+            {ratingCount > 0 && (
+              <span className="text-[10px] text-slate">({ratingCount})</span>
+            )}
           </div>
-          <span className="text-[10px] font-semibold text-carbon">
-            {product.averageRating > 0 ? product.averageRating.toFixed(1) : 'New'}
-          </span>
-          {ratingCount > 0 && (
-            <span className="text-[10px] text-slate">({ratingCount})</span>
-          )}
-        </div>
 
-        {/* Title — 2 lines max */}
-        <p className="text-[12px] font-semibold text-carbon leading-snug line-clamp-2 mb-2">
-          {product.name}
-        </p>
+          {/* Title — 2 lines max */}
+          <p className="text-[12px] font-semibold text-carbon leading-snug line-clamp-2 mb-2">
+            {product.name}
+          </p>
 
-        {/* Price hierarchy + Add to Cart */}
-        <div className="mt-auto flex items-end justify-between gap-2">
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-[6px] flex-wrap">
-              <span className={clsx('text-[16px] font-bold tracking-tight', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
-                {displayPrice != null ? `${priceSymbol}${displayPrice.toLocaleString()}` : '—'}
-              </span>
-              {compareAt != null && compareAt > (displayPrice ?? 0) && (
-                <span className="text-[10.5px] text-slate line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
+          {/* Price hierarchy + Add to Cart */}
+          <div className="mt-auto flex items-end justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-[6px] flex-wrap">
+                <span className={clsx('text-[16px] font-bold tracking-tight', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
+                  {displayPrice != null ? `${priceSymbol}${displayPrice.toLocaleString()}` : '—'}
+                </span>
+                {compareAt != null && compareAt > (displayPrice ?? 0) && (
+                  <span className="text-[11px] text-slate line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
+                )}
+              </div>
+              {savings != null && savings > 0 && (
+                <p className="text-[9.5px] font-semibold text-success mt-[2px]">Save {priceSymbol}{savings.toLocaleString()}</p>
               )}
             </div>
-            {savings != null && savings > 0 && (
-              <p className="text-[9.5px] font-semibold text-success mt-[2px]">Save {priceSymbol}{savings.toLocaleString()}</p>
-            )}
-            {stock <= 0 ? (
-              <p className="text-[9.5px] font-semibold text-error mt-[2px]">Out of stock</p>
-            ) : stock <= 5 && (
-              <p className="text-[9.5px] font-semibold text-amber-600 mt-[2px]">Only {stock} left</p>
-            )}
-          </div>
 
-          {/* Add to Cart — compact circular action button */}
-          <button
-            onClick={e => onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital')}
-            disabled={stock <= 0}
-            className={clsx(
-              'w-9 h-9 rounded-full flex items-center justify-center shrink-0 border transition-all duration-200',
-              stock <= 0
-                ? 'bg-bone border-bone text-slate cursor-not-allowed'
-                : 'bg-brand-pale-orange border-brand-pale-orange text-brand-deep-orange hover:opacity-[0.88] hover:scale-105 active:scale-90 cursor-pointer',
-            )}
-          >
-            {isAdding ? <Loader2 size={13} className="animate-spin" /> : <ShoppingCart size={13} />}
-          </button>
+            <button
+              onClick={e => onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital')}
+              disabled={stock <= 0}
+              aria-label={stock <= 0 ? 'Out of stock' : 'Add to cart'}
+              className={clsx(
+                'shrink-0 flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200',
+                stock <= 0
+                  ? 'bg-bone text-slate border-bone cursor-not-allowed'
+                  : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.95] cursor-pointer',
+              )}
+            >
+              {isAdding ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

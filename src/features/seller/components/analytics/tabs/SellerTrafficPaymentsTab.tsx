@@ -5,7 +5,7 @@ import { useSellerAnalyticsTrafficSources, useSellerAnalyticsPaymentMethods } fr
 import type { SellerAnalyticsParams, PaymentMethodRow } from '@/api/services/analytics/analytics';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
-import { formatCurrency } from '@/components/comman/analytics/format';
+import { formatMoneyCompact } from '@/utils/currency';
 
 const SOURCE_LABELS: Record<string, string> = {
   marketplace_search: 'Marketplace Search',
@@ -15,14 +15,14 @@ const SOURCE_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
-export function SellerTrafficPaymentsTab({ params }: { params: SellerAnalyticsParams }) {
+export function SellerTrafficPaymentsTab({ params, currency }: { params: SellerAnalyticsParams; currency?: string | null }) {
   const traffic = useSellerAnalyticsTrafficSources(params);
   const payments = useSellerAnalyticsPaymentMethods(params);
 
   const methodColumns: TableColumn<PaymentMethodRow>[] = [
     { key: 'label', header: 'Method' },
     { key: 'orderCount', header: 'Orders', align: 'right' },
-    { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatCurrency(r.revenue) },
+    { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatMoneyCompact(r.revenue, currency) },
   ];
 
   return (

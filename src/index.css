@@ -22,6 +22,7 @@
   --color-warning-bg: #FEF7E5;
   --color-error:      #C13030;
   --color-error-bg:   #FDEAEA;
+  --color-error-border: #FECACA;
   --color-info:       #1A72C2;
   --color-info-bg:    #E6F1FB;
 
@@ -208,6 +209,26 @@
   to   { transform: scale(1); }
 }
 .hero-kenburns { animation: hero-kenburns 7s var(--ease-out) forwards; }
+
+/* Very subtle ambient "alive" pulse for the campaign countdown group — not
+   tied to the per-second tick (that would look twitchy), just a slow, gentle
+   breathing scale so it doesn't read as inert. */
+@keyframes countdown-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.03); }
+}
+.countdown-pulse { animation: countdown-pulse 2.4s ease-in-out infinite; }
+
+/* Slow ambient gradient drift on the campaign banner's background — the
+   gradient layer is sized larger than its box and its position animates
+   gently back and forth, so the color field feels alive without any motion
+   on the actual content sitting on top of it. */
+@keyframes gradient-drift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.gradient-drift { background-size: 160% 160%; animation: gradient-drift 10s ease-in-out infinite; }
 
 /* Periodic light sweep across the deals ribbon — reads as "live sale", not distracting */
 @keyframes banner-shimmer {

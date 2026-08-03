@@ -87,7 +87,7 @@ export interface AdminFinanceOverviewData {
   flaggedSellersCount: number;
   pendingVerificationMethodsCount: number;
   pendingManualPaymentsCount: number;
-  payoutQueue: Record<PayoutStatus, { count: number; amount: number }>;
+  payoutQueue: Record<PayoutStatus, { count: number; amount: number; byCurrency: { currency: string; count: number; amount: number }[] }>;
   note: string;
 }
 
@@ -187,6 +187,10 @@ export interface TransactionRow {
   storeName?: string;
   sellerId: string;
   type: TransactionType;
+  /** The seller's own settlement currency this ledger entry is denominated in
+   *  (already returned by the API — same field the CSV export's "Currency"
+   *  column already uses — just previously missing from this type). */
+  currency: string;
   amount: number;
   balanceBefore: number;
   balanceAfter: number;
@@ -217,7 +221,7 @@ export interface AdminPayoutQueueData {
   statusCounts: Record<PayoutStatus, { count: number; amount: number }>;
 }
 
-export interface ClearingResultData { processed: number; totalAmount: number }
+export interface ClearingResultData { processed: number; totalAmount: number; byCurrency: { currency: string; amount: number }[] }
 
 // ── H. Reports ────────────────────────────────────────────────────────────────────
 

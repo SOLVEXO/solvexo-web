@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
-  Zap, PackageCheck, Bell, ShoppingBag, Search, Gift, ShieldCheck, Award, Headphones, Star,
+  Zap, PackageCheck, Bell, ShoppingBag, Search, Gift, ShieldCheck, Award, Headphones,
   Signal, Wifi, BatteryFull, Home, LayoutGrid, ShoppingCart, Package, User, Shirt, Sparkles, MoreHorizontal,
-  Apple, Play, CornerRightUp,
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { QrGlyph } from './AppPromoParts';
+import { QrGlyph, StoreBadgeChip, RatingRow } from './AppPromoParts';
 import { apiGetPlatformStats, type PlatformStats } from '@/api/services/store';
 
 const compactNumber = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
@@ -257,14 +256,7 @@ export function AppDownloadBanner({ className }: { className?: string }) {
           </p>
 
           <div className="flex items-center justify-center lg:justify-start gap-2 mb-4">
-            <div className="flex items-center gap-[2px]">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} size={12} className="text-brand-orange fill-brand-orange" />
-              ))}
-            </div>
-            <span className="text-[12px] font-bold text-white">4.8</span>
-            <span className="text-white/25">|</span>
-            <span className="text-[10.5px] text-white/60">500K+ downloads</span>
+            <RatingRow />
           </div>
 
           {/* Feature cards */}
@@ -285,28 +277,26 @@ export function AppDownloadBanner({ className }: { className?: string }) {
             ))}
           </ul>
 
-          {/* Store badges */}
+          {/* Store badges — decorative only, no app is published yet (see
+              StoreBadgeChip/Footer's AppBadge, the same honest pattern used
+              everywhere else this codebase promotes the not-yet-real app) */}
           <div className="flex items-center justify-center lg:justify-start gap-3">
-            <span className="flex items-center justify-center gap-[8px] rounded-[10px] bg-carbon border border-white/10 px-[18px] py-[11px] cursor-pointer transition-colors hover:bg-charcoal">
-              <Apple size={16} className="text-white shrink-0" />
-              <span className="text-[13px] font-semibold text-white leading-none">App Store</span>
-            </span>
-            <span className="flex items-center justify-center gap-[8px] rounded-[10px] bg-carbon border border-white/10 px-[18px] py-[11px] cursor-pointer transition-colors hover:bg-charcoal">
-              <Play size={14} className="text-white shrink-0 fill-white" />
-              <span className="text-[13px] font-semibold text-white leading-none">Google Play</span>
-            </span>
+            <StoreBadgeChip platform="ios" />
+            <StoreBadgeChip platform="android" />
           </div>
         </div>
 
-        {/* QR code — its own column, beside the phones (not attached to them) */}
+        {/* QR code — its own column, beside the phones (not attached to them).
+            Decorative pattern only (see QrGlyph) — no real app to scan into
+            yet, so the caption says so rather than promising a working scan. */}
         <div className="hidden lg:flex flex-col items-start gap-[8px] shrink-0">
           <div className="rounded-2xl border-2 border-brand-orange/50 p-3">
             <QrGlyph size={84} />
           </div>
-          <p className="text-[11px] text-[#B0AEA8] leading-tight">Scan to download</p>
+          <p className="text-[11px] text-[#B0AEA8] leading-tight">Coming soon</p>
           <div className="flex items-center gap-[6px]">
-            <CornerRightUp size={13} className="text-brand-orange" />
-            <p className="text-[10.5px] text-brand-orange italic whitespace-nowrap">Scan &amp; install in seconds</p>
+            <Sparkles size={13} className="text-brand-orange" />
+            <p className="text-[10.5px] text-brand-orange italic whitespace-nowrap">We'll let you know when it's ready</p>
           </div>
         </div>
 

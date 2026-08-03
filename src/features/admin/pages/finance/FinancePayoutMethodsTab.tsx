@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Landmark, CheckCircle2, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
-import { Button, Modal, Input, EmptyState, SkeletonBox } from '@/components/comman/ui';
+import { Button, Modal, Input, Table, type TableColumn } from '@/components/comman/ui';
 import { useAdminPendingVerificationMethods, useAdminVerifyPayoutMethod, useAdminTriggerScheduledPayouts } from '@/hooks/admin/useAdminFinance';
 import type { PendingPayoutMethodRow } from '@/api/services/finance/adminFinance';
 import { formatDate } from '@/components/comman/analytics/format';
@@ -37,6 +37,34 @@ export function FinancePayoutMethodsTab() {
     await scheduled.trigger();
   }
 
+  const columns: TableColumn<PendingPayoutMethodRow>[] = [
+    { key: 'storeName', header: 'Store', render: m => <span className="font-medium text-charcoal">{m.storeName}</span> },
+    { key: 'type', header: 'Type', render: m => <span className="text-graphite">{METHOD_LABEL[m.type] ?? m.type}</span> },
+    {
+      key: 'details', header: 'Details',
+      render: m => (
+        <span className="font-mono">
+          {methodDetail(m)}
+          {m.accountTitleMismatchFlagged && (
+            <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold text-warning bg-warning-bg rounded-full px-2 py-[1px]">
+              <AlertTriangle size={9} /> Name mismatch
+            </span>
+          )}
+        </span>
+      ),
+    },
+    { key: 'createdAt', header: 'Submitted', render: m => <span className="text-slate whitespace-nowrap">{formatDate(m.createdAt)}</span> },
+    {
+      key: 'actions', header: '', align: 'right',
+      render: m => (
+        <div className="flex items-center justify-end gap-2">
+          <Button size="xs" variant="outline" icon={<CheckCircle2 size={12} />} onClick={() => handleApprove(m)} loading={submitting}>Approve</Button>
+          <Button size="xs" variant="danger" icon={<XCircle size={12} />} onClick={() => { setRejecting(m); setReason(''); }}>Reject</Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -59,50 +87,17 @@ export function FinancePayoutMethodsTab() {
         <div className="px-5 py-[14px] border-b border-bone">
           <p className="text-[14px] font-bold text-charcoal">Pending Verification</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                {['Store', 'Type', 'Details', 'Submitted', ''].map(h => (
-                  <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <tr key={i} className="border-b border-[#F0EEE6]"><td className="px-4 py-3" colSpan={5}><SkeletonBox className="h-5 w-full" /></td></tr>
-                ))
-              ) : error ? (
-                <tr><td colSpan={5} className="px-4 py-6 text-center text-[13px] text-error">{error}</td></tr>
-              ) : methods.length === 0 ? (
-                <tr><td colSpan={5}>
-                  <EmptyState icon={<Landmark size={28} className="text-slate" />} title="Nothing pending" description="Newly added seller payout methods needing review will show up here." />
-                </td></tr>
-              ) : methods.map(m => (
-                <tr key={m._id} className="border-b border-[#F0EEE6]">
-                  <td className="px-4 py-3 text-[13px] font-medium text-charcoal">{m.storeName}</td>
-                  <td className="px-4 py-3 text-[12.5px] text-graphite">{METHOD_LABEL[m.type] ?? m.type}</td>
-                  <td className="px-4 py-3 text-[12px] text-slate font-mono">
-                    {methodDetail(m)}
-                    {m.accountTitleMismatchFlagged && (
-                      <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold text-warning bg-warning-bg rounded-full px-2 py-[1px]">
-                        <AlertTriangle size={9} /> Name mismatch
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-[12px] text-slate whitespace-nowrap">{formatDate(m.createdAt)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button size="xs" variant="outline" icon={<CheckCircle2 size={12} />} onClick={() => handleApprove(m)} loading={submitting}>Approve</Button>
-                      <Button size="xs" variant="danger" icon={<XCircle size={12} />} onClick={() => { setRejecting(m); setReason(''); }}>Reject</Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {error ? (
+          <p className="px-4 py-6 text-center text-[13px] text-error">{error}</p>
+        ) : (
+          <Table
+            columns={columns}
+            data={methods}
+            keyExtractor={m => m._id}
+            loading={loading}
+            emptyState={{ icon: <Landmark size={28} className="text-slate" />, title: 'Nothing pending', description: 'Newly added seller payout methods needing review will show up here.' }}
+          />
+        )}
       </div>
 
       {rejecting && (

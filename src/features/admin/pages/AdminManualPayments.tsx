@@ -3,7 +3,7 @@ import { Landmark, CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminManualPayments, useApproveManualPayment, useRejectManualPayment } from '@/hooks/admin/useAdminManualPayments';
 import type { AdminManualPaymentProof, ManualPaymentProofStatus } from '@/api/services/manualPayment';
-import { Button, Modal, StatusBadge, EmptyState, SkeletonBox, Textarea } from '@/components/comman/ui';
+import { Button, Modal, StatusBadge, Textarea, Table, type TableColumn } from '@/components/comman/ui';
 
 const STATUS_LABEL: Record<ManualPaymentProofStatus, string> = {
   pending: 'Pending', approved: 'Approved', rejected: 'Rejected',
@@ -18,6 +18,7 @@ function ReviewModal({ proof, onClose, onDone }: { proof: AdminManualPaymentProo
   const { approve, submitting: approving, error: approveError } = useApproveManualPayment();
   const { reject, submitting: rejecting, error: rejectError } = useRejectManualPayment();
   const [rejecting_, setRejecting] = useState(false);
+  const [confirmingApprove, setConfirmingApprove] = useState(false);
   const [reason, setReason] = useState('');
 
   async function handleApprove() {
@@ -43,10 +44,15 @@ function ReviewModal({ proof, onClose, onDone }: { proof: AdminManualPaymentProo
               <Button variant="ghost" onClick={() => setRejecting(false)}>Back</Button>
               <Button variant="danger" loading={rejecting} disabled={!reason.trim()} onClick={handleReject}>Confirm Reject</Button>
             </>
+          ) : confirmingApprove ? (
+            <>
+              <Button variant="ghost" onClick={() => setConfirmingApprove(false)}>Back</Button>
+              <Button variant="primary" icon={<CheckCircle2 size={14} />} loading={approving} onClick={handleApprove}>Confirm Approve</Button>
+            </>
           ) : (
             <>
               <Button variant="outline" icon={<XCircle size={14} />} onClick={() => setRejecting(true)}>Reject</Button>
-              <Button variant="primary" icon={<CheckCircle2 size={14} />} loading={approving} onClick={handleApprove}>Approve</Button>
+              <Button variant="primary" icon={<CheckCircle2 size={14} />} onClick={() => setConfirmingApprove(true)}>Approve</Button>
             </>
           )
         ) : (
@@ -99,6 +105,12 @@ function ReviewModal({ proof, onClose, onDone }: { proof: AdminManualPaymentProo
           />
         )}
 
+        {confirmingApprove && (
+          <p className="text-[12px] text-charcoal bg-cream border border-bone rounded-md px-2.5 py-2">
+            This marks the order{proof.orderIds.length !== 1 ? 's' : ''} as paid and credits the seller. Confirm the transfer amount and reference above match the buyer's actual bank transfer before approving.
+          </p>
+        )}
+
         {(approveError || rejectError) && <p className="text-[12px] text-error">{approveError || rejectError}</p>}
       </div>
     </Modal>
@@ -111,6 +123,45 @@ export function AdminManualPayments() {
   const [statusFilter, setStatusFilter] = useState<ManualPaymentProofStatus | ''>('pending');
   const { proofs, loading, error, refetch } = useAdminManualPayments(statusFilter || undefined);
   const [viewing, setViewing] = useState<AdminManualPaymentProof | null>(null);
+
+  const columns: TableColumn<AdminManualPaymentProof>[] = [
+    {
+      key: 'buyer', header: 'Buyer',
+      render: p => (
+        <div className="max-w-[180px]">
+          <p className="font-semibold truncate">{p.buyerName}</p>
+          <p className="text-[11px] text-slate truncate">{p.buyerEmail}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'amount', header: 'Amount',
+      render: p => (
+        <span className="whitespace-nowrap">
+          PKR {p.amountPKR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          <span className="text-slate"> · ${p.amountUSD.toFixed(2)}</span>
+        </span>
+      ),
+    },
+    {
+      key: 'transactionReference', header: 'Reference',
+      render: p => <span className="font-mono max-w-[160px] truncate block">{p.transactionReference || '—'}</span>,
+    },
+    {
+      key: 'createdAt', header: 'Submitted',
+      render: p => <span className="whitespace-nowrap">{formatDate(p.createdAt)}</span>,
+    },
+    {
+      key: 'status', header: 'Status',
+      render: p => <StatusBadge status={STATUS_LABEL[p.status]} />,
+    },
+    {
+      key: 'actions', header: '', align: 'right',
+      render: p => (
+        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setViewing(p); }}>Review</Button>
+      ),
+    },
+  ];
 
   return (
     <div>
@@ -131,49 +182,18 @@ export function AdminManualPayments() {
             </select>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  {['Buyer', 'Amount', 'Reference', 'Submitted', 'Status', ''].map(h => (
-                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <tr key={i} className="border-b border-[#F0EEE6]">
-                      <td className="px-4 py-3" colSpan={6}><SkeletonBox className="h-5 w-full" /></td>
-                    </tr>
-                  ))
-                ) : error ? (
-                  <tr><td colSpan={6} className="px-4 py-6 text-center text-[13px] text-error">{error}</td></tr>
-                ) : proofs.length === 0 ? (
-                  <tr><td colSpan={6}>
-                    <EmptyState icon={<Landmark size={28} className="text-slate" />} title="No manual payments found" description="Bank-transfer submissions will show up here for review." />
-                  </td></tr>
-                ) : proofs.map(p => (
-                  <tr key={p._id} className="border-b border-[#F0EEE6] transition-colors duration-150 hover:bg-cream cursor-pointer" onClick={() => setViewing(p)}>
-                    <td className="px-4 py-3 text-[13px] text-charcoal max-w-[180px]">
-                      <p className="font-semibold truncate">{p.buyerName}</p>
-                      <p className="text-[11px] text-slate truncate">{p.buyerEmail}</p>
-                    </td>
-                    <td className="px-4 py-3 text-[12.5px] text-graphite whitespace-nowrap">
-                      PKR {p.amountPKR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                      <span className="text-slate"> · ${p.amountUSD.toFixed(2)}</span>
-                    </td>
-                    <td className="px-4 py-3 text-[12px] text-slate font-mono max-w-[160px] truncate">{p.transactionReference || '—'}</td>
-                    <td className="px-4 py-3 text-[12px] text-slate whitespace-nowrap">{formatDate(p.createdAt)}</td>
-                    <td className="px-4 py-3"><StatusBadge status={STATUS_LABEL[p.status]} /></td>
-                    <td className="px-4 py-3 text-right">
-                      <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setViewing(p); }}>Review</Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {error ? (
+            <p className="px-4 py-6 text-center text-[13px] text-error">{error}</p>
+          ) : (
+            <Table
+              columns={columns}
+              data={proofs}
+              keyExtractor={p => p._id}
+              loading={loading}
+              onRowClick={setViewing}
+              emptyState={{ icon: <Landmark size={28} className="text-slate" />, title: 'No manual payments found', description: 'Bank-transfer submissions will show up here for review.' }}
+            />
+          )}
         </div>
       </div>
 

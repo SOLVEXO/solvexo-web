@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShoppingBag, Plus, Package, Download,
+  ShoppingBag, Plus,
   AlertCircle, RefreshCw, TrendingUp,
-  CheckCircle2, AlertTriangle, XCircle,
-  Eye, Pencil, Trash2,
+  Eye, Pencil,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   Table,      type TableColumn, type TableSort,
-  MetricCard,
   Badge,      StatusBadge,
   EmptyState,
   Card,
@@ -21,30 +19,13 @@ import {
   apiGetStoreInventory,
   type InventoryProduct,
 } from '@/api/services/product';
-
-// ── Product thumbnail cell ────────────────────────────────────────────────────
-function ProductCell({ p }: { p: InventoryProduct }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="w-9 h-9 rounded-lg shrink-0 bg-brand-pale-orange border border-[#EDEBE2] flex items-center justify-center overflow-hidden">
-        {p.image
-          ? <img loading="lazy" decoding="async" src={p.image} alt="" className="w-full h-full object-cover" />
-          : p.type === 'digital'
-            ? <Download size={14} className="text-brand-orange" />
-            : <Package  size={14} className="text-brand-orange" />}
-      </div>
-      <div>
-        <p className="text-[13px] font-medium text-charcoal mb-[1px]">{p.name}</p>
-        <p className="text-[11px] text-slate">SKU: {p.sku}</p>
-      </div>
-    </div>
-  );
-}
+import { currencySymbol } from '@/utils/currency';
+import { ProductCell, ProductStatsGrid } from '../../components/ProductListShared';
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function StoreProductList() {
   const navigate    = useNavigate();
-  const { storeId } = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
 
   const [products,      setProducts]      = useState<InventoryProduct[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -61,7 +42,6 @@ export default function StoreProductList() {
   const isSearching = debouncedSearch.trim().length > 0;
 
   const [sort, setSort] = useState<TableSort | null>(null);
-  const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(new Set());
 
   const handleSortChange = (key: string) => {
     setSort(prev => (prev && prev.key === key)
@@ -155,7 +135,7 @@ export default function StoreProductList() {
       key: 'price', header: 'Price', align: 'right', sortable: true,
       render: p => (
         <span className="font-semibold text-charcoal">
-          ${p.price.toLocaleString()}
+          {currencySymbol(store?.baseCurrency)}{p.price.toLocaleString()}
         </span>
       ),
     },
@@ -212,32 +192,7 @@ export default function StoreProductList() {
       <div className="px-7 py-5 flex flex-col gap-5">
 
         {/* ── Stats ──────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <MetricCard
-            label="Total Products"
-            value={stats?.totalProducts ?? 0}
-            icon={<ShoppingBag size={16} />}
-            loading={loading && !stats}
-          />
-          <MetricCard
-            label="In Stock"
-            value={stats?.inStock ?? 0}
-            icon={<CheckCircle2 size={16} />}
-            loading={loading && !stats}
-          />
-          <MetricCard
-            label="Low Stock"
-            value={stats?.lowStock ?? 0}
-            icon={<AlertTriangle size={16} />}
-            loading={loading && !stats}
-          />
-          <MetricCard
-            label="Out of Stock"
-            value={stats?.outOfStock ?? 0}
-            icon={<XCircle size={16} />}
-            loading={loading && !stats}
-          />
-        </div>
+        <ProductStatsGrid stats={stats} loading={loading} />
 
         {/* ── Error ──────────────────────────────────────────────────── */}
         {error && (
@@ -266,22 +221,12 @@ export default function StoreProductList() {
                   placeholder="Search by name or SKU…"
                   className="w-[220px]"
                 />
-                {selectedKeys.size > 0 ? (
-                  <button
-                    disabled
-                    title="Bulk delete isn't available yet — delete products individually from the row menu."
-                    className="flex items-center gap-1.5 text-[11px] font-semibold text-error border border-[#FECACA] rounded-[6px] px-2.5 py-[6px] opacity-50 cursor-not-allowed shrink-0"
-                  >
-                    <Trash2 size={12} /> Delete selected ({selectedKeys.size})
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleRetry()}
-                    className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[6px] transition-colors duration-150 hover:bg-bone shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-1"
-                  >
-                    <RefreshCw size={11} /> Refresh
-                  </button>
-                )}
+                <button
+                  onClick={() => handleRetry()}
+                  className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[6px] transition-colors duration-150 hover:bg-bone shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-1"
+                >
+                  <RefreshCw size={11} /> Refresh
+                </button>
               </div>
             </div>
 
@@ -317,9 +262,6 @@ export default function StoreProductList() {
                 keyExtractor={p => p.productId}
                 sort={sort ?? undefined}
                 onSortChange={handleSortChange}
-                selectable
-                selectedKeys={selectedKeys}
-                onSelectionChange={setSelectedKeys}
                 pagination={isSearching ? undefined : {
                   page,
                   total:    totalProducts,

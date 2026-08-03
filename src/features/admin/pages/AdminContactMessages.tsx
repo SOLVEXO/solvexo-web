@@ -3,7 +3,7 @@ import { MessageCircle, Eye, Trash2 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminContact } from '@/hooks/admin/useAdminContact';
 import { apiUpdateContactStatus, apiDeleteContactSubmission, type ContactSubmission, type ContactSubmissionStatus } from '@/api/services/contact';
-import { Button, Modal, StatusBadge, ActionMenu, EmptyState, SkeletonBox } from '@/components/comman/ui';
+import { Button, Modal, StatusBadge, ActionMenu, Table, type TableColumn } from '@/components/comman/ui';
 
 const STATUS_LABEL: Record<ContactSubmissionStatus, string> = {
   new: 'New', read: 'Read', resolved: 'Resolved',
@@ -77,6 +77,37 @@ export function AdminContactMessages() {
     }
   }
 
+  const columns: TableColumn<ContactSubmission>[] = [
+    {
+      key: 'name', header: 'From',
+      render: s => (
+        <div className="max-w-[180px]">
+          <p className="font-semibold truncate">{s.name}</p>
+          <p className="text-[11px] text-slate truncate">{s.email}</p>
+        </div>
+      ),
+    },
+    { key: 'topic', header: 'Topic', render: s => <span className="text-graphite max-w-[160px] truncate block">{s.topic}</span> },
+    { key: 'message', header: 'Message', render: s => <span className="text-slate max-w-[280px] truncate block">{s.message}</span> },
+    { key: 'createdAt', header: 'Received', render: s => <span className="text-slate whitespace-nowrap">{formatDate(s.createdAt)}</span> },
+    { key: 'status', header: 'Status', render: s => <StatusBadge status={STATUS_LABEL[s.status]} /> },
+    {
+      key: 'actions', header: 'Actions',
+      render: s => (
+        <div onClick={e => e.stopPropagation()}>
+          <ActionMenu
+            align="right"
+            items={[
+              { label: 'View', icon: <Eye size={13} />, onClick: () => openDetail(s) },
+              ...(s.status !== 'resolved' ? [{ label: 'Mark Resolved', icon: <MessageCircle size={13} />, onClick: () => handleStatusChange(s, 'resolved' as ContactSubmissionStatus) }] : []),
+              { label: 'Delete', icon: <Trash2 size={13} />, danger: true, onClick: () => { setDeleting(s); setActionError(''); } },
+            ]}
+          />
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div>
       <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
@@ -101,53 +132,18 @@ export function AdminContactMessages() {
             </select>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  {['From', 'Topic', 'Message', 'Received', 'Status', 'Actions'].map(h => (
-                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <tr key={i} className="border-b border-[#F0EEE6]">
-                      <td className="px-4 py-3" colSpan={6}><SkeletonBox className="h-5 w-full" /></td>
-                    </tr>
-                  ))
-                ) : error ? (
-                  <tr><td colSpan={6} className="px-4 py-6 text-center text-[13px] text-error">{error}</td></tr>
-                ) : filtered.length === 0 ? (
-                  <tr><td colSpan={6}>
-                    <EmptyState icon={<MessageCircle size={28} className="text-slate" />} title="No contact messages found" />
-                  </td></tr>
-                ) : filtered.map(s => (
-                  <tr key={s._id} className="border-b border-[#F0EEE6] transition-colors duration-150 hover:bg-cream cursor-pointer" onClick={() => openDetail(s)}>
-                    <td className="px-4 py-3 text-[13px] text-charcoal max-w-[180px]">
-                      <p className="font-semibold truncate">{s.name}</p>
-                      <p className="text-[11px] text-slate truncate">{s.email}</p>
-                    </td>
-                    <td className="px-4 py-3 text-[13px] text-graphite max-w-[160px] truncate">{s.topic}</td>
-                    <td className="px-4 py-3 text-[12px] text-slate max-w-[280px] truncate">{s.message}</td>
-                    <td className="px-4 py-3 text-[12px] text-slate whitespace-nowrap">{formatDate(s.createdAt)}</td>
-                    <td className="px-4 py-3"><StatusBadge status={STATUS_LABEL[s.status]} /></td>
-                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                      <ActionMenu
-                        align="right"
-                        items={[
-                          { label: 'View', icon: <Eye size={13} />, onClick: () => openDetail(s) },
-                          ...(s.status !== 'resolved' ? [{ label: 'Mark Resolved', icon: <MessageCircle size={13} />, onClick: () => handleStatusChange(s, 'resolved' as ContactSubmissionStatus) }] : []),
-                          { label: 'Delete', icon: <Trash2 size={13} />, danger: true, onClick: () => { setDeleting(s); setActionError(''); } },
-                        ]}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {error ? (
+            <p className="px-4 py-6 text-center text-[13px] text-error">{error}</p>
+          ) : (
+            <Table
+              columns={columns}
+              data={filtered}
+              keyExtractor={s => s._id}
+              loading={loading}
+              onRowClick={openDetail}
+              emptyState={{ icon: <MessageCircle size={28} className="text-slate" />, title: 'No contact messages found' }}
+            />
+          )}
         </div>
       </div>
 

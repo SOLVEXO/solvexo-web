@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { ArrowLeft, ArrowRight, Search, Clock, LayoutGrid, X, TrendingUp, Tag, Star, Sparkles, ChevronDown, Check, Store as StoreIcon, Lightbulb, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Search, Clock, LayoutGrid, X, TrendingUp, Tag, Star, Sparkles, ChevronDown, Check, Store as StoreIcon, Lightbulb, Trash2, Eye } from 'lucide-react';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetRecentSearches, apiSearchStores } from '@/api/services/search';
 import { apiGetAllProducts, type MarketplaceProduct } from '@/api/services/marketplace';
@@ -28,6 +28,29 @@ export interface BuyerNavbarSearchConfig {
   categories?: { id: string; name: string }[];
   /** Called when a category suggestion is clicked — lets the host page filter locally instead of falling back to a text search. */
   onCategorySelect?: (id: string) => void;
+  /** Real top-stores list (e.g. Marketplace's own `topStores`) shown as "Popular Stores" — no separate fetch inside the search box for this one. */
+  popularStores?: PublicStoreListItem[];
+}
+
+// ── Recently viewed — client-tracked (no view-history API exists), same
+// pattern as recent searches: a small real snapshot cached on-device from
+// ProductDetail so the dropdown can show it without an extra fetch. ──
+const RECENTLY_VIEWED_KEY = 'solvexo_recently_viewed';
+export interface RecentlyViewedItem {
+  id: string;
+  name: string;
+  image: string | null;
+  price: number | null;
+  currency?: 'PKR' | 'USD' | null;
+}
+export function getRecentlyViewed(): RecentlyViewedItem[] {
+  try { return JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) ?? '[]'); } catch { return []; }
+}
+export function pushRecentlyViewed(item: RecentlyViewedItem) {
+  try {
+    const next = [item, ...getRecentlyViewed().filter(v => v.id !== item.id)].slice(0, 8);
+    localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(next));
+  } catch { /* storage unavailable */ }
 }
 
 export interface BuyerNavbarProps {
@@ -41,6 +64,10 @@ export interface BuyerNavbarProps {
   accentColor?: string;
   /** Optional back-link button, e.g. "Continue Shopping" or "Back to Cart". */
   backTo?: { label: string; path: string };
+  /** Hides the built-in search box (and its mobile icon toggle) entirely —
+   *  for pages (e.g. Marketplace) that already render their own larger,
+   *  dedicated search bar below the navbar, so search isn't duplicated. */
+  hideSearch?: boolean;
 }
 
 const RECENT_KEY = 'solvexo_recent_searches';
@@ -188,9 +215,19 @@ function StoreMatchRow({ store, query, onClick }: { store: PublicStoreListItem; 
 }
 
 // ── Search box with recent / trending / category / product suggestions ──────
-function SearchBox({
-  value, onChange, placeholder, categories, onCategorySelect, onSubmit, autoFocus,
-}: BuyerNavbarSearchConfig & { onSubmit: (term?: string) => void; autoFocus?: boolean }) {
+// `size="lg"` renders the same real search box (same suggestions dropdown,
+// same state) at the enlarged, pill-shaped scale used as a standalone hero
+// search bar (e.g. Marketplace, above the banner) instead of its default
+// compact navbar scale.
+export interface SearchBoxProps extends BuyerNavbarSearchConfig {
+  onSubmit: (term?: string) => void;
+  autoFocus?: boolean;
+  size?: 'md' | 'lg';
+}
+export function SearchBox({
+  value, onChange, placeholder, categories, onCategorySelect, popularStores, onSubmit, autoFocus, size = 'md',
+}: SearchBoxProps) {
+  const isLg = size === 'lg';
   const navigate = useNavigate();
   const panelId = useId();
   const ref = useRef<HTMLDivElement>(null);
@@ -207,6 +244,7 @@ function SearchBox({
   const poolFetched = useRef(false);
   const [storeMatches, setStoreMatches] = useState<PublicStoreListItem[]>([]);
   const [storesLoading, setStoresLoading] = useState(false);
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedItem[]>([]);
   const [isMac] = useState(() => typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.userAgent));
 
   const recent = [...syncedRecent, ...localRecent.filter(t => !syncedRecent.some(s => s.toLowerCase() === t.toLowerCase()))].slice(0, 5);
@@ -220,6 +258,7 @@ function SearchBox({
     if (!open) return;
 
     setLocalRecent(getLocalRecentSearches());
+    setRecentlyViewed(getRecentlyViewed());
     if (TokenStorage.isLoggedIn()) {
       // Account-synced history when the backend has it.
       apiGetRecentSearches(5)
@@ -337,30 +376,36 @@ function SearchBox({
   // raw id or goes blank.
   const categoryNameFor = (p: MarketplaceProduct) => categories?.find(c => c.id === p.categoryId)?.name ?? typeLabel(p);
 
-  const hasEmptyStateContent = recent.length > 0 || TRENDING_SEARCHES.length > 0 || (categories?.length ?? 0) > 0;
+  const hasEmptyStateContent = recent.length > 0 || TRENDING_SEARCHES.length > 0 || (categories?.length ?? 0) > 0
+    || recentlyViewed.length > 0 || (popularStores?.length ?? 0) > 0;
   const hasTypingContent = matchingProducts.length > 0 || matchingCategories.length > 0 || storeMatches.length > 0 || poolLoading || storesLoading;
   const hasSuggestions = isTyping ? hasTypingContent : hasEmptyStateContent;
 
   return (
-    <div ref={ref} className="relative flex-1 flex justify-center px-2 sm:px-4" onKeyDown={handleKeyDown}>
+    <div ref={ref} className={clsx('relative flex justify-center', isLg ? 'w-full' : 'flex-1 px-2 sm:px-4')} onKeyDown={handleKeyDown}>
       {/* Input and dropdown share this one sized wrapper so they're always
          exactly the same width — the dropdown reads as an extension of the
          input, not a separately-floating box. */}
       {/* No base max-width — on mobile this only renders inside the full-width
          expanded search row (mobileSearchOpen), where a 240px cap would leave
          no room for the 56px product-row thumbnails; sm+ still caps it to sit
-         comfortably between the logo and the account icons. */}
-      <div className="relative w-full sm:max-w-[360px] lg:max-w-[480px]">
+         comfortably between the logo and the account icons. lg is a
+         standalone hero search bar (Marketplace, above the banner), so it
+         gets its own, much wider cap instead. */}
+      <div className={clsx('relative w-full', isLg ? 'max-w-[820px]' : 'sm:max-w-[360px] lg:max-w-[480px]')}>
         <div
           className={clsx(
-            'group relative flex items-center gap-[9px] px-[14px] py-[9px] bg-white border rounded-xl w-full',
+            'group relative flex items-center bg-white border w-full',
             'transition-[border-color,box-shadow,background-color] duration-200 ease-out',
+            isLg
+              ? 'gap-3 pl-6 pr-1.5 py-1.5 rounded-full border-2'
+              : 'gap-[9px] px-[14px] py-[9px] rounded-xl',
             open
               ? 'border-brand-orange shadow-[0_2px_12px_rgba(217,119,87,0.12)] ring-[3px] ring-brand-orange/10'
-              : 'border-bone hover:border-[#DEDBD0]',
+              : isLg ? 'border-brand-orange shadow-[0_6px_24px_rgba(217,119,87,0.16)]' : 'border-bone hover:border-[#DEDBD0]',
           )}
         >
-          <Search size={15} className={clsx('shrink-0 transition-colors duration-200', open ? 'text-brand-orange' : 'text-slate')} />
+          <Search size={isLg ? 19 : 15} className={clsx('shrink-0 transition-colors duration-200', open || isLg ? 'text-brand-orange' : 'text-slate')} />
           <input
             ref={inputRef}
             role="combobox"
@@ -373,9 +418,9 @@ function SearchBox({
             placeholder={placeholder ?? 'Search products, categories, stores…'}
             aria-label={placeholder ?? 'Search products, categories, stores'}
             autoFocus={autoFocus}
-            className="border-0 outline-none text-[13.5px] text-carbon placeholder:text-slate/80 bg-transparent w-full min-w-0"
+            className={clsx('border-0 outline-none text-carbon placeholder:text-slate/80 bg-transparent w-full min-w-0', isLg ? 'text-[15px] sm:text-[16px] py-[8px]' : 'text-[13.5px]')}
           />
-          {value ? (
+          {value && (
             <button
               onClick={() => onChange('')}
               aria-label="Clear search"
@@ -383,10 +428,19 @@ function SearchBox({
             >
               <X size={14} />
             </button>
-          ) : !open && (
+          )}
+          {!isLg && !value && !open && (
             <kbd className="hidden sm:flex items-center gap-[2px] text-[10px] font-semibold text-slate/70 bg-cream border border-bone rounded-[5px] px-[6px] py-[2px] shrink-0 leading-none">
               {isMac ? '⌘' : 'Ctrl'}K
             </kbd>
+          )}
+          {isLg && (
+            <button
+              onClick={() => onSubmit(value)}
+              className="shrink-0 flex items-center gap-2 bg-gradient-to-r from-brand-orange to-brand-deep-orange px-7 sm:px-9 py-[13px] rounded-full text-[15px] font-bold text-white cursor-pointer hover:opacity-95 transition-opacity"
+            >
+              <Search size={16} /> <span className="hidden sm:inline">Search</span>
+            </button>
           )}
         </div>
 
@@ -420,6 +474,31 @@ function SearchBox({
                   </div>
                 )}
 
+                {recentlyViewed.length > 0 && (
+                  <div className="px-3 py-3 border-b border-bone">
+                    <div className="px-1"><SearchSectionLabel icon={<Eye size={10} />}>Recently Viewed</SearchSectionLabel></div>
+                    <div className="flex gap-[10px] overflow-x-auto scrollbar-hide px-1">
+                      {recentlyViewed.map(item => (
+                        <button
+                          key={item.id}
+                          data-search-item
+                          onClick={() => goToProduct(item.id)}
+                          className="group shrink-0 w-[74px] text-left bg-transparent border-none cursor-pointer p-0 focus-visible:outline-none"
+                        >
+                          <span className="block w-[74px] h-[74px] rounded-[10px] overflow-hidden bg-brand-pale-orange">
+                            {item.image
+                              ? <img loading="lazy" decoding="async" src={item.image} alt="" className="w-full h-full object-cover" />
+                              : <span className="w-full h-full flex items-center justify-center"><Sparkles size={16} className="text-brand-orange opacity-40" /></span>}
+                          </span>
+                          <span className="block text-[10.5px] text-charcoal leading-snug line-clamp-2 mt-[5px] group-hover:text-brand-deep-orange transition-colors">
+                            {item.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {categories && categories.length > 0 && (
                   <div className="px-4 py-3 border-b border-bone">
                     <SearchSectionLabel icon={<LayoutGrid size={10} />}>Popular Categories</SearchSectionLabel>
@@ -437,6 +516,30 @@ function SearchBox({
                         >
                           <Tag size={11} className="shrink-0 text-brand-orange" />
                           <span className="truncate">{cat.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {popularStores && popularStores.length > 0 && (
+                  <div className="px-4 py-3 border-b border-bone">
+                    <SearchSectionLabel icon={<StoreIcon size={10} />} tone="brand">Popular Stores</SearchSectionLabel>
+                    <div className="flex flex-wrap gap-[7px]">
+                      {popularStores.slice(0, 6).map(s => (
+                        <button
+                          key={s.storeId}
+                          data-search-item
+                          onClick={() => goToStore(s.slug)}
+                          className="flex items-center gap-[7px] max-w-[180px] pl-[5px] pr-[12px] py-[5px] rounded-full text-[11.5px] font-medium bg-white text-charcoal border border-bone hover:border-brand-orange hover:bg-brand-pale-orange hover:text-brand-deep-orange focus-visible:outline-none focus-visible:border-brand-orange focus-visible:bg-brand-pale-orange transition-colors duration-150 cursor-pointer"
+                          title={s.name}
+                        >
+                          <span className="w-6 h-6 rounded-full overflow-hidden shrink-0 bg-brand-pale-orange flex items-center justify-center">
+                            {s.logo
+                              ? <img loading="lazy" decoding="async" src={s.logo} alt="" className="w-full h-full object-cover" />
+                              : <StoreIcon size={12} className="text-brand-orange opacity-60" />}
+                          </span>
+                          <span className="truncate">{s.name}</span>
                         </button>
                       ))}
                     </div>
@@ -620,18 +723,15 @@ function AccountActions() {
   if (TokenStorage.isLoggedIn()) {
     return (
       <div className="flex items-center gap-2.5">
-        <CurrencySelector />
         <NotificationBell />
         <ProfileAvatar />
+        <CurrencySelector />
       </div>
     );
   }
   return (
     <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
       <SignInPreview />
-      {/* Currency sits directly beside Start Selling now, not off on its own
-         next to the wishlist/cart icons. */}
-      <CurrencySelector />
       <div className="hidden md:inline-flex">
         <Button variant="primary" size="sm" onClick={() => navigate('/onboard')}>
           Start Selling
@@ -643,6 +743,9 @@ function AccountActions() {
       >
         Sign In
       </button>
+      {/* Currency sits at the very end — the rightmost element in the navbar
+         on every page, not tucked in beside Start Selling. */}
+      <CurrencySelector />
     </div>
   );
 }
@@ -663,7 +766,7 @@ function useCompactOnScroll() {
   return scrolled;
 }
 
-export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColor, backTo }: BuyerNavbarProps) {
+export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColor, backTo, hideSearch = false }: BuyerNavbarProps) {
   const navigate = useNavigate();
   const uncontrolled = useUncontrolledSearch();
   const scrolled = useCompactOnScroll();
@@ -699,7 +802,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
             mobileSearchOpen ? 'hidden sm:flex' : 'flex',
           )}
         >
-          <SolvexoLogo size={scrolled ? 24 : 28} className="transition-[width,height] duration-200" />
+          <SolvexoLogo size={scrolled ? 28 : 34} className="transition-[width,height] duration-200" />
           {contextLabel && (
             <>
               <span className="text-bone mx-1 hidden md:inline">|</span>
@@ -720,20 +823,25 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
         ) : (
           <>
             {/* Single SearchBox instance — its container is always visible at sm+,
-                and on mobile only shown once the search icon below is tapped. */}
-            <div className={clsx('min-w-0 justify-center', mobileSearchOpen ? 'flex flex-1' : 'hidden sm:flex sm:flex-1')}>
-              <SearchBox
-                value={searchValue}
-                onChange={searchOnChange}
-                placeholder={search?.placeholder}
-                categories={search?.categories}
-                onCategorySelect={search?.onCategorySelect}
-                onSubmit={term => { handleSearchSubmit(term); setMobileSearchOpen(false); }}
-                autoFocus={mobileSearchOpen}
-              />
-            </div>
+                and on mobile only shown once the search icon below is tapped.
+                Omitted entirely when hideSearch (page already has its own
+                larger dedicated search bar below the navbar). */}
+            {!hideSearch && (
+              <div className={clsx('min-w-0 justify-center', mobileSearchOpen ? 'flex flex-1' : 'hidden sm:flex sm:flex-1')}>
+                <SearchBox
+                  value={searchValue}
+                  onChange={searchOnChange}
+                  placeholder={search?.placeholder}
+                  categories={search?.categories}
+                  onCategorySelect={search?.onCategorySelect}
+                  popularStores={search?.popularStores}
+                  onSubmit={term => { handleSearchSubmit(term); setMobileSearchOpen(false); }}
+                  autoFocus={mobileSearchOpen}
+                />
+              </div>
+            )}
 
-            {!mobileSearchOpen && (
+            {!hideSearch && !mobileSearchOpen && (
               <button
                 onClick={() => setMobileSearchOpen(true)}
                 aria-label="Search"
@@ -742,7 +850,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
                 <Search size={18} />
               </button>
             )}
-            {mobileSearchOpen && (
+            {!hideSearch && mobileSearchOpen && (
               <button
                 onClick={() => setMobileSearchOpen(false)}
                 aria-label="Close search"
@@ -752,8 +860,10 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
               </button>
             )}
 
-            {/* Actions — hidden on mobile while search is expanded so the input gets full width */}
-            <div className={clsx('items-center gap-1.5 sm:gap-2.5 shrink-0', mobileSearchOpen ? 'hidden sm:flex' : 'flex')}>
+            {/* Actions — hidden on mobile while search is expanded so the input gets full width.
+               With hideSearch there's no flex-1 search container to push this group to the
+               right edge, so it takes ml-auto itself in that case. */}
+            <div className={clsx('items-center gap-1.5 sm:gap-2.5 shrink-0', mobileSearchOpen ? 'hidden sm:flex' : 'flex', hideSearch && 'ml-auto')}>
               {backTo && (
                 <div className="hidden md:inline-flex">
                   <Button variant="ghost" size="sm" onClick={() => navigate(backTo.path)}>

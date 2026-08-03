@@ -328,6 +328,8 @@ export interface SellerOrder {
   productType?: 'physical' | 'digital' | 'educational';
   date:        string;
   amount:      number;
+  /** Currency `amount` is denominated in (the order's own currency, fixed per store). */
+  currency:    string | null;
   status:      string;
   isPaid:      boolean;
   paymentType: string;

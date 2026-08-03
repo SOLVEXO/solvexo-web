@@ -23,6 +23,7 @@ import {
 } from '@/api/services/analytics/analytics';
 import { apiGetMySellerOrders, type SellerOrder } from '@/api/services/product';
 import { formatCurrency, formatNumber, formatPercent, formatBucketLabel } from '@/components/comman/analytics/format';
+import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
 
 // ── Workspace hero — replaces the plain title/subtitle with a real-data
 // summary banner: who's logged in, how many stores they run, and the most
@@ -321,6 +322,9 @@ function QuickActionsRow() {
 }
 
 // ── Recent orders table columns ──────────────────────────────────────────────
+// A static const, not a function of a single dashboard-level currency — each
+// row carries its own `currency` (fixed per store), which matters here
+// specifically because this table can span stores in different currencies.
 const ORDER_COLUMNS: TableColumn<SellerOrder>[] = [
   {
     key: 'orderNumber', header: 'Order',
@@ -341,7 +345,7 @@ const ORDER_COLUMNS: TableColumn<SellerOrder>[] = [
   },
   {
     key: 'amount', header: 'Amount',
-    render: row => <span className="font-semibold text-charcoal">{formatCurrency(row.amount)}</span>,
+    render: row => <span className="font-semibold text-charcoal">{formatMoneyCompact(row.amount, row.currency)}</span>,
   },
   {
     key: 'status', header: 'Status',
@@ -390,12 +394,19 @@ export function SellerDashboard() {
     return () => { cancelled = true; };
   }, [hasStore, storesLoading]);
 
+  // Backend-resolved (see AnalyticsService.resolveScopeCurrency) rather than
+  // guessed from `stores` here — `null` means this seller's stores span more
+  // than one currency, so every money figure below is a blended sum across
+  // incompatible currencies and must not be labeled with any one symbol.
+  const currency = overview?.currency ?? null;
+  const currencyMixed = !!overview && stores.length > 1 && currency === null;
+
   const revenueSparkline = revenueSeries.map(p => p.grossRevenue);
 
   const metrics = overview ? [
-    { label: 'Revenue (7 days)',  value: formatCurrency(overview.totalRevenue), trend: overview.totalRevenueChangePercent != null ? formatPercent(overview.totalRevenueChangePercent, { signed: true }) : null, trendUp: (overview.totalRevenueChangePercent ?? 0) >= 0, sub: null, icon: <DollarSign size={16} />, color: '#D97757', sparkline: revenueSparkline },
+    { label: 'Revenue (7 days)',  value: formatMoneyCompact(overview.totalRevenue, currency), trend: overview.totalRevenueChangePercent != null ? formatPercent(overview.totalRevenueChangePercent, { signed: true }) : null, trendUp: (overview.totalRevenueChangePercent ?? 0) >= 0, sub: null, icon: <DollarSign size={16} />, color: '#D97757', sparkline: revenueSparkline },
     { label: 'Orders (7 days)',   value: formatNumber(overview.totalOrders),    trend: overview.totalOrdersChange ? formatPercent(overview.totalOrdersChange, { signed: true }) : null, trendUp: (overview.totalOrdersChange ?? 0) >= 0, sub: null, icon: <Package size={16} />, color: '#8B5CF6' },
-    { label: 'Avg Order Value',   value: formatCurrency(overview.avgOrderValue), trend: overview.avgOrderValueChangePercent != null ? formatPercent(overview.avgOrderValueChangePercent, { signed: true }) : null, trendUp: (overview.avgOrderValueChangePercent ?? 0) >= 0, sub: null, icon: <ShoppingBag size={16} />, color: '#0EA5E9' },
+    { label: 'Avg Order Value',   value: formatMoneyCompact(overview.avgOrderValue, currency), trend: overview.avgOrderValueChangePercent != null ? formatPercent(overview.avgOrderValueChangePercent, { signed: true }) : null, trendUp: (overview.avgOrderValueChangePercent ?? 0) >= 0, sub: null, icon: <ShoppingBag size={16} />, color: '#0EA5E9' },
     { label: 'Repeat Buyers',     value: formatPercent(overview.repeatBuyerPercent), trend: null, trendUp: true, sub: overview.repeatBuyerTrend === 'improving' ? 'Improving' : overview.repeatBuyerTrend === 'declining' ? 'Declining' : 'Steady', icon: <Repeat size={16} />, color: '#22C55E' },
   ] : [];
 
@@ -422,6 +433,13 @@ export function SellerDashboard() {
           </div>
         )}
 
+        {currencyMixed && (
+          <div className="dash-section-enter flex items-center gap-2 px-4 py-3 rounded-xl bg-brand-pale-orange text-[#8A4A2E] text-[12.5px] border border-brand-orange/15">
+            <AlertCircle size={14} className="shrink-0" />
+            Your stores use different currencies, so revenue and order-value figures below are a blended total across them — open a store's own dashboard for an amount in that store's currency.
+          </div>
+        )}
+
         {/* ── Row 1: Metric Cards ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {(loading || storesLoading) ? (
@@ -441,10 +459,10 @@ export function SellerDashboard() {
           dataKey="sales"
           xKey="day"
           title="Revenue — Last 7 Days"
-          action={hasStore ? <span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">{formatCurrency(revenueTotal)} total</span> : undefined}
+          action={hasStore ? <span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">{formatMoneyCompact(revenueTotal, currency)} total</span> : undefined}
           height={320}
-          valuePrefix="$"
-          yTickFormatter={v => `$${v.toLocaleString()}`}
+          valuePrefix={currencySymbol(currency)}
+          yTickFormatter={v => `${currencySymbol(currency)}${v.toLocaleString()}`}
         />
 
         {/* ── Row: My Stores + Platform Billing + Quick Actions ── */}
@@ -480,7 +498,7 @@ export function SellerDashboard() {
                       <span className="text-[12px] font-medium text-charcoal truncate">{p.name}</span>
                     </div>
                     <div className="shrink-0 ml-3 text-right">
-                      <span className="text-[12px] font-bold text-carbon">{formatCurrency(p.revenue)}</span>
+                      <span className="text-[12px] font-bold text-carbon">{formatMoneyCompact(p.revenue, currency)}</span>
                       <span className="text-[10px] text-slate ml-1">{p.unitsSold} sold</span>
                     </div>
                   </div>

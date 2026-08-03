@@ -8,7 +8,7 @@ import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
-import { AppDownloadBanner, Footer, SkeletonBox, DealsBanner, CoverImage } from '@/components/comman/ui';
+import { AppDownloadBanner, Footer, SkeletonBox, DealsBanner, CoverImage, FloatingAppWidget } from '@/components/comman/ui';
 import { FlashSaleCard, FlashSaleCardSkeleton } from '@/components/comman/marketplace/FlashSaleCard';
 import {
   ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles,
@@ -710,6 +710,7 @@ export function Homepage() {
       </section>
 
       <Footer />
+      <FloatingAppWidget />
     </div>
   );
 }

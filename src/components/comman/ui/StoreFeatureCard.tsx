@@ -41,7 +41,7 @@ export function StoreFeatureCard({ store, onClick, className }: {
       <CoverImage
         src={store.coverImage}
         imgClassName="transition-transform duration-500 group-hover:scale-105"
-        className="h-[76px]"
+        className="h-[88px]"
       >
         {isTopSeller && (
           <span className="absolute top-[8px] right-[8px] inline-flex items-center gap-[3px] px-[7px] py-[3px] rounded-full bg-carbon/80 backdrop-blur-sm text-white text-[9.5px] font-bold">

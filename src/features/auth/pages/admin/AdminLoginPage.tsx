@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { safeRedirectPath } from '@/utils/safeRedirect';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Input } from '@/components/comman/ui/Input';
 import { Eye, EyeOff, Shield, Lock, Activity } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
-import { apiLogin, TokenStorage } from '@/api/services/auth';
+import { useLogin } from '@/hooks/auth/useLogin';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { AdminControlMockup } from '@/features/auth/components/mockups/AuthMockups';
 
@@ -31,35 +32,22 @@ const BRANDING_HEADER = (
 // ── Component ─────────────────────────────────────────────────────────────────
 export function AdminLoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = safeRedirectPath(searchParams.get('redirect'));
   usePageTitle('Admin Login');
 
   const [showPass, setShowPass] = useState(false);
-  const [apiError, setApiError] = useState('');
-  const [loading,  setLoading]  = useState(false);
+  const { execute: login, loading, error: apiError } = useLogin();
 
   const { values, errors, set, blur, handleSubmit } = useForm(
     loginSchema,
     { email: '', password: '' },
     {
-      onSubmit: async (data: LoginFormData) => {
-        setApiError('');
-        setLoading(true);
-        try {
-          const res = await apiLogin({
-            email:    data.email,
-            password: data.password,
-            role:     'admin',
-          });
-
-          TokenStorage.save(res.data.token.accessToken, res.data.token.refreshToken);
-          TokenStorage.saveUser(res.data.user);
-          navigate('/admin', { replace: true });
-        } catch (err) {
-          setApiError(err instanceof Error ? err.message : 'Invalid admin credentials.');
-        } finally {
-          setLoading(false);
-        }
-      },
+      onSubmit: (data: LoginFormData) => login({
+        email:    data.email,
+        password: data.password,
+        role:     'admin',
+      }, redirectTo),
     },
   );
 
@@ -135,7 +123,7 @@ export function AdminLoginPage() {
       </Button>
 
       {apiError && (
-        <div className="bg-error-bg rounded-lg px-[14px] py-[10px] mt-3 text-[13px] text-error text-center">
+        <div role="alert" className="bg-error-bg rounded-lg px-[14px] py-[10px] mt-3 text-[13px] text-error text-center">
           {apiError}
         </div>
       )}

@@ -1,7 +1,7 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { TokenStorage } from '@/api/services/auth';
-import { NotificationBell, ProfileAvatar, CurrencySelector } from '@/components/comman/ui';
+import { NotificationBell, ProfileAvatar, CurrencySelector, SolvexoLogo } from '@/components/comman/ui';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data
@@ -13,26 +13,6 @@ const NAV_ITEMS = [
   { label: 'Learn',       path: '/EducationMarketplace',   orange: false },
   { label: 'FAQ',         path: '/faq',         orange: false },
 ];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SolvexoNavLogo
-// ─────────────────────────────────────────────────────────────────────────────
-function SolvexoNavLogo() {
-  return (
-    <div className="flex items-center gap-2 cursor-pointer">
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <rect width="32" height="32" rx="8" fill="#D97757" />
-        <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-        <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7" />
-        <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <div className="flex items-center">
-        <span className="text-[18px] font-bold text-carbon tracking-[-0.3px]">Solvex</span>
-        <span className="text-[18px] font-bold text-brand-orange tracking-[-0.3px]">o</span>
-      </div>
-    </div>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NavBtn (desktop only)
@@ -94,29 +74,29 @@ function NavActions() {
   if (TokenStorage.isLoggedIn()) {
     return (
       <div className="flex items-center gap-3">
-        <CurrencySelector />
         <NotificationBell />
         <ProfileAvatar />
+        <CurrencySelector />
       </div>
     );
   }
   return (
     <>
-      {/* Desktop: both buttons */}
+      {/* Desktop: both buttons, currency last so it sits in the right corner */}
       <div className="hidden md:flex items-center gap-[10px]">
-        <CurrencySelector />
         <NavBtn variant="ghost"   onClick={() => navigate('/login')}>Sign In</NavBtn>
         <NavBtn variant="primary" onClick={() => navigate('/onboard')}>Start Selling</NavBtn>
+        <CurrencySelector />
       </div>
       {/* Mobile: compact currency toggle + sign in */}
       <div className="md:hidden flex items-center gap-2">
-        <CurrencySelector />
         <button
           onClick={() => navigate('/login')}
           className="text-[13px] font-medium text-charcoal border border-bone rounded-md px-3 py-[6px] bg-transparent cursor-pointer hover:bg-cream transition-colors"
         >
           Sign In
         </button>
+        <CurrencySelector />
       </div>
     </>
   );
@@ -132,7 +112,7 @@ function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-bone h-16 flex items-center">
       <nav className="w-full flex items-center justify-between px-4 md:px-12">
-        <div onClick={() => navigate('/')}><SolvexoNavLogo /></div>
+        <div onClick={() => navigate('/')} className="cursor-pointer"><SolvexoLogo /></div>
         <NavLinks pathname={pathname} />
         <NavActions />
       </nav>

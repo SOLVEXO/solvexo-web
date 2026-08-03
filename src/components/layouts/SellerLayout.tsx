@@ -481,8 +481,8 @@ export function SellerPageHeader({ title, subtitle, actions }: SellerPageHeaderP
       </div>
       <div className="flex items-center gap-[10px]">
         {actions}
-        <CurrencySelector />
         <NotificationBell />
+        <CurrencySelector />
       </div>
     </div>
   );
@@ -490,6 +490,7 @@ export function SellerPageHeader({ title, subtitle, actions }: SellerPageHeaderP
 
 // ── Layout ────────────────────────────────────────────────────────────────────
 export function SellerLayout() {
+  const { pathname: currentPath } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
 
   useEffect(() => {
@@ -508,7 +509,7 @@ export function SellerLayout() {
 
   const user = TokenStorage.getUser<{ role?: AppRole }>();
   if (!TokenStorage.isLoggedIn() || user?.role !== 'seller') {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(currentPath)}`} replace />;
   }
 
   return (

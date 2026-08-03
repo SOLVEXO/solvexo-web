@@ -1,6 +1,6 @@
-import { useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useId, useState, type KeyboardEvent } from 'react';
 import { X, ChevronLeft, ChevronRight, CalendarClock } from 'lucide-react';
-import { useFocusTrap } from './useFocusTrap';
+import { DialogShell } from './DialogShell';
 
 const MONTHS    = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const WEEK_DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -25,9 +25,6 @@ type Sel  = { y: number; m: number; d: number };
 
 export function DateTimePickerModal({ value, onChange, onClose }: DateTimePickerModalProps) {
   const titleId   = useId();
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  useFocusTrap(dialogRef, onClose);
 
   const init = value ? new Date(value) : null;
   const now  = new Date();
@@ -94,20 +91,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
     : null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-
-      {/* Modal card */}
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className="relative flex flex-col w-full max-w-[360px] max-h-[92vh] bg-white rounded-2xl border border-bone overflow-hidden outline-none"
-      >
+    <DialogShell onClose={onClose} ariaLabelledBy={titleId} className="max-w-[360px] max-h-[92vh]">
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="shrink-0 flex items-center justify-between px-5 py-[14px] border-b border-bone">
@@ -356,7 +340,6 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
           </button>
         </div>
 
-      </div>
-    </div>
+    </DialogShell>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { RefreshCw, History, AlertTriangle } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Button, Input, Toggle, StatusBadge, SkeletonBox, EmptyState } from '@/components/comman/ui';
+import { Button, Input, Toggle, StatusBadge, SkeletonBox, EmptyState, Table, type TableColumn } from '@/components/comman/ui';
 import { apiGetPlatformConfig, apiUpdateFxConfig, type FxConfig } from '@/api/services/config/adminConfig';
 import { apiGetCurrentRates, apiGetFxHistory, apiGetFxStaleness, apiOverrideFxRate, type CurrentRatesMap, type ExchangeRateHistoryRow } from '@/api/services/exchangeRate';
 
@@ -52,7 +52,16 @@ function OverrideForm({ onDone }: { onDone: () => void }) {
     setSubmitting(true);
     setError('');
     try {
-      await apiOverrideFxRate(currency, value);
+      const res = await apiOverrideFxRate(currency, value);
+      // Defensive check — the current backend logic never actually holds an
+      // admin-sourced override (the abnormal-jump hold only applies to
+      // provider-sourced refreshes), but read the response instead of
+      // assuming success so this doesn't silently regress if that ever changes.
+      if (!res.data.applied) {
+        setError('Rate was not applied — it was held for review instead of taking effect immediately.');
+        setSubmitting(false);
+        return;
+      }
       setRate('');
       onDone();
     } catch (err) {
@@ -127,6 +136,20 @@ export function AdminFxSettings() {
     }
   }
 
+  const historyColumns: TableColumn<ExchangeRateHistoryRow>[] = [
+    { key: 'currency', header: 'Currency', render: h => <span className="font-semibold text-charcoal">{h.currency}</span> },
+    { key: 'ratePerUSD', header: 'Rate (per USD)', render: h => <span className="text-graphite">{h.ratePerUSD}</span> },
+    { key: 'source', header: 'Source', render: h => <span className="text-slate capitalize">{h.source}</span> },
+    { key: 'effectiveFrom', header: 'Effective From', render: h => <span className="text-slate whitespace-nowrap">{formatDate(h.effectiveFrom)}</span> },
+    {
+      key: 'status', header: 'Status',
+      render: h => !h.isRejected ? <StatusBadge status="Active" />
+        : h.rejectionReason === 'abnormal_jump' ? <StatusBadge status="Flagged" />
+        : h.rejectionReason === 'sanity_band' ? <StatusBadge status="Suspended" />
+        : <StatusBadge status="Held" />,
+    },
+  ];
+
   return (
     <div>
       <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
@@ -169,39 +192,13 @@ export function AdminFxSettings() {
             <History size={14} className="text-slate" />
             <p className="text-[13px] font-bold text-carbon">Rate History</p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  {['Currency', 'Rate (per USD)', 'Source', 'Effective From', 'Status'].map(h => (
-                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <tr key={i} className="border-b border-[#F0EEE6]"><td className="px-4 py-3" colSpan={5}><SkeletonBox className="h-5 w-full" /></td></tr>
-                  ))
-                ) : history.length === 0 ? (
-                  <tr><td colSpan={5}><EmptyState icon={<History size={28} className="text-slate" />} title="No history yet" description="Rate changes will appear here." /></td></tr>
-                ) : history.map(h => (
-                  <tr key={h._id} className="border-b border-[#F0EEE6]">
-                    <td className="px-4 py-3 text-[13px] font-semibold text-charcoal">{h.currency}</td>
-                    <td className="px-4 py-3 text-[12.5px] text-graphite">{h.ratePerUSD}</td>
-                    <td className="px-4 py-3 text-[12px] text-slate capitalize">{h.source}</td>
-                    <td className="px-4 py-3 text-[12px] text-slate whitespace-nowrap">{formatDate(h.effectiveFrom)}</td>
-                    <td className="px-4 py-3">
-                      {!h.isRejected ? <StatusBadge status="Active" />
-                        : h.rejectionReason === 'abnormal_jump' ? <StatusBadge status="Flagged" />
-                        : h.rejectionReason === 'sanity_band' ? <StatusBadge status="Suspended" />
-                        : <StatusBadge status="Held" />}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            columns={historyColumns}
+            data={history}
+            keyExtractor={h => h._id}
+            loading={loading}
+            emptyState={{ icon: <History size={28} className="text-slate" />, title: 'No history yet', description: 'Rate changes will appear here.' }}
+          />
         </div>
       </div>
     </div>

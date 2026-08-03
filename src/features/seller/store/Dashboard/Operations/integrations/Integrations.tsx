@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader } from '@/components/layouts/StoreLayout';
-import { CreditCard, DollarSign, BarChart2, Mail, Package, Zap, Check } from 'lucide-react';
+import { CreditCard, BarChart2, Mail, Package, Zap, Check } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { ComingSoonBanner } from '@/components/comman/ui';
 
@@ -13,7 +13,6 @@ interface AppDef {
 
 const CONNECTED_APPS: AppDef[] = [
   { id: 'stripe',           Icon: CreditCard, iconBg: '#EEF2FF', name: 'Stripe',           desc: 'Accept credit cards, Apple Pay, Google Pay.'  },
-  { id: 'paypal',           Icon: DollarSign, iconBg: '#E8F4FD', name: 'PayPal',           desc: 'PayPal checkout and payout.'                  },
   { id: 'google-analytics', Icon: BarChart2,  iconBg: '#FFF8E1', name: 'Google Analytics', desc: 'Track store traffic and conversions.'          },
   { id: 'mailchimp',        Icon: Mail,       iconBg: '#FFF3E0', name: 'Mailchimp',        desc: 'Sync customers and send email campaigns.'      },
   { id: 'shippo',           Icon: Package,    iconBg: '#E8F5E9', name: 'Shippo',           desc: 'Discounted shipping labels and tracking.'      },
@@ -26,7 +25,7 @@ const WEBHOOK_EVENTS = [
 ];
 
 const metrics = [
-  { label: 'Connected Apps', value: '6',       sub: 'Active integrations'  },
+  { label: 'Connected Apps', value: String(CONNECTED_APPS.length), sub: 'Active integrations'  },
   { label: 'Last Sync',      value: '2:14 PM', sub: 'All apps synced today' },
   { label: 'Available Apps', value: '50+',     sub: 'In app marketplace'   },
 ] as const;
@@ -89,7 +88,7 @@ export function StoreIntegrations() {
               border: activeTab !== 'connected' ? '1px solid #E8E6DC' : '1px solid transparent',
             }}
           >
-            <Check size={13} /> Connected (6)
+            <Check size={13} /> Connected ({CONNECTED_APPS.length})
           </button>
           <button
             onClick={() => setActiveTab('available')}

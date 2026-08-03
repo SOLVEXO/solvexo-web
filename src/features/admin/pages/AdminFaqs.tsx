@@ -7,8 +7,7 @@ import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Input, Textarea } from '@/components/comman/ui/Input';
 import { Toggle } from '@/components/comman/ui/Toggle';
-import { EmptyState } from '@/components/comman/ui/EmptyState';
-import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
+import { Table, type TableColumn } from '@/components/comman/ui/Table';
 
 // ── Form modal ────────────────────────────────────────────────────────────────
 function FaqFormModal({ faq, onClose, onSaved }: { faq: Faq | null; onClose: () => void; onSaved: () => void }) {
@@ -107,6 +106,43 @@ export function AdminFaqs() {
     }
   }
 
+  const columns: TableColumn<Faq>[] = [
+    {
+      key: 'question', header: 'Question',
+      render: f => (
+        <div className="max-w-[360px]">
+          <p className="font-semibold truncate">{f.question}</p>
+          <p className="text-[11px] text-slate truncate">{f.answer}</p>
+        </div>
+      ),
+    },
+    { key: 'category', header: 'Category', render: f => <span className="text-graphite capitalize whitespace-nowrap">{f.category}</span> },
+    { key: 'order', header: 'Order', render: f => <span className="text-slate whitespace-nowrap">{f.order}</span> },
+    {
+      key: 'status', header: 'Status',
+      render: f => (
+        <button onClick={() => handleToggle(f)} className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold border-none cursor-pointer outline-none transition-[filter] duration-150 hover:brightness-95 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50"
+          style={{ background: f.isActive ? '#EAF7EF' : '#F0EEE6', color: f.isActive ? '#1E7A3C' : '#5A5852' }}>
+          {f.isActive ? 'Active' : 'Inactive'}
+        </button>
+      ),
+    },
+    {
+      key: 'actions', header: 'Actions',
+      render: f => (
+        <div className="flex items-center gap-2">
+          <button onClick={() => setEditing(f)} className="text-[12px] font-medium text-[#1A72C2] bg-transparent border-none cursor-pointer flex items-center gap-1 outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
+            <Pencil size={11} /> Edit
+          </button>
+          <span className="text-bone text-[13px]">|</span>
+          <button onClick={() => { setDeleting(f); setActionError(''); }} className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer flex items-center gap-1 outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
+            <Trash2 size={11} /> Delete
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div>
       <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
@@ -132,58 +168,17 @@ export function AdminFaqs() {
             </select>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  {['Question', 'Category', 'Order', 'Status', 'Actions'].map(h => (
-                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <tr key={i} className="border-b border-[#F0EEE6]">
-                      <td className="px-4 py-3" colSpan={5}><SkeletonBox className="h-5 w-full" /></td>
-                    </tr>
-                  ))
-                ) : error ? (
-                  <tr><td colSpan={5} className="px-4 py-6 text-center text-[13px] text-error">{error}</td></tr>
-                ) : filtered.length === 0 ? (
-                  <tr><td colSpan={5}>
-                    <EmptyState icon={<HelpCircle size={28} className="text-slate" />} title="No FAQs found" />
-                  </td></tr>
-                ) : filtered.map(f => (
-                  <tr key={f._id} className="border-b border-[#F0EEE6] transition-colors duration-150 hover:bg-cream">
-                    <td className="px-4 py-3 text-[13px] text-charcoal max-w-[360px]">
-                      <p className="font-semibold truncate">{f.question}</p>
-                      <p className="text-[11px] text-slate truncate">{f.answer}</p>
-                    </td>
-                    <td className="px-4 py-3 text-[13px] text-graphite capitalize whitespace-nowrap">{f.category}</td>
-                    <td className="px-4 py-3 text-[13px] text-slate whitespace-nowrap">{f.order}</td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => handleToggle(f)} className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold border-none cursor-pointer outline-none transition-[filter] duration-150 hover:brightness-95 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50"
-                        style={{ background: f.isActive ? '#EAF7EF' : '#F0EEE6', color: f.isActive ? '#1E7A3C' : '#5A5852' }}>
-                        {f.isActive ? 'Active' : 'Inactive'}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => setEditing(f)} className="text-[12px] font-medium text-[#1A72C2] bg-transparent border-none cursor-pointer flex items-center gap-1 outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
-                          <Pencil size={11} /> Edit
-                        </button>
-                        <span className="text-bone text-[13px]">|</span>
-                        <button onClick={() => { setDeleting(f); setActionError(''); }} className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer flex items-center gap-1 outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
-                          <Trash2 size={11} /> Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {error ? (
+            <p className="px-4 py-6 text-center text-[13px] text-error">{error}</p>
+          ) : (
+            <Table
+              columns={columns}
+              data={filtered}
+              keyExtractor={f => f._id}
+              loading={loading}
+              emptyState={{ icon: <HelpCircle size={28} className="text-slate" />, title: 'No FAQs found' }}
+            />
+          )}
         </div>
       </div>
 

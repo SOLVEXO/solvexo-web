@@ -323,6 +323,9 @@ export const ENDPOINTS = {
       FEATURE:  (id: string) => `/api/admin/marketplace/listings/${id}/feature`,
       REMOVE:   (id: string) => `/api/admin/marketplace/listings/${id}/remove`,
       SET_STORE_BADGE: (storeId: string) => `/api/admin/marketplace/stores/${storeId}/badge`,
+      LEADS:        '/api/admin/marketplace/leads',
+      APPROVE_LEAD: (id: string) => `/api/admin/marketplace/leads/${id}/approve`,
+      REJECT_LEAD:  (id: string) => `/api/admin/marketplace/leads/${id}/reject`,
     },
   },
 
@@ -333,8 +336,9 @@ export const ENDPOINTS = {
 
   // ── SEARCH ────────────────────────────────────────────────────────────────
   SEARCH: {
-    STORES: '/api/search/stores',
-    RECENT: '/api/search/recent',
+    STORES:   '/api/search/stores',
+    PRODUCTS: '/api/search/products',
+    RECENT:   '/api/search/recent',
   },
 
   // ── CART ──────────────────────────────────────────────────────────────────

@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
-import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, DealsBanner, CoverImage, StoreAnnouncementBar } from '@/components/comman/ui';
+import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, DealsBanner, CoverImage, StoreAnnouncementBar, FloatingAppWidget } from '@/components/comman/ui';
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { ProductImage, StarRating as SharedStarRating } from '@/components/comman/marketplace/ProductCard';
 import { useStoreBanners } from '@/hooks/useStoreBanners';
@@ -459,6 +459,13 @@ export function SellerStorefront() {
                 </p>
               )}
               <div className="flex items-center gap-[5px] text-[12px] text-[rgba(255,255,255,0.7)] mt-[6px]">
+                {(store.reviewCount ?? 0) > 0 && (
+                  <>
+                    <Star size={13} className="fill-current" style={{ color: cfg.primaryColor }} />
+                    <span>{store.averageRating.toFixed(1)} ({store.reviewCount.toLocaleString()} reviews)</span>
+                    <span className="mx-1">·</span>
+                  </>
+                )}
                 <Users size={13} />
                 <span>{store.followersCount.toLocaleString()} followers</span>
                 <span className="mx-1">·</span>
@@ -709,7 +716,9 @@ export function SellerStorefront() {
                         <span className="flex items-center gap-[3px] px-[5px] py-[2px] rounded-[4px] text-[9px] font-bold leading-none bg-gradient-to-r from-brand-orange to-[#F0A57A] text-white">
                           <Zap size={8} className="fill-white shrink-0" />
                           {p.activeCampaign.discountType && p.activeCampaign.discountValue != null
-                            ? (p.activeCampaign.discountType === 'percentage' ? `${p.activeCampaign.discountValue}% OFF` : `$${p.activeCampaign.discountValue} OFF`)
+                            ? (p.activeCampaign.discountType === 'percentage'
+                                ? `${p.activeCampaign.discountValue}% OFF`
+                                : `${displaySymbol}${convert(p.activeCampaign.discountValue, p.activeCampaign.currency ?? 'USD')} OFF`)
                             : 'FEATURED'}
                         </span>
                       </div>
@@ -828,7 +837,7 @@ export function SellerStorefront() {
                   <p className="text-[16px] font-bold text-carbon mb-1">{plan.name}</p>
                   {plan.description && <p className="text-[12px] text-slate mb-4">{plan.description}</p>}
                   <div className="mb-4">
-                    <span className="text-[32px] font-bold" style={{ color: cfg.textColor }}>{price}</span>
+                    <span className="text-[32px] font-bold" style={{ color: cfg.textColor }}>{displaySymbol}{convert(price, plan.displayCurrency).toLocaleString()}</span>
                     <span className="text-[12px] text-slate">/{billingInterval === 'yearly' ? 'yr' : 'mo'}</span>
                   </div>
                   <ul className="flex flex-col gap-2 mb-6 p-0 list-none flex-1">
@@ -862,6 +871,7 @@ export function SellerStorefront() {
         <AppDownloadBanner />
       </div>
       <Footer />
+      <FloatingAppWidget />
 
       {showRewards && (
         <Modal title="Rewards Catalog" onClose={() => setShowRewards(false)}>
@@ -884,7 +894,11 @@ export function SellerStorefront() {
                     <div>
                       <p className="text-[13px] font-semibold text-carbon">{r.name}</p>
                       <p className="text-[11px] text-slate">
-                        {r.pointsCost.toLocaleString()} points — {r.type === 'fixed_discount' ? `$${r.discountValue} off` : 'Free product'}
+                        {/* Loyalty rewards are a seller-defined catalog with no
+                            currency field of their own (unlike platform
+                            campaigns, which are always USD) — the store's own
+                            baseCurrency is the correct, safe assumption here. */}
+                        {r.pointsCost.toLocaleString()} points — {r.type === 'fixed_discount' ? `${displaySymbol}${convert(r.discountValue ?? 0, store?.baseCurrency).toLocaleString()} off` : 'Free product'}
                       </p>
                     </div>
                     <button

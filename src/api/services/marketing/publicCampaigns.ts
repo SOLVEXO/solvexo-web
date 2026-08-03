@@ -9,6 +9,8 @@ export interface PublicCampaign {
   endDate: string;
   discountType: 'percentage' | 'fixed' | null;
   discountValue: number | null;
+  /** Only meaningful when discountType === 'fixed' — always 'USD' (the platform pivot). */
+  currency: string | null;
   // 'platform': applies to every active store automatically — storeCount
   // below is the platform's total active-store count, not an opt-in tally.
   sponsorType: 'seller' | 'platform';

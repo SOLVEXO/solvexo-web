@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { safeRedirectPath } from '@/utils/safeRedirect';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useLogin } from '@/hooks/auth/useLogin';
 import { useSocialLogin } from '@/hooks/auth/useSocialLogin';
@@ -28,6 +29,8 @@ const HIGHLIGHTS = [
 
 export function LoginPage() {
   const navigate   = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = safeRedirectPath(searchParams.get('redirect'));
   usePageTitle('Login');
   const login      = useLogin();
   const social     = useSocialLogin();
@@ -42,7 +45,7 @@ export function LoginPage() {
     { email: '', password: '' },
     {
       onSubmit: async (data: LoginFormData) => {
-        await login.execute({ email: data.email, password: data.password, role });
+        await login.execute({ email: data.email, password: data.password, role }, redirectTo);
       },
     },
   );
@@ -111,7 +114,7 @@ export function LoginPage() {
       </Button>
 
       {(login.error || social.error) && (
-        <div className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
+        <div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
           <AlertTriangle size={14} className="shrink-0" />
           <span>{login.error || social.error}</span>
         </div>

@@ -15,7 +15,7 @@ import { Card } from '@/components/comman/ui/Card';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { TabBar } from '@/components/comman/ui/TabBar';
 import { Modal } from '@/components/comman/ui/Modal';
-import { BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, CoverImage } from '@/components/comman/ui';
+import { BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, CoverImage, pushRecentlyViewed, FloatingAppWidget } from '@/components/comman/ui';
 import {
   ArrowRight, Package, Download, ClipboardList, CheckCircle, Minus, Plus,
   ShoppingCart, Star, Link2, Share2, ImageOff, Heart, ShieldCheck, Truck,
@@ -351,6 +351,20 @@ export function ProductDetail() {
 
   useEffect(() => { setQty(1); }, [activeVariant?._id]);
 
+  // Recently Viewed — client-tracked snapshot (no view-history API exists),
+  // surfaced in the navbar search dropdown's empty state.
+  useEffect(() => {
+    if (!product) return;
+    pushRecentlyViewed({
+      id: product._id,
+      name: product.name,
+      image: product.images?.[0] ?? null,
+      price: activeVariant?.price ?? null,
+      currency: activeVariant?.currency,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?._id]);
+
   useEffect(() => {
     if (!storeId || !isLoggedIn) return;
     apiGetFollowStatus(storeId).then(res => setFollowing(res.data.following)).catch(() => {});
@@ -481,7 +495,9 @@ export function ProductDetail() {
                         >
                           <Zap size={10} className="fill-white shrink-0" />
                           {product.activeCampaign.discountType && product.activeCampaign.discountValue != null
-                            ? (product.activeCampaign.discountType === 'percentage' ? `${product.activeCampaign.discountValue}% OFF` : `$${product.activeCampaign.discountValue} OFF`)
+                            ? (product.activeCampaign.discountType === 'percentage'
+                                ? `${product.activeCampaign.discountValue}% OFF`
+                                : `${displaySymbol}${convert(product.activeCampaign.discountValue, product.activeCampaign.currency ?? 'USD')} OFF`)
                             : product.activeCampaign.name}
                         </span>
                       )}
@@ -816,6 +832,7 @@ export function ProductDetail() {
         <div className="pb-[76px] lg:pb-0">
           <div className="px-4 md:px-6 lg:px-10 pb-8"><AppDownloadBanner /></div>
           <Footer />
+          <FloatingAppWidget />
         </div>
       )}
 

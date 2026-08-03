@@ -4,6 +4,7 @@ import { Tag as TagIcon, Mail, ShoppingCart, Handshake, Gift, Megaphone, Buildin
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { EmptyState, SkeletonBox, Modal, Button, Input, FileDropSelect } from '@/components/comman/ui';
 import { StripeCardPayment, isStripeConfigured } from '@/features/buyer/components/StripeCardPayment';
+import { currencySymbol } from '@/utils/currency';
 import {
   apiGetCoupons, apiCreateCoupon, apiUpdateCoupon, apiDeleteCoupon,
   apiGetJoinableCampaigns, apiJoinCampaign, apiLeaveCampaign,
@@ -1009,7 +1010,7 @@ export function StoreMarketing() {
                       </span>
                     </div>
                     <p className="text-[13px] font-semibold text-carbon mb-3">
-                      {coupon.discountType === 'percentage' ? `${coupon.discountValue}% Off` : `$${coupon.discountValue} Off`}
+                      {coupon.discountType === 'percentage' ? `${coupon.discountValue}% Off` : `${currencySymbol(store?.baseCurrency)}${coupon.discountValue} Off`}
                     </p>
                     <table className="w-full border-collapse text-xs mb-3">
                       <tbody>
@@ -1125,7 +1126,7 @@ export function StoreMarketing() {
                     <p className="text-[11px] text-slate mb-2">
                       {new Date(c.startDate).toLocaleDateString()} – {new Date(c.endDate).toLocaleDateString()}
                       {c.discountType && c.discountValue != null && (
-                        <> · {c.discountType === 'percentage' ? `${c.discountValue}% off` : `$${c.discountValue} off`}</>
+                        <> · {c.discountType === 'percentage' ? `${c.discountValue}% off` : `${currencySymbol(c.currency ?? 'USD')}${c.discountValue} off`}</>
                       )}
                     </p>
                     {c.sponsorType === 'platform' ? (

@@ -56,7 +56,12 @@ client.interceptors.response.use(
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
       sessionStorage.removeItem('authCtx');
-      window.location.href = '/login';
+      // Carries the page the user was on back through login so a session
+      // expiring mid-task doesn't strand them on the role's default
+      // dashboard afterward — LoginPage/AdminLoginPage read this back.
+      const here = window.location.pathname + window.location.search;
+      const isLoginPage = window.location.pathname.startsWith('/login') || window.location.pathname.startsWith('/admin/login');
+      window.location.href = isLoginPage ? '/login' : `/login?redirect=${encodeURIComponent(here)}`;
     }
 
     // Platform-wide maintenance mode (see main.ts) — admin/auth routes are

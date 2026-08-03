@@ -78,7 +78,7 @@ export function RailCard({ product, onClick, badge, rank, size = 'md', stockLabe
 }
 
 // ── Category bar icon — reuses each category's real uploaded image, falls back to a tag glyph ──
-function CategoryBarIcon({ category }: { category: CategoryNode }) {
+export function CategoryBarIcon({ category }: { category: CategoryNode }) {
   if (category.image) {
     return (
       <span className="w-[24px] h-[24px] rounded-lg overflow-hidden shrink-0 bg-cream border border-bone">
@@ -93,7 +93,10 @@ function CategoryBarIcon({ category }: { category: CategoryNode }) {
   );
 }
 
-const CATEGORY_BAR_TRENDING = ['Wireless Earbuds', 'Digital Planner', 'Desk Organizer', 'Handmade Jewelry', 'Watercolor Prints'];
+// A curated starter-search list, not a live trending-terms feed (no search-
+// analytics endpoint exists yet to back one) — labeled "Popular Searches"
+// rather than "Trending" so it doesn't imply a live signal it isn't.
+const CATEGORY_BAR_POPULAR_SEARCHES = ['Wireless Earbuds', 'Digital Planner', 'Desk Organizer', 'Handmade Jewelry', 'Watercolor Prints'];
 
 // ── Full-width mega-menu content panes ───────────────────────────────────────
 // Each of the 5 nav items below renders into the SAME shared full-width panel
@@ -175,9 +178,9 @@ function CategoriesMegaContent({
           <p className="text-[12px] text-slate mb-6">No subcategories yet — browse everything in {active?.name}.</p>
         )}
 
-        <MegaSectionLabel>Trending Searches</MegaSectionLabel>
+        <MegaSectionLabel>Popular Searches</MegaSectionLabel>
         <div className="flex flex-wrap gap-[6px]">
-          {CATEGORY_BAR_TRENDING.map(term => (
+          {CATEGORY_BAR_POPULAR_SEARCHES.map(term => (
             <button
               key={term}
               onClick={() => onTrendingTerm(term)}
@@ -256,29 +259,56 @@ export function FlashSaleMegaContent({ flashDeals, countdown, onProductClick }: 
   );
 }
 
-export function TopPicksMegaContent({ topPicks, onProductClick }: {
+export function TopPicksMegaContent({ topPicks, bestRated = [], onProductClick }: {
   topPicks: MarketplaceProduct[];
+  /** A distinct, purely-rating-sorted slice — real signal, separate from
+   *  topPicks' purchase+rating blend, so the panel isn't one section twice
+   *  under two names. Optional/defaults to empty so callers that don't
+   *  compute it (Education) just don't get a second section. */
+  bestRated?: MarketplaceProduct[];
   onProductClick: (id: string) => void;
 }) {
   return (
-    <div>
-      <MegaSectionLabel>Trending With Buyers</MegaSectionLabel>
-      {topPicks.length === 0 ? (
-        <p className="text-[12px] text-slate">No top picks yet.</p>
-      ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-6 gap-3">
-          {topPicks.slice(0, 6).map(product => (
-            <RailCard
-              key={product._id}
-              product={product}
-              onClick={onProductClick}
-              badge={product.purchaseCount > 0 ? (
-                <span className="px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-carbon/80 text-white backdrop-blur-sm">
-                  {product.purchaseCount} sold
-                </span>
-              ) : undefined}
-            />
-          ))}
+    <div className="flex flex-col gap-6">
+      <div>
+        <MegaSectionLabel>Trending With Buyers</MegaSectionLabel>
+        {topPicks.length === 0 ? (
+          <p className="text-[12px] text-slate">No top picks yet.</p>
+        ) : (
+          <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-6 gap-3">
+            {topPicks.slice(0, 6).map(product => (
+              <RailCard
+                key={product._id}
+                product={product}
+                onClick={onProductClick}
+                badge={product.purchaseCount > 0 ? (
+                  <span className="px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-carbon/80 text-white backdrop-blur-sm">
+                    {product.purchaseCount} sold
+                  </span>
+                ) : undefined}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {bestRated.length > 0 && (
+        <div className="pt-5 border-t border-bone">
+          <MegaSectionLabel>Best Rated</MegaSectionLabel>
+          <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-6 gap-3">
+            {bestRated.slice(0, 6).map(product => (
+              <RailCard
+                key={product._id}
+                product={product}
+                onClick={onProductClick}
+                badge={product.averageRating > 0 ? (
+                  <span className="flex items-center gap-[2px] px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-carbon/80 text-white backdrop-blur-sm">
+                    <Star size={8} className="fill-white" /> {product.averageRating.toFixed(1)}
+                  </span>
+                ) : undefined}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -402,27 +432,32 @@ type MegaMenuKey = 'categories' | 'flash-sale' | 'top-picks' | 'featured-sellers
 interface MegaMenuExtraTrigger {
   key: Exclude<MegaMenuKey, 'categories'>;
   label: string;
+  icon: LucideIcon;
   chevron: boolean;
   className: string;
 }
 
-// Default trigger set (Flash Sale / Top Picks / Featured Stores / About) — Education
-// keeps these via the default; Marketplace now passes `extraTriggers={[]}` since that
-// content moved to standalone Discovery sections on the page instead of a hover menu.
+// Default trigger set — Flash Sale / Top Picks / Featured Stores / About, each
+// with its own icon and a filled hover/active pill (not a plain text link) so
+// this reads as a real navigation feature, not an afterthought row.
 const DEFAULT_EXTRA_TRIGGERS: MegaMenuExtraTrigger[] = [
-  { key: 'flash-sale',       label: 'Flash Sale',          chevron: true,  className: '' },
-  { key: 'top-picks',        label: 'Top Picks',           chevron: true,  className: '' },
-  { key: 'featured-sellers', label: 'Featured Stores',    chevron: true,  className: 'hidden sm:flex' },
-  { key: 'about',            label: 'About Solvexo.store', chevron: false, className: 'hidden sm:flex' },
+  { key: 'flash-sale',       label: 'Flash Sale',      icon: Flame,    chevron: true,  className: '' },
+  { key: 'top-picks',        label: 'Top Picks',       icon: Star,     chevron: true,  className: '' },
+  { key: 'featured-sellers', label: 'Featured Stores', icon: Store,    chevron: true,  className: 'hidden sm:flex' },
+  { key: 'about',            label: 'About Solvexo',   icon: Sparkles, chevron: false, className: 'hidden sm:flex' },
 ];
 
 export function MegaMenuBar({
-  categories = [], topPicks, flashDeals, topStores, countdown,
+  categories = [], topPicks, bestRated = [], flashDeals, topStores, countdown,
   onShopCategory = () => {}, onProductClick, onStoreClick, onTrendingTerm = () => {}, onNavigate,
-  categoriesLabel = 'All Categories', categoriesContent, extraTriggers = DEFAULT_EXTRA_TRIGGERS,
+  categoriesLabel = 'All Categories', categoriesContent, extraTriggers = DEFAULT_EXTRA_TRIGGERS, compact = false,
 }: {
   categories?: CategoryNode[];
   topPicks:   MarketplaceProduct[];
+  /** Purely-rating-sorted slice for Top Picks' second "Best Rated" section —
+   *  optional, defaults to empty (no second section) for callers that don't
+   *  compute one. */
+  bestRated?: MarketplaceProduct[];
   flashDeals: { product: MarketplaceProduct; pct: number }[];
   topStores:  PublicStoreListItem[];
   countdown:  { h: string; m: string; s: string };
@@ -442,6 +477,11 @@ export function MegaMenuBar({
    *  Picks/Featured Stores/About. Pass `[]` to render just the categories
    *  trigger (Marketplace, once that content has its own page sections). */
   extraTriggers?: MegaMenuExtraTrigger[];
+  /** Small, plain-text scale (no icons, no hover pills) — the row reads as
+   *  a thin Alibaba-style utility bar with breathing room in the middle,
+   *  instead of the default larger app-nav look. Used when this row sits
+   *  above the hero (Marketplace) rather than below it. */
+  compact?: boolean;
 }) {
   const [active, setActive] = useState<MegaMenuKey | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -477,26 +517,31 @@ export function MegaMenuBar({
          (a "category line" and a "welcome line") that duplicated the same
          navigational weight — merged into one to remove that redundancy. ── */}
       <div className="bg-white border-b border-bone">
-        <div className="flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-10 py-[11px]">
-          <div className="flex items-center gap-5 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
+        <div className={clsx(
+          'flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-10',
+          compact ? 'py-[7px]' : 'py-[11px]',
+        )}>
+          <div className={clsx('flex items-center min-w-0 flex-1 overflow-x-auto scrollbar-hide', compact ? 'gap-4' : 'gap-5')}>
             <button
               aria-haspopup="true"
               aria-expanded={active === 'categories'}
               onMouseEnter={() => openMenu('categories')}
               onClick={() => setActive(a => a === 'categories' ? null : 'categories')}
-              className={triggerCls('categories', 'shrink-0')}
+              className={triggerCls('categories', clsx('shrink-0', compact && 'text-[11.5px] py-1'))}
             >
               {categoriesLabel}
-              <ChevronDown size={14} className={clsx('transition-transform duration-200', active === 'categories' && 'rotate-180')} />
+              <ChevronDown size={compact ? 12 : 14} className={clsx('transition-transform duration-200', active === 'categories' && 'rotate-180')} />
               <span className={triggerUnderlineCls('categories')} />
             </button>
 
             {extraTriggers.length > 0 && <span className="hidden sm:block w-px h-4 bg-bone shrink-0" />}
 
-            {/* Segmented nav — one consistent trigger style/spacing/animation
-               instead of plain text links separated by dividers; each trigger
-               gets a color transition plus an animated underline (full-width on
-               active, a shorter peek on hover) rather than a filled pill. */}
+            {/* Segmented nav. Default: each trigger carries its own icon and a
+               filled hover/active pill, so Flash Sale/Top Picks/Featured
+               Stores/About read as real discovery features rather than a row
+               of afterthought links. Compact: plain small text (no icon, no
+               pill) — a thin Alibaba-style utility link, matching the
+               Verified Sellers/Track Order group on the right. */}
             {extraTriggers.map(item => (
               <button
                 key={item.key}
@@ -505,29 +550,34 @@ export function MegaMenuBar({
                 onMouseEnter={() => openMenu(item.key)}
                 onClick={() => setActive(a => a === item.key ? null : item.key)}
                 className={clsx(
-                  'group relative flex items-center gap-[5px] py-2 text-[12.5px] font-semibold whitespace-nowrap shrink-0 border-none bg-transparent cursor-pointer transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
-                  active === item.key ? 'text-brand-orange' : 'text-slate hover:text-charcoal',
+                  'group flex items-center whitespace-nowrap shrink-0 border-none cursor-pointer transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                  compact
+                    ? clsx('gap-1 py-1 text-[11.5px] font-medium bg-transparent', active === item.key ? 'text-brand-orange' : 'text-slate hover:text-brand-orange')
+                    : clsx('gap-[6px] py-[7px] px-[11px] rounded-full text-[12.5px] font-semibold', active === item.key ? 'text-brand-deep-orange bg-brand-pale-orange' : 'text-charcoal hover:bg-cream'),
                   item.className,
                 )}
               >
+                {!compact && (
+                  <item.icon
+                    size={13}
+                    className={clsx('shrink-0 transition-colors duration-200', active === item.key ? 'text-brand-orange' : 'text-slate group-hover:text-brand-orange')}
+                  />
+                )}
                 {item.label}
-                {item.chevron && <ChevronDown size={12} className={clsx('transition-transform duration-200', active === item.key && 'rotate-180')} />}
-                <span
-                  className={clsx(
-                    'absolute left-0 right-0 -bottom-[2px] h-[2px] rounded-full bg-brand-orange origin-left transition-transform duration-200',
-                    active === item.key ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-50',
-                  )}
-                />
+                {item.chevron && <ChevronDown size={compact ? 11 : 12} className={clsx('transition-transform duration-200', active === item.key && 'rotate-180')} />}
               </button>
             ))}
           </div>
 
-          <div className="hidden lg:flex items-center gap-4 shrink-0 text-[12.5px] text-slate whitespace-nowrap">
+          <div className={clsx(
+            'hidden lg:flex items-center shrink-0 text-slate whitespace-nowrap',
+            compact ? 'gap-3 text-[11.5px]' : 'gap-4 text-[12.5px]',
+          )}>
             <span className="flex items-center gap-1">
-              <BadgeCheck size={13} className="text-success" /> Verified Sellers
+              <BadgeCheck size={compact ? 11 : 13} className="text-success" /> Verified Sellers
             </span>
             <span className="flex items-center gap-1">
-              <ShieldCheck size={13} className="text-success" /> Verified Stores
+              <ShieldCheck size={compact ? 11 : 13} className="text-success" /> Verified Stores
             </span>
             <span className="w-px h-4 bg-bone" />
             <button
@@ -564,7 +614,7 @@ export function MegaMenuBar({
             <FlashSaleMegaContent flashDeals={flashDeals} countdown={countdown} onProductClick={onProductClick} />
           )}
           {active === 'top-picks' && (
-            <TopPicksMegaContent topPicks={topPicks} onProductClick={onProductClick} />
+            <TopPicksMegaContent topPicks={topPicks} bestRated={bestRated} onProductClick={onProductClick} />
           )}
           {active === 'featured-sellers' && (
             <FeaturedSellersMegaContent topStores={topStores} onStoreClick={onStoreClick} />

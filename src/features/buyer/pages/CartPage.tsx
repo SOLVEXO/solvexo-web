@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
 import { Button } from '@/components/comman/ui/Button';
-import { BuyerNavbar, Breadcrumb, Footer } from '@/components/comman/ui';
+import { BuyerNavbar, Breadcrumb, Footer, EmptyState, SkeletonBox } from '@/components/comman/ui';
 import {
   Minus, Plus, Trash2, ShoppingBag, ImageOff,
   Loader2, Package, Download, ChevronRight,
@@ -107,13 +107,13 @@ export function CartPage() {
 
         {/* ── Empty ── */}
         {isEmpty && (
-          <div className="bg-white rounded-xl border border-bone p-10 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-bone flex items-center justify-center mx-auto mb-4">
-              <ShoppingBag size={30} className="text-slate opacity-60" />
-            </div>
-            <p className="text-[16px] font-semibold text-carbon mb-2">Your cart is empty</p>
-            <p className="text-[13px] text-slate mb-6">Browse the marketplace and add products to get started.</p>
-            <Button variant="primary" onClick={() => navigate('/marketplace')}>Browse Marketplace</Button>
+          <div className="bg-white rounded-xl border border-bone">
+            <EmptyState
+              icon={<ShoppingBag size={30} className="text-brand-orange" />}
+              title="Your cart is empty"
+              description="Browse the marketplace and add products to get started."
+              action={{ label: 'Browse Marketplace', onClick: () => navigate('/marketplace') }}
+            />
           </div>
         )}
 
@@ -144,13 +144,13 @@ export function CartPage() {
                 <div className="divide-y divide-bone">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="flex gap-4 items-center px-5 py-4">
-                      <div className="animate-pulse w-[72px] h-[72px] rounded-[10px] bg-bone shrink-0" />
+                      <SkeletonBox width={72} height={72} rounded="10px" className="shrink-0" />
                       <div className="flex-1 flex flex-col gap-[10px]">
-                        <div className="animate-pulse h-[13px] rounded bg-bone w-[55%]" />
-                        <div className="animate-pulse h-[11px] rounded bg-bone w-[25%]" />
-                        <div className="animate-pulse h-8 rounded-lg bg-bone w-[100px]" />
+                        <SkeletonBox height={13} width="55%" />
+                        <SkeletonBox height={11} width="25%" />
+                        <SkeletonBox height={32} width={100} rounded="8px" />
                       </div>
-                      <div className="animate-pulse w-[55px] h-5 rounded bg-bone" />
+                      <SkeletonBox width={55} height={20} />
                     </div>
                   ))}
                 </div>

@@ -9,7 +9,7 @@ import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { Table, type TableColumn } from '@/components/comman/ui/Table';
 import { Badge } from '@/components/comman/ui/Badge';
 import { SearchInput } from '@/components/comman/ui/SearchInput';
-import { formatCurrency } from '@/components/comman/analytics/format';
+import { formatMoneyCompact } from '@/utils/currency';
 import { FollowersTab } from './tabs/FollowersTab';
 
 const TABS: Tab[] = [
@@ -29,7 +29,7 @@ function fmtDate(d: string | null) {
 
 export default function StoreCustomerList() {
   usePageTitle('Customers');
-  const { storeId } = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
 
   const [activeTab, setActiveTab] = useState('customers');
   const [search, setSearch] = useState('');
@@ -100,7 +100,7 @@ export default function StoreCustomerList() {
     },
     {
       key: 'totalSpent', header: 'Total Spent', align: 'right',
-      render: c => <span className="font-semibold text-charcoal">{formatCurrency(c.totalSpent)}</span>,
+      render: c => <span className="font-semibold text-charcoal">{formatMoneyCompact(c.totalSpent, store?.baseCurrency)}</span>,
     },
     { key: 'lastOrderAt', header: 'Last Order', render: c => <span className="text-slate">{fmtDate(c.lastOrderAt)}</span> },
     { key: 'createdAt', header: 'Member Since', render: c => <span className="text-slate">{fmtDate(c.createdAt)}</span> },
@@ -133,7 +133,7 @@ export default function StoreCustomerList() {
         <div className="flex flex-wrap gap-3">
           <MetricCard label="Total Customers" value={total.toLocaleString()} icon={<Users size={16} />} loading={loading && page === 1 && customers.length === 0} />
           <MetricCard label="Total Orders"     value={summary.totalOrders.toLocaleString()} icon={<ShoppingBag size={16} />} loading={loading && page === 1 && customers.length === 0} />
-          <MetricCard label="Total Revenue"    value={formatCurrency(summary.totalRevenue)} icon={<DollarSign size={16} />} loading={loading && page === 1 && customers.length === 0} />
+          <MetricCard label="Total Revenue"    value={formatMoneyCompact(summary.totalRevenue, store?.baseCurrency)} icon={<DollarSign size={16} />} loading={loading && page === 1 && customers.length === 0} />
         </div>
 
         <div className="flex gap-4 items-start">
@@ -177,7 +177,7 @@ export default function StoreCustomerList() {
                       <p className="text-[10px] text-slate uppercase tracking-[0.05em]">Orders</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[15px] font-bold text-carbon">{formatCurrency(sel.totalSpent)}</p>
+                      <p className="text-[15px] font-bold text-carbon">{formatMoneyCompact(sel.totalSpent, store?.baseCurrency)}</p>
                       <p className="text-[10px] text-slate uppercase tracking-[0.05em]">Spent</p>
                     </div>
                   </div>

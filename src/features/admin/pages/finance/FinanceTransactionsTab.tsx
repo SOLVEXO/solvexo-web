@@ -3,7 +3,8 @@ import { FilterDropdown, Table, type TableColumn } from '@/components/comman/ui'
 import { useAdminPlatformTransactions } from '@/hooks/admin/useAdminFinance';
 import type { AdminFinanceParams, TransactionRow } from '@/api/services/finance/adminFinance';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
-import { formatCurrency, formatDate } from '@/components/comman/analytics/format';
+import { formatDate } from '@/components/comman/analytics/format';
+import { formatMoneyCompact } from '@/utils/currency';
 import { Receipt } from 'lucide-react';
 import { FinanceStatusBadge } from '../../components/finance/FinanceStatusBadge';
 
@@ -25,7 +26,7 @@ export function FinanceTransactionsTab({ params }: { params: AdminFinanceParams 
     { key: 'storeName', header: 'Store', render: (t) => t.storeName ?? t.storeId },
     { key: 'description', header: 'Description' },
     { key: 'type', header: 'Type' },
-    { key: 'amount', header: 'Amount', align: 'right', render: (t) => `${t.amount >= 0 ? '+' : ''}${formatCurrency(t.amount)}` },
+    { key: 'amount', header: 'Amount', align: 'right', render: (t) => `${t.amount >= 0 ? '+' : ''}${formatMoneyCompact(t.amount, t.currency)}` },
     { key: 'status', header: 'Status', render: (t) => <FinanceStatusBadge status={t.status} /> },
     { key: 'createdAt', header: 'Date', render: (t) => formatDate(t.createdAt) },
   ];

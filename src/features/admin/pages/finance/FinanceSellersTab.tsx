@@ -3,7 +3,7 @@ import { SearchInput, FilterDropdown, Table, type TableColumn } from '@/componen
 import { useAdminSellerBalances } from '@/hooks/admin/useAdminFinance';
 import type { SellerBalanceRow, SellerBalancesParams } from '@/api/services/finance/adminFinance';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
-import { formatCurrency } from '@/components/comman/analytics/format';
+import { formatMoneyCompact } from '@/utils/currency';
 import { Users } from 'lucide-react';
 import { SellerFinancialDetailsModal } from '../../components/finance/SellerFinancialDetailsModal';
 
@@ -29,10 +29,10 @@ export function FinanceSellersTab() {
         <p className="text-[11px] text-slate">{r.storeName}</p>
       </div>
     ) },
-    { key: 'availableBalance', header: 'Available', align: 'right', render: (r) => formatCurrency(r.availableBalance) },
-    { key: 'pendingBalance', header: 'Pending', align: 'right', render: (r) => formatCurrency(r.pendingBalance) },
-    { key: 'totalRevenue', header: 'Lifetime Revenue', align: 'right', render: (r) => formatCurrency(r.totalRevenue) },
-    { key: 'totalPayouts', header: 'Lifetime Payouts', align: 'right', render: (r) => formatCurrency(r.totalPayouts) },
+    { key: 'availableBalance', header: 'Available', align: 'right', render: (r) => formatMoneyCompact(r.availableBalance, r.currency) },
+    { key: 'pendingBalance', header: 'Pending', align: 'right', render: (r) => formatMoneyCompact(r.pendingBalance, r.currency) },
+    { key: 'totalRevenue', header: 'Lifetime Revenue', align: 'right', render: (r) => formatMoneyCompact(r.totalRevenue, r.currency) },
+    { key: 'totalPayouts', header: 'Lifetime Payouts', align: 'right', render: (r) => formatMoneyCompact(r.totalPayouts, r.currency) },
   ];
 
   return (

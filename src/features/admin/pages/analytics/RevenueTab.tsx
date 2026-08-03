@@ -1,14 +1,32 @@
-import { MetricCard } from '@/components/comman/ui';
+import { MetricCard, Table, type TableColumn } from '@/components/comman/ui';
 import { LineChart, DonutChart } from '@/components/comman/charts';
 import { useAdminAnalyticsRevenueOverTime, useAdminAnalyticsRevenueBreakdown } from '@/hooks/admin/useAdminAnalytics';
 import type { BaseAnalyticsParams } from '@/api/services/analytics/adminAnalytics';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
-import { formatCurrency, formatBucketLabel } from '@/components/comman/analytics/format';
+import { formatCurrency, formatBucketLabel, formatDate } from '@/components/comman/analytics/format';
 
-export function RevenueTab({ params }: { params: BaseAnalyticsParams }) {
+interface ComparisonRow { metric: string; current: string; previous: string }
+
+export function RevenueTab({ params, compareToPreviousPeriod }: { params: BaseAnalyticsParams; compareToPreviousPeriod: boolean }) {
   const revenue = useAdminAnalyticsRevenueOverTime(params);
   const breakdown = useAdminAnalyticsRevenueBreakdown(params);
+
+  const comparisonColumns: TableColumn<ComparisonRow>[] = [
+    { key: 'metric', header: 'Metric' },
+    { key: 'previous', header: 'Previous Period', align: 'right' },
+    { key: 'current', header: 'Current Period', align: 'right' },
+  ];
+
+  const b = breakdown.data;
+  const comparisonRows: ComparisonRow[] = b?.previousPeriod ? [
+    { metric: 'One-Time Order Revenue', current: formatCurrency(b.oneTimeOrderRevenue), previous: formatCurrency(b.previousPeriod.oneTimeOrderRevenue) },
+    { metric: 'Subscription Revenue', current: formatCurrency(b.recurringSubscriptionRevenue), previous: formatCurrency(b.previousPeriod.recurringSubscriptionRevenue) },
+    { metric: 'Platform Commission', current: formatCurrency(b.platformCommissionRevenue), previous: formatCurrency(b.previousPeriod.platformCommissionRevenue) },
+    { metric: 'Payment Processing Fees', current: formatCurrency(b.paymentProcessingFees), previous: formatCurrency(b.previousPeriod.paymentProcessingFees) },
+    { metric: 'Total Platform Revenue', current: formatCurrency(b.totalPlatformRevenue), previous: formatCurrency(b.previousPeriod.totalPlatformRevenue) },
+    { metric: 'Total Marketplace Revenue', current: formatCurrency(b.totalMarketplaceRevenue), previous: formatCurrency(b.previousPeriod.totalMarketplaceRevenue) },
+  ] : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -64,6 +82,18 @@ export function RevenueTab({ params }: { params: BaseAnalyticsParams }) {
 
       {breakdown.data?.note && (
         <p className="text-[11px] text-slate bg-cream border border-bone rounded-lg px-3 py-2">{breakdown.data.note}</p>
+      )}
+
+      {compareToPreviousPeriod && b?.previousPeriod && (
+        <div className="bg-white border border-bone rounded-[10px]">
+          <div className="px-5 pt-4 pb-3">
+            <p className="text-[14px] font-bold text-charcoal">Period Comparison</p>
+            <p className="text-[12px] text-slate">
+              {formatDate(b.previousPeriod.period.from)} – {formatDate(b.previousPeriod.period.to)} vs. {formatDate(b.period.from)} – {formatDate(b.period.to)}
+            </p>
+          </div>
+          <Table columns={comparisonColumns} data={comparisonRows} keyExtractor={r => r.metric} />
+        </div>
       )}
     </div>
   );

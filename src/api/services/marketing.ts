@@ -66,6 +66,8 @@ export interface JoinableCampaign {
   status:        'draft' | 'active' | 'ended';
   discountType:  DiscountType | null;
   discountValue: number | null;
+  /** Only meaningful when discountType === 'fixed' — always 'USD' (the platform pivot). */
+  currency:      string | null;
   // 'seller': this store pays the discount out of its own payout if it joins.
   // 'platform': Solvexo reimburses it — joining costs this store nothing.
   sponsorType:   'seller' | 'platform';

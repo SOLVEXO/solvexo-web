@@ -5,9 +5,10 @@ import { useSellerAnalyticsCustomers } from '@/hooks/seller/useSellerAnalytics';
 import type { SellerAnalyticsParams, GeoBreakdownRow, TopCustomerRow } from '@/api/services/analytics/analytics';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
-import { formatCurrency, formatBucketLabel } from '@/components/comman/analytics/format';
+import { formatBucketLabel } from '@/components/comman/analytics/format';
+import { formatMoneyCompact } from '@/utils/currency';
 
-export function SellerCustomersTab({ params }: { params: SellerAnalyticsParams }) {
+export function SellerCustomersTab({ params, currency }: { params: SellerAnalyticsParams; currency?: string | null }) {
   const customers = useSellerAnalyticsCustomers(params);
 
   if (customers.error) {
@@ -19,18 +20,18 @@ export function SellerCustomersTab({ params }: { params: SellerAnalyticsParams }
   const ltvColumns: TableColumn<TopCustomerRow>[] = [
     { key: 'name', header: 'Customer', render: r => <div><p className="font-medium">{r.name}</p><p className="text-[11px] text-slate">{r.email}</p></div> },
     { key: 'totalOrders', header: 'Total Orders', align: 'right' },
-    { key: 'lifetimeValue', header: 'Lifetime Value', align: 'right', render: r => formatCurrency(r.lifetimeValue) },
+    { key: 'lifetimeValue', header: 'Lifetime Value', align: 'right', render: r => formatMoneyCompact(r.lifetimeValue, currency) },
   ];
 
   const geoColumns: TableColumn<GeoBreakdownRow>[] = [
     { key: 'state', header: 'State' },
     { key: 'orders', header: 'Orders', align: 'right' },
-    { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatCurrency(r.revenue) },
+    { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatMoneyCompact(r.revenue, currency) },
   ];
 
   return (
     <div className="flex flex-col gap-4">
-      <MetricCard label="Avg. Lifetime Value" value={d ? formatCurrency(d.averageLifetimeValue) : ''} loading={customers.loading} sub="All-time, per customer" />
+      <MetricCard label="Avg. Lifetime Value" value={d ? formatMoneyCompact(d.averageLifetimeValue, currency) : ''} loading={customers.loading} sub="All-time, per customer" />
 
       {customers.loading ? (
         <ChartCardSkeleton />

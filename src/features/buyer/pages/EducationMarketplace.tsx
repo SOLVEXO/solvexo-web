@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductsByCategory } from '@/hooks/marketplace/useProductsByCategory';
+import type { MarketplaceSortBy } from '@/api/services/marketplace';
 import { useEducationFacets } from '@/hooks/marketplace/useEducationFacets';
 import { useBanners } from '@/hooks/useBanners';
 import { useCountdownToMidnight } from '@/hooks/useCountdownToMidnight';
@@ -15,7 +16,7 @@ import { ProductCard, ProductCardSkeleton } from '@/components/comman/marketplac
 import { FilterAccordionSection, FilterChipPill, FilterRadioRow, FilterCheckboxRow, FilterStarRow, ActiveFilterChip, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { MegaMenuBar, RailCard, MegaSectionLabel } from '@/components/comman/marketplace/MegaMenuBar';
-import { BuyerNavbar, AppDownloadBanner, Footer, FilterDropdown, Modal, DealsBanner, TrustServiceStrip } from '@/components/comman/ui';
+import { BuyerNavbar, AppDownloadBanner, Footer, FilterDropdown, Modal, DealsBanner, TrustServiceStrip, Pagination, EmptyState, FloatingAppWidget } from '@/components/comman/ui';
 import { ArrowRight, Sparkles, SlidersHorizontal, Loader2, RefreshCcw, GraduationCap, ShieldCheck, BadgeCheck } from 'lucide-react';
 
 const SUBJECTS = ['Math', 'ELA', 'Science', 'Social Studies', 'Art', 'SEL'];
@@ -286,6 +287,7 @@ export function EducationMarketplace() {
   const [sortBy,          setSortBy]          = useState('newest');
   const [showAiTrial,     setShowAiTrial]     = useState(false);
   const [mobileFilters,   setMobileFilters]   = useState(false);
+  const [page,            setPage]            = useState(1);
 
   const { levels, otherLevels, loading: facetsLoading } = useEducationFacets();
   const { banners } = useBanners('educationHero');
@@ -300,11 +302,36 @@ export function EducationMarketplace() {
     return () => { cancelled = true; };
   }, []);
 
+  const LIMIT = 24;
+  // Price/rating/sort are real server-side facets (see ProductsController) —
+  // previously only fetched page 1 of 24 with no pagination at all, making
+  // any catalog beyond the first 24 items permanently unreachable, and
+  // price/rating/sort only ever re-sorted/re-filtered that one fixed page.
+  const serverSortBy: MarketplaceSortBy | undefined =
+    sortBy === 'price-asc' ? 'price_asc' :
+    sortBy === 'price-desc' ? 'price_desc' :
+    sortBy === 'best-rated' ? 'rating' : undefined;
+  const isPriceRangeActive = priceRange[0] !== PRICE_MIN || priceRange[1] !== PRICE_MAX;
+  const serverMinPrice = isPriceRangeActive ? priceRange[0] : undefined;
+  const serverMaxPrice = isPriceRangeActive && priceRange[1] < PRICE_MAX ? priceRange[1] : undefined;
+  const serverMinRating = activeRatings.includes('4★ & up') ? 4 : activeRatings.includes('3★ & up') ? 3 : undefined;
+
   const { products, total, loading, error } = useProductsByCategory(
-    1, 24, undefined, 'educational',
+    page, LIMIT, undefined, 'educational',
     activeLevel || undefined,
     activeLevel === 'other' ? (activeOtherSlug || undefined) : undefined,
+    undefined, serverMinPrice, serverMaxPrice, serverMinRating, serverSortBy,
   );
+
+  // Subject (tag-based) and free-text search have no server-side facet on
+  // this endpoint — they still narrow only the current fetched page, same
+  // limitation as before. Changing any real server facet resets to page 1,
+  // same as Marketplace, so a filter change never fetches a stale page.
+  const isFirstFacetRun = useRef(true);
+  useEffect(() => {
+    if (isFirstFacetRun.current) { isFirstFacetRun.current = false; return; }
+    setPage(1);
+  }, [activeLevel, activeOtherSlug, sortBy, priceRange[0], priceRange[1], activeRatings.join(',')]);
 
   // Unfiltered educational pool (independent of the sidebar's current level
   // filter) — same approach Marketplace uses for its own Flash Sale/Top Picks
@@ -334,40 +361,17 @@ export function EducationMarketplace() {
     setActiveRatings(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r]);
   }, []);
 
-  const isPriceRangeActive = priceRange[0] !== PRICE_MIN || priceRange[1] !== PRICE_MAX;
-  const matchesPriceFilter = (price: number | null) => {
-    if (!isPriceRangeActive || price == null) return true;
-    const [min, max] = priceRange;
-    if (price < min) return false;
-    if (max < PRICE_MAX && price > max) return false; // max at the slider's cap means "and up" — no upper bound
-    return true;
-  };
-  const matchesRatingFilter = (rating: number) => {
-    if (activeRatings.length === 0) return true;
-    return activeRatings.some(label => {
-      if (label === '4★ & up') return rating >= 4;
-      if (label === '3★ & up') return rating >= 3;
-      return true;
-    });
-  };
-
-  const filtered = products
-    .filter(p => {
-      const matchesSearch = !searchQuery
-        || p.name.toLowerCase().includes(searchQuery.toLowerCase())
-        || (p.sellerName ?? '').toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesSubject = activeSubjects.length === 0
-        || activeSubjects.some(s => (p.tags ?? []).some(t => t.toLowerCase() === s.toLowerCase()));
-      const lowestPrice = p.variants?.length > 0 ? Math.min(...p.variants.map(v => v.price)) : null;
-      return matchesSearch && matchesSubject && matchesPriceFilter(lowestPrice) && matchesRatingFilter(p.averageRating);
-    })
-    .sort((a, b) => {
-      const priceOf = (p: typeof a) => ((p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0])?.price ?? 0;
-      if (sortBy === 'price-asc')  return priceOf(a) - priceOf(b);
-      if (sortBy === 'price-desc') return priceOf(b) - priceOf(a);
-      if (sortBy === 'best-rated') return b.averageRating - a.averageRating;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+  // Price/rating/sort are already applied server-side (see serverMinPrice/
+  // serverMinRating/serverSortBy above) — only search/subject (no server
+  // facet for either) still narrow the already-fetched page here.
+  const filtered = products.filter(p => {
+    const matchesSearch = !searchQuery
+      || p.name.toLowerCase().includes(searchQuery.toLowerCase())
+      || (p.sellerName ?? '').toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSubject = activeSubjects.length === 0
+      || activeSubjects.some(s => (p.tags ?? []).some(t => t.toLowerCase() === s.toLowerCase()));
+    return matchesSearch && matchesSubject;
+  });
 
   const handleCardClick = useCallback((id: string) => navigate(`/marketplace/${id}`), [navigate]);
   const handleAddToCart = useCallback((e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => {
@@ -599,8 +603,21 @@ export function EducationMarketplace() {
             </div>
 
             {!loading && !error && filtered.length === 0 && (
-              <div className="text-center py-[60px] text-slate text-[14px]">
-                No educational resources match your filters yet.
+              <EmptyState
+                icon={<GraduationCap size={30} className="text-brand-orange" />}
+                title="No resources match"
+                description="No educational resources match your filters yet."
+                action={
+                  activeFilterCount > 0 || searchQuery
+                    ? { label: 'Clear filters', onClick: () => { clearFilters(); setSearchQuery(''); } }
+                    : undefined
+                }
+              />
+            )}
+
+            {!loading && !error && total > LIMIT && (
+              <div className="flex justify-center mt-8 pb-2">
+                <Pagination page={page} total={total} perPage={LIMIT} onChange={p => setPage(p)} />
               </div>
             )}
 
@@ -673,6 +690,7 @@ export function EducationMarketplace() {
       {showAiTrial && <WorksheetTrialModal onClose={() => setShowAiTrial(false)} />}
 
       <Footer />
+      <FloatingAppWidget />
     </div>
   );
 }

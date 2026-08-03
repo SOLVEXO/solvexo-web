@@ -8,6 +8,7 @@ import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
 import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal } from '@/components/comman/ui';
+import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 
 type ProductType   = 'physical' | 'digital' | 'educational';
 type ProductStatus = 'draft' | 'active' | 'scheduled';
@@ -150,7 +151,9 @@ export default function StoreAddProduct() {
   const { storeId, store } = useStoreWorkspace();
   // Every price on this form is in the STORE's own currency (locked at
   // onboarding, see OnboardingPage's currency selector) — never assume PKR.
-  const currencySymbol = store?.baseCurrency === 'USD' ? '$' : 'Rs';
+  // Uses the shared currencySymbol() util (supports every SupportedCurrency,
+  // not just a PKR/USD ternary that mislabeled any other currency as "Rs").
+  const currencySymbol = symbolForCurrency(store?.baseCurrency);
 
   const supportsPhysical    = !store || (store.productTypes ?? []).includes('physical_products');
   const supportsDigital     = !store || (store.productTypes ?? []).includes('digital_downloads');
@@ -249,7 +252,7 @@ export default function StoreAddProduct() {
       </div>
 
       {/* ── 2-column body ── */}
-      <div className="px-7 py-6 grid grid-cols-[1fr_296px] gap-5 items-start">
+      <div className="px-4 sm:px-7 py-6 grid grid-cols-1 lg:grid-cols-[1fr_296px] gap-5 items-start">
 
         {/* Left column */}
         <div className="flex flex-col gap-5">

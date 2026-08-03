@@ -50,7 +50,7 @@ export interface ProductPerformanceParams extends BaseAnalyticsParams {
   categoryId?: string;
 }
 
-export type ExportSection = 'revenue' | 'orders' | 'sellers' | 'products' | 'customers';
+export type ExportSection = 'revenue' | 'orders' | 'sellers' | 'products' | 'customers' | 'payments' | 'platform';
 
 export interface ExportParams extends BaseAnalyticsParams {
   format: 'pdf' | 'csv';
@@ -106,7 +106,18 @@ export interface AdminOverviewData {
 export interface RevenuePoint { date: string; grossRevenue: number; netRevenue: number }
 export interface AdminRevenueOverTimeData { granularity: AnalyticsGranularity; series: RevenuePoint[] }
 
+export interface AdminRevenueBreakdownPreviousPeriod {
+  period: AnalyticsPeriod;
+  oneTimeOrderRevenue: number;
+  recurringSubscriptionRevenue: number;
+  platformCommissionRevenue: number;
+  paymentProcessingFees: number;
+  totalPlatformRevenue: number;
+  totalMarketplaceRevenue: number;
+}
+
 export interface AdminRevenueBreakdownData {
+  period: AnalyticsPeriod;
   oneTimeOrderRevenue: number;
   recurringSubscriptionRevenue: number;
   platformCommissionRevenue: number;
@@ -114,6 +125,7 @@ export interface AdminRevenueBreakdownData {
   totalPlatformRevenue: number;
   totalMarketplaceRevenue: number;
   note: string;
+  previousPeriod?: AdminRevenueBreakdownPreviousPeriod;
 }
 
 // ── C. Seller analytics ────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode, type KeyboardEvent } from 'react';
 import { clsx } from 'clsx';
 import { ChevronDown, Check, Star, X } from 'lucide-react';
 
@@ -198,6 +198,31 @@ export function PriceRangeSlider({ value, onChange }: { value: [number, number];
   const [lo, hi] = value;
   const pctLo = ((lo - PRICE_MIN) / (PRICE_MAX - PRICE_MIN)) * 100;
   const pctHi = ((hi - PRICE_MIN) / (PRICE_MAX - PRICE_MIN)) * 100;
+
+  // Free-typing local text state so a digit can be deleted/retyped without
+  // each keystroke being clamped mid-edit — the clamp only runs on blur/Enter,
+  // then syncs back from the committed value (also picks up slider drags).
+  const [loText, setLoText] = useState(String(lo));
+  const [hiText, setHiText] = useState(hi >= PRICE_MAX ? `${PRICE_MAX}+` : String(hi));
+  useEffect(() => setLoText(String(lo)), [lo]);
+  useEffect(() => setHiText(hi >= PRICE_MAX ? `${PRICE_MAX}+` : String(hi)), [hi]);
+
+  const commitLo = () => {
+    const parsed = parseInt(loText.replace(/[^0-9]/g, ''), 10);
+    const next = Number.isNaN(parsed) ? PRICE_MIN : Math.min(Math.max(parsed, PRICE_MIN), hi - PRICE_STEP);
+    onChange([next, hi]);
+    setLoText(String(next));
+  };
+  const commitHi = () => {
+    const parsed = parseInt(hiText.replace(/[^0-9]/g, ''), 10);
+    const next = Number.isNaN(parsed) ? PRICE_MAX : Math.min(Math.max(parsed, lo + PRICE_STEP), PRICE_MAX);
+    onChange([lo, next]);
+    setHiText(next >= PRICE_MAX ? `${PRICE_MAX}+` : String(next));
+  };
+  const commitOnEnter = (commit: () => void) => (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') { commit(); (e.target as HTMLInputElement).blur(); }
+  };
+
   return (
     <div>
       <div className="relative h-5 flex items-center">
@@ -225,9 +250,33 @@ export function PriceRangeSlider({ value, onChange }: { value: [number, number];
         />
       </div>
       <div className="flex items-center justify-between mt-3.5 gap-2">
-        <span className="flex-1 text-[11.5px] font-semibold text-carbon tabular-nums bg-cream border border-bone rounded-[7px] px-[8px] py-[6px] text-center">${lo}</span>
+        <div className="relative flex-1">
+          <span className="pointer-events-none absolute left-[8px] top-1/2 -translate-y-1/2 text-[11.5px] font-semibold text-slate">$</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={loText}
+            onChange={e => setLoText(e.target.value)}
+            onBlur={commitLo}
+            onKeyDown={commitOnEnter(commitLo)}
+            aria-label="Minimum price"
+            className="w-full text-[11.5px] font-semibold text-carbon tabular-nums bg-cream border border-bone rounded-[7px] pl-[17px] pr-[8px] py-[6px] text-center focus:outline-none focus:border-brand-orange focus:bg-white transition-colors"
+          />
+        </div>
         <span className="text-bone text-[10px]">—</span>
-        <span className="flex-1 text-[11.5px] font-semibold text-carbon tabular-nums bg-cream border border-bone rounded-[7px] px-[8px] py-[6px] text-center">{hi >= PRICE_MAX ? `$${PRICE_MAX}+` : `$${hi}`}</span>
+        <div className="relative flex-1">
+          <span className="pointer-events-none absolute left-[8px] top-1/2 -translate-y-1/2 text-[11.5px] font-semibold text-slate">$</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={hiText}
+            onChange={e => setHiText(e.target.value)}
+            onBlur={commitHi}
+            onKeyDown={commitOnEnter(commitHi)}
+            aria-label="Maximum price"
+            className="w-full text-[11.5px] font-semibold text-carbon tabular-nums bg-cream border border-bone rounded-[7px] pl-[17px] pr-[8px] py-[6px] text-center focus:outline-none focus:border-brand-orange focus:bg-white transition-colors"
+          />
+        </div>
       </div>
     </div>
   );
