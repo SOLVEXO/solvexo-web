@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiLogin, TokenStorage, getRoleRedirect, type LoginPayload, type AppRole } from '@/api/services/auth';
+import { apiLogin, TokenStorage, getRoleRedirect, LastRolePreference, type LoginPayload, type AppRole } from '@/api/services/auth';
+import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 
 export function useLogin() {
   const navigate = useNavigate();
@@ -21,7 +22,16 @@ export function useLogin() {
       TokenStorage.save(token.accessToken, token.refreshToken);
       TokenStorage.saveUser(user);
       const serverRole = (user.role ?? payload.role) as AppRole;
-      navigate(redirectTo || getRoleRedirect(serverRole), { replace: true });
+      LastRolePreference.set(serverRole);
+      if (redirectTo) {
+        navigate(redirectTo, { replace: true });
+        return;
+      }
+      // An existing seller's own real store state (not a hardcoded guess)
+      // decides where they land — onboarding if they never finished setup,
+      // verification if a store is pending/rejected, dashboard once active.
+      const destination = serverRole === 'seller' ? await resolveSellerDestinationRemote() : getRoleRedirect(serverRole);
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid credentials. Please try again.');
     } finally {

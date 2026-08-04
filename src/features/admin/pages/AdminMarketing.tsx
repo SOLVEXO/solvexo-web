@@ -262,7 +262,7 @@ function CampaignsTab() {
 
   return (
     <div className="flex flex-col gap-4 pt-4">
-      {actionError && <div className="bg-error-bg border border-[#FECACA] rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
+      {actionError && <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           {(['', 'draft', 'active', 'ended'] as const).map((s) => (
@@ -423,7 +423,7 @@ function CouponsTab() {
 
   return (
     <div className="flex flex-col gap-4 pt-4">
-      {actionError && <div className="bg-error-bg border border-[#FECACA] rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
+      {actionError && <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
       <div className="flex justify-end">
         <Button size="sm" icon={<Plus size={13} />} onClick={() => setCreating(true)}>New Coupon</Button>
       </div>
@@ -598,7 +598,7 @@ function PromotionCalendarModal({ onClose }: { onClose: () => void }) {
                               </div>
                               <span className="text-[12.5px] font-semibold text-charcoal shrink-0">{formatCurrency(p.priceUSD)}</span>
                               {conflicted ? (
-                                <span className="flex items-center gap-1 text-[11px] font-medium text-[#9A6A17] bg-[#FDF3E7] px-2 py-1 rounded-md shrink-0"><AlertTriangle size={11} /> Overlap</span>
+                                <span className="flex items-center gap-1 text-[11px] font-medium text-[#9a6a17] bg-[#fdf3e7] px-2 py-1 rounded-md shrink-0"><AlertTriangle size={11} /> Overlap</span>
                               ) : (
                                 <span className="flex items-center gap-1 text-[11px] font-medium text-success bg-success-bg px-2 py-1 rounded-md shrink-0"><ShieldCheck size={11} /> Clear</span>
                               )}
@@ -874,7 +874,7 @@ function PromotionsTab() {
         </div>
       </div>
 
-      {conflictNote && <div className="bg-[#FDF3E7] border border-[#F5D9A8] rounded-lg px-4 py-2.5 text-[12.5px] text-[#9A6A17]">{conflictNote}</div>}
+      {conflictNote && <div className="bg-[#fdf3e7] border border-[#f5d9a8] rounded-lg px-4 py-2.5 text-[12.5px] text-[#9a6a17]">{conflictNote}</div>}
 
       <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
         {error ? (

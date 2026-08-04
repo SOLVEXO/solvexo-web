@@ -5,7 +5,7 @@ import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
-import { SkeletonBox } from '@/components/comman/ui';
+import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
 import {
   apiGetFinanceDashboard, apiGetFinanceTransactions, apiExportFinanceTransactions,
@@ -291,6 +291,23 @@ export function StoreFinance() {
   const [exporting, setExporting] = useState(false);
   const [generatingTax, setGeneratingTax] = useState(false);
 
+  const transactionColumns: TableColumn<Transaction>[] = [
+    { key: 'createdAt', header: 'Date', render: t => <span className="text-slate whitespace-nowrap">{new Date(t.createdAt).toLocaleDateString()}</span> },
+    { key: 'description', header: 'Description', render: t => <span className="text-graphite">{t.description}</span> },
+    {
+      key: 'type', header: 'Type',
+      render: t => {
+        const ts = TYPE_STYLE[t.type];
+        return <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: ts.bg, color: ts.color }}>{ts.label}</span>;
+      },
+    },
+    {
+      key: 'amount', header: 'Amount',
+      render: t => <span className="font-semibold whitespace-nowrap" style={{ color: t.amount >= 0 ? '#2D8A4E' : '#C13030' }}>{t.amount >= 0 ? '+' : ''}{fmt(t.amount, t.currency)}</span>,
+    },
+    { key: 'balanceAfter', header: 'Balance', render: t => <span className="font-medium text-carbon whitespace-nowrap">{fmt(t.balanceAfter, t.currency)}</span> },
+  ];
+
   const [methodModal, setMethodModal] = useState(false);
   const [editingMethod, setEditingMethod] = useState<PayoutMethod | null>(null);
   const [payoutModal, setPayoutModal] = useState(false);
@@ -502,7 +519,7 @@ export function StoreFinance() {
             <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
               <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
               <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
-              {'trend' in m && m.trend && <p className="text-xs text-[#2D8A4E] mt-1">{m.trend}</p>}
+              {'trend' in m && m.trend && <p className="text-xs text-success mt-1">{m.trend}</p>}
               {'sub' in m && m.sub && <p className="text-xs text-slate mt-1">{m.sub}</p>}
             </div>
           ))}
@@ -527,43 +544,12 @@ export function StoreFinance() {
               </div>
             </div>
 
-            {transactions.length === 0 ? (
-              <p className="px-5 py-8 text-center text-[13px] text-slate">No transactions yet.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr>
-                      {['Date', 'Description', 'Type', 'Amount', 'Balance'].map(h => (
-                        <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transactions.map((t, i) => {
-                      const ts = TYPE_STYLE[t.type];
-                      return (
-                        <tr key={t._id} style={{ borderBottom: i < transactions.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
-                          <td className="px-4 py-3 text-[13px] text-slate whitespace-nowrap">{new Date(t.createdAt).toLocaleDateString()}</td>
-                          <td className="px-4 py-3 text-[13px] text-graphite">{t.description}</td>
-                          <td className="px-4 py-3">
-                            <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: ts.bg, color: ts.color }}>
-                              {ts.label}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-[13px] font-semibold whitespace-nowrap" style={{ color: t.amount >= 0 ? '#2D8A4E' : '#C13030' }}>
-                            {t.amount >= 0 ? '+' : ''}{fmt(t.amount, t.currency)}
-                          </td>
-                          <td className="px-4 py-3 text-[13px] font-medium text-carbon whitespace-nowrap">{fmt(t.balanceAfter, t.currency)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <Table
+              columns={transactionColumns}
+              data={transactions}
+              keyExtractor={t => t._id}
+              emptyState={{ title: 'No transactions yet.' }}
+            />
 
             {txPages > 1 && (
               <div className="flex items-center justify-center gap-2 px-5 py-3 border-t border-bone">
@@ -635,7 +621,7 @@ export function StoreFinance() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-3 pt-3 border-t border-[#F0EEE6]">
+                <div className="mt-3 pt-3 border-t border-[#f0eee6]">
                   <button onClick={() => setScheduleModal(true)}
                     className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer hover:border-brand-orange/40">
                     Update Schedule

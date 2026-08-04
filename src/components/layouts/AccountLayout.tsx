@@ -157,7 +157,7 @@ function AccountSidebar({ open, onToggle, onClose }: SidebarProps) {
                       'flex items-center gap-[10px] min-h-11 py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer',
                       'transition-colors duration-150',
                       !open && 'lg:justify-center lg:px-0',
-                      active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1A1917]',
+                      active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1a1917]',
                     )}
                   >
                     <item.Icon size={15} className={clsx('shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')} />

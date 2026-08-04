@@ -7,11 +7,14 @@ import {
   apiRemoveListing,
   apiSetStoreBadge,
   apiGetLeads,
+  apiGetLeadDetail,
+  apiMarkLeadUnderReview,
   apiApproveLead,
   apiRejectLead,
   type MarketplaceListingQuery,
   type GrantableStoreBadge,
   type LeadsQuery,
+  type LeadDetail,
 } from '@/api/services/marketplace/adminMarketplace';
 
 export function useMarketplaceStats() {
@@ -75,9 +78,44 @@ export function useLeads(query: LeadsQuery) {
   return useAnalyticsQuery(apiGetLeads, query);
 }
 
+/** Lazily fetched — only call `refetch` once a lead's detail view (e.g. a
+ *  Modal) actually opens, since each fetch generates fresh signed document
+ *  URLs server-side. */
+export function useLeadDetail(id: string | null) {
+  const [data, setData] = useState<LeadDetail | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const refetch = useCallback(() => {
+    if (!id) return;
+    setLoading(true);
+    setError('');
+    apiGetLeadDetail(id)
+      .then(res => setData(res.data))
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load lead.'))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  return { data, loading, error, refetch, setData };
+}
+
 export function useLeadActions() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [error, setError] = useState('');
+
+  const markUnderReview = useCallback(async (id: string) => {
+    setProcessingId(id);
+    setError('');
+    try {
+      await apiMarkLeadUnderReview(id);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update lead status.');
+      return false;
+    } finally {
+      setProcessingId(null);
+    }
+  }, []);
 
   const approve = useCallback(async (id: string) => {
     setProcessingId(id);
@@ -93,7 +131,7 @@ export function useLeadActions() {
     }
   }, []);
 
-  const reject = useCallback(async (id: string, reason?: string) => {
+  const reject = useCallback(async (id: string, reason: string) => {
     setProcessingId(id);
     setError('');
     try {
@@ -107,5 +145,5 @@ export function useLeadActions() {
     }
   }, []);
 
-  return { approve, reject, processingId, error };
+  return { markUnderReview, approve, reject, processingId, error };
 }

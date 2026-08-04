@@ -174,7 +174,7 @@ export function StoreOrderList() {
           <span className="text-[12px] text-slate capitalize">{o.paymentType.replace(/_/g, ' ')}</span>
           {o.isPaid
             ? <span className="text-[10px] font-semibold text-success">Paid</span>
-            : <span className="text-[10px] font-semibold text-[#B36200]">Unpaid</span>
+            : <span className="text-[10px] font-semibold text-[#b36200]">Unpaid</span>
           }
         </div>
       ),
@@ -286,7 +286,7 @@ export function StoreOrderList() {
 
         {/* Error */}
         {error && (
-          <div className="bg-error-bg border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
+          <div className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-center gap-3">
             <AlertCircle size={16} className="text-error shrink-0" />
             <span className="text-[13px] text-error flex-1">{error}</span>
             <button

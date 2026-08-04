@@ -46,12 +46,17 @@ export function CountdownUnit({ value, label, size = 'md' }: { value: number; la
   );
 }
 
-// ── Campaign image — the banner's hero visual. object-contain inside a
-// bounded "showcase" panel (never a bare floating image), with a graceful
+// ── Campaign image — the banner's hero visual. `fit="contain"` (default,
+// the non-compact 3-column layout) sits inside a bounded "showcase" panel
+// (never a bare floating image); `fit="cover"` (compact) instead fills its
+// parent completely edge-to-edge, cropping as needed — the parent there is
+// already a fixed, consistent size, so this is what gives every campaign's
+// image (whatever its own aspect ratio) the same premium, no-visible-card-
+// behind-it look instead of letterboxing against blank space. Graceful
 // fallback (a plain decorative icon, not a fake photo) when there's no real
 // image or it fails to load. Local error state is keyed by campaign id at the
 // call site, so switching campaigns doesn't get stuck on a stale error. ──
-function CampaignImage({ src }: { src: string | null }) {
+function CampaignImage({ src, fit = 'contain' }: { src: string | null; fit?: 'contain' | 'cover' }) {
   const [errored, setErrored] = useState(false);
 
   if (!src || errored) {
@@ -73,7 +78,10 @@ function CampaignImage({ src }: { src: string | null }) {
       loading="lazy"
       decoding="async"
       onError={() => setErrored(true)}
-      className="max-h-full max-w-full object-contain rounded-[10px] transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+      className={clsx(
+        'transition-transform duration-300 ease-out group-hover:scale-[1.03]',
+        fit === 'cover' ? 'absolute inset-0 w-full h-full object-cover rounded-[20px]' : 'max-h-full max-w-full object-contain rounded-[10px]',
+      )}
     />
   );
 }
@@ -182,40 +190,45 @@ export function DealsBanner({ className, storeType, compact = false }: {
           without that, stacked content taller than the host's own height
           assumption would spill out past the visible rounded card. */}
       <div className={clsx('relative w-full h-full transition-transform duration-200 hover:-translate-y-[2px]', compact && 'overflow-hidden rounded-[20px]')}>
-        <div className="absolute inset-0 overflow-hidden rounded-[20px] border border-black/10">
-          <div className="gradient-drift absolute inset-0 bg-gradient-to-br from-[#D97757] via-[#E28B63] to-[#F3A27A]" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.18),transparent_55%)]" />
-          <div className="pointer-events-none absolute inset-0 opacity-[0.08] bg-[radial-gradient(circle_at_1px_1px,#ffffff_1px,transparent_0)] bg-[length:16px_16px]" />
-          <div className="pointer-events-none absolute -top-10 left-[38%] size-40 rounded-full bg-white/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-14 right-[20%] size-48 rounded-full bg-[#7A3520]/25 blur-3xl" />
-          {/* Thin vertical separators between the 3 columns — desktop only, there's no room below lg. Not part of the compact (forced single-column) layout. */}
-          {!compact && (
-            <>
-              <div className="pointer-events-none hidden lg:block absolute inset-y-6 left-[40%] w-px bg-white/15" />
-              <div className="pointer-events-none hidden lg:block absolute inset-y-6 left-[75%] w-px bg-white/15" />
-            </>
-          )}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/25" />
-        </div>
+        {compact ? (
+          /* Compact background — plain and neutral, not the orange
+             promo-copy gradient (that gradient existed to carry white text;
+             compact mode has none, it's just the image, so an orange frame
+             behind it was only ever wasted letterboxing). */
+          <div className="absolute inset-0 overflow-hidden rounded-[20px] border border-bone bg-white" />
+        ) : (
+          <div className="absolute inset-0 overflow-hidden rounded-[20px] border border-black/10">
+            <div className="gradient-drift absolute inset-0 bg-gradient-to-br from-brand-orange via-[#e28b63] to-[#f3a27a]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.18),transparent_55%)]" />
+            <div className="pointer-events-none absolute inset-0 opacity-[0.08] bg-[radial-gradient(circle_at_1px_1px,#ffffff_1px,transparent_0)] bg-[length:16px_16px]" />
+            <div className="pointer-events-none absolute -top-10 left-[38%] size-40 rounded-full bg-white/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-14 right-[20%] size-48 rounded-full bg-[#7a3520]/25 blur-3xl" />
+            {/* Thin vertical separators between the 3 columns — desktop only, there's no room below lg. */}
+            <div className="pointer-events-none hidden lg:block absolute inset-y-6 left-[40%] w-px bg-white/15" />
+            <div className="pointer-events-none hidden lg:block absolute inset-y-6 left-[75%] w-px bg-white/15" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/25" />
+          </div>
+        )}
 
         {compact ? (
-          /* Compact: a clean, full, un-cropped image — no headline/
-             description/countdown text overlaid on top of it, since the
-             image itself is the entire point of this placement. */
+          /* Compact: the image alone, filling the card completely edge-to-
+             edge (fit="cover") — one fixed, consistent size every campaign
+             image sits in, so nothing peeks out around it regardless of the
+             source image's own aspect ratio. No headline/description/
+             countdown text on top, since the image is the entire point of
+             this placement. */
           <button
             key={campaign._id}
             onClick={() => navigate(`/marketplace?campaign=${campaign._id}`)}
-            className="group relative z-[1] flex w-full h-full items-center justify-center border-none bg-transparent p-4 outline-none cursor-pointer"
+            className="group relative z-[1] block w-full h-full border-none bg-transparent p-0 outline-none cursor-pointer overflow-hidden rounded-[20px]"
           >
-            <div className="relative w-full h-full flex items-center justify-center">
-              <CampaignImage src={campaign.bannerImage} />
-              {hasPercentOff && (
-                <span className="absolute -top-2 -left-2 -rotate-6 flex flex-col items-center justify-center size-[42px] rounded-full bg-error text-white border-2 border-white/40">
-                  <span className="text-[11px] font-bold leading-none">-{campaign.discountValue}%</span>
-                  <span className="text-[5px] font-semibold uppercase tracking-wide leading-none mt-[1px]">off</span>
-                </span>
-              )}
-            </div>
+            <CampaignImage src={campaign.bannerImage} fit="cover" />
+            {hasPercentOff && (
+              <span className="absolute top-2 left-2 -rotate-6 flex flex-col items-center justify-center size-[42px] rounded-full bg-error text-white border-2 border-white/40 z-[1]">
+                <span className="text-[11px] font-bold leading-none">-{campaign.discountValue}%</span>
+                <span className="text-[5px] font-semibold uppercase tracking-wide leading-none mt-[1px]">off</span>
+              </span>
+            )}
           </button>
         ) : (
           <button

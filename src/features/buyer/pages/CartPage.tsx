@@ -93,7 +93,7 @@ export function CartPage() {
 
         {/* ── Error banner ── */}
         {error && (
-          <div className="mb-4 flex items-center justify-between gap-3 rounded-[10px] border border-[#FECACA] bg-error-bg px-4 py-3">
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-[10px] border border-error-border bg-error-bg px-4 py-3">
             <span className="text-[13px] text-error">{error}</span>
             <button
               onClick={clearError}
@@ -185,12 +185,12 @@ export function CartPage() {
                           {item.name}
                         </p>
                         {item.type === 'physical' && (
-                          <span className="shrink-0 px-2 py-[2px] rounded-full text-[10px] font-semibold bg-[#FFF4DC] text-[#B36200]">
+                          <span className="shrink-0 px-2 py-[2px] rounded-full text-[10px] font-semibold bg-[#fff4dc] text-[#b36200]">
                             Physical
                           </span>
                         )}
                         {item.type === 'digital' && (
-                          <span className="shrink-0 flex items-center gap-[3px] px-2 py-[2px] rounded-full text-[10px] font-semibold bg-[#EEF0FF] text-[#3851D1]">
+                          <span className="shrink-0 flex items-center gap-[3px] px-2 py-[2px] rounded-full text-[10px] font-semibold bg-[#eef0ff] text-[#3851d1]">
                             <Download size={9} /> Digital
                           </span>
                         )}

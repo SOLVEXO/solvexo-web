@@ -5,6 +5,7 @@ import { ArrowRight, Sparkles, User, Lock, Star, Receipt, MessageSquare, Check }
 import type { LucideIcon } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useFaqs } from '@/hooks/useFaqs';
+import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { apiBrowsePlatformPlans, type PlatformPlan } from '@/api/services/platformPlans';
 
 const SERIF = "'Lora', Georgia, serif";
@@ -46,6 +47,7 @@ const FALLBACK_FAQS = [
 // ── Component ─────────────────────────────────────────────────────────────────
 export function PricingPage() {
   const navigate  = useNavigate();
+  const sellEntry = useSellEntry();
   usePageTitle('Pricing');
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
@@ -79,7 +81,7 @@ export function PricingPage() {
       <div className="text-center px-4 md:px-8 lg:px-12 pt-10 md:pt-16 pb-12 max-w-[720px] mx-auto">
         {/* Top pill badge */}
         <div className="inline-flex items-center gap-2 bg-brand-pale-orange border border-[rgba(217,119,87,0.3)] rounded-[20px] px-[14px] py-[5px] mb-5">
-          <span className="text-[12px] text-[#B95A3A] font-medium">
+          <span className="text-[12px] text-brand-deep-orange font-medium">
             No credit card required • Cancel anytime
           </span>
         </div>
@@ -148,7 +150,7 @@ export function PricingPage() {
               <p className={clsx('text-[15px] font-bold mb-2', isFeatured ? 'text-white' : 'text-carbon')}>
                 {plan.name}
               </p>
-              <p className={clsx('text-[11px] mb-5 leading-[1.5]', isFeatured ? 'text-[#B0AEA8]' : 'text-slate')}>
+              <p className={clsx('text-[11px] mb-5 leading-[1.5]', isFeatured ? 'text-[#b0aea8]' : 'text-slate')}>
                 {plan.description ?? ' '}
               </p>
 
@@ -163,7 +165,7 @@ export function PricingPage() {
                     <span className={clsx('text-[36px] font-bold', isFeatured ? 'text-brand-orange' : 'text-carbon')}>
                       ${monthlyEquivalent(plan)}
                     </span>
-                    <span className={clsx('text-[13px]', isFeatured ? 'text-[#B0AEA8]' : 'text-slate')}>
+                    <span className={clsx('text-[13px]', isFeatured ? 'text-[#b0aea8]' : 'text-slate')}>
                       /month
                     </span>
                   </div>
@@ -174,7 +176,7 @@ export function PricingPage() {
                   </p>
                 )}
                 {plan.trialDays > 0 && !plan.isFree && !plan.isCustomPricing && (
-                  <p className={clsx('text-[11px] mt-1', isFeatured ? 'text-[#B0AEA8]' : 'text-slate')}>
+                  <p className={clsx('text-[11px] mt-1', isFeatured ? 'text-[#b0aea8]' : 'text-slate')}>
                     {plan.trialDays}-day free trial
                   </p>
                 )}
@@ -184,7 +186,7 @@ export function PricingPage() {
               <button
                 onClick={() => plan.isCustomPricing
                   ? (window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${plan.name} Plan Inquiry`)}`)
-                  : navigate('/onboard')}
+                  : sellEntry.go()}
                 className={clsx(
                   'w-full py-[10px] rounded-lg text-[13px] font-semibold cursor-pointer mb-6 flex justify-center transition-all duration-[180ms] border',
                   isFeatured ? 'border-brand-orange bg-brand-orange text-white' : 'border-bone bg-transparent text-charcoal',
@@ -201,7 +203,7 @@ export function PricingPage() {
                 {(plan.featureBullets ?? []).map(f => (
                   <div key={f} className="flex gap-2 items-start">
                     <Check size={13} className="text-success flex-shrink-0 mt-[1px]" />
-                    <span className={clsx('text-[12px] leading-[1.5]', isFeatured ? 'text-[#D0CEC8]' : 'text-charcoal')}>
+                    <span className={clsx('text-[12px] leading-[1.5]', isFeatured ? 'text-[#d0cec8]' : 'text-charcoal')}>
                       {f}
                     </span>
                   </div>
@@ -273,7 +275,7 @@ export function PricingPage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
-            onClick={() => navigate('/onboard')}
+            onClick={() => sellEntry.go()}
             className="px-6 py-[13px] rounded-lg text-[15px] font-medium cursor-pointer bg-brand-orange text-white border-none transition-all duration-[180ms]"
           >
             Create Free Account <ArrowRight size={14} className="inline align-middle ml-1" />

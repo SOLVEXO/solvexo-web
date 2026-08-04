@@ -5,6 +5,7 @@ import { Send, Check, ChevronDown, ChevronRight, ArrowUp, Apple, Play } from 'lu
 import { SolvexoLogo, SolvexoIcon } from './SolvexoLogo';
 import { apiSubscribeNewsletter } from '../../../api/services/newsletter';
 import { scrollRootToTop } from '@/utils/scrollRoot';
+import { useSellEntry } from '@/hooks/auth/useSellEntry';
 
 interface FooterLink {
   label: string;
@@ -103,7 +104,7 @@ function AppBadge({ platform }: { platform: 'ios' | 'android' }) {
         ? <Apple size={18} className="text-white shrink-0" />
         : <Play size={15} className="text-white shrink-0 fill-white" />}
       <span className="leading-none">
-        <span className="block text-[8px] text-[#8B8985] tracking-[0.04em]">{isIos ? 'Download on the' : 'GET IT ON'}</span>
+        <span className="block text-[8px] text-[#8b8985] tracking-[0.04em]">{isIos ? 'Download on the' : 'GET IT ON'}</span>
         <span className="block text-[12.5px] font-bold text-white mt-[2px]">{isIos ? 'App Store' : 'Google Play'}</span>
       </span>
     </div>
@@ -152,7 +153,7 @@ function Newsletter() {
           placeholder="Your email address"
           aria-label="Email address"
           disabled={loading}
-          className="flex-1 min-w-0 h-11 px-4 rounded-lg border border-white/[0.14] bg-white/[0.03] text-[13px] text-white placeholder:text-[#7A7873] outline-none transition-colors duration-200 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15 disabled:opacity-60"
+          className="flex-1 min-w-0 h-11 px-4 rounded-lg border border-white/[0.14] bg-white/[0.03] text-[13px] text-white placeholder:text-[#7a7873] outline-none transition-colors duration-200 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15 disabled:opacity-60"
         />
         <button
           type="submit"
@@ -191,7 +192,7 @@ function FooterColumn({ heading, links, navigate }: { heading: string; links: Fo
         </span>
         <ChevronDown
           size={15}
-          className={clsx('text-[#8B8985] transition-transform duration-200 sm:hidden shrink-0', open && 'rotate-180')}
+          className={clsx('text-[#8b8985] transition-transform duration-200 sm:hidden shrink-0', open && 'rotate-180')}
         />
       </button>
 
@@ -204,7 +205,7 @@ function FooterColumn({ heading, links, navigate }: { heading: string; links: Fo
             {link.path ? (
               <button
                 onClick={() => navigate(link.path!)}
-                className="group inline-flex items-center gap-1 min-h-11 sm:min-h-0 text-[12.5px] text-[#B0AEA8] hover:text-white transition-colors duration-200 bg-transparent border-none p-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
+                className="group inline-flex items-center gap-1 min-h-11 sm:min-h-0 text-[12.5px] text-[#b0aea8] hover:text-white transition-colors duration-200 bg-transparent border-none p-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
               >
                 <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">{link.label}</span>
                 <ChevronRight
@@ -213,7 +214,7 @@ function FooterColumn({ heading, links, navigate }: { heading: string; links: Fo
                 />
               </button>
             ) : (
-              <span className="inline-flex items-center min-h-11 sm:min-h-0 text-[12.5px] text-[#5E5C58] cursor-default">{link.label}</span>
+              <span className="inline-flex items-center min-h-11 sm:min-h-0 text-[12.5px] text-[#5e5c58] cursor-default">{link.label}</span>
             )}
           </li>
         ))}
@@ -224,10 +225,15 @@ function FooterColumn({ heading, links, navigate }: { heading: string; links: Fo
 
 export function Footer() {
   const navigate = useNavigate();
+  const sellEntry = useSellEntry();
   const scrollToTop = () => scrollRootToTop('smooth');
+  // "Start Selling" is the only footer link that means seller intent — route
+  // it through the shared entry handler instead of a raw navigate, every
+  // other link behaves exactly as before.
+  const footerNavigate = (path: string) => path === '/onboard' ? sellEntry.go() : navigate(path);
 
   return (
-    <footer className="bg-carbon text-[#B0AEA8]">
+    <footer className="bg-carbon text-[#b0aea8]">
 
       {/* Top accent — a soft cut line from the rest of the page, on-brand instead of a flat border */}
       <div className="h-[2px] bg-gradient-to-r from-brand-orange via-brand-orange/40 to-transparent" />
@@ -237,7 +243,7 @@ export function Footer() {
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div>
             <p className="text-[18px] sm:text-[20px] font-bold text-white leading-tight">Get deals before anyone else</p>
-            <p className="text-[13px] text-[#8B8985] mt-2">Sign up for exclusive offers, new arrivals and price-drop alerts.</p>
+            <p className="text-[13px] text-[#8b8985] mt-2">Sign up for exclusive offers, new arrivals and price-drop alerts.</p>
           </div>
           <Newsletter />
         </div>
@@ -249,7 +255,7 @@ export function Footer() {
 
           <div className="sm:col-span-2 lg:col-span-1 pb-2 sm:pb-0">
             <SolvexoLogo size={26} variant="light" />
-            <p className="text-[12.5px] mt-4 leading-relaxed max-w-[260px] text-[#9A9894]">
+            <p className="text-[12.5px] mt-4 leading-relaxed max-w-[260px] text-[#9a9894]">
               The commerce OS for sellers, creators and educators — one marketplace for physical goods, digital downloads and learning resources.
             </p>
 
@@ -259,7 +265,7 @@ export function Footer() {
                   key={label}
                   aria-label={label}
                   title={label}
-                  className="w-10 h-10 rounded-full border border-white/[0.12] bg-white/[0.03] flex items-center justify-center text-[#B0AEA8] hover:text-brand-orange hover:border-brand-orange/50 hover:bg-brand-orange/10 transition-colors duration-200 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon"
+                  className="w-10 h-10 rounded-full border border-white/[0.12] bg-white/[0.03] flex items-center justify-center text-[#b0aea8] hover:text-brand-orange hover:border-brand-orange/50 hover:bg-brand-orange/10 transition-colors duration-200 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon"
                 >
                   <Glyph />
                 </button>
@@ -267,7 +273,7 @@ export function Footer() {
             </div>
 
             <div className="mt-6">
-              <p className="text-[10px] font-bold text-[#8B8985] uppercase tracking-[0.1em] mb-3">Get the App</p>
+              <p className="text-[10px] font-bold text-[#8b8985] uppercase tracking-[0.1em] mb-3">Get the App</p>
               <div className="flex flex-col sm:flex-row gap-2.5">
                 <AppBadge platform="ios" />
                 <AppBadge platform="android" />
@@ -276,7 +282,7 @@ export function Footer() {
           </div>
 
           {FOOTER_COLUMNS.map(col => (
-            <FooterColumn key={col.heading} heading={col.heading} links={col.links} navigate={navigate} />
+            <FooterColumn key={col.heading} heading={col.heading} links={col.links} navigate={footerNavigate} />
           ))}
         </div>
       </div>
@@ -286,12 +292,12 @@ export function Footer() {
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <SolvexoIcon size={16} />
-            <p className="text-[12px] text-[#8B8985]">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
+            <p className="text-[12px] text-[#8b8985]">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
           </div>
           <button
             type="button"
             onClick={scrollToTop}
-            className="flex items-center gap-1.5 min-h-11 px-2 -mx-2 text-[12px] text-[#8B8985] hover:text-white transition-colors duration-200 bg-transparent border-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
+            className="flex items-center gap-1.5 min-h-11 px-2 -mx-2 text-[12px] text-[#8b8985] hover:text-white transition-colors duration-200 bg-transparent border-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
           >
             Back to top <ArrowUp size={13} />
           </button>

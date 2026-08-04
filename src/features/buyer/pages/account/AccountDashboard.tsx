@@ -49,12 +49,12 @@ function WishlistPreviewImg({ src, name }: { src?: string; name: string }) {
   const [err, setErr] = useState(false);
   if (!src || err) {
     return (
-      <div className="w-12 h-12 rounded-[9px] bg-brand-pale-orange shrink-0 flex items-center justify-center border border-[#EDEBE2]">
+      <div className="w-12 h-12 rounded-[9px] bg-brand-pale-orange shrink-0 flex items-center justify-center border border-[#edebe2]">
         <ImageOff size={16} className="text-brand-orange opacity-40" />
       </div>
     );
   }
-  return <img loading="lazy" decoding="async" src={src} alt={name} onError={() => setErr(true)} className="w-12 h-12 rounded-[9px] object-cover shrink-0 border border-[#EDEBE2]" />;
+  return <img loading="lazy" decoding="async" src={src} alt={name} onError={() => setErr(true)} className="w-12 h-12 rounded-[9px] object-cover shrink-0 border border-[#edebe2]" />;
 }
 
 export function AccountDashboard() {

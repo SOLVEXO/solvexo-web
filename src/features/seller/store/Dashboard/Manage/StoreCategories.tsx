@@ -82,7 +82,7 @@ export default function StoreCategories() {
 
         {/* Main category */}
         <div className="bg-white border border-bone rounded-[10px] px-5 py-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[10px] bg-[#FBECE4] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-[10px] bg-brand-pale-orange flex items-center justify-center shrink-0">
             <FolderTree size={19} style={{ color: '#D97757' }} />
           </div>
           <div className="min-w-0">
@@ -113,7 +113,7 @@ export default function StoreCategories() {
           {loading ? (
             <div className="flex flex-col">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-2.5 px-5 py-3 border-b border-[#F0EEE6] last:border-b-0">
+                <div key={i} className="flex items-center gap-2.5 px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
                   <SkeletonBox width={13} height={13} rounded="3px" />
                   <SkeletonBox height={13} width={120 + (i % 3) * 30} rounded="4px" />
                 </div>
@@ -124,7 +124,7 @@ export default function StoreCategories() {
           ) : (
             <div className="flex flex-col">
               {subcategories.map(sub => (
-                <div key={sub._id} className="flex items-center gap-2.5 px-5 py-3 border-b border-[#F0EEE6] last:border-b-0 transition-colors duration-150 hover:bg-cream">
+                <div key={sub._id} className="flex items-center gap-2.5 px-5 py-3 border-b border-[#f0eee6] last:border-b-0 transition-colors duration-150 hover:bg-cream">
                   <Tag size={13} className="text-slate shrink-0" />
                   <span className="text-[13px] font-medium text-carbon flex-1">{sub.name}</span>
                   {sub.description && <span className="text-[11px] text-slate truncate max-w-[220px]">{sub.description}</span>}

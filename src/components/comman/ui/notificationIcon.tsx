@@ -6,8 +6,8 @@ import { Bell, Package, MessageSquare, Star, Sparkles } from 'lucide-react';
 export function getNotificationIcon(type: string, size: number = 14) {
   const t = type.toLowerCase();
   if (t.includes('order')) return <Package size={size} className="text-brand-orange" />;
-  if (t.includes('message') || t.includes('chat')) return <MessageSquare size={size} className="text-[#1A65A8]" />;
-  if (t.includes('loyalty') || t.includes('points') || t.includes('tier')) return <Star size={size} className="text-[#D4AF37]" />;
-  if (t.includes('subscription') || t.includes('plan')) return <Sparkles size={size} className="text-[#7C3AED]" />;
+  if (t.includes('message') || t.includes('chat')) return <MessageSquare size={size} className="text-[#1a65a8]" />;
+  if (t.includes('loyalty') || t.includes('points') || t.includes('tier')) return <Star size={size} className="text-[#d4af37]" />;
+  if (t.includes('subscription') || t.includes('plan')) return <Sparkles size={size} className="text-[#7c3aed]" />;
   return <Bell size={size} className="text-slate" />;
 }

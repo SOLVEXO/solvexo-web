@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
-import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, DealsBanner, CoverImage, StoreAnnouncementBar, FloatingAppWidget } from '@/components/comman/ui';
+import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, CoverImage, StoreAnnouncementBar, FloatingAppWidget } from '@/components/comman/ui';
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { ProductImage, StarRating as SharedStarRating } from '@/components/comman/marketplace/ProductCard';
 import { useStoreBanners } from '@/hooks/useStoreBanners';
@@ -108,7 +108,7 @@ const SORT_OPTIONS = [
 // card — only the wishlist/cart handlers below are wired to real context state.
 function StoreProductImage({ src, alt }: { src: string; alt: string }) {
   const [errored, setErrored] = useState(false);
-  if (errored) return <Package size={28} className="text-[#5A8A6A]" />;
+  if (errored) return <Package size={28} className="text-[#5a8a6a]" />;
   return (
     <img
       loading="lazy" decoding="async" src={src} alt={alt}
@@ -403,8 +403,6 @@ export function SellerStorefront() {
         backTo={{ label: 'Marketplace', path: '/marketplace' }}
       />
 
-      <DealsBanner />
-
       {store.announcementBar?.message && (
         <StoreAnnouncementBar
           storeId={store.storeId}
@@ -630,8 +628,8 @@ export function SellerStorefront() {
                             <span className={clsx(
                               'absolute top-3 left-3 px-[6px] py-[1px] rounded-[4px] text-[9px] font-semibold border',
                               isDigital
-                                ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
-                                : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
+                                ? 'bg-[#ede9fe] text-[#7c3aed] border-[#ddd6fe]'
+                                : 'bg-brand-pale-orange text-brand-deep-orange border-[#f5d0bc]',
                             )}>
                               {typeLabel}
                             </span>
@@ -688,10 +686,10 @@ export function SellerStorefront() {
                 return (
                 <Card key={p._id} padding="none" hover onClick={() => navigate(`/marketplace/${p._id}`)} className="overflow-hidden bg-white">
                   {/* Image */}
-                  <div className="relative w-full h-[110px] sm:h-[150px] lg:h-[170px] bg-[#EAF4EE] flex items-center justify-center">
+                  <div className="relative w-full h-[110px] sm:h-[150px] lg:h-[170px] bg-[#eaf4ee] flex items-center justify-center">
                     {p.images?.[0]
                       ? <StoreProductImage src={p.images[0]} alt={p.name} />
-                      : <Package size={28} className="text-[#5A8A6A]" />
+                      : <Package size={28} className="text-[#5a8a6a]" />
                     }
                     <button
                       onClick={e => { e.stopPropagation(); toggleWishlist(p._id, vId); }}
@@ -699,21 +697,21 @@ export function SellerStorefront() {
                       aria-label={isWishlisted(p._id, vId) ? 'Remove from wishlist' : 'Save to wishlist'}
                       className="absolute bottom-[6px] right-[6px] w-6 h-6 rounded-full bg-[rgba(255,255,255,0.92)] flex items-center justify-center cursor-pointer border-none"
                     >
-                      <Heart size={11} className={clsx(isWishlisted(p._id, vId) ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')} />
+                      <Heart size={11} className={clsx(isWishlisted(p._id, vId) ? 'text-[#e11d48] fill-[#e11d48]' : 'text-slate fill-none')} />
                     </button>
                     <div className="absolute top-[6px] left-[6px]">
                       <span className={clsx(
                         'px-[5px] py-[2px] rounded-[4px] text-[9px] font-semibold border leading-none',
                         isPhysical
-                          ? 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]'
-                          : 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]',
+                          ? 'bg-brand-pale-orange text-brand-deep-orange border-[#f5d0bc]'
+                          : 'bg-[#ede9fe] text-[#7c3aed] border-[#ddd6fe]',
                       )}>
                         {typeLabel}
                       </span>
                     </div>
                     {p.activeCampaign && (
                       <div className="absolute top-[6px] right-[6px]">
-                        <span className="flex items-center gap-[3px] px-[5px] py-[2px] rounded-[4px] text-[9px] font-bold leading-none bg-gradient-to-r from-brand-orange to-[#F0A57A] text-white">
+                        <span className="flex items-center gap-[3px] px-[5px] py-[2px] rounded-[4px] text-[9px] font-bold leading-none bg-gradient-to-r from-brand-orange to-[#f0a57a] text-white">
                           <Zap size={8} className="fill-white shrink-0" />
                           {p.activeCampaign.discountType && p.activeCampaign.discountValue != null
                             ? (p.activeCampaign.discountType === 'percentage'
@@ -815,10 +813,10 @@ export function SellerStorefront() {
           </div>
 
           {subscribedMsg && (
-            <div className="max-w-[520px] mx-auto mb-6 px-4 py-3 rounded-lg bg-[#E3F4EA] text-[#1E7A3C] text-[13px] font-medium text-center">{subscribedMsg}</div>
+            <div className="max-w-[520px] mx-auto mb-6 px-4 py-3 rounded-lg bg-[#e3f4ea] text-[#1e7a3c] text-[13px] font-medium text-center">{subscribedMsg}</div>
           )}
           {subscribeError && (
-            <div className="max-w-[520px] mx-auto mb-6 px-4 py-3 rounded-lg bg-[#FDECEA] text-[#C13030] text-[13px] font-medium text-center">{subscribeError}</div>
+            <div className="max-w-[520px] mx-auto mb-6 px-4 py-3 rounded-lg bg-[#fdecea] text-error text-[13px] font-medium text-center">{subscribeError}</div>
           )}
 
           <div className={clsx('grid gap-5 max-w-[960px] mx-auto', plans.length === 1 ? 'grid-cols-1 max-w-[380px]' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3')}>

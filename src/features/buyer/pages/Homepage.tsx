@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { useCountdownToMidnight } from '@/hooks/useCountdownToMidnight';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
-import { AppDownloadBanner, Footer, SkeletonBox, DealsBanner, CoverImage, FloatingAppWidget } from '@/components/comman/ui';
+import { AppDownloadBanner, Footer, SkeletonBox, CoverImage, FloatingAppWidget } from '@/components/comman/ui';
 import { FlashSaleCard, FlashSaleCardSkeleton } from '@/components/comman/marketplace/FlashSaleCard';
 import {
   ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles,
@@ -57,7 +58,7 @@ function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick:
       className="group h-full flex flex-col shrink-0 w-[210px] sm:w-auto snap-start bg-white border border-bone rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-[3px] hover:border-brand-orange/25"
     >
       {/* Top accent — sweeps in on hover, same language as the Feature Category cards */}
-      <div className="h-[4px] shrink-0 bg-gradient-to-r from-brand-orange to-[#F0A57A] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
+      <div className="h-[4px] shrink-0 bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
 
       {/* Cover — logo below overlaps up into it, same visual language as StoreFeatureCard */}
       <CoverImage
@@ -79,7 +80,7 @@ function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick:
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-[4px] min-w-0">
               <p className="text-[13px] font-bold text-carbon leading-tight truncate">{store.name}</p>
-              {isVerified && <BadgeCheck size={12} className="text-[#1A72C2] fill-[#1A72C2]/15 shrink-0" />}
+              {isVerified && <BadgeCheck size={12} className="text-info fill-info/15 shrink-0" />}
             </div>
             <div className="flex items-center gap-[4px] text-[10px] text-slate mt-[2px]">
               <Star size={9} className="text-brand-orange fill-brand-orange shrink-0" />
@@ -93,7 +94,7 @@ function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick:
         {(isFeatured || isTopSeller || isTopRated || store.sellerType) && (
           <div className="flex flex-wrap gap-[4px] mb-2">
             {isFeatured && (
-              <span className="inline-flex items-center gap-1 px-[7px] py-[3px] rounded-full bg-[#7C3AED] text-white text-[9px] font-bold">
+              <span className="inline-flex items-center gap-1 px-[7px] py-[3px] rounded-full bg-[#7c3aed] text-white text-[9px] font-bold">
                 <Crown size={9} /> Platinum
               </span>
             )}
@@ -165,6 +166,7 @@ const FEATURES: { Icon: LucideIcon; title: string; bg: string; desc: string; pat
 
 export function Homepage() {
   const navigate = useNavigate();
+  const sellEntry = useSellEntry();
   usePageTitle('Home');
 
   const [showAllFeatures, setShowAllFeatures] = useState(false);
@@ -284,8 +286,6 @@ export function Homepage() {
   return (
     <div className="bg-white min-h-full">
 
-      <DealsBanner />
-
       {/* ── Hero ─────────────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-gradient-to-br from-carbon to-charcoal">
 
@@ -312,12 +312,12 @@ export function Homepage() {
 
             <h1 className="font-serif text-[28px] sm:text-[36px] lg:text-[44px] leading-[1.14] font-semibold text-white mb-4">
               The Commerce OS for{' '}
-              <span className="bg-gradient-to-r from-brand-orange to-[#F0A57A] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-brand-orange to-[#f0a57a] bg-clip-text text-transparent">
                 Sellers, Creators &amp; Educators
               </span>
             </h1>
 
-            <p className="text-[13px] sm:text-sm text-[#B0AEA8] leading-[1.75] mb-7 max-w-[440px]">
+            <p className="text-[13px] sm:text-sm text-[#b0aea8] leading-[1.75] mb-7 max-w-[440px]">
               Sell physical products, digital downloads, and educational resources — with
               AI-powered tools, a built-in marketplace, and point-of-sale. Everything
               commerce, in one place.
@@ -325,7 +325,7 @@ export function Homepage() {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-start gap-3 mb-8">
-              <Button size="md" onClick={() => navigate('/onboard')} className="w-full sm:w-auto">
+              <Button size="md" onClick={sellEntry.go} loading={sellEntry.loading} className="w-full sm:w-auto">
                 Start for Free <ArrowRight size={13} className="inline align-middle ml-1" />
               </Button>
               <button
@@ -431,8 +431,8 @@ export function Homepage() {
                 </h2>
                 <p className="flex items-center gap-[6px] text-[12.5px] sm:text-[13px] text-slate max-w-md">
                   <span className="relative flex h-[6px] w-[6px] shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E11D48] opacity-75" />
-                    <span className="relative inline-flex rounded-full h-[6px] w-[6px] bg-[#E11D48]" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#e11d48] opacity-75" />
+                    <span className="relative inline-flex rounded-full h-[6px] w-[6px] bg-[#e11d48]" />
                   </span>
                   Ends tonight — grab these deals before they're gone.
                 </p>
@@ -498,11 +498,11 @@ export function Homepage() {
           <h2 className="font-serif text-[24px] sm:text-[28px] lg:text-[32px] font-bold text-carbon text-center mb-3 max-w-sm mx-auto leading-[1.2]">
             One platform. Infinite possibilities.
           </h2>
-          <div className="w-10 h-[3px] rounded-full bg-gradient-to-r from-brand-orange to-[#F0A57A] mx-auto mb-10" />
+          <div className="w-10 h-[3px] rounded-full bg-gradient-to-r from-brand-orange to-[#f0a57a] mx-auto mb-10" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {(showAllFeatures ? FEATURES : FEATURES.slice(0, 6)).map(f => (
               <Card key={f.title} hover padding="none" onClick={() => navigate(f.path)} className="group relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#F0A57A] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
+                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
                 <div className="p-5">
                   <div
                     className="w-10 h-10 rounded-[10px] flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3"
@@ -656,7 +656,7 @@ export function Homepage() {
                   ))
                 : testimonials.map(t => (
                     <Card key={t.id} padding="none" hover className="group relative overflow-hidden">
-                      <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#F0A57A] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
+                      <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
                       <div className="p-5">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-[2px]">
@@ -674,7 +674,7 @@ export function Homepage() {
                           <div>
                             <div className="flex items-center gap-[6px]">
                               <p className="text-[13px] font-semibold text-carbon">{t.name}</p>
-                              {t.isVerifiedPurchase && <BadgeCheck size={13} className="text-[#1A72C2] fill-[#1A72C2]/15 shrink-0" />}
+                              {t.isVerifiedPurchase && <BadgeCheck size={13} className="text-info fill-info/15 shrink-0" />}
                             </div>
                             <p className="text-[11px] text-slate">{t.storeName ? `Bought from ${t.storeName}` : 'Verified buyer'}</p>
                           </div>
@@ -698,7 +698,7 @@ export function Homepage() {
               ? `Join ${compactNumber.format(stats.sellersCount)}+ sellers on Solvexo. Free to start, no credit card required.`
               : 'Free to start, no credit card required.'}
           </p>
-          <Button variant="dark" size="md" onClick={() => navigate('/onboard')}>
+          <Button variant="dark" size="md" onClick={sellEntry.go} loading={sellEntry.loading}>
             Create Your Account <ArrowRight size={13} className="inline align-middle ml-1" />
           </Button>
         </div>

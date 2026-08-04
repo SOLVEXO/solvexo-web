@@ -155,7 +155,7 @@ export function SellerMessages() {
         title="Messages"
         subtitle="Respond to buyer questions and support requests."
         actions={
-          <span className="px-3 py-1 bg-[#FDECEA] rounded-[6px] text-xs font-semibold text-[#C0392B]">
+          <span className="px-3 py-1 bg-[#fdecea] rounded-[6px] text-xs font-semibold text-[#c0392b]">
             {conversations.reduce((n, c) => n + c.sellerUnread, 0)} Unread
           </span>
         }

@@ -8,7 +8,7 @@ import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLa
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { Input, Textarea, Select } from '@/components/comman/ui/Input';
-import { SkeletonBox } from '@/components/comman/ui';
+import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
 import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
 import {
   apiListPlans, apiCreatePlan, apiUpdatePlan, apiArchivePlan, apiEstimatePlanHealth,
@@ -489,6 +489,56 @@ export function StoreSubscriptions() {
     { label: 'Churn Rate', value: `${dashboard.churnRate}%`, Icon: RefreshCw },
   ] : [];
 
+  const subscriberColumns: TableColumn<SellerSubscriber>[] = [
+    {
+      key: 'customer', header: 'Customer',
+      render: sub => (
+        <div className="flex items-center gap-[10px]">
+          <div className="w-[30px] h-[30px] rounded-full bg-[#f0eee6] text-[10px] font-bold flex items-center justify-center shrink-0 text-[#5a5852]">
+            {sub.customer.name.slice(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <p className="text-[13px] font-medium text-carbon whitespace-nowrap">{sub.customer.name}</p>
+            <p className="text-[11px] text-slate">{sub.customer.email}</p>
+          </div>
+        </div>
+      ),
+    },
+    { key: 'planName', header: 'Plan', render: sub => <span className="text-graphite whitespace-nowrap">{sub.planName} — {sub.billingInterval}</span> },
+    { key: 'amountUSD', header: 'Amount', render: sub => <span className="font-semibold text-carbon whitespace-nowrap">${sub.amountUSD.toFixed(2)}</span> },
+    {
+      key: 'status', header: 'Status',
+      render: sub => {
+        const style = STATUS_STYLE[sub.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
+        return (
+          <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: style.bg, color: style.color }}>
+            {sub.status}{sub.pendingCancellation ? ' (ending)' : ''}
+          </span>
+        );
+      },
+    },
+    { key: 'startedAt', header: 'Started', render: sub => <span className="text-slate whitespace-nowrap">{new Date(sub.startedAt).toLocaleDateString()}</span> },
+    { key: 'nextBillingDate', header: 'Next Billing', render: sub => <span className="text-slate whitespace-nowrap">{new Date(sub.nextBillingDate).toLocaleDateString()}</span> },
+    { key: 'totalPaidUSD', header: 'Total Paid', render: sub => <span className="font-semibold text-carbon">${sub.totalPaidUSD.toFixed(2)}</span> },
+    {
+      key: 'actions', header: '',
+      render: sub => (
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => setViewingSubId(sub._id)} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">View</button>
+          {sub.status === 'active' && (
+            <button disabled={busyId === sub._id} onClick={() => handleAction(sub, 'pause')} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Pause</button>
+          )}
+          {sub.status === 'paused' && (
+            <button disabled={busyId === sub._id} onClick={() => handleAction(sub, 'resume')} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Resume</button>
+          )}
+          {(sub.status === 'active' || sub.status === 'paused' || sub.status === 'past_due') && (
+            <button disabled={busyId === sub._id} onClick={() => setCancelReasonFor(sub)} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-error cursor-pointer transition-colors duration-150 hover:bg-error hover:text-white hover:border-error disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Cancel</button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   return (
     <>
       <StorePageHeader
@@ -507,7 +557,7 @@ export function StoreSubscriptions() {
       <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error">{error}</p>}
         {actionError && (
-          <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-[#FECACA] rounded-lg px-3 py-2">
+          <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">
             <span>{actionError}</span>
             <button onClick={() => setActionError('')} className="text-[11px] font-semibold text-error bg-transparent border-none cursor-pointer shrink-0">Dismiss</button>
           </div>
@@ -532,7 +582,7 @@ export function StoreSubscriptions() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
                 <p className="text-[10px] text-slate uppercase tracking-wide mb-1">Subscriber Revenue</p>
-                <p className="text-[18px] font-bold text-[#2D8A4E]">${dashboard.subscriberEconomics.subscriberRevenue.toFixed(2)}</p>
+                <p className="text-[18px] font-bold text-success">${dashboard.subscriberEconomics.subscriberRevenue.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-[10px] text-slate uppercase tracking-wide mb-1">Regular Revenue</p>
@@ -559,8 +609,8 @@ export function StoreSubscriptions() {
               <div key={plan._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 flex flex-col transition-transform duration-200 hover:-translate-y-[1px]">
                 <div className="flex items-start justify-between mb-1 gap-2">
                   <p className="text-[15px] font-bold text-carbon">{plan.name}</p>
-                  {plan.status === 'suspended' && <span className="text-[10px] font-bold px-[8px] py-[2px] rounded-full bg-[#FDECEA] text-[#C0392B] shrink-0">Suspended by admin</span>}
-                  {plan.status === 'archived' && <span className="text-[10px] font-bold px-[8px] py-[2px] rounded-full bg-[#F0EEE6] text-[#5A5852] shrink-0">Archived</span>}
+                  {plan.status === 'suspended' && <span className="text-[10px] font-bold px-[8px] py-[2px] rounded-full bg-[#fdecea] text-[#c0392b] shrink-0">Suspended by admin</span>}
+                  {plan.status === 'archived' && <span className="text-[10px] font-bold px-[8px] py-[2px] rounded-full bg-[#f0eee6] text-[#5a5852] shrink-0">Archived</span>}
                 </div>
                 <div className="flex items-baseline gap-2 mb-[10px]">
                   <span className="text-[18px] font-bold text-brand-orange">${plan.monthlyPriceUSD.toFixed(2)}/mo</span>
@@ -578,9 +628,9 @@ export function StoreSubscriptions() {
                     <span className="text-[11px] font-medium capitalize" style={{ color: hs.color }}>{plan.healthEstimate!.health}</span>
                   </div>
                 )}
-                <div className="flex items-center justify-between py-3 border-t border-[#F0EEE6] mb-[14px] mt-auto">
+                <div className="flex items-center justify-between py-3 border-t border-[#f0eee6] mb-[14px] mt-auto">
                   <span className="text-xs text-slate">{plan.subscriberCount} subscribers</span>
-                  <span className="text-xs font-bold text-[#2D8A4E]">${plan.monthlyRecurringRevenueUSD.toFixed(2)}/mo</span>
+                  <span className="text-xs font-bold text-success">${plan.monthlyRecurringRevenueUSD.toFixed(2)}/mo</span>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => setEditingPlan(plan)} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
@@ -604,7 +654,7 @@ export function StoreSubscriptions() {
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="flex items-center justify-between px-5 py-[14px] border-b border-bone flex-wrap gap-2">
             <p className="text-[15px] font-bold text-carbon">Subscribers</p>
-            <div className="flex items-center gap-0.5 bg-[#F5F4EF] rounded-lg p-[3px]">
+            <div className="flex items-center gap-0.5 bg-[#f5f4ef] rounded-lg p-[3px]">
               {SUB_TABS.map(t => (
                 <button key={t.id} onClick={() => { setStatusTab(t.id); setPage(1); }}
                   className="px-[14px] py-[5px] rounded-[6px] text-xs font-medium cursor-pointer border-none transition-all duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
@@ -615,92 +665,14 @@ export function StoreSubscriptions() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  {['CUSTOMER', 'PLAN', 'AMOUNT', 'STATUS', 'STARTED', 'NEXT BILLING', 'TOTAL PAID', ''].map(h => (
-                    <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="border-b border-[#F0EEE6]">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-[10px]">
-                          <SkeletonBox width={30} height={30} rounded="9999px" />
-                          <div className="flex flex-col gap-1">
-                            <SkeletonBox height={13} width={90} />
-                            <SkeletonBox height={11} width={120} />
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3"><SkeletonBox height={13} width={100} /></td>
-                      <td className="px-4 py-3"><SkeletonBox height={13} width={60} /></td>
-                      <td className="px-4 py-3"><SkeletonBox height={20} width={70} rounded="5px" /></td>
-                      <td className="px-4 py-3"><SkeletonBox height={13} width={70} /></td>
-                      <td className="px-4 py-3"><SkeletonBox height={13} width={70} /></td>
-                      <td className="px-4 py-3"><SkeletonBox height={13} width={60} /></td>
-                      <td className="px-4 py-3"><SkeletonBox height={26} width={60} rounded="6px" /></td>
-                    </tr>
-                  ))
-                ) : subs.length === 0 ? (
-                  <tr><td colSpan={8} className="px-4 py-8 text-center text-[13px] text-slate">No subscribers in this view.</td></tr>
-                ) : subs.map(sub => {
-                  const style = STATUS_STYLE[sub.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
-                  return (
-                    <tr key={sub._id} className="border-b border-[#F0EEE6] transition-colors duration-150 hover:bg-cream">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-[10px]">
-                          <div className="w-[30px] h-[30px] rounded-full bg-[#F0EEE6] text-[10px] font-bold flex items-center justify-center shrink-0 text-[#5A5852]">
-                            {sub.customer.name.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-[13px] font-medium text-carbon whitespace-nowrap">{sub.customer.name}</p>
-                            <p className="text-[11px] text-slate">{sub.customer.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-[13px] text-graphite whitespace-nowrap">{sub.planName} — {sub.billingInterval}</td>
-                      <td className="px-4 py-3 text-[13px] font-semibold text-carbon whitespace-nowrap">${sub.amountUSD.toFixed(2)}</td>
-                      <td className="px-4 py-3">
-                        <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: style.bg, color: style.color }}>
-                          {sub.status}{sub.pendingCancellation ? ' (ending)' : ''}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-[13px] text-slate whitespace-nowrap">{new Date(sub.startedAt).toLocaleDateString()}</td>
-                      <td className="px-4 py-3 text-[13px] text-slate whitespace-nowrap">{new Date(sub.nextBillingDate).toLocaleDateString()}</td>
-                      <td className="px-4 py-3 text-[13px] font-semibold text-carbon">${sub.totalPaidUSD.toFixed(2)}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <button onClick={() => setViewingSubId(sub._id)} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">View</button>
-                          {sub.status === 'active' && (
-                            <button disabled={busyId === sub._id} onClick={() => handleAction(sub, 'pause')} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Pause</button>
-                          )}
-                          {sub.status === 'paused' && (
-                            <button disabled={busyId === sub._id} onClick={() => handleAction(sub, 'resume')} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Resume</button>
-                          )}
-                          {(sub.status === 'active' || sub.status === 'paused' || sub.status === 'past_due') && (
-                            <button disabled={busyId === sub._id} onClick={() => setCancelReasonFor(sub)} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-error cursor-pointer transition-colors duration-150 hover:bg-error hover:text-white hover:border-error disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Cancel</button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {subsTotal > 10 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-bone">
-              <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="text-[12px] text-graphite disabled:opacity-40 bg-transparent border-none cursor-pointer transition-opacity duration-150 hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 rounded-sm">Previous</button>
-              <span className="text-[12px] text-slate">Page {page} of {Math.ceil(subsTotal / 10)}</span>
-              <button disabled={page >= Math.ceil(subsTotal / 10)} onClick={() => setPage(p => p + 1)} className="text-[12px] text-graphite disabled:opacity-40 bg-transparent border-none cursor-pointer transition-opacity duration-150 hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 rounded-sm">Next</button>
-            </div>
-          )}
+          <Table
+            columns={subscriberColumns}
+            data={subs}
+            keyExtractor={sub => sub._id}
+            loading={loading}
+            emptyState={{ title: 'No subscribers in this view.' }}
+            pagination={{ page, total: subsTotal, perPage: 10, onChange: setPage, label: 'subscribers' }}
+          />
         </div>
 
         {/* Cancellation reasons — churn insight */}
@@ -733,7 +705,7 @@ export function StoreSubscriptions() {
               </div>
               <div>
                 <p className="text-[10px] text-slate uppercase tracking-wide mb-1">Realized LTV</p>
-                <p className="text-[18px] font-bold text-[#2D8A4E]">${advanced.realizedLtvUSD.toFixed(2)}</p>
+                <p className="text-[18px] font-bold text-success">${advanced.realizedLtvUSD.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-[10px] text-slate uppercase tracking-wide mb-1">Upgrades / Downgrades</p>

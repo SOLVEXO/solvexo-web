@@ -49,7 +49,7 @@ function ProfileSkeleton() {
           <div className="animate-pulse w-20 h-[11px] rounded bg-bone" />
         </div>
       </div>
-      <div className="h-px bg-[#F0EEE6] mb-5" />
+      <div className="h-px bg-[#f0eee6] mb-5" />
       {[1, 2, 3, 4].map(i => (
         <div key={i} className="mb-4">
           <div className="animate-pulse w-20 h-[11px] rounded bg-bone mb-[6px]" />
@@ -128,14 +128,14 @@ export function AdminSettings() {
                     {/* Avatar */}
                     <div className="flex items-center gap-4 mb-[22px]">
                       <label className={`relative flex-shrink-0 ${photoUploading ? 'cursor-wait' : 'cursor-pointer'}`}>
-                        <div className="w-[76px] h-[76px] rounded-full bg-[#FDECEA] text-[#C0392B] text-[26px] font-bold flex items-center justify-center overflow-hidden">
+                        <div className="w-[76px] h-[76px] rounded-full bg-[#fdecea] text-[#c0392b] text-[26px] font-bold flex items-center justify-center overflow-hidden">
                           {photoUploading
                             ? <Loader2 size={24} className="animate-spin" />
                             : profileImage
                               ? <img loading="lazy" decoding="async" src={profileImage} alt={profile?.name} className="w-full h-full object-cover" />
                               : (profile?.name?.slice(0, 2).toUpperCase() ?? 'AD')}
                         </div>
-                        <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#C13030] flex items-center justify-center">
+                        <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-error flex items-center justify-center">
                           <Camera size={12} className="text-white" />
                         </span>
                         <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handlePhotoChange} disabled={photoUploading} />
@@ -150,7 +150,7 @@ export function AdminSettings() {
                       </div>
                     </div>
 
-                    <div className="h-px bg-[#F0EEE6] mb-5" />
+                    <div className="h-px bg-[#f0eee6] mb-5" />
 
                     {/* Name */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px] mb-4">
@@ -173,7 +173,7 @@ export function AdminSettings() {
                         <input readOnly value={profile?.email ?? ''}
                           className="flex-1 px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-cream box-border" />
                         {profile?.isVerified && (
-                          <span className="px-[10px] py-1 rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C] flex items-center gap-1 flex-shrink-0">
+                          <span className="px-[10px] py-1 rounded-[5px] text-[11px] font-semibold bg-[#e3f4ea] text-[#1e7a3c] flex items-center gap-1 flex-shrink-0">
                             <Check size={10} /> Verified
                           </span>
                         )}
@@ -213,7 +213,7 @@ export function AdminSettings() {
                       <button
                         onClick={handleSave}
                         disabled={saving}
-                        className={`px-6 py-[10px] bg-[#C13030] border-none rounded-lg text-[13px] font-semibold text-white flex items-center gap-2 ${saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                        className={`px-6 py-[10px] bg-error border-none rounded-lg text-[13px] font-semibold text-white flex items-center gap-2 ${saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                       >
                         {saving && <Loader2 size={13} className="animate-spin" />}
                         {saving ? 'Saving…' : 'Save Changes'}
@@ -237,7 +237,7 @@ export function AdminSettings() {
                     className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-cream box-border" />
                 </div>
 
-                <div className="h-px bg-[#F0EEE6] mb-5" />
+                <div className="h-px bg-[#f0eee6] mb-5" />
 
                 <p className="text-[13px] font-semibold text-charcoal mb-4">Change Password</p>
 
@@ -272,7 +272,7 @@ export function AdminSettings() {
                   <button
                     onClick={handleChangePassword}
                     disabled={pwSaving || !currentPassword || !newPassword}
-                    className={`px-6 py-[10px] bg-[#C13030] border-none rounded-lg text-[13px] font-semibold text-white flex items-center gap-2 ${pwSaving || !currentPassword || !newPassword ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                    className={`px-6 py-[10px] bg-error border-none rounded-lg text-[13px] font-semibold text-white flex items-center gap-2 ${pwSaving || !currentPassword || !newPassword ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                   >
                     {pwSaving && <Loader2 size={13} className="animate-spin" />}
                     {pwSaving ? 'Updating…' : 'Update Password'}
@@ -311,9 +311,9 @@ export function AdminSettings() {
             <div className="bg-white border border-bone rounded-[10px] sticky top-[70px]" style={{ padding: 0 }}>
               {NAV.map((group, gi) => (
                 <div key={group.group}>
-                  {gi > 0 && <div className="h-px bg-[#F0EEE6]" />}
+                  {gi > 0 && <div className="h-px bg-[#f0eee6]" />}
                   <div className="px-4 pt-[10px] pb-1">
-                    <p className={`text-[10px] font-semibold uppercase tracking-[0.08em] ${group.isDanger ? 'text-[#C0392B]' : 'text-slate'}`}>
+                    <p className={`text-[10px] font-semibold uppercase tracking-[0.08em] ${group.isDanger ? 'text-[#c0392b]' : 'text-slate'}`}>
                       {group.group}
                     </p>
                   </div>

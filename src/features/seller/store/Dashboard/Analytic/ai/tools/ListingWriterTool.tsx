@@ -145,7 +145,7 @@ export function ListingWriterTool({ storeId, onCreditsChanged }: ListingWriterTo
               <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.08em] mb-2">Suggested Tags</p>
               <div className="flex flex-wrap gap-[6px]">
                 {result.suggestedTags.map(tag => (
-                  <span key={tag} className="px-[10px] py-[3px] bg-[#F0EEE6] rounded-[5px] text-[11px] text-[#5A5852]">{tag}</span>
+                  <span key={tag} className="px-[10px] py-[3px] bg-[#f0eee6] rounded-[5px] text-[11px] text-[#5a5852]">{tag}</span>
                 ))}
               </div>
             </div>

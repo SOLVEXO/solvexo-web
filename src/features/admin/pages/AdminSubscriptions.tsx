@@ -150,7 +150,7 @@ function InsightsPanel() {
               { key: 'cohort', header: 'Cohort', render: c => <span className="text-charcoal">{c.cohort}</span> },
               { key: 'totalStarted', header: 'Started', render: c => <span className="text-graphite">{c.totalStarted}</span> },
               { key: 'stillActive', header: 'Still Active', render: c => <span className="text-graphite">{c.stillActive}</span> },
-              { key: 'retentionPercent', header: 'Retention', render: c => <span className="font-semibold text-[#2D8A4E]">{c.retentionPercent}%</span> },
+              { key: 'retentionPercent', header: 'Retention', render: c => <span className="font-semibold text-success">{c.retentionPercent}%</span> },
             ] as TableColumn<ChurnCohort>[]}
             data={cohorts}
             keyExtractor={c => c.cohort}
@@ -164,7 +164,7 @@ function InsightsPanel() {
           <Table
             columns={[
               { key: 'storeName', header: 'Store', render: r => <span className="text-charcoal">{r.storeName}</span> },
-              { key: 'totalUSD', header: 'Total', render: r => <span className="font-semibold text-[#2D8A4E]">${r.totalUSD.toFixed(2)}</span> },
+              { key: 'totalUSD', header: 'Total', render: r => <span className="font-semibold text-success">${r.totalUSD.toFixed(2)}</span> },
               { key: 'invoiceCount', header: 'Invoices', render: r => <span className="text-graphite">{r.invoiceCount}</span> },
               { key: 'sellerPayoutUSD', header: 'Seller Payout', render: r => <span className="text-graphite">${r.sellerPayoutUSD.toFixed(2)}</span> },
               { key: 'platformCommissionUSD', header: 'Platform Commission', render: r => <span className="text-graphite">${r.platformCommissionUSD.toFixed(2)}</span> },
@@ -345,7 +345,7 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
               {(data.paymentAttempts ?? []).map((a: PaymentAttempt) => (
                 <div key={a._id} className="flex items-center justify-between text-[12px] px-2.5 py-1.5 rounded bg-cream">
                   <span className="text-slate">#{a.attemptNumber} · {a.attemptType} · {new Date(a.createdAt).toLocaleString()}</span>
-                  <span className={`font-semibold ${a.outcome === 'success' ? 'text-[#1E7A3C]' : 'text-error'}`}>
+                  <span className={`font-semibold ${a.outcome === 'success' ? 'text-[#1e7a3c]' : 'text-error'}`}>
                     {a.outcome === 'failed' ? (a.failureReason ?? 'Failed') : `$${a.amountUSD.toFixed(2)}`}
                   </span>
                 </div>
@@ -429,7 +429,7 @@ export function AdminSubscriptions() {
   const storeColumns: TableColumn<StoreBreakdownRow>[] = [
     { key: 'storeName', header: 'Store', render: s => <span className="font-semibold text-charcoal">{s.storeName}</span> },
     { key: 'subscriberCount', header: 'Subscribers', render: s => <span className="text-graphite">{s.subscriberCount}</span> },
-    { key: 'mrrUSD', header: 'MRR', render: s => <span className="font-semibold text-[#2D8A4E]">${s.mrrUSD.toFixed(2)}</span> },
+    { key: 'mrrUSD', header: 'MRR', render: s => <span className="font-semibold text-success">${s.mrrUSD.toFixed(2)}</span> },
     { key: 'planCount', header: 'Plans', render: s => <span className="text-graphite">{s.planCount}</span> },
     {
       key: 'actions', header: '',

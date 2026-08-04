@@ -87,7 +87,7 @@ export function SignInPreview() {
 
   return (
     <div ref={ref} className="relative hidden md:block" onMouseEnter={openNow}>
-      <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
+      <Button variant="primary" size="sm" onClick={() => navigate('/login')}>
         Sign In
       </Button>
 

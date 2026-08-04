@@ -78,7 +78,7 @@ export function StoreFeatureCard({ store, onClick, className }: {
 
         <div className="flex items-center gap-[5px] mb-[3px]">
           <p className="text-[13.5px] font-bold text-carbon leading-tight truncate">{store.name}</p>
-          {isVerified && <BadgeCheck size={14} className="text-[#1A72C2] fill-[#1A72C2]/15 shrink-0" />}
+          {isVerified && <BadgeCheck size={14} className="text-info fill-info/15 shrink-0" />}
         </div>
         {store.description && (
           <p className="text-[10.5px] text-slate leading-snug line-clamp-1 mb-[10px]">{store.description}</p>

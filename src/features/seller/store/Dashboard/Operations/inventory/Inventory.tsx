@@ -190,14 +190,14 @@ export function StoreInventory() {
         {/* Low stock detail */}
         {!!lowStock?.count && (
           <Card padding="none">
-            <div className="px-5 pt-4 pb-3 flex items-center gap-2 border-b border-[#F3F2EC]">
+            <div className="px-5 pt-4 pb-3 flex items-center gap-2 border-b border-[#f3f2ec]">
               <AlertTriangle size={14} className="text-warning shrink-0" />
               <p className="text-[13px] font-bold text-charcoal">
                 {lowStock.count} product{lowStock.count !== 1 ? 's' : ''} running low
               </p>
               <span className="text-[11px] text-slate ml-1">(≤ {lowStock.threshold} units left)</span>
             </div>
-            <div className="px-5 py-3 flex flex-col divide-y divide-[#F3F2EC]">
+            <div className="px-5 py-3 flex flex-col divide-y divide-[#f3f2ec]">
               {(lowStock.items ?? []).slice(0, 5).map(item => (
                 <button
                   key={item.productId}
@@ -217,7 +217,7 @@ export function StoreInventory() {
 
         {/* Error */}
         {error && (
-          <div className="bg-error-bg border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
+          <div className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-center gap-3">
             <AlertCircle size={16} className="text-error shrink-0" />
             <span className="text-[13px] text-error flex-1">{error}</span>
             <button

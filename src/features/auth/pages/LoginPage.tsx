@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { safeRedirectPath } from '@/utils/safeRedirect';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -12,7 +12,8 @@ import { SocialLoginRow } from '@/components/comman/ui/SocialIcons';
 import { Eye, EyeOff, ShieldCheck, Sparkles, Zap, AlertTriangle, ShoppingBag, Store } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
-import type { AppRole } from '@/api/services/auth';
+import { TokenStorage, LastRolePreference, getRoleRedirect, type AppRole } from '@/api/services/auth';
+import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MarketplaceMockup } from '@/features/auth/components/mockups/AuthMockups';
 
@@ -34,7 +35,11 @@ export function LoginPage() {
   usePageTitle('Login');
   const login      = useLogin();
   const social     = useSocialLogin();
-  const [role, setRole]           = useState<AppRole>('user');
+  // Defaults to whichever role this device last registered/logged in as —
+  // previously always hardcoded to "Buyer", so a seller who forgot to flip
+  // the toggle got a misleading "Invalid email or password" (their account
+  // lives in a different collection than the one being queried).
+  const [role, setRole]           = useState<AppRole>(() => LastRolePreference.get());
   const [showPass, setShowPass]   = useState(false);
 
   // Stable role toggle — doesn't reset form or trigger re-mount of hook states
@@ -49,6 +54,20 @@ export function LoginPage() {
       },
     },
   );
+
+  // Already signed in — send them to wherever they actually belong instead
+  // of showing a login form to someone who doesn't need one.
+  useEffect(() => {
+    if (!TokenStorage.isLoggedIn()) return;
+    const user = TokenStorage.getUser<{ role?: AppRole }>();
+    if (user?.role === 'seller') {
+      resolveSellerDestinationRemote().then(dest => navigate(dest, { replace: true }));
+    } else {
+      navigate(redirectTo || getRoleRedirect((user?.role ?? 'user') as AppRole), { replace: true });
+    }
+  }, [navigate, redirectTo]);
+
+  if (TokenStorage.isLoggedIn()) return null;
 
   return (
     <AuthSplitLayout

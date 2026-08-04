@@ -50,9 +50,9 @@ export function MarketplaceMockup() {
         <div className="grid grid-cols-2 gap-[clamp(4px,1vh,10px)]">
           {[
             { grad: 'from-brand-orange to-brand-deep-orange', price: '$24' },
-            { grad: 'from-[#2D8A4E] to-[#1A72C2]',            price: '$58' },
-            { grad: 'from-[#C08B1E] to-brand-orange',          price: '$12' },
-            { grad: 'from-[#1A72C2] to-[#6B4EE6]',             price: '$36' },
+            { grad: 'from-success to-info',            price: '$58' },
+            { grad: 'from-warning to-brand-orange',          price: '$12' },
+            { grad: 'from-info to-[#6b4ee6]',             price: '$36' },
           ].map((p, i) => (
             <div key={i} className="rounded-[10px] bg-white/[0.06] border border-white/10 overflow-hidden">
               <div className={clsx('h-[clamp(28px,6vh,48px)] bg-gradient-to-br', p.grad)} />
@@ -66,8 +66,8 @@ export function MarketplaceMockup() {
       </GlassPanel>
 
       <FloatingChip className="-left-3 -bottom-4 auth-float-slow hidden sm:flex">
-        <span className="w-6 h-6 rounded-full bg-[#2D8A4E]/25 flex items-center justify-center shrink-0">
-          <CheckCircle2 size={12} className="text-[#4ADE80]" />
+        <span className="w-6 h-6 rounded-full bg-success/25 flex items-center justify-center shrink-0">
+          <CheckCircle2 size={12} className="text-[#4ade80]" />
         </span>
         <span className="text-[10.5px] font-medium text-white/85">Order confirmed</span>
       </FloatingChip>
@@ -87,11 +87,11 @@ export function DashboardMockup() {
   const bars = [40, 65, 48, 80, 58, 92, 70];
   return (
     <div className="relative w-full max-w-[300px] mx-auto py-[clamp(6px,2vh,24px)]">
-      <GlowOrb className="w-40 h-40 bg-[#1A72C2]/25 -top-4 -left-6" />
+      <GlowOrb className="w-40 h-40 bg-info/25 -top-4 -left-6" />
       <GlassPanel className="relative p-4 auth-float">
         <div className="flex items-center justify-between mb-3">
           <span className="text-[11.5px] font-semibold text-white">Store revenue</span>
-          <span className="flex items-center gap-1 text-[10px] font-semibold text-[#4ADE80]">
+          <span className="flex items-center gap-1 text-[10px] font-semibold text-[#4ade80]">
             <ArrowUpRight size={11} /> 24%
           </span>
         </div>
@@ -135,7 +135,7 @@ export function SecurityMockup() {
 export function PasswordSecurityMockup() {
   return (
     <div className="relative w-full max-w-[260px] mx-auto py-[clamp(6px,2vh,24px)]">
-      <GlowOrb className="w-40 h-40 bg-[#2D8A4E]/25 -top-2 -right-2" />
+      <GlowOrb className="w-40 h-40 bg-success/25 -top-2 -right-2" />
       <GlassPanel className="relative p-4 auth-float">
         <div className="flex items-center gap-2.5 mb-4">
           <div className="size-8 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center">
@@ -151,8 +151,8 @@ export function PasswordSecurityMockup() {
             { label: 'One special character',  on: false },
           ].map(({ label, on }) => (
             <div key={label} className="flex items-center gap-2">
-              <span className={clsx('size-4 rounded-full flex items-center justify-center shrink-0', on ? 'bg-[#4ADE80]/25' : 'bg-white/10')}>
-                {on && <CheckCircle2 size={10} className="text-[#4ADE80]" />}
+              <span className={clsx('size-4 rounded-full flex items-center justify-center shrink-0', on ? 'bg-[#4ade80]/25' : 'bg-white/10')}>
+                {on && <CheckCircle2 size={10} className="text-[#4ade80]" />}
               </span>
               <span className={clsx('text-[11px]', on ? 'text-white/85' : 'text-white/40')}>{label}</span>
             </div>
@@ -184,7 +184,7 @@ export function InboxMockup() {
         </div>
       </GlassPanel>
       <FloatingChip className="-right-2 -bottom-3 hidden sm:flex">
-        <CheckCircle2 size={12} className="text-[#4ADE80]" />
+        <CheckCircle2 size={12} className="text-[#4ade80]" />
         <span className="text-[10.5px] font-medium text-white/85">Delivered instantly</span>
       </FloatingChip>
     </div>
@@ -196,12 +196,12 @@ export function IdentityMockup() {
   return (
     <div className="relative w-full max-w-[240px] mx-auto py-[clamp(6px,2.4vh,32px)] flex items-center justify-center">
       <div className="absolute size-32 rounded-full border border-white/10" />
-      <GlowOrb className="w-44 h-44 bg-[#1A72C2]/20" />
+      <GlowOrb className="w-44 h-44 bg-info/20" />
       <div className="relative size-20 rounded-[22px] bg-white/[0.08] backdrop-blur-md border border-white/25 flex items-center justify-center auth-float">
         <Fingerprint size={34} className="text-brand-orange" />
       </div>
       <FloatingChip className="left-1 top-3 hidden sm:flex">
-        <ShieldCheck size={12} className="text-[#4ADE80]" />
+        <ShieldCheck size={12} className="text-[#4ade80]" />
         <span className="text-[10.5px] font-medium text-white/85">Confirm it's you</span>
       </FloatingChip>
     </div>
@@ -264,8 +264,8 @@ export function AdminControlMockup() {
             </div>
             <span className="text-[11.5px] font-semibold text-white">Platform status</span>
           </div>
-          <span className="flex items-center gap-1 text-[10px] font-semibold text-[#4ADE80]">
-            <span className="size-1.5 rounded-full bg-[#4ADE80]" /> All systems normal
+          <span className="flex items-center gap-1 text-[10px] font-semibold text-[#4ade80]">
+            <span className="size-1.5 rounded-full bg-[#4ade80]" /> All systems normal
           </span>
         </div>
         <div className="grid grid-cols-3 gap-2">

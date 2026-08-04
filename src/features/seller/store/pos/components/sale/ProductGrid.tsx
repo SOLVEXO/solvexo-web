@@ -83,7 +83,7 @@ export function ProductGrid({ sale }: ProductGridProps) {
           </div>
         ) : productsError ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-[72px] h-[72px] rounded-3xl bg-gradient-to-br from-[#2A1A1A] to-pos-surface-2 border border-error/25 flex items-center justify-center mb-5 shrink-0">
+            <div className="w-[72px] h-[72px] rounded-3xl bg-gradient-to-br from-[#2a1a1a] to-pos-surface-2 border border-error/25 flex items-center justify-center mb-5 shrink-0">
               <ImageOff size={30} className="text-error" />
             </div>
             <p className="text-[15px] font-bold text-white mb-1">Failed to load products</p>

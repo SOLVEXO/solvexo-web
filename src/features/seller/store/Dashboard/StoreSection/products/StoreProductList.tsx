@@ -196,7 +196,7 @@ export default function StoreProductList() {
 
         {/* ── Error ──────────────────────────────────────────────────── */}
         {error && (
-          <div className="bg-error-bg border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
+          <div className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-center gap-3">
             <AlertCircle size={16} className="text-error shrink-0" />
             <span className="text-[13px] text-error flex-1">{error}</span>
             <button
@@ -236,7 +236,7 @@ export default function StoreProductList() {
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div
                     key={i}
-                    className={`flex items-center gap-4 px-4 py-[13px]${i < 4 ? ' border-b border-[#F0EEE6]' : ''}`}
+                    className={`flex items-center gap-4 px-4 py-[13px]${i < 4 ? ' border-b border-[#f0eee6]' : ''}`}
                   >
                     <SkeletonBox width={32} height={32} rounded="8px" />
                     <SkeletonBox width="35%" height={13} />

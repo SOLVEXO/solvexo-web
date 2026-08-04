@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { Button } from '@/components/comman/ui/Button';
 import { SkeletonBox } from '@/components/comman/ui';
 import { ArrowRight, GraduationCap, Palette, Store, Gem, Briefcase, Building2, ShoppingBag, Hammer, Download, Sparkles, BarChart2, Monitor, CreditCard, Lock } from 'lucide-react';
@@ -34,6 +35,7 @@ const FEATURES: { Icon: LucideIcon; title: string; desc: string }[] = [
 
 export function ForSellersPage() {
   const navigate = useNavigate();
+  const sellEntry = useSellEntry();
   usePageTitle('For Sellers');
 
   const [stats, setStats] = useState<PlatformStats | null>(null);
@@ -64,7 +66,7 @@ export function ForSellersPage() {
         style={{ background: 'linear-gradient(135deg, #141413 0%, #2C2A28 100%)' }}
       >
         <div className="absolute rounded-full w-[400px] h-[400px] bg-brand-orange opacity-[0.08] -top-[80px] -right-[80px]" />
-        <div className="absolute rounded-full w-[300px] h-[300px] bg-[#B95A3A] opacity-[0.06] -bottom-[60px] left-[40%]" />
+        <div className="absolute rounded-full w-[300px] h-[300px] bg-brand-deep-orange opacity-[0.06] -bottom-[60px] left-[40%]" />
 
         <div className="max-w-[760px] mx-auto text-center relative z-[1]">
           <div className="inline-flex items-center gap-2 bg-[rgba(217,119,87,0.15)] border border-[rgba(217,119,87,0.3)] rounded-[20px] px-[14px] py-[5px] mb-6">
@@ -78,13 +80,13 @@ export function ForSellersPage() {
             With Solvex<span className="text-brand-orange">o</span>.
           </h1>
 
-          <p className="text-sm md:text-[17px] text-[#B0AEA8] leading-[1.7] max-w-[580px] mx-auto mb-9">
+          <p className="text-sm md:text-[17px] text-[#b0aea8] leading-[1.7] max-w-[580px] mx-auto mb-9">
             The all-in-one commerce platform for educators, creators, and independent sellers.
             Get your store live in minutes. Start selling today.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" onClick={() => navigate('/onboard')}>
+            <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
               Start for Free <ArrowRight size={14} className="inline align-middle ml-1" />
             </Button>
             <button
@@ -114,7 +116,7 @@ export function ForSellersPage() {
                   variant="secondary" size="sm"
                   onClick={() => s.cta === 'Contact Us'
                     ? (window.location.href = 'mailto:support@solvexo.com?subject=Institutional%20Account%20Inquiry')
-                    : navigate('/onboard')}
+                    : sellEntry.go()}
                 >
                   {s.cta} <ArrowRight size={14} className="inline align-middle ml-1" />
                 </Button>
@@ -175,7 +177,7 @@ export function ForSellersPage() {
           No credit card required. Get your store live in minutes. Upgrade when you're ready.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button size="lg" onClick={() => navigate('/onboard')}>
+          <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
             Create Free Account <ArrowRight size={14} className="inline align-middle ml-1" />
           </Button>
           <button

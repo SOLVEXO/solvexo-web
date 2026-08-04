@@ -141,7 +141,7 @@ function SidebarStoreSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-[#1A1917] border border-charcoal rounded-[10px] p-[6px]">
+        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-[#1a1917] border border-charcoal rounded-[10px] p-[6px]">
           <p className="text-[10px] font-semibold text-dark-label uppercase tracking-[0.08em] px-[10px] pt-1 pb-2">
             Switch Store
           </p>
@@ -406,7 +406,7 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
           <div className={clsx('flex items-center gap-2', !open && 'flex-col')}>
             <div className="size-7 rounded-full shrink-0 bg-charcoal flex items-center justify-center overflow-hidden">
               {profileLoading
-                ? <div className="animate-pulse w-full h-full bg-[#3C3A38]" />
+                ? <div className="animate-pulse w-full h-full bg-[#3c3a38]" />
                 : profile?.profileImage
                   ? <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
                   : <span className="text-[10px] font-bold text-brand-orange">{profile?.name?.slice(0, 2).toUpperCase() ?? '--'}</span>

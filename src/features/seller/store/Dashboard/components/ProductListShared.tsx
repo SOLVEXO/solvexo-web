@@ -12,7 +12,7 @@ import type { InventoryProduct } from '@/api/services/product';
 export function ProductCell({ p }: { p: InventoryProduct }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="w-9 h-9 rounded-lg shrink-0 bg-brand-pale-orange border border-[#EDEBE2] flex items-center justify-center overflow-hidden">
+      <div className="w-9 h-9 rounded-lg shrink-0 bg-brand-pale-orange border border-[#edebe2] flex items-center justify-center overflow-hidden">
         {p.image
           ? <img loading="lazy" decoding="async" src={p.image} alt="" className="w-full h-full object-cover" />
           : p.type === 'digital'

@@ -20,6 +20,8 @@ export { SolvexoLogo, SolvexoIcon }          from './SolvexoLogo';
 export { RadioButton }                       from './RadioButton';
 export type { RadioOption }                  from './RadioButton';
 
+export { RoleChoiceCards }                    from './RoleChoiceCards';
+export type { RoleChoiceOption }             from './RoleChoiceCards';
 export { RoleSegmentedControl }              from './RoleSegmentedControl';
 export type { RoleSegmentOption }            from './RoleSegmentedControl';
 

@@ -110,7 +110,7 @@ function CategoryRow({ node, depth }: { node: CategoryNode; depth: number }) {
   return (
     <div>
       <div
-        className="flex items-center gap-2 px-4 py-[10px] border-b border-[#F0EEE6] hover:bg-cream cursor-pointer transition-colors duration-150"
+        className="flex items-center gap-2 px-4 py-[10px] border-b border-[#f0eee6] hover:bg-cream cursor-pointer transition-colors duration-150"
         style={{ paddingLeft: 16 + depth * 24 }}
         onClick={() => hasChildren && setExpanded(e => !e)}
       >

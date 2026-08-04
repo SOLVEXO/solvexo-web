@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import {
   Home, ShoppingCart, Store, DollarSign, Users, BookOpen,
-  LogIn, Rocket,
+  LogIn,
   LayoutDashboard,
   Settings,
   Shield,
@@ -36,7 +36,7 @@ const LEGAL_PAGES: NavPage[] = [
 
 const AUTH_PAGES: NavPage[] = [
   { label: 'Login',        path: '/login',        Icon: LogIn       },
-  { label: 'Onboarding',   path: '/onboard',   Icon: Rocket },
+  // { label: 'Onboarding',   path: '/onboard',   Icon: Rocket },
 ];
 
 const SELLER_PAGES: NavPage[] = [

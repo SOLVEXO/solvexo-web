@@ -98,7 +98,7 @@ export function SellerShipping() {
                           checkout.service.ts's SHIPPING_ZONE_CURRENCY constant), so this
                           is intentionally never store-currency-dependent. */}
                       <span className="text-sm font-bold text-brand-orange">Rs {zone.shippingPrice.toLocaleString()}</span>
-                      <span className={`px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold ${zone.status === 'active' ? 'bg-[#E3F4EA] text-[#1E7A3C]' : 'bg-bone text-slate'}`}>
+                      <span className={`px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold ${zone.status === 'active' ? 'bg-[#e3f4ea] text-[#1e7a3c]' : 'bg-bone text-slate'}`}>
                         {zone.status === 'active' ? 'Active' : 'Inactive'}
                       </span>
                     </div>

@@ -116,7 +116,7 @@ export function SeoBoosterTool({ storeId, onCreditsChanged }: SeoBoosterToolProp
               <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.08em] mb-2">Optimized Tags</p>
               <div className="flex flex-wrap gap-[6px]">
                 {result.optimizedTags.map(t => (
-                  <span key={t.tag} className="inline-flex items-center gap-1 px-[10px] py-[3px] bg-[#F0EEE6] rounded-[5px] text-[11px] text-[#5A5852]">
+                  <span key={t.tag} className="inline-flex items-center gap-1 px-[10px] py-[3px] bg-[#f0eee6] rounded-[5px] text-[11px] text-[#5a5852]">
                     {t.isVerifiedData ? <ShieldCheck size={10} className="text-success" /> : null}
                     {t.tag}
                   </span>

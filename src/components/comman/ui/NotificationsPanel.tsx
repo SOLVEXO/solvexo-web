@@ -89,7 +89,7 @@ export function NotificationsPanel() {
           )}
         </div>
 
-        <div className="p-5 flex flex-col gap-5 divide-y divide-[#F5F4EF]">
+        <div className="p-5 flex flex-col gap-5 divide-y divide-[#f5f4ef]">
           {showPrefsLoading ? (
             <div className="flex flex-col gap-4 py-3">
               {[1, 2, 3].map(i => (
@@ -168,8 +168,8 @@ export function NotificationsPanel() {
 
                 <div className="flex justify-between items-center gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="size-7 rounded bg-[#EEF7FF] flex items-center justify-center shrink-0">
-                      <MessageSquare size={13} className="text-[#1A65A8]" />
+                    <div className="size-7 rounded bg-[#eef7ff] flex items-center justify-center shrink-0">
+                      <MessageSquare size={13} className="text-[#1a65a8]" />
                     </div>
                     <div>
                       <p className="text-[12.5px] font-medium text-charcoal">Direct Messages</p>
@@ -185,8 +185,8 @@ export function NotificationsPanel() {
 
                 <div className="flex justify-between items-center gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="size-7 rounded bg-[#FFF8E7] flex items-center justify-center shrink-0">
-                      <Star size={13} className="text-[#D4AF37]" />
+                    <div className="size-7 rounded bg-[#fff8e7] flex items-center justify-center shrink-0">
+                      <Star size={13} className="text-[#d4af37]" />
                     </div>
                     <div>
                       <p className="text-[12.5px] font-medium text-charcoal">Loyalty & Reward Points</p>
@@ -202,8 +202,8 @@ export function NotificationsPanel() {
 
                 <div className="flex justify-between items-center gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="size-7 rounded bg-[#F5F0FF] flex items-center justify-center shrink-0">
-                      <Sparkles size={13} className="text-[#7C3AED]" />
+                    <div className="size-7 rounded bg-[#f5f0ff] flex items-center justify-center shrink-0">
+                      <Sparkles size={13} className="text-[#7c3aed]" />
                     </div>
                     <div>
                       <p className="text-[12.5px] font-medium text-charcoal">Subscriptions & Plans</p>
@@ -252,7 +252,7 @@ export function NotificationsPanel() {
           </div>
         </div>
 
-        <div className="divide-y divide-[#F5F4EF]">
+        <div className="divide-y divide-[#f5f4ef]">
           {notificationsLoading && notifications.length === 0 ? (
             <div className="p-5 flex flex-col gap-4">
               {[1, 2, 3].map(i => (

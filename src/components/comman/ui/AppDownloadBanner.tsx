@@ -57,8 +57,8 @@ function OrdersScreenMockup() {
   const tabs = ['All', 'Processing', 'Shipped', 'Delivered'];
   const orders = [
     { id: '124578', status: 'Delivered',  color: 'bg-success-bg text-success',           items: '2 items',  price: 129.98, date: 'Apr 24, 2025' },
-    { id: '124577', status: 'Shipped',    color: 'bg-[#E6F1FB] text-[#1A72C2]',          items: '1 item',   price: 59.99,  date: 'Apr 23, 2025' },
-    { id: '124576', status: 'Processing', color: 'bg-[#FEF3C7] text-[#B45309]',          items: '3 items',  price: 199.97, date: 'Apr 22, 2025' },
+    { id: '124577', status: 'Shipped',    color: 'bg-info-bg text-info',          items: '1 item',   price: 59.99,  date: 'Apr 23, 2025' },
+    { id: '124576', status: 'Processing', color: 'bg-[#fef3c7] text-[#b45309]',          items: '3 items',  price: 199.97, date: 'Apr 22, 2025' },
     { id: '124575', status: 'Delivered',  color: 'bg-success-bg text-success',           items: '1 item',   price: 89.99,  date: 'Apr 20, 2025' },
   ];
   return (
@@ -161,7 +161,7 @@ function HomeScreenMockup() {
           {FLASH_DEAL_PRODUCTS.map((p, i) => (
             <div key={i} className="rounded-[8px] border border-bone overflow-hidden relative">
               <div className="aspect-square relative" style={{ background: p.color }}>
-                <span className="absolute top-[3px] left-[3px] px-[4px] py-[1px] rounded-[3px] text-[5px] font-bold bg-[#E11D48] text-white">-{p.pct}%</span>
+                <span className="absolute top-[3px] left-[3px] px-[4px] py-[1px] rounded-[3px] text-[5px] font-bold bg-[#e11d48] text-white">-{p.pct}%</span>
               </div>
               <div className="px-[4px] py-[3px]">
                 <p className="text-[5.5px] font-semibold text-charcoal truncate">{p.name}</p>
@@ -183,13 +183,13 @@ function PhoneShell({ className, primary = true, children }: { className?: strin
   return (
     <div className={clsx('relative shrink-0 w-[188px] xl:w-[204px] aspect-[9/19]', primary ? 'z-[1]' : 'opacity-95', className)}>
       {/* Side buttons — the detail that reads "real phone" instead of a bare rounded rectangle */}
-      <div className="absolute -left-px top-[20%] w-[2px] h-[6%] rounded-l-sm bg-[#0A0A09]" />
-      <div className="absolute -left-px top-[29%] w-[2px] h-[9%] rounded-l-sm bg-[#0A0A09]" />
-      <div className="absolute -left-px top-[40%] w-[2px] h-[9%] rounded-l-sm bg-[#0A0A09]" />
-      <div className="absolute -right-px top-[24%] w-[2px] h-[10%] rounded-r-sm bg-[#0A0A09]" />
+      <div className="absolute -left-px top-[20%] w-[2px] h-[6%] rounded-l-sm bg-[#0a0a09]" />
+      <div className="absolute -left-px top-[29%] w-[2px] h-[9%] rounded-l-sm bg-[#0a0a09]" />
+      <div className="absolute -left-px top-[40%] w-[2px] h-[9%] rounded-l-sm bg-[#0a0a09]" />
+      <div className="absolute -right-px top-[24%] w-[2px] h-[10%] rounded-r-sm bg-[#0a0a09]" />
 
       <div className={clsx(
-        'w-full h-full rounded-[36px] bg-gradient-to-b from-[#333130] via-carbon to-[#0A0A09] p-[8px] border',
+        'w-full h-full rounded-[36px] bg-gradient-to-b from-[#333130] via-carbon to-[#0a0a09] p-[8px] border',
         primary ? 'border-white/20' : 'border-white/10',
       )}>
         <div className="relative w-full h-full rounded-[28px] overflow-hidden ring-1 ring-black/60">
@@ -229,12 +229,12 @@ export function AppDownloadBanner({ className }: { className?: string }) {
   return (
     <section className={clsx('relative overflow-hidden rounded-2xl bg-gradient-to-br from-carbon to-charcoal', className)}>
       {/* Thin top accent line */}
-      <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-brand-orange to-[#F0A57A]" />
+      <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-brand-orange to-[#f0a57a]" />
 
       {/* Soft ambient circle + faint dotted-grid texture — CSS only. No orange
           here — the only orange glow in this banner lives locally behind the
           phone mockups (see the phone-cluster spotlight below), not hero-wide. */}
-      <div className="absolute w-[280px] h-[280px] rounded-full bg-[#3A3633] -top-20 -right-16 pointer-events-none" />
+      <div className="absolute w-[280px] h-[280px] rounded-full bg-[#3a3633] -top-20 -right-16 pointer-events-none" />
       <div
         className="hidden lg:block absolute right-0 top-0 bottom-0 w-[40%] opacity-[0.05] pointer-events-none"
         style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.7) 1px, transparent 1px)', backgroundSize: '20px 20px' }}
@@ -251,7 +251,7 @@ export function AppDownloadBanner({ className }: { className?: string }) {
           <h3 className="text-[22px] sm:text-[25px] lg:text-[28px] font-bold text-white mb-2 leading-[1.15] tracking-tight">
             Shop <span className="text-brand-orange">smarter.</span> Anywhere, anytime.
           </h3>
-          <p className="text-[12.5px] sm:text-[13px] text-[#B0AEA8] max-w-[420px] mx-auto lg:mx-0 leading-relaxed mb-3">
+          <p className="text-[12.5px] sm:text-[13px] text-[#b0aea8] max-w-[420px] mx-auto lg:mx-0 leading-relaxed mb-3">
             One-tap checkout, live order tracking, and app-only deals — right in your pocket.
           </p>
 
@@ -271,7 +271,7 @@ export function AppDownloadBanner({ className }: { className?: string }) {
                 </span>
                 <span className="min-w-0">
                   <p className="text-[12px] font-semibold text-white leading-tight">{title}</p>
-                  <p className="text-[10.5px] text-[#8C8A82] leading-tight mt-[1px]">{sub}</p>
+                  <p className="text-[10.5px] text-slate leading-tight mt-[1px]">{sub}</p>
                 </span>
               </li>
             ))}
@@ -293,7 +293,7 @@ export function AppDownloadBanner({ className }: { className?: string }) {
           <div className="rounded-2xl border-2 border-brand-orange/50 p-3">
             <QrGlyph size={84} />
           </div>
-          <p className="text-[11px] text-[#B0AEA8] leading-tight">Coming soon</p>
+          <p className="text-[11px] text-[#b0aea8] leading-tight">Coming soon</p>
           <div className="flex items-center gap-[6px]">
             <Sparkles size={13} className="text-brand-orange" />
             <p className="text-[10.5px] text-brand-orange italic whitespace-nowrap">We'll let you know when it's ready</p>
@@ -332,7 +332,7 @@ export function AppDownloadBanner({ className }: { className?: string }) {
                 </span>
                 <span>
                   <p className="text-[13px] font-bold text-white leading-none">{value}</p>
-                  <p className="text-[10px] text-[#8C8A82] mt-[2px] whitespace-nowrap">{label}</p>
+                  <p className="text-[10px] text-slate mt-[2px] whitespace-nowrap">{label}</p>
                 </span>
               </div>
             ))}

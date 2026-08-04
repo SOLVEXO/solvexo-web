@@ -53,7 +53,7 @@ export function AdminLoginPage() {
 
   return (
     <AuthSplitLayout
-      panelGradient="from-admin-bg via-[#1A1918] to-[#2A1414]"
+      panelGradient="from-admin-bg via-[#1a1918] to-[#2a1414]"
       brandingHeader={BRANDING_HEADER}
       heading={<>Platform control,<br />secured.</>}
       subtext="Sign in with your administrator credentials to access the Solvexo control panel."

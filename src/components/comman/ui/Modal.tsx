@@ -16,11 +16,11 @@ export function Modal({ title, onClose, children, footer, width = 440 }: ModalPr
   return (
     <DialogShell onClose={onClose} ariaLabelledBy={titleId} className="max-h-[90vh]" style={{ maxWidth: width }}>
       <div className="flex items-center justify-between px-5 py-4 border-b border-bone shrink-0">
-        <p id={titleId} className="text-[15px] font-semibold text-[#1A1918]">{title}</p>
+        <p id={titleId} className="text-[15px] font-semibold text-[#1a1918]">{title}</p>
         <button
           onClick={onClose}
           aria-label="Close dialog"
-          className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border-0 cursor-pointer text-slate hover:bg-[#F5F3EE]"
+          className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border-0 cursor-pointer text-slate hover:bg-[#f5f3ee]"
         >
           <X size={16} />
         </button>

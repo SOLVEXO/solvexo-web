@@ -101,7 +101,7 @@ export function Payments() {
         <div className="px-5 pt-5 pb-4 border-b border-bone">
           <PageHeader eyebrow="Account" title="Bank Transfer Payments" />
         </div>
-        <div className="divide-y divide-[#F5F4EF]">
+        <div className="divide-y divide-[#f5f4ef]">
           {[1, 2].map(i => (
             <div key={i} className="px-5 py-[18px]"><SkeletonBox width="100%" height={60} rounded="10px" /></div>
           ))}
@@ -133,7 +133,7 @@ export function Payments() {
           <PageHeader eyebrow="Account" title="Bank Transfer Payments" description={`${proofs.length} submission${proofs.length !== 1 ? 's' : ''}`} />
         </div>
         {error && <p className="px-5 py-3 text-[12px] text-error">{error}</p>}
-        <div className="divide-y divide-[#F5F4EF]">
+        <div className="divide-y divide-[#f5f4ef]">
           {proofs.map(p => (
             <div key={p._id} className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-[16px]">
               <div className="flex-1 min-w-0">

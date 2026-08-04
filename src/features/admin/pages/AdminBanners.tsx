@@ -240,7 +240,7 @@ export function AdminBanners() {
                       <button onClick={() => togglePause(b)} disabled={toggleBusyId === b._id} className="px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-charcoal bg-cream border border-bone cursor-pointer flex items-center justify-center gap-1 outline-none transition-colors duration-150 hover:bg-bone disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
                         {b.status === 'paused' ? <Play size={11} /> : <Pause size={11} />}
                       </button>
-                      <button onClick={() => { setDeleting(b); setDeleteError(''); }} className="px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-error bg-error-bg border border-[#FECACA] cursor-pointer flex items-center justify-center gap-1 outline-none transition-colors duration-150 hover:bg-error hover:text-white focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
+                      <button onClick={() => { setDeleting(b); setDeleteError(''); }} className="px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-error bg-error-bg border border-error-border cursor-pointer flex items-center justify-center gap-1 outline-none transition-colors duration-150 hover:bg-error hover:text-white focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
                         <Trash2 size={11} />
                       </button>
                     </div>

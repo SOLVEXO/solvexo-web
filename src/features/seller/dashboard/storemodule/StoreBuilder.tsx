@@ -110,7 +110,7 @@ function Toggle({ on, set }: { on: boolean; set: (v: boolean) => void }) {
       onClick={() => set(!on)}
       className={clsx(
         'relative inline-flex w-9 h-5 rounded-full transition-colors duration-200 border-0 cursor-pointer shrink-0',
-        on ? 'bg-brand-orange' : 'bg-[#D1CFC7]',
+        on ? 'bg-brand-orange' : 'bg-[#d1cfc7]',
       )}
     >
       <span className={clsx(
@@ -123,7 +123,7 @@ function Toggle({ on, set }: { on: boolean; set: (v: boolean) => void }) {
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-[9px] border-b border-[#F5F4EF] last:border-0">
+    <div className="flex items-center justify-between gap-3 py-[9px] border-b border-[#f5f4ef] last:border-0">
       <span className="text-[12px] text-slate shrink-0">{label}</span>
       <div className="shrink-0 flex items-center">{children}</div>
     </div>
@@ -140,7 +140,7 @@ function Field({ label, value, onChange, maxLen, textarea = false }: {
       <div className="flex items-center justify-between mb-[4px]">
         <label className="text-[11px] font-medium text-slate">{label}</label>
         {maxLen && (
-          <span className={clsx('text-[10px]', value.length > maxLen * 0.88 ? 'text-red-500' : 'text-[#B0AEA8]')}>
+          <span className={clsx('text-[10px]', value.length > maxLen * 0.88 ? 'text-red-500' : 'text-[#b0aea8]')}>
             {value.length}/{maxLen}
           </span>
         )}
@@ -315,9 +315,9 @@ function HeaderPanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => v
             />
             <button
               onClick={() => set({ navLinks: cfg.navLinks.filter((_, j) => j !== i) })}
-              className="w-7 h-7 rounded-md flex items-center justify-center border border-[#F5D0C8] bg-[#FFF0EE] cursor-pointer shrink-0"
+              className="w-7 h-7 rounded-md flex items-center justify-center border border-[#f5d0c8] bg-[#fff0ee] cursor-pointer shrink-0"
             >
-              <Trash2 size={11} className="text-[#C0392B]" />
+              <Trash2 size={11} className="text-[#c0392b]" />
             </button>
           </div>
         ))}
@@ -325,7 +325,7 @@ function HeaderPanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => v
       {cfg.navLinks.length < 6 && (
         <button
           onClick={() => set({ navLinks: [...cfg.navLinks, { id: Date.now().toString(), label: 'New Link' }] })}
-          className="w-full mt-2 py-[7px] flex items-center justify-center gap-[5px] border border-dashed border-[#D1CFC7] rounded-lg text-[11px] text-slate cursor-pointer bg-transparent hover:border-brand-orange hover:text-brand-orange transition-colors"
+          className="w-full mt-2 py-[7px] flex items-center justify-center gap-[5px] border border-dashed border-[#d1cfc7] rounded-lg text-[11px] text-slate cursor-pointer bg-transparent hover:border-brand-orange hover:text-brand-orange transition-colors"
         >
           <Plus size={11} /> Add Link
         </button>
@@ -396,9 +396,9 @@ function FooterPanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => v
             />
             <button
               onClick={() => set({ footerLinks: cfg.footerLinks.filter((_, j) => j !== i) })}
-              className="w-7 h-7 rounded-md flex items-center justify-center border border-[#F5D0C8] bg-[#FFF0EE] cursor-pointer shrink-0"
+              className="w-7 h-7 rounded-md flex items-center justify-center border border-[#f5d0c8] bg-[#fff0ee] cursor-pointer shrink-0"
             >
-              <Trash2 size={11} className="text-[#C0392B]" />
+              <Trash2 size={11} className="text-[#c0392b]" />
             </button>
           </div>
         ))}
@@ -406,7 +406,7 @@ function FooterPanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => v
       {cfg.footerLinks.length < 6 && (
         <button
           onClick={() => set({ footerLinks: [...cfg.footerLinks, { id: Date.now().toString(), label: 'New Link' }] })}
-          className="w-full mt-2 py-[7px] flex items-center justify-center gap-[5px] border border-dashed border-[#D1CFC7] rounded-lg text-[11px] text-slate cursor-pointer bg-transparent hover:border-brand-orange hover:text-brand-orange transition-colors"
+          className="w-full mt-2 py-[7px] flex items-center justify-center gap-[5px] border border-dashed border-[#d1cfc7] rounded-lg text-[11px] text-slate cursor-pointer bg-transparent hover:border-brand-orange hover:text-brand-orange transition-colors"
         >
           <Plus size={11} /> Add Link
         </button>
@@ -423,11 +423,11 @@ function SEOPanel({ cfg, set }: { cfg: Config; set: (p: Partial<Config>) => void
       <Field label="Meta Description" value={cfg.metaDesc}  onChange={v => set({ metaDesc: v })}  maxLen={160} textarea />
       <Field label="Keywords (comma-separated)" value={cfg.keywords} onChange={v => set({ keywords: v })} />
       {/* Google preview */}
-      <div className="mt-2 p-3 bg-[#F5F4EF] rounded-lg border border-bone">
+      <div className="mt-2 p-3 bg-[#f5f4ef] rounded-lg border border-bone">
         <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.06em] mb-2">Google Preview</p>
-        <p className="text-[13px] font-medium text-[#1A0DAB] leading-[1.3] mb-[2px] truncate">{cfg.metaTitle || 'Page Title'}</p>
-        <p className="text-[11px] text-[#006621]">{cfg.storeName.toLowerCase().replace(/\s+/g, '-')}.solvexo.store</p>
-        <p className="text-[11px] text-[#4C4C4C] leading-[1.4] mt-[2px] line-clamp-2">{cfg.metaDesc || 'Page description…'}</p>
+        <p className="text-[13px] font-medium text-[#1a0dab] leading-[1.3] mb-[2px] truncate">{cfg.metaTitle || 'Page Title'}</p>
+        <p className="text-[11px] text-[#006621]">solvexo.store/{cfg.storeName.toLowerCase().replace(/\s+/g, '-')}</p>
+        <p className="text-[11px] text-[#4c4c4c] leading-[1.4] mt-[2px] line-clamp-2">{cfg.metaDesc || 'Page description…'}</p>
       </div>
     </div>
   );
@@ -562,7 +562,7 @@ function StorePreview({ cfg, device }: { cfg: Config; device: Device }) {
                   </p>
                   {cfg.showRatings && (
                     <div className="flex items-center gap-[3px] mb-[3px]">
-                      <Star size={8} className="fill-[#F59E0B] text-[#F59E0B]" />
+                      <Star size={8} className="fill-[#f59e0b] text-[#f59e0b]" />
                       <span className="text-[9px] text-slate">{p.rating} ({p.reviews})</span>
                     </div>
                   )}
@@ -790,7 +790,7 @@ export function StoreBuilder() {
         onClick={undo}
         disabled={!history.length}
         title="Undo last change"
-        className="flex items-center gap-[5px] px-3 py-[7px] bg-white border border-bone rounded-lg text-[12px] font-medium text-slate cursor-pointer hover:border-[#C0BDB5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center gap-[5px] px-3 py-[7px] bg-white border border-bone rounded-lg text-[12px] font-medium text-slate cursor-pointer hover:border-dark-text disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         <RotateCcw size={12} /> Undo
       </button>
@@ -852,7 +852,7 @@ export function StoreBuilder() {
                   <span className="flex-1 text-[13px] font-medium" style={{ color: active ? '#B95A3A' : '#141413' }}>
                     {sec.label}
                   </span>
-                  <span className="text-[13px] text-[#C0BDB5]">›</span>
+                  <span className="text-[13px] text-dark-text">›</span>
                 </button>
               );
             })}
@@ -871,16 +871,16 @@ export function StoreBuilder() {
         <div className="flex-1 flex flex-col border border-bone rounded-xl bg-white overflow-hidden min-w-0">
 
           {/* Browser chrome bar */}
-          <div className="flex items-center gap-3 px-4 py-[10px] border-b border-bone bg-[#F5F4F0] shrink-0">
+          <div className="flex items-center gap-3 px-4 py-[10px] border-b border-bone bg-[#f5f4f0] shrink-0">
             <div className="flex items-center gap-[5px] shrink-0">
-              <div className="w-[11px] h-[11px] rounded-full bg-[#E05252]" />
-              <div className="w-[11px] h-[11px] rounded-full bg-[#E0BE52]" />
-              <div className="w-[11px] h-[11px] rounded-full bg-[#52C45A]" />
+              <div className="w-[11px] h-[11px] rounded-full bg-[#e05252]" />
+              <div className="w-[11px] h-[11px] rounded-full bg-[#e0be52]" />
+              <div className="w-[11px] h-[11px] rounded-full bg-[#52c45a]" />
             </div>
             <div className="flex-1 flex justify-center">
               <div className="bg-white border border-bone rounded-lg px-3 py-[5px] text-[11px] text-slate flex items-center gap-[5px] min-w-[200px] justify-center">
                 <Lock size={9} />
-                {cfg.storeName.toLowerCase().replace(/\s+/g, '-')}.solvexo.store
+                solvexo.store/{cfg.storeName.toLowerCase().replace(/\s+/g, '-')}
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">

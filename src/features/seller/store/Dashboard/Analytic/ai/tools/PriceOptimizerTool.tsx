@@ -37,9 +37,9 @@ export function PriceOptimizerTool({ storeId, onCreditsChanged }: PriceOptimizer
             <Input value={attributes} onChange={e => setAttributes(e.target.value)} placeholder="e.g. premium finish, limited edition" />
           </Field>
 
-          <div className="bg-brand-pale-orange rounded-lg p-3 text-xs text-[#B95A3A]">
+          <div className="bg-brand-pale-orange rounded-lg p-3 text-xs text-brand-deep-orange">
             <p className="font-semibold mb-[6px] flex items-center gap-1"><TrendingUp size={13} /> AI will analyze:</p>
-            <ul className="pl-4 text-[#8C6050] text-[11px] leading-loose list-disc">
+            <ul className="pl-4 text-[#8c6050] text-[11px] leading-loose list-disc">
               <li>Comparable active listings in your category</li>
               <li>Median, 25th and 75th percentile pricing</li>
               <li>Optional external market signal (if enabled)</li>

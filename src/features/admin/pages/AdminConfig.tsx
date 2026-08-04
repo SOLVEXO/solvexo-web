@@ -126,7 +126,7 @@ function FeatureFlagsCard({ config, onSaved }: { config: PlatformConfig; onSaved
       <div className="flex flex-col gap-0">
         {FLAG_META.map((flag, i) => (
           <div key={flag.key}>
-            {i > 0 && <div className="h-px bg-[#F0EEE6] my-[10px]" />}
+            {i > 0 && <div className="h-px bg-[#f0eee6] my-[10px]" />}
             <div className="flex items-center justify-between gap-3 -mx-2 px-2 py-[3px] rounded-md transition-colors duration-150 hover:bg-cream/60">
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-charcoal">{flag.label}</p>
@@ -192,7 +192,7 @@ function AiConfigCard({ config, onSaved }: { config: PlatformConfig; onSaved: (c
         </Select>
         <div className="bg-brand-pale-orange rounded-lg px-3 py-[10px] text-[12px] text-brand-deep-orange">
           <p className="font-semibold mb-[3px]">Cost estimate</p>
-          <p className="text-[#8C6050]">
+          <p className="text-[#8c6050]">
             At {creditLimit || 0} credits/seller × active sellers, actual usage tracks against each seller's AI wallet.
           </p>
         </div>

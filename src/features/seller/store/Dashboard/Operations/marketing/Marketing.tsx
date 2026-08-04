@@ -772,7 +772,7 @@ export function StoreMarketing() {
                             {b.status === 'paused' ? <Play size={11} /> : <Pause size={11} />} {b.status === 'paused' ? 'Resume' : 'Pause'}
                           </button>
                           <button onClick={() => removeBanner(b)} disabled={bannerBusyId === b._id}
-                            className="px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-error bg-error-bg border border-[#FECACA] cursor-pointer flex items-center justify-center gap-1 outline-none transition-colors duration-150 hover:bg-error hover:text-white disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
+                            className="px-[10px] py-[6px] rounded-[6px] text-[11px] font-medium text-error bg-error-bg border border-error-border cursor-pointer flex items-center justify-center gap-1 outline-none transition-colors duration-150 hover:bg-error hover:text-white disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
                             <Trash2 size={11} />
                           </button>
                         </div>
@@ -1002,7 +1002,7 @@ export function StoreMarketing() {
                 {coupons.map(coupon => (
                   <div key={coupon._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 transition-transform duration-200 hover:-translate-y-[1px]">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="px-3 py-[5px] rounded-lg border-2 border-dashed border-brand-orange font-mono text-[13px] font-bold text-[#B95A3A] bg-brand-pale-orange">
+                      <div className="px-3 py-[5px] rounded-lg border-2 border-dashed border-brand-orange font-mono text-[13px] font-bold text-brand-deep-orange bg-brand-pale-orange">
                         {coupon.code}
                       </div>
                       <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: coupon.isActive ? '#E3F4EA' : '#F0EEE6', color: coupon.isActive ? '#1E7A3C' : '#5A5852' }}>

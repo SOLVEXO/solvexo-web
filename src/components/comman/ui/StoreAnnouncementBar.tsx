@@ -17,7 +17,7 @@ const STYLE: Record<StoreAnnouncementType, { Icon: LucideIcon; bg: string; borde
   info:     { Icon: Info,         bg: 'bg-brand-pale-orange', border: 'border-brand-orange/20', text: 'text-brand-deep-orange' },
   sale:     { Icon: Percent,      bg: 'bg-brand-pale-orange', border: 'border-brand-orange/20', text: 'text-brand-deep-orange' },
   coupon:   { Icon: Tag,          bg: 'bg-brand-pale-orange', border: 'border-brand-orange/20', text: 'text-brand-deep-orange' },
-  warning:  { Icon: AlertTriangle, bg: 'bg-error-bg',         border: 'border-[#FECACA]',        text: 'text-error' },
+  warning:  { Icon: AlertTriangle, bg: 'bg-error-bg',         border: 'border-error-border',        text: 'text-error' },
   shipping: { Icon: Truck,        bg: 'bg-success-bg',        border: 'border-success/20',        text: 'text-success' },
   holiday:  { Icon: PartyPopper,  bg: 'bg-brand-pale-orange', border: 'border-brand-orange/20', text: 'text-brand-deep-orange' },
 };

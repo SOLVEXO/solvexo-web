@@ -82,17 +82,16 @@ function NavActions() {
   }
   return (
     <>
-      {/* Desktop: both buttons, currency last so it sits in the right corner */}
+      {/* Desktop: sign in + currency last so it sits in the right corner */}
       <div className="hidden md:flex items-center gap-[10px]">
-        <NavBtn variant="ghost"   onClick={() => navigate('/login')}>Sign In</NavBtn>
-        <NavBtn variant="primary" onClick={() => navigate('/onboard')}>Start Selling</NavBtn>
+        <NavBtn variant="primary" onClick={() => navigate('/login')}>Sign In</NavBtn>
         <CurrencySelector />
       </div>
       {/* Mobile: compact currency toggle + sign in */}
       <div className="md:hidden flex items-center gap-2">
         <button
           onClick={() => navigate('/login')}
-          className="text-[13px] font-medium text-charcoal border border-bone rounded-md px-3 py-[6px] bg-transparent cursor-pointer hover:bg-cream transition-colors"
+          className="text-[13px] font-medium text-white border-none rounded-md px-3 py-[6px] bg-brand-orange cursor-pointer hover:bg-brand-deep-orange transition-colors"
         >
           Sign In
         </button>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useId } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -11,7 +11,6 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Pagination, FilterDropdown, BuyerNavbar, SearchBox, AppDownloadBanner, Footer, TrustServiceStrip, StoreFeatureCard, FloatingAppWidget, EmptyState } from '@/components/comman/ui';
-import { useFocusTrap } from '@/components/comman/ui/useFocusTrap';
 import { ProductCard, ProductCardSkeleton } from '@/components/comman/marketplace/ProductCard';
 import { FlashSaleCard } from '@/components/comman/marketplace/FlashSaleCard';
 import { FilterAccordionSection, FilterRadioRow, FilterCheckboxRow, FilterStarRow, ActiveFilterChip, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
@@ -102,9 +101,6 @@ export function Marketplace() {
   const [viewMode,      setViewMode]      = useState<'grid' | 'list'>('grid');
   const [page,          setPage]          = useState(() => { const p = Number(searchParams.get('page')); return p > 0 ? p : 1; });
   const [mobileFilters, setMobileFilters] = useState(false);
-  const mobileFilterPanelRef = useRef<HTMLDivElement>(null);
-  const mobileFilterTitleId = useId();
-  useFocusTrap(mobileFilterPanelRef, () => setMobileFilters(false), mobileFilters);
   // Flash Sale rail auto-advances one card at a time — paused on hover/touch
   // so a shopper reading or reaching for a card never has it slide away
   // mid-interaction.
@@ -448,8 +444,11 @@ export function Marketplace() {
       <div className="px-4 sm:px-6 lg:px-10 pb-5">
         <WelcomeStrip
           categories={categories}
+          topPicks={topPicks}
           banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))}
           onShopCategory={handleCategoryChange}
+          onProductClick={handleCardClick}
+          onTrendingTerm={term => { setSearchInput(term); setSearch(term); }}
           onNavigate={navigate}
         />
       </div>
@@ -523,26 +522,39 @@ export function Marketplace() {
           </p>
         )}
 
-        {/* Mobile: filter + sort bar */}
-        <div className="lg:hidden flex items-center justify-between gap-3 mb-4">
-          <button
-            onClick={() => setMobileFilters(true)}
-            className={clsx(
-              'flex items-center gap-2 px-3 min-h-11 rounded-[10px] border text-[13px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
-              activeFilterCount > 0
-                ? 'bg-brand-pale-orange border-brand-orange text-brand-deep-orange'
-                : 'bg-white border-bone text-charcoal hover:bg-cream',
-            )}
-          >
-            <SlidersHorizontal size={14} strokeWidth={2} />
-            Filters
-            {activeFilterCount > 0 && (
-              <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
-          <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+        {/* Sort/view toolbar — Filters now lives on its own tab stuck to the
+           left edge of the viewport (see below), not in this row. */}
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <span className="text-[13px] font-medium text-slate">
+            {!loading && (error ? 'Error loading' : <>Showing <span className="text-carbon font-semibold">{countLabel}</span></>)}
+          </span>
+          <div className="flex items-center gap-3">
+            <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+            <div className="hidden sm:flex items-center gap-[2px] rounded-lg border border-bone bg-white p-[3px]">
+              <button
+                onClick={() => setViewMode('grid')}
+                aria-label="Grid view"
+                aria-pressed={viewMode === 'grid'}
+                className={clsx(
+                  'flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                  viewMode === 'grid' ? 'bg-brand-pale-orange text-brand-orange' : 'bg-transparent text-slate hover:text-charcoal',
+                )}
+              >
+                <LayoutGrid size={15} />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                aria-label="List view"
+                aria-pressed={viewMode === 'list'}
+                className={clsx(
+                  'flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                  viewMode === 'list' ? 'bg-brand-pale-orange text-brand-orange' : 'bg-transparent text-slate hover:text-charcoal',
+                )}
+              >
+                <LayoutList size={15} />
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Stores matching the current search — sits above the product grid so a
@@ -613,153 +625,94 @@ export function Marketplace() {
           )
         )}
 
-        <div className="flex gap-5 lg:gap-6 items-start">
+        {/* ── Products area — full width, no persistent sidebar (Filters
+           lives in the toolbar above, opening the same panel as a bottom
+           sheet at every breakpoint). ── */}
+        <div>
 
-          {/* ── Desktop sidebar ───────────────────────────────────────────────── */}
-          <aside className="hidden lg:block w-[228px] xl:w-[252px] shrink-0 sticky top-[76px] self-start">
-            <div className="bg-white rounded-[18px] border border-bone overflow-hidden flex flex-col max-h-[calc(100vh-100px)]">
-              {/* Sticky header — stays put while the accordion body below scrolls */}
-              <div className="shrink-0 px-[18px] py-[14px] border-b border-bone flex items-center justify-between gap-2">
-                <div className="flex items-center gap-[9px]">
-                  <SlidersHorizontal size={15} className="text-charcoal" strokeWidth={2} />
-                  <span className="text-[14.5px] font-bold text-carbon tracking-[-0.01em]">Filters</span>
-                </div>
-                {activeFilterCount > 0 && (
-                  <button
-                    onClick={clearFilters}
-                    className="shrink-0 text-[11.5px] font-semibold text-brand-orange hover:opacity-70 transition-opacity duration-200 cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-                  >
-                    Clear all
-                  </button>
-                )}
-              </div>
-              <div className="px-[18px] py-[6px] overflow-y-auto">
-                <FilterPanel filters={filters} onChange={toggleFilter} onPriceRangeChange={setPriceRange} categories={categories} selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
-              </div>
+          {/* Active filter chips — one removable chip per applied facet */}
+          {activeFilterChips.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {activeFilterChips.map(chip => (
+                <ActiveFilterChip key={chip.key} label={chip.label} onRemove={chip.onRemove} />
+              ))}
             </div>
-          </aside>
+          )}
 
-          {/* ── Products area ─────────────────────────────────────────────────── */}
-          <div className="flex-1 min-w-0">
+          {/* Mobile: product count (sm+ already shows this inline in the toolbar above) */}
+          <p className="sm:hidden text-[12px] text-slate mb-3">
+            {!loading && !error && countLabel}
+          </p>
 
-            {/* Active filter chips — one removable chip per applied facet */}
-            {activeFilterChips.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                {activeFilterChips.map(chip => (
-                  <ActiveFilterChip key={chip.key} label={chip.label} onRemove={chip.onRemove} />
-                ))}
-              </div>
-            )}
-
-            {/* Desktop: count + sort + view-toggle row */}
-            <div className="hidden lg:flex items-center justify-between mb-5">
-              <span className="text-[13px] font-medium text-slate">
-                {!loading && (error ? 'Error loading' : <>Showing <span className="text-carbon font-semibold">{countLabel}</span></>)}
-              </span>
-              <div className="flex items-center gap-3">
-                <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
-                <div className="flex items-center gap-[2px] rounded-lg border border-bone bg-white p-[3px]">
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    aria-label="Grid view"
-                    aria-pressed={viewMode === 'grid'}
-                    className={clsx(
-                      'flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
-                      viewMode === 'grid' ? 'bg-brand-pale-orange text-brand-orange' : 'bg-transparent text-slate hover:text-charcoal',
-                    )}
-                  >
-                    <LayoutGrid size={15} />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    aria-label="List view"
-                    aria-pressed={viewMode === 'list'}
-                    className={clsx(
-                      'flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
-                      viewMode === 'list' ? 'bg-brand-pale-orange text-brand-orange' : 'bg-transparent text-slate hover:text-charcoal',
-                    )}
-                  >
-                    <LayoutList size={15} />
-                  </button>
-                </div>
-              </div>
+          {error && !loading && (
+            <div className="p-6 flex flex-col items-center gap-3 text-center bg-error-bg rounded-[12px] border border-error-border text-error text-[13px]">
+              <span>{error}</span>
+              <Button variant="outline" size="sm" onClick={refetch}>Try again</Button>
             </div>
+          )}
 
-            {/* Mobile: product count */}
-            <p className="lg:hidden text-[12px] text-slate mb-3">
-              {!loading && !error && countLabel}
-            </p>
-
-            {error && !loading && (
-              <div className="p-6 flex flex-col items-center gap-3 text-center bg-error-bg rounded-[12px] border border-[#FECACA] text-error text-[13px]">
-                <span>{error}</span>
-                <Button variant="outline" size="sm" onClick={refetch}>Try again</Button>
-              </div>
+          {/* No sidebar to share width with anymore, so the grid gets a wider
+              ceiling: 2 @ 320-767 → 3 @ md → 4 @ lg → 5 @ xl, denser like a
+              full-width marketplace grid instead of stopping at 4 columns.
+              List view collapses to a single column of horizontal rows. */}
+          <div
+            id="marketplace-grid"
+            className={clsx(
+              'scroll-mt-[76px]',
+              viewMode === 'list'
+                ? 'flex flex-col gap-3'
+                : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5',
             )}
-
-            {/* Capped at 4 columns — cards get wider (not more numerous) past lg,
-                so they stay comfortably readable instead of shrinking indefinitely
-                on very wide screens: 2 @ 320-767 → 3 @ md → 4 @ lg and up.
-                List view collapses to a single column of horizontal rows. */}
-            <div
-              id="marketplace-grid"
-              className={clsx(
-                'scroll-mt-[76px]',
-                viewMode === 'list'
-                  ? 'flex flex-col gap-3'
-                  : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5',
-              )}
-            >
-              {loading
-                ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} layout={viewMode} />)
-                : filtered.map(p => {
-                    const defVariant = (p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0];
-                    const vId = defVariant?._id ?? '';
-                    return (
-                      <ProductCard
-                        key={p._id}
-                        layout={viewMode}
-                        product={p}
-                        onClick={handleCardClick}
-                        isAdding={adding === vId}
-                        onAddToCart={handleAddToCart}
-                        isWishlisted={isWishlisted(p._id, vId)}
-                        isWishlisting={wishlisting === vId}
-                        onToggleWishlist={handleToggleWishlist}
-                      />
-                    );
-                  })
-              }
-            </div>
-
-            {!loading && !error && filtered.length === 0 && (
-              <EmptyState
-                icon={<ShoppingBag size={30} className="text-brand-orange" />}
-                title={search || activeFilterCount > 0 ? 'No products match' : 'No products yet'}
-                description={
-                  search || activeFilterCount > 0
-                    ? 'No products match your search or filters.'
-                    : 'No products found in this category yet.'
-                }
-                action={
-                  search
-                    ? { label: 'Clear search', onClick: () => { setSearchInput(''); setSearch(''); } }
-                    : activeFilterCount > 0
-                    ? { label: 'Clear filters', onClick: clearFilters }
-                    : undefined
-                }
-              />
-            )}
-
-            {!loading && !error && totalPages > 1 && (
-              <div className="flex flex-col items-center gap-2 mt-8 pb-2">
-                <Pagination page={page} total={total} perPage={LIMIT} onChange={goToPage} />
-                <p className="text-[12px] text-slate text-center">
-                  Page {page} of {totalPages} · {total} products total
-                </p>
-              </div>
-            )}
+          >
+            {loading
+              ? Array.from({ length: 10 }).map((_, i) => <ProductCardSkeleton key={i} layout={viewMode} />)
+              : filtered.map(p => {
+                  const defVariant = (p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0];
+                  const vId = defVariant?._id ?? '';
+                  return (
+                    <ProductCard
+                      key={p._id}
+                      layout={viewMode}
+                      product={p}
+                      onClick={handleCardClick}
+                      isAdding={adding === vId}
+                      onAddToCart={handleAddToCart}
+                      isWishlisted={isWishlisted(p._id, vId)}
+                      isWishlisting={wishlisting === vId}
+                      onToggleWishlist={handleToggleWishlist}
+                    />
+                  );
+                })
+            }
           </div>
+
+          {!loading && !error && filtered.length === 0 && (
+            <EmptyState
+              icon={<ShoppingBag size={30} className="text-brand-orange" />}
+              title={search || activeFilterCount > 0 ? 'No products match' : 'No products yet'}
+              description={
+                search || activeFilterCount > 0
+                  ? 'No products match your search or filters.'
+                  : 'No products found in this category yet.'
+              }
+              action={
+                search
+                  ? { label: 'Clear search', onClick: () => { setSearchInput(''); setSearch(''); } }
+                  : activeFilterCount > 0
+                  ? { label: 'Clear filters', onClick: clearFilters }
+                  : undefined
+              }
+            />
+          )}
+
+          {!loading && !error && totalPages > 1 && (
+            <div className="flex flex-col items-center gap-2 mt-8 pb-2">
+              <Pagination page={page} total={total} perPage={LIMIT} onChange={goToPage} />
+              <p className="text-[12px] text-slate text-center">
+                Page {page} of {totalPages} · {total} products total
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -770,47 +723,59 @@ export function Marketplace() {
       <Footer />
       <FloatingAppWidget />
 
-      {/* ── Mobile filter bottom sheet ────────────────────────────────────────── */}
+      {/* ── Filters — a real sidebar, not an inline panel or a bottom sheet.
+         A small tab stays stuck to the left edge of the viewport at every
+         breakpoint; clicking it slides a full-height drawer in from the
+         left, over the page. Anchored low (not vertical-center, which sat
+         right on top of the page's own content) and kept small/slim so it
+         reads as a discreet edge tab, not a button floating over the page. ── */}
+      <button
+        onClick={() => setMobileFilters(o => !o)}
+        aria-expanded={mobileFilters}
+        aria-label="Toggle filters"
+        className={clsx(
+          'fixed left-0 bottom-24 z-[58] flex items-center gap-[6px] rounded-r-[10px] border border-l-0 py-2 pl-2 pr-[10px] text-[12px] font-semibold shadow-[0_2px_8px_rgba(20,15,10,0.1)] cursor-pointer transition-colors',
+          mobileFilters || activeFilterCount > 0
+            ? 'bg-brand-pale-orange border-brand-orange text-brand-deep-orange'
+            : 'bg-white border-bone text-charcoal hover:bg-cream',
+        )}
+      >
+        <SlidersHorizontal size={13} strokeWidth={2} />
+        Filters
+        {activeFilterCount > 0 && (
+          <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
+            {activeFilterCount}
+          </span>
+        )}
+      </button>
+
       <div
         className={clsx(
-          'fixed inset-0 bg-black/40 z-[59] lg:hidden transition-opacity duration-300',
+          'fixed inset-0 bg-black/40 z-[59] transition-opacity duration-300',
           mobileFilters ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
         )}
         onClick={() => setMobileFilters(false)}
       />
 
       <div
-        ref={mobileFilterPanelRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={mobileFilterTitleId}
         aria-hidden={!mobileFilters}
-        tabIndex={-1}
         className={clsx(
-          'fixed bottom-0 left-0 right-0 z-[60] bg-white lg:hidden outline-none',
-          'rounded-t-[20px]',
+          'fixed top-0 left-0 h-full w-[300px] max-w-[85vw] z-[60] bg-white shadow-2xl outline-none overflow-y-auto',
           'transition-transform duration-300 ease-out',
-          mobileFilters ? 'translate-y-0' : 'translate-y-full',
+          mobileFilters ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex justify-center pt-[10px] pb-[4px]">
-          <div className="w-9 h-[4px] bg-bone rounded-full" />
-        </div>
-
-        <div className="flex items-start justify-between px-5 py-3 border-b border-bone">
-          <div>
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal size={15} className="text-charcoal" strokeWidth={2} />
-              <span id={mobileFilterTitleId} className="text-[15px] font-bold text-carbon">Filters</span>
-              {activeFilterCount > 0 && (
-                <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
-                  {activeFilterCount}
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] text-slate mt-1 ml-[22px]">
-              {!loading && `${total} product${total === 1 ? '' : 's'}`}
-            </p>
+        <div className="sticky top-0 bg-white z-[1] flex items-center justify-between gap-2 px-5 py-4 border-b border-bone">
+          <div className="flex items-center gap-[9px]">
+            <SlidersHorizontal size={15} className="text-charcoal" strokeWidth={2} />
+            <span className="text-[14.5px] font-bold text-carbon tracking-[-0.01em]">Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
+                {activeFilterCount}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {activeFilterCount > 0 && (
@@ -823,27 +788,17 @@ export function Marketplace() {
             )}
             <button
               onClick={() => setMobileFilters(false)}
-              className="size-11 rounded-full bg-cream flex items-center justify-center cursor-pointer hover:bg-bone transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              aria-label="Close filters"
+              className="size-9 rounded-full bg-cream flex items-center justify-center cursor-pointer hover:bg-bone transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
             >
-              <X size={15} className="text-charcoal" />
+              <X size={14} className="text-charcoal" />
             </button>
           </div>
         </div>
-
-        <div className="px-5 py-4 overflow-y-auto max-h-[55vh]">
+        <div className="px-5 py-4">
           <FilterPanel filters={filters} onChange={toggleFilter} onPriceRangeChange={setPriceRange} categories={categories} selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
         </div>
-
-        <div className="px-5 pt-3 pb-6 border-t border-bone">
-          <button
-            onClick={() => setMobileFilters(false)}
-            className="w-full bg-brand-orange text-white py-[13px] rounded-[12px] text-[14px] font-semibold cursor-pointer hover:opacity-[0.9] transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-          >
-            {activeFilterCount > 0 ? `Apply ${activeFilterCount} Filter${activeFilterCount > 1 ? 's' : ''}` : 'Done'}
-          </button>
-        </div>
       </div>
-
     </div>
   );
 }

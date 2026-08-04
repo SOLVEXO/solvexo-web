@@ -104,7 +104,7 @@ export function NotificationBell() {
       >
         <Bell size={16} className="text-brand-orange" />
         {unreadCount > 0 && (
-          <span className="absolute -top-[3px] -right-[3px] min-w-[15px] h-[15px] bg-[#C0392B] text-white text-[8px] font-bold rounded-full flex items-center justify-center px-[3px] border border-white leading-none">
+          <span className="absolute -top-[3px] -right-[3px] min-w-[15px] h-[15px] bg-[#c0392b] text-white text-[8px] font-bold rounded-full flex items-center justify-center px-[3px] border border-white leading-none">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -134,7 +134,7 @@ export function NotificationBell() {
           </div>
 
           {/* List content */}
-          <div className="max-h-[300px] overflow-y-auto divide-y divide-[#F5F4EF]">
+          <div className="max-h-[300px] overflow-y-auto divide-y divide-[#f5f4ef]">
             {recentNotifications.length > 0 ? (
               recentNotifications.map((notif) => (
                 <div

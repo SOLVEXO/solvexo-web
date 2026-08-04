@@ -39,7 +39,7 @@ function AddressForm({ initial, onSave, onCancel, saving }: {
   const set = (k: keyof AddressPayload, v: string | boolean) => setForm(p => ({ ...p, [k]: v }));
 
   return (
-    <div className="border-[1.5px] border-brand-orange rounded-[12px] px-5 py-5 bg-[#FFFAF7]">
+    <div className="border-[1.5px] border-brand-orange rounded-[12px] px-5 py-5 bg-[#fffaf7]">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="sm:col-span-2">
           <label className={LABEL_CLS}>Label</label>
@@ -176,7 +176,7 @@ export function Addresses() {
       key: 'recipientName', header: 'Recipient',
       render: a => (
         <div className="flex items-center gap-2">
-          <div className="w-[26px] h-[26px] rounded-full bg-[#EAF3FB] text-[11px] font-bold flex items-center justify-center shrink-0 text-[#2156A8]">
+          <div className="w-[26px] h-[26px] rounded-full bg-[#eaf3fb] text-[11px] font-bold flex items-center justify-center shrink-0 text-[#2156a8]">
             {(a.recipientName ?? '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
           </div>
           <span className="text-charcoal">{a.recipientName}</span>
@@ -264,7 +264,7 @@ export function Addresses() {
 
       {actionError && (
         <div className="px-5 pt-4">
-          <p className="text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-lg px-3 py-2">{actionError}</p>
+          <p className="text-[12px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">{actionError}</p>
         </div>
       )}
 

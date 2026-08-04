@@ -139,7 +139,7 @@ export function SellerSettings() {
                         <div className="animate-pulse w-20 h-[11px] rounded bg-bone" />
                       </div>
                     </div>
-                    <div className="h-px bg-[#F0EEE6] mb-5" />
+                    <div className="h-px bg-[#f0eee6] mb-5" />
                     {[1,2,3,4].map(i => (
                       <div key={i} className="mb-4">
                         <div className="animate-pulse w-20 h-[11px] rounded bg-bone mb-[6px]" />
@@ -174,7 +174,7 @@ export function SellerSettings() {
                       </div>
                     </div>
 
-                    <div className="h-px bg-[#F0EEE6] mb-5" />
+                    <div className="h-px bg-[#f0eee6] mb-5" />
 
                     {/* Name */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px] mb-4">
@@ -284,7 +284,7 @@ export function SellerSettings() {
                     className="w-full px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-cream box-border" />
                 </div>
 
-                <div className="h-px bg-[#F0EEE6] mb-5" />
+                <div className="h-px bg-[#f0eee6] mb-5" />
 
                 <p className="text-[13px] font-semibold text-carbon mb-4">Change Password</p>
 
@@ -353,7 +353,7 @@ export function SellerSettings() {
                   {active === 'delete-account' && (
                     <button
                       onClick={() => { setShowDeleteConfirm(true); setDeleteError(''); }}
-                      className="mt-4 px-[18px] py-2 bg-[#FDECEA] border border-[#F5C6C2] rounded-lg text-[13px] font-semibold text-[#C0392B] cursor-pointer"
+                      className="mt-4 px-[18px] py-2 bg-[#fdecea] border border-[#f5c6c2] rounded-lg text-[13px] font-semibold text-[#c0392b] cursor-pointer"
                     >
                       Delete My Account
                     </button>
@@ -368,9 +368,9 @@ export function SellerSettings() {
             <div className="bg-white border border-bone rounded-[10px] p-0 sticky top-[70px]">
               {SETTINGS_NAV.map((group, gi) => (
                 <div key={group.group}>
-                  {gi > 0 && <div className="h-px bg-[#F0EEE6]" />}
+                  {gi > 0 && <div className="h-px bg-[#f0eee6]" />}
                   <div className="px-4 pt-[10px] pb-1">
-                    <p className={`text-[10px] font-semibold uppercase tracking-[0.08em] ${group.isDanger ? 'text-[#C0392B]' : 'text-slate'}`}>
+                    <p className={`text-[10px] font-semibold uppercase tracking-[0.08em] ${group.isDanger ? 'text-[#c0392b]' : 'text-slate'}`}>
                       {group.group}
                     </p>
                   </div>

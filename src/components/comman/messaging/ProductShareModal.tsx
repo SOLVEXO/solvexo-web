@@ -45,7 +45,7 @@ export function ProductShareModal({ storeId, onClose, onShare, sharing }: Produc
         tabIndex={-1}
         className="w-full max-w-[420px] max-h-[80vh] bg-white border border-bone rounded-[16px] overflow-hidden outline-none flex flex-col transition-all duration-200 ease-out starting:opacity-0 starting:scale-95"
       >
-        <div className="flex items-center justify-between px-4 py-[14px] border-b border-[#EEECE4] shrink-0">
+        <div className="flex items-center justify-between px-4 py-[14px] border-b border-[#eeece4] shrink-0">
           <p className="text-[15px] font-bold text-charcoal">Share a product</p>
           <button onClick={onClose} aria-label="Close dialog" className="w-7 h-7 flex items-center justify-center rounded-full bg-cream border-none cursor-pointer">
             <X size={13} className="text-charcoal" />
@@ -91,7 +91,7 @@ export function ProductShareModal({ storeId, onClose, onShare, sharing }: Produc
           )}
         </div>
 
-        <div className="px-4 py-3 border-t border-[#EEECE4] shrink-0">
+        <div className="px-4 py-3 border-t border-[#eeece4] shrink-0">
           <button
             onClick={() => selectedId && onShare(selectedId)}
             disabled={!selectedId || sharing}

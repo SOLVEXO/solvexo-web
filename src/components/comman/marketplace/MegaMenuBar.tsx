@@ -42,7 +42,7 @@ export function RailCard({ product, onClick, badge, rank, size = 'md', stockLabe
       {/* Hover accent — same sweep-in top line used on TopStoreCard/Feature cards,
          so this rail card finally reads as the same design system, not a
          separate/older component. */}
-      <div className="absolute top-0 left-0 right-0 h-[3px] z-[1] bg-gradient-to-r from-brand-orange to-[#F0A57A] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
+      <div className="absolute top-0 left-0 right-0 h-[3px] z-[1] bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
 
       <div className="relative">
         <ProductImage
@@ -113,16 +113,25 @@ export function MegaSectionLabel({ children }: { children: ReactNode }) {
   );
 }
 
-function CategoriesMegaContent({
-  categories, spotlight, onShopCategory, onProductClick, onTrendingTerm,
+export function CategoriesMegaContent({
+  categories, spotlight, onShopCategory, onProductClick, onTrendingTerm, initialActiveId, showSpotlight = true,
 }: {
   categories:     CategoryNode[];
   spotlight:      MarketplaceProduct[];
   onShopCategory: (id: string) => void;
   onProductClick: (id: string) => void;
   onTrendingTerm: (term: string) => void;
+  /** Which category starts selected — defaults to the first one. Lets a
+   *  caller open this already focused on a specific category (e.g. the one
+   *  the shopper just clicked to get here) instead of always resetting to
+   *  the top of the list. */
+  initialActiveId?: string;
+  /** Hides the "Popular Products" column — for callers that just want the
+   *  categories/subcategories browse experience (e.g. the "Categories for
+   *  you" modal) without a third products column. */
+  showSpotlight?: boolean;
 }) {
-  const [activeId, setActiveId] = useState<string | null>(categories[0]?._id ?? null);
+  const [activeId, setActiveId] = useState<string | null>(initialActiveId ?? categories[0]?._id ?? null);
   const active = categories.find(c => c._id === activeId) ?? categories[0] ?? null;
 
   if (categories.length === 0) return <p className="text-[13px] text-slate">No categories yet.</p>;
@@ -193,16 +202,18 @@ function CategoriesMegaContent({
       </div>
 
       {/* Column 3 — popular products (last column; Featured promo banner removed to give this a full row) */}
-      <div className="w-full lg:w-auto lg:shrink-0">
-        <MegaSectionLabel>Popular Products</MegaSectionLabel>
-        {spotlight.length === 0 ? (
-          <p className="text-[12px] text-slate">Nothing trending yet.</p>
-        ) : (
-          <div className="flex flex-wrap gap-3">
-            {spotlight.slice(0, 4).map(p => <RailCard key={p._id} product={p} onClick={onProductClick} />)}
-          </div>
-        )}
-      </div>
+      {showSpotlight && (
+        <div className="w-full lg:w-auto lg:shrink-0">
+          <MegaSectionLabel>Popular Products</MegaSectionLabel>
+          {spotlight.length === 0 ? (
+            <p className="text-[12px] text-slate">Nothing trending yet.</p>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              {spotlight.slice(0, 4).map(p => <RailCard key={p._id} product={p} onClick={onProductClick} />)}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -232,7 +243,7 @@ export function FlashSaleMegaContent({ flashDeals, countdown, onProductClick }: 
                   key={product._id}
                   product={product}
                   onClick={onProductClick}
-                  badge={<span className="px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-[#E11D48] text-white">-{pct}%</span>}
+                  badge={<span className="px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-[#e11d48] text-white">-{pct}%</span>}
                   stockLabel={stock != null && stock > 0 && stock <= 5 ? `Only ${stock} left` : undefined}
                 />
               );
@@ -240,7 +251,7 @@ export function FlashSaleMegaContent({ flashDeals, countdown, onProductClick }: 
           </div>
         )}
       </div>
-      <div className="w-full lg:w-[220px] shrink-0 rounded-2xl bg-gradient-to-br from-[#E11D48] to-brand-deep-orange p-5 flex flex-col items-center text-center text-white">
+      <div className="w-full lg:w-[220px] shrink-0 rounded-2xl bg-gradient-to-br from-[#e11d48] to-brand-deep-orange p-5 flex flex-col items-center text-center text-white">
         <Flame size={26} className="mb-2" />
         <p className="text-[15px] font-bold mb-1">Flash Sale</p>
         <p className="text-[11px] text-white/85 mb-4">Deep discounts, while stock lasts.</p>
@@ -363,7 +374,7 @@ function AboutMegaContent({ onNavigate }: { onNavigate: (path: string) => void }
               className="relative flex flex-col items-start text-left bg-white rounded-2xl border border-bone overflow-hidden cursor-pointer group p-4 transition-all duration-300 hover:-translate-y-[3px] hover:border-brand-orange/25 hover:shadow-[0_10px_28px_rgba(20,15,10,0.07)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
             >
               {/* Sweep-in top accent — same hover language as RailCard/StoreFeatureCard */}
-              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#F0A57A] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
+              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
 
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center mb-3 ring-1 ring-black/[0.04] transition-transform duration-200 group-hover:scale-[1.06]"

@@ -63,7 +63,7 @@ export function ChatListItem({
           <span className={clsx('flex items-center gap-[4px] text-[12.5px] truncate flex-1', hasUnread ? 'text-charcoal font-medium' : 'text-slate')}>
             {muted && <BellOff size={11} className="shrink-0 text-slate" />}
             {own && (seen
-              ? <CheckCheck size={13} className="shrink-0 text-[#4FA8E8]" />
+              ? <CheckCheck size={13} className="shrink-0 text-[#4fa8e8]" />
               : <Check size={13} className="shrink-0 text-slate" />
             )}
             {TypeIcon && <TypeIcon size={12} className="shrink-0 text-slate" />}

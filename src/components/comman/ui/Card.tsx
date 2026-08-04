@@ -39,7 +39,7 @@ export function Card({
       className={clsx(
         'bg-white rounded-xl border border-bone duration-200 ease-out',
         // shadow && 'shadow-card',
-        (hover || !!onClick) && 'hover:border-[#DEDBD0] hover:-translate-y-[2px] cursor-pointer',
+        (hover || !!onClick) && 'hover:border-[#dedbd0] hover:-translate-y-[2px] cursor-pointer',
         PADDING[padding],
         className,
       )}

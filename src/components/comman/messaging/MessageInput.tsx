@@ -119,7 +119,7 @@ export function MessageInput({
   // ── Voice recording active state ─────────────────────────────────────────
   if (recording) {
     return (
-      <div className="border-t border-[#EEECE4] bg-white px-4 py-[10px] shrink-0" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+      <div className="border-t border-[#eeece4] bg-white px-4 py-[10px] shrink-0" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
         <div className="flex items-center gap-3 bg-cream rounded-[22px] px-4 py-[11px]">
           <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
           <span className="text-[13px] font-medium text-charcoal flex-1 tabular-nums">Recording {formattedTime}</span>
@@ -147,7 +147,7 @@ export function MessageInput({
   }
 
   return (
-    <div className="border-t border-[#EEECE4] bg-white px-4 py-[10px] shrink-0" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+    <div className="border-t border-[#eeece4] bg-white px-4 py-[10px] shrink-0" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
       {replyTo && (
         <div className="flex items-center gap-2 mb-[8px] px-3 py-[7px] bg-cream rounded-[10px] border-l-[3px] border-brand-orange transition-all duration-200 ease-out starting:opacity-0 starting:-translate-y-1">
           <div className="flex-1 min-w-0">

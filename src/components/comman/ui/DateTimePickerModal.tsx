@@ -108,7 +108,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="w-7 h-7 rounded-full bg-bone flex items-center justify-center border-none cursor-pointer text-slate hover:bg-[#E0DED6] hover:text-charcoal transition-colors shrink-0"
+            className="w-7 h-7 rounded-full bg-bone flex items-center justify-center border-none cursor-pointer text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors shrink-0"
           >
             <X size={13} />
           </button>
@@ -124,7 +124,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
                 type="button"
                 onClick={prevMonth}
                 aria-label="Previous month"
-                className="w-7 h-7 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#E0DED6] hover:text-charcoal transition-colors"
+                className="w-7 h-7 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors"
               >
                 <ChevronLeft size={14} />
               </button>
@@ -133,7 +133,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
                 type="button"
                 onClick={nextMonth}
                 aria-label="Next month"
-                className="w-7 h-7 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#E0DED6] hover:text-charcoal transition-colors"
+                className="w-7 h-7 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors"
               >
                 <ChevronRight size={14} />
               </button>
@@ -192,7 +192,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
               >
                 {hh}
               </button>
-              <span className="text-[26px] font-bold text-[#C8C4BB] select-none leading-none">:</span>
+              <span className="text-[26px] font-bold text-[#c8c4bb] select-none leading-none">:</span>
               <button
                 type="button"
                 onClick={() => setMode('minute')}

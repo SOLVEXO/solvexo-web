@@ -155,7 +155,7 @@ export function AdminModeration() {
         <p className="text-[12px] text-slate">Review flagged listings, sellers, and reports.</p>
       </div>
 
-      {actionError && <div className="bg-error-bg border border-[#FECACA] rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
+      {actionError && <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
 
       {statsError ? (
         <AnalyticsErrorState message={statsError} onRetry={refetchStats} />

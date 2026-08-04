@@ -138,7 +138,7 @@ export function ActivityLogTab() {
               <button
                 key={cat.id}
                 onClick={() => { setCategory(cat.id); setPage(1); }}
-                className="w-full flex items-center px-4 py-[10px] border-b border-[#F0EEE6] cursor-pointer border-none text-left transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-orange/50"
+                className="w-full flex items-center px-4 py-[10px] border-b border-[#f0eee6] cursor-pointer border-none text-left transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-orange/50"
                 style={{ background: isActive ? '#FBECE4' : 'transparent', borderLeft: isActive ? '3px solid #D97757' : '3px solid transparent' }}
               >
                 <span className="text-[13px]" style={{ fontWeight: isActive ? 600 : 400, color: isActive ? '#B95A3A' : '#4A4945' }}>
@@ -212,17 +212,17 @@ export function ActivityLogTab() {
               return (
                 <div key={item._id} className="px-4 py-[14px] transition-colors duration-150 hover:bg-cream" style={{ borderBottom: i < logs.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
                   <div className="flex items-center gap-2 mb-1.5">
-                    <div className="w-[30px] h-[30px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0 bg-[#F0EEE6] text-[#5A5852]">
+                    <div className="w-[30px] h-[30px] rounded-full text-[9px] font-bold flex items-center justify-center shrink-0 bg-[#f0eee6] text-[#5a5852]">
                       {initialsOf(actorName)}
                     </div>
                     <span className="text-[13px] font-semibold text-carbon">{actorName}</span>
-                    {roleLabel && <span className="px-[7px] py-[2px] rounded-[20px] text-[10px] font-semibold bg-[#EAF0FB] text-[#2156A8]">{roleLabel}</span>}
+                    {roleLabel && <span className="px-[7px] py-[2px] rounded-[20px] text-[10px] font-semibold bg-[#eaf0fb] text-[#2156a8]">{roleLabel}</span>}
                     <span className="px-[7px] py-[2px] rounded-[20px] text-[10px] font-semibold" style={{ background: cs.bg, color: cs.color }}>{catLabel}</span>
                     <span className="ml-auto text-[11px] text-slate shrink-0">{timeAgo(item.createdAt)}</span>
                   </div>
                   <p className="text-[13px] font-semibold text-carbon pl-[38px] mb-0.5">{actionTitle(item.action)}</p>
                   {item.description && <p className="text-xs text-slate pl-[38px] mb-0.5">{item.description}</p>}
-                  {item.ip && <p className="text-[11px] text-[#C0BDB5] pl-[38px]">IP: {item.ip}</p>}
+                  {item.ip && <p className="text-[11px] text-dark-text pl-[38px]">IP: {item.ip}</p>}
                 </div>
               );
             })

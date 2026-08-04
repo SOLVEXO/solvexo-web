@@ -139,7 +139,7 @@ export function StoreReturnList() {
   });
 
   const columns: TableColumn<SellerReturnItem>[] = [
-    { key: 'orderNumber', header: 'Order', render: r => <span className="font-bold text-[#B95A3A] whitespace-nowrap">{r.orderNumber}</span> },
+    { key: 'orderNumber', header: 'Order', render: r => <span className="font-bold text-brand-deep-orange whitespace-nowrap">{r.orderNumber}</span> },
     { key: 'customer', header: 'Customer', render: r => <span className="text-graphite whitespace-nowrap">{r.customer.name}</span> },
     { key: 'productName', header: 'Product', render: r => <span className="text-graphite max-w-[180px] truncate block">{r.productName}</span> },
     { key: 'returnReason', header: 'Reason', render: r => <span className="text-slate max-w-[180px] truncate block">{r.returnReason}</span> },
@@ -203,7 +203,7 @@ export function StoreReturnList() {
 
         {/* Error */}
         {error && (
-          <div className="bg-error-bg border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
+          <div className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-center gap-3">
             <AlertCircle size={16} className="text-error shrink-0" />
             <span className="text-[13px] text-error flex-1">{error}</span>
             <button onClick={refetch} className="flex items-center gap-1 text-[12px] text-error font-semibold cursor-pointer">

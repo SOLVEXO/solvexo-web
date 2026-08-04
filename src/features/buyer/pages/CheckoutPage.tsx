@@ -83,7 +83,7 @@ function CardPaymentSlot({
 
   if (initiateError) {
     return (
-      <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2">
+      <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2">
         <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
         {initiateError}
       </div>
@@ -157,7 +157,7 @@ function ManualBankTransferSlot({
 
   if (detailsError || !bankDetails) {
     return (
-      <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2">
+      <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2">
         <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
         {detailsError || 'Bank transfer is not available right now.'}
       </div>
@@ -210,7 +210,7 @@ function ManualBankTransferSlot({
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2">
+        <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2">
           <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
           {error}
         </div>
@@ -640,8 +640,8 @@ export function CheckoutPage() {
       <div className="min-h-screen bg-cream">
         <BuyerNavbar variant="minimal" backTo={{ label: 'Back to Cart', path: '/cart' }} />
         <div className="max-w-[560px] mx-auto px-4 py-14 text-center">
-          <div className="w-14 h-14 rounded-full bg-[#FFF4DC] flex items-center justify-center mx-auto mb-5">
-            <Clock size={26} className="text-[#B36200]" />
+          <div className="w-14 h-14 rounded-full bg-[#fff4dc] flex items-center justify-center mx-auto mb-5">
+            <Clock size={26} className="text-[#b36200]" />
           </div>
           <h1 className="text-[20px] font-bold text-carbon mb-2">We're verifying your payment</h1>
           <p className="text-[13px] text-slate mb-6">
@@ -687,7 +687,7 @@ export function CheckoutPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-[2px]">
                     <h1 className="text-[20px] font-bold text-carbon leading-tight">Checkout</h1>
-                    <span className="flex items-center gap-1 px-2 py-[3px] rounded-full text-[10px] font-semibold bg-[#EEF0FF] text-[#3851D1]">
+                    <span className="flex items-center gap-1 px-2 py-[3px] rounded-full text-[10px] font-semibold bg-[#eef0ff] text-[#3851d1]">
                       <Download size={9} /> Digital Delivery
                     </span>
                   </div>
@@ -695,7 +695,7 @@ export function CheckoutPage() {
                     {cartLoading ? 'Loading…' : `${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart`}
                   </p>
                 </div>
-                <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-[#EEF0FF] text-[#3851D1]">
+                <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-[#eef0ff] text-[#3851d1]">
                   Instant Delivery
                 </span>
               </div>
@@ -709,15 +709,15 @@ export function CheckoutPage() {
                     <SkeletonBox height={48} rounded="12px" />
                   </div>
                 ) : checkoutError ? (
-                  <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2">
+                  <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2">
                     <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
                     {checkoutError}
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-center gap-2 bg-[#EEF0FF] border border-[#C7CEFF] rounded-[8px] px-3 py-2 mb-5">
-                      <Download size={13} className="text-[#3851D1] shrink-0" />
-                      <p className="text-[12px] text-[#3851D1] font-medium">
+                    <div className="flex items-center gap-2 bg-[#eef0ff] border border-[#c7ceff] rounded-[8px] px-3 py-2 mb-5">
+                      <Download size={13} className="text-[#3851d1] shrink-0" />
+                      <p className="text-[12px] text-[#3851d1] font-medium">
                         Digital products are delivered instantly after payment — no shipping required.
                       </p>
                     </div>
@@ -728,7 +728,7 @@ export function CheckoutPage() {
                     </div>
 
                     {placeError && (
-                      <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2 mb-4">
+                      <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2 mb-4">
                         <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
                         {placeError}
                       </div>
@@ -788,7 +788,7 @@ export function CheckoutPage() {
                 </div>
                 <span className={clsx(
                   'text-[11px] font-semibold px-3 py-1 rounded-full',
-                  step === 4 ? 'bg-[#E3F4EA] text-[#1E7A3C]' : 'bg-brand-pale-orange text-brand-orange',
+                  step === 4 ? 'bg-[#e3f4ea] text-[#1e7a3c]' : 'bg-brand-pale-orange text-brand-orange',
                 )}>
                   Step {step} of 4
                 </span>
@@ -820,7 +820,7 @@ export function CheckoutPage() {
                     </div>
                     <span className={clsx(
                       'text-[10px] font-semibold whitespace-nowrap',
-                      step === n ? 'text-brand-orange' : step > n ? 'text-[#1E7A3C]' : 'text-slate',
+                      step === n ? 'text-brand-orange' : step > n ? 'text-[#1e7a3c]' : 'text-slate',
                     )}>{label}</span>
                   </div>
                 ))}
@@ -911,7 +911,7 @@ export function CheckoutPage() {
                               >
                                 <div className={clsx(
                                   'mt-[2px] w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors',
-                                  selectedAddr?._id === addr._id ? 'border-brand-orange' : 'border-[#C5C4BC]',
+                                  selectedAddr?._id === addr._id ? 'border-brand-orange' : 'border-[#c5c4bc]',
                                 )}>
                                   {selectedAddr?._id === addr._id && (
                                     <div className="w-2 h-2 rounded-full bg-brand-orange" />
@@ -1048,7 +1048,7 @@ export function CheckoutPage() {
                               >
                                 <div className={clsx(
                                   'mt-[1px] w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors',
-                                  selectedZoneId === zone._id ? 'border-brand-orange' : 'border-[#C5C4BC]',
+                                  selectedZoneId === zone._id ? 'border-brand-orange' : 'border-[#c5c4bc]',
                                 )}>
                                   {selectedZoneId === zone._id && (
                                     <div className="w-2 h-2 rounded-full bg-brand-orange" />
@@ -1072,7 +1072,7 @@ export function CheckoutPage() {
                       </div>
 
                       {checkoutError && (
-                        <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2">
+                        <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2">
                           <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
                           {checkoutError}
                         </div>
@@ -1126,7 +1126,7 @@ export function CheckoutPage() {
               {step === 3 && (
                 <div className="p-5">
                   {effectiveMethods.length === 0 && (
-                    <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-3 mb-4">
+                    <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-3 mb-4">
                       <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
                       No payment method is available for this order right now. Please try again shortly or contact support.
                     </div>
@@ -1208,7 +1208,7 @@ export function CheckoutPage() {
                   </div>
 
                   {placeError && (
-                    <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-[8px] px-3 py-2 mb-4">
+                    <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2 mb-4">
                       <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
                       {placeError}
                     </div>

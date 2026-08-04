@@ -61,7 +61,7 @@ export function AiSeoTab({ storeId }: AiSeoTabProps) {
         ) : (
           <div className="flex flex-col gap-2">
             {(history?.items ?? []).map(item => (
-              <div key={item._id} className="flex items-center justify-between py-2 border-b border-[#F0EEE6] last:border-b-0">
+              <div key={item._id} className="flex items-center justify-between py-2 border-b border-[#f0eee6] last:border-b-0">
                 <div className="min-w-0">
                   <p className="text-[13px] text-carbon truncate">{item.suggestion.metaTitle || '—'}</p>
                   <p className="text-[11px] text-slate mt-[2px]">{item.entityType} · {new Date(item.createdAt).toLocaleDateString()}</p>

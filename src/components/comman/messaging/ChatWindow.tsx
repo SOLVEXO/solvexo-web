@@ -164,7 +164,7 @@ export function ChatWindow({
       />
 
       {showSearch && conversationId && (
-        <div className="border-b border-[#EEECE4] bg-white px-4 py-[10px] transition-all duration-200 ease-out starting:opacity-0 starting:-translate-y-1">
+        <div className="border-b border-[#eeece4] bg-white px-4 py-[10px] transition-all duration-200 ease-out starting:opacity-0 starting:-translate-y-1">
           <div className="flex items-center gap-2 bg-cream rounded-full px-3.5 py-2">
             <Search size={14} className="text-slate shrink-0" />
             <input autoFocus value={query} onChange={e => handleSearchChange(e.target.value)}

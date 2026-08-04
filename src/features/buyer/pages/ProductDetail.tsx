@@ -76,7 +76,7 @@ function ImageGallery({ images, name }: { images: string[]; name: string }) {
         onMouseMove={onMouseMove}
       >
         {!src || errored[selected] ? (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#FBECE4] to-[#FFF5EE]">
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-brand-pale-orange to-[#fff5ee]">
             <ImageOff size={56} className="text-brand-orange opacity-50" />
             <span className="text-[12px] text-slate">{name}</span>
           </div>
@@ -253,7 +253,7 @@ function RelatedCard({ id, name, image, price: nativePrice, compareAtPrice: nati
               wishlist.active ? 'bg-white opacity-100' : 'bg-white/85 opacity-0 group-hover:opacity-100',
             )}
           >
-            <Heart size={12} className={wishlist.active ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate'} />
+            <Heart size={12} className={wishlist.active ? 'text-[#e11d48] fill-[#e11d48]' : 'text-slate'} />
           </button>
         )}
       </div>
@@ -491,7 +491,7 @@ export function ProductDetail() {
                       {product.activeCampaign && (
                         <span
                           title={`${product.activeCampaign.name} — ends ${new Date(product.activeCampaign.endDate).toLocaleDateString()}`}
-                          className="flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-orange to-[#F0A57A] px-2.5 py-[3px] text-[11px] font-bold text-white"
+                          className="flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-orange to-[#f0a57a] px-2.5 py-[3px] text-[11px] font-bold text-white"
                         >
                           <Zap size={10} className="fill-white shrink-0" />
                           {product.activeCampaign.discountType && product.activeCampaign.discountValue != null
@@ -539,9 +539,9 @@ export function ProductDetail() {
                   {/* Stock / delivery status */}
                   <div className={clsx(
                     'inline-flex w-fit items-center gap-[6px] rounded-full border px-3 py-[6px] mb-3 text-[12px] font-semibold',
-                    stock <= 0 ? 'border-[#FECDD3] bg-[#FFF0F5] text-error'
+                    stock <= 0 ? 'border-[#fecdd3] bg-[#fff0f5] text-error'
                       : stock <= 5 ? 'border-amber-200 bg-amber-50 text-amber-600'
-                      : 'border-[#CFEEDA] bg-success-bg text-success',
+                      : 'border-[#cfeeda] bg-success-bg text-success',
                   )}>
                     <CheckCircle size={13} />
                     {stock <= 0 ? 'Out of stock' : isDigital ? 'Available — instant delivery' : stock <= 5 ? `Only ${stock} left in stock` : 'In stock'}
@@ -593,11 +593,11 @@ export function ProductDetail() {
                             aria-label={wishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
                             className={clsx(
                               'w-10 flex-shrink-0 rounded-[10px] flex items-center justify-center transition-all duration-150 border-[1.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
-                              wishlisted ? 'border-[#FECDD3] bg-[#FFF0F5]' : 'border-bone bg-white',
+                              wishlisted ? 'border-[#fecdd3] bg-[#fff0f5]' : 'border-bone bg-white',
                               busy ? 'cursor-wait' : 'cursor-pointer',
                             )}
                           >
-                            <Heart size={16} className={clsx('transition-[color,fill] duration-150', wishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none')} />
+                            <Heart size={16} className={clsx('transition-[color,fill] duration-150', wishlisted ? 'text-[#e11d48] fill-[#e11d48]' : 'text-slate fill-none')} />
                           </button>
                         );
                       })()}

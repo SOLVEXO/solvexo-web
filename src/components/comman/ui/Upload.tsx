@@ -116,7 +116,7 @@ export function FileDropSelect({
   return (
     <div className={className}>
       {value ? (
-        <div className="flex items-center gap-3 px-4 py-3 bg-[#F0FDF4] border border-[#BBF7D0] rounded-lg">
+        <div className="flex items-center gap-3 px-4 py-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-lg">
           <img loading="lazy" decoding="async" src={URL.createObjectURL(value)} alt="" className="w-10 h-10 rounded-md object-cover shrink-0 border border-bone" />
           <div className="flex-1 min-w-0">
             <p className="text-[13px] font-medium text-charcoal truncate">{value.name}</p>
@@ -177,7 +177,7 @@ export function FileUpload({
   return (
     <div className={className}>
       {value ? (
-        <div className="flex items-center gap-3 px-4 py-3 bg-[#F0FDF4] border border-[#BBF7D0] rounded-lg">
+        <div className="flex items-center gap-3 px-4 py-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-lg">
           <FileIcon size={18} className="text-success shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-[13px] font-medium text-charcoal truncate">{value.fileName}</p>

@@ -49,7 +49,7 @@ export function CoverImage({
         backgroundOverride
       ) : src ? (
         <>
-          {!loaded && <div className="absolute inset-0 animate-pulse bg-[#EDEBE2]" />}
+          {!loaded && <div className="absolute inset-0 animate-pulse bg-[#edebe2]" />}
           <img
             src={cloudinaryUrl(src, 1920)}
             srcSet={cloudinarySrcSet(src)}
@@ -68,7 +68,7 @@ export function CoverImage({
         </>
       ) : (
         <div
-          className={clsx('absolute inset-0', fallbackClassName ?? 'bg-gradient-to-br from-brand-pale-orange to-[#FDE8DA]')}
+          className={clsx('absolute inset-0', fallbackClassName ?? 'bg-gradient-to-br from-brand-pale-orange to-[#fde8da]')}
           style={fallbackStyle}
         />
       )}

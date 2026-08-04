@@ -34,7 +34,7 @@ export function CategoriesTab({ storeId }: CategoriesTabProps) {
         </p>
       </div>
       {data.map((cat, i) => (
-        <div key={cat._id} className={`px-5 py-3 flex items-center justify-between ${i < data.length - 1 ? 'border-b border-[#F0EEE6]' : ''}`}>
+        <div key={cat._id} className={`px-5 py-3 flex items-center justify-between ${i < data.length - 1 ? 'border-b border-[#f0eee6]' : ''}`}>
           <div className="min-w-0">
             <p className="text-[13px] font-medium text-carbon truncate">{cat.name}</p>
             <p className="text-[11px] text-slate truncate mt-[2px]">{cat.seo?.metaTitle || 'No meta title set'}</p>

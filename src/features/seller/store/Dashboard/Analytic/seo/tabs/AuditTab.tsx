@@ -75,7 +75,7 @@ export function AuditTab({ storeId }: AuditTabProps) {
         ) : (
           <div className="flex flex-col gap-2">
             {(history?.items ?? []).map(item => (
-              <div key={item._id} className="flex items-center justify-between py-2 border-b border-[#F0EEE6] last:border-b-0">
+              <div key={item._id} className="flex items-center justify-between py-2 border-b border-[#f0eee6] last:border-b-0">
                 <span className="text-[12px] text-slate">{new Date(item.runAt).toLocaleString()}</span>
                 <span className="text-[13px] font-semibold text-carbon">{item.score}/100</span>
               </div>

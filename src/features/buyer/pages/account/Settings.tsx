@@ -188,8 +188,8 @@ export function Settings() {
           </Card>
 
           <Card padding="none" className="rounded-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-[#F5BCBC] bg-error-bg/40 flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-[10px] bg-white border border-[#F5BCBC] flex items-center justify-center shrink-0">
+            <div className="px-6 py-4 border-b border-[#f5bcbc] bg-error-bg/40 flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-[10px] bg-white border border-[#f5bcbc] flex items-center justify-center shrink-0">
                 <AlertTriangle size={16} className="text-error" />
               </div>
               <p className="text-[13px] font-bold text-error">Danger Zone</p>
@@ -270,7 +270,7 @@ export function Settings() {
                       </div>
                     </div>
 
-                    <div className="h-px bg-[#F0EDE5] my-5" />
+                    <div className="h-px bg-[#f0ede5] my-5" />
 
                     <SectionHeading icon={<Phone size={14} className="text-brand-orange" />} title="Contact & Delivery" />
                     <div className="mb-5">
@@ -282,7 +282,7 @@ export function Settings() {
                       <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address" className={INPUT_CLS} />
                     </div>
 
-                    <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-[#F0EDE5]">
+                    <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-[#f0ede5]">
                       <button
                         onClick={handleSaveProfile}
                         disabled={saving}
@@ -349,7 +349,7 @@ export function Settings() {
                 <PasswordField label="New Password" value={newPassword} onChange={setNewPassword} />
               </div>
 
-              <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-[#F0EDE5]">
+              <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-[#f0ede5]">
                 <button
                   onClick={handleChangePassword}
                   disabled={pwSaving}

@@ -78,7 +78,7 @@ function DownloadBtn({ orderId, productId }: { orderId: string; productId: strin
         className={clsx(
           'flex items-center gap-[5px] px-3 py-[5px] rounded-[7px] text-[11px] font-semibold border-none',
           busy ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
-          'bg-[#EEF0FF] text-[#3851D1]',
+          'bg-[#eef0ff] text-[#3851d1]',
         )}
       >
         {busy ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
@@ -199,21 +199,21 @@ function OrderItemRow({ item, orderId, currency }: { item: OrderLineItem; orderI
       <div className="flex items-center gap-3 min-w-0">
         <div className={clsx(
           'w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0',
-          isDigital ? 'bg-[#EEF0FF]' : 'bg-brand-pale-orange',
+          isDigital ? 'bg-[#eef0ff]' : 'bg-brand-pale-orange',
         )}>
-          {isDigital ? <Download size={13} className="text-[#3851D1]" /> : <Package size={13} className="text-brand-orange" />}
+          {isDigital ? <Download size={13} className="text-[#3851d1]" /> : <Package size={13} className="text-brand-orange" />}
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap mb-[2px]">
             <p className="text-[12px] font-semibold text-charcoal truncate">{item.name}</p>
             {isDigital && (
-              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#EEF0FF] text-[#3851D1]">Digital</span>
+              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#eef0ff] text-[#3851d1]">Digital</span>
             )}
             {item.status === 'cancelled' && (
-              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#FFF0F0] text-error">Cancelled</span>
+              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#fff0f0] text-error">Cancelled</span>
             )}
             {item.returnStatus && item.returnStatus !== 'none' && (
-              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#FFF4DC] text-[#B36200] capitalize">
+              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#fff4dc] text-[#b36200] capitalize">
                 Return {item.returnStatus.replace('_', ' ')}
               </span>
             )}
@@ -304,11 +304,11 @@ function OrderCard({ order, onChanged }: { order: OrderSummary; onChanged: () =>
             <span className="text-[13px] font-bold text-brand-deep-orange font-mono">{order.orderNumber}</span>
             <StatusBadge status={order.orderStatus} />
             {order.isPaid
-              ? <span className="px-2 py-[3px] rounded-full text-[9px] font-bold bg-[#E3F4EA] text-[#1A6B35] border border-[#A3D9B5]">Paid</span>
-              : <span className="px-2 py-[3px] rounded-full text-[9px] font-bold bg-[#FFF0F0] text-error border border-[#F5BCBC]">Unpaid</span>
+              ? <span className="px-2 py-[3px] rounded-full text-[9px] font-bold bg-[#e3f4ea] text-[#1a6b35] border border-[#a3d9b5]">Paid</span>
+              : <span className="px-2 py-[3px] rounded-full text-[9px] font-bold bg-[#fff0f0] text-error border border-[#f5bcbc]">Unpaid</span>
             }
             {hasDigital && (
-              <span className="px-2 py-[3px] rounded-full text-[9px] font-bold bg-[#EEF0FF] text-[#3851D1] border border-[#C7CEFF]">Digital</span>
+              <span className="px-2 py-[3px] rounded-full text-[9px] font-bold bg-[#eef0ff] text-[#3851d1] border border-[#c7ceff]">Digital</span>
             )}
           </div>
           <p className="text-[11px] text-slate">
@@ -409,7 +409,7 @@ function OrderCard({ order, onChanged }: { order: OrderSummary; onChanged: () =>
               {canCancel && (
                 <button
                   onClick={() => setModal('cancel')}
-                  className="flex items-center gap-[6px] px-3 py-[7px] rounded-[8px] text-[12px] font-semibold border border-[#F5BCBC] bg-[#FFF0F0] text-error cursor-pointer"
+                  className="flex items-center gap-[6px] px-3 py-[7px] rounded-[8px] text-[12px] font-semibold border border-[#f5bcbc] bg-[#fff0f0] text-error cursor-pointer"
                 >
                   <Ban size={12} /> Cancel Order
                 </button>

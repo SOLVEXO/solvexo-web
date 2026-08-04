@@ -95,7 +95,7 @@ function ConversationsPanel() {
   const [viewingId, setViewingId] = useState<string | null>(null);
 
   const columns: TableColumn<Conversation>[] = [
-    { key: '_id', header: 'Conversation', render: c => <span className="font-bold text-[#B95A3A] whitespace-nowrap">{c._id.slice(-8).toUpperCase()}</span> },
+    { key: '_id', header: 'Conversation', render: c => <span className="font-bold text-brand-deep-orange whitespace-nowrap">{c._id.slice(-8).toUpperCase()}</span> },
     { key: 'storeId', header: 'Store', render: c => <span className="text-graphite whitespace-nowrap">{c.storeId?.slice(-8) ?? '—'}</span> },
     { key: 'buyerId', header: 'Buyer', render: c => <span className="text-graphite whitespace-nowrap">{c.buyerId?.slice(-8) ?? '—'}</span> },
     { key: 'sellerId', header: 'Seller', render: c => <span className="text-graphite whitespace-nowrap">{c.sellerId?.slice(-8) ?? '—'}</span> },
@@ -112,7 +112,7 @@ function ConversationsPanel() {
     {
       key: 'actions', header: '',
       render: c => (
-        <button onClick={() => setViewingId(c._id)} className="px-[10px] py-1 rounded-[6px] text-[11px] font-medium text-white border-none cursor-pointer bg-[#1A72C2] flex items-center gap-1 outline-none transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
+        <button onClick={() => setViewingId(c._id)} className="px-[10px] py-1 rounded-[6px] text-[11px] font-medium text-white border-none cursor-pointer bg-info flex items-center gap-1 outline-none transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
           <MessageSquare size={11} /> View
         </button>
       ),
@@ -166,7 +166,7 @@ function ReportsPanel() {
   });
 
   const columns: TableColumn<Report>[] = [
-    { key: '_id', header: 'Report', render: r => <span className="font-bold text-[#B95A3A] whitespace-nowrap flex items-center gap-1"><Flag size={11} /> {r._id.slice(-8).toUpperCase()}</span> },
+    { key: '_id', header: 'Report', render: r => <span className="font-bold text-brand-deep-orange whitespace-nowrap flex items-center gap-1"><Flag size={11} /> {r._id.slice(-8).toUpperCase()}</span> },
     { key: 'targetType', header: 'Type', render: r => <span className="text-graphite capitalize whitespace-nowrap">{r.targetType}</span> },
     { key: 'targetId', header: 'Target', render: r => <span className="text-graphite whitespace-nowrap">{r.targetId.slice(-8)}</span> },
     { key: 'reporterId', header: 'Reporter', render: r => <span className="text-graphite whitespace-nowrap">{r.reporterId?.slice(-8) ?? '—'}</span> },

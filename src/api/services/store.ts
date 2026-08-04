@@ -52,7 +52,7 @@ export interface StoreData {
   aiCredits:    number;
   customDomain: string | null;
   whiteLabelEnabled: boolean;
-  status:       'pending' | 'active' | 'inactive' | 'suspended' | 'rejected';
+  status:       'pending' | 'under_review' | 'active' | 'inactive' | 'suspended' | 'rejected';
   /** Set by an admin when rejecting a pending lead — see AdminMarketplaceService.rejectLead. */
   rejectionReason: string | null;
   isDelete:     boolean;

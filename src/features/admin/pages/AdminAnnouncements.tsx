@@ -231,7 +231,7 @@ export function AdminAnnouncements() {
       <CreateAnnouncementCard onCreated={refetch} />
 
       {actionError && (
-        <div className="bg-error-bg border border-[#FECACA] rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>
+        <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>
       )}
 
       <div className="bg-white border border-bone rounded-[10px] overflow-hidden">

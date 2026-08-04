@@ -13,14 +13,14 @@ function WishlistImg({ images, name }: { images?: string[]; name: string }) {
   const src = images?.[0];
   if (!src || err) {
     return (
-      <div className="w-[84px] h-[84px] rounded-[12px] bg-brand-pale-orange shrink-0 flex items-center justify-center border border-[#EDEBE2]">
+      <div className="w-[84px] h-[84px] rounded-[12px] bg-brand-pale-orange shrink-0 flex items-center justify-center border border-[#edebe2]">
         <ImageOff size={20} className="text-brand-orange opacity-40" />
       </div>
     );
   }
   return (
     <img loading="lazy" decoding="async" src={src} alt={name} onError={() => setErr(true)}
-      className="w-[84px] h-[84px] rounded-[12px] object-cover shrink-0 border border-[#EDEBE2]" />
+      className="w-[84px] h-[84px] rounded-[12px] object-cover shrink-0 border border-[#edebe2]" />
   );
 }
 
@@ -59,7 +59,7 @@ export function Wishlist() {
         <div className="px-5 pt-5 pb-4 border-b border-bone">
           <PageHeader eyebrow="Account" title="Wishlist" />
         </div>
-        <div className="divide-y divide-[#F5F4EF]">
+        <div className="divide-y divide-[#f5f4ef]">
           {[1, 2, 3].map(i => (
             <div key={i} className="flex gap-4 items-center px-5 py-[18px]">
               <SkeletonBox width={84} height={84} rounded="12px" />
@@ -111,7 +111,7 @@ export function Wishlist() {
           }
         />
       </div>
-      <div className="divide-y divide-[#F5F4EF]">
+      <div className="divide-y divide-[#f5f4ef]">
         {wishlistItems.map(item => {
           const p = item.product;
           const variant = item.variants?.[0];
@@ -126,7 +126,7 @@ export function Wishlist() {
             <div
               key={p._id}
               className={clsx(
-                'group flex gap-4 items-center px-5 py-[18px] transition-all hover:bg-[#FAFAF8]',
+                'group flex gap-4 items-center px-5 py-[18px] transition-all hover:bg-[#fafaf8]',
                 isRemoving && 'opacity-40',
               )}
             >
@@ -154,7 +154,7 @@ export function Wishlist() {
                 {variant && variant.options?.length > 0 && (
                   <div className="flex items-center gap-[5px] flex-wrap">
                     {variant.options.map(o => (
-                      <span key={o.name} className="text-[11px] px-[8px] py-[2px] rounded-[6px] bg-[#F2F0EA] text-slate font-medium">{o.value}</span>
+                      <span key={o.name} className="text-[11px] px-[8px] py-[2px] rounded-[6px] bg-[#f2f0ea] text-slate font-medium">{o.value}</span>
                     ))}
                   </div>
                 )}
@@ -163,10 +163,10 @@ export function Wishlist() {
                   <div className="flex items-center gap-[8px]">
                     <span className="font-bold text-[16px] text-carbon">{displaySymbol}{convert(variant.price, variant.currency).toLocaleString()}</span>
                     {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
-                      <span className="text-[12px] line-through text-[#B0AEAA]">{displaySymbol}{convert(variant.compareAtPrice, variant.currency).toLocaleString()}</span>
+                      <span className="text-[12px] line-through text-[#b0aeaa]">{displaySymbol}{convert(variant.compareAtPrice, variant.currency).toLocaleString()}</span>
                     )}
                     {discount && (
-                      <span className="text-[10px] font-bold px-[7px] py-[2px] rounded-[5px] bg-[#DCFCE7] text-[#15803D]">Save {discount}%</span>
+                      <span className="text-[10px] font-bold px-[7px] py-[2px] rounded-[5px] bg-[#dcfce7] text-[#15803d]">Save {discount}%</span>
                     )}
                   </div>
                 )}
@@ -191,7 +191,7 @@ export function Wishlist() {
                   disabled={isRemoving}
                   className={clsx(
                     'flex items-center justify-center gap-[5px] px-3 py-[6px] rounded-[8px] text-[11px] font-medium border border-bone bg-white text-slate whitespace-nowrap transition-colors',
-                    isRemoving ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-[#FECDD3] hover:text-[#E11D48] hover:bg-[#FFF5F7]',
+                    isRemoving ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-[#fecdd3] hover:text-[#e11d48] hover:bg-[#fff5f7]',
                   )}
                 >
                   {isRemoving ? <Loader2 size={11} className="animate-spin" /> : <Heart size={11} />}

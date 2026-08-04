@@ -41,6 +41,25 @@ export function getRoleRedirect(role: AppRole): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// LAST-ROLE PREFERENCE — persisted role toggle default (localStorage, so it
+// survives across sessions on the same device). Not an identity check —
+// backend account lookup is still scoped per-role regardless — this only
+// saves a returning seller/buyer from having to re-select their role on
+// LoginPage every time (it used to always default to "Buyer", so a seller
+// forgetting to flip it got a misleading "Invalid email or password").
+// ─────────────────────────────────────────────────────────────────────────────
+const LAST_ROLE_KEY = 'solvexo_last_role';
+export const LastRolePreference = {
+  get(): AppRole {
+    const stored = localStorage.getItem(LAST_ROLE_KEY);
+    return stored === 'seller' || stored === 'admin' ? stored : 'user';
+  },
+  set(role: AppRole) {
+    try { localStorage.setItem(LAST_ROLE_KEY, role); } catch { /* storage unavailable */ }
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // AUTH CONTEXT  (sessionStorage — survives between pages, clears on tab close)
 // ─────────────────────────────────────────────────────────────────────────────
 export interface AuthCtx {

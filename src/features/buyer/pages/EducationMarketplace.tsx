@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { useProductsByCategory } from '@/hooks/marketplace/useProductsByCategory';
 import type { MarketplaceSortBy } from '@/api/services/marketplace';
 import { useEducationFacets } from '@/hooks/marketplace/useEducationFacets';
@@ -14,10 +16,11 @@ import { apiGetTopStores, type PublicStoreListItem } from '@/api/services/store'
 import { Button } from '@/components/comman/ui/Button';
 import { ProductCard, ProductCardSkeleton } from '@/components/comman/marketplace/ProductCard';
 import { FilterAccordionSection, FilterChipPill, FilterRadioRow, FilterCheckboxRow, FilterStarRow, ActiveFilterChip, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
-import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
+import { BannerCarousel, type BannerCarouselItem } from '@/components/comman/marketplace/BannerCarousel';
+import { FlashSaleCard } from '@/components/comman/marketplace/FlashSaleCard';
 import { MegaMenuBar, RailCard, MegaSectionLabel } from '@/components/comman/marketplace/MegaMenuBar';
-import { BuyerNavbar, AppDownloadBanner, Footer, FilterDropdown, Modal, DealsBanner, TrustServiceStrip, Pagination, EmptyState, FloatingAppWidget } from '@/components/comman/ui';
-import { ArrowRight, Sparkles, SlidersHorizontal, Loader2, RefreshCcw, GraduationCap, ShieldCheck, BadgeCheck } from 'lucide-react';
+import { BuyerNavbar, SearchBox, AppDownloadBanner, Footer, FilterDropdown, Modal, DealsBanner, TrustServiceStrip, Pagination, EmptyState, FloatingAppWidget } from '@/components/comman/ui';
+import { ArrowRight, Sparkles, SlidersHorizontal, Loader2, RefreshCcw, GraduationCap, ShieldCheck, ChevronRight, Store, X, Zap, LayoutGrid, LayoutList } from 'lucide-react';
 
 const SUBJECTS = ['Math', 'ELA', 'Science', 'Social Studies', 'Art', 'SEL'];
 const RATING_ITEMS: { label: string; stars: number }[] = [
@@ -65,7 +68,7 @@ function WorksheetTrialModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#B5B3AC] outline-none';
+  const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none';
 
   return (
     <Modal title="AI Worksheet Builder — Free Trial" onClose={onClose} width={560}>
@@ -204,7 +207,7 @@ function EducationFilterPanel({
 // shape it doesn't have. Passed to MegaMenuBar's categoriesContent override. ──
 function EducationCategoriesMegaContent({
   levels, otherLevels, activeLevel, onLevelChange, activeOtherSlug, onOtherSlugChange,
-  activeSubjects, onToggleSubject, topPicks, onProductClick,
+  activeSubjects, onToggleSubject, topPicks, onProductClick, showSpotlight = true,
 }: {
   levels: { level: string; count: number }[];
   otherLevels: { slug: string; displayName: string; count: number }[];
@@ -216,6 +219,10 @@ function EducationCategoriesMegaContent({
   onToggleSubject: (s: string) => void;
   topPicks: import('@/api/services/marketplace').MarketplaceProduct[];
   onProductClick: (id: string) => void;
+  /** Hides the "Popular Resources" column — for callers that just want the
+   *  grade-levels/subjects browse experience (e.g. the "Grade Levels for
+   *  you" modal) without a third products column. */
+  showSpotlight?: boolean;
 }) {
   return (
     <div className="flex gap-8">
@@ -258,16 +265,125 @@ function EducationCategoriesMegaContent({
         </div>
       </div>
 
-      <div className="shrink-0">
-        <MegaSectionLabel>Popular Resources</MegaSectionLabel>
-        {topPicks.length === 0 ? (
-          <p className="text-[12px] text-slate">Nothing trending yet.</p>
-        ) : (
-          <div className="flex gap-3">
-            {topPicks.slice(0, 4).map(p => <RailCard key={p._id} product={p} onClick={onProductClick} />)}
+      {showSpotlight && (
+        <div className="shrink-0">
+          <MegaSectionLabel>Popular Resources</MegaSectionLabel>
+          {topPicks.length === 0 ? (
+            <p className="text-[12px] text-slate">Nothing trending yet.</p>
+          ) : (
+            <div className="flex gap-3">
+              {topPicks.slice(0, 4).map(p => <RailCard key={p._id} product={p} onClick={onProductClick} />)}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── "Welcome to Solvexo" discovery strip — Education's mirror of Marketplace's
+// WelcomeStrip: "Grade Levels for you" (real facet data, no CategoryNode tree
+// to reuse here), the real Hero Banner, and the real DealsBanner side by
+// side in one row. Clicking a grade level opens the same grade-levels/
+// subjects mega-panel the navbar's own "All Category" dropdown already uses
+// (EducationCategoriesMegaContent, reused as-is), as a big modal instead of
+// a hover panel. ──
+function EducationWelcomeStrip({
+  levels, otherLevels, activeLevel, onLevelChange, activeOtherSlug, onOtherSlugChange,
+  activeSubjects, onToggleSubject, topPicks, banners, onProductClick, onNavigate,
+}: {
+  levels: { level: string; count: number }[];
+  otherLevels: { slug: string; displayName: string; count: number }[];
+  activeLevel: string;
+  onLevelChange: (level: string) => void;
+  activeOtherSlug: string;
+  onOtherSlugChange: (slug: string) => void;
+  activeSubjects: string[];
+  onToggleSubject: (s: string) => void;
+  topPicks: import('@/api/services/marketplace').MarketplaceProduct[];
+  banners: BannerCarouselItem[];
+  onProductClick: (id: string) => void;
+  onNavigate: (path: string) => void;
+}) {
+  const hasLevels = levels.length > 0;
+  const hasHero = banners.length > 0;
+  const [modalOpen, setModalOpen] = useState(false);
+  const sellEntry = useSellEntry();
+
+  if (!hasLevels && !hasHero) return null;
+
+  return (
+    <div>
+      {/* Welcome bar — real quick links to distinct destinations. */}
+      <div className="flex items-center justify-between gap-4 px-1 pb-3">
+        <p className="text-[14px] sm:text-[15px] font-bold text-carbon">Welcome to Solvexo</p>
+        <div className="hidden sm:flex items-center gap-5 text-[12px] font-medium text-charcoal">
+          <button onClick={() => onNavigate('/faq')} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+            <ShieldCheck size={14} className="text-brand-orange" /> Buyer Protection
+          </button>
+          <span className="w-px h-4 bg-bone" />
+          <button onClick={() => sellEntry.go()} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+            <Store size={14} className="text-brand-orange" /> Sell Your Resources
+          </button>
+          <span className="w-px h-4 bg-bone" />
+          <button onClick={() => onNavigate('/marketplace')} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+            <GraduationCap size={14} className="text-brand-orange" /> Marketplace
+          </button>
+        </div>
+      </div>
+
+      {/* One row: Grade Levels for you, the real Hero Banner, and the real
+         DealsBanner — side by side, all visible together, not stacked. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.4fr_1fr] lg:grid-rows-[220px] gap-4">
+        {hasLevels && (
+          <div className="bg-cream rounded-[14px] p-3 flex flex-col lg:h-full lg:overflow-y-auto">
+            <p className="text-[11.5px] font-bold text-carbon mb-2">Grade Levels for you</p>
+            <div className="flex flex-col gap-[2px]">
+              {levels.slice(0, 6).map(l => (
+                <button
+                  key={l.level}
+                  onClick={() => setModalOpen(true)}
+                  className="group flex items-center gap-2 rounded-lg px-1.5 py-[6px] bg-transparent border-none text-left cursor-pointer transition-colors duration-150 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                >
+                  <span className="w-[24px] h-[24px] rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
+                    <GraduationCap size={13} className="text-brand-orange" />
+                  </span>
+                  <span className="flex-1 min-w-0 text-[11.5px] font-medium text-charcoal truncate">{LEVEL_LABEL[l.level] ?? l.level}</span>
+                  <ChevronRight size={12} className="shrink-0 text-slate/50 group-hover:text-brand-orange transition-colors" />
+                </button>
+              ))}
+            </div>
           </div>
         )}
+
+        {/* Hero Banner — real education-hero banners, in the same fixed-size
+           card as DealsBanner beside it. */}
+        {hasHero && (
+          <div className="relative min-h-[200px] lg:h-full rounded-[14px] overflow-hidden">
+            <BannerCarousel entityType="banner" banners={banners} />
+          </div>
+        )}
+
+        {/* DealsBanner — the real campaign banner (scoped to educational
+           resources), right beside the hero, not stacked below it. */}
+        <DealsBanner compact storeType="educational_resources" className="min-h-[200px] lg:h-full" />
       </div>
+
+      {/* Grade-levels mega-modal — the exact same panel the navbar's "All
+         Category" dropdown shows, just as a big modal here. */}
+      {modalOpen && (
+        <Modal title="Grade Levels for you" onClose={() => setModalOpen(false)} width={720}>
+          <EducationCategoriesMegaContent
+            levels={levels} otherLevels={otherLevels}
+            activeLevel={activeLevel} onLevelChange={onLevelChange}
+            activeOtherSlug={activeOtherSlug} onOtherSlugChange={onOtherSlugChange}
+            activeSubjects={activeSubjects} onToggleSubject={onToggleSubject}
+            topPicks={topPicks}
+            onProductClick={id => { onProductClick(id); setModalOpen(false); }}
+            showSpotlight={false}
+          />
+        </Modal>
+      )}
     </div>
   );
 }
@@ -285,9 +401,14 @@ export function EducationMarketplace() {
   const [activeRatings,   setActiveRatings]   = useState<string[]>([]);
   const [searchQuery,     setSearchQuery]     = useState('');
   const [sortBy,          setSortBy]          = useState('newest');
+  const [viewMode,        setViewMode]        = useState<'grid' | 'list'>('grid');
   const [showAiTrial,     setShowAiTrial]     = useState(false);
   const [mobileFilters,   setMobileFilters]   = useState(false);
   const [page,            setPage]            = useState(1);
+  // Flash Sale rail auto-advances one card at a time — paused on hover/touch,
+  // same behavior as Marketplace's own rail.
+  const flashSaleTrackRef = useRef<HTMLDivElement>(null);
+  const [flashSalePaused, setFlashSalePaused] = useState(false);
 
   const { levels, otherLevels, loading: facetsLoading } = useEducationFacets();
   const { banners } = useBanners('educationHero');
@@ -350,6 +471,21 @@ export function EducationMarketplace() {
     .sort((a, b) => b.pct - a.pct)
     .slice(0, 10);
 
+  // Auto-scroll the Flash Sale rail one card at a time, looping back to the
+  // start at the end — pauses on hover/touch (see the handlers on the rail
+  // below) so it never fights a shopper's own scroll/tap. Same as Marketplace.
+  useEffect(() => {
+    const track = flashSaleTrackRef.current;
+    if (!track || flashSalePaused || flashDeals.length === 0) return;
+    const id = setInterval(() => {
+      const card = track.firstElementChild as HTMLElement | null;
+      const step = (card?.offsetWidth ?? 140) + 12; // card width + the rail's gap-3
+      const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+      track.scrollTo({ left: atEnd ? 0 : track.scrollLeft + step, behavior: 'smooth' });
+    }, 2200);
+    return () => clearInterval(id);
+  }, [flashSalePaused, flashDeals.length]);
+
   const topPicks = [...featuredPool]
     .sort((a, b) => (b.purchaseCount + b.averageRating * 10) - (a.purchaseCount + a.averageRating * 10))
     .slice(0, 10);
@@ -383,6 +519,11 @@ export function EducationMarketplace() {
     if (variantId) toggleWishlist(id, variantId);
   }, [toggleWishlist]);
 
+  // Hides the discovery rail (Flash Sale) while a shopper is actively
+  // narrowing results — same rule Marketplace uses, a discovery feed doesn't
+  // belong above a shopper's own filtered results.
+  const isBrowsing = !!searchQuery || !!activeLevel || activeSubjects.length > 0;
+
   const activeFilterCount = (activeLevel ? 1 : 0) + (activeOtherSlug ? 1 : 0) + activeSubjects.length
     + (isPriceRangeActive ? 1 : 0) + activeRatings.length;
   const clearFilters = () => {
@@ -410,62 +551,18 @@ export function EducationMarketplace() {
   ];
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="theme-education min-h-screen bg-cream">
 
       <BuyerNavbar
-        search={{ value: searchQuery, onChange: setSearchQuery, placeholder: 'Search resources...' }}
+        hideSearch
+        search={{ value: searchQuery, onChange: setSearchQuery, placeholder: 'Search resources...', popularStores: topStores }}
       />
 
-      <DealsBanner storeType="educational_resources" />
-
-      {/* ── Hero — same admin-managed Banner list shown on Marketplace (scoped to
-          the `educationHero` placement), with the same always-rendered
-          fallback Marketplace's hero has, instead of collapsing to zero
-          height when no `educationHero` banner is currently active. ── */}
-      <div className="relative overflow-hidden h-[300px] sm:h-[360px] lg:h-[420px] border-b border-[#F5D5C2]">
-
-        {banners.length > 0 ? (
-          <BannerCarousel entityType="banner" banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))} />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#FBECE4] via-[#FDF1E9] to-[#FFF5EE]">
-            <div className="absolute -top-16 -right-16 size-64 rounded-full bg-brand-orange/[0.08] blur-3xl pointer-events-none" />
-            <GraduationCap size={220} className="absolute -bottom-10 -right-10 text-brand-orange/[0.08] hidden sm:block" />
-          </div>
-        )}
-
-        <div className={`absolute inset-0 pointer-events-none ${banners.length > 0 ? 'bg-gradient-to-r from-black/65 via-black/30 to-transparent' : ''}`} />
-
-        <div className="relative z-[1] h-full flex items-center px-4 sm:px-6 lg:px-10">
-          <div className="min-w-0 max-w-[520px]">
-            <span className={`inline-block text-[10px] font-bold uppercase tracking-[0.12em] rounded-full px-3 py-1 mb-3 border ${
-              banners.length > 0 ? 'text-white bg-white/15 border-white/25 backdrop-blur-sm' : 'text-brand-deep-orange bg-white/60 border-brand-orange/20'
-            }`}>
-              Curriculum, courses & worksheets
-            </span>
-            <h1 className={`font-serif text-[26px] sm:text-[32px] lg:text-[40px] font-bold mb-3 leading-[1.12] tracking-tight ${banners.length > 0 ? 'text-white' : 'text-carbon'}`}>
-              Learning Resources<br className="hidden sm:block" /> Made by Educators
-            </h1>
-            <p className={`text-[12px] sm:text-[13px] mb-5 leading-[1.6] ${banners.length > 0 ? 'text-white/85' : 'text-slate'}`}>
-              Lesson plans, courses, and worksheets from verified educators — ready to teach or take.
-            </p>
-            <Button variant="primary" size="md" onClick={() => document.getElementById('education-grid')?.scrollIntoView({ behavior: 'smooth' })}>
-              Browse Resources <span className="ml-1">→</span>
-            </Button>
-
-            <div className={`flex flex-wrap items-center gap-x-4 gap-y-2 mt-5 text-[11px] font-medium ${banners.length > 0 ? 'text-white/80' : 'text-charcoal/70'}`}>
-              <span className="flex items-center gap-[5px]"><ShieldCheck size={13} className="text-brand-orange" /> Secure Checkout</span>
-              <span className="flex items-center gap-[5px]"><BadgeCheck size={13} className="text-brand-orange" /> Verified Educators</span>
-              <span className="flex items-center gap-[5px]"><RefreshCcw size={13} className="text-brand-orange" /> Easy Returns</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Trust & Service strip ────────────────────────────────────────────── */}
-      <TrustServiceStrip />
-
-      {/* ── Full-width mega-menu bar — Grade Levels / Flash Sale / Top Picks / Featured Sellers / About ── */}
+      {/* ── Education navigation — Grade Levels / Flash Sale / Top Picks /
+         Featured Stores / About, compact, above the hero — same merged row
+         as Marketplace's own nav, positioned the same way. ── */}
       <MegaMenuBar
+        compact
         categoriesLabel="All Category"
         categoriesContent={
           <EducationCategoriesMegaContent
@@ -485,163 +582,211 @@ export function EducationMarketplace() {
         onNavigate={navigate}
       />
 
-      {/* ── Page header ──────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-bone">
-        <div className="px-4 sm:px-6 lg:px-10 py-4 flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-[18px] sm:text-[20px] font-bold text-carbon">Education Marketplace</h1>
-            <p className="text-[12px] text-slate mt-0.5">Curriculum, lesson plans, worksheets and more from verified educators.</p>
-          </div>
-          <Button variant="primary" size="md" onClick={() => navigate('/onboard')} className="shrink-0">
-            Sell Your Resources
-          </Button>
-        </div>
+      {/* ── Big search bar — the real navbar SearchBox, rendered at its `lg`
+         scale as a standalone hero search, same as Marketplace. The
+         navbar's own compact copy is hidden on this page (hideSearch above). ── */}
+      <div className="bg-gradient-to-b from-brand-pale-orange/60 via-brand-pale-orange/25 to-transparent px-4 sm:px-6 lg:px-10 py-7 sm:py-9 flex justify-center">
+        <SearchBox
+          size="lg"
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search for resources, subjects, and stores..."
+          popularStores={topStores}
+          onSubmit={term => setSearchQuery(term ?? searchQuery)}
+        />
       </div>
+
+      {/* ── "Welcome to Solvexo" discovery strip — Grade Levels for you, plus
+         the real Hero Banner and DealsBanner side by side, same as
+         Marketplace's WelcomeStrip. ── */}
+      <div className="px-4 sm:px-6 lg:px-10 pb-5">
+        <EducationWelcomeStrip
+          levels={levels} otherLevels={otherLevels}
+          activeLevel={activeLevel} onLevelChange={l => { setActiveLevel(l); setActiveOtherSlug(''); }}
+          activeOtherSlug={activeOtherSlug} onOtherSlugChange={setActiveOtherSlug}
+          activeSubjects={activeSubjects} onToggleSubject={toggleSubject}
+          topPicks={topPicks}
+          banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))}
+          onProductClick={handleCardClick}
+          onNavigate={navigate}
+        />
+      </div>
+
+      {/* ── Trust & Service strip ────────────────────────────────────────────── */}
+      <TrustServiceStrip />
+
+      {/* ── Flash Sale — a compact, always-visible rail (real discount signal
+         from the same `flashDeals` pool the mega-menu dropdown already uses),
+         same as Marketplace's own rail. Hidden while actively browsing. ── */}
+      {!isBrowsing && flashDeals.length > 0 && (
+        <div className="px-4 sm:px-6 lg:px-10 pt-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-error-bg text-error">
+                <Zap size={14} className="fill-error" />
+              </span>
+              <h2 className="font-serif text-[16px] sm:text-[19px] font-bold text-carbon tracking-[-0.01em]">Flash Sale</h2>
+            </div>
+            <div className="flex items-center gap-[6px] text-[11px] sm:text-[12px] font-semibold text-slate">
+              <span className="hidden sm:inline">Ends in</span>
+              <span className="tabular-nums text-error font-bold">{countdown.h}:{countdown.m}:{countdown.s}</span>
+            </div>
+          </div>
+          <div
+            ref={flashSaleTrackRef}
+            onMouseEnter={() => setFlashSalePaused(true)}
+            onMouseLeave={() => setFlashSalePaused(false)}
+            onTouchStart={() => setFlashSalePaused(true)}
+            onTouchEnd={() => setTimeout(() => setFlashSalePaused(false), 1500)}
+            className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 snap-x snap-mandatory scroll-smooth"
+          >
+            {flashDeals.map(({ product: p }) => {
+              const dv = (p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0];
+              const vId = dv?._id ?? '';
+              return (
+                <div key={p._id} className="w-[118px] sm:w-[132px] lg:w-[144px] shrink-0 snap-start">
+                  <FlashSaleCard
+                    compact
+                    product={p}
+                    onClick={handleCardClick}
+                    isAdding={adding === vId}
+                    onAddToCart={handleAddToCart}
+                    isWishlisted={isWishlisted(p._id, vId)}
+                    isWishlisting={wishlisting === vId}
+                    onToggleWishlist={handleToggleWishlist}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
       <div className="px-4 sm:px-6 lg:px-10 py-4 sm:py-5 lg:py-6">
 
-        {/* Mobile: filter + sort bar */}
-        <div className="lg:hidden flex items-center justify-between gap-3 mb-4">
-          <button
-            onClick={() => setMobileFilters(true)}
-            className={`flex items-center gap-2 px-3 py-[9px] rounded-[10px] border text-[13px] font-medium transition-colors ${
-              activeFilterCount > 0 ? 'bg-brand-pale-orange border-brand-orange text-brand-deep-orange' : 'bg-white border-bone text-charcoal hover:bg-cream'
-            }`}
-          >
-            <SlidersHorizontal size={14} strokeWidth={2} />
-            Filters
-            {activeFilterCount > 0 && (
-              <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
-          <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
-        </div>
-
-        <div className="flex gap-5 lg:gap-6 items-start">
-
-          {/* ── Desktop sidebar ───────────────────────────────────────────────── */}
-          <aside className="hidden lg:block w-[220px] xl:w-[240px] shrink-0 sticky top-[68px] self-start">
-            <div className="theme-education bg-white rounded-[20px] border border-bone overflow-hidden flex flex-col max-h-[calc(100vh-96px)]">
-              {/* Sticky header — stays put while the accordion body below scrolls */}
-              <div className="shrink-0 px-4 py-3 border-b border-bone flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <SlidersHorizontal size={15} className="text-charcoal" strokeWidth={2} />
-                  <span className="text-[14px] font-bold text-carbon">Filters</span>
-                </div>
-                {activeFilterCount > 0 && (
-                  <button
-                    onClick={clearFilters}
-                    className="shrink-0 text-[11.5px] font-semibold text-brand-orange hover:opacity-70 transition-opacity duration-200 cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-                  >
-                    Clear all
-                  </button>
+        {/* Sort/view toolbar — Filters lives on its own tab stuck to the left
+           edge of the viewport (see below), same as Marketplace, not a
+           sidebar or an inline row here. */}
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <span className="text-[13px] font-medium text-slate">
+            {!loading && (error ? 'Error loading' : <>Showing <span className="text-carbon font-semibold">{filtered.length} of {total}</span> resources</>)}
+          </span>
+          <div className="flex items-center gap-3">
+            <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+            <div className="hidden sm:flex items-center gap-[2px] rounded-lg border border-bone bg-white p-[3px]">
+              <button
+                onClick={() => setViewMode('grid')}
+                aria-label="Grid view"
+                aria-pressed={viewMode === 'grid'}
+                className={clsx(
+                  'flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                  viewMode === 'grid' ? 'bg-brand-pale-orange text-brand-orange' : 'bg-transparent text-slate hover:text-charcoal',
                 )}
-              </div>
-              <div className="px-4 py-1 overflow-y-auto">
-                <EducationFilterPanel
-                  levels={levels} otherLevels={otherLevels} facetsLoading={facetsLoading}
-                  activeLevel={activeLevel} onLevelChange={l => { setActiveLevel(l); setActiveOtherSlug(''); }}
-                  activeOtherSlug={activeOtherSlug} onOtherSlugChange={setActiveOtherSlug}
-                  activeSubjects={activeSubjects} onToggleSubject={toggleSubject}
-                  priceRange={priceRange} onPriceRangeChange={setPriceRange}
-                  activeRatings={activeRatings} onToggleRating={toggleRating}
-                />
-              </div>
-            </div>
-          </aside>
-
-          {/* ── Products area ─────────────────────────────────────────────────── */}
-          <div className="flex-1 min-w-0">
-
-            {activeFilterChips.length > 0 && (
-              <div className="theme-education flex flex-wrap items-center gap-2 mb-4">
-                {activeFilterChips.map(chip => (
-                  <ActiveFilterChip key={chip.key} label={chip.label} onRemove={chip.onRemove} />
-                ))}
-              </div>
-            )}
-
-            <div className="hidden lg:flex items-center justify-between mb-4">
-              <span className="text-[13px] text-slate">
-                {!loading && (error ? 'Error loading' : `Showing ${filtered.length} of ${total} resources`)}
-              </span>
-              <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
-            </div>
-            <p className="lg:hidden text-[12px] text-slate mb-3">
-              {!loading && !error && `${filtered.length} of ${total} resources`}
-            </p>
-
-            {error && !loading && (
-              <div className="p-6 flex flex-col items-center gap-3 text-center bg-error-bg rounded-[12px] border border-[#FECACA] text-error text-[13px]">
-                <span>Couldn't load resources right now — please try again shortly.</span>
-              </div>
-            )}
-
-            <div id="education-grid" className="theme-education grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px] scroll-mt-[76px]">
-              {loading
-                ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
-                : filtered.map(p => {
-                    const defVariant = (p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0];
-                    const vId = defVariant?._id ?? '';
-                    return (
-                      <ProductCard
-                        key={p._id}
-                        product={p}
-                        onClick={handleCardClick}
-                        isAdding={adding === vId}
-                        onAddToCart={handleAddToCart}
-                        isWishlisted={isWishlisted(p._id, vId)}
-                        isWishlisting={wishlisting === vId}
-                        onToggleWishlist={handleToggleWishlist}
-                      />
-                    );
-                  })
-              }
-            </div>
-
-            {!loading && !error && filtered.length === 0 && (
-              <EmptyState
-                icon={<GraduationCap size={30} className="text-brand-orange" />}
-                title="No resources match"
-                description="No educational resources match your filters yet."
-                action={
-                  activeFilterCount > 0 || searchQuery
-                    ? { label: 'Clear filters', onClick: () => { clearFilters(); setSearchQuery(''); } }
-                    : undefined
-                }
-              />
-            )}
-
-            {!loading && !error && total > LIMIT && (
-              <div className="flex justify-center mt-8 pb-2">
-                <Pagination page={page} total={total} perPage={LIMIT} onChange={p => setPage(p)} />
-              </div>
-            )}
-
-            {/* ── AI Builder CTA ─────────────────────────────────────────────── */}
-            <div
-              className="mt-6 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5"
-              style={{ background: 'linear-gradient(120deg, #FBECE4, #FFF)' }}
-            >
-              <div className="w-12 h-12 rounded-xl bg-[rgba(217,119,87,0.12)] flex items-center justify-center shrink-0">
-                <Sparkles size={24} className="text-brand-orange" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[14px] sm:text-[16px] font-bold text-carbon mb-1">
-                  AI Worksheet Builder — Try Free
-                </p>
-                <p className="text-[12px] sm:text-[13px] text-slate leading-[1.6]">
-                  Generate custom worksheets, quizzes, and lesson activities in seconds with AI. Save hours of prep time.
-                </p>
-              </div>
-              <Button variant="primary" size="md" onClick={() => setShowAiTrial(true)} className="shrink-0 w-full sm:w-auto">
-                Try AI Builder <ArrowRight size={14} className="inline align-middle ml-1" />
-              </Button>
+              >
+                <LayoutGrid size={15} />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                aria-label="List view"
+                aria-pressed={viewMode === 'list'}
+                className={clsx(
+                  'flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                  viewMode === 'list' ? 'bg-brand-pale-orange text-brand-orange' : 'bg-transparent text-slate hover:text-charcoal',
+                )}
+              >
+                <LayoutList size={15} />
+              </button>
             </div>
           </div>
+        </div>
+
+        {activeFilterChips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {activeFilterChips.map(chip => (
+              <ActiveFilterChip key={chip.key} label={chip.label} onRemove={chip.onRemove} />
+            ))}
+          </div>
+        )}
+
+        {error && !loading && (
+          <div className="p-6 flex flex-col items-center gap-3 text-center bg-error-bg rounded-[12px] border border-error-border text-error text-[13px]">
+            <span>Couldn't load resources right now — please try again shortly.</span>
+          </div>
+        )}
+
+        {/* No sidebar to share width with anymore, so the grid gets a wider
+            ceiling: 2 @ 320-767 → 3 @ md → 4 @ lg → 5 @ xl, same as
+            Marketplace. List view collapses to a single column of rows. */}
+        <div
+          id="education-grid"
+          className={clsx(
+            'scroll-mt-[76px]',
+            viewMode === 'list'
+              ? 'flex flex-col gap-3'
+              : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-[10px] sm:gap-3 lg:gap-[14px]',
+          )}
+        >
+          {loading
+            ? Array.from({ length: 10 }).map((_, i) => <ProductCardSkeleton key={i} layout={viewMode} />)
+            : filtered.map(p => {
+                const defVariant = (p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0];
+                const vId = defVariant?._id ?? '';
+                return (
+                  <ProductCard
+                    key={p._id}
+                    layout={viewMode}
+                    product={p}
+                    onClick={handleCardClick}
+                    isAdding={adding === vId}
+                    onAddToCart={handleAddToCart}
+                    isWishlisted={isWishlisted(p._id, vId)}
+                    isWishlisting={wishlisting === vId}
+                    onToggleWishlist={handleToggleWishlist}
+                  />
+                );
+              })
+          }
+        </div>
+
+        {!loading && !error && filtered.length === 0 && (
+          <EmptyState
+            icon={<GraduationCap size={30} className="text-brand-orange" />}
+            title="No resources match"
+            description="No educational resources match your filters yet."
+            action={
+              activeFilterCount > 0 || searchQuery
+                ? { label: 'Clear filters', onClick: () => { clearFilters(); setSearchQuery(''); } }
+                : undefined
+            }
+          />
+        )}
+
+        {!loading && !error && total > LIMIT && (
+          <div className="flex justify-center mt-8 pb-2">
+            <Pagination page={page} total={total} perPage={LIMIT} onChange={p => setPage(p)} />
+          </div>
+        )}
+
+        {/* ── AI Builder CTA ─────────────────────────────────────────────── */}
+        <div
+          className="mt-6 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5"
+          style={{ background: 'linear-gradient(120deg, #FBECE4, #FFF)' }}
+        >
+          <div className="w-12 h-12 rounded-xl bg-[rgba(217,119,87,0.12)] flex items-center justify-center shrink-0">
+            <Sparkles size={24} className="text-brand-orange" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] sm:text-[16px] font-bold text-carbon mb-1">
+              AI Worksheet Builder — Try Free
+            </p>
+            <p className="text-[12px] sm:text-[13px] text-slate leading-[1.6]">
+              Generate custom worksheets, quizzes, and lesson activities in seconds with AI. Save hours of prep time.
+            </p>
+          </div>
+          <Button variant="primary" size="md" onClick={() => setShowAiTrial(true)} className="shrink-0 w-full sm:w-auto">
+            Try AI Builder <ArrowRight size={14} className="inline align-middle ml-1" />
+          </Button>
         </div>
       </div>
 
@@ -650,31 +795,82 @@ export function EducationMarketplace() {
         <AppDownloadBanner />
       </div>
 
-      {/* ── Mobile filter drawer ─────────────────────────────────────────────── */}
-      {mobileFilters && (
-        <Modal
-          title="Filters"
-          onClose={() => setMobileFilters(false)}
-          footer={
-            <>
-              {activeFilterCount > 0 && (
-                <button
-                  onClick={clearFilters}
-                  className="flex items-center gap-1 text-[12px] font-semibold text-brand-orange hover:opacity-70 transition-opacity duration-200 cursor-pointer p-2 -m-2 mr-auto"
-                >
-                  <RefreshCcw size={12} /> Reset All
-                </button>
-              )}
-              <Button variant="primary" size="sm" onClick={() => setMobileFilters(false)}>
-                Show Results
-              </Button>
-            </>
-          }
-        >
-          <div className="theme-education">
-          <p className="text-[11px] text-slate mb-3">
-            {!loading && `${total} product${total === 1 ? '' : 's'}`}
-          </p>
+      {showAiTrial && <WorksheetTrialModal onClose={() => setShowAiTrial(false)} />}
+
+      <Footer />
+      <FloatingAppWidget />
+
+      {/* ── Filters — a real sidebar, not an inline panel or a bottom sheet,
+         same as Marketplace. A small tab stays stuck to the left edge of the
+         viewport at every breakpoint; clicking it slides a full-height
+         drawer in from the left, over the page. ── */}
+      <button
+        onClick={() => setMobileFilters(o => !o)}
+        aria-expanded={mobileFilters}
+        aria-label="Toggle filters"
+        className={clsx(
+          'fixed left-0 bottom-24 z-[58] flex items-center gap-[6px] rounded-r-[10px] border border-l-0 py-2 pl-2 pr-[10px] text-[12px] font-semibold shadow-[0_2px_8px_rgba(20,15,10,0.1)] cursor-pointer transition-colors',
+          mobileFilters || activeFilterCount > 0
+            ? 'bg-brand-pale-orange border-brand-orange text-brand-deep-orange'
+            : 'bg-white border-bone text-charcoal hover:bg-cream',
+        )}
+      >
+        <SlidersHorizontal size={13} strokeWidth={2} />
+        Filters
+        {activeFilterCount > 0 && (
+          <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
+            {activeFilterCount}
+          </span>
+        )}
+      </button>
+
+      <div
+        className={clsx(
+          'fixed inset-0 bg-black/40 z-[59] transition-opacity duration-300',
+          mobileFilters ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+        )}
+        onClick={() => setMobileFilters(false)}
+      />
+
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!mobileFilters}
+        className={clsx(
+          'fixed top-0 left-0 h-full w-[300px] max-w-[85vw] z-[60] bg-white shadow-2xl outline-none overflow-y-auto',
+          'transition-transform duration-300 ease-out',
+          mobileFilters ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
+        <div className="sticky top-0 bg-white z-[1] flex items-center justify-between gap-2 px-5 py-4 border-b border-bone">
+          <div className="flex items-center gap-[9px]">
+            <SlidersHorizontal size={15} className="text-charcoal" strokeWidth={2} />
+            <span className="text-[14.5px] font-bold text-carbon tracking-[-0.01em]">Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
+                {activeFilterCount}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1 text-[12px] font-medium text-slate hover:text-brand-orange transition-colors duration-200 cursor-pointer p-2 -m-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              >
+                <RefreshCcw size={12} /> Reset All
+              </button>
+            )}
+            <button
+              onClick={() => setMobileFilters(false)}
+              aria-label="Close filters"
+              className="size-9 rounded-full bg-cream flex items-center justify-center cursor-pointer hover:bg-bone transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+            >
+              <X size={14} className="text-charcoal" />
+            </button>
+          </div>
+        </div>
+        <div className="px-5 py-4">
           <EducationFilterPanel
             levels={levels} otherLevels={otherLevels} facetsLoading={facetsLoading}
             activeLevel={activeLevel} onLevelChange={l => { setActiveLevel(l); setActiveOtherSlug(''); }}
@@ -683,14 +879,8 @@ export function EducationMarketplace() {
             priceRange={priceRange} onPriceRangeChange={setPriceRange}
             activeRatings={activeRatings} onToggleRating={toggleRating}
           />
-          </div>
-        </Modal>
-      )}
-
-      {showAiTrial && <WorksheetTrialModal onClose={() => setShowAiTrial(false)} />}
-
-      <Footer />
-      <FloatingAppWidget />
+        </div>
+      </div>
     </div>
   );
 }

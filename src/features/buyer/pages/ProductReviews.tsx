@@ -154,7 +154,7 @@ function RatingSummaryCard({
                 <span className={`text-[12px] w-9 text-left shrink-0 ${active ? 'font-bold text-brand-orange' : 'text-graphite'}`}>{star} ★</span>
                 <div className="flex-1 h-2 rounded-full bg-[#eee9df] overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-[width] duration-300 ${active ? 'bg-gradient-to-r from-brand-orange to-[#F59E0B]' : 'bg-[#D9D6CC] group-hover:bg-brand-orange/60'}`}
+                    className={`h-full rounded-full transition-[width] duration-300 ${active ? 'bg-gradient-to-r from-brand-orange to-[#f59e0b]' : 'bg-[#d9d6cc] group-hover:bg-brand-orange/60'}`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -246,7 +246,7 @@ function ReviewCard({ review: r, storeName, onToggleHelpful, onEdit, onDelete, o
             <button onClick={onEdit} title="Edit your review" className="w-7 h-7 flex items-center justify-center rounded-lg border border-bone bg-white text-slate cursor-pointer hover:bg-cream transition-colors">
               <Pencil size={12} />
             </button>
-            <button onClick={onDelete} title="Delete your review" className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#F5C6C2] bg-error-bg text-error cursor-pointer hover:bg-error hover:text-white transition-colors">
+            <button onClick={onDelete} title="Delete your review" className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#f5c6c2] bg-error-bg text-error cursor-pointer hover:bg-error hover:text-white transition-colors">
               <Trash2 size={12} />
             </button>
           </div>
@@ -541,7 +541,7 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
             Delete your review? This cannot be undone.
           </p>
           {deleteError && (
-            <div className="flex items-center gap-2 mt-3 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 mt-3 text-[12px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">
               <AlertTriangle size={13} className="shrink-0" />
               {deleteError}
             </div>

@@ -27,7 +27,7 @@ export function CustomLevelInput({ value, onChange }: { value: string; onChange:
         onFocus={() => setFocused(true)}
         onBlur={() => setTimeout(() => setFocused(false), 120)}
         placeholder="e.g. Hifz Course, O-Level, Matric, IB…"
-        className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#B5B3AC] outline-none"
+        className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none"
       />
       {focused && suggestions.length > 0 && (
         <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-bone rounded-lg overflow-hidden">

@@ -119,7 +119,7 @@ export function AdminContactMessages() {
 
       <div className="px-7 pt-5 pb-8 flex flex-col gap-4">
         {actionError && (
-          <div className="bg-error-bg border border-[#FECACA] rounded-lg px-4 py-2.5 text-[12.5px] text-error">
+          <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">
             {actionError}
           </div>
         )}

@@ -91,7 +91,7 @@ export function BannerCarousel({ banners, entityType, fit = 'cover' }: BannerCar
       onBlur={() => setPaused(false)}
     >
       {/* Skeleton — visible only until the currently-active slide has painted at least once */}
-      {!activeLoaded && <div className="absolute inset-0 animate-pulse bg-[#EDEBE2]" />}
+      {!activeLoaded && <div className="absolute inset-0 animate-pulse bg-[#edebe2]" />}
 
       {/* Bottom legibility scrim — keeps the dot indicators readable regardless
           of how light the active slide's image is, without touching the image

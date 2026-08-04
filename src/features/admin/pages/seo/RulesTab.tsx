@@ -45,7 +45,7 @@ export function RulesTab() {
   return (
     <Card padding="none" className="max-w-[720px]">
       {(data ?? []).map((rule, i) => (
-        <div key={rule.code} className={`px-5 py-4 flex items-center justify-between gap-4 ${i < (data?.length ?? 0) - 1 ? 'border-b border-[#F0EEE6]' : ''}`}>
+        <div key={rule.code} className={`px-5 py-4 flex items-center justify-between gap-4 ${i < (data?.length ?? 0) - 1 ? 'border-b border-[#f0eee6]' : ''}`}>
           <div className="min-w-0">
             <p className="text-[13px] font-medium text-carbon">{RULE_LABELS[rule.code] ?? rule.code}</p>
             <Badge color={SEVERITY_COLOR[rule.severity as keyof typeof SEVERITY_COLOR] ?? 'gray'} size="sm" className="mt-1">

@@ -113,7 +113,7 @@ function DomainWhiteLabelCard({ storeId, store, refetch }: { storeId: string; st
 
       <Field label="Custom Domain">
         {domainFeature && !domainFeature.allowed ? (
-          <div className="flex items-center gap-2 text-[12px] text-slate bg-[#F3F2EC] rounded-lg px-3 py-2.5">
+          <div className="flex items-center gap-2 text-[12px] text-slate bg-[#f3f2ec] rounded-lg px-3 py-2.5">
             <Lock size={13} />
             Requires the {domainFeature.requiredPlan ?? 'a higher'} plan.
           </div>
@@ -127,7 +127,7 @@ function DomainWhiteLabelCard({ storeId, store, refetch }: { storeId: string; st
 
       <Field label="White-Label Branding">
         {whiteLabelFeature && !whiteLabelFeature.allowed ? (
-          <div className="flex items-center gap-2 text-[12px] text-slate bg-[#F3F2EC] rounded-lg px-3 py-2.5">
+          <div className="flex items-center gap-2 text-[12px] text-slate bg-[#f3f2ec] rounded-lg px-3 py-2.5">
             <Lock size={13} />
             Requires the {whiteLabelFeature.requiredPlan ?? 'a higher'} plan.
           </div>
@@ -328,7 +328,7 @@ export default function StoreSettings() {
                 <input
                   value={store?.slug ?? ''}
                   readOnly
-                  className={`${inputCls} text-slate cursor-default bg-[#F3F2EC]`}
+                  className={`${inputCls} text-slate cursor-default bg-[#f3f2ec]`}
                 />
                 <p className="text-[10px] text-slate mt-1">URL slug cannot be changed.</p>
               </Field>
@@ -337,7 +337,7 @@ export default function StoreSettings() {
                 <input
                   value={store?.plan ?? ''}
                   readOnly
-                  className={`${inputCls} text-slate cursor-default bg-[#F3F2EC]`}
+                  className={`${inputCls} text-slate cursor-default bg-[#f3f2ec]`}
                 />
               </Field>
             </div>
@@ -400,7 +400,7 @@ export default function StoreSettings() {
                   { label: 'Seller',   value: store?.sellerType ?? '—' },
                   { label: 'AI Credits', value: String(store?.aiCredits ?? 0) },
                 ].map(r => (
-                  <div key={r.label} className="flex justify-between text-[12px] py-1.5 border-b border-[#F3F2EC]">
+                  <div key={r.label} className="flex justify-between text-[12px] py-1.5 border-b border-[#f3f2ec]">
                     <span className="text-slate">{r.label}</span>
                     <span className="font-semibold text-charcoal">{r.value}</span>
                   </div>

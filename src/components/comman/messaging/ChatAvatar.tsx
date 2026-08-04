@@ -30,13 +30,13 @@ export function ChatAvatar({ name, image, size = 40, online, verified, className
       )}
       {online && (
         <span
-          className="absolute rounded-full bg-[#31A24C] border-2 border-white"
+          className="absolute rounded-full bg-[#31a24c] border-2 border-white"
           style={{ width: size * 0.28, height: size * 0.28, right: -1, bottom: -1 }}
         />
       )}
       {verified && !online && (
         <BadgeCheck
-          className="absolute text-[#3B82F6] fill-white"
+          className="absolute text-[#3b82f6] fill-white"
           style={{ width: size * 0.34, height: size * 0.34, right: -2, bottom: -2 }}
           strokeWidth={2.5}
         />

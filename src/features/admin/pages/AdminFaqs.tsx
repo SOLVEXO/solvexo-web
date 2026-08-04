@@ -131,7 +131,7 @@ export function AdminFaqs() {
       key: 'actions', header: 'Actions',
       render: f => (
         <div className="flex items-center gap-2">
-          <button onClick={() => setEditing(f)} className="text-[12px] font-medium text-[#1A72C2] bg-transparent border-none cursor-pointer flex items-center gap-1 outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
+          <button onClick={() => setEditing(f)} className="text-[12px] font-medium text-info bg-transparent border-none cursor-pointer flex items-center gap-1 outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
             <Pencil size={11} /> Edit
           </button>
           <span className="text-bone text-[13px]">|</span>
@@ -155,7 +155,7 @@ export function AdminFaqs() {
 
       <div className="px-7 pt-5 pb-8 flex flex-col gap-4">
         {actionError && (
-          <div className="bg-error-bg border border-[#FECACA] rounded-lg px-4 py-2.5 text-[12.5px] text-error">
+          <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">
             {actionError}
           </div>
         )}

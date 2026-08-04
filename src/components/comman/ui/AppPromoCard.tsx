@@ -100,8 +100,8 @@ export function AuthAppPromo({ className }: { className?: string }) {
       <div className="relative flex items-center justify-center py-2 w-full">
         {/* Floating context cards */}
         <FloatingMiniCard className="left-0 top-2 hidden sm:flex">
-          <span className="w-6 h-6 rounded-full bg-[#2D8A4E]/20 flex items-center justify-center shrink-0">
-            <span className="w-2 h-2 rounded-full bg-[#4ADE80]" />
+          <span className="w-6 h-6 rounded-full bg-success/20 flex items-center justify-center shrink-0">
+            <span className="w-2 h-2 rounded-full bg-[#4ade80]" />
           </span>
           <span className="text-[10.5px] font-medium text-white/85 whitespace-nowrap">Order confirmed</span>
         </FloatingMiniCard>

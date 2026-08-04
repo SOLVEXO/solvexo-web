@@ -69,11 +69,11 @@ export function MiniWishlist() {
         aria-label={`Wishlist${wishlistCount > 0 ? ` (${wishlistCount} items)` : ''}`}
         aria-haspopup="true"
         aria-expanded={open}
-        className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer shrink-0 transition-transform hover:scale-105 outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 focus-visible:ring-offset-1"
+        className="relative w-9 h-9 rounded-full bg-[#fff0f5] border border-[#fecdd3] flex items-center justify-center cursor-pointer shrink-0 transition-transform hover:scale-105 outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 focus-visible:ring-offset-1"
       >
-        <Heart size={16} className={wishlistCount > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'} />
+        <Heart size={16} className={wishlistCount > 0 ? 'text-[#e11d48] fill-[#e11d48]' : 'text-[#e11d48] fill-none'} />
         {wishlistCount > 0 && (
-          <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 border-2 border-white">
+          <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#e11d48] text-white text-[10px] font-bold leading-[18px] text-center px-1 border-2 border-white">
             {wishlistCount > 99 ? '99+' : wishlistCount}
           </span>
         )}
@@ -97,9 +97,9 @@ export function MiniWishlist() {
           {wishlistItems.length === 0 ? (
             <div className="py-8 px-6 flex flex-col items-center text-center">
               <div className="relative w-20 h-20 mb-4 shrink-0">
-                <div className="absolute inset-0 rounded-full bg-[#FFF0F5]" />
+                <div className="absolute inset-0 rounded-full bg-[#fff0f5]" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Heart size={30} className="text-[#E11D48]" strokeWidth={1.5} />
+                  <Heart size={30} className="text-[#e11d48]" strokeWidth={1.5} />
                 </div>
               </div>
               <p className="text-[13.5px] font-semibold text-charcoal">Your wishlist is empty</p>
@@ -110,7 +110,7 @@ export function MiniWishlist() {
             </div>
           ) : (
             <>
-              <div className="max-h-[264px] overflow-y-auto divide-y divide-[#F5F4EF]">
+              <div className="max-h-[264px] overflow-y-auto divide-y divide-[#f5f4ef]">
                 {recent.map(item => {
                   const variant = item.variants?.[0];
                   return (

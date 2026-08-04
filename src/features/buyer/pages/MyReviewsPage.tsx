@@ -173,7 +173,7 @@ export function ReviewsTab() {
             Delete your review for <strong>{deleting.product?.name ?? 'this product'}</strong>? This cannot be undone.
           </p>
           {deleteError && (
-            <div className="flex items-center gap-2 mt-3 text-[12px] text-error bg-error-bg border border-[#FECACA] rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 mt-3 text-[12px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">
               <AlertTriangle size={13} className="shrink-0" />
               {deleteError}
             </div>

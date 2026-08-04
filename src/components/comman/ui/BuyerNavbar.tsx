@@ -402,7 +402,7 @@ export function SearchBox({
               : 'gap-[9px] px-[14px] py-[9px] rounded-xl',
             open
               ? 'border-brand-orange shadow-[0_2px_12px_rgba(217,119,87,0.12)] ring-[3px] ring-brand-orange/10'
-              : isLg ? 'border-brand-orange shadow-[0_6px_24px_rgba(217,119,87,0.16)]' : 'border-bone hover:border-[#DEDBD0]',
+              : isLg ? 'border-brand-orange shadow-[0_6px_24px_rgba(217,119,87,0.16)]' : 'border-bone hover:border-[#dedbd0]',
           )}
         >
           <Search size={isLg ? 19 : 15} className={clsx('shrink-0 transition-colors duration-200', open || isLg ? 'text-brand-orange' : 'text-slate')} />
@@ -732,19 +732,14 @@ function AccountActions() {
   return (
     <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
       <SignInPreview />
-      <div className="hidden md:inline-flex">
-        <Button variant="primary" size="sm" onClick={() => navigate('/onboard')}>
-          Start Selling
-        </Button>
-      </div>
       <button
         onClick={() => navigate('/login')}
-        className="md:hidden text-[13px] font-medium text-charcoal border border-bone rounded-md px-[10px] py-[6px] bg-transparent cursor-pointer hover:bg-cream transition-colors"
+        className="md:hidden text-[13px] font-medium text-white border-none rounded-md px-[10px] py-[6px] bg-brand-orange cursor-pointer hover:bg-brand-deep-orange transition-colors"
       >
         Sign In
       </button>
       {/* Currency sits at the very end — the rightmost element in the navbar
-         on every page, not tucked in beside Start Selling. */}
+         on every page. */}
       <CurrencySelector />
     </div>
   );

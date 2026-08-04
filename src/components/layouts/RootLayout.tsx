@@ -7,7 +7,7 @@ import { scrollRootRef } from '@/utils/scrollRoot';
 function PageSpinner() {
   return (
     <div className="flex items-center justify-center min-h-[55vh]">
-      <div className="w-5 h-5 rounded-full border-2 border-[#D97757] border-t-transparent animate-spin" />
+      <div className="w-5 h-5 rounded-full border-2 border-brand-orange border-t-transparent animate-spin" />
     </div>
   );
 }
@@ -20,7 +20,7 @@ function TopProgressBar() {
   if (navigation.state === 'idle') return null;
   return (
     <div className="fixed top-0 left-0 right-0 z-[9999] h-[3px] bg-transparent overflow-hidden">
-      <div className="h-full w-1/3 bg-[#D97757] animate-[top-progress_1s_ease-in-out_infinite]" />
+      <div className="h-full w-1/3 bg-brand-orange animate-[top-progress_1s_ease-in-out_infinite]" />
     </div>
   );
 }

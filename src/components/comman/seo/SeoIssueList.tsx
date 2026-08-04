@@ -57,7 +57,7 @@ export function SeoIssueList({ issues, loading, className }: SeoIssueListProps) 
       {sorted.map((issue, i) => {
         const { icon: Icon, color } = SEVERITY_STYLE[issue.severity] ?? SEVERITY_STYLE.info;
         return (
-          <div key={`${issue.code}-${issue.entityId ?? i}`} className="flex items-start gap-2 py-2 border-b border-[#F0EEE6] last:border-b-0">
+          <div key={`${issue.code}-${issue.entityId ?? i}`} className="flex items-start gap-2 py-2 border-b border-[#f0eee6] last:border-b-0">
             <Icon size={14} className={clsx('shrink-0 mt-[1px]', color)} />
             <div className="min-w-0">
               <p className="text-[13px] text-carbon leading-[1.5]">{issue.message}</p>

@@ -21,7 +21,7 @@ import type { MyStoreItem } from '@/api/services/store';
 function StoreCell({ store }: { store: MyStoreItem }) {
   return (
     <div className="flex items-center gap-[10px]">
-      <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0 overflow-hidden border border-[#EDEBE2]">
+      <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0 overflow-hidden border border-[#edebe2]">
         {store.logo
           ? <img loading="lazy" decoding="async" src={store.logo} alt={store.name} className="w-full h-full object-cover" />
           : <Store size={15} className="text-brand-orange" />}
@@ -131,7 +131,7 @@ export function SellerStoreList() {
 
         {/* Error */}
         {error && (
-          <div className="bg-error-bg border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center justify-between gap-3 mb-4">
+          <div className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
               <AlertCircle size={16} className="text-error shrink-0" />
               <span className="text-[13px] text-error">{error}</span>

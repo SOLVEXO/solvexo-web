@@ -18,10 +18,10 @@ import { EmptyState } from '@/components/comman/ui/EmptyState';
 // data fetched here, just quicker access to where that data already lives.
 interface QuickLink { Icon: LucideIcon; label: string; desc: string; path: string; gradient: string; iconColor: string }
 const QUICK_LINKS: QuickLink[] = [
-  { Icon: Shield,  label: 'Moderation Queue', desc: 'Review flagged listings & reports', path: '/admin/moderation',   gradient: 'from-[#FBE9E7] to-[#FBDFDC]', iconColor: '#B3261E' },
-  { Icon: Store,   label: 'Marketplace',      desc: 'Manage listings platform-wide',     path: '/admin/marketplace',  gradient: 'from-brand-pale-orange to-[#FBECE4]', iconColor: '#D97757' },
-  { Icon: Users,   label: 'Users & Sellers',  desc: 'Accounts, suspensions, roles',      path: '/admin/users',        gradient: 'from-[#EAF0FB] to-[#DCEBFA]', iconColor: '#2156A8' },
-  { Icon: Bell,    label: 'Announcements',    desc: 'Platform-wide banners & alerts',    path: '/admin/announcements', gradient: 'from-[#F3E8FF] to-[#EDE0FE]', iconColor: '#A855F7' },
+  { Icon: Shield,  label: 'Moderation Queue', desc: 'Review flagged listings & reports', path: '/admin/moderation',   gradient: 'from-[#fbe9e7] to-[#fbdfdc]', iconColor: '#B3261E' },
+  { Icon: Store,   label: 'Marketplace',      desc: 'Manage listings platform-wide',     path: '/admin/marketplace',  gradient: 'from-brand-pale-orange to-brand-pale-orange', iconColor: '#D97757' },
+  { Icon: Users,   label: 'Users & Sellers',  desc: 'Accounts, suspensions, roles',      path: '/admin/users',        gradient: 'from-[#eaf0fb] to-[#dcebfa]', iconColor: '#2156A8' },
+  { Icon: Bell,    label: 'Announcements',    desc: 'Platform-wide banners & alerts',    path: '/admin/announcements', gradient: 'from-[#f3e8ff] to-[#ede0fe]', iconColor: '#A855F7' },
 ];
 
 // A fixed-range glance dashboard — a few key numbers, no filter/export chrome.

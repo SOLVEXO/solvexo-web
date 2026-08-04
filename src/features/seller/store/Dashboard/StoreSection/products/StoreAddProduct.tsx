@@ -14,7 +14,7 @@ type ProductType   = 'physical' | 'digital' | 'educational';
 type ProductStatus = 'draft' | 'active' | 'scheduled';
 type LicenseType   = 'personal' | 'single_classroom' | 'school' | 'commercial';
 
-const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#B5B3AC] outline-none';
+const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none';
 const ta  = `${inp} resize-y min-h-[100px]`;
 
 function L({ children, req }: { children: ReactNode; req?: boolean }) {
@@ -62,7 +62,7 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
       <input value={input} onChange={e => onInput(e.target.value)}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); onAdd(); } }}
         placeholder={tags.length === 0 ? 'Type a tag and press Enter…' : ''}
-        className="border-none outline-none text-[12px] flex-[1_1_80px] min-w-[80px] bg-transparent text-charcoal placeholder:text-[#B5B3AC]"
+        className="border-none outline-none text-[12px] flex-[1_1_80px] min-w-[80px] bg-transparent text-charcoal placeholder:text-[#b5b3ac]"
       />
     </div>
   );
@@ -106,7 +106,7 @@ function VariantOptionsField({ options, onChange }: { options: VariantOption[]; 
         </div>
       )}
       {options.length < MAX_VARIANT_OPTIONS && (
-        <div className="flex flex-col gap-[7px] p-2.5 rounded-lg border border-dashed border-[#D9D6CC] bg-cream/50">
+        <div className="flex flex-col gap-[7px] p-2.5 rounded-lg border border-dashed border-[#d9d6cc] bg-cream/50">
           <div className="grid grid-cols-2 gap-[7px]">
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Attribute"
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
@@ -442,9 +442,9 @@ export default function StoreAddProduct() {
                   placeholder="0.00" className={inp} />
               </F>
               {discountPct !== null && (
-                <div className="flex items-center gap-1.5 px-3 py-2 bg-[#E3F4EA] border border-[#B7E2C7] rounded-[7px]">
-                  <span className="text-[12px] font-bold text-[#1E7A3C]">{discountPct}% OFF</span>
-                  <span className="text-[11px] text-[#2D8A4E]">shown to buyers</span>
+                <div className="flex items-center gap-1.5 px-3 py-2 bg-[#e3f4ea] border border-[#b7e2c7] rounded-[7px]">
+                  <span className="text-[12px] font-bold text-[#1e7a3c]">{discountPct}% OFF</span>
+                  <span className="text-[11px] text-success">shown to buyers</span>
                 </div>
               )}
             </div>
@@ -474,8 +474,8 @@ export default function StoreAddProduct() {
                 <L>Status</L>
                 <div className="flex flex-col gap-1.5">
                   {([
-                    { val: 'draft'     as const, label: 'Draft',     dotCls: 'bg-[#B5B3AC]',    selCls: 'bg-[#F5F4EF] border-[#B5B3AC]',    chkCls: 'bg-[#B5B3AC]'    },
-                    { val: 'active'    as const, label: 'Active',    dotCls: 'bg-[#22C55E]',    selCls: 'bg-[#EDFBF3] border-[#22C55E]',    chkCls: 'bg-[#22C55E]'    },
+                    { val: 'draft'     as const, label: 'Draft',     dotCls: 'bg-[#b5b3ac]',    selCls: 'bg-[#f5f4ef] border-[#b5b3ac]',    chkCls: 'bg-[#b5b3ac]'    },
+                    { val: 'active'    as const, label: 'Active',    dotCls: 'bg-[#22c55e]',    selCls: 'bg-[#edfbf3] border-[#22c55e]',    chkCls: 'bg-[#22c55e]'    },
                     { val: 'scheduled' as const, label: 'Scheduled', dotCls: 'bg-brand-orange',  selCls: 'bg-brand-pale-orange border-brand-orange', chkCls: 'bg-brand-orange' },
                   ]).map(({ val, label, dotCls, selCls, chkCls }) => {
                     const sel = cur.status === val;
@@ -485,10 +485,10 @@ export default function StoreAddProduct() {
                           if (pType === 'physical') sp('status', val); else sd('status', val);
                           if (val === 'scheduled') setShowScheduleModal(true);
                         }}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-[9px] border-[1.5px] cursor-pointer text-left transition-all duration-150 w-full ${sel ? selCls : 'bg-cream border-bone hover:border-[#C5C3BB]'}`}>
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-[9px] border-[1.5px] cursor-pointer text-left transition-all duration-150 w-full ${sel ? selCls : 'bg-cream border-bone hover:border-[#c5c3bb]'}`}>
                         <span className={`w-[7px] h-[7px] rounded-full shrink-0 ${dotCls}`} />
                         <span className={`flex-1 text-[12px] font-semibold ${sel ? 'text-charcoal' : 'text-slate'}`}>{label}</span>
-                        <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${sel ? `${chkCls} border-transparent` : 'border-[#D1D5DB] bg-white'}`}>
+                        <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${sel ? `${chkCls} border-transparent` : 'border-[#d1d5db] bg-white'}`}>
                           {sel && <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                         </span>
                       </button>

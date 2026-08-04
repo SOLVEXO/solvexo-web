@@ -11,11 +11,11 @@ export function useUpload<T extends UploadType>(type: T) {
   const [uploading, setUploading] = useState(false);
   const [error,     setError]     = useState('');
 
-  const upload = useCallback((file: File): Promise<Result<T>> => {
+  const upload = useCallback((file: File, purpose?: string): Promise<Result<T>> => {
     setUploading(true);
     setError('');
-    const fn = type === 'public' ? apiUploadPublicFile : apiUploadPrivateFile;
-    return fn(file)
+    const promise = type === 'public' ? apiUploadPublicFile(file) : apiUploadPrivateFile(file, purpose);
+    return promise
       .then(res => res.data as Result<T>)
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Upload failed');

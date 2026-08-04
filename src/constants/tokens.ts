@@ -77,6 +77,7 @@ export const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'blue' | 'gray' 
   fulfilled:        'green',
   published:        'green',
   pending:          'yellow',
+  under_review:     'blue',
   scheduled:        'yellow',
   processing:       'blue',
   draft:            'gray',

@@ -39,7 +39,7 @@ function DownloadBtn({ orderId, productId }: { orderId: string; productId: strin
         className={clsx(
           'flex items-center gap-[5px] px-3 min-h-9 rounded-[7px] text-[11px] font-semibold border-none transition-opacity',
           busy ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
-          'bg-[#EEF0FF] text-[#3851D1]',
+          'bg-[#eef0ff] text-[#3851d1]',
         )}
       >
         {busy ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
@@ -60,10 +60,10 @@ function OrderItemRow({ item, orderId, currency }: { item: OrderItem; orderId: s
       <div className="flex items-center gap-3 min-w-0">
         <div className={clsx(
           'w-9 h-9 rounded-[8px] flex items-center justify-center shrink-0',
-          isDigital ? 'bg-[#EEF0FF]' : 'bg-brand-pale-orange',
+          isDigital ? 'bg-[#eef0ff]' : 'bg-brand-pale-orange',
         )}>
           {isDigital
-            ? <Download size={14} className="text-[#3851D1]" />
+            ? <Download size={14} className="text-[#3851d1]" />
             : <Package  size={14} className="text-brand-orange" />
           }
         </div>
@@ -71,7 +71,7 @@ function OrderItemRow({ item, orderId, currency }: { item: OrderItem; orderId: s
           <div className="flex items-center gap-1.5 flex-wrap mb-[2px]">
             <p className="text-[13px] font-semibold text-charcoal leading-tight truncate">{item.name}</p>
             {isDigital && (
-              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#EEF0FF] text-[#3851D1] uppercase tracking-wide">
+              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#eef0ff] text-[#3851d1] uppercase tracking-wide">
                 Digital
               </span>
             )}
@@ -205,9 +205,9 @@ function OrderCard({ order }: { order: PlacedOrder }) {
         <div className="flex items-center gap-2 flex-wrap">
           <span className={clsx(
             'px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide',
-            order.orderStatus === 'completed' ? 'bg-[#E3F4EA] text-[#1A6B35]'
+            order.orderStatus === 'completed' ? 'bg-[#e3f4ea] text-[#1a6b35]'
             : order.orderStatus === 'cancelled' ? 'bg-error-bg text-error'
-            : 'bg-[#FFF4DC] text-[#B36200]',
+            : 'bg-[#fff4dc] text-[#b36200]',
           )}>
             {order.orderStatus}
           </span>
@@ -215,7 +215,7 @@ function OrderCard({ order }: { order: PlacedOrder }) {
             {order.paymentMethod.replace(/_/g, ' ')}
           </span>
           {order.isPaid && (
-            <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-[#E3F4EA] text-[#1A6B35]">
+            <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-[#e3f4ea] text-[#1a6b35]">
               Paid
             </span>
           )}
@@ -271,7 +271,7 @@ function SuccessHero({ orders }: { orders: PlacedOrder[] }) {
 
       {/* Icon */}
       <div className="relative mb-5">
-        <div className="w-[72px] h-[72px] rounded-full bg-[#EBF7EF] flex items-center justify-center">
+        <div className="w-[72px] h-[72px] rounded-full bg-success-bg flex items-center justify-center">
           <CheckCircle2 size={38} className="text-success" />
         </div>
         <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-brand-orange flex items-center justify-center">
@@ -311,9 +311,9 @@ function SuccessHero({ orders }: { orders: PlacedOrder[] }) {
           </span>
         </div>
         {hasDigital && (
-          <div className="flex items-center gap-1.5 px-4 py-[7px] bg-[#EEF0FF] rounded-[8px] border border-[#C7CEFF]">
-            <Download size={11} className="text-[#3851D1]" />
-            <span className="text-[11px] font-semibold text-[#3851D1]">Ready to download</span>
+          <div className="flex items-center gap-1.5 px-4 py-[7px] bg-[#eef0ff] rounded-[8px] border border-[#c7ceff]">
+            <Download size={11} className="text-[#3851d1]" />
+            <span className="text-[11px] font-semibold text-[#3851d1]">Ready to download</span>
           </div>
         )}
       </div>

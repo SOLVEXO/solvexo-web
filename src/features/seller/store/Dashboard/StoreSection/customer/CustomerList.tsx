@@ -85,7 +85,7 @@ export default function StoreCustomerList() {
       key: 'name', header: 'Customer',
       render: c => (
         <div className="flex items-center gap-2.5">
-          <div className="w-[30px] h-[30px] rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 bg-[#F0EEE6] text-[#5A5852]">{initialsOf(c.name)}</div>
+          <div className="w-[30px] h-[30px] rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 bg-[#f0eee6] text-[#5a5852]">{initialsOf(c.name)}</div>
           <div className="min-w-0">
             <p className="text-[13px] font-semibold text-charcoal leading-[1.3] truncate">{c.name}</p>
             <p className="text-[11px] text-slate truncate">{c.email}</p>
@@ -165,13 +165,13 @@ export default function StoreCustomerList() {
           {sel && (
             <div className="w-[300px] shrink-0">
               <div className="bg-white border border-bone rounded-[10px] px-[18px] py-5 sticky top-[70px]">
-                <div className="flex flex-col items-center text-center pb-4 border-b border-[#F0EEE6] mb-3.5">
-                  <div className="w-[52px] h-[52px] rounded-full text-base font-bold flex items-center justify-center mb-2.5 bg-[#F0EEE6] text-[#5A5852]">
+                <div className="flex flex-col items-center text-center pb-4 border-b border-[#f0eee6] mb-3.5">
+                  <div className="w-[52px] h-[52px] rounded-full text-base font-bold flex items-center justify-center mb-2.5 bg-[#f0eee6] text-[#5a5852]">
                     {initialsOf(sel.name)}
                   </div>
                   <p className="text-[15px] font-bold text-carbon mb-[3px]">{sel.name}</p>
                   <p className="text-xs text-slate">Customer since {fmtDate(sel.createdAt)}</p>
-                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#F0EEE6] w-full justify-center">
+                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#f0eee6] w-full justify-center">
                     <div className="text-center">
                       <p className="text-[15px] font-bold text-carbon">{sel.orderCount}</p>
                       <p className="text-[10px] text-slate uppercase tracking-[0.05em]">Orders</p>

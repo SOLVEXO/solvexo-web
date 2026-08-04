@@ -39,7 +39,7 @@ interface AuthSplitLayoutProps {
 // RootLayout's wrapper and puts a scrollbar on the whole page; being taken out
 // of flow via `fixed` makes that structurally impossible.
 export function AuthSplitLayout({
-  panelGradient = 'from-carbon via-[#241F1B] to-brand-deep-orange',
+  panelGradient = 'from-carbon via-[#241f1b] to-brand-deep-orange',
   brandingHeader,
   heading,
   subtext,

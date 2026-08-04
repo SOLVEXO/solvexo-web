@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Modal } from '@/components/comman/ui/Modal';
-import { EmptyState, SkeletonBox } from '@/components/comman/ui';
+import { EmptyState, SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
 import { Star, Trophy, Gift, Users, Settings, Award, Gem, Trash2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -77,7 +77,7 @@ export function StoreLoyalty() {
       <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
         {program && !program.isEnabled && (
-          <div className="bg-[#FFF4DC] border border-[#F0D9A0] rounded-[10px] px-4 py-3 text-xs text-[#8A6200]">
+          <div className="bg-[#fff4dc] border border-[#f0d9a0] rounded-[10px] px-4 py-3 text-xs text-[#8a6200]">
             Loyalty program is currently <strong>disabled</strong> — customers aren't earning points yet. Enable it from Program Settings.
           </div>
         )}
@@ -418,57 +418,38 @@ function MembersTab({ storeId, onAward }: { storeId: string; onAward: (m: Loyalt
     apiGetLoyaltyMembers(storeId).then(res => { setMembers(res.data.members ?? []); setTotal(res.data.pagination.total); }).finally(() => setLoading(false));
   }, [storeId]);
 
+  const columns: TableColumn<LoyaltyMember>[] = [
+    {
+      key: 'user', header: 'Customer',
+      render: m => (
+        <div>
+          <p className="font-semibold text-charcoal">{m.user?.name ?? 'Unknown'}</p>
+          <p className="text-[11px] text-slate">{m.user?.email}</p>
+        </div>
+      ),
+    },
+    { key: 'pointsBalance', header: 'Points Balance', render: m => <span className="font-semibold text-charcoal">{m.pointsBalance.toLocaleString()}</span> },
+    { key: 'lifetimePoints', header: 'Lifetime Points', render: m => <span className="text-slate">{m.lifetimePoints.toLocaleString()}</span> },
+    { key: 'currentTier', header: 'Tier', render: m => <span className="text-slate">{m.currentTier ?? '—'}</span> },
+    { key: 'lastActivityAt', header: 'Last Activity', render: m => <span className="text-slate">{new Date(m.lastActivityAt).toLocaleDateString()}</span> },
+    {
+      key: 'actions', header: '',
+      render: m => <button onClick={() => onAward(m)} className="text-xs font-medium text-brand-orange bg-transparent border-none cursor-pointer transition-opacity duration-150 hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 rounded-sm">Award Points</button>,
+    },
+  ];
+
   return (
     <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
       <div className="px-5 py-3.5 border-b border-bone">
         <p className="text-[13px] font-semibold text-carbon">{loading ? 'Loading members…' : `${total} Member${total === 1 ? '' : 's'}`}</p>
       </div>
-      {loading ? (
-        <div className="p-4 flex flex-col gap-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4">
-              <SkeletonBox width="25%" height={13} />
-              <SkeletonBox width="12%" height={13} className="ml-auto" />
-              <SkeletonBox width="12%" height={13} />
-              <SkeletonBox width="10%" height={13} />
-              <SkeletonBox width="15%" height={13} />
-            </div>
-          ))}
-        </div>
-      ) : members.length === 0 ? (
-        <EmptyState
-          icon={<Users size={28} className="text-brand-orange opacity-55" />}
-          title="No loyalty members yet"
-          description="Members will appear here once customers start earning points."
-        />
-      ) : (
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              {['Customer', 'Points Balance', 'Lifetime Points', 'Tier', 'Last Activity', ''].map(h => (
-                <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-cream whitespace-nowrap">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {members.map((m, i) => (
-              <tr key={m._id} className="transition-colors duration-150 hover:bg-cream" style={{ borderBottom: i < members.length - 1 ? '1px solid #F0EEE6' : 'none' }}>
-                <td className="px-4 py-3">
-                  <p className="text-[13px] font-semibold text-charcoal">{m.user?.name ?? 'Unknown'}</p>
-                  <p className="text-[11px] text-slate">{m.user?.email}</p>
-                </td>
-                <td className="px-4 py-3 text-[13px] font-semibold text-charcoal">{m.pointsBalance.toLocaleString()}</td>
-                <td className="px-4 py-3 text-[13px] text-slate">{m.lifetimePoints.toLocaleString()}</td>
-                <td className="px-4 py-3 text-[13px] text-slate">{m.currentTier ?? '—'}</td>
-                <td className="px-4 py-3 text-[13px] text-slate">{new Date(m.lastActivityAt).toLocaleDateString()}</td>
-                <td className="px-4 py-3">
-                  <button onClick={() => onAward(m)} className="text-xs font-medium text-brand-orange bg-transparent border-none cursor-pointer transition-opacity duration-150 hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 rounded-sm">Award Points</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <Table
+        columns={columns}
+        data={members}
+        keyExtractor={m => m._id}
+        loading={loading}
+        emptyState={{ icon: <Users size={28} className="text-brand-orange opacity-55" />, title: 'No loyalty members yet', description: 'Members will appear here once customers start earning points.' }}
+      />
     </div>
   );
 }

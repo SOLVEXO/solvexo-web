@@ -113,7 +113,7 @@ export function ChatList({
   return (
     <div
       ref={rootRef}
-      className="w-full md:w-[var(--list-w)] md:shrink-0 border-r border-[#EEECE4] flex flex-col bg-white h-full relative"
+      className="w-full md:w-[var(--list-w)] md:shrink-0 border-r border-[#eeece4] flex flex-col bg-white h-full relative"
       style={{ '--list-w': `${width}px` } as React.CSSProperties}
     >
         <div className="px-4 pt-4 pb-[10px] flex items-center justify-between shrink-0">

@@ -8,7 +8,7 @@ import {
   Settings, Sparkles, ChevronLeft, Monitor, Store,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
-  PanelLeftClose, PanelLeftOpen, AlertTriangle, XCircle, Clock, LogOut,
+  PanelLeftClose, PanelLeftOpen, AlertTriangle, XCircle, Clock, LogOut, ShieldCheck,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
@@ -95,8 +95,9 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: 'Settings',
     items: [
-      { id: 'integrations', Icon: Plug,     label: 'Integrations', path: 'integrations' },
-      { id: 'settings',     Icon: Settings, label: 'Settings',     path: 'settings'     },
+      { id: 'integrations',  Icon: Plug,        label: 'Integrations',          path: 'integrations'  },
+      { id: 'verification',  Icon: ShieldCheck, label: 'Business Verification', path: 'verification'  },
+      { id: 'settings',      Icon: Settings,    label: 'Settings',              path: 'settings'      },
     ],
   },
 ];
@@ -299,7 +300,7 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
                       isLockedPos ? 'cursor-default' : 'cursor-pointer',
                       'transition-colors duration-150',
                       !open && 'lg:justify-center lg:px-0',
-                      active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1A1917]',
+                      active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1a1917]',
                     )}
                   >
                     <item.Icon
@@ -469,6 +470,45 @@ function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// ── Seller business-verification status — workspace-wide so a pending/
+// rejected store's owner sees it on every page, not just their store list.
+// A live store (status 'active') never renders anything here. ──
+function StoreVerificationBanner() {
+  const navigate = useNavigate();
+  const { store, storeId } = useStoreWorkspace();
+  if (!store) return null;
+
+  const goToVerification = () => navigate(`/seller/store/${storeId}/verification`);
+
+  if (store.status === 'rejected') {
+    return (
+      <button onClick={goToVerification} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer text-center">
+        <XCircle size={14} className="shrink-0" />
+        Your store application was rejected{store.rejectionReason ? `: ${store.rejectionReason}` : '.'}
+        <span className="underline font-semibold shrink-0">Fix &amp; resubmit</span>
+      </button>
+    );
+  }
+  if (store.status === 'under_review') {
+    return (
+      <div className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3]">
+        <Clock size={14} className="shrink-0" />
+        Your store is under review by our team — you'll be notified as soon as a decision is made.
+      </div>
+    );
+  }
+  if (store.status === 'pending') {
+    return (
+      <button onClick={goToVerification} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#946200] bg-warning-bg border-b border-[#f5dfa6] cursor-pointer text-center">
+        <AlertTriangle size={14} className="shrink-0" />
+        Your store isn't visible on the marketplace yet — complete business verification to submit it for review.
+        <span className="underline font-semibold shrink-0">Complete verification</span>
+      </button>
+    );
+  }
+  return null;
+}
+
 // ── Platform-plan billing banner — past-due / scheduled-cancellation / trial-ending,
 // surfaced workspace-wide (not just on the Billing Center page) so a seller can't
 // miss it just by not visiting that one page. Same source of truth as StorePlanBilling. ──
@@ -491,7 +531,7 @@ function PlatformBillingBanner() {
 
   if (sub.status === 'past_due') {
     return (
-      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-[#FECACA] cursor-pointer">
+      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer">
         <AlertTriangle size={14} className="shrink-0" />
         Your plan payment failed (attempt {sub.failedPaymentAttempts}) — update your payment method to avoid losing access.
         <span className="underline font-semibold">Fix now</span>
@@ -500,7 +540,7 @@ function PlatformBillingBanner() {
   }
   if (sub.cancelAtPeriodEnd) {
     return (
-      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#946200] bg-[#FDF2DA] border-b border-[#F5DFA6] cursor-pointer">
+      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#946200] bg-[#fdf2da] border-b border-[#f5dfa6] cursor-pointer">
         <XCircle size={14} className="shrink-0" />
         Your plan is set to cancel on {new Date(sub.currentPeriodEnd).toDateString()}.
         <span className="underline font-semibold">Reactivate</span>
@@ -511,7 +551,7 @@ function PlatformBillingBanner() {
     const daysLeft = Math.max(0, Math.ceil((new Date(sub.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
     if (daysLeft <= 7) {
       return (
-        <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1A5A8A] bg-[#E6F1FB] border-b border-[#BFDCF3] cursor-pointer">
+        <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3] cursor-pointer">
           <Clock size={14} className="shrink-0" />
           Your trial ends in {daysLeft} day{daysLeft === 1 ? '' : 's'}.
           <span className="underline font-semibold">Add a payment method</span>
@@ -524,6 +564,7 @@ function PlatformBillingBanner() {
 
 // ── Layout ────────────────────────────────────────────────────────────────────
 export function StoreLayout() {
+  const { pathname: currentPath } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
 
   useEffect(() => {
@@ -542,7 +583,11 @@ export function StoreLayout() {
 
   const user = TokenStorage.getUser<{ role?: AppRole }>();
   if (!TokenStorage.isLoggedIn() || user?.role !== 'seller') {
-    return <Navigate to="/login" replace />;
+    // Same `?redirect=` convention as SellerLayout's guard — a buyer/
+    // logged-out visitor hitting a store-workspace URL directly (e.g. the
+    // verification page) lands back on it after logging in, instead of a
+    // bare /login that drops where they were headed.
+    return <Navigate to={`/login?redirect=${encodeURIComponent(currentPath)}`} replace />;
   }
 
   return (
@@ -552,6 +597,7 @@ export function StoreLayout() {
           <StoreSidebar open={sidebarOpen} onToggle={toggle} onClose={onClose} />
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             <AnnouncementBanner audience="sellers" />
+            <StoreVerificationBanner />
             <PlatformBillingBanner />
             <div className="flex-1 overflow-y-auto">
               <Outlet />

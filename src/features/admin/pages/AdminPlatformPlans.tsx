@@ -249,7 +249,7 @@ function AddonsPanel() {
     { key: 'storeId', header: 'Store', render: a => <span className="text-charcoal">{a.storeId.slice(-6).toUpperCase()}</span> },
     { key: 'addonType', header: 'Add-on', render: a => <span className="text-graphite">{ADDON_LABELS[a.addonType] ?? a.addonType}</span> },
     { key: 'quantity', header: 'Qty', render: a => <span className="text-graphite">{a.quantity}</span> },
-    { key: 'amountUSD', header: 'Amount', render: a => <span className="font-semibold text-[#2D8A4E]">${a.amountUSD.toFixed(2)}</span> },
+    { key: 'amountUSD', header: 'Amount', render: a => <span className="font-semibold text-success">${a.amountUSD.toFixed(2)}</span> },
     { key: 'status', header: 'Status', render: a => <span className="text-slate capitalize">{a.status}</span> },
     { key: 'createdAt', header: 'Date', render: a => <span className="text-slate whitespace-nowrap">{new Date(a.createdAt).toLocaleDateString()}</span> },
   ];
@@ -370,7 +370,7 @@ export function AdminPlatformPlans() {
                   <p className="text-[15px] font-bold text-carbon">{plan.name}</p>
                   <div className="flex items-center gap-1.5">
                     {plan.isPubliclyVisible === false && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-bone text-slate">Hidden</span>}
-                    {plan.badge && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-[#FBECE4] text-[#B95A3A]">{plan.badge}</span>}
+                    {plan.badge && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-brand-pale-orange text-brand-deep-orange">{plan.badge}</span>}
                   </div>
                 </div>
                 <p className="text-[18px] font-bold text-brand-orange mb-2">
@@ -379,9 +379,9 @@ export function AdminPlatformPlans() {
                 <ul className="flex flex-col gap-1 mb-3 p-0 list-none">
                   {(plan.featureBullets ?? []).slice(0, 4).map(f => <li key={f} className="text-[12px] text-graphite">• {f}</li>)}
                 </ul>
-                <div className="flex items-center justify-between py-2 border-t border-[#F0EEE6] mb-3 mt-auto text-[11px] text-slate">
+                <div className="flex items-center justify-between py-2 border-t border-[#f0eee6] mb-3 mt-auto text-[11px] text-slate">
                   <span>{plan.subscriberCount ?? 0} sellers</span>
-                  <span className="font-semibold text-[#2D8A4E]">${(plan.mrrUSD ?? 0).toFixed(2)}/mo</span>
+                  <span className="font-semibold text-success">${(plan.mrrUSD ?? 0).toFixed(2)}/mo</span>
                   <span className="capitalize">{plan.status}</span>
                 </div>
                 <div className="flex gap-2">

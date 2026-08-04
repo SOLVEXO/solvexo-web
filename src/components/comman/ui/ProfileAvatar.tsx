@@ -122,17 +122,17 @@ function MenuItem({
       className={clsx(
         'w-full flex items-center gap-[10px] py-[9px] px-3 rounded-[9px] border-0 cursor-pointer text-left group',
         'transition-colors',
-        danger ? 'hover:bg-[#FFF0F0]' : 'hover:bg-cream',
+        danger ? 'hover:bg-[#fff0f0]' : 'hover:bg-cream',
       )}
     >
       <div className={clsx(
         'w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 transition-colors',
-        danger ? 'bg-[#FFF0F0] group-hover:bg-[#FECDD3]' : 'bg-bone group-hover:bg-[#EDEBE2]',
+        danger ? 'bg-[#fff0f0] group-hover:bg-[#fecdd3]' : 'bg-bone group-hover:bg-[#edebe2]',
       )}>
-        <Icon size={14} className={danger ? 'text-[#C0392B]' : 'text-slate'} />
+        <Icon size={14} className={danger ? 'text-[#c0392b]' : 'text-slate'} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className={clsx('text-[13px] font-medium leading-tight', danger ? 'text-[#C0392B]' : 'text-charcoal')}>
+        <p className={clsx('text-[13px] font-medium leading-tight', danger ? 'text-[#c0392b]' : 'text-charcoal')}>
           {label}
         </p>
         {sublabel && <p className="text-[10px] text-slate mt-[1px]">{sublabel}</p>}

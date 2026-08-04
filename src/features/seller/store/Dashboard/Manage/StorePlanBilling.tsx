@@ -17,9 +17,9 @@ import {
 } from '@/api/services/platformPlans';
 
 const INVOICE_STATUS_STYLE: Record<string, string> = {
-  paid: 'bg-[#E3F4EA] text-[#1E7A3C]',
-  pending: 'bg-[#FDF2DA] text-[#946200]',
-  failed: 'bg-[#FDECEA] text-[#C0392B]',
+  paid: 'bg-[#e3f4ea] text-[#1e7a3c]',
+  pending: 'bg-[#fdf2da] text-[#946200]',
+  failed: 'bg-[#fdecea] text-[#c0392b]',
   refunded: 'bg-bone text-slate',
   partially_refunded: 'bg-bone text-slate',
 };
@@ -218,9 +218,9 @@ export default function StorePlanBilling() {
   }, [isPastDue, isCancelPending, trialDaysLeft, current]);
 
   const BANNER_STYLE = {
-    error:   { bg: 'bg-error-bg', border: 'border-[#FECACA]', text: 'text-error', icon: 'text-error' },
-    warning: { bg: 'bg-[#FDF2DA]', border: 'border-[#F5DFA6]', text: 'text-[#946200]', icon: 'text-[#946200]' },
-    info:    { bg: 'bg-[#E6F1FB]', border: 'border-[#BFDCF3]', text: 'text-[#1A5A8A]', icon: 'text-[#1A5A8A]' },
+    error:   { bg: 'bg-error-bg', border: 'border-error-border', text: 'text-error', icon: 'text-error' },
+    warning: { bg: 'bg-[#fdf2da]', border: 'border-[#f5dfa6]', text: 'text-[#946200]', icon: 'text-[#946200]' },
+    info:    { bg: 'bg-info-bg', border: 'border-[#bfdcf3]', text: 'text-[#1a5a8a]', icon: 'text-[#1a5a8a]' },
   };
 
   if (loading && !current) {
@@ -249,7 +249,7 @@ export default function StorePlanBilling() {
       <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error">{error}</p>}
         {actionError && (
-          <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-[#FECACA] rounded-lg px-3 py-2">
+          <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">
             <span>{actionError}</span>
             <button onClick={() => setActionError('')} className="text-[11px] font-semibold text-error bg-transparent border-none cursor-pointer shrink-0">Dismiss</button>
           </div>
@@ -282,7 +282,7 @@ export default function StorePlanBilling() {
               </div>
               <div className="flex items-center gap-2">
                 <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${
-                  isPastDue ? 'bg-error-bg text-error' : isCancelPending ? 'bg-[#FDF2DA] text-[#946200]' : 'bg-[#E3F4EA] text-[#1E7A3C]'
+                  isPastDue ? 'bg-error-bg text-error' : isCancelPending ? 'bg-[#fdf2da] text-[#946200]' : 'bg-[#e3f4ea] text-[#1e7a3c]'
                 }`}>
                   {isCancelPending ? 'Canceling' : current.status}
                 </span>
@@ -339,7 +339,7 @@ export default function StorePlanBilling() {
               <div key={plan._id} className="bg-white border rounded-[10px] px-5 py-4 flex flex-col" style={{ borderColor: isCurrent ? '#D97757' : '#E8E6DC', borderWidth: isCurrent ? 2 : 1 }}>
                 <div className="flex items-start justify-between mb-1">
                   <p className="text-[15px] font-bold text-carbon">{plan.name}</p>
-                  {plan.badge && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-[#FBECE4] text-[#B95A3A]">{plan.badge}</span>}
+                  {plan.badge && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-brand-pale-orange text-brand-deep-orange">{plan.badge}</span>}
                 </div>
                 <p className="text-[20px] font-bold text-brand-orange mb-2">
                   {plan.isFree ? 'Free' : plan.isCustomPricing ? 'Custom' : `$${price}/${interval === 'yearly' ? 'yr' : 'mo'}`}
@@ -367,7 +367,7 @@ export default function StorePlanBilling() {
           ) : (
             <div className="flex flex-col">
               {addons.map(a => (
-                <div key={a._id} className="flex items-center justify-between px-5 py-3 border-b border-[#F0EEE6] last:border-b-0">
+                <div key={a._id} className="flex items-center justify-between px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
                   <div>
                     <p className="text-[13px] font-medium text-carbon">{ADDON_LABELS[a.addonType]}</p>
                     <p className="text-[11px] text-slate">Qty {a.quantity} · ${a.amountUSD.toFixed(2)}/mo</p>
@@ -388,7 +388,7 @@ export default function StorePlanBilling() {
           ) : (
             <div className="flex flex-col">
               {invoices.map(inv => (
-                <div key={inv._id} className="flex items-center justify-between px-5 py-3 border-b border-[#F0EEE6] last:border-b-0">
+                <div key={inv._id} className="flex items-center justify-between px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
                   <div>
                     <p className="text-[13px] font-medium text-carbon">{inv.invoiceNumber}</p>
                     <p className="text-[11px] text-slate">

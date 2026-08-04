@@ -84,8 +84,8 @@ function StoreHero({ store }: { store: ReturnType<typeof useStoreWorkspace>['sto
       src={store?.coverImage}
       loading="eager"
       overlay
-      overlayClassName="bg-gradient-to-br from-carbon/92 via-[#241F1B]/88 to-brand-deep-orange/75"
-      fallbackClassName="bg-gradient-to-br from-carbon via-[#241F1B] to-brand-deep-orange"
+      overlayClassName="bg-gradient-to-br from-carbon/92 via-[#241f1b]/88 to-brand-deep-orange/75"
+      fallbackClassName="bg-gradient-to-br from-carbon via-[#241f1b] to-brand-deep-orange"
       className="dash-section-enter rounded-2xl"
     >
       <div className="px-6 py-6 sm:px-7 sm:py-7 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
@@ -106,8 +106,8 @@ function StoreHero({ store }: { store: ReturnType<typeof useStoreWorkspace>['sto
             {store?.name ?? '—'}
           </p>
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className={`inline-flex items-center gap-[6px] rounded-full px-[10px] py-[4px] text-[12px] font-medium ${isLive ? 'bg-success/20 text-[#8FE3AC]' : 'bg-white/10 text-white/80'}`}>
-              <span className={`size-[6px] rounded-full ${isLive ? 'bg-[#8FE3AC] pos-live-pulse' : 'bg-white/50'}`} />
+            <span className={`inline-flex items-center gap-[6px] rounded-full px-[10px] py-[4px] text-[12px] font-medium ${isLive ? 'bg-success/20 text-[#8fe3ac]' : 'bg-white/10 text-white/80'}`}>
+              <span className={`size-[6px] rounded-full ${isLive ? 'bg-[#8fe3ac] pos-live-pulse' : 'bg-white/50'}`} />
               {isLive ? 'Live' : (store?.status ?? '—')}
             </span>
             {store?.plan && (
@@ -172,9 +172,9 @@ function StoreInfoCard() {
     <div className="bg-white rounded-2xl border border-bone hover:border-slate/30 transition-colors duration-200 flex flex-col h-full">
 
       {/* Logo + name + badges */}
-      <div className="px-5 pt-5 pb-4 border-b border-[#F3F2EC]">
+      <div className="px-5 pt-5 pb-4 border-b border-[#f3f2ec]">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-[10px] bg-brand-pale-orange border border-[#EAE8DE] flex items-center justify-center overflow-hidden shrink-0">
+          <div className="w-10 h-10 rounded-[10px] bg-brand-pale-orange border border-[#eae8de] flex items-center justify-center overflow-hidden shrink-0">
             {store?.logo
               ? <img loading="lazy" decoding="async" src={store.logo} alt={store?.name} className="w-full h-full object-cover" />
               : <Globe size={18} className="text-brand-orange" />}
@@ -210,10 +210,10 @@ function StoreInfoCard() {
       </div>
 
       {/* URL + Product Types */}
-      <div className="px-5 py-4 border-b border-[#F3F2EC] flex flex-col gap-3">
+      <div className="px-5 py-4 border-b border-[#f3f2ec] flex flex-col gap-3">
         <div>
           <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.06em] mb-1.5">Store URL</p>
-          <div className="flex items-center gap-2 bg-[#F7F6F1] rounded-lg px-[10px] py-[8px] border border-[#EDEBD8]">
+          <div className="flex items-center gap-2 bg-[#f7f6f1] rounded-lg px-[10px] py-[8px] border border-[#edebd8]">
             <span className="flex-1 text-[12px] font-medium text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">
               /{store?.slug ?? '…'}
             </span>
@@ -222,10 +222,10 @@ function StoreInfoCard() {
               className="shrink-0 border-0 bg-transparent p-0 cursor-pointer transition-transform active:scale-90"
               title="Copy URL"
             >
-              <Copy size={12} className={copied ? 'text-[#22C55E]' : 'text-slate'} />
+              <Copy size={12} className={copied ? 'text-[#22c55e]' : 'text-slate'} />
             </button>
           </div>
-          {copied && <p className="text-[10px] text-[#22C55E] mt-1 font-medium">Copied!</p>}
+          {copied && <p className="text-[10px] text-[#22c55e] mt-1 font-medium">Copied!</p>}
         </div>
 
         {(store?.productTypes?.length ?? 0) > 0 && (
@@ -251,22 +251,22 @@ function StoreInfoCard() {
       <div className="px-3 py-3 mt-auto flex flex-col gap-0.5">
         <button
           onClick={() => navigate(`/seller/store/${storeId}/settings`)}
-          className="flex items-center gap-2.5 px-[10px] py-[9px] rounded-lg text-[12px] font-medium text-charcoal bg-transparent border-0 cursor-pointer text-left transition-colors duration-150 hover:bg-[#F7F6F1] w-full"
+          className="flex items-center gap-2.5 px-[10px] py-[9px] rounded-lg text-[12px] font-medium text-charcoal bg-transparent border-0 cursor-pointer text-left transition-colors duration-150 hover:bg-[#f7f6f1] w-full"
         >
           <Settings size={13} className="text-slate shrink-0" />
           Store Settings
-          <ArrowRight size={11} className="text-[#C0BDB5] ml-auto" />
+          <ArrowRight size={11} className="text-dark-text ml-auto" />
         </button>
         {store?.slug && (
           <a
             href={`/${store.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2.5 px-[10px] py-[9px] rounded-lg text-[12px] font-medium text-charcoal no-underline transition-colors duration-150 hover:bg-[#F7F6F1]"
+            className="flex items-center gap-2.5 px-[10px] py-[9px] rounded-lg text-[12px] font-medium text-charcoal no-underline transition-colors duration-150 hover:bg-[#f7f6f1]"
           >
             <ExternalLink size={13} className="text-slate shrink-0" />
             View Live Store
-            <ExternalLink size={10} className="text-[#C0BDB5] ml-auto" />
+            <ExternalLink size={10} className="text-dark-text ml-auto" />
           </a>
         )}
       </div>
@@ -281,17 +281,17 @@ function QuickActionsRow({ storeId }: { storeId: string }) {
   const navigate = useNavigate();
 
   const actions: QuickAction[] = [
-    { Icon: ShoppingBag,   label: 'Add Product', path: 'products/add', gradient: 'from-brand-pale-orange to-[#FBECE4]', iconColor: '#D97757' },
-    { Icon: Package,       label: 'View Orders', path: 'orders',        gradient: 'from-[#F3E8FF] to-[#EDE0FE]',         iconColor: '#8B5CF6' },
-    { Icon: BarChart2,     label: 'Analytics',   path: 'analytics',     gradient: 'from-[#E6F1FB] to-[#DCEBFA]',         iconColor: '#0EA5E9' },
-    { Icon: ClipboardList, label: 'Inventory',   path: 'inventory',     gradient: 'from-[#EAF7EF] to-[#DFF3E7]',         iconColor: '#22C55E' },
-    { Icon: Megaphone,     label: 'Marketing',   path: 'marketing',     gradient: 'from-[#FFF4E5] to-[#FEEBCF]',         iconColor: '#F59E0B' },
+    { Icon: ShoppingBag,   label: 'Add Product', path: 'products/add', gradient: 'from-brand-pale-orange to-brand-pale-orange', iconColor: '#D97757' },
+    { Icon: Package,       label: 'View Orders', path: 'orders',        gradient: 'from-[#f3e8ff] to-[#ede0fe]',         iconColor: '#8B5CF6' },
+    { Icon: BarChart2,     label: 'Analytics',   path: 'analytics',     gradient: 'from-info-bg to-[#dcebfa]',         iconColor: '#0EA5E9' },
+    { Icon: ClipboardList, label: 'Inventory',   path: 'inventory',     gradient: 'from-[#eaf7ef] to-[#dff3e7]',         iconColor: '#22C55E' },
+    { Icon: Megaphone,     label: 'Marketing',   path: 'marketing',     gradient: 'from-[#fff4e5] to-[#feebcf]',         iconColor: '#F59E0B' },
     { Icon: Sparkles,      label: 'AI Studio',   path: 'ai/studio',     gradient: 'from-cream to-bone',                  iconColor: '#A855F7' },
   ];
 
   return (
     <div className="bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200">
-      <div className="px-5 pt-4 pb-3 border-b border-[#F3F2EC]">
+      <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec]">
         <p className="text-sm font-bold text-charcoal">Quick Actions</p>
       </div>
       <div className="px-4 py-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -373,7 +373,7 @@ function DashSkeleton() {
           <SkeletonBox width="100%" height={200} rounded="8px" />
         </div>
         <div className="bg-white rounded-2xl border border-bone h-[320px]">
-          <div className="px-5 pt-5 pb-4 border-b border-[#F3F2EC] flex items-center gap-3">
+          <div className="px-5 pt-5 pb-4 border-b border-[#f3f2ec] flex items-center gap-3">
             <SkeletonBox width={40} height={40} rounded="10px" className="shrink-0" />
             <div className="flex-1">
               <SkeletonBox width={96} height={14} rounded="4px" className="mb-1.5" />

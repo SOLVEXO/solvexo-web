@@ -20,7 +20,7 @@ function Avatar({ name, image }: { name: string; image?: string | null }) {
 function FollowerRow({ entry }: { entry: FollowerEntry }) {
   const when = new Date(entry.followedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
   return (
-    <div className="flex items-center gap-3 px-5 py-[14px] border-b border-[#F3F2EC] last:border-none hover:bg-cream transition-colors">
+    <div className="flex items-center gap-3 px-5 py-[14px] border-b border-[#f3f2ec] last:border-none hover:bg-cream transition-colors">
       <Avatar name={entry.user.name} image={entry.user.profileImage} />
       <div className="flex-1 min-w-0">
         <p className="text-[14px] font-semibold text-charcoal truncate">{entry.user.name}</p>
@@ -37,7 +37,7 @@ function Skeleton() {
   return (
     <div className="bg-white rounded-[10px] border border-bone overflow-hidden">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 px-5 py-[14px] border-b border-[#F3F2EC] last:border-none">
+        <div key={i} className="flex items-center gap-3 px-5 py-[14px] border-b border-[#f3f2ec] last:border-none">
           <div className="animate-pulse w-9 h-9 rounded-full bg-bone shrink-0" />
           <div className="flex-1 flex flex-col gap-2">
             <div className="animate-pulse w-32 h-3 rounded bg-bone" />
@@ -118,7 +118,7 @@ export function FollowersTab() {
 
           {/* List */}
           <div className="bg-white rounded-[10px] border border-bone overflow-hidden">
-            <div className="px-5 py-3 border-b border-[#F3F2EC] flex items-center justify-between">
+            <div className="px-5 py-3 border-b border-[#f3f2ec] flex items-center justify-between">
               <p className="text-[12px] font-semibold text-slate uppercase tracking-[0.06em]">Followers</p>
               <p className="text-[11px] text-slate">{followers.length} shown</p>
             </div>

@@ -45,7 +45,7 @@ export function ChatHeader({
   const subtitle = subtitleOverride ?? (typing ? 'typing' : online !== undefined ? (online ? 'Online' : 'Offline') : undefined);
 
   return (
-    <div className="bg-white/95 backdrop-blur-sm border-b border-[#EEECE4] px-3 md:px-4 py-[10px] flex items-center gap-[10px] shrink-0 sticky top-0 z-20">
+    <div className="bg-white/95 backdrop-blur-sm border-b border-[#eeece4] px-3 md:px-4 py-[10px] flex items-center gap-[10px] shrink-0 sticky top-0 z-20">
       {onBack && (
         <button
           onClick={onBack}

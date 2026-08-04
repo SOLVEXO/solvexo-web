@@ -127,7 +127,7 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
           <div><p className="text-slate mb-0.5">Next billing</p><p className="font-semibold text-charcoal">{new Date(sub.nextBillingDate).toLocaleDateString()}</p></div>
           <div><p className="text-slate mb-0.5">Total paid</p><p className="font-semibold text-charcoal">${sub.totalPaidUSD.toFixed(2)}</p></div>
           {sub.creditBalanceUSD > 0 && (
-            <div className="col-span-2"><p className="text-slate mb-0.5">Account credit</p><p className="font-semibold text-[#1E7A3C]">${sub.creditBalanceUSD.toFixed(2)}</p></div>
+            <div className="col-span-2"><p className="text-slate mb-0.5">Account credit</p><p className="font-semibold text-[#1e7a3c]">${sub.creditBalanceUSD.toFixed(2)}</p></div>
           )}
         </div>
 
@@ -213,7 +213,7 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
               {invoices.map(inv => (
                 <div key={inv._id} className="flex items-center justify-between text-[12px] px-2 py-1.5 rounded bg-cream">
                   <span className="text-slate">{new Date(inv.createdAt).toLocaleDateString()} · {inv.type}</span>
-                  <span className={`font-semibold ${inv.status === 'paid' ? 'text-[#1E7A3C]' : inv.status === 'failed' ? 'text-error' : 'text-slate'}`}>
+                  <span className={`font-semibold ${inv.status === 'paid' ? 'text-[#1e7a3c]' : inv.status === 'failed' ? 'text-error' : 'text-slate'}`}>
                     {inv.amountUSD < 0 ? '−' : ''}${Math.abs(inv.amountUSD).toFixed(2)}
                   </span>
                 </div>

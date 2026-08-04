@@ -148,7 +148,7 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
           <button
             role="menuitem"
             onClick={() => { onReply(); setOpen(false); }}
-            className="w-full flex items-center gap-[9px] px-[13px] py-[9px] text-[13px] text-charcoal hover:bg-[#F7F6F1] cursor-pointer bg-transparent border-none text-left"
+            className="w-full flex items-center gap-[9px] px-[13px] py-[9px] text-[13px] text-charcoal hover:bg-[#f7f6f1] cursor-pointer bg-transparent border-none text-left"
           >
             <ReplyIcon size={13} className="text-slate shrink-0" /> Reply
           </button>
@@ -156,14 +156,14 @@ function BubbleMenu({ own, canEdit, onReply, onEdit, onDelete }: BubbleMenuProps
             <button
               role="menuitem"
               onClick={() => { onEdit(); setOpen(false); }}
-              className="w-full flex items-center gap-[9px] px-[13px] py-[9px] text-[13px] text-charcoal hover:bg-[#F7F6F1] cursor-pointer bg-transparent border-none text-left"
+              className="w-full flex items-center gap-[9px] px-[13px] py-[9px] text-[13px] text-charcoal hover:bg-[#f7f6f1] cursor-pointer bg-transparent border-none text-left"
             >
               <Pencil size={13} className="text-slate shrink-0" /> Edit
             </button>
           )}
           {onDelete && (
             <>
-              <div className="border-t border-[#F3F2EC] mx-[8px] my-[3px]" />
+              <div className="border-t border-[#f3f2ec] mx-[8px] my-[3px]" />
               <button
                 role="menuitem"
                 onClick={() => { onDelete(); setOpen(false); }}
@@ -219,7 +219,7 @@ export const MessageBubble = memo(function MessageBubble({
   if (message.isDeleted) {
     return (
       <div className={clsx('flex w-full mb-[2px]', own ? 'justify-end' : 'justify-start')}>
-        <div className="px-4 py-2 text-[13px] italic text-slate bg-[#F0EEE6] rounded-[18px] border border-bone">
+        <div className="px-4 py-2 text-[13px] italic text-slate bg-[#f0eee6] rounded-[18px] border border-bone">
           This message was deleted
         </div>
       </div>
@@ -256,7 +256,7 @@ export const MessageBubble = memo(function MessageBubble({
           <div className={clsx('flex flex-col max-w-[78vw] sm:max-w-[400px]', own ? 'items-end' : 'items-start')}>
             {editing ? (
               // ── Inline edit — matches bubble color ──────────────────────────
-              <div className={clsx('px-[14px] py-[10px]', bubbleRadius, own ? 'bg-brand-orange' : 'bg-white border border-[#EEECE4]')}>
+              <div className={clsx('px-[14px] py-[10px]', bubbleRadius, own ? 'bg-brand-orange' : 'bg-white border border-[#eeece4]')}>
                 <textarea
                   value={editText}
                   onChange={e => onEditTextChange(e.target.value)}
@@ -295,7 +295,7 @@ export const MessageBubble = memo(function MessageBubble({
                 className={clsx(
                   'relative px-[14px] py-[9px]',
                   bubbleRadius,
-                  own ? 'bg-brand-orange text-white' : 'bg-white text-charcoal border border-[#EEECE4]',
+                  own ? 'bg-brand-orange text-white' : 'bg-white text-charcoal border border-[#eeece4]',
                   message._failed && 'ring-2 ring-error/50',
                 )}
               >
@@ -412,7 +412,7 @@ export const MessageBubble = memo(function MessageBubble({
                     message._pending
                       ? <Clock size={12} className="text-slate" />
                       : seenByOther
-                        ? <CheckCheck size={13} className="text-[#4FA8E8]" />
+                        ? <CheckCheck size={13} className="text-[#4fa8e8]" />
                         : <Check size={13} className="text-slate" />
                   )}
                 </>

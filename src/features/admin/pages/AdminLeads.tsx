@@ -1,17 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { useLeads, useLeadActions } from '@/hooks/admin/useAdminMarketplace';
+import { useLeads, useLeadDetail, useLeadActions } from '@/hooks/admin/useAdminMarketplace';
 import type { LeadRow } from '@/api/services/marketplace/adminMarketplace';
-import { Table, Button, Modal, SearchInput, Badge } from '@/components/comman/ui';
+import { Table, Button, Modal, SearchInput, Badge, StatusBadge, SkeletonBox } from '@/components/comman/ui';
 import type { TableColumn } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate } from '@/components/comman/analytics/format';
-import { Store, RefreshCw, Check, X } from 'lucide-react';
+import { Store, RefreshCw, Check, X, Eye, ExternalLink, Clock, AlertCircle } from 'lucide-react';
 
 function StoreCell({ lead }: { lead: LeadRow }) {
   return (
     <div className="flex items-center gap-[10px]">
-      <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0 overflow-hidden border border-[#EDEBE2]">
+      <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0 overflow-hidden border border-[#edebe2]">
         {lead.logo
           ? <img loading="lazy" decoding="async" src={lead.logo} alt={lead.storeName} className="w-full h-full object-cover" />
           : <Store size={15} className="text-brand-orange" />}
@@ -24,6 +24,162 @@ function StoreCell({ lead }: { lead: LeadRow }) {
   );
 }
 
+function DetailRow({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div>
+      <p className="text-[10px] text-slate uppercase tracking-[0.05em]">{label}</p>
+      <p className="text-[12.5px] font-semibold text-carbon mt-[2px]">{value || '—'}</p>
+    </div>
+  );
+}
+
+const HISTORY_ACTION_LABEL: Record<string, string> = {
+  submitted: 'Submitted for review',
+  resubmitted: 'Resubmitted after rejection',
+  under_review: 'Marked under review',
+  approved: 'Approved',
+  rejected: 'Rejected',
+};
+
+// ── Lead detail — business info, documents (fresh signed URLs), and the
+// full submit/review history trail, fetched lazily only when opened. ──
+function LeadDetailModal({ leadId, onClose, onApprove, onReject, onMarkUnderReview, processingId }: {
+  leadId: string;
+  onClose: () => void;
+  onApprove: (id: string) => void;
+  onReject: (lead: { id: string; storeName: string }) => void;
+  onMarkUnderReview: (id: string) => void;
+  processingId: string | null;
+}) {
+  const { data, loading, error, refetch } = useLeadDetail(leadId);
+  useEffect(() => { refetch(); }, [refetch]);
+
+  return (
+    <Modal title="Review Lead" onClose={onClose} width={640}>
+      {loading && (
+        <div className="flex flex-col gap-3">
+          <SkeletonBox height={20} width="60%" />
+          <SkeletonBox height={80} />
+          <SkeletonBox height={120} />
+        </div>
+      )}
+      {error && <AnalyticsErrorState message={error} onRetry={refetch} />}
+      {!loading && !error && data && (
+        <div className="flex flex-col gap-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0 overflow-hidden border border-[#edebe2]">
+                {data.logo
+                  ? <img loading="lazy" decoding="async" src={data.logo} alt={data.storeName} className="w-full h-full object-cover" />
+                  : <Store size={18} className="text-brand-orange" />}
+              </div>
+              <div>
+                <p className="text-[15px] font-bold text-carbon">{data.storeName}</p>
+                <p className="text-[11.5px] text-slate">{data.categoryName ?? 'No category'}</p>
+              </div>
+            </div>
+            <StatusBadge status={data.status} />
+          </div>
+
+          {!data.submitted && (
+            <div className="bg-warning-bg border border-warning/30 rounded-lg px-4 py-2.5 flex items-center gap-2">
+              <AlertCircle size={14} className="text-warning shrink-0" />
+              <span className="text-[12.5px] text-warning">Seller hasn't finished the onboarding verification steps yet — this lead can't be approved or rejected until submitted.</span>
+            </div>
+          )}
+
+          <div>
+            <p className="text-[12px] font-bold text-carbon mb-2">Seller Contact</p>
+            <div className="grid grid-cols-2 gap-3 bg-cream rounded-lg p-3">
+              <DetailRow label="Name" value={data.seller.name} />
+              <DetailRow label="Email" value={data.seller.email} />
+              <DetailRow label="Phone" value={data.seller.phone} />
+              <DetailRow label="Address" value={data.seller.address} />
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[12px] font-bold text-carbon mb-2">Business Information</p>
+            <div className="grid grid-cols-2 gap-3 bg-cream rounded-lg p-3">
+              <DetailRow label="Business Type" value={data.businessType} />
+              <DetailRow label="Legal Business Name" value={data.legalBusinessName} />
+              <DetailRow label="Registration Number" value={data.registrationNumber} />
+              <DetailRow label="Tax ID / NTN" value={data.taxId} />
+              <DetailRow label="ID Document Type" value={data.idDocumentType} />
+              <DetailRow label="Business Address" value={data.businessAddress} />
+              <DetailRow label="Authorized Contact" value={data.authorizedContact?.name} />
+              <DetailRow label="Contact Email / Phone" value={[data.authorizedContact?.email, data.authorizedContact?.phone].filter(Boolean).join(' · ')} />
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[12px] font-bold text-carbon mb-2">Documents ({data.documents.length})</p>
+            {data.documents.length === 0 ? (
+              <p className="text-[12.5px] text-slate">No documents uploaded yet.</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {data.documents.map(doc => (
+                  <div key={doc.type} className="flex items-center justify-between gap-3 bg-cream rounded-lg px-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="text-[12.5px] font-semibold text-carbon capitalize">{doc.type.replace(/_/g, ' ')}</p>
+                      <p className="text-[11px] text-slate truncate">{doc.fileName}</p>
+                    </div>
+                    <a href={doc.viewUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 inline-flex items-center gap-1 text-[11.5px] font-semibold text-brand-orange hover:underline">
+                      View <ExternalLink size={11} />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {data.rejectionReason && (
+            <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5">
+              <p className="text-[11px] font-semibold text-error mb-[2px]">Last rejection reason</p>
+              <p className="text-[12.5px] text-error">{data.rejectionReason}</p>
+            </div>
+          )}
+
+          {data.history.length > 0 && (
+            <div>
+              <p className="text-[12px] font-bold text-carbon mb-2">History</p>
+              <div className="flex flex-col gap-2">
+                {data.history.slice().reverse().map((h, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <Clock size={12} className="text-slate mt-[3px] shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[12px] text-charcoal">
+                        <span className="font-semibold">{HISTORY_ACTION_LABEL[h.action] ?? h.action}</span>
+                        {' — '}<span className="text-slate">{formatDate(h.at)} by {h.actorRole}</span>
+                      </p>
+                      {h.note && <p className="text-[11.5px] text-slate mt-[1px]">{h.note}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 pt-2 border-t border-bone">
+            {data.status === 'pending' && (
+              <Button variant="ghost" size="sm" onClick={() => onMarkUnderReview(data.id)} loading={processingId === data.id} disabled={!data.submitted}>
+                Mark Under Review
+              </Button>
+            )}
+            <div className="flex-1" />
+            <Button variant="outline" size="sm" icon={<X size={13} />} onClick={() => onReject({ id: data.id, storeName: data.storeName })} disabled={!data.submitted || processingId === data.id}>
+              Reject
+            </Button>
+            <Button variant="primary" size="sm" icon={<Check size={13} />} onClick={() => onApprove(data.id)} disabled={!data.submitted} loading={processingId === data.id}>
+              Approve
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 export function AdminLeads() {
   usePageTitle('Leads');
 
@@ -32,20 +188,28 @@ export function AdminLeads() {
   const query = useMemo(() => ({ search: search || undefined, page, limit: 10 }), [search, page]);
 
   const { data, loading, error, refetch } = useLeads(query);
-  const { approve, reject, processingId, error: actionError } = useLeadActions();
+  const { markUnderReview, approve, reject, processingId, error: actionError } = useLeadActions();
 
-  const [rejecting, setRejecting] = useState<LeadRow | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
+  const [rejecting, setRejecting] = useState<{ id: string; storeName: string } | null>(null);
   const [reason, setReason] = useState('');
+  const reasonTooShort = reason.trim().length > 0 && reason.trim().length < 10;
+  const canConfirmReject = reason.trim().length >= 10;
 
-  async function handleApprove(lead: LeadRow) {
-    const ok = await approve(lead.id);
+  async function handleApprove(id: string) {
+    const ok = await approve(id);
+    if (ok) { setViewingId(null); refetch(); }
+  }
+
+  async function handleMarkUnderReview(id: string) {
+    const ok = await markUnderReview(id);
     if (ok) refetch();
   }
 
   async function handleReject() {
-    if (!rejecting) return;
-    const ok = await reject(rejecting.id, reason.trim() || undefined);
-    if (ok) { setRejecting(null); setReason(''); refetch(); }
+    if (!rejecting || !canConfirmReject) return;
+    const ok = await reject(rejecting.id, reason.trim());
+    if (ok) { setRejecting(null); setReason(''); setViewingId(null); refetch(); }
   }
 
   const columns: TableColumn<LeadRow>[] = [
@@ -56,46 +220,52 @@ export function AdminLeads() {
         <div className="min-w-0">
           <p className="text-[13px] text-graphite truncate max-w-[200px]">{lead.seller.name}</p>
           <p className="text-[11px] text-slate truncate max-w-[200px]">{lead.seller.email}</p>
-          {lead.seller.phone && <p className="text-[11px] text-slate truncate max-w-[200px]">{lead.seller.phone}</p>}
         </div>
       ),
     },
     {
-      key: 'sellerType', header: 'Seller Type',
-      render: lead => lead.sellerType
-        ? <Badge color="orange" className="capitalize">{lead.sellerType.replace(/_/g, ' ')}</Badge>
+      key: 'status', header: 'Status',
+      render: lead => (
+        <div className="flex flex-col gap-1">
+          <StatusBadge status={lead.status} size="sm" />
+          {!lead.verificationSubmitted && <span className="text-[10px] text-warning font-medium">Awaiting submission</span>}
+        </div>
+      ),
+    },
+    {
+      key: 'businessType', header: 'Business Type',
+      render: lead => lead.businessType
+        ? <Badge color="orange" className="capitalize">{lead.businessType}</Badge>
         : <span className="text-slate">—</span>,
     },
     {
-      key: 'productTypes', header: 'Sells',
-      render: lead => (
-        <div className="flex flex-wrap gap-1 max-w-[200px]">
-          {(lead.productTypes ?? []).map(pt => (
-            <Badge key={pt} color="gray" className="capitalize">{pt.replace(/_/g, ' ')}</Badge>
-          ))}
-        </div>
-      ),
+      key: 'documentCount', header: 'Docs', align: 'center',
+      render: lead => <span className="text-[12px] font-semibold text-charcoal">{lead.documentCount}</span>,
     },
     {
-      key: 'submittedAt', header: 'Submitted',
+      key: 'submittedAt', header: 'Created',
       render: lead => <span className="text-[12px] text-slate whitespace-nowrap">{formatDate(lead.submittedAt)}</span>,
     },
     {
       key: 'actions', header: 'Actions', align: 'right',
       render: lead => (
         <div className="flex items-center justify-end gap-2">
+          <Button variant="ghost" size="xs" icon={<Eye size={12} />} onClick={() => setViewingId(lead.id)}>
+            View
+          </Button>
           <Button
             variant="outline" size="xs"
             icon={<X size={12} />}
-            onClick={() => setRejecting(lead)}
-            disabled={processingId === lead.id}
+            onClick={() => setRejecting({ id: lead.id, storeName: lead.storeName })}
+            disabled={!lead.verificationSubmitted || processingId === lead.id}
           >
             Reject
           </Button>
           <Button
             variant="primary" size="xs"
             icon={<Check size={12} />}
-            onClick={() => handleApprove(lead)}
+            onClick={() => handleApprove(lead.id)}
+            disabled={!lead.verificationSubmitted}
             loading={processingId === lead.id}
           >
             Approve
@@ -110,12 +280,12 @@ export function AdminLeads() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Leads</h1>
-          <p className="text-[12px] text-slate">New stores submitted through onboarding — review and approve or reject before they go live.</p>
+          <p className="text-[12px] text-slate">New stores submitted through onboarding — review business verification and approve or reject before they go live.</p>
         </div>
         <Button variant="outline" size="sm" icon={<RefreshCw size={13} />} onClick={refetch}>Refresh</Button>
       </div>
 
-      {actionError && <div className="bg-error-bg border border-[#FECACA] rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
+      {actionError && <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
 
       <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
         <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
@@ -136,27 +306,39 @@ export function AdminLeads() {
         )}
       </div>
 
+      {viewingId && (
+        <LeadDetailModal
+          leadId={viewingId}
+          onClose={() => setViewingId(null)}
+          onApprove={handleApprove}
+          onReject={lead => { setViewingId(null); setRejecting(lead); }}
+          onMarkUnderReview={handleMarkUnderReview}
+          processingId={processingId}
+        />
+      )}
+
       {rejecting && (
         <Modal
           title="Reject Lead"
           onClose={() => { setRejecting(null); setReason(''); }}
           footer={<>
             <Button variant="ghost" onClick={() => { setRejecting(null); setReason(''); }}>Cancel</Button>
-            <Button variant="danger" onClick={handleReject} loading={processingId === rejecting.id}>Reject Lead</Button>
+            <Button variant="danger" onClick={handleReject} disabled={!canConfirmReject} loading={processingId === rejecting.id}>Reject Lead</Button>
           </>}
         >
           <p className="text-[13px] text-charcoal leading-[1.6] mb-3">
-            Reject "<strong>{rejecting.storeName}</strong>"? The seller will be notified and the store will stay hidden from the marketplace.
+            Reject "<strong>{rejecting.storeName}</strong>"? The seller will be notified with your reason and can correct the details and resubmit.
           </p>
-          <label htmlFor="lead-reject-reason" className="block text-[12px] font-medium text-charcoal mb-[6px]">Reason <span className="text-slate font-normal">(optional, shown to the seller)</span></label>
+          <label htmlFor="lead-reject-reason" className="block text-[12px] font-medium text-charcoal mb-[6px]">Reason <span className="text-brand-orange">*</span> <span className="text-slate font-normal">(shown to the seller, min. 10 characters)</span></label>
           <textarea
             id="lead-reject-reason"
             rows={3}
             value={reason}
             onChange={e => setReason(e.target.value)}
-            placeholder="e.g. Store name conflicts with an existing brand"
+            placeholder="e.g. Business registration document is illegible — please re-upload a clearer scan"
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white resize-y transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
           />
+          {reasonTooShort && <p className="text-[11px] text-error mt-1">Please provide a bit more detail (at least 10 characters).</p>}
         </Modal>
       )}
     </div>

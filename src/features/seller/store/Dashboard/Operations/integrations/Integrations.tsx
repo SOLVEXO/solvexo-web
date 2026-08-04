@@ -109,7 +109,7 @@ export function StoreIntegrations() {
             {filteredApps.map(app => (
               <div key={app.id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 relative transition-transform duration-200 hover:-translate-y-[1px]">
                 <div className="absolute top-4 right-4">
-                  <span className="px-[9px] py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C] flex items-center gap-1">
+                  <span className="px-[9px] py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#e3f4ea] text-[#1e7a3c] flex items-center gap-1">
                     <Check size={10} /> Connected
                   </span>
                 </div>
@@ -129,7 +129,7 @@ export function StoreIntegrations() {
                   <button
                     disabled
                     title="Not connected to a backend yet"
-                    className="px-[14px] py-[5px] bg-[#FDECEA] border border-[#F5C6C2] rounded-[7px] text-xs font-medium text-[#C0392B] opacity-50 cursor-not-allowed"
+                    className="px-[14px] py-[5px] bg-[#fdecea] border border-[#f5c6c2] rounded-[7px] text-xs font-medium text-[#c0392b] opacity-50 cursor-not-allowed"
                   >
                     Disconnect
                   </button>
@@ -167,7 +167,7 @@ export function StoreIntegrations() {
                 <button
                   disabled
                   title="Not connected to a backend yet"
-                  className="px-[14px] py-[5px] bg-[#FDECEA] border border-[#F5C6C2] rounded-[7px] text-xs font-medium text-[#C0392B] opacity-50 cursor-not-allowed"
+                  className="px-[14px] py-[5px] bg-[#fdecea] border border-[#f5c6c2] rounded-[7px] text-xs font-medium text-[#c0392b] opacity-50 cursor-not-allowed"
                 >
                   Regenerate
                 </button>
@@ -196,8 +196,8 @@ export function StoreIntegrations() {
             <p className="text-xs font-medium text-graphite mb-[10px]">Active Webhook Events</p>
             <div className="flex flex-wrap gap-2">
               {WEBHOOK_EVENTS.map(event => (
-                <span key={event} className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E3F4EA] rounded-[20px] text-[11px] font-medium text-[#1E7A3C]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#2D8A4E] shrink-0" />
+                <span key={event} className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#e3f4ea] rounded-[20px] text-[11px] font-medium text-[#1e7a3c]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
                   {event}
                 </span>
               ))}

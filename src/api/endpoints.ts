@@ -141,6 +141,9 @@ export const ENDPOINTS = {
     WHITE_LABEL:   (storeId: string) => `/api/store/${storeId}/white-label`,
     PINNED_PRODUCTS: (storeId: string) => `/api/store/${storeId}/pinned-products`,
     ANNOUNCEMENT:    (storeId: string) => `/api/store/${storeId}/announcement`,
+    VERIFICATION:            (storeId: string) => `/api/store/${storeId}/verification`,
+    VERIFICATION_DOCUMENTS:  (storeId: string) => `/api/store/${storeId}/verification/documents`,
+    VERIFICATION_SUBMIT:     (storeId: string) => `/api/store/${storeId}/verification/submit`,
 
     // Builder
     SAVE_BUILDER_CONFIG: '/api/store/save-builder-config',
@@ -174,6 +177,12 @@ export const ENDPOINTS = {
     LIST:   (storeId: string) => `/api/activity-log/${storeId}`,
     STATS:  (storeId: string) => `/api/activity-log/${storeId}/stats`,
     EXPORT: (storeId: string) => `/api/activity-log/${storeId}/export`,
+  },
+
+  // ── ACTIVITY LOG (Admin, platform-wide) ─────────────────────────────────────
+  ADMIN_ACTIVITY_LOG: {
+    LIST:   '/api/admin/activity-log',
+    EXPORT: '/api/admin/activity-log/export',
   },
 
   // ── SUBSCRIPTIONS ─────────────────────────────────────────────────────────
@@ -323,9 +332,11 @@ export const ENDPOINTS = {
       FEATURE:  (id: string) => `/api/admin/marketplace/listings/${id}/feature`,
       REMOVE:   (id: string) => `/api/admin/marketplace/listings/${id}/remove`,
       SET_STORE_BADGE: (storeId: string) => `/api/admin/marketplace/stores/${storeId}/badge`,
-      LEADS:        '/api/admin/marketplace/leads',
-      APPROVE_LEAD: (id: string) => `/api/admin/marketplace/leads/${id}/approve`,
-      REJECT_LEAD:  (id: string) => `/api/admin/marketplace/leads/${id}/reject`,
+      LEADS:            '/api/admin/marketplace/leads',
+      LEAD_DETAIL:      (id: string) => `/api/admin/marketplace/leads/${id}`,
+      LEAD_UNDER_REVIEW: (id: string) => `/api/admin/marketplace/leads/${id}/under-review`,
+      APPROVE_LEAD:     (id: string) => `/api/admin/marketplace/leads/${id}/approve`,
+      REJECT_LEAD:      (id: string) => `/api/admin/marketplace/leads/${id}/reject`,
     },
   },
 

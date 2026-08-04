@@ -276,8 +276,8 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             isEducational
               ? 'bg-info-bg text-info border-info/25'
               : isDigital
-                ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
-                : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
+                ? 'bg-[#ede9fe] text-[#7c3aed] border-[#ddd6fe]'
+                : 'bg-brand-pale-orange text-brand-deep-orange border-[#f5d0bc]',
           )}>
             {typeLabel}
           </span>
@@ -311,7 +311,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
           <Heart
             key={isWishlisted ? 'on' : 'off'}
             size={13}
-            className={clsx('heart-pop transition-colors duration-150', isWishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate')}
+            className={clsx('heart-pop transition-colors duration-150', isWishlisted ? 'text-[#e11d48] fill-[#e11d48]' : 'text-slate')}
           />
         </button>
 
@@ -465,8 +465,8 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
               isEducational
                 ? 'bg-info-bg text-info border-info/25'
                 : isDigital
-                  ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
-                  : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
+                  ? 'bg-[#ede9fe] text-[#7c3aed] border-[#ddd6fe]'
+                  : 'bg-brand-pale-orange text-brand-deep-orange border-[#f5d0bc]',
             )}>
               {typeLabel}
             </span>

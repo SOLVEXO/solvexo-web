@@ -184,7 +184,7 @@ export function StoreReviews() {
       <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
 
         {actionError && (
-          <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-[#FECACA] rounded-lg px-3 py-2">
+          <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">
             <span>{actionError}</span>
             <button onClick={() => setActionError('')} className="text-[11px] font-semibold text-error bg-transparent border-none cursor-pointer shrink-0">Dismiss</button>
           </div>

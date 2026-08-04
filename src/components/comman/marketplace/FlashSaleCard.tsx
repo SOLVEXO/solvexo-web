@@ -97,7 +97,7 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
         <span className={clsx(
           'absolute rounded-full font-bold tracking-[0.02em] border bg-white',
           compact ? 'top-[5px] left-[5px] px-[5px] py-[1px] text-[7px]' : 'top-[7px] left-[7px] px-[6px] py-[1.5px] text-[8px]',
-          isDigital ? 'text-[#7C3AED] border-[#DDD6FE]' : 'text-brand-deep-orange border-[#F5D0BC]',
+          isDigital ? 'text-[#7c3aed] border-[#ddd6fe]' : 'text-brand-deep-orange border-[#f5d0bc]',
         )}>
           {typeLabel}
         </span>
@@ -126,7 +126,7 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
           <Heart
             key={isWishlisted ? 'on' : 'off'}
             size={compact ? 10 : 12}
-            className={clsx('heart-pop transition-colors duration-150', isWishlisted ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate')}
+            className={clsx('heart-pop transition-colors duration-150', isWishlisted ? 'text-[#e11d48] fill-[#e11d48]' : 'text-slate')}
           />
         </button>
 

@@ -33,7 +33,7 @@ function WorkspaceHero({ storeCount, activeCount }: { storeCount: number; active
   const { profile } = useGetProfile();
 
   return (
-    <div className="dash-section-enter relative overflow-hidden rounded-2xl bg-gradient-to-br from-carbon via-[#241F1B] to-brand-deep-orange px-6 py-6 sm:px-7 sm:py-7 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
+    <div className="dash-section-enter relative overflow-hidden rounded-2xl bg-gradient-to-br from-carbon via-[#241f1b] to-brand-deep-orange px-6 py-6 sm:px-7 sm:py-7 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.06]"
         style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '22px 22px' }}
@@ -61,7 +61,7 @@ function WorkspaceHero({ storeCount, activeCount }: { storeCount: number; active
               <Store size={12} /> {storeCount} store{storeCount === 1 ? '' : 's'}
             </span>
             {activeCount > 0 && (
-              <span className="inline-flex items-center gap-[6px] rounded-full bg-success/20 px-[10px] py-[4px] text-[12px] font-medium text-[#8FE3AC]">
+              <span className="inline-flex items-center gap-[6px] rounded-full bg-success/20 px-[10px] py-[4px] text-[12px] font-medium text-[#8fe3ac]">
                 <CircleCheck size={12} /> {activeCount} active
               </span>
             )}
@@ -86,6 +86,9 @@ const statusColors: Record<string, { bg: string; color: string }> = {
   active: { bg: '#E3F4EA', color: '#1E7A3C' },
   inactive: { bg: '#F0EEE6', color: '#8C8A82' },
   pending: { bg: '#FFF0E0', color: '#B36200' },
+  under_review: { bg: '#E6F1FB', color: '#1A72C2' },
+  rejected: { bg: '#FDEAEA', color: '#C13030' },
+  suspended: { bg: '#FDEAEA', color: '#C13030' },
 };
 
 function MyStoreCardSkeleton() {
@@ -97,7 +100,7 @@ function MyStoreCardSkeleton() {
       </div>
       <div className="px-2 pb-2">
         {[0, 1, 2].map(i => (
-          <div key={i} className={`flex items-center gap-3 px-[10px] py-[11px]${i < 2 ? ' border-b border-[#F5F4EF]' : ''}`}>
+          <div key={i} className={`flex items-center gap-3 px-[10px] py-[11px]${i < 2 ? ' border-b border-[#f5f4ef]' : ''}`}>
             <SkeletonBox width={32} height={32} rounded="8px" className="shrink-0" />
             <div className="flex-1 flex flex-col gap-[6px]">
               <SkeletonBox width={100} height={12} rounded="4px" />
@@ -187,7 +190,7 @@ function MyStoreCard({ stores, loading, error, onRetry }: { stores: MyStore[]; l
               className="w-full flex items-center gap-3 px-[10px] py-[11px] bg-transparent border-0 cursor-pointer text-left transition-colors duration-150 rounded-lg hover:bg-cream"
               style={{ borderBottom: i < stores.length - 1 ? '1px solid #F5F4EF' : 'none' }}
             >
-              <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0 overflow-hidden border border-[#EDEBE2]">
+              <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0 overflow-hidden border border-[#edebe2]">
                 {store.logo
                   ? <img loading="lazy" decoding="async" src={store.logo} alt={store.name} className="w-full h-full object-cover" />
                   : <Store size={15} className="text-brand-orange" />}
@@ -195,13 +198,13 @@ function MyStoreCard({ stores, loading, error, onRetry }: { stores: MyStore[]; l
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-charcoal overflow-hidden text-ellipsis whitespace-nowrap">{store.name}</p>
                 <div className="flex items-center gap-[6px] mt-0.5">
-                  <span className="text-[10px] font-semibold px-[6px] py-px rounded-[20px]" style={{ background: st.bg, color: st.color }}>
-                    {store.status}
+                  <span className="text-[10px] font-semibold px-[6px] py-px rounded-[20px] capitalize" style={{ background: st.bg, color: st.color }}>
+                    {store.status.replace(/_/g, ' ')}
                   </span>
                   <span className="text-[10px] text-slate">/{store.slug}</span>
                 </div>
               </div>
-              <span className="text-base text-[#C0BDB5]">›</span>
+              <span className="text-base text-dark-text">›</span>
             </button>
           );
         })}
@@ -243,9 +246,9 @@ function PlatformBillingCard() {
 
   return (
     <div className="bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200 overflow-hidden h-full flex flex-col">
-      <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-[#F3F2EC]">
+      <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-[#f3f2ec]">
         <p className="text-sm font-bold text-charcoal">Platform Billing</p>
-        <span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">
+        <span className="bg-brand-pale-orange text-[#c96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">
           {formatCurrency(totalUSD)}/mo total
         </span>
       </div>
@@ -287,9 +290,9 @@ function PlatformBillingCard() {
 interface QuickAction { Icon: LucideIcon; label: string; path: string; gradient: string; iconColor: string }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { Icon: Store,     label: 'My Stores',    path: '/seller/stores',    gradient: 'from-brand-pale-orange to-[#FBECE4]', iconColor: '#D97757' },
-  { Icon: Sparkles,  label: 'Create Store', path: '/seller/store',     gradient: 'from-[#F3E8FF] to-[#EDE0FE]',         iconColor: '#A855F7' },
-  { Icon: BarChart2, label: 'Analytics',    path: '/seller/analytics', gradient: 'from-[#E6F1FB] to-[#DCEBFA]',         iconColor: '#0EA5E9' },
+  { Icon: Store,     label: 'My Stores',    path: '/seller/stores',    gradient: 'from-brand-pale-orange to-brand-pale-orange', iconColor: '#D97757' },
+  { Icon: Sparkles,  label: 'Create Store', path: '/seller/store',     gradient: 'from-[#f3e8ff] to-[#ede0fe]',         iconColor: '#A855F7' },
+  { Icon: BarChart2, label: 'Analytics',    path: '/seller/analytics', gradient: 'from-info-bg to-[#dcebfa]',         iconColor: '#0EA5E9' },
   { Icon: Settings,  label: 'Settings',     path: '/seller/settings',  gradient: 'from-cream to-bone',                  iconColor: '#8C8A82' },
 ];
 
@@ -297,7 +300,7 @@ function QuickActionsRow() {
   const navigate = useNavigate();
   return (
     <div className="bg-white border border-bone rounded-2xl hover:border-slate/30 transition-colors duration-200 h-full flex flex-col">
-      <div className="px-5 pt-4 pb-3 border-b border-[#F3F2EC]">
+      <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec]">
         <p className="text-sm font-bold text-charcoal">Quick Actions</p>
       </div>
       <div className="px-4 py-4 grid grid-cols-2 gap-3 flex-1">
@@ -434,7 +437,7 @@ export function SellerDashboard() {
         )}
 
         {currencyMixed && (
-          <div className="dash-section-enter flex items-center gap-2 px-4 py-3 rounded-xl bg-brand-pale-orange text-[#8A4A2E] text-[12.5px] border border-brand-orange/15">
+          <div className="dash-section-enter flex items-center gap-2 px-4 py-3 rounded-xl bg-brand-pale-orange text-[#8a4a2e] text-[12.5px] border border-brand-orange/15">
             <AlertCircle size={14} className="shrink-0" />
             Your stores use different currencies, so revenue and order-value figures below are a blended total across them — open a store's own dashboard for an amount in that store's currency.
           </div>
@@ -459,7 +462,7 @@ export function SellerDashboard() {
           dataKey="sales"
           xKey="day"
           title="Revenue — Last 7 Days"
-          action={hasStore ? <span className="bg-brand-pale-orange text-[#C96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">{formatMoneyCompact(revenueTotal, currency)} total</span> : undefined}
+          action={hasStore ? <span className="bg-brand-pale-orange text-[#c96847] text-xs font-semibold px-[10px] py-[3px] rounded-md">{formatMoneyCompact(revenueTotal, currency)} total</span> : undefined}
           height={320}
           valuePrefix={currencySymbol(currency)}
           yTickFormatter={v => `${currencySymbol(currency)}${v.toLocaleString()}`}

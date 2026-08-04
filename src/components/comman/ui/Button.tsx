@@ -62,7 +62,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
     'bg-charcoal text-white border-0 hover:bg-carbon',
   // Soft red — destructive actions (Flag, Delete, Cancel…)
   danger:
-    'bg-error-bg text-error border border-[#FECACA] hover:bg-error hover:text-white hover:border-error',
+    'bg-error-bg text-error border border-error-border hover:bg-error hover:text-white hover:border-error',
 };
 
 const ICON_SIZE: Record<ButtonSize, number> = {

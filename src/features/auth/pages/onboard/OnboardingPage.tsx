@@ -1,14 +1,15 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCreateStore } from '@/hooks/store/useCreateStore';
+import { TokenStorage, getRoleRedirect, type AppRole } from '@/api/services/auth';
 import { Button } from '@/components/comman/ui/Button';
 import {
   Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
   Package, Download, Calendar, Repeat, MonitorSmartphone,
-  Sparkles, User, CreditCard, Plus, Wrench, ShoppingCart,
-  ArrowRight, ArrowLeft, Check, AlertTriangle, Loader2, Clock,
+  Sparkles, ArrowRight, ArrowLeft, Check, AlertTriangle, Loader2,
+  ShieldCheck, FileText, Clock3, ShoppingCart,
 } from 'lucide-react';
 import { useUpload } from '@/hooks/upload/useUpload';
 import type { SellerType, ProductType, StoreData, SupportedCurrency } from '@/api/services/store';
@@ -22,11 +23,15 @@ const ONBOARDING_HIGHLIGHTS = [
   { Icon: ShoppingCart, text: 'Reach thousands of active buyers' },
 ];
 
-const STEPS = ['Store Info', 'Seller Type', 'What You Sell', 'Go Live'];
+// Deliberately short — store setup only. Business verification is a
+// separate, dedicated flow (see StoreVerification.tsx / step 4 below, which
+// only hands off to it) so this wizard never feels like a KYC form.
+const STEPS = ['Store Info', 'Seller Type', 'What You Sell', 'Verification'];
+const TOTAL_STEPS = STEPS.length;
 
 // Every step shares this exact outer width so the progress header (badge +
 // bar + circles) renders at the same size on every tab — only the narrower
-// steps (Store Info, Go Live) constrain their inner content below it.
+// steps constrain their inner content below it.
 const STEP_WIDTH = 'max-w-[760px]';
 const NARROW_CONTENT = 'max-w-[480px] mx-auto';
 
@@ -220,7 +225,7 @@ function Step1({ form, setForm, onNext, step, maxReached, onStepClick }: {
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
           {form.storeName && (
             <p className="text-[11px] text-slate mt-[5px]">
-              Your store URL: <span className="text-brand-orange">{form.storeName.toLowerCase().replace(/\s+/g, '-')}.solvexo.store</span>
+              Your store URL will look like: <span className="text-brand-orange">solvexo.store/{form.storeName.toLowerCase().replace(/\s+/g, '-')}</span>
             </p>
           )}
         </div>
@@ -384,67 +389,81 @@ function Step3({ form, setForm, onNext, onBack, loading, error, step, maxReached
   );
 }
 
-// ── Step 4 — Go Live ──────────────────────────────────────────────────────────
+// ── Step 4 — Business Verification Required ─────────────────────────────────
+// A professional B2B-style hand-off screen, not a form — the store is
+// already created and the seller's dashboard/tools are ready to use. This
+// only explains *why* a separate verification flow exists (the same reason
+// Alibaba's own "Business Verification" gate does: establishing a legal
+// business identity and an authorized contact before a storefront goes
+// live) and hands off to the dedicated `/verification` flow, which owns all
+// the actual business-info/document collection and resubmission logic.
 function Step4({ store, categoryName }: { store: StoreData | null; categoryName: string }) {
   const navigate = useNavigate();
 
   const sellerLabel   = SELLER_TYPES.find(t => t.id === store?.sellerType)?.title ?? store?.sellerType ?? '—';
   const productLabels = (store?.productTypes ?? []).map(p => PRODUCT_TYPES.find(t => t.id === p)?.title ?? p).filter((v, i, a) => a.indexOf(v) === i).join(', ');
-  const toolLabels    = (store?.enabledTools ?? []).map(t => t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())).join(', ');
+
+  const VERIFICATION_STAGES = [
+    { Icon: Briefcase,   label: 'Business Info', desc: 'Legal name, type & contact' },
+    { Icon: FileText,    label: 'Documents',     desc: 'ID and business proof' },
+    { Icon: Clock3,      label: 'Admin Review',  desc: 'Usually within 1–2 business days' },
+  ];
 
   return (
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
-      <OnboardingStepHeader step={4} maxReached={4} onStepClick={() => {}} />
+      <OnboardingStepHeader step={TOTAL_STEPS} maxReached={TOTAL_STEPS} onStepClick={() => {}} />
       <div className={clsx(NARROW_CONTENT, 'text-center')}>
-        <h1 className="text-[30px] font-bold text-carbon mb-[10px]">Submitted for review</h1>
-        <p className="text-[14px] text-slate leading-[1.7] mb-8 max-w-[400px] mx-auto">
-          Welcome to Solvexo. Your seller dashboard and tools are ready now — your store will go live on the marketplace as soon as our team approves it.
+        <div className="size-14 rounded-full bg-brand-pale-orange flex items-center justify-center mx-auto mb-4">
+          <ShieldCheck size={26} className="text-brand-orange" />
+        </div>
+        <h1 className="text-[28px] font-bold text-carbon mb-[10px]">Your store is set up</h1>
+        <p className="text-[14px] text-slate leading-[1.7] mb-7 max-w-[420px] mx-auto">
+          Welcome to Solvexo — your seller dashboard and tools are ready to use right now. One thing stands between {store?.name || 'your store'} and the marketplace: business verification.
         </p>
 
-        <div className="bg-white border border-bone rounded-[14px] p-5 mb-7 text-left">
+        <div className="bg-white border border-bone rounded-[14px] p-5 mb-5 text-left">
           <p className="text-[12px] font-semibold text-carbon mb-[14px]">Your Solvexo Setup</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-[10px]">
             {[
-              { Icon: Clock,      label: 'Status',       value: 'Pending Review' },
-              { Icon: Store,      label: 'Store',        value: store?.name ?? '—' },
-              { Icon: Globe,      label: 'Store URL',    value: store?.slug ? `${store.slug}.solvexo.store` : '—' },
-              { Icon: User,       label: 'Seller type',  value: sellerLabel },
-              { Icon: Package,    label: 'Category',     value: categoryName || '—' },
-              { Icon: Download,   label: 'Products',     value: productLabels || '—' },
-              { Icon: CreditCard, label: 'Plan',         value: store?.plan ? `${store.plan.charAt(0).toUpperCase() + store.plan.slice(1)} — Free` : 'Starter — Free' },
-              { Icon: Sparkles,   label: 'AI Credits',   value: store?.aiCredits != null ? `${store.aiCredits} free credits included` : '—' },
-              { Icon: Wrench,     label: 'Active Tools', value: toolLabels || '—', fullWidth: true },
-            ].map(({ Icon, label, value, fullWidth }) => (
-              <div key={label} className={clsx('flex items-center gap-[10px]', fullWidth && 'col-span-2')}>
-                <Icon size={16} className="w-6 text-slate shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] text-slate">{label}</p>
-                  <p className="text-[12px] font-semibold text-carbon">{value}</p>
-                </div>
+              { label: 'Store',        value: store?.name ?? '—' },
+              { label: 'Store URL',    value: store?.slug ? `solvexo.store/${store.slug}` : '—' },
+              { label: 'Seller type',  value: sellerLabel },
+              { label: 'Category',     value: categoryName || '—' },
+              { label: 'Sells',        value: productLabels || '—', fullWidth: true },
+            ].map(({ label, value, fullWidth }) => (
+              <div key={label} className={clsx(fullWidth && 'col-span-2')}>
+                <p className="text-[10px] text-slate">{label}</p>
+                <p className="text-[12px] font-semibold text-carbon">{value}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="text-[13px] font-semibold text-carbon mb-[14px]">Recommended next steps</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-[10px] mb-7">
-          {[
-            { Icon: Plus,         label: 'Add your first product', path: `/seller/store/${store?._id}/products/add` },
-            { Icon: Wrench,       label: 'Customise your store',   path: `/seller/store/${store?._id}/storebuilder` },
-            { Icon: ShoppingCart, label: 'Browse the marketplace', path: '/marketplace' },
-          ].map(({ Icon, label, path }) => (
-            <div key={label} onClick={() => navigate(path, { replace: true })}
-              className="px-3 py-[14px] rounded-xl border-[1.5px] border-bone bg-white text-center cursor-pointer transition-[border-color] duration-200 hover:border-brand-orange"
-            >
-              <Icon size={24} className="block mx-auto mb-[6px] text-charcoal" />
-              <p className="text-[12px] font-medium text-charcoal">{label}</p>
-            </div>
-          ))}
+        <div className="bg-brand-pale-orange/40 border border-brand-orange/20 rounded-[14px] p-5 mb-7 text-left">
+          <p className="text-[13px] font-bold text-carbon mb-1">Business Verification Required</p>
+          <p className="text-[12px] text-slate leading-[1.6] mb-4">
+            This establishes who's legally responsible for the store and keeps buyers confident in every storefront on the marketplace — the same reason B2B marketplaces like Alibaba verify sellers before listing them.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-[10px]">
+            {VERIFICATION_STAGES.map(({ Icon, label, desc }) => (
+              <div key={label} className="bg-white rounded-xl px-3 py-[14px] border border-bone/60">
+                <Icon size={18} className="text-brand-orange mb-[6px]" />
+                <p className="text-[12px] font-bold text-carbon">{label}</p>
+                <p className="text-[10.5px] text-slate leading-[1.4] mt-[2px]">{desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/seller/dashboard', { replace: true })}>
-          Go to My Dashboard <ArrowRight size={14} className="inline align-middle ml-1" />
+        <Button variant="primary" size="lg" fullWidth onClick={() => navigate(`/seller/store/${store?._id}/verification`, { replace: true })}>
+          Start Business Verification <ArrowRight size={14} className="inline align-middle ml-1" />
         </Button>
+        <button
+          onClick={() => navigate('/seller/dashboard', { replace: true })}
+          className="mt-3 text-[12.5px] font-medium text-slate bg-transparent border-none cursor-pointer hover:text-charcoal transition-colors"
+        >
+          I'll do this later — go to my dashboard
+        </button>
       </div>
     </div>
   );
@@ -461,7 +480,20 @@ export function OnboardingPage() {
     sellerType: '', sellerKey: '', productTypes: [], baseCurrency: DEFAULT_CURRENCY,
   });
 
-  const next   = () => setStep(s => { const n = Math.min(s + 1, 4); setMaxReached(m => Math.max(m, n)); return n; });
+  // Store setup is a seller-only flow — a logged-out visitor is sent to
+  // /login (redirect back here after), and a logged-in buyer is sent to
+  // their own home instead of ever seeing seller store setup. Placed after
+  // every hook call above (same convention as StoreLayout's role guard) so
+  // this early return never changes the hook count between renders.
+  const user = TokenStorage.getUser<{ role?: AppRole }>();
+  if (!TokenStorage.isLoggedIn()) {
+    return <Navigate to="/login?redirect=/onboard" replace />;
+  }
+  if (user?.role && user.role !== 'seller') {
+    return <Navigate to={getRoleRedirect(user.role)} replace />;
+  }
+
+  const next   = () => setStep(s => { const n = Math.min(s + 1, TOTAL_STEPS); setMaxReached(m => Math.max(m, n)); return n; });
   const back   = () => setStep(s => Math.max(s - 1, 1));
   const jumpTo = (target: number) => setStep(target);
 
@@ -475,15 +507,12 @@ export function OnboardingPage() {
       productTypes: [...new Set(form.productTypes)],
       baseCurrency: form.baseCurrency,
     });
-    if (result) {
-      setMaxReached(4);
-      setStep(4);
-    }
+    if (result) next();
   };
 
   return (
     <AuthSplitLayout
-      panelGradient="from-carbon via-[#241F1B] to-brand-deep-orange"
+      panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
       heading="Your store, your way."
       subtext="A few quick steps and your Solvexo seller dashboard is ready — tools, analytics and AI Studio included."
       highlights={ONBOARDING_HIGHLIGHTS}

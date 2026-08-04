@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, FolderTree, RefreshCw,
-  BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle, Landmark, Percent, Coins, UserPlus,
+  BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle, Landmark, Percent, Coins, UserPlus, Activity,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -26,6 +26,7 @@ const ADMIN_NAV: AdminNavItem[] = [
   { id: 'analytics',     Icon: BarChart3,       label: 'Analytics',       path: '/admin/analytics'     },
   { id: 'users',         Icon: Users,           label: 'Users & Sellers', path: '/admin/users'         },
   { id: 'moderation',    Icon: Shield,          label: 'Moderation',      path: '/admin/moderation'    },
+  { id: 'activity-log',  Icon: Activity,        label: 'Activity Log',    path: '/admin/activity-log'  },
   { id: 'messages',      Icon: MessageSquare,   label: 'Messaging',       path: '/admin/messages'      },
   { id: 'leads',         Icon: UserPlus,        label: 'Leads',           path: '/admin/leads'         },
   { id: 'marketplace',   Icon: Store,           label: 'Marketplace',     path: '/admin/marketplace'   },
@@ -51,7 +52,7 @@ const ADMIN_NAV: AdminNavItem[] = [
 // which items exist. Every id above must appear in exactly one group.
 const NAV_GROUPS: { label: string; ids: AdminNavItem['id'][] }[] = [
   { label: 'Overview',  ids: ['overview', 'analytics'] },
-  { label: 'Community', ids: ['users', 'moderation', 'messages'] },
+  { label: 'Community', ids: ['users', 'moderation', 'activity-log', 'messages'] },
   { label: 'Commerce',  ids: ['leads', 'marketplace', 'categories', 'subscriptions', 'platform-plans'] },
   { label: 'Growth',    ids: ['marketing', 'seo', 'ai-studio'] },
   { label: 'Finance',   ids: ['finance', 'manual-payments', 'commission-rules', 'fx-settings'] },

@@ -82,6 +82,7 @@ const StoreCustomerList  = lazy(() => import('@/features/seller/store/Dashboard/
 const StoreSettings      = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreSettings'));
 const StoreCategories    = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCategories'));
 const StorePlanBilling   = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
+const StoreVerification  = lazy(() => named(import('@/features/seller/store/Dashboard/Manage/StoreVerification'), 'StoreVerification'));
 const StoreOrderList     = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList'),        'StoreOrderList'));
 const StoreReturnList    = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/returns/ReturnList'),      'StoreReturnList'));
 const StoreAnalytics     = lazy(() => named(import('@/features/seller/store/Dashboard/Analytic/analytics/Analytics'),        'StoreAnalytics'));
@@ -100,6 +101,7 @@ const AdminOverview      = lazy(() => named(import('@/features/admin/pages/Admin
 const AdminAnalytics     = lazy(() => named(import('@/features/admin/pages/AdminAnalytics'),                    'AdminAnalytics'));
 const AdminUsers         = lazy(() => named(import('@/features/admin/pages/AdminUsers'),                        'AdminUsers'));
 const AdminModeration    = lazy(() => named(import('@/features/admin/pages/AdminModeration'),                   'AdminModeration'));
+const AdminActivityLog   = lazy(() => named(import('@/features/admin/pages/AdminActivityLog'),                   'AdminActivityLog'));
 const AdminMessaging     = lazy(() => named(import('@/features/admin/pages/AdminMessaging'),                    'AdminMessaging'));
 const AdminMarketplace   = lazy(() => named(import('@/features/admin/pages/AdminMarketplace'),                  'AdminMarketplace'));
 const AdminLeads         = lazy(() => named(import('@/features/admin/pages/AdminLeads'),                        'AdminLeads'));
@@ -219,6 +221,7 @@ export const router = createBrowserRouter([
           { path: 'settings',                         element: <StoreSettings /> },
           { path: 'categories',                       element: <StoreCategories /> },
           { path: 'plan-billing',                     element: <StorePlanBilling /> },
+          { path: 'verification',                     element: <StoreVerification /> },
           { path: 'storebuilder',                     element: <StoreBuilder /> },
           { path: 'returns',                          element: <StoreReturnList /> },
           { path: 'seo',                              element: <StoreSEO /> },
@@ -247,6 +250,7 @@ export const router = createBrowserRouter([
           { path: 'analytics',    element: <RequireRole role="admin"><AdminAnalytics /></RequireRole> },
           { path: 'users',        element: <RequireRole role="admin"><AdminUsers /></RequireRole> },
           { path: 'moderation',   element: <RequireRole role="admin"><AdminModeration /></RequireRole> },
+          { path: 'activity-log', element: <RequireRole role="admin"><AdminActivityLog /></RequireRole> },
           { path: 'messages',     element: <AdminMessaging /> },
           { path: 'leads',        element: <RequireRole role="admin"><AdminLeads /></RequireRole> },
           { path: 'marketplace',  element: <RequireRole role="admin"><AdminMarketplace /></RequireRole> },

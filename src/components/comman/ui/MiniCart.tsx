@@ -84,7 +84,7 @@ export function MiniCart({ accentColor }: { accentColor?: string }) {
       >
         <ShoppingCart size={16} className="text-white" />
         {cartCount > 0 && (
-          <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 border-2 border-white">
+          <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#e11d48] text-white text-[10px] font-bold leading-[18px] text-center px-1 border-2 border-white">
             {cartCount > 99 ? '99+' : cartCount}
           </span>
         )}
@@ -121,7 +121,7 @@ export function MiniCart({ accentColor }: { accentColor?: string }) {
             </div>
           ) : (
             <>
-              <div className="max-h-[264px] overflow-y-auto divide-y divide-[#F5F4EF]">
+              <div className="max-h-[264px] overflow-y-auto divide-y divide-[#f5f4ef]">
                 {recent.map(item => (
                   <div key={item.productVariantId} className="flex gap-2.5 p-3">
                     <ItemThumb item={item} />
