@@ -16,6 +16,7 @@ jobs:
           script: |
             cd /home/deploy/apps/solvexo-web
             git pull origin main
+            printf 'VITE_API_URL=https://staging.solvexo.store\n' > .env
             npm ci
             npm run build
             pm2 restart solvexo-web || pm2 start npm --name "solvexo-web" -- start

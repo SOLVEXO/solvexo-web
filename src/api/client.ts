@@ -16,8 +16,26 @@ const AUTH_ATTEMPT_PATHS = [
 ];
 
 // ── Axios instance ────────────────────────────────────────────────────────────
+// import.meta.env.VITE_API_URL is inlined at BUILD time. If the build runs
+// without it set, Vite bakes in `undefined` — axios then silently treats
+// every request as relative to whatever origin serves the built bundle
+// (e.g. the static frontend host) instead of the real backend. That host
+// has no /api route, so its SPA fallback returns index.html with a 200 for
+// every API call: requests "succeed" but return HTML, and every `res.data`
+// destructure downstream throws on the resulting string. This exact failure
+// mode shipped once already (baseURL came out as `void 0` in a production
+// bundle) — fail loudly here instead of letting it recur silently.
+const API_BASE_URL = import.meta.env.VITE_API_URL as string | undefined;
+if (!API_BASE_URL) {
+  // eslint-disable-next-line no-console
+  console.error(
+    '[Solvexo] VITE_API_URL is not set for this build. All API requests will ' +
+    'target the wrong host and silently fail. Set VITE_API_URL and rebuild.',
+  );
+}
+
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL as string,
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
   timeout: 15_000,
 });
@@ -25,6 +43,12 @@ const client = axios.create({
 // ── Request interceptor — attach Bearer token automatically ───────────────────
 client.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    if (!API_BASE_URL) {
+      return Promise.reject(Object.assign(
+        new Error('The app is misconfigured (missing API URL). Please contact support.'),
+        { isNetworkError: false, status: undefined },
+      ));
+    }
     const token = localStorage.getItem('accessToken');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -40,7 +64,21 @@ client.interceptors.request.use(
 
 // ── Response interceptor — normalize errors, handle 401 ──────────────────────
 client.interceptors.response.use(
-  (res: AxiosResponse) => res.data,   // unwrap → caller gets { success, message, data }
+  (res: AxiosResponse) => {
+    // Every backend controller returns a JSON object body (no endpoint sends
+    // 204/empty responses) — if a 2xx response ever arrives without one (e.g.
+    // a stale deploy, a proxy/CDN returning an empty 200, a version-skewed
+    // frontend/backend pair), surface a readable error here instead of
+    // letting every call site's `const { x } = res.data` throw a raw
+    // "Cannot destructure property 'x' of 'res.data' as it is undefined".
+    if (res.data === null || res.data === undefined || typeof res.data !== 'object') {
+      throw Object.assign(new Error('Unexpected response from server. Please try again.'), {
+        isNetworkError: false,
+        status: res.status,
+      });
+    }
+    return res.data;   // unwrap → caller gets { success, message, data } (or module-specific equivalent)
+  },
   err => {
     const msg: string =
       err.response?.data?.message ||
