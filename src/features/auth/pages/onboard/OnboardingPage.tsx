@@ -1,32 +1,47 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCreateStore } from '@/hooks/store/useCreateStore';
+import { useStandaloneRequirementsPreview } from '@/hooks/store/useStoreVerification';
 import { TokenStorage, getRoleRedirect, type AppRole } from '@/api/services/auth';
 import { Button } from '@/components/comman/ui/Button';
 import {
   Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
   Package, Download, Calendar, Repeat, MonitorSmartphone,
   Sparkles, ArrowRight, ArrowLeft, Check, AlertTriangle, Loader2,
-  ShieldCheck, FileText, Clock3, ShoppingCart,
+  ShieldCheck, Clock3,
 } from 'lucide-react';
 import { useUpload } from '@/hooks/upload/useUpload';
 import type { SellerType, ProductType, StoreData, SupportedCurrency } from '@/api/services/store';
+import {
+  apiUpdateVerification, apiAttachVerificationDocument, apiSubmitVerification,
+  type VerificationDocumentType, type VerificationDocumentView,
+} from '@/api/services/storeVerification';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { SellerDashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
+import {
+  BusinessInfoFields, DocumentUploadCard, VERIFICATION_LEVEL_LABELS, previewVerificationLevel,
+  type BusinessInfoValues,
+} from '@/features/seller/components/verification/VerificationFormFields';
 
 const ONBOARDING_HIGHLIGHTS = [
   { Icon: Store,     text: 'A store built around how you sell' },
   { Icon: Sparkles,  text: 'AI Studio and analytics from day one' },
-  { Icon: ShoppingCart, text: 'Reach thousands of active buyers' },
+  { Icon: ShieldCheck, text: 'Verified sellers buyers can trust' },
 ];
 
-// Deliberately short — store setup only. Business verification is a
-// separate, dedicated flow (see StoreVerification.tsx / step 4 below, which
-// only hands off to it) so this wizard never feels like a KYC form.
-const STEPS = ['Store Info', 'Seller Type', 'What You Sell', 'Verification'];
+// One continuous seller-activation journey — store setup, seller profile,
+// business information, documents, and review/submit are all steps of the
+// SAME wizard. Nothing is created on the backend until the very last step:
+// steps 1-5 only ever touch local component state (document files upload
+// straight to Cloudinary to get a publicId, but aren't attached to
+// anything yet) — the store record, the saved business info, and the
+// attached documents are all created together in ONE batch when "Submit
+// for Review" is clicked, so an abandoned/incomplete onboarding attempt
+// never leaves a half-created store behind.
+const STEPS = ['Store Info', 'Seller Type', 'What You Sell', 'Business Info', 'Documents', 'Review'];
 const TOTAL_STEPS = STEPS.length;
 
 // Every step shares this exact outer width so the progress header (badge +
@@ -73,6 +88,31 @@ interface StoreForm {
 // default can replace this constant later without touching anything else,
 // since the rest of the app only ever reads `store.baseCurrency`.
 const DEFAULT_CURRENCY: SupportedCurrency = 'PKR';
+
+const EMPTY_BUSINESS_INFO: BusinessInfoValues = {
+  country: 'PK',
+  businessType: null,
+  legalBusinessName: '',
+  registrationNumber: '',
+  taxId: '',
+  businessAddress: '',
+  idDocumentType: null,
+  authorizedContact: { name: null, designation: null, email: null, phone: null },
+};
+
+/** A document the user has uploaded to Cloudinary (private storage) during
+ *  onboarding but that isn't attached to a store yet — nothing to attach it
+ *  TO until the store is created at final submit. */
+interface PendingDocument { publicId: string; resourceType: string; fileName: string }
+
+function isFieldFilled(values: BusinessInfoValues, path: string): boolean {
+  if (path.startsWith('authorizedContact.')) {
+    const key = path.split('.')[1] as keyof typeof values.authorizedContact;
+    return !!values.authorizedContact[key]?.trim();
+  }
+  const value = (values as any)[path];
+  return typeof value === 'string' ? value.trim().length > 0 : value != null;
+}
 
 // ── Step Progress header — lives inside each step's card, same badge +
 // progress-line + circle treatment as CheckoutPage's step header, instead of
@@ -306,10 +346,9 @@ function Step2({ form, setForm, onNext, onBack, step, maxReached, onStepClick }:
 }
 
 // ── Step 3 — What You Sell ────────────────────────────────────────────────────
-function Step3({ form, setForm, onNext, onBack, loading, error, step, maxReached, onStepClick }: {
+function Step3({ form, setForm, onNext, onBack, step, maxReached, onStepClick }: {
   form: StoreForm; setForm: (f: StoreForm) => void;
   onNext: () => void; onBack: () => void;
-  loading: boolean; error: string;
   step: number; maxReached: number; onStepClick: (step: number) => void;
 }) {
   const toggle = (id: ProductType) =>
@@ -363,107 +402,235 @@ function Step3({ form, setForm, onNext, onBack, loading, error, step, maxReached
         </div>
       )}
 
-      {error && (
-        <div className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 flex items-center gap-2">
-          <AlertTriangle size={14} className="text-error shrink-0" />
-          <span className="text-[13px] text-error">{error}</span>
-        </div>
-      )}
-
       <div className="flex gap-[10px]">
-        <Button variant="ghost" size="md" onClick={onBack} className="shrink-0" disabled={loading}>
+        <Button variant="ghost" size="md" onClick={onBack} className="shrink-0">
           <ArrowLeft size={14} className="inline align-middle mr-1" /> Back
         </Button>
         <Button variant="primary" size="lg" className="flex-1 justify-center"
           onClick={() => form.productTypes.length > 0 && onNext()}
-          disabled={form.productTypes.length === 0}
-          loading={loading}>
-          {loading
-            ? 'Creating your store...'
-            : form.productTypes.length > 0
-              ? <span>Create Store <ArrowRight size={14} className="inline align-middle ml-1" /></span>
-              : 'Select at least one'}
+          disabled={form.productTypes.length === 0}>
+          {form.productTypes.length > 0 ? <span>Continue <ArrowRight size={14} className="inline align-middle ml-1" /></span> : 'Select at least one'}
         </Button>
       </div>
     </div>
   );
 }
 
-// ── Step 4 — Business Verification Required ─────────────────────────────────
-// A professional B2B-style hand-off screen, not a form — the store is
-// already created and the seller's dashboard/tools are ready to use. This
-// only explains *why* a separate verification flow exists (the same reason
-// Alibaba's own "Business Verification" gate does: establishing a legal
-// business identity and an authorized contact before a storefront goes
-// live) and hands off to the dedicated `/verification` flow, which owns all
-// the actual business-info/document collection and resubmission logic.
-function Step4({ store, categoryName }: { store: StoreData | null; categoryName: string }) {
+// ── Step 4 — Business Information ────────────────────────────────────────────
+function Step4BusinessInfo({ values, onChange, missingFields, requirementsReady, onNext, onBack, step, maxReached, onStepClick }: {
+  values: BusinessInfoValues; onChange: (v: BusinessInfoValues) => void;
+  missingFields: string[]; requirementsReady: boolean; onNext: () => void; onBack: () => void;
+  step: number; maxReached: number; onStepClick: (step: number) => void;
+}) {
+  // `requirementsReady` guards a real race: the live requirements preview
+  // loads asynchronously, and before its first response arrives
+  // `missingFields` would otherwise default to an empty array (nothing
+  // *known* to be missing yet) — which let a fast click-through past this
+  // step skip mandatory fields entirely, only surfacing at Review.
+  const canProceed = values.businessType !== null && requirementsReady && missingFields.length === 0;
+  return (
+    <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
+      <OnboardingStepHeader step={step} maxReached={maxReached} onStepClick={onStepClick} />
+      <div className={clsx(NARROW_CONTENT, 'text-center mb-7')}>
+        <h1 className="text-[28px] font-bold text-carbon mb-2">Tell us about your business</h1>
+        <p className="text-[14px] text-slate">This establishes who's legally responsible for the store — required before it can go live on the marketplace.</p>
+      </div>
+      <div className={NARROW_CONTENT}>
+        <BusinessInfoFields values={values} onChange={onChange} />
+        {!requirementsReady && values.businessType && (
+          <p className="text-[11.5px] text-slate mt-2 mb-1">Checking requirements for your country/business type…</p>
+        )}
+        {requirementsReady && values.businessType && missingFields.length > 0 && (
+          <p className="text-[11.5px] text-slate mt-2 mb-1">{missingFields.length} required field(s) still need to be filled in above.</p>
+        )}
+        <div className="flex gap-[10px] mt-2">
+          <Button variant="ghost" size="md" onClick={onBack} className="shrink-0">
+            <ArrowLeft size={14} className="inline align-middle mr-1" /> Back
+          </Button>
+          <Button variant="primary" size="lg" className="flex-1 justify-center" onClick={() => canProceed && onNext()} disabled={!canProceed}>
+            Continue <ArrowRight size={14} className="inline align-middle ml-1" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 5 — Documents ────────────────────────────────────────────────────────
+function Step5Documents({ checklist, uploadingType, onUpload, onNext, onBack, completeCount, requiredCount, step, maxReached, onStepClick }: {
+  checklist: VerificationDocumentView[]; uploadingType: VerificationDocumentType | null;
+  onUpload: (type: VerificationDocumentType, file: File) => void;
+  onNext: () => void; onBack: () => void; completeCount: number; requiredCount: number;
+  step: number; maxReached: number; onStepClick: (step: number) => void;
+}) {
+  return (
+    <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
+      <OnboardingStepHeader step={step} maxReached={maxReached} onStepClick={onStepClick} />
+      <div className={clsx(NARROW_CONTENT, 'text-center mb-7')}>
+        <h1 className="text-[28px] font-bold text-carbon mb-2">Upload your verification documents</h1>
+        <p className="text-[14px] text-slate">Based on your country and business type — you can still review everything before submitting.</p>
+      </div>
+      <div className={NARROW_CONTENT}>
+        {requiredCount > 0 && (
+          <p className="text-[11.5px] font-semibold text-slate mb-3 text-right">{completeCount} of {requiredCount} required documents complete</p>
+        )}
+        <div className="flex flex-col gap-3 mb-6">
+          {checklist.map(doc => (
+            <DocumentUploadCard
+              key={doc.type}
+              doc={doc}
+              uploading={uploadingType === doc.type}
+              onUpload={file => onUpload(doc.type, file)}
+            />
+          ))}
+        </div>
+        <div className="flex gap-[10px]">
+          <Button variant="ghost" size="md" onClick={onBack} className="shrink-0">
+            <ArrowLeft size={14} className="inline align-middle mr-1" /> Back
+          </Button>
+          <Button variant="primary" size="lg" className="flex-1 justify-center" onClick={onNext}>
+            Continue <ArrowRight size={14} className="inline align-middle ml-1" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 6 — Review & Submit ──────────────────────────────────────────────────
+// Deliberately flat — plain labeled sections, no boxed/card sub-panels — so
+// this step reads as a continuation of steps 1-5, not a different kind of
+// screen bolted onto the end.
+function Step6Review({ form, businessInfo, level, checklist, missingFields, missingDocs, canSubmit, submitting, submitError, onSubmit, onBack, step, maxReached, onStepClick }: {
+  form: StoreForm; businessInfo: BusinessInfoValues; level: 'basic' | 'business' | 'enhanced';
+  checklist: VerificationDocumentView[]; missingFields: string[]; missingDocs: VerificationDocumentView[];
+  canSubmit: boolean; submitting: boolean; submitError: string;
+  onSubmit: () => void; onBack: () => void;
+  step: number; maxReached: number; onStepClick: (step: number) => void;
+}) {
+  const sellerLabel   = SELLER_TYPES.find(t => t.id === form.sellerType)?.title ?? form.sellerType ?? '—';
+  const productLabels = form.productTypes.map(p => PRODUCT_TYPES.find(t => t.id === p)?.title ?? p).filter((v, i, a) => a.indexOf(v) === i).join(', ');
+
+  return (
+    <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
+      <OnboardingStepHeader step={step} maxReached={maxReached} onStepClick={onStepClick} />
+      <div className={clsx(NARROW_CONTENT, 'text-center mb-7')}>
+        <h1 className="text-[28px] font-bold text-carbon mb-2">Review &amp; submit</h1>
+        <p className="text-[14px] text-slate">Double-check everything, then submit for verification review.</p>
+      </div>
+
+      <div className={NARROW_CONTENT}>
+        <div className="mb-6">
+          <p className="text-[12px] font-bold text-carbon uppercase tracking-[0.05em] pb-2 mb-3 border-b border-bone">Store</p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-[10px]">
+            <div><p className="text-[10px] text-slate">Store name</p><p className="text-[12.5px] font-semibold text-carbon">{form.storeName || '—'}</p></div>
+            <div><p className="text-[10px] text-slate">Category</p><p className="text-[12.5px] font-semibold text-carbon">{form.categoryName || '—'}</p></div>
+            <div><p className="text-[10px] text-slate">Seller type</p><p className="text-[12.5px] font-semibold text-carbon">{sellerLabel}</p></div>
+            <div><p className="text-[10px] text-slate">Sells</p><p className="text-[12.5px] font-semibold text-carbon">{productLabels || '—'}</p></div>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <div className="flex items-center justify-between pb-2 mb-3 border-b border-bone">
+            <p className="text-[12px] font-bold text-carbon uppercase tracking-[0.05em]">Business Information</p>
+            <span className="text-[10.5px] font-bold uppercase tracking-wide text-brand-deep-orange bg-brand-pale-orange rounded-full px-[9px] py-[3px]">
+              {VERIFICATION_LEVEL_LABELS[level].label}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-[10px]">
+            <div><p className="text-[10px] text-slate">Country</p><p className="text-[12.5px] font-semibold text-carbon">{businessInfo.country}</p></div>
+            <div><p className="text-[10px] text-slate">Business type</p><p className="text-[12.5px] font-semibold text-carbon capitalize">{businessInfo.businessType ?? '—'}</p></div>
+            <div><p className="text-[10px] text-slate">Legal name</p><p className="text-[12.5px] font-semibold text-carbon">{businessInfo.legalBusinessName || '—'}</p></div>
+            <div><p className="text-[10px] text-slate">Authorized contact</p><p className="text-[12.5px] font-semibold text-carbon">{businessInfo.authorizedContact.name || '—'}</p></div>
+            <div><p className="text-[10px] text-slate">Business address</p><p className="text-[12.5px] font-semibold text-carbon">{businessInfo.businessAddress || '—'}</p></div>
+            <div><p className="text-[10px] text-slate">ID document type</p><p className="text-[12.5px] font-semibold text-carbon uppercase">{businessInfo.idDocumentType || '—'}</p></div>
+            <div><p className="text-[10px] text-slate">Contact email</p><p className="text-[12.5px] font-semibold text-carbon">{businessInfo.authorizedContact.email || '—'}</p></div>
+            <div><p className="text-[10px] text-slate">Contact phone</p><p className="text-[12.5px] font-semibold text-carbon">{businessInfo.authorizedContact.phone || '—'}</p></div>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <p className="text-[12px] font-bold text-carbon uppercase tracking-[0.05em] pb-2 mb-3 border-b border-bone">Documents</p>
+          <div className="flex flex-col gap-2">
+            {checklist.map(doc => (
+              <div key={doc.type} className="flex items-center justify-between gap-2">
+                <span className="text-[12.5px] text-charcoal capitalize">{doc.type.replace(/_/g, ' ')}</span>
+                {doc.state === 'uploaded'
+                  ? <span className="text-[11px] font-semibold text-success inline-flex items-center gap-1"><Check size={12} /> Uploaded</span>
+                  : doc.required
+                    ? <span className="text-[11px] font-semibold text-error">Missing</span>
+                    : <span className="text-[11px] text-slate">Not required</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {(missingFields.length > 0 || missingDocs.length > 0) && (
+          <div className="flex items-start gap-2 text-left mb-4">
+            <AlertTriangle size={14} className="text-[#946200] shrink-0 mt-[2px]" />
+            <p className="text-[12.5px] text-[#946200] leading-[1.6]">
+              {missingFields.length > 0 && `${missingFields.length} business field(s) still missing. `}
+              {missingDocs.length > 0 && `${missingDocs.length} required document(s) still missing.`}
+              {' '}Go back to fix these before submitting.
+            </p>
+          </div>
+        )}
+
+        {submitError && (
+          <div className="flex items-start gap-2 text-left mb-4">
+            <AlertTriangle size={14} className="text-error shrink-0 mt-[2px]" />
+            <p className="text-[12.5px] text-error leading-[1.6]">{submitError}</p>
+          </div>
+        )}
+
+        <div className="flex gap-[10px]">
+          <Button variant="ghost" size="md" onClick={onBack} className="shrink-0" disabled={submitting}>
+            <ArrowLeft size={14} className="inline align-middle mr-1" /> Back
+          </Button>
+          <Button variant="primary" size="lg" className="flex-1 justify-center" onClick={onSubmit} disabled={!canSubmit} loading={submitting}>
+            Submit for Review
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Terminal state — application submitted ───────────────────────────────────
+// Same flat, no-card treatment as Step6Review.
+const REVIEW_STAGES = [
+  { Icon: Briefcase,   label: 'Application Submitted', desc: 'Business info & documents received' },
+  { Icon: Clock3,      label: 'Admin Review',          desc: 'Usually within 1–2 business days' },
+  { Icon: ShieldCheck, label: 'Store Goes Live',        desc: 'Full seller access unlocks automatically' },
+];
+
+function SubmittedConfirmation({ store }: { store: StoreData | null }) {
   const navigate = useNavigate();
-
-  const sellerLabel   = SELLER_TYPES.find(t => t.id === store?.sellerType)?.title ?? store?.sellerType ?? '—';
-  const productLabels = (store?.productTypes ?? []).map(p => PRODUCT_TYPES.find(t => t.id === p)?.title ?? p).filter((v, i, a) => a.indexOf(v) === i).join(', ');
-
-  const VERIFICATION_STAGES = [
-    { Icon: Briefcase,   label: 'Business Info', desc: 'Legal name, type & contact' },
-    { Icon: FileText,    label: 'Documents',     desc: 'ID and business proof' },
-    { Icon: Clock3,      label: 'Admin Review',  desc: 'Usually within 1–2 business days' },
-  ];
-
   return (
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
       <OnboardingStepHeader step={TOTAL_STEPS} maxReached={TOTAL_STEPS} onStepClick={() => {}} />
       <div className={clsx(NARROW_CONTENT, 'text-center')}>
-        <div className="size-14 rounded-full bg-brand-pale-orange flex items-center justify-center mx-auto mb-4">
-          <ShieldCheck size={26} className="text-brand-orange" />
+        <div className="size-14 rounded-full bg-success-bg flex items-center justify-center mx-auto mb-4">
+          <Check size={26} className="text-success" />
         </div>
-        <h1 className="text-[28px] font-bold text-carbon mb-[10px]">Your store is set up</h1>
+        <h1 className="text-[28px] font-bold text-carbon mb-[10px]">Application submitted</h1>
         <p className="text-[14px] text-slate leading-[1.7] mb-7 max-w-[420px] mx-auto">
-          Welcome to Solvexo — your seller dashboard and tools are ready to use right now. One thing stands between {store?.name || 'your store'} and the marketplace: business verification.
+          {store?.name || 'Your store'} and your business verification are both in — our team will review it and you'll be notified as soon as a decision is made.
         </p>
-
-        <div className="bg-white border border-bone rounded-[14px] p-5 mb-5 text-left">
-          <p className="text-[12px] font-semibold text-carbon mb-[14px]">Your Solvexo Setup</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-[10px]">
-            {[
-              { label: 'Store',        value: store?.name ?? '—' },
-              { label: 'Store URL',    value: store?.slug ? `solvexo.store/${store.slug}` : '—' },
-              { label: 'Seller type',  value: sellerLabel },
-              { label: 'Category',     value: categoryName || '—' },
-              { label: 'Sells',        value: productLabels || '—', fullWidth: true },
-            ].map(({ label, value, fullWidth }) => (
-              <div key={label} className={clsx(fullWidth && 'col-span-2')}>
-                <p className="text-[10px] text-slate">{label}</p>
-                <p className="text-[12px] font-semibold text-carbon">{value}</p>
+        <div className="flex flex-col gap-4 mb-7 text-left">
+          {REVIEW_STAGES.map(({ Icon, label, desc }, i) => (
+            <div key={label} className="flex items-start gap-3">
+              <div className="size-7 rounded-full bg-brand-pale-orange flex items-center justify-center shrink-0 text-[11px] font-bold text-brand-orange">{i + 1}</div>
+              <div>
+                <p className="text-[12.5px] font-bold text-carbon inline-flex items-center gap-[6px]"><Icon size={14} className="text-brand-orange" /> {label}</p>
+                <p className="text-[11.5px] text-slate mt-[2px]">{desc}</p>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-
-        <div className="bg-brand-pale-orange/40 border border-brand-orange/20 rounded-[14px] p-5 mb-7 text-left">
-          <p className="text-[13px] font-bold text-carbon mb-1">Business Verification Required</p>
-          <p className="text-[12px] text-slate leading-[1.6] mb-4">
-            This establishes who's legally responsible for the store and keeps buyers confident in every storefront on the marketplace — the same reason B2B marketplaces like Alibaba verify sellers before listing them.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-[10px]">
-            {VERIFICATION_STAGES.map(({ Icon, label, desc }) => (
-              <div key={label} className="bg-white rounded-xl px-3 py-[14px] border border-bone/60">
-                <Icon size={18} className="text-brand-orange mb-[6px]" />
-                <p className="text-[12px] font-bold text-carbon">{label}</p>
-                <p className="text-[10.5px] text-slate leading-[1.4] mt-[2px]">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <Button variant="primary" size="lg" fullWidth onClick={() => navigate(`/seller/store/${store?._id}/verification`, { replace: true })}>
-          Start Business Verification <ArrowRight size={14} className="inline align-middle ml-1" />
+        <Button variant="primary" size="lg" fullWidth onClick={() => navigate(`/seller/store/${store?._id}/dashboard`, { replace: true })}>
+          Go to My Seller Workspace <ArrowRight size={14} className="inline align-middle ml-1" />
         </Button>
-        <button
-          onClick={() => navigate('/seller/dashboard', { replace: true })}
-          className="mt-3 text-[12.5px] font-medium text-slate bg-transparent border-none cursor-pointer hover:text-charcoal transition-colors"
-        >
-          I'll do this later — go to my dashboard
-        </button>
       </div>
     </div>
   );
@@ -475,10 +642,31 @@ export function OnboardingPage() {
   const createStore = useCreateStore();
   const [step, setStep]             = useState(1);
   const [maxReached, setMaxReached] = useState(1);
+  const [submitted, setSubmitted]   = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [form, setForm] = useState<StoreForm>({
     storeName: '', categoryId: '', categoryName: '', description: '', logo: '',
     sellerType: '', sellerKey: '', productTypes: [], baseCurrency: DEFAULT_CURRENCY,
   });
+  const [businessInfo, setBusinessInfo] = useState<BusinessInfoValues>(EMPTY_BUSINESS_INFO);
+  // Uploaded to Cloudinary already (so a slow scan/photo doesn't need
+  // re-uploading if the seller navigates back and forth), but not attached
+  // to any store yet — nothing to attach it to until final submit creates one.
+  const [pendingDocs, setPendingDocs] = useState<Partial<Record<VerificationDocumentType, PendingDocument>>>({});
+  const [uploadingType, setUploadingType] = useState<VerificationDocumentType | null>(null);
+  const [uploadError, setUploadError] = useState('');
+
+  const { requirements, preview } = useStandaloneRequirementsPreview();
+  const { upload: uploadDocument } = useUpload('private');
+
+  // Recalculate requirements the instant country/business type changes —
+  // same live-preview pattern as the returning-seller StoreVerification.tsx
+  // page, never a client-side guess trusted for gating. Fires once on
+  // mount too (default country 'PK', no business type yet).
+  useEffect(() => {
+    preview({ country: businessInfo.country, businessType: businessInfo.businessType ?? undefined });
+  }, [businessInfo.country, businessInfo.businessType, preview]);
 
   // Store setup is a seller-only flow — a logged-out visitor is sent to
   // /login (redirect back here after), and a logged-in buyer is sent to
@@ -497,24 +685,117 @@ export function OnboardingPage() {
   const back   = () => setStep(s => Math.max(s - 1, 1));
   const jumpTo = (target: number) => setStep(target);
 
-  const handleStep3Next = async () => {
-    if (!form.sellerType || form.productTypes.length === 0) return;
-    const result = await createStore.execute({
-      name:         form.storeName,
-      categoryId:   form.categoryId,
-      description:  form.description,
-      sellerType:   form.sellerType as SellerType,
-      productTypes: [...new Set(form.productTypes)],
-      baseCurrency: form.baseCurrency,
-    });
-    if (result) next();
+  const handleUploadDocument = useCallback(async (type: VerificationDocumentType, file: File) => {
+    setUploadError('');
+    setUploadingType(type);
+    try {
+      const uploaded = await uploadDocument(file, 'kyc_document');
+      setPendingDocs(prev => ({ ...prev, [type]: { publicId: uploaded.publicId, resourceType: uploaded.resourceType, fileName: file.name } }));
+    } catch {
+      setUploadError('Failed to upload document. Please try again.');
+    } finally {
+      setUploadingType(null);
+    }
+  }, [uploadDocument]);
+
+  // The ONE place anything gets created — store, business info, and
+  // documents are all created/saved together here, never earlier. Uses the
+  // freshly-created store's id directly from `createStore.execute`'s return
+  // value (rather than waiting for a re-render) so a partial-failure retry
+  // never creates a second store — `createStore.store` from a prior attempt
+  // is reused instead of calling `execute` again.
+  const handleFinalSubmit = async () => {
+    setSubmitError('');
+    setSubmitting(true);
+    try {
+      let store = createStore.store;
+      if (!store) {
+        store = await createStore.execute({
+          name:         form.storeName,
+          categoryId:   form.categoryId,
+          description:  form.description,
+          sellerType:   form.sellerType as SellerType,
+          productTypes: [...new Set(form.productTypes)],
+          baseCurrency: form.baseCurrency,
+        });
+        if (!store) { setSubmitError(createStore.error || 'Failed to create store. Please try again.'); return; }
+      }
+
+      await apiUpdateVerification(store._id, {
+        country: businessInfo.country,
+        businessType: businessInfo.businessType ?? undefined,
+        legalBusinessName: businessInfo.legalBusinessName,
+        registrationNumber: businessInfo.registrationNumber,
+        taxId: businessInfo.taxId,
+        businessAddress: businessInfo.businessAddress,
+        idDocumentType: businessInfo.idDocumentType ?? undefined,
+        authorizedContact: businessInfo.authorizedContact,
+      });
+
+      for (const [type, doc] of Object.entries(pendingDocs)) {
+        if (!doc) continue;
+        await apiAttachVerificationDocument(store._id, type as VerificationDocumentType, doc);
+      }
+
+      await apiSubmitVerification(store._id);
+      setSubmitted(true);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to submit for review. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  // Same "merge live requirements with what's actually uploaded" pattern as
+  // the returning-seller StoreVerification.tsx page — except "what's
+  // uploaded" comes from local `pendingDocs` state here, since nothing is
+  // persisted to a store yet.
+  const requiredDocs = requirements?.requiredDocuments ?? [];
+  const optionalDocs = requirements?.optionalDocuments ?? [];
+  const checklist: VerificationDocumentView[] = [...new Set([...requiredDocs, ...optionalDocs])].map((type) => {
+    const uploaded = pendingDocs[type];
+    const required = requiredDocs.includes(type);
+    return {
+      type,
+      required,
+      state: uploaded ? 'uploaded' : (required ? 'missing' : 'not_required'),
+      fileName: uploaded?.fileName ?? null,
+      uploadedAt: null,
+      // No signed URL until the document is actually attached to a store
+      // (at final submit) — DocumentUploadCard already handles a null
+      // viewUrl by simply not rendering the "View" link.
+      viewUrl: null,
+    };
+  });
+  const missingFields = (requirements?.requiredFields ?? []).filter(path => !isFieldFilled(businessInfo, path));
+  const missingDocs = checklist.filter(d => d.required && d.state !== 'uploaded');
+  const requiredCount = checklist.filter(d => d.required).length;
+  const completeCount = checklist.filter(d => d.required && d.state === 'uploaded').length;
+  const canSubmit = missingFields.length === 0 && missingDocs.length === 0;
+  const level = requirements?.verificationLevel ?? previewVerificationLevel(businessInfo.businessType);
+
+  if (submitted) {
+    return (
+      <AuthSplitLayout
+        panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
+        heading="You're almost there."
+        subtext="Our team reviews every new seller's business verification before their store goes live."
+        highlights={ONBOARDING_HIGHLIGHTS}
+        visual={<SellerDashboardMockup />}
+        bare
+      >
+        <div className="flex-1 flex items-start justify-center px-6 py-6">
+          <SubmittedConfirmation store={createStore.store} />
+        </div>
+      </AuthSplitLayout>
+    );
+  }
 
   return (
     <AuthSplitLayout
       panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
       heading="Your store, your way."
-      subtext="A few quick steps and your Solvexo seller dashboard is ready — tools, analytics and AI Studio included."
+      subtext="A few quick steps and your Solvexo seller application is submitted — store, business info, documents, all in one place."
       highlights={ONBOARDING_HIGHLIGHTS}
       visual={<SellerDashboardMockup />}
       bare
@@ -523,15 +804,35 @@ export function OnboardingPage() {
         <StepPane step={step}>
           {step === 1 && <Step1 form={form} setForm={setForm} onNext={next} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
           {step === 2 && <Step2 form={form} setForm={setForm} onNext={next} onBack={back} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
-          {step === 3 && (
-            <Step3
-              form={form} setForm={setForm}
-              onNext={handleStep3Next} onBack={back}
-              loading={createStore.loading} error={createStore.error}
+          {step === 3 && <Step3 form={form} setForm={setForm} onNext={next} onBack={back} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
+          {step === 4 && (
+            <Step4BusinessInfo
+              values={businessInfo} onChange={setBusinessInfo}
+              missingFields={missingFields} requirementsReady={requirements !== null} onNext={next} onBack={back}
               step={step} maxReached={maxReached} onStepClick={jumpTo}
             />
           )}
-          {step === 4 && <Step4 store={createStore.store} categoryName={form.categoryName} />}
+          {step === 5 && (
+            <>
+              <Step5Documents
+                checklist={checklist} uploadingType={uploadingType} onUpload={handleUploadDocument}
+                onNext={next} onBack={back} completeCount={completeCount} requiredCount={requiredCount}
+                step={step} maxReached={maxReached} onStepClick={jumpTo}
+              />
+              {uploadError && (
+                <p className={clsx(NARROW_CONTENT, 'text-[12px] text-error mt-3')}>{uploadError}</p>
+              )}
+            </>
+          )}
+          {step === 6 && (
+            <Step6Review
+              form={form} businessInfo={businessInfo} level={level}
+              checklist={checklist} missingFields={missingFields} missingDocs={missingDocs}
+              canSubmit={canSubmit} submitting={submitting} submitError={submitError}
+              onSubmit={handleFinalSubmit} onBack={back}
+              step={step} maxReached={maxReached} onStepClick={jumpTo}
+            />
+          )}
         </StepPane>
       </div>
     </AuthSplitLayout>

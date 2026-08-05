@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useLeads, useLeadDetail, useLeadActions } from '@/hooks/admin/useAdminMarketplace';
-import type { LeadRow } from '@/api/services/marketplace/adminMarketplace';
-import { Table, Button, Modal, SearchInput, Badge, StatusBadge, SkeletonBox } from '@/components/comman/ui';
+import type { LeadRow, LeadVerificationStatus } from '@/api/services/marketplace/adminMarketplace';
+import { Table, Button, Modal, SearchInput, FilterDropdown, Badge, StatusBadge, SkeletonBox } from '@/components/comman/ui';
 import type { TableColumn } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate } from '@/components/comman/analytics/format';
@@ -41,8 +41,29 @@ const HISTORY_ACTION_LABEL: Record<string, string> = {
   rejected: 'Rejected',
 };
 
-// ── Lead detail — business info, documents (fresh signed URLs), and the
-// full submit/review history trail, fetched lazily only when opened. ──
+const VERIFICATION_LEVEL_LABEL: Record<string, string> = {
+  basic: 'Basic',
+  business: 'Business',
+  enhanced: 'Enhanced',
+};
+
+// The default queue (no filter selected) is pending/under_review only, same
+// as the backend's default — "All Statuses" is an explicit admin choice to
+// look outside the actionable queue, e.g. to review already-verified or
+// rejected leads.
+const VERIFICATION_STATUS_OPTIONS = [
+  { value: 'all', label: 'All Statuses' },
+  { value: 'not_started', label: 'Not Started' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'under_review', label: 'Under Review' },
+  { value: 'verified', label: 'Verified' },
+  { value: 'rejected', label: 'Rejected' },
+];
+
+// ── Lead detail — business info (country/business-type/level-aware), the
+// same requirement checklist the seller sees (so admin never has to guess
+// "why is this document required"), fresh signed document URLs, and the
+// full submit/review history trail. Fetched lazily only when opened. ──
 function LeadDetailModal({ leadId, onClose, onApprove, onReject, onMarkUnderReview, processingId }: {
   leadId: string;
   onClose: () => void;
@@ -53,6 +74,8 @@ function LeadDetailModal({ leadId, onClose, onApprove, onReject, onMarkUnderRevi
 }) {
   const { data, loading, error, refetch } = useLeadDetail(leadId);
   useEffect(() => { refetch(); }, [refetch]);
+
+  const reviewable = data?.verificationStatus === 'pending' || data?.verificationStatus === 'under_review';
 
   return (
     <Modal title="Review Lead" onClose={onClose} width={640}>
@@ -78,13 +101,18 @@ function LeadDetailModal({ leadId, onClose, onApprove, onReject, onMarkUnderRevi
                 <p className="text-[11.5px] text-slate">{data.categoryName ?? 'No category'}</p>
               </div>
             </div>
-            <StatusBadge status={data.status} />
+            <div className="flex items-center gap-2">
+              <StatusBadge status={data.verificationStatus} />
+              <Badge color="gray">{VERIFICATION_LEVEL_LABEL[data.verificationLevel] ?? data.verificationLevel} verification</Badge>
+            </div>
           </div>
 
-          {!data.submitted && (
+          {!data.canApprove && (
             <div className="bg-warning-bg border border-warning/30 rounded-lg px-4 py-2.5 flex items-center gap-2">
               <AlertCircle size={14} className="text-warning shrink-0" />
-              <span className="text-[12.5px] text-warning">Seller hasn't finished the onboarding verification steps yet — this lead can't be approved or rejected until submitted.</span>
+              <span className="text-[12.5px] text-warning">
+                Incomplete — {data.missingFields.length} field(s) and {data.missingDocuments.length} document(s) still missing. Cannot be approved until complete.
+              </span>
             </div>
           )}
 
@@ -101,6 +129,7 @@ function LeadDetailModal({ leadId, onClose, onApprove, onReject, onMarkUnderRevi
           <div>
             <p className="text-[12px] font-bold text-carbon mb-2">Business Information</p>
             <div className="grid grid-cols-2 gap-3 bg-cream rounded-lg p-3">
+              <DetailRow label="Country" value={data.country} />
               <DetailRow label="Business Type" value={data.businessType} />
               <DetailRow label="Legal Business Name" value={data.legalBusinessName} />
               <DetailRow label="Registration Number" value={data.registrationNumber} />
@@ -113,24 +142,26 @@ function LeadDetailModal({ leadId, onClose, onApprove, onReject, onMarkUnderRevi
           </div>
 
           <div>
-            <p className="text-[12px] font-bold text-carbon mb-2">Documents ({data.documents.length})</p>
-            {data.documents.length === 0 ? (
-              <p className="text-[12.5px] text-slate">No documents uploaded yet.</p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {data.documents.map(doc => (
-                  <div key={doc.type} className="flex items-center justify-between gap-3 bg-cream rounded-lg px-3 py-2.5">
-                    <div className="min-w-0">
-                      <p className="text-[12.5px] font-semibold text-carbon capitalize">{doc.type.replace(/_/g, ' ')}</p>
-                      <p className="text-[11px] text-slate truncate">{doc.fileName}</p>
-                    </div>
+            <p className="text-[12px] font-bold text-carbon mb-2">
+              Documents — {VERIFICATION_LEVEL_LABEL[data.verificationLevel] ?? data.verificationLevel} verification requires {data.documents.filter(d => d.required).length}
+            </p>
+            <div className="flex flex-col gap-2">
+              {data.documents.map(doc => (
+                <div key={doc.type} className="flex items-center justify-between gap-3 bg-cream rounded-lg px-3 py-2.5">
+                  <div className="min-w-0 flex items-center gap-2">
+                    <p className="text-[12.5px] font-semibold text-carbon capitalize">{doc.type.replace(/_/g, ' ')}</p>
+                    <Badge color={doc.required ? 'orange' : 'gray'}>{doc.required ? 'Required' : 'Optional'}</Badge>
+                    {doc.state !== 'uploaded' && <span className="text-[11px] text-slate">— not uploaded</span>}
+                    {doc.fileName && <p className="text-[11px] text-slate truncate">{doc.fileName}</p>}
+                  </div>
+                  {doc.viewUrl && (
                     <a href={doc.viewUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 inline-flex items-center gap-1 text-[11.5px] font-semibold text-brand-orange hover:underline">
                       View <ExternalLink size={11} />
                     </a>
-                  </div>
-                ))}
-              </div>
-            )}
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
           {data.rejectionReason && (
@@ -161,16 +192,16 @@ function LeadDetailModal({ leadId, onClose, onApprove, onReject, onMarkUnderRevi
           )}
 
           <div className="flex items-center gap-2 pt-2 border-t border-bone">
-            {data.status === 'pending' && (
-              <Button variant="ghost" size="sm" onClick={() => onMarkUnderReview(data.id)} loading={processingId === data.id} disabled={!data.submitted}>
+            {data.verificationStatus === 'pending' && (
+              <Button variant="ghost" size="sm" onClick={() => onMarkUnderReview(data.id)} loading={processingId === data.id}>
                 Mark Under Review
               </Button>
             )}
             <div className="flex-1" />
-            <Button variant="outline" size="sm" icon={<X size={13} />} onClick={() => onReject({ id: data.id, storeName: data.storeName })} disabled={!data.submitted || processingId === data.id}>
+            <Button variant="outline" size="sm" icon={<X size={13} />} onClick={() => onReject({ id: data.id, storeName: data.storeName })} disabled={!reviewable || processingId === data.id}>
               Reject
             </Button>
-            <Button variant="primary" size="sm" icon={<Check size={13} />} onClick={() => onApprove(data.id)} disabled={!data.submitted} loading={processingId === data.id}>
+            <Button variant="primary" size="sm" icon={<Check size={13} />} onClick={() => onApprove(data.id)} disabled={!reviewable || !data.canApprove} loading={processingId === data.id}>
               Approve
             </Button>
           </div>
@@ -184,8 +215,16 @@ export function AdminLeads() {
   usePageTitle('Leads');
 
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
-  const query = useMemo(() => ({ search: search || undefined, page, limit: 10 }), [search, page]);
+  const query = useMemo(
+    () => ({
+      search: search || undefined,
+      verificationStatus: (statusFilter || undefined) as LeadVerificationStatus | 'all' | undefined,
+      page, limit: 10,
+    }),
+    [search, statusFilter, page],
+  );
 
   const { data, loading, error, refetch } = useLeads(query);
   const { markUnderReview, approve, reject, processingId, error: actionError } = useLeadActions();
@@ -224,13 +263,8 @@ export function AdminLeads() {
       ),
     },
     {
-      key: 'status', header: 'Status',
-      render: lead => (
-        <div className="flex flex-col gap-1">
-          <StatusBadge status={lead.status} size="sm" />
-          {!lead.verificationSubmitted && <span className="text-[10px] text-warning font-medium">Awaiting submission</span>}
-        </div>
-      ),
+      key: 'country', header: 'Country',
+      render: lead => <span className="text-[12px] text-charcoal font-medium">{lead.country}</span>,
     },
     {
       key: 'businessType', header: 'Business Type',
@@ -239,8 +273,14 @@ export function AdminLeads() {
         : <span className="text-slate">—</span>,
     },
     {
-      key: 'documentCount', header: 'Docs', align: 'center',
-      render: lead => <span className="text-[12px] font-semibold text-charcoal">{lead.documentCount}</span>,
+      key: 'verificationLevel', header: 'Level',
+      render: lead => lead.verificationLevel
+        ? <Badge color="gray">{VERIFICATION_LEVEL_LABEL[lead.verificationLevel] ?? lead.verificationLevel}</Badge>
+        : <span className="text-slate">—</span>,
+    },
+    {
+      key: 'verificationStatus', header: 'Verification',
+      render: lead => <StatusBadge status={lead.verificationStatus} size="sm" />,
     },
     {
       key: 'submittedAt', header: 'Created',
@@ -257,7 +297,7 @@ export function AdminLeads() {
             variant="outline" size="xs"
             icon={<X size={12} />}
             onClick={() => setRejecting({ id: lead.id, storeName: lead.storeName })}
-            disabled={!lead.verificationSubmitted || processingId === lead.id}
+            disabled={processingId === lead.id}
           >
             Reject
           </Button>
@@ -265,7 +305,6 @@ export function AdminLeads() {
             variant="primary" size="xs"
             icon={<Check size={12} />}
             onClick={() => handleApprove(lead.id)}
-            disabled={!lead.verificationSubmitted}
             loading={processingId === lead.id}
           >
             Approve
@@ -290,6 +329,12 @@ export function AdminLeads() {
       <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
         <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
           <SearchInput value={search} onChange={v => { setSearch(v); setPage(1); }} placeholder="Search by store name…" className="flex-1 max-w-[300px]" />
+          <FilterDropdown
+            placeholder="Review Queue"
+            options={VERIFICATION_STATUS_OPTIONS}
+            value={statusFilter}
+            onChange={v => { setStatusFilter(v); setPage(1); }}
+          />
         </div>
 
         {error ? (

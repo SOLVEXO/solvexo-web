@@ -399,6 +399,10 @@ export function CheckoutPage() {
   const [couponInput,   setCouponInput]   = useState('');
   const [couponBusy,    setCouponBusy]    = useState(false);
   const [couponError,   setCouponError]   = useState('');
+  // Explicit "it worked, here's how much" confirmation — shown once right
+  // after a successful apply, matching how Amazon/Shopify confirm a promo
+  // code rather than just letting a summary line quietly appear.
+  const [couponSuccessMsg, setCouponSuccessMsg] = useState('');
 
   // Cash on Delivery can't cover a digital item — it's delivered instantly, long
   // before any cash changes hands, so a buyer could take the download and then
@@ -445,7 +449,9 @@ export function CheckoutPage() {
         setCheckout(res.data.checkout);
         setSummary(res.data.summary);
         setSavingsHints(res.data.subscriptionSavingsHints ?? []);
-        setAllowedMethods((res.data.allowedPaymentMethods ?? []).filter(m => m !== 'cash_on_delivery'));
+        // Temporary: Stripe is the only payment method enabled at checkout for now
+        // (other methods left disabled server-side too, just kept out of this list).
+        setAllowedMethods((res.data.allowedPaymentMethods ?? []).filter(m => m === 'stripe'));
         setStep(3);
       })
       .catch(err => {
@@ -557,9 +563,11 @@ export function CheckoutPage() {
     if (!checkout || !couponInput.trim()) return;
     setCouponBusy(true);
     setCouponError('');
+    setCouponSuccessMsg('');
     try {
       const res = await apiApplyCoupon({ checkoutId: checkout._id, code: couponInput.trim() });
       setCheckout(c => c && { ...c, couponCode: res.data.couponCode, couponDiscountUSD: res.data.couponDiscountUSD, totalAmount: res.data.totalAmount });
+      setCouponSuccessMsg(`Coupon applied — you saved ${currencySymbol(checkout.currency)}${res.data.couponDiscountUSD.toFixed(2)}.`);
       setCouponInput('');
     } catch (err) {
       setCouponError(err instanceof Error ? err.message : 'Failed to apply coupon.');
@@ -572,6 +580,7 @@ export function CheckoutPage() {
     if (!checkout) return;
     setCouponBusy(true);
     setCouponError('');
+    setCouponSuccessMsg('');
     try {
       const res = await apiRemoveCoupon(checkout._id);
       setCheckout(c => c && { ...c, couponCode: null, couponDiscountUSD: 0, totalAmount: res.data.totalAmount });
@@ -604,7 +613,12 @@ export function CheckoutPage() {
       setCheckout(res.data.checkout);
       setSummary(res.data.summary);
       setSavingsHints(res.data.subscriptionSavingsHints ?? []);
-      setAllowedMethods(res.data.allowedPaymentMethods ?? []);
+      // Temporary: for physical/mixed checkout, Stripe only works on a USD
+      // checkout (see PaymentService.confirmCardPayment) — a PKR checkout
+      // has no working card rail yet, so Cash on Delivery is kept as the
+      // fallback that actually completes an order right now. Split (card +
+      // COD) and manual bank transfer stay hidden for the demo.
+      setAllowedMethods((res.data.allowedPaymentMethods ?? []).filter(m => m === 'stripe' || m === 'cash_on_delivery'));
       setStep(3);
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : 'Failed to create checkout. Please try again.');
@@ -638,7 +652,7 @@ export function CheckoutPage() {
   if (manualPaymentResult) {
     return (
       <div className="min-h-screen bg-cream">
-        <BuyerNavbar variant="minimal" backTo={{ label: 'Back to Cart', path: '/cart' }} />
+        <BuyerNavbar/>
         <div className="max-w-[560px] mx-auto px-4 py-14 text-center">
           <div className="w-14 h-14 rounded-full bg-[#fff4dc] flex items-center justify-center mx-auto mb-5">
             <Clock size={26} className="text-[#b36200]" />
@@ -666,7 +680,7 @@ export function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-cream">
-      <BuyerNavbar variant="minimal" backTo={{ label: 'Back to Cart', path: '/cart' }} />
+      <BuyerNavbar/>
 
       <div className="max-w-[960px] mx-auto px-4 md:px-6 py-6 md:py-8">
         <Breadcrumb className="mb-4" items={[
@@ -1313,22 +1327,34 @@ export function CheckoutPage() {
               {!!summary?.subscriberSavingsUSD && summary.subscriberSavingsUSD > 0 && (
                 <div className="flex justify-between text-[13px]">
                   <span className="text-success">Member savings</span>
-                  <span className="font-semibold text-success">-${summary.subscriberSavingsUSD.toFixed(2)}</span>
+                  <span className="font-semibold text-success">-{currencySymbol(checkout?.currency)}{summary.subscriberSavingsUSD.toFixed(2)}</span>
                 </div>
               )}
               {/* Already baked into each item's totalPrice at checkout-creation
                   time (same as member savings above) — shown here purely as a
-                  breakdown line, not subtracted again in the total below. */}
+                  breakdown line, not subtracted again in the total below.
+                  Despite the "USD" field-name suffix (a naming holdover from
+                  before PKR support), this is already denominated in the
+                  checkout's own currency — see CheckoutService.applyCoupon's
+                  "checkout's own display currency" comment for the coupon
+                  case, and the parallel per-item-native-currency math for
+                  the campaign case below. */}
               {!!summary?.campaignDiscountUSD && summary.campaignDiscountUSD > 0 && (
                 <div className="flex justify-between text-[13px]">
                   <span className="text-success">Sale discount</span>
-                  <span className="font-semibold text-success">-${summary.campaignDiscountUSD.toFixed(2)}</span>
+                  <span className="font-semibold text-success">-{currencySymbol(checkout?.currency)}{summary.campaignDiscountUSD.toFixed(2)}</span>
                 </div>
               )}
+              {/* The backend rejects a coupon outright (see CheckoutService.applyCoupon)
+                  if it would compute to zero real savings — e.g. every eligible
+                  item is already on an active sale — so `checkout.couponCode`
+                  being set here always means a genuine, nonzero discount. */}
               {!!checkout?.couponCode && (
                 <div className="flex justify-between text-[13px]">
-                  <span className="text-success">Coupon ({checkout.couponCode})</span>
-                  <span className="font-semibold text-success">-${couponDiscount.toFixed(2)}</span>
+                  <span className="flex items-center gap-1 text-success">
+                    <CheckCircle2 size={12} /> Coupon ({checkout.couponCode})
+                  </span>
+                  <span className="font-semibold text-success">-{currencySymbol(checkout?.currency)}{couponDiscount.toFixed(2)}</span>
                 </div>
               )}
             </div>
@@ -1361,6 +1387,11 @@ export function CheckoutPage() {
                   </div>
                 )}
                 {couponError && <p className="text-[11px] text-error mt-1.5">{couponError}</p>}
+                {couponSuccessMsg && (
+                  <p className="flex items-center gap-1 text-[11px] font-medium text-success mt-1.5">
+                    <CheckCircle2 size={12} /> {couponSuccessMsg}
+                  </p>
+                )}
               </div>
             )}
 

@@ -83,11 +83,12 @@ export function CartPage() {
   return (
     <div className="min-h-screen bg-cream">
 
-      <BuyerNavbar backTo={{ label: 'Continue Shopping', path: '/marketplace' }} />
+      <BuyerNavbar/>
 
       <div className="max-w-[960px] mx-auto px-4 md:px-6 py-6 md:py-8">
         <Breadcrumb className="mb-4" items={[
           { label: 'Home', path: '/' },
+          { label: 'Marketplace', path: '/marketplace'},
           { label: 'Cart' },
         ]} />
 

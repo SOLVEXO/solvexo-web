@@ -8,7 +8,7 @@ import {
   Settings, Sparkles, ChevronLeft, Monitor, Store,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
-  PanelLeftClose, PanelLeftOpen, AlertTriangle, XCircle, Clock, LogOut, ShieldCheck,
+  PanelLeftClose, PanelLeftOpen, AlertTriangle, XCircle, Clock, LogOut, ShieldCheck, Lock,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
@@ -102,15 +102,26 @@ const NAV: { group: string; items: NavItem[] }[] = [
   },
 ];
 
+// Available before the store's business verification is approved — every
+// other nav item is locked (see spec: seller workspace must stay restricted
+// until `verificationStatus === 'verified'`, not just gated on plan tools).
+const ALLOWED_PRE_VERIFICATION = new Set(['dashboard', 'verification', 'settings']);
+
+function isItemLocked(item: NavItem, verified: boolean, posEnabled: boolean): boolean {
+  if (item.id === 'pos' && !posEnabled) return true;
+  return !verified && !ALLOWED_PRE_VERIFICATION.has(item.id);
+}
+
 function buildPaletteItems(
   navigate: (path: string) => void,
   storeId: string,
   posEnabled: boolean,
+  verified: boolean,
 ): CommandPaletteItem[] {
   const result: CommandPaletteItem[] = [];
   NAV.forEach(section => {
     section.items.forEach(item => {
-      if (item.id === 'pos' && !posEnabled) return; // exclude locked POS item from search
+      if (isItemLocked(item, verified, posEnabled)) return; // exclude locked items from search
       result.push({
         id:       item.id,
         label:    item.label,
@@ -131,8 +142,16 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
   const { pathname } = useLocation();
   const { store, storeId, loading } = useStoreWorkspace();
   const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
+  // Gate on `store.status === 'active'`, NOT `verificationStatus === 'verified'`
+  // directly — they're set together by every real approval path (see
+  // AdminMarketplaceService.approveLead), but `status` is also the field a
+  // pre-existing, already-approved store from before verification tracking
+  // existed will have as `'active'` even if its `verificationStatus` was
+  // never backfilled. Gating on the newer field alone would retroactively
+  // lock out real, already-working sellers.
+  const verified   = store?.status === 'active';
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
-  const paletteItems = buildPaletteItems(navigate, storeId, posEnabled);
+  const paletteItems = buildPaletteItems(navigate, storeId, posEnabled, verified);
   const logout = useLogout();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -280,7 +299,10 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
               {section.items.map(item => {
                 const active = isActive(item.path);
                 const isLockedPos = item.id === 'pos' && !posEnabled;
+                const isLockedByVerification = !verified && !ALLOWED_PRE_VERIFICATION.has(item.id) && item.id !== 'pos';
+                const locked = isLockedPos || isLockedByVerification;
                 const goToItem = () => {
+                  if (isLockedByVerification) { navigate(`/seller/store/${storeId}/verification`); return; }
                   if (isLockedPos) return;
                   navigate(item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`);
                 };
@@ -292,7 +314,7 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
                     onClick={goToItem}
                     onKeyDown={e => { if (!isLockedPos && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); goToItem(); } }}
                     title={!open ? item.label : undefined}
-                    aria-label={item.label}
+                    aria-label={locked ? `${item.label} — locked` : item.label}
                     aria-current={active ? 'page' : undefined}
                     aria-disabled={isLockedPos || undefined}
                     className={clsx(
@@ -303,28 +325,33 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
                       active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1a1917]',
                     )}
                   >
-                    <item.Icon
-                      size={15}
-                      className={clsx(
-                        'shrink-0',
-                        isLockedPos ? 'text-slate opacity-35' : active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55',
-                      )}
-                    />
+                    {isLockedByVerification
+                      ? <Lock size={14} className="shrink-0 text-slate opacity-40" />
+                      : <item.Icon
+                          size={15}
+                          className={clsx(
+                            'shrink-0',
+                            isLockedPos ? 'text-slate opacity-35' : active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55',
+                          )}
+                        />}
                     {open && (
                       <>
                         <span className={clsx(
                           'text-[13px] flex-1',
-                          isLockedPos ? 'font-normal text-slate opacity-40' : active ? 'font-semibold text-white' : 'font-normal text-slate',
+                          locked ? 'font-normal text-slate opacity-40' : active ? 'font-semibold text-white' : 'font-normal text-slate',
                         )}>
                           {item.label}
                         </span>
-                        {isLockedPos ? (
+                        {locked ? (
                           <button
                             type="button"
-                            onClick={e => { e.stopPropagation(); navigate(`/seller/store/${storeId}/pos`); }}
+                            onClick={e => {
+                              e.stopPropagation();
+                              navigate(isLockedByVerification ? `/seller/store/${storeId}/verification` : `/seller/store/${storeId}/pos`);
+                            }}
                             className="text-[9px] font-bold uppercase tracking-[0.03em] px-[7px] py-[2px] rounded-full bg-brand-orange text-white border-none cursor-pointer shrink-0"
                           >
-                            Upgrade
+                            {isLockedByVerification ? 'Locked' : 'Upgrade'}
                           </button>
                         ) : active && (
                           <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />
@@ -470,43 +497,56 @@ function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// ── Seller business-verification status — workspace-wide so a pending/
-// rejected store's owner sees it on every page, not just their store list.
-// A live store (status 'active') never renders anything here. ──
+// ── Seller business-verification status — workspace-wide so a not-yet-
+// verified store's owner sees it on every page, not just their store list.
+// Reads `verificationStatus` (never `store.status`, which is the separate
+// marketplace-listing lifecycle field — see store.schema.ts). A verified
+// store never renders anything here. ──
 function StoreVerificationBanner() {
   const navigate = useNavigate();
   const { store, storeId } = useStoreWorkspace();
-  if (!store) return null;
+  // A store that's already marketplace-active (including a pre-verification-
+  // tracking legacy approval) never shows a verification nag, even if
+  // `verificationStatus` is stale/missing — `status` is the authoritative
+  // "already approved" signal (see the `verified` comment in StoreSidebar).
+  if (!store || store.status === 'active') return null;
 
   const goToVerification = () => navigate(`/seller/store/${storeId}/verification`);
 
-  if (store.status === 'rejected') {
-    return (
-      <button onClick={goToVerification} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer text-center">
-        <XCircle size={14} className="shrink-0" />
-        Your store application was rejected{store.rejectionReason ? `: ${store.rejectionReason}` : '.'}
-        <span className="underline font-semibold shrink-0">Fix &amp; resubmit</span>
-      </button>
-    );
+  switch (store.verificationStatus) {
+    case 'rejected':
+      return (
+        <button onClick={goToVerification} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer text-center">
+          <XCircle size={14} className="shrink-0" />
+          Your business verification was rejected{store.rejectionReason ? `: ${store.rejectionReason}` : '.'}
+          <span className="underline font-semibold shrink-0">Fix &amp; resubmit</span>
+        </button>
+      );
+    case 'under_review':
+      return (
+        <div className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3]">
+          <Clock size={14} className="shrink-0" />
+          Your store is under review by our team — you'll be notified as soon as a decision is made.
+        </div>
+      );
+    case 'pending':
+      return (
+        <div className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3]">
+          <Clock size={14} className="shrink-0" />
+          Your verification application has been submitted and is waiting to be reviewed.
+        </div>
+      );
+    case 'not_started':
+      return (
+        <button onClick={goToVerification} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#946200] bg-warning-bg border-b border-[#f5dfa6] cursor-pointer text-center">
+          <AlertTriangle size={14} className="shrink-0" />
+          Your store isn't visible on the marketplace yet — complete business verification to submit it for review.
+          <span className="underline font-semibold shrink-0">Complete verification</span>
+        </button>
+      );
+    default:
+      return null;
   }
-  if (store.status === 'under_review') {
-    return (
-      <div className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3]">
-        <Clock size={14} className="shrink-0" />
-        Your store is under review by our team — you'll be notified as soon as a decision is made.
-      </div>
-    );
-  }
-  if (store.status === 'pending') {
-    return (
-      <button onClick={goToVerification} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#946200] bg-warning-bg border-b border-[#f5dfa6] cursor-pointer text-center">
-        <AlertTriangle size={14} className="shrink-0" />
-        Your store isn't visible on the marketplace yet — complete business verification to submit it for review.
-        <span className="underline font-semibold shrink-0">Complete verification</span>
-      </button>
-    );
-  }
-  return null;
 }
 
 // ── Platform-plan billing banner — past-due / scheduled-cancellation / trial-ending,
@@ -562,6 +602,72 @@ function PlatformBillingBanner() {
   return null;
 }
 
+// ── Restricted-feature explainer — shown instead of the real page when a
+// seller navigates directly (URL bar, bookmark, back button) to a nav item
+// that's locked pre-verification, so the restriction is never just a
+// silently-vanished sidebar entry. Mirrors the sidebar's own lock logic
+// rather than a second source of truth. ──
+const VERIFICATION_NOTICE_COPY: Record<StoreData['verificationStatus'], string> = {
+  not_started: 'Complete business verification to unlock this feature.',
+  pending: 'Your verification application has been submitted and is waiting to be reviewed — this unlocks as soon as it’s approved.',
+  under_review: 'Your verification is under review by our team — this unlocks as soon as a decision is made.',
+  verified: '', // never shown — this notice only renders for unverified stores
+  rejected: 'Your last verification submission was rejected. Fix the issues and resubmit to unlock this feature.',
+};
+
+function SellerActivationNotice({ item, storeId, verificationStatus }: {
+  item: NavItem; storeId: string; verificationStatus: StoreData['verificationStatus'];
+}) {
+  const navigate = useNavigate();
+  const ctaLabel = verificationStatus === 'rejected' ? 'Fix & Resubmit'
+    : verificationStatus === 'not_started' ? 'Start Verification'
+    : 'View Verification Status';
+
+  return (
+    <div className="flex flex-col items-center text-center gap-4 px-6 py-16 max-w-[440px] mx-auto">
+      <div className="size-14 rounded-full bg-brand-pale-orange flex items-center justify-center">
+        <Lock size={22} className="text-brand-orange" />
+      </div>
+      <div>
+        <p className="text-[16px] font-bold text-carbon mb-1.5">{item.label} is locked</p>
+        <p className="text-[13px] text-slate leading-[1.6]">{VERIFICATION_NOTICE_COPY[verificationStatus] || VERIFICATION_NOTICE_COPY.not_started}</p>
+      </div>
+      <Button variant="primary" size="md" onClick={() => navigate(`/seller/store/${storeId}/verification`)}>
+        {ctaLabel}
+      </Button>
+    </div>
+  );
+}
+
+/** Finds the NAV item (if any) whose route matches `pathname`, excluding the
+ *  always-available items — the single source of truth for "is this route
+ *  locked", shared by the sidebar's own lock styling above. */
+function findLockedNavItem(pathname: string, storeId: string): NavItem | null {
+  for (const section of NAV) {
+    for (const item of section.items) {
+      if (ALLOWED_PRE_VERIFICATION.has(item.id) || item.id === 'pos') continue;
+      const full = item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`;
+      if (pathname === full || pathname.startsWith(full + '/')) return item;
+    }
+  }
+  return null;
+}
+
+// Swaps in for `<Outlet/>` — renders the real nested route unless it's a
+// verification-locked feature being reached by direct URL/bookmark/back
+// button (nav-click already redirects to /verification before ever getting
+// here, but a locked feature must never be reachable just by typing its URL).
+function GatedOutlet() {
+  const { store, storeId } = useStoreWorkspace();
+  const { pathname } = useLocation();
+  // Same `status === 'active'` boundary as the sidebar — see the comment
+  // on `verified` in StoreSidebar for why this isn't `verificationStatus`.
+  if (!store || store.status === 'active') return <Outlet />;
+  const lockedItem = findLockedNavItem(pathname, storeId);
+  if (!lockedItem) return <Outlet />;
+  return <SellerActivationNotice item={lockedItem} storeId={storeId} verificationStatus={store.verificationStatus} />;
+}
+
 // ── Layout ────────────────────────────────────────────────────────────────────
 export function StoreLayout() {
   const { pathname: currentPath } = useLocation();
@@ -600,7 +706,7 @@ export function StoreLayout() {
             <StoreVerificationBanner />
             <PlatformBillingBanner />
             <div className="flex-1 overflow-y-auto">
-              <Outlet />
+              <GatedOutlet />
             </div>
           </div>
         </div>

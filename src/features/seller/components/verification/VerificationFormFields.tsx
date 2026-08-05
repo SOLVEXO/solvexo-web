@@ -1,7 +1,7 @@
 import { clsx } from 'clsx';
-import { Check, FileText, Loader2, Upload, ExternalLink } from 'lucide-react';
+import { Check, FileText, Loader2, Upload, ExternalLink, ShieldCheck } from 'lucide-react';
 import type {
-  BusinessType, IdDocumentType, VerificationDocumentType,
+  BusinessType, IdDocumentType, VerificationDocumentType, VerificationLevel,
   AuthorizedContact, VerificationDocumentView,
 } from '@/api/services/storeVerification';
 
@@ -17,6 +17,29 @@ export const ID_DOC_TYPE_OPTIONS: { id: IdDocumentType; label: string }[] = [
   { id: 'national_id',  label: 'Other National ID' },
 ];
 
+// A short, curated list, not an exhaustive ISO country picker — Solvexo
+// doesn't yet have a confirmed, distinct legal requirement set for any of
+// these beyond Pakistan's ID-document options, so every entry here resolves
+// to the same generic requirement set today (see the backend's
+// verification-requirements.config.ts). The list exists so "seller country"
+// is real, structured data the architecture can key off of later — adding a
+// genuine country-specific rule doesn't require touching this list.
+export const COUNTRY_OPTIONS: { code: string; label: string }[] = [
+  { code: 'PK', label: 'Pakistan' },
+  { code: 'US', label: 'United States' },
+  { code: 'GB', label: 'United Kingdom' },
+  { code: 'AE', label: 'United Arab Emirates' },
+  { code: 'AU', label: 'Australia' },
+  { code: 'CA', label: 'Canada' },
+  { code: 'OTHER', label: 'Other' },
+];
+
+export const VERIFICATION_LEVEL_LABELS: Record<VerificationLevel, { label: string; desc: string }> = {
+  basic:    { label: 'Basic Verification',    desc: 'Identity and address verification' },
+  business: { label: 'Business Verification', desc: 'Legal business identity and registration' },
+  enhanced: { label: 'Enhanced Verification', desc: 'Additional trust review' },
+};
+
 export const VERIFICATION_DOCUMENT_LABELS: Record<VerificationDocumentType, { label: string; desc: string }> = {
   business_registration: { label: 'Business Registration / License', desc: 'Certificate of incorporation or trade license' },
   tax_registration:      { label: 'Tax Registration Certificate',    desc: 'NTN certificate or equivalent tax registration' },
@@ -25,18 +48,18 @@ export const VERIFICATION_DOCUMENT_LABELS: Record<VerificationDocumentType, { la
   authorization_proof:   { label: 'Authorization / Ownership Proof', desc: 'Only if the authorized contact isn’t the owner' },
 };
 
-// Mirrors StoreService's `requiredVerificationDocuments` — presentation-only;
-// the backend re-validates this independently on submit, this is just so the
-// UI can show "required" badges and gate the Continue button early.
-export function requiredDocumentTypesFor(businessType: BusinessType | null): VerificationDocumentType[] {
-  const always: VerificationDocumentType[] = ['owner_id', 'address_proof'];
-  if (businessType === 'company' || businessType === 'partnership') {
-    return [...always, 'business_registration', 'tax_registration'];
-  }
-  return always;
+/** Client-side mirror of the backend's determineVerificationLevel — used
+ *  ONLY for instant visual feedback the moment a business type is picked
+ *  (before the debounced requirements-preview call resolves). The backend
+ *  value from `getVerificationRequirements`/`getVerification` is always the
+ *  one actually rendered into the document checklist and the only one ever
+ *  trusted for gating. */
+export function previewVerificationLevel(businessType: BusinessType | null): VerificationLevel {
+  return businessType === 'company' || businessType === 'partnership' ? 'business' : 'basic';
 }
 
 export interface BusinessInfoValues {
+  country: string;
   businessType: BusinessType | null;
   legalBusinessName: string;
   registrationNumber: string;
@@ -60,9 +83,18 @@ export function BusinessInfoFields({ values, onChange, disabled }: {
     onChange({ ...values, authorizedContact: { ...values.authorizedContact, [key]: value } });
 
   const isBusiness = values.businessType === 'company' || values.businessType === 'partnership';
+  const level = previewVerificationLevel(values.businessType);
 
   return (
     <fieldset disabled={disabled} className="disabled:opacity-60">
+      <div className="mb-5">
+        <label htmlFor="verif-country" className={labelClass}>Country <span className="text-brand-orange">*</span></label>
+        <select id="verif-country" className={clsx(inputClass, 'cursor-pointer')}
+          value={values.country} onChange={e => set('country', e.target.value)}>
+          {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+        </select>
+      </div>
+
       <div className="mb-5">
         <label className={labelClass}>Business Type <span className="text-brand-orange">*</span></label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-[10px]">
@@ -87,6 +119,12 @@ export function BusinessInfoFields({ values, onChange, disabled }: {
             );
           })}
         </div>
+        {values.businessType && (
+          <div className="flex items-center gap-[6px] mt-3 text-[11.5px] text-brand-deep-orange font-medium">
+            <ShieldCheck size={13} />
+            Applicable level: {VERIFICATION_LEVEL_LABELS[level].label}
+          </div>
+        )}
       </div>
 
       <div className="mb-4">
@@ -154,15 +192,14 @@ export function BusinessInfoFields({ values, onChange, disabled }: {
   );
 }
 
-export function DocumentUploadCard({ type, required, doc, uploading, disabled, onUpload }: {
-  type: VerificationDocumentType;
-  required: boolean;
-  doc?: VerificationDocumentView;
+export function DocumentUploadCard({ doc, uploading, disabled, onUpload }: {
+  doc: VerificationDocumentView;
   uploading: boolean;
   disabled?: boolean;
   onUpload: (file: File) => void;
 }) {
-  const meta = VERIFICATION_DOCUMENT_LABELS[type];
+  const meta = VERIFICATION_DOCUMENT_LABELS[doc.type];
+  const uploaded = doc.state === 'uploaded';
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) onUpload(file);
@@ -172,37 +209,39 @@ export function DocumentUploadCard({ type, required, doc, uploading, disabled, o
   return (
     <div className={clsx(
       'flex items-start gap-3 p-4 rounded-xl border transition-colors duration-150',
-      doc ? 'bg-success-bg/40 border-success/30' : 'bg-cream border-bone',
+      uploaded ? 'bg-success-bg/40 border-success/30' : 'bg-cream border-bone',
     )}>
       <div className={clsx(
         'size-10 rounded-lg flex items-center justify-center shrink-0',
-        doc ? 'bg-success/15 text-success' : 'bg-brand-pale-orange text-brand-orange',
+        uploaded ? 'bg-success/15 text-success' : 'bg-brand-pale-orange text-brand-orange',
       )}>
-        {uploading ? <Loader2 size={18} className="animate-spin" /> : doc ? <Check size={18} /> : <FileText size={18} />}
+        {uploading ? <Loader2 size={18} className="animate-spin" /> : uploaded ? <Check size={18} /> : <FileText size={18} />}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="text-[13px] font-semibold text-carbon">{meta.label}</p>
-          {required
+          {doc.required
             ? <span className="text-[9.5px] font-bold uppercase tracking-wide text-brand-deep-orange bg-brand-pale-orange rounded-full px-[7px] py-[2px]">Required</span>
             : <span className="text-[9.5px] font-medium text-slate bg-bone rounded-full px-[7px] py-[2px]">Optional</span>}
         </div>
         <p className="text-[11px] text-slate mt-[2px] leading-[1.4]">{meta.desc}</p>
-        {doc && (
+        {uploaded && (
           <div className="flex items-center gap-[6px] mt-[6px]">
             <p className="text-[11px] text-success font-medium truncate max-w-[220px]">{doc.fileName}</p>
-            <a href={doc.viewUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-brand-orange font-medium inline-flex items-center gap-[3px] hover:underline">
-              View <ExternalLink size={10} />
-            </a>
+            {doc.viewUrl && (
+              <a href={doc.viewUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-brand-orange font-medium inline-flex items-center gap-[3px] hover:underline">
+                View <ExternalLink size={10} />
+              </a>
+            )}
           </div>
         )}
       </div>
       <label className={clsx(
         'shrink-0 inline-flex items-center gap-[6px] px-3 py-[7px] rounded-lg text-[11.5px] font-semibold border cursor-pointer transition-colors duration-150',
-        doc ? 'border-bone text-charcoal bg-white hover:bg-cream' : 'border-brand-orange text-brand-orange bg-white hover:bg-brand-pale-orange/40',
+        uploaded ? 'border-bone text-charcoal bg-white hover:bg-cream' : 'border-brand-orange text-brand-orange bg-white hover:bg-brand-pale-orange/40',
         (uploading || disabled) && 'opacity-50 cursor-not-allowed pointer-events-none',
       )}>
-        <Upload size={12} /> {doc ? 'Replace' : 'Upload'}
+        <Upload size={12} /> {uploaded ? 'Replace' : 'Upload'}
         <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf" className="hidden" onChange={handleFile} disabled={uploading || disabled} />
       </label>
     </div>

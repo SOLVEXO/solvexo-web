@@ -5,10 +5,10 @@ import { Button } from '@/components/comman/ui/Button';
 import { StatusBadge, SkeletonBox } from '@/components/comman/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useUpload } from '@/hooks/upload/useUpload';
-import { useStoreVerification, useVerificationActions } from '@/hooks/store/useStoreVerification';
-import type { VerificationDocumentType } from '@/api/services/storeVerification';
+import { useStoreVerification, useVerificationActions, useVerificationRequirementsPreview } from '@/hooks/store/useStoreVerification';
+import type { VerificationDocumentType, VerificationDocumentView } from '@/api/services/storeVerification';
 import {
-  BusinessInfoFields, DocumentUploadCard, requiredDocumentTypesFor,
+  BusinessInfoFields, DocumentUploadCard, VERIFICATION_LEVEL_LABELS,
   type BusinessInfoValues,
 } from '@/features/seller/components/verification/VerificationFormFields';
 
@@ -21,6 +21,7 @@ const HISTORY_ACTION_LABEL: Record<string, string> = {
 };
 
 const EMPTY_BUSINESS_INFO: BusinessInfoValues = {
+  country: 'PK',
   businessType: null,
   legalBusinessName: '',
   registrationNumber: '',
@@ -30,15 +31,21 @@ const EMPTY_BUSINESS_INFO: BusinessInfoValues = {
   authorizedContact: { name: null, designation: null, email: null, phone: null },
 };
 
-const ALL_DOC_TYPES: VerificationDocumentType[] = [
-  'owner_id', 'address_proof', 'business_registration', 'tax_registration', 'authorization_proof',
-];
+function isFieldFilled(values: BusinessInfoValues, path: string): boolean {
+  if (path.startsWith('authorizedContact.')) {
+    const key = path.split('.')[1] as keyof typeof values.authorizedContact;
+    return !!values.authorizedContact[key]?.trim();
+  }
+  const value = (values as any)[path];
+  return typeof value === 'string' ? value.trim().length > 0 : value != null;
+}
 
 export function StoreVerification() {
   usePageTitle('Business Verification');
   const { storeId } = useStoreWorkspace();
   const { data, loading, error: loadError, refetch } = useStoreVerification(storeId);
   const { save, attachDocument, submit, saving, uploadingType, submitting, error, setError } = useVerificationActions(storeId);
+  const { requirements, preview } = useVerificationRequirementsPreview(storeId);
   const { upload } = useUpload('private');
 
   const [values, setValues] = useState<BusinessInfoValues>(EMPTY_BUSINESS_INFO);
@@ -49,6 +56,7 @@ export function StoreVerification() {
   useEffect(() => {
     if (!data) return;
     setValues({
+      country: data.country,
       businessType: data.businessType,
       legalBusinessName: data.legalBusinessName ?? '',
       registrationNumber: data.registrationNumber ?? '',
@@ -57,7 +65,8 @@ export function StoreVerification() {
       idDocumentType: data.idDocumentType,
       authorizedContact: data.authorizedContact ?? EMPTY_BUSINESS_INFO.authorizedContact,
     });
-  }, [data]);
+    preview({ country: data.country, businessType: data.businessType ?? undefined });
+  }, [data, preview]);
 
   if (loading && !data) {
     return (
@@ -82,14 +91,58 @@ export function StoreVerification() {
     );
   }
 
-  const editable = data.storeStatus === 'pending' || data.storeStatus === 'rejected';
-  const required = requiredDocumentTypesFor(values.businessType);
-  const docByType = new Map(data.documents.map(d => [d.type, d]));
-  const missingRequired = required.filter(t => !docByType.has(t));
+  // Editable while nothing's been submitted yet, or after a rejection —
+  // locked the moment it's pending/under_review/verified. This reads
+  // `verificationStatus`, never the store's marketplace `storeStatus` —
+  // they're independent (see StoreService, store.schema.ts).
+  const editable = data.verificationStatus === 'not_started' || data.verificationStatus === 'rejected';
+  const level = requirements?.verificationLevel ?? data.verificationLevel;
+
+  // Live checklist — driven by the requirements PREVIEW (recalculated the
+  // instant country/businessType changes, before anything is saved), not by
+  // the last-saved `data.documents`, so switching business type updates the
+  // required/optional badges immediately. Upload state (fileName/viewUrl)
+  // still comes from `data.documents`, since that's the actual persisted
+  // record of what's been uploaded.
+  const uploadedByType = new Map(data.documents.map(d => [d.type, d]));
+  const requiredDocs = requirements?.requiredDocuments ?? [];
+  const optionalDocs = requirements?.optionalDocuments ?? [];
+  const checklist: VerificationDocumentView[] = [...new Set([...requiredDocs, ...optionalDocs])].map((type) => {
+    const uploaded = uploadedByType.get(type);
+    const required = requiredDocs.includes(type);
+    return {
+      type,
+      required,
+      state: uploaded ? 'uploaded' : (required ? 'missing' : 'not_required'),
+      fileName: uploaded?.fileName ?? null,
+      uploadedAt: uploaded?.uploadedAt ?? null,
+      viewUrl: uploaded?.viewUrl ?? null,
+    };
+  });
+
+  const missingFields = (requirements?.requiredFields ?? []).filter(path => !isFieldFilled(values, path));
+  const missingDocs = checklist.filter(d => d.required && d.state !== 'uploaded');
+  const requiredCount = checklist.filter(d => d.required).length;
+  const completeCount = checklist.filter(d => d.required && d.state === 'uploaded').length;
+  // `requirements !== null` guards the same race as OnboardingPage's Step 4:
+  // before the live requirements preview resolves for the first time,
+  // `missingFields`/`missingDocs` would otherwise default to "nothing known
+  // missing yet" rather than genuinely complete. The backend independently
+  // re-validates on submit regardless, but the button shouldn't ever look
+  // clickable before the frontend actually knows what's required.
+  const canSubmit = editable && requirements !== null && missingFields.length === 0 && missingDocs.length === 0;
+
+  const handleBusinessInfoChange = (next: BusinessInfoValues) => {
+    setValues(next);
+    if (next.country !== values.country || next.businessType !== values.businessType) {
+      preview({ country: next.country, businessType: next.businessType ?? undefined });
+    }
+  };
 
   const handleSaveDraft = async () => {
     setSaved(false);
     const ok = await save({
+      country: values.country,
       businessType: values.businessType ?? undefined,
       legalBusinessName: values.legalBusinessName,
       registrationNumber: values.registrationNumber,
@@ -105,8 +158,8 @@ export function StoreVerification() {
   const handleUpload = async (type: VerificationDocumentType, file: File) => {
     setError('');
     try {
-      const uploaded = await upload(file, 'kyc_document');
-      const ok = await attachDocument(type, { publicId: uploaded.publicId, resourceType: uploaded.resourceType, fileName: file.name });
+      const uploadedFile = await upload(file, 'kyc_document');
+      const ok = await attachDocument(type, { publicId: uploadedFile.publicId, resourceType: uploadedFile.resourceType, fileName: file.name });
       if (ok) refetch();
     } catch {
       setError('Failed to upload document. Please try again.');
@@ -114,16 +167,15 @@ export function StoreVerification() {
   };
 
   const handleSubmit = async () => {
-    // Persist the latest edited fields before locking the submission in.
+    // Persist the latest edited fields before locking the submission in —
+    // the backend independently re-validates everything regardless (see
+    // StoreService.submitVerification), this is just so a last-second edit
+    // isn't silently dropped.
     const savedOk = await handleSaveDraft();
     if (!savedOk) return;
     const ok = await submit();
     if (ok) refetch();
   };
-
-  const canSubmit = editable && missingRequired.length === 0
-    && values.businessType != null && values.legalBusinessName.trim().length > 0 && values.businessAddress.trim().length > 0
-    && values.idDocumentType != null && !!values.authorizedContact.name && !!values.authorizedContact.email && !!values.authorizedContact.phone;
 
   return (
     <>
@@ -136,14 +188,16 @@ export function StoreVerification() {
               <ShieldCheck size={18} className="text-brand-orange" />
             </div>
             <div>
-              <p className="text-[13px] font-semibold text-carbon">Verification Status</p>
+              <p className="text-[13px] font-semibold text-carbon">
+                {VERIFICATION_LEVEL_LABELS[level].label}
+              </p>
               <p className="text-[11.5px] text-slate">{editable ? 'Complete every required field and document, then submit for review.' : 'Your submission is locked while under review.'}</p>
             </div>
           </div>
-          <StatusBadge status={data.storeStatus} />
+          <StatusBadge status={data.verificationStatus} />
         </div>
 
-        {data.storeStatus === 'rejected' && data.rejectionReason && (
+        {data.verificationStatus === 'rejected' && data.rejectionReason && (
           <div className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-start gap-2">
             <AlertTriangle size={14} className="text-error shrink-0 mt-[2px]" />
             <div>
@@ -156,7 +210,7 @@ export function StoreVerification() {
 
         <div className="bg-white border border-bone rounded-[14px] p-5">
           <p className="text-[13px] font-bold text-carbon mb-4">Business Information</p>
-          <BusinessInfoFields values={values} onChange={setValues} disabled={!editable || saving || submitting} />
+          <BusinessInfoFields values={values} onChange={handleBusinessInfoChange} disabled={!editable || saving || submitting} />
           {editable && (
             <div className="flex items-center gap-3 mt-4">
               <Button variant="outline" size="sm" onClick={handleSaveDraft} loading={saving}>Save Draft</Button>
@@ -166,21 +220,22 @@ export function StoreVerification() {
         </div>
 
         <div className="bg-white border border-bone rounded-[14px] p-5">
-          <p className="text-[13px] font-bold text-carbon mb-4">Documents</p>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[13px] font-bold text-carbon">Required Documents</p>
+            {requiredCount > 0 && (
+              <span className="text-[11.5px] font-semibold text-slate">{completeCount} of {requiredCount} complete</span>
+            )}
+          </div>
           <div className="flex flex-col gap-3">
-            {ALL_DOC_TYPES
-              .filter(t => required.includes(t) || t === 'authorization_proof')
-              .map(type => (
-                <DocumentUploadCard
-                  key={type}
-                  type={type}
-                  required={required.includes(type)}
-                  doc={docByType.get(type)}
-                  uploading={uploadingType === type}
-                  disabled={!editable || submitting}
-                  onUpload={file => handleUpload(type, file)}
-                />
-              ))}
+            {checklist.map(doc => (
+              <DocumentUploadCard
+                key={doc.type}
+                doc={doc}
+                uploading={uploadingType === doc.type}
+                disabled={!editable || submitting}
+                onUpload={file => handleUpload(doc.type, file)}
+              />
+            ))}
           </div>
         </div>
 
@@ -190,7 +245,7 @@ export function StoreVerification() {
 
         {editable && (
           <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={!canSubmit} loading={submitting}>
-            {data.storeStatus === 'rejected' ? 'Resubmit for Review' : 'Submit for Review'}
+            {data.verificationStatus === 'rejected' ? 'Resubmit for Review' : 'Submit for Review'}
           </Button>
         )}
 

@@ -47,9 +47,16 @@ export interface MarketplaceListingsData {
 // ── Leads (new-store approval queue) ────────────────────────────────────────
 export interface LeadsQuery {
   search?: string;
+  /** Omit for the default pending/under_review review queue; `'all'` removes
+   *  the status filter entirely so every lead (verified/rejected/not_started
+   *  included) shows up. */
+  verificationStatus?: LeadVerificationStatus | 'all';
   page?: number;
   limit?: number;
 }
+
+export type LeadVerificationStatus = 'not_started' | 'pending' | 'under_review' | 'verified' | 'rejected';
+export type LeadVerificationLevel = 'basic' | 'business' | 'enhanced';
 
 export interface LeadRow {
   id: string;
@@ -62,10 +69,12 @@ export interface LeadRow {
   productTypes: string[];
   baseCurrency: string | null;
   submittedAt: string;
-  status: 'pending' | 'under_review';
-  verificationSubmitted: boolean;
+  /** Marketplace listing lifecycle — independent of verificationStatus below. */
+  storeStatus: string;
+  country: string;
   businessType: string | null;
-  documentCount: number;
+  verificationLevel: LeadVerificationLevel | null;
+  verificationStatus: LeadVerificationStatus;
   seller: {
     id: string;
     name: string;
@@ -84,9 +93,11 @@ export interface LeadsData {
 
 export interface LeadDocumentView {
   type: string;
-  fileName: string;
-  uploadedAt: string;
-  viewUrl: string;
+  required: boolean;
+  state: 'missing' | 'uploaded' | 'not_required';
+  fileName: string | null;
+  uploadedAt: string | null;
+  viewUrl: string | null;
 }
 
 export interface LeadHistoryEntry {
@@ -105,19 +116,27 @@ export interface LeadDetail {
   categoryName: string | null;
   sellerType: string | null;
   productTypes: string[];
-  status: string;
+  storeStatus: string;
   rejectionReason: string | null;
   submittedAt: string;
   seller: { id: string; name: string; email: string | null; phone: string | null; address: string | null };
+  country: string;
   businessType: string | null;
+  verificationLevel: LeadVerificationLevel;
+  verificationStatus: LeadVerificationStatus;
   legalBusinessName: string | null;
   registrationNumber: string | null;
   taxId: string | null;
   businessAddress: string | null;
   idDocumentType: string | null;
   authorizedContact: { name: string | null; designation: string | null; email: string | null; phone: string | null } | null;
-  submitted: boolean;
   documents: LeadDocumentView[];
+  missingFields: string[];
+  missingDocuments: string[];
+  /** True only when every required field/document is satisfied — mirrors
+   *  the backend's own gate, so the UI can disable Approve for exactly the
+   *  same reason the server would reject it. */
+  canApprove: boolean;
   history: LeadHistoryEntry[];
 }
 
