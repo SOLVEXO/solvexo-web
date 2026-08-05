@@ -4,7 +4,7 @@ import { SellerAnalyticsView } from '@/features/seller/components/analytics/Sell
 
 export function StoreAnalytics() {
   usePageTitle('Analytics');
-  const { storeId } = useStoreWorkspace();
+  const { store, storeId } = useStoreWorkspace();
 
   return (
     <>
@@ -14,7 +14,7 @@ export function StoreAnalytics() {
       />
 
       <div className="px-7 pt-5 pb-8">
-        <SellerAnalyticsView storeId={storeId} />
+        <SellerAnalyticsView storeId={storeId} currency={store?.baseCurrency ?? null} />
       </div>
     </>
   );

@@ -79,10 +79,13 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
     <div
       onClick={() => onClick(product._id)}
       className={clsx(
-        'group relative bg-white rounded-2xl border border-bone overflow-hidden cursor-pointer transition-all duration-300 hover:border-brand-orange/35',
+        'group relative bg-white rounded-2xl border border-bone overflow-hidden cursor-pointer transition-all duration-300 hover:bg-brand-pale-orange/[0.12]',
         !compact && 'h-full flex flex-col hover:-translate-y-[3px]',
       )}
     >
+      {/* Accent bar — sweeps in on hover, same signal as ProductCard's grid tiles */}
+      <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-brand-orange to-brand-deep-orange scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 z-[1]" />
+
       {/* Image — square, the card's focal point without dominating the whole card.
           Compact: stays fixed-size on hover (no zoom) — hover instead reveals the
           price/rating overlay below. */}
@@ -119,7 +122,7 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
           className={clsx(
             'absolute rounded-full bg-white border border-bone flex items-center justify-center z-[1]',
             compact ? 'bottom-[6px] right-[6px] w-7 h-7' : 'bottom-2 right-2 w-9 h-9',
-            'transition-all duration-200 hover:scale-110 hover:border-brand-orange/40',
+            'transition-all duration-200 hover:scale-110 hover:bg-brand-pale-orange',
             isWishlisting ? 'cursor-wait' : 'cursor-pointer',
           )}
         >

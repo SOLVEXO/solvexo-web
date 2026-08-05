@@ -48,10 +48,11 @@ function FilterPanel({ filters, onChange, onPriceRangeChange, categories = [], s
   selectedCategory: string;
   onCategoryChange: (id: string) => void;
 }) {
+  const isPriceRangeActive = filters.priceRange[0] !== PRICE_MIN || filters.priceRange[1] !== PRICE_MAX;
   return (
     <div>
       {categories.length > 0 && (
-        <FilterAccordionSection title="Category">
+        <FilterAccordionSection title="Category" activeCount={selectedCategory ? 1 : 0}>
           <div className="flex flex-col">
             <FilterRadioRow label="All Categories" active={selectedCategory === ''} onClick={() => onCategoryChange('')} count={categories.reduce((sum, c) => sum + (c.productCount ?? 0), 0)} />
             {categories.map(c => (
@@ -60,17 +61,17 @@ function FilterPanel({ filters, onChange, onPriceRangeChange, categories = [], s
           </div>
         </FilterAccordionSection>
       )}
-      <FilterAccordionSection title="Price Range">
+      <FilterAccordionSection title="Price Range" activeCount={isPriceRangeActive ? 1 : 0}>
         <PriceRangeSlider value={filters.priceRange} onChange={onPriceRangeChange} />
       </FilterAccordionSection>
-      <FilterAccordionSection title="Product Type">
+      <FilterAccordionSection title="Product Type" activeCount={filters.type.length}>
         <div className="flex flex-col">
           {TYPE_ITEMS.map(label => (
             <FilterCheckboxRow key={label} label={label} active={filters.type.includes(label)} onClick={() => onChange('type', label)} />
           ))}
         </div>
       </FilterAccordionSection>
-      <FilterAccordionSection title="Rating">
+      <FilterAccordionSection title="Rating" activeCount={filters.rating.length}>
         <div className="flex flex-col">
           {RATING_ITEMS.map(({ label, stars }) => (
             <FilterStarRow key={label} stars={stars} active={filters.rating.includes(label)} onClick={() => onChange('rating', label)} />
@@ -101,6 +102,14 @@ export function Marketplace() {
   const [viewMode,      setViewMode]      = useState<'grid' | 'list'>('grid');
   const [page,          setPage]          = useState(() => { const p = Number(searchParams.get('page')); return p > 0 ? p : 1; });
   const [mobileFilters, setMobileFilters] = useState(false);
+  // The floating Filters tab starts fully off-screen (not just invisible —
+  // translated past the viewport edge) and slides in shortly after the page
+  // has settled, instead of being visible immediately on load.
+  const [showFilterTab, setShowFilterTab] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setShowFilterTab(true), 700);
+    return () => clearTimeout(t);
+  }, []);
   // Flash Sale rail auto-advances one card at a time — paused on hover/touch
   // so a shopper reading or reaching for a card never has it slide away
   // mid-interaction.
@@ -724,26 +733,34 @@ export function Marketplace() {
       <FloatingAppWidget />
 
       {/* ── Filters — a real sidebar, not an inline panel or a bottom sheet.
-         A small tab stays stuck to the left edge of the viewport at every
-         breakpoint; clicking it slides a full-height drawer in from the
-         left, over the page. Anchored low (not vertical-center, which sat
-         right on top of the page's own content) and kept small/slim so it
-         reads as a discreet edge tab, not a button floating over the page. ── */}
+         A slim vertical ribbon tab stays stuck to the left edge of the
+         viewport, vertically centered; clicking it slides a full-height
+         drawer in from the left, over the page. The label is rotated as one
+         line (not stacked letter-by-letter — that reads much slower) so it
+         reads like a spine label on a folder tab. ── */}
       <button
         onClick={() => setMobileFilters(o => !o)}
         aria-expanded={mobileFilters}
         aria-label="Toggle filters"
         className={clsx(
-          'fixed left-0 bottom-24 z-[58] flex items-center gap-[6px] rounded-r-[10px] border border-l-0 py-2 pl-2 pr-[10px] text-[12px] font-semibold shadow-[0_2px_8px_rgba(20,15,10,0.1)] cursor-pointer transition-colors',
-          mobileFilters || activeFilterCount > 0
-            ? 'bg-brand-pale-orange border-brand-orange text-brand-deep-orange'
-            : 'bg-white border-bone text-charcoal hover:bg-cream',
+          'fixed left-0 top-1/2 -translate-y-1/2 z-[58] flex flex-col items-center gap-3 rounded-r-2xl border border-l-0 border-white/10 py-4 px-[9px] text-white bg-gradient-to-b from-charcoal to-brand-orange shadow-[0_8px_24px_-4px_rgba(217,119,87,0.4),0_4px_14px_rgba(20,15,10,0.25)] cursor-pointer transition-all duration-500 ease-out hover:px-3 hover:brightness-110 hover:shadow-[0_10px_28px_-4px_rgba(217,119,87,0.5),0_4px_14px_rgba(20,15,10,0.3)]',
+          showFilterTab ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0',
+          (mobileFilters || activeFilterCount > 0) && 'ring-2 ring-brand-orange/50',
         )}
       >
-        <SlidersHorizontal size={13} strokeWidth={2} />
-        Filters
+        <SlidersHorizontal size={14} strokeWidth={2} className="shrink-0" />
+        {/* `writing-mode:vertical-rl` (not a `rotate-90` transform on
+           horizontal text) — a transform is purely visual and doesn't
+           affect layout, so the button would still be laid out as wide as
+           the unrotated text; vertical-rl actually reflows the text
+           vertically, so the box sizes correctly narrow+tall, and Latin
+           glyphs rotate clockwise automatically (browser default
+           text-orientation: mixed) reading top-to-bottom. */}
+        <span className="[writing-mode:vertical-rl] whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.06em] my-1">
+          Filter Products
+        </span>
         {activeFilterCount > 0 && (
-          <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
+          <span className="min-w-[18px] h-[18px] rounded-full bg-white text-brand-deep-orange text-[9px] font-bold flex items-center justify-center px-[4px] leading-none shrink-0">
             {activeFilterCount}
           </span>
         )}
@@ -795,8 +812,22 @@ export function Marketplace() {
             </button>
           </div>
         </div>
-        <div className="px-5 py-4">
+        <div className="px-5 py-4 pb-24">
           <FilterPanel filters={filters} onChange={toggleFilter} onPriceRangeChange={setPriceRange} categories={categories} selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
+        </div>
+
+        {/* Sticky "show results" footer — filtering is already live as you
+           toggle each control above, so this isn't really an "Apply" action;
+           it's the same confirm-and-close affordance Amazon/Shopify's mobile
+           filter sheets use, so closing the drawer never requires scrolling
+           back up to find the header's X button. */}
+        <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-bone px-5 py-3.5">
+          <button
+            onClick={() => setMobileFilters(false)}
+            className="w-full flex items-center justify-center gap-2 bg-brand-orange text-white text-[13.5px] font-bold rounded-xl py-[11px] cursor-pointer hover:bg-brand-deep-orange transition-colors duration-200"
+          >
+            Show {total} {total === 1 ? 'Result' : 'Results'}
+          </button>
         </div>
       </div>
     </div>

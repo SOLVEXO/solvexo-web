@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
-import { FilterDropdown, SkeletonBox, BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, CoverImage, StoreAnnouncementBar, FloatingAppWidget } from '@/components/comman/ui';
+import { FilterDropdown, SkeletonBox, BuyerNavbar, AppDownloadBanner, Footer, CoverImage, StoreAnnouncementBar, FloatingAppWidget } from '@/components/comman/ui';
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { ProductImage, StarRating as SharedStarRating } from '@/components/comman/marketplace/ProductCard';
 import { useStoreBanners } from '@/hooks/useStoreBanners';
@@ -108,12 +108,12 @@ const SORT_OPTIONS = [
 // card — only the wishlist/cart handlers below are wired to real context state.
 function StoreProductImage({ src, alt }: { src: string; alt: string }) {
   const [errored, setErrored] = useState(false);
-  if (errored) return <Package size={28} className="text-[#5a8a6a]" />;
+  if (errored) return <Package size={28} className="text-brand-orange" />;
   return (
     <img
       loading="lazy" decoding="async" src={src} alt={alt}
       onError={() => setErrored(true)}
-      className="w-full h-full object-cover"
+      className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
     />
   );
 }
@@ -413,14 +413,6 @@ export function SellerStorefront() {
         />
       )}
 
-      <div className="px-4 sm:px-6 lg:px-10 pt-3 bg-white border-b border-bone">
-        <Breadcrumb items={[
-          { label: 'Home', path: '/' },
-          { label: 'Marketplace', path: '/marketplace' },
-          { label: store.name },
-        ]} />
-      </div>
-
       {/* ── Store Banner ─ same full-bleed hero height as the Marketplace hero ── */}
       <CoverImage
         className="min-h-[300px] sm:min-h-[360px] lg:min-h-[420px] flex items-end"
@@ -600,7 +592,7 @@ export function SellerStorefront() {
             <div
               onMouseEnter={clearCloseTimer}
               className={clsx(
-                'absolute left-0 right-0 top-full z-30 bg-white border-b border-bone shadow-lg transition-all duration-200 origin-top',
+                'absolute left-0 right-0 top-full z-30 bg-white border-b border-bone transition-all duration-200 origin-top',
                 activeSection ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none',
               )}
             >
@@ -615,7 +607,7 @@ export function SellerStorefront() {
                         <button
                           key={p._id}
                           onClick={() => navigate(`/marketplace/${p._id}`)}
-                          className="group shrink-0 w-[140px] text-left bg-white border border-bone rounded-xl overflow-hidden cursor-pointer transition-colors duration-200 hover:border-carbon/25"
+                          className="group shrink-0 w-[140px] text-left bg-white border border-bone rounded-xl overflow-hidden cursor-pointer transition-colors duration-200 hover:bg-brand-pale-orange/[0.12]"
                         >
                           <div className="relative p-2">
                             <div className="relative overflow-hidden aspect-square rounded-lg bg-bone">
@@ -628,7 +620,7 @@ export function SellerStorefront() {
                             <span className={clsx(
                               'absolute top-3 left-3 px-[6px] py-[1px] rounded-[4px] text-[9px] font-semibold border',
                               isDigital
-                                ? 'bg-[#ede9fe] text-[#7c3aed] border-[#ddd6fe]'
+                                ? 'bg-accent-violet-bg text-accent-violet border-accent-violet/25'
                                 : 'bg-brand-pale-orange text-brand-deep-orange border-[#f5d0bc]',
                             )}>
                               {typeLabel}
@@ -684,18 +676,25 @@ export function SellerStorefront() {
                 const typeLabel  = isPhysical ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
                 const vId        = p.variantId ?? p._id;
                 return (
-                <Card key={p._id} padding="none" hover onClick={() => navigate(`/marketplace/${p._id}`)} className="overflow-hidden bg-white">
+                <Card key={p._id} padding="none" hover onClick={() => navigate(`/marketplace/${p._id}`)} className="group overflow-hidden bg-white">
+                  {/* Accent bar — sweeps in on hover using the store's own theme
+                     color (not a hardcoded brand color — this card renders
+                     inside a seller-customizable storefront). */}
+                  <div
+                    className="absolute top-0 left-0 w-full h-[3px] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 z-[1]"
+                    style={{ background: cfg.primaryColor }}
+                  />
                   {/* Image */}
-                  <div className="relative w-full h-[110px] sm:h-[150px] lg:h-[170px] bg-[#eaf4ee] flex items-center justify-center">
+                  <div className="relative w-full h-[110px] sm:h-[150px] lg:h-[170px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">
                     {p.images?.[0]
                       ? <StoreProductImage src={p.images[0]} alt={p.name} />
-                      : <Package size={28} className="text-[#5a8a6a]" />
+                      : <Package size={28} className="text-brand-orange" />
                     }
                     <button
                       onClick={e => { e.stopPropagation(); toggleWishlist(p._id, vId); }}
                       disabled={wishlisting === vId}
                       aria-label={isWishlisted(p._id, vId) ? 'Remove from wishlist' : 'Save to wishlist'}
-                      className="absolute bottom-[6px] right-[6px] w-6 h-6 rounded-full bg-[rgba(255,255,255,0.92)] flex items-center justify-center cursor-pointer border-none"
+                      className="absolute bottom-[6px] right-[6px] w-6 h-6 rounded-full bg-[rgba(255,255,255,0.92)] flex items-center justify-center cursor-pointer border-none transition-transform duration-150 hover:scale-110"
                     >
                       <Heart size={11} className={clsx(isWishlisted(p._id, vId) ? 'text-[#e11d48] fill-[#e11d48]' : 'text-slate fill-none')} />
                     </button>
@@ -704,7 +703,7 @@ export function SellerStorefront() {
                         'px-[5px] py-[2px] rounded-[4px] text-[9px] font-semibold border leading-none',
                         isPhysical
                           ? 'bg-brand-pale-orange text-brand-deep-orange border-[#f5d0bc]'
-                          : 'bg-[#ede9fe] text-[#7c3aed] border-[#ddd6fe]',
+                          : 'bg-accent-violet-bg text-accent-violet border-accent-violet/25',
                       )}>
                         {typeLabel}
                       </span>
@@ -813,10 +812,10 @@ export function SellerStorefront() {
           </div>
 
           {subscribedMsg && (
-            <div className="max-w-[520px] mx-auto mb-6 px-4 py-3 rounded-lg bg-[#e3f4ea] text-[#1e7a3c] text-[13px] font-medium text-center">{subscribedMsg}</div>
+            <div className="max-w-[520px] mx-auto mb-6 px-4 py-3 rounded-lg bg-success-bg text-success text-[13px] font-medium text-center">{subscribedMsg}</div>
           )}
           {subscribeError && (
-            <div className="max-w-[520px] mx-auto mb-6 px-4 py-3 rounded-lg bg-[#fdecea] text-error text-[13px] font-medium text-center">{subscribeError}</div>
+            <div className="max-w-[520px] mx-auto mb-6 px-4 py-3 rounded-lg bg-error-bg text-error text-[13px] font-medium text-center">{subscribeError}</div>
           )}
 
           <div className={clsx('grid gap-5 max-w-[960px] mx-auto', plans.length === 1 ? 'grid-cols-1 max-w-[380px]' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3')}>

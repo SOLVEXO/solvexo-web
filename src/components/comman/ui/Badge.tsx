@@ -12,7 +12,7 @@ interface BadgeProps {
 }
 
 const colorClasses: Record<BadgeColor, string> = {
-  gray:   'bg-[#f1efe8] text-slate',
+  gray:   'bg-mist text-slate',
   orange: 'bg-brand-pale-orange text-brand-deep-orange',
   green:  'bg-success-bg text-success',
   red:    'bg-error-bg text-error',

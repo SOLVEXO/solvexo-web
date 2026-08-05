@@ -9,7 +9,6 @@ interface CardProps {
   children:   ReactNode;
   className?: string;
   padding?:   CardPadding;
-  // shadow?:    boolean;
   hover?:     boolean;
   onClick?:   () => void;
 }
@@ -29,7 +28,6 @@ export function Card({
   children,
   className,
   padding  = 'md',
-  // shadow   = true,
   hover    = false,
   onClick,
 }: CardProps) {
@@ -37,9 +35,10 @@ export function Card({
     <div
       onClick={onClick}
       className={clsx(
+        // No shadow, no hover border-color change — hover reads through a
+        // warm background tint + lift instead.
         'bg-white rounded-xl border border-bone duration-200 ease-out',
-        // shadow && 'shadow-card',
-        (hover || !!onClick) && 'hover:border-[#dedbd0] hover:-translate-y-[2px] cursor-pointer',
+        (hover || !!onClick) && 'hover:bg-brand-pale-orange/[0.12] hover:-translate-y-[2px] cursor-pointer',
         PADDING[padding],
         className,
       )}

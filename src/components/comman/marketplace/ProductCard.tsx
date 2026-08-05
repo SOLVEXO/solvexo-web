@@ -196,14 +196,22 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
     <div
       onClick={() => onClick(product._id)}
       className={clsx(
-        // 1px border, color-only on hover — premium here comes from the lift
-        // + color shift, never a shadow.
-        'group relative bg-white rounded-xl border border-bone overflow-hidden cursor-pointer',
-        'transition-[transform,border-color] duration-200 ease-out',
-        'hover:-translate-y-[2px] hover:border-brand-orange/45',
+        // No shadow, no hover border-color change — depth/hover signal comes
+        // from the lift + the accent bar sweeping in + a warm background tint.
+        'group relative bg-white hover:bg-brand-pale-orange/[0.15] rounded-2xl border border-bone overflow-hidden cursor-pointer',
+        'transition-[transform,background-color] duration-300 ease-out',
+        'hover:-translate-y-[4px]',
         isList ? 'flex flex-row items-stretch' : 'h-full flex flex-col',
       )}
     >
+      {/* Accent bar — sweeps in on hover, same language used across the
+          homepage's cards; the hover signal instead of a shadow or a
+          border-color change. */}
+      <div className={clsx(
+        'absolute top-0 left-0 h-[3px] bg-gradient-to-r from-brand-orange to-brand-deep-orange scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 z-[1]',
+        isList ? 'w-[3px] h-full top-0 bottom-0 left-0 scale-y-0 scale-x-100 group-hover:scale-y-100 origin-top' : 'w-full',
+      )} />
+
       {/* Image — full-bleed to the card's own rounded top corners (parent's
           overflow-hidden clips it), Amazon/Alibaba-style rather than an inset frame. */}
       <div className={clsx('relative shrink-0', isList ? 'w-[112px] sm:w-[168px]' : '')}>
@@ -304,7 +312,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
           aria-label={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
           className={clsx(
             'absolute top-2 right-2 w-7 h-7 rounded-full bg-white border border-bone',
-            'flex items-center justify-center transition-[transform,border-color] duration-150 hover:border-brand-orange/50 hover:scale-[1.06]',
+            'flex items-center justify-center transition-[transform,background-color] duration-150 hover:bg-brand-pale-orange hover:scale-[1.08]',
             isWishlisting ? 'cursor-wait' : 'cursor-pointer',
           )}
         >
@@ -323,7 +331,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             aria-label="Preview"
             className={clsx(
               'absolute bottom-2 left-2 w-7 h-7 rounded-full bg-white border border-bone',
-              'flex items-center justify-center transition-[transform,border-color] duration-150 hover:border-brand-orange/50 hover:scale-[1.06]',
+              'flex items-center justify-center transition-[transform,background-color] duration-150 hover:bg-brand-pale-orange hover:scale-[1.08]',
               previewLoading ? 'cursor-wait' : 'cursor-pointer',
             )}
           >
@@ -406,7 +414,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
                 'flex items-center justify-center gap-[6px] rounded-lg border transition-colors duration-150 font-semibold text-[12px] h-9 px-4 shrink-0',
                 stock <= 0
                   ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                  : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white hover:border-brand-orange active:scale-[0.98] cursor-pointer',
+                  : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white active:scale-[0.98] cursor-pointer',
               )}
             >
               {isAdding ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
@@ -426,7 +434,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
                 compact ? 'w-7 h-7' : 'flex-1 h-8',
                 stock <= 0
                   ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                  : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white hover:border-brand-orange active:scale-[0.98] cursor-pointer',
+                  : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white active:scale-[0.98] cursor-pointer',
               )}
             >
               {isAdding ? <Loader2 size={13} className="animate-spin" /> : <ShoppingCart size={13} />}
@@ -443,7 +451,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
               <button
                 onClick={openQuickView}
                 aria-label="Quick view"
-                className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg border border-bone text-charcoal bg-white hover:border-brand-orange/50 hover:text-brand-orange transition-colors duration-150 cursor-pointer"
+                className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg border border-bone text-charcoal bg-white hover:bg-brand-pale-orange hover:text-brand-orange transition-colors duration-150 cursor-pointer"
               >
                 <ScanEye size={14} />
               </button>

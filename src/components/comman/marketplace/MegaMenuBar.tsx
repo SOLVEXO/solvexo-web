@@ -115,6 +115,7 @@ export function MegaSectionLabel({ children }: { children: ReactNode }) {
 
 export function CategoriesMegaContent({
   categories, spotlight, onShopCategory, onProductClick, onTrendingTerm, initialActiveId, showSpotlight = true,
+  fixedHeight,
 }: {
   categories:     CategoryNode[];
   spotlight:      MarketplaceProduct[];
@@ -130,18 +131,26 @@ export function CategoriesMegaContent({
    *  categories/subcategories browse experience (e.g. the "Categories for
    *  you" modal) without a third products column. */
   showSpotlight?: boolean;
+  /** When set, columns 1 & 2 lock to this pixel height with their own
+   *  independent scroll beneath a fixed header, so clicking a category with
+   *  fewer/more subcategories never resizes the modal around it (Alibaba's
+   *  category-browser pattern). Omitted by the navbar's hover dropdown,
+   *  which stays content-sized as before. */
+  fixedHeight?: number;
 }) {
   const [activeId, setActiveId] = useState<string | null>(initialActiveId ?? categories[0]?._id ?? null);
   const active = categories.find(c => c._id === activeId) ?? categories[0] ?? null;
 
   if (categories.length === 0) return <p className="text-[13px] text-slate">No categories yet.</p>;
 
+  const colStyle = fixedHeight ? { height: fixedHeight } : undefined;
+
   return (
     <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
       {/* Column 1 — category links */}
-      <div className="w-full lg:w-[210px] shrink-0 border-b lg:border-b-0 lg:border-r border-bone pb-5 lg:pb-0 pr-0 lg:pr-6">
+      <div className="w-full lg:w-[220px] shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-bone pb-5 lg:pb-0 pr-0 lg:pr-6" style={colStyle}>
         <MegaSectionLabel>Categories</MegaSectionLabel>
-        <div className="flex flex-col gap-[2px] max-h-[400px] overflow-y-auto">
+        <div className={clsx('flex flex-col gap-[2px] overflow-y-auto pr-1 -mr-1', fixedHeight ? 'flex-1 min-h-0' : 'max-h-[400px]')}>
           {categories.map(cat => (
             <button
               key={cat._id}
@@ -162,8 +171,9 @@ export function CategoriesMegaContent({
       </div>
 
       {/* Column 2 — subcategory icon grid + trending searches */}
-      <div className="w-full lg:flex-1 lg:min-w-0 border-b lg:border-b-0 lg:border-r border-bone pb-5 lg:pb-0 pr-0 lg:pr-8">
+      <div className="w-full lg:flex-1 lg:min-w-0 flex flex-col border-b lg:border-b-0 lg:border-r border-bone pb-5 lg:pb-0 pr-0 lg:pr-8" style={colStyle}>
         <MegaSectionLabel>Subcategories</MegaSectionLabel>
+        <div className={clsx('overflow-y-auto pr-1 -mr-1', fixedHeight && 'flex-1 min-h-0')}>
         {active && active.children.length > 0 ? (
           <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-4 mb-6">
             {active.children.map(sub => (
@@ -198,6 +208,7 @@ export function CategoriesMegaContent({
               {term}
             </button>
           ))}
+        </div>
         </div>
       </div>
 

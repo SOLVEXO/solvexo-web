@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowRight, Download, Plus, X, Star } from 'lucide-react';
+import { clsx } from 'clsx';
+import { ArrowRight, Download, Plus, X, Star, AlertTriangle } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
+import { Badge } from '@/components/comman/ui/Badge';
+import type { BadgeColor } from '@/types';
+import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
 import {
@@ -17,23 +21,23 @@ import {
   type PayoutMethodType, type PayoutSchedule, type TaxReport, type Payout, type PayoutStatus,
 } from '@/api/services/finance';
 
-const TYPE_STYLE: Record<TransactionType, { bg: string; color: string; label: string }> = {
-  sale:       { bg: '#E3F4EA', color: '#1E7A3C', label: 'Sale' },
-  payout:     { bg: '#F0EEE6', color: '#5A5852', label: 'Payout' },
-  fee:        { bg: '#FFF4DC', color: '#B36200', label: 'Fee' },
-  refund:     { bg: '#FDECEA', color: '#C0392B', label: 'Refund' },
-  adjustment: { bg: '#E4F0FB', color: '#1F5FA8', label: 'Adjustment' },
+const TYPE_STYLE: Record<TransactionType, { color: BadgeColor; label: string }> = {
+  sale:       { color: 'green',  label: 'Sale' },
+  payout:     { color: 'gray',   label: 'Payout' },
+  fee:        { color: 'yellow', label: 'Fee' },
+  refund:     { color: 'red',    label: 'Refund' },
+  adjustment: { color: 'blue',   label: 'Adjustment' },
 };
 
 const METHOD_LABEL: Record<PayoutMethodType, string> = {
   bank_transfer: 'Bank Transfer', paypal: 'PayPal', stripe: 'Stripe',
 };
 
-const PAYOUT_STATUS_STYLE: Record<PayoutStatus, { bg: string; color: string }> = {
-  pending:    { bg: '#FDF2DA', color: '#946200' },
-  processing: { bg: '#E4F0FB', color: '#1F5FA8' },
-  completed:  { bg: '#E3F4EA', color: '#1E7A3C' },
-  failed:     { bg: '#FDECEA', color: '#C0392B' },
+const PAYOUT_STATUS_COLOR: Record<PayoutStatus, BadgeColor> = {
+  pending:    'yellow',
+  processing: 'blue',
+  completed:  'green',
+  failed:     'red',
 };
 
 // Every wallet/balance/transaction figure must be shown in ITS OWN currency
@@ -83,8 +87,10 @@ function PayoutMethodModal({
         <div className="flex gap-2">
           {(['bank_transfer', 'paypal', 'stripe'] as const).map(t => (
             <button key={t} onClick={() => setType(t)}
-              className="flex-1 px-2.5 py-2 rounded-lg text-[12px] font-semibold border cursor-pointer"
-              style={{ borderColor: type === t ? '#D97757' : '#E8E6DC', background: type === t ? '#FBECE4' : '#fff', color: type === t ? '#B95A3A' : '#5A5852' }}>
+              className={clsx(
+                'flex-1 px-2.5 py-2 rounded-lg text-[12px] font-semibold border cursor-pointer',
+                type === t ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-graphite',
+              )}>
               {METHOD_LABEL[t]}
             </button>
           ))}
@@ -96,8 +102,10 @@ function PayoutMethodModal({
           <div className="flex gap-2">
             {(['PKR', 'USD'] as const).map(c => (
               <button key={c} disabled={!!editing} onClick={() => setCurrency(c)}
-                className="flex-1 px-2.5 py-2 rounded-lg text-[12px] font-semibold border disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                style={{ borderColor: currency === c ? '#D97757' : '#E8E6DC', background: currency === c ? '#FBECE4' : '#fff', color: currency === c ? '#B95A3A' : '#5A5852' }}>
+                className={clsx(
+                  'flex-1 px-2.5 py-2 rounded-lg text-[12px] font-semibold border disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer',
+                  currency === c ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-graphite',
+                )}>
                 {c}
               </button>
             ))}
@@ -280,7 +288,7 @@ export function StoreFinance() {
   const [activeCurrency, setActiveCurrency] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [txPage, setTxPage] = useState(1);
-  const [txPages, setTxPages] = useState(1);
+  const [txTotal, setTxTotal] = useState(0);
   const [txType, setTxType] = useState<TransactionType | ''>('');
   const [methods, setMethods] = useState<PayoutMethod[]>([]);
   const [schedule, setSchedule] = useState<PayoutSchedule | null>(null);
@@ -296,14 +304,11 @@ export function StoreFinance() {
     { key: 'description', header: 'Description', render: t => <span className="text-graphite">{t.description}</span> },
     {
       key: 'type', header: 'Type',
-      render: t => {
-        const ts = TYPE_STYLE[t.type];
-        return <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: ts.bg, color: ts.color }}>{ts.label}</span>;
-      },
+      render: t => <Badge color={TYPE_STYLE[t.type].color}>{TYPE_STYLE[t.type].label}</Badge>,
     },
     {
       key: 'amount', header: 'Amount',
-      render: t => <span className="font-semibold whitespace-nowrap" style={{ color: t.amount >= 0 ? '#2D8A4E' : '#C13030' }}>{t.amount >= 0 ? '+' : ''}{fmt(t.amount, t.currency)}</span>,
+      render: t => <span className={clsx('font-semibold whitespace-nowrap', t.amount >= 0 ? 'text-success' : 'text-error')}>{t.amount >= 0 ? '+' : ''}{fmt(t.amount, t.currency)}</span>,
     },
     { key: 'balanceAfter', header: 'Balance', render: t => <span className="font-medium text-carbon whitespace-nowrap">{fmt(t.balanceAfter, t.currency)}</span> },
   ];
@@ -353,7 +358,7 @@ export function StoreFinance() {
   const loadTransactions = useCallback(() => {
     if (!storeId) return;
     apiGetFinanceTransactions(storeId, { page: txPage, limit: 10, type: txType || undefined, currency: activeCurrency || undefined })
-      .then(res => { setTransactions(res.transactions ?? []); setTxPages(res.pages); })
+      .then(res => { setTransactions(res.transactions ?? []); setTxTotal(res.total); })
       .catch(() => {});
   }, [storeId, txPage, txType, activeCurrency]);
 
@@ -428,7 +433,13 @@ export function StoreFinance() {
   if (error || !dashboard) {
     return (
       <div className="px-7 pt-5 pb-8">
-        <p className="text-[13px] text-error">{error || 'Failed to load finance data.'}</p>
+        <div className="flex flex-col items-center gap-3 text-center bg-white border border-bone rounded-[10px] px-6 py-12">
+          <div className="w-11 h-11 rounded-full bg-error-bg flex items-center justify-center">
+            <AlertTriangle size={20} className="text-error" />
+          </div>
+          <p className="text-[13px] text-charcoal max-w-sm">{error || 'Failed to load finance data.'}</p>
+          <Button size="sm" variant="outline" onClick={loadCore}>Try Again</Button>
+        </div>
       </div>
     );
   }
@@ -509,20 +520,16 @@ export function StoreFinance() {
         </div>
 
         {/* Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {[
-            { label: 'This Month Revenue', value: fmt(activeWallet.summary.thisMonthRevenue, activeWallet.currency), trend: `${activeWallet.summary.revenueGrowthPercent >= 0 ? '+' : ''}${activeWallet.summary.revenueGrowthPercent}% vs last month` },
-            { label: 'Platform Fees', value: fmt(activeWallet.summary.platformFees, activeWallet.currency), sub: 'This month' },
-            { label: 'Total Paid Out', value: fmt(activeWallet.summary.totalPaidOut, activeWallet.currency), sub: 'All time' },
-            { label: 'Pending Tax', value: fmt(activeWallet.summary.pendingTax, activeWallet.currency), sub: 'Estimated' },
-          ].map(m => (
-            <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
-              <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
-              <p className="text-[28px] font-bold text-carbon leading-[1.15]">{m.value}</p>
-              {'trend' in m && m.trend && <p className="text-xs text-success mt-1">{m.trend}</p>}
-              {'sub' in m && m.sub && <p className="text-xs text-slate mt-1">{m.sub}</p>}
-            </div>
-          ))}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <MetricCard
+            label="This Month Revenue"
+            value={fmt(activeWallet.summary.thisMonthRevenue, activeWallet.currency)}
+            trend={`${activeWallet.summary.revenueGrowthPercent >= 0 ? '+' : ''}${activeWallet.summary.revenueGrowthPercent}% vs last month`}
+            trendUp={activeWallet.summary.revenueGrowthPercent >= 0}
+          />
+          <MetricCard label="Platform Fees" value={fmt(activeWallet.summary.platformFees, activeWallet.currency)} sub="This month" />
+          <MetricCard label="Total Paid Out" value={fmt(activeWallet.summary.totalPaidOut, activeWallet.currency)} sub="All time" />
+          <MetricCard label="Pending Tax" value={fmt(activeWallet.summary.pendingTax, activeWallet.currency)} sub="Estimated" />
         </div>
 
         {/* 2-col layout */}
@@ -549,17 +556,8 @@ export function StoreFinance() {
               data={transactions}
               keyExtractor={t => t._id}
               emptyState={{ title: 'No transactions yet.' }}
+              pagination={{ page: txPage, total: txTotal, perPage: 10, onChange: setTxPage, label: 'transactions' }}
             />
-
-            {txPages > 1 && (
-              <div className="flex items-center justify-center gap-2 px-5 py-3 border-t border-bone">
-                <button disabled={txPage <= 1} onClick={() => setTxPage(p => p - 1)}
-                  className="px-2.5 py-1 text-[12px] border border-bone rounded-[6px] bg-white disabled:opacity-40 cursor-pointer">Prev</button>
-                <span className="text-[12px] text-slate">Page {txPage} / {txPages}</span>
-                <button disabled={txPage >= txPages} onClick={() => setTxPage(p => p + 1)}
-                  className="px-2.5 py-1 text-[12px] border border-bone rounded-[6px] bg-white disabled:opacity-40 cursor-pointer">Next</button>
-              </div>
-            )}
           </div>
 
           {/* RIGHT — 3 stacked cards */}
@@ -580,7 +578,7 @@ export function StoreFinance() {
                   {methods.map(m => (
                     <div key={m._id} className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        {m.isDefault && <Star size={11} className="text-brand-orange shrink-0" fill="#D97757" />}
+                        {m.isDefault && <Star size={11} className="text-brand-orange shrink-0" fill="var(--color-brand-orange)" />}
                         <span className="text-xs text-graphite truncate">
                           {METHOD_LABEL[m.type]}{m.accountLast4 ? ` ••${m.accountLast4}` : ''}
                         </span>
@@ -621,7 +619,7 @@ export function StoreFinance() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-3 pt-3 border-t border-[#f0eee6]">
+                <div className="mt-3 pt-3 border-t border-bone">
                   <button onClick={() => setScheduleModal(true)}
                     className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer hover:border-brand-orange/40">
                     Update Schedule
@@ -685,18 +683,13 @@ export function StoreFinance() {
               <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
                 <p className="text-[13px] font-semibold text-carbon mb-3">Recent Payouts</p>
                 <div className="flex flex-col gap-2.5">
-                  {recentPayouts.map(p => {
-                    const ps = PAYOUT_STATUS_STYLE[p.status];
-                    return (
-                      <button key={p._id} onClick={() => setSelectedPayoutId(p._id)}
-                        className="flex items-center justify-between gap-2 bg-transparent border-none p-0 cursor-pointer text-left">
-                        <span className="text-xs text-graphite">{fmt(p.amount, p.currency)}</span>
-                        <span className="px-2 py-[2px] rounded-full text-[10px] font-semibold capitalize" style={{ background: ps.bg, color: ps.color }}>
-                          {p.status}
-                        </span>
-                      </button>
-                    );
-                  })}
+                  {recentPayouts.map(p => (
+                    <button key={p._id} onClick={() => setSelectedPayoutId(p._id)}
+                      className="flex items-center justify-between gap-2 bg-transparent border-none p-0 cursor-pointer text-left">
+                      <span className="text-xs text-graphite">{fmt(p.amount, p.currency)}</span>
+                      <Badge color={PAYOUT_STATUS_COLOR[p.status]} size="sm">{p.status.charAt(0).toUpperCase() + p.status.slice(1)}</Badge>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}

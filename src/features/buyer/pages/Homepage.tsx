@@ -55,7 +55,7 @@ function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick:
       role="button"
       tabIndex={0}
       onKeyDown={e => { if (e.key === 'Enter') onClick(); }}
-      className="group h-full flex flex-col shrink-0 w-[210px] sm:w-auto snap-start bg-white border border-bone rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-[3px] hover:border-brand-orange/25"
+      className="group h-full flex flex-col shrink-0 w-[210px] sm:w-auto snap-start bg-white border border-bone rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-[3px] hover:bg-brand-pale-orange/[0.12]"
     >
       {/* Top accent — sweeps in on hover, same language as the Feature Category cards */}
       <div className="h-[4px] shrink-0 bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
@@ -94,7 +94,7 @@ function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick:
         {(isFeatured || isTopSeller || isTopRated || store.sellerType) && (
           <div className="flex flex-wrap gap-[4px] mb-2">
             {isFeatured && (
-              <span className="inline-flex items-center gap-1 px-[7px] py-[3px] rounded-full bg-[#7c3aed] text-white text-[9px] font-bold">
+              <span className="inline-flex items-center gap-1 px-[7px] py-[3px] rounded-full bg-accent-violet text-white text-[9px] font-bold">
                 <Crown size={9} /> Platinum
               </span>
             )}
@@ -151,17 +151,20 @@ function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick:
   );
 }
 
+// bg values reference existing theme tokens (via CSS var, since these render
+// through an inline style — see FEATURES.map below) instead of repeating
+// their hex values as untracked magic numbers.
 const FEATURES: { Icon: LucideIcon; title: string; bg: string; desc: string; path: string }[] = [
-  { Icon: ShoppingBag,   title: 'Marketplace',           bg: '#FBECE4', desc: 'Join thousands of buyers discovering your products in the Solvexo marketplace.',         path: '/marketplace' },
-  { Icon: BookOpen,      title: 'Educational Resources', bg: '#EBF7EF', desc: 'Sell lesson plans, courses, worksheets and digital curricula to educators worldwide.',    path: '/EducationMarketplace'   },
-  { Icon: Download,      title: 'Digital Downloads',     bg: '#E6F1FB', desc: 'Sell ebooks, music, software, templates and files with instant delivery.',                path: '/marketplace' },
-  { Icon: Store,         title: 'Your Own Store',        bg: '#FEF7E5', desc: 'Launch a branded store with a custom domain, no coding required.',                        path: '/sellers'     },
-  { Icon: Monitor,       title: 'Point of Sale',         bg: '#FBECE4', desc: 'Accept payments in-person with the Solvexo POS app, fully synced to your dashboard.',     path: '/sellers'     },
-  { Icon: Sparkles,      title: 'AI Commerce Tools',     bg: '#F5F0FB', desc: 'Write listings, optimize pricing, auto-generate descriptions with built-in AI.',           path: '/sellers'     },
-  { Icon: Gift,          title: 'Loyalty & Rewards',     bg: '#FEF7E5', desc: 'Turn one-time buyers into repeat customers with points, tiers and perks.',                 path: '/sellers'     },
-  { Icon: Megaphone,     title: 'Marketing & Campaigns', bg: '#FBECE4', desc: 'Run coupons, sales campaigns and seasonal promotions across your storefront.',            path: '/sellers'     },
-  { Icon: BarChart3,     title: 'Analytics & Insights',  bg: '#E6F1FB', desc: 'Track revenue, orders and customers with real-time dashboards and reports.',              path: '/sellers'     },
-  { Icon: MessageCircle, title: 'Buyer Messaging',       bg: '#EBF7EF', desc: 'Chat directly with buyers to answer questions and close more sales.',                    path: '/sellers'     },
+  { Icon: ShoppingBag,   title: 'Marketplace',           bg: 'var(--color-brand-pale-orange)', desc: 'Join thousands of buyers discovering your products in the Solvexo marketplace.',         path: '/marketplace' },
+  { Icon: BookOpen,      title: 'Educational Resources', bg: 'var(--color-success-bg)',         desc: 'Sell lesson plans, courses, worksheets and digital curricula to educators worldwide.',    path: '/EducationMarketplace'   },
+  { Icon: Download,      title: 'Digital Downloads',     bg: 'var(--color-info-bg)',            desc: 'Sell ebooks, music, software, templates and files with instant delivery.',                path: '/marketplace' },
+  { Icon: Store,         title: 'Your Own Store',        bg: 'var(--color-warning-bg)',         desc: 'Launch a branded store with a custom domain, no coding required.',                        path: '/sellers'     },
+  { Icon: Monitor,       title: 'Point of Sale',         bg: 'var(--color-brand-pale-orange)',  desc: 'Accept payments in-person with the Solvexo POS app, fully synced to your dashboard.',     path: '/sellers'     },
+  { Icon: Sparkles,      title: 'AI Commerce Tools',     bg: 'var(--color-accent-violet-bg)',   desc: 'Write listings, optimize pricing, auto-generate descriptions with built-in AI.',           path: '/sellers'     },
+  { Icon: Gift,          title: 'Loyalty & Rewards',     bg: 'var(--color-warning-bg)',         desc: 'Turn one-time buyers into repeat customers with points, tiers and perks.',                 path: '/sellers'     },
+  { Icon: Megaphone,     title: 'Marketing & Campaigns', bg: 'var(--color-brand-pale-orange)',  desc: 'Run coupons, sales campaigns and seasonal promotions across your storefront.',            path: '/sellers'     },
+  { Icon: BarChart3,     title: 'Analytics & Insights',  bg: 'var(--color-info-bg)',            desc: 'Track revenue, orders and customers with real-time dashboards and reports.',              path: '/sellers'     },
+  { Icon: MessageCircle, title: 'Buyer Messaging',       bg: 'var(--color-success-bg)',         desc: 'Chat directly with buyers to answer questions and close more sales.',                    path: '/sellers'     },
 ];
 
 export function Homepage() {
@@ -287,20 +290,17 @@ export function Homepage() {
     <div className="bg-white min-h-full">
 
       {/* ── Hero ─────────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-carbon to-charcoal">
+      <section className="mesh-brand grain-overlay relative overflow-hidden">
 
-        {/* Ambient glow orbs + subtle dot-grid texture */}
+        {/* Ambient glow orbs on top of the mesh — kept for extra drift/life,
+           the mesh itself supplies the base layered depth. */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="auth-float absolute w-[280px] h-[280px] sm:w-[380px] sm:h-[380px] lg:w-[480px] lg:h-[480px] rounded-full -top-24 -right-20 bg-[radial-gradient(circle,var(--color-brand-orange)_0%,transparent_70%)] opacity-[0.22] blur-3xl" />
-          <div className="auth-float-slow absolute w-[180px] h-[180px] sm:w-[240px] sm:h-[240px] rounded-full -bottom-16 right-[30%] bg-[radial-gradient(circle,#7C3AED_0%,transparent_70%)] opacity-[0.14] blur-3xl" />
-          <div
-            className="absolute inset-0 opacity-[0.05]"
-            style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)', backgroundSize: '24px 24px' }}
-          />
+          <div className="auth-float absolute w-[280px] h-[280px] sm:w-[380px] sm:h-[380px] lg:w-[480px] lg:h-[480px] rounded-full -top-24 -right-20 bg-[radial-gradient(circle,var(--color-brand-orange)_0%,transparent_70%)] opacity-[0.18] blur-3xl" />
+          <div className="auth-float-slow absolute w-[180px] h-[180px] sm:w-[240px] sm:h-[240px] rounded-full -bottom-16 right-[30%] bg-[radial-gradient(circle,var(--color-accent-violet)_0%,transparent_70%)] opacity-[0.12] blur-3xl" />
         </div>
 
-        <div className="relative z-[1] px-4 sm:px-6 lg:px-12 py-12 sm:py-16 lg:py-20 flex items-center justify-between gap-10">
-          <div className="max-w-[520px]">
+        <div className="relative z-[1] px-4 sm:px-6 lg:px-12 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-18 lg:pb-24 flex items-center justify-between gap-10">
+          <div className="max-w-[560px]">
 
             {/* Badge */}
             <div className="inline-flex items-center gap-2 rounded-full px-[14px] py-[5px] mb-5 border border-[rgba(217,119,87,0.35)] bg-[rgba(217,119,87,0.12)]">
@@ -310,7 +310,7 @@ export function Homepage() {
               </span>
             </div>
 
-            <h1 className="font-serif text-[28px] sm:text-[36px] lg:text-[44px] leading-[1.14] font-semibold text-white mb-4">
+            <h1 className="font-serif text-[30px] sm:text-[40px] lg:text-[50px] leading-[1.1] tracking-[-0.01em] font-semibold text-white mb-4">
               The Commerce OS for{' '}
               <span className="bg-gradient-to-r from-brand-orange to-[#f0a57a] bg-clip-text text-transparent">
                 Sellers, Creators &amp; Educators
@@ -336,20 +336,22 @@ export function Homepage() {
               </button>
             </div>
 
-            {/* Stats — real platform numbers, hidden until they load (no fake placeholders) */}
+            {/* Stats — real platform numbers, hidden until they load (no fake
+               placeholders), presented as a glass pill strip for real depth
+               rather than plain stacked text. */}
             {(statsLoading || statItems.length > 0) && (
-              <div className="flex gap-6 sm:gap-8">
+              <div className="inline-flex flex-wrap gap-1 rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-sm p-2">
                 {statsLoading
                   ? Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i}>
+                      <div key={i} className="px-4 py-2">
                         <SkeletonBox width={48} height={22} className="mb-1" />
                         <SkeletonBox width={64} height={11} />
                       </div>
                     ))
-                  : statItems.map(({ value, label }) => (
-                      <div key={label}>
+                  : statItems.map(({ value, label }, i) => (
+                      <div key={label} className={clsx('px-4 py-2', i > 0 && 'border-l border-white/10')}>
                         <p className="text-[20px] sm:text-[22px] font-bold text-brand-orange leading-none">{value}</p>
-                        <p className="text-[10px] sm:text-[11px] text-slate mt-1">{label}</p>
+                        <p className="text-[10px] sm:text-[11px] text-white/50 mt-1 whitespace-nowrap">{label}</p>
                       </div>
                     ))}
               </div>
@@ -374,7 +376,7 @@ export function Homepage() {
               // sitting on the *same* element as the animation would get overwritten every frame.
               <div key={f.title} style={{ transform: `rotate(${f.rotate}) translateY(${f.shift})` }}>
                 <div
-                  className="auth-float group relative rounded-2xl rounded-tl-md border overflow-hidden cursor-default transition-[border-color,background-color] duration-200 active:scale-[0.98]"
+                  className="auth-float group relative rounded-2xl rounded-tl-md border overflow-hidden cursor-default backdrop-blur-sm transition-[background-color] duration-200 active:scale-[0.98]"
                   style={{
                     animationDelay: f.delay,
                     borderColor: f.featured ? `${f.accent}40` : 'rgba(255,255,255,0.09)',
@@ -426,7 +428,7 @@ export function Homepage() {
                 <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-[6px]">
                   Limited Time Offers
                 </p>
-                <h2 className="font-serif text-[22px] sm:text-[26px] font-bold text-carbon leading-[1.2] mb-1">
+                <h2 className="font-serif text-[26px] sm:text-[32px] font-bold text-carbon leading-[1.2] mb-1">
                   Flash Sale
                 </h2>
                 <p className="flex items-center gap-[6px] text-[12.5px] sm:text-[13px] text-slate max-w-md">
@@ -459,10 +461,10 @@ export function Homepage() {
 
             {/* Carousel — horizontal scroll instead of a wrapping grid, generous
                gaps and edge padding so cards never feel compressed */}
-            <div className="flex gap-5 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0">
+            <div className="flex gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0">
               {productsLoading
-                ? Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="shrink-0 w-[150px] sm:w-[calc((100%-40px)/3)] lg:w-[calc((100%-100px)/6)]">
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="shrink-0 w-[200px] sm:w-[calc((100%-48px)/3)] lg:w-[calc((100%-72px)/4)]">
                       <FlashSaleCardSkeleton />
                     </div>
                   ))
@@ -471,7 +473,7 @@ export function Homepage() {
                     const defVariant = variants.find(v => v.isDefault) ?? variants[0];
                     const vId = defVariant?._id ?? '';
                     return (
-                      <div key={product._id} className="shrink-0 snap-start w-[150px] sm:w-[calc((100%-40px)/3)] lg:w-[calc((100%-100px)/6)]">
+                      <div key={product._id} className="shrink-0 snap-start w-[200px] sm:w-[calc((100%-48px)/3)] lg:w-[calc((100%-72px)/4)]">
                         <FlashSaleCard
                           product={product}
                           onClick={handleCardClick}
@@ -501,7 +503,10 @@ export function Homepage() {
           <div className="w-10 h-[3px] rounded-full bg-gradient-to-r from-brand-orange to-[#f0a57a] mx-auto mb-10" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {(showAllFeatures ? FEATURES : FEATURES.slice(0, 6)).map(f => (
-              <Card key={f.title} hover padding="none" onClick={() => navigate(f.path)} className="group relative overflow-hidden">
+              <Card
+                key={f.title} hover padding="none" onClick={() => navigate(f.path)}
+                className="group relative overflow-hidden"
+              >
                 <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
                 <div className="p-5">
                   <div
@@ -687,13 +692,18 @@ export function Homepage() {
         </section>
       )}
 
-      {/* ── CTA ──────────────────────────────────────────────────────────────────── */}
-      <section className="bg-brand-orange py-10 sm:py-12 lg:py-14 px-4 sm:px-6 text-center">
-        <div className="max-w-lg mx-auto">
-          <h2 className="font-serif text-[24px] sm:text-[28px] lg:text-[32px] font-bold text-white mb-3 leading-[1.2]">
+      {/* ── CTA — layered gradient + glow instead of a flat fill, so the
+         platform's closing moment carries the same depth as the hero. ── */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-brand-orange to-brand-deep-orange py-12 sm:py-14 lg:py-18 px-4 sm:px-6 text-center">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute w-[320px] h-[320px] rounded-full -top-32 -left-16 bg-white/10 blur-3xl" />
+          <div className="absolute w-[260px] h-[260px] rounded-full -bottom-24 -right-10 bg-carbon/15 blur-3xl" />
+        </div>
+        <div className="relative z-[1] max-w-lg mx-auto">
+          <h2 className="font-serif text-[26px] sm:text-[30px] lg:text-[34px] font-bold text-white mb-3 leading-[1.2] tracking-[-0.01em]">
             Ready to start selling?
           </h2>
-          <p className="text-[13px] sm:text-[14px] text-[rgba(255,255,255,0.85)] mb-6 leading-[1.7]">
+          <p className="text-[13px] sm:text-[14px] text-white/85 mb-7 leading-[1.7]">
             {stats && stats.sellersCount > 0
               ? `Join ${compactNumber.format(stats.sellersCount)}+ sellers on Solvexo. Free to start, no credit card required.`
               : 'Free to start, no credit card required.'}

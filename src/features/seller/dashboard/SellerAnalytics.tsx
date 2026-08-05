@@ -44,6 +44,7 @@ export function SellerAnalytics() {
   }
 
   const storeId = activeStoreId === 'all' ? null : activeStoreId;
+  const currency = storeId ? stores.find(s => s._id === storeId)?.baseCurrency ?? null : null;
 
   return (
     <>
@@ -60,7 +61,7 @@ export function SellerAnalytics() {
       />
 
       <div className="px-7 pt-5 pb-8">
-        <SellerAnalyticsView storeId={storeId} />
+        <SellerAnalyticsView storeId={storeId} currency={currency} />
       </div>
     </>
   );

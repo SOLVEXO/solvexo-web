@@ -7,7 +7,7 @@ import { ChevronDown, Check, Star, X } from 'lucide-react';
  *  reads worse with oversized rows than with a slightly smaller tap target),
  *  200ms height/opacity animation, no shadows — borders and color are the
  *  only affordances. */
-export function FilterAccordionSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: ReactNode }) {
+export function FilterAccordionSection({ title, defaultOpen = true, activeCount, children }: { title: string; defaultOpen?: boolean; activeCount?: number; children: ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="py-3.5 border-b border-bone last:border-b-0 last:pb-0">
@@ -16,8 +16,15 @@ export function FilterAccordionSection({ title, defaultOpen = true, children }: 
         aria-expanded={open}
         className="w-full min-h-9 flex items-center justify-between gap-2 bg-transparent border-none cursor-pointer p-0 group"
       >
-        <span className="text-[11.5px] font-bold text-charcoal uppercase tracking-[0.05em] group-hover:text-brand-orange transition-colors duration-200">
-          {title}
+        <span className="flex items-center gap-[7px]">
+          <span className="text-[11.5px] font-bold text-charcoal uppercase tracking-[0.05em] group-hover:text-brand-orange transition-colors duration-200">
+            {title}
+          </span>
+          {!!activeCount && (
+            <span className="min-w-[17px] h-[17px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
+              {activeCount}
+            </span>
+          )}
         </span>
         <span className="w-6 h-6 rounded-full flex items-center justify-center bg-cream group-hover:bg-brand-pale-orange transition-colors duration-200">
           <ChevronDown size={12} className={clsx('text-slate group-hover:text-brand-orange transition-transform duration-200', open && 'rotate-180')} />

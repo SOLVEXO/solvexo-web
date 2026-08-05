@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { LayoutDashboard, DollarSign, Package, Users, Globe2 } from 'lucide-react';
 import { TabBar, type Tab } from '@/components/comman/ui';
 import { AnalyticsFilterBar } from '@/components/comman/analytics/AnalyticsFilterBar';
-import { useActiveStore } from '@/contexts/ActiveStoreContext';
 import { useSellerAnalyticsExport } from '@/hooks/seller/useSellerAnalytics';
 import type { SellerExportSection } from '@/api/services/analytics/analytics';
+import type { SupportedCurrency } from '@/api/services/store';
 import {
   CSV_SECTION_OPTIONS,
   DEFAULT_SELLER_ANALYTICS_FILTERS,
@@ -28,6 +28,18 @@ const TABS: Tab[] = [
 interface SellerAnalyticsViewProps {
   /** `null` means "every store the seller owns" — the cross-store view. */
   storeId: string | null;
+  /** Passed in by the caller rather than resolved here — this component is
+   *  shared across two different layout trees (StoreLayout's per-store page
+   *  and SellerLayout's cross-store page) that each source "the current
+   *  store's currency" from a different context, and only one of those
+   *  contexts (`ActiveStoreProvider`) is actually mounted under SellerLayout.
+   *  Calling that hook unconditionally here crashed every visit to the
+   *  per-store Analytics page. `null` (cross-store "All Stores" view) means
+   *  no single currency can be shown correctly — tabs fall back to a plain
+   *  "$" in that case, since the underlying analytics aggregation doesn't
+   *  yet convert/group multi-store amounts by currency (a real backend gap,
+   *  not something this display alone can safely resolve). */
+  currency: SupportedCurrency | null;
 }
 
 /**
@@ -39,20 +51,11 @@ interface SellerAnalyticsViewProps {
  * scoped down to the 5 tabs the seller-side backend module actually supports.
  * Export (PDF/CSV) stays single-store only — hidden when `storeId` is null.
  */
-export function SellerAnalyticsView({ storeId }: SellerAnalyticsViewProps) {
+export function SellerAnalyticsView({ storeId, currency }: SellerAnalyticsViewProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [filters, setFilters] = useState(DEFAULT_SELLER_ANALYTICS_FILTERS);
   const [csvSection, setCsvSection] = useState(TAB_TO_CSV_SECTION.overview);
   const { exportReport, exporting } = useSellerAnalyticsExport();
-  // `null` (cross-store "All Stores" view) means no single currency can be
-  // shown correctly — tabs fall back to a plain "$" in that case, same as
-  // before this fix, since the underlying analytics aggregation itself
-  // doesn't yet convert/group multi-store amounts by currency (see
-  // analytics.service.ts — a real backend gap, not something this display
-  // fix alone can safely resolve without changing what revenue number a
-  // multi-currency seller is shown).
-  const { activeStore } = useActiveStore();
-  const currency = storeId ? activeStore?.baseCurrency : null;
 
   useEffect(() => { setCsvSection(TAB_TO_CSV_SECTION[activeTab] ?? 'revenue'); }, [activeTab]);
 

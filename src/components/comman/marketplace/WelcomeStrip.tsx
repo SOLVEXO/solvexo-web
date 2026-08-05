@@ -43,20 +43,23 @@ export function WelcomeStrip({
       {/* Welcome bar — pulled out above the card (its own row, not sharing
          the card's border/rounded corners), with breathing room below it.
          Real quick links to distinct destinations, not a restated copy of
-         the utility row already above the hero. */}
-      <div className="flex items-center justify-between gap-4 px-1 pb-3">
-        <p className="text-[14px] sm:text-[15px] font-bold text-carbon">Welcome to Solvexo</p>
-        <div className="hidden sm:flex items-center gap-5 text-[12px] font-medium text-charcoal">
-          <button onClick={() => onNavigate('/faq')} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-            <ShieldCheck size={14} className="text-brand-orange" /> Buyer Protection
+         the utility row already above the hero. Sized up as a real section
+         header (bigger heading, chip-style icon links) rather than a thin
+         utility line, with a border to give it visual weight. */}
+      <div className="flex items-center justify-between gap-4 px-1 pb-4 mb-1 border-b border-bone">
+        <p className="text-[19px] sm:text-[22px] font-bold text-carbon tracking-[-0.01em]">Welcome to Solvexo</p>
+        <div className="hidden sm:flex items-center gap-[6px] text-[13.5px] font-semibold text-charcoal">
+          <button onClick={() => onNavigate('/faq')} className="flex items-center gap-[9px] rounded-full pl-[5px] pr-[14px] py-[5px] bg-cream border border-transparent cursor-pointer transition-all duration-150 hover:bg-brand-pale-orange/70 hover:border-brand-orange/15 hover:text-brand-deep-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+            <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-[0_1px_3px_rgba(20,15,10,0.06)]"><ShieldCheck size={16} className="text-brand-orange" /></span>
+            Buyer Protection
           </button>
-          <span className="w-px h-4 bg-bone" />
-          <button onClick={() => onNavigate('/sellers')} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-            <Store size={14} className="text-brand-orange" /> Sell on Solvexo
+          <button onClick={() => onNavigate('/sellers')} className="flex items-center gap-[9px] rounded-full pl-[5px] pr-[14px] py-[5px] bg-cream border border-transparent cursor-pointer transition-all duration-150 hover:bg-brand-pale-orange/70 hover:border-brand-orange/15 hover:text-brand-deep-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+            <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-[0_1px_3px_rgba(20,15,10,0.06)]"><Store size={16} className="text-brand-orange" /></span>
+            Sell on Solvexo
           </button>
-          <span className="w-px h-4 bg-bone" />
-          <button onClick={() => onNavigate('/EducationMarketplace')} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-            <GraduationCap size={14} className="text-brand-orange" /> Education Marketplace
+          <button onClick={() => onNavigate('/EducationMarketplace')} className="flex items-center gap-[9px] rounded-full pl-[5px] pr-[14px] py-[5px] bg-cream border border-transparent cursor-pointer transition-all duration-150 hover:bg-brand-pale-orange/70 hover:border-brand-orange/15 hover:text-brand-deep-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+            <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-[0_1px_3px_rgba(20,15,10,0.06)]"><GraduationCap size={16} className="text-brand-orange" /></span>
+            Education Marketplace
           </button>
         </div>
       </div>
@@ -107,12 +110,13 @@ export function WelcomeStrip({
          / popular products), just as a big modal here instead of a hover
          panel, opened already focused on whichever category was clicked. */}
       {modalCategoryId && (
-        <Modal title="Categories for you" onClose={() => setModalCategoryId(null)} width={720}>
+        <Modal title="Categories for you" onClose={() => setModalCategoryId(null)} width={900}>
           <CategoriesMegaContent
             categories={categories}
             spotlight={topPicks}
             showSpotlight={false}
             initialActiveId={modalCategoryId}
+            fixedHeight={520}
             onShopCategory={id => { onShopCategory(id); setModalCategoryId(null); }}
             onProductClick={id => { onProductClick(id); setModalCategoryId(null); }}
             onTrendingTerm={term => { onTrendingTerm(term); setModalCategoryId(null); }}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   useCampaigns, useCampaignActions, usePlatformCoupons, usePlatformCouponActions,
@@ -120,11 +121,10 @@ function CreateCampaignModal({ campaign, onClose, onSaved }: { campaign?: Campai
             <button
               type="button"
               onClick={() => setSponsorType('seller')}
-              className="text-left px-3.5 py-3 rounded-lg border transition-colors cursor-pointer"
-              style={{
-                borderColor: sponsorType === 'seller' ? '#D97757' : '#E8E6DC',
-                background: sponsorType === 'seller' ? '#FBECE4' : '#FAF9F5',
-              }}
+              className={clsx(
+                'text-left px-3.5 py-3 rounded-lg border transition-colors cursor-pointer',
+                sponsorType === 'seller' ? 'border-brand-orange bg-brand-pale-orange' : 'border-bone bg-cream',
+              )}
             >
               <p className="flex items-center gap-1.5 text-[13px] font-semibold text-charcoal"><User size={13} /> Seller Sponsored</p>
               <p className="text-[11px] text-slate mt-1">Participating sellers give the discount out of their own payout — the platform's cost is $0.</p>
@@ -132,11 +132,10 @@ function CreateCampaignModal({ campaign, onClose, onSaved }: { campaign?: Campai
             <button
               type="button"
               onClick={() => setSponsorType('platform')}
-              className="text-left px-3.5 py-3 rounded-lg border transition-colors cursor-pointer"
-              style={{
-                borderColor: sponsorType === 'platform' ? '#D97757' : '#E8E6DC',
-                background: sponsorType === 'platform' ? '#FBECE4' : '#FAF9F5',
-              }}
+              className={clsx(
+                'text-left px-3.5 py-3 rounded-lg border transition-colors cursor-pointer',
+                sponsorType === 'platform' ? 'border-brand-orange bg-brand-pale-orange' : 'border-bone bg-cream',
+              )}
             >
               <p className="flex items-center gap-1.5 text-[13px] font-semibold text-charcoal"><Building2 size={13} /> Platform Sponsored</p>
               <p className="text-[11px] text-slate mt-1">The platform reimburses the discount — sellers keep their full payout, no margin lost by joining.</p>

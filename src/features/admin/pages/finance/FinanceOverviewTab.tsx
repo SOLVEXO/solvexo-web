@@ -32,10 +32,17 @@ export function FinanceOverviewTab({ params }: { params: AdminFinanceParams }) {
         d.byCurrency.map((c) => (
           <div key={c.currency} className="flex flex-col gap-2">
             <p className="text-[12px] font-semibold text-slate uppercase tracking-[0.06em]">{c.currency}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <MetricCard label="GMV" value={formatMoneyCompact(c.gmv, c.currency)} icon={<DollarSign size={16} />} />
+
+            {/* Hero row — the two numbers an admin actually opens this page
+                to check first (total volume, platform's own take). Everything
+                else is supporting context, not a competing headline. */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <MetricCard label="GMV" value={formatMoneyCompact(c.gmv, c.currency)} icon={<DollarSign size={18} />} />
+              <MetricCard label="Platform Earnings" value={formatMoneyCompact(c.platformEarnings, c.currency)} icon={<Percent size={18} />} sub={`Commission ${formatMoneyCompact(c.platformCommission, c.currency)} + Subs ${formatMoneyCompact(c.subscriptionRevenue, c.currency)}`} />
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               <MetricCard label="Net Revenue" value={formatMoneyCompact(c.netRevenue, c.currency)} icon={<DollarSign size={16} />} />
-              <MetricCard label="Platform Earnings" value={formatMoneyCompact(c.platformEarnings, c.currency)} icon={<Percent size={16} />} sub={`Commission ${formatMoneyCompact(c.platformCommission, c.currency)} + Subs ${formatMoneyCompact(c.subscriptionRevenue, c.currency)}`} />
               <MetricCard label="Refunds" value={formatMoneyCompact(c.refunds, c.currency)} icon={<RotateCcw size={16} />} />
               <MetricCard label="Available (owed)" value={formatMoneyCompact(c.sellerBalances.totalAvailable, c.currency)} icon={<Wallet size={16} />} />
               <MetricCard label="Pending (owed)" value={formatMoneyCompact(c.sellerBalances.totalPending, c.currency)} icon={<Clock size={16} />} sub="In clearing window" />

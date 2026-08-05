@@ -208,6 +208,7 @@ function EducationFilterPanel({
 function EducationCategoriesMegaContent({
   levels, otherLevels, activeLevel, onLevelChange, activeOtherSlug, onOtherSlugChange,
   activeSubjects, onToggleSubject, topPicks, onProductClick, showSpotlight = true,
+  fixedHeight,
 }: {
   levels: { level: string; count: number }[];
   otherLevels: { slug: string; displayName: string; count: number }[];
@@ -223,12 +224,19 @@ function EducationCategoriesMegaContent({
    *  grade-levels/subjects browse experience (e.g. the "Grade Levels for
    *  you" modal) without a third products column. */
   showSpotlight?: boolean;
+  /** When set, columns 1 & 2 lock to this pixel height with their own
+   *  independent scroll beneath a fixed header, so expanding "Other Levels"
+   *  never resizes the modal around it — same fixed-size pattern as
+   *  Marketplace's "Categories for you" modal. Omitted by the navbar's
+   *  hover dropdown, which stays content-sized as before. */
+  fixedHeight?: number;
 }) {
+  const colStyle = fixedHeight ? { height: fixedHeight } : undefined;
   return (
     <div className="flex gap-8">
-      <div className="w-[210px] shrink-0 border-r border-bone pr-6">
+      <div className="w-[220px] shrink-0 flex flex-col border-r border-bone pr-6" style={colStyle}>
         <MegaSectionLabel>Grade Levels</MegaSectionLabel>
-        <div className="flex flex-col gap-[2px]">
+        <div className={clsx('flex flex-col gap-[2px] overflow-y-auto pr-1 -mr-1', fixedHeight && 'flex-1 min-h-0')}>
           <button
             onClick={() => onLevelChange('')}
             className={`w-full text-left px-[10px] py-[9px] rounded-lg text-[12.5px] font-medium bg-transparent border-none cursor-pointer transition-colors ${activeLevel === '' ? 'bg-brand-pale-orange text-brand-orange' : 'text-charcoal hover:bg-cream'}`}
@@ -256,9 +264,9 @@ function EducationCategoriesMegaContent({
         </div>
       </div>
 
-      <div className="flex-1 min-w-0 border-r border-bone pr-8">
+      <div className="flex-1 min-w-0 flex flex-col border-r border-bone pr-8" style={colStyle}>
         <MegaSectionLabel>Subjects</MegaSectionLabel>
-        <div className="flex flex-wrap gap-[7px]">
+        <div className={clsx('flex flex-wrap gap-[7px] overflow-y-auto pr-1 -mr-1', fixedHeight && 'flex-1 min-h-0')}>
           {SUBJECTS.map(s => (
             <FilterChipPill key={s} label={s} active={activeSubjects.includes(s)} onClick={() => onToggleSubject(s)} />
           ))}
@@ -314,20 +322,24 @@ function EducationWelcomeStrip({
 
   return (
     <div>
-      {/* Welcome bar — real quick links to distinct destinations. */}
-      <div className="flex items-center justify-between gap-4 px-1 pb-3">
-        <p className="text-[14px] sm:text-[15px] font-bold text-carbon">Welcome to Solvexo</p>
-        <div className="hidden sm:flex items-center gap-5 text-[12px] font-medium text-charcoal">
-          <button onClick={() => onNavigate('/faq')} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-            <ShieldCheck size={14} className="text-brand-orange" /> Buyer Protection
+      {/* Welcome bar — real quick links to distinct destinations. Sized up
+         as a real section header, same treatment as Marketplace's
+         WelcomeStrip — brand-orange tokens render green here automatically
+         via .theme-education, no hardcoded color needed. */}
+      <div className="flex items-center justify-between gap-4 px-1 pb-4 mb-1 border-b border-bone">
+        <p className="text-[19px] sm:text-[22px] font-bold text-carbon tracking-[-0.01em]">Welcome to Solvexo</p>
+        <div className="hidden sm:flex items-center gap-[6px] text-[13.5px] font-semibold text-charcoal">
+          <button onClick={() => onNavigate('/faq')} className="flex items-center gap-[9px] rounded-full pl-[5px] pr-[14px] py-[5px] bg-cream border border-transparent cursor-pointer transition-all duration-150 hover:bg-brand-pale-orange/70 hover:border-brand-orange/15 hover:text-brand-deep-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+            <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-[0_1px_3px_rgba(20,15,10,0.06)]"><ShieldCheck size={16} className="text-brand-orange" /></span>
+            Buyer Protection
           </button>
-          <span className="w-px h-4 bg-bone" />
-          <button onClick={() => sellEntry.go()} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-            <Store size={14} className="text-brand-orange" /> Sell Your Resources
+          <button onClick={() => sellEntry.go()} className="flex items-center gap-[9px] rounded-full pl-[5px] pr-[14px] py-[5px] bg-cream border border-transparent cursor-pointer transition-all duration-150 hover:bg-brand-pale-orange/70 hover:border-brand-orange/15 hover:text-brand-deep-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+            <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-[0_1px_3px_rgba(20,15,10,0.06)]"><Store size={16} className="text-brand-orange" /></span>
+            Sell Your Resources
           </button>
-          <span className="w-px h-4 bg-bone" />
-          <button onClick={() => onNavigate('/marketplace')} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-            <GraduationCap size={14} className="text-brand-orange" /> Marketplace
+          <button onClick={() => onNavigate('/marketplace')} className="flex items-center gap-[9px] rounded-full pl-[5px] pr-[14px] py-[5px] bg-cream border border-transparent cursor-pointer transition-all duration-150 hover:bg-brand-pale-orange/70 hover:border-brand-orange/15 hover:text-brand-deep-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+            <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-[0_1px_3px_rgba(20,15,10,0.06)]"><GraduationCap size={16} className="text-brand-orange" /></span>
+            Marketplace
           </button>
         </div>
       </div>
@@ -372,7 +384,7 @@ function EducationWelcomeStrip({
       {/* Grade-levels mega-modal — the exact same panel the navbar's "All
          Category" dropdown shows, just as a big modal here. */}
       {modalOpen && (
-        <Modal title="Grade Levels for you" onClose={() => setModalOpen(false)} width={720}>
+        <Modal title="Grade Levels for you" onClose={() => setModalOpen(false)} width={900}>
           <EducationCategoriesMegaContent
             levels={levels} otherLevels={otherLevels}
             activeLevel={activeLevel} onLevelChange={onLevelChange}
@@ -381,6 +393,7 @@ function EducationWelcomeStrip({
             topPicks={topPicks}
             onProductClick={id => { onProductClick(id); setModalOpen(false); }}
             showSpotlight={false}
+            fixedHeight={520}
           />
         </Modal>
       )}
@@ -404,6 +417,13 @@ export function EducationMarketplace() {
   const [viewMode,        setViewMode]        = useState<'grid' | 'list'>('grid');
   const [showAiTrial,     setShowAiTrial]     = useState(false);
   const [mobileFilters,   setMobileFilters]   = useState(false);
+  // Same off-screen-then-slide-in entrance as the general Marketplace's
+  // filter tab — starts fully off-screen, not just invisible.
+  const [showFilterTab, setShowFilterTab] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setShowFilterTab(true), 700);
+    return () => clearTimeout(t);
+  }, []);
   const [page,            setPage]            = useState(1);
   // Flash Sale rail auto-advances one card at a time — paused on hover/touch,
   // same behavior as Marketplace's own rail.
@@ -553,10 +573,12 @@ export function EducationMarketplace() {
   return (
     <div className="theme-education min-h-screen bg-cream">
 
-      <BuyerNavbar
-        hideSearch
-        search={{ value: searchQuery, onChange: setSearchQuery, placeholder: 'Search resources...', popularStores: topStores }}
-      />
+      <div className="theme-brand-default">
+        <BuyerNavbar
+          hideSearch
+          search={{ value: searchQuery, onChange: setSearchQuery, placeholder: 'Search resources...', popularStores: topStores }}
+        />
+      </div>
 
       {/* ── Education navigation — Grade Levels / Flash Sale / Top Picks /
          Featured Stores / About, compact, above the hero — same merged row
@@ -790,35 +812,39 @@ export function EducationMarketplace() {
         </div>
       </div>
 
-      {/* ── App download ─────────────────────────────────────────────────────── */}
-      <div className="px-4 sm:px-6 lg:px-10 pb-8 pt-2">
+      {/* ── App download — universal chrome, stays brand-orange even here ── */}
+      <div className="theme-brand-default px-4 sm:px-6 lg:px-10 pb-8 pt-2">
         <AppDownloadBanner />
       </div>
 
       {showAiTrial && <WorksheetTrialModal onClose={() => setShowAiTrial(false)} />}
 
-      <Footer />
-      <FloatingAppWidget />
+      <div className="theme-brand-default">
+        <Footer />
+        <FloatingAppWidget />
+      </div>
 
       {/* ── Filters — a real sidebar, not an inline panel or a bottom sheet,
-         same as Marketplace. A small tab stays stuck to the left edge of the
-         viewport at every breakpoint; clicking it slides a full-height
-         drawer in from the left, over the page. ── */}
+         same as Marketplace. A slim vertical ribbon tab stays stuck to the
+         left edge of the viewport, vertically centered; clicking it slides
+         a full-height drawer in from the left, over the page. Green/white
+         instead of Marketplace's orange/black — this page's own accent. ── */}
       <button
         onClick={() => setMobileFilters(o => !o)}
         aria-expanded={mobileFilters}
         aria-label="Toggle filters"
         className={clsx(
-          'fixed left-0 bottom-24 z-[58] flex items-center gap-[6px] rounded-r-[10px] border border-l-0 py-2 pl-2 pr-[10px] text-[12px] font-semibold shadow-[0_2px_8px_rgba(20,15,10,0.1)] cursor-pointer transition-colors',
-          mobileFilters || activeFilterCount > 0
-            ? 'bg-brand-pale-orange border-brand-orange text-brand-deep-orange'
-            : 'bg-white border-bone text-charcoal hover:bg-cream',
+          'fixed left-0 top-1/2 -translate-y-1/2 z-[58] flex flex-col items-center gap-3 rounded-r-2xl border border-l-0 border-white/10 py-4 px-[9px] text-white bg-gradient-to-b from-charcoal to-success shadow-[0_8px_24px_-4px_rgba(45,138,78,0.4),0_4px_14px_rgba(20,15,10,0.25)] cursor-pointer transition-all duration-500 ease-out hover:px-3 hover:brightness-110 hover:shadow-[0_10px_28px_-4px_rgba(45,138,78,0.5),0_4px_14px_rgba(20,15,10,0.3)]',
+          showFilterTab ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0',
+          (mobileFilters || activeFilterCount > 0) && 'ring-2 ring-success/50',
         )}
       >
-        <SlidersHorizontal size={13} strokeWidth={2} />
-        Filters
+        <SlidersHorizontal size={14} strokeWidth={2} className="shrink-0" />
+        <span className="[writing-mode:vertical-rl] whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.06em] my-1">
+          Filter Products
+        </span>
         {activeFilterCount > 0 && (
-          <span className="min-w-[18px] h-[18px] rounded-full bg-brand-orange text-white text-[9px] font-bold flex items-center justify-center px-[4px] leading-none">
+          <span className="min-w-[18px] h-[18px] rounded-full bg-white text-success text-[9px] font-bold flex items-center justify-center px-[4px] leading-none shrink-0">
             {activeFilterCount}
           </span>
         )}

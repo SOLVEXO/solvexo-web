@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useId } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { ArrowLeft, ArrowRight, Search, Clock, LayoutGrid, X, TrendingUp, Tag, Star, Sparkles, ChevronDown, Check, Store as StoreIcon, Lightbulb, Trash2, Eye } from 'lucide-react';
 import { TokenStorage } from '@/api/services/auth';
@@ -68,6 +68,12 @@ export interface BuyerNavbarProps {
    *  for pages (e.g. Marketplace) that already render their own larger,
    *  dedicated search bar below the navbar, so search isn't duplicated. */
   hideSearch?: boolean;
+  /** Optional centered nav links (desktop only) between the logo and the
+   *  search box — used by PublicLayout's marketing pages (Marketplace,
+   *  Education, Pricing, FAQ, Sell on Solvexo) so that navigation lives in
+   *  the one real navbar instead of a separate strip underneath it. Omitted
+   *  everywhere else (Marketplace, ProductDetail, etc.) — unaffected. */
+  centerLinks?: { label: string; path: string; highlight?: boolean }[];
 }
 
 const RECENT_KEY = 'solvexo_recent_searches';
@@ -402,7 +408,7 @@ export function SearchBox({
               : 'gap-[9px] px-[14px] py-[9px] rounded-xl',
             open
               ? 'border-brand-orange shadow-[0_2px_12px_rgba(217,119,87,0.12)] ring-[3px] ring-brand-orange/10'
-              : isLg ? 'border-brand-orange shadow-[0_6px_24px_rgba(217,119,87,0.16)]' : 'border-bone hover:border-[#dedbd0]',
+              : isLg ? 'border-brand-orange shadow-[0_6px_24px_rgba(217,119,87,0.16)]' : 'border-bone hover:border-border-hover',
           )}
         >
           <Search size={isLg ? 19 : 15} className={clsx('shrink-0 transition-colors duration-200', open || isLg ? 'text-brand-orange' : 'text-slate')} />
@@ -449,7 +455,7 @@ export function SearchBox({
             id={panelId}
             role="listbox"
             aria-label="Search suggestions"
-            className="dropdown-enter absolute left-0 right-0 top-[calc(100%+6px)] bg-white border border-bone rounded-2xl overflow-y-auto overscroll-contain shadow-[0_6px_20px_-4px_rgba(20,15,10,0.08)] max-h-[460px]"
+            className="dropdown-enter absolute left-0 right-0 top-[calc(100%+6px)] z-30 bg-white border border-bone rounded-2xl overflow-y-auto overscroll-contain shadow-[0_6px_20px_-4px_rgba(20,15,10,0.08)] max-h-[460px]"
           >
             {!isTyping ? (
               <>
@@ -761,8 +767,9 @@ function useCompactOnScroll() {
   return scrolled;
 }
 
-export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColor, backTo, hideSearch = false }: BuyerNavbarProps) {
+export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColor, backTo, hideSearch = false, centerLinks }: BuyerNavbarProps) {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const uncontrolled = useUncontrolledSearch();
   const scrolled = useCompactOnScroll();
   const searchValue    = search?.value    ?? uncontrolled.value;
@@ -806,6 +813,31 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
           )}
         </button>
 
+        {/* Center nav links — desktop only, real navigation living in the one
+           navbar instead of a separate strip underneath it. flex-1 + justify-center
+           so it actually centers in the row's remaining space (the search box
+           beside it drops its own flex-1 in this mode — see below — so this
+           is the only flexible element and gets the true middle). */}
+        {centerLinks && centerLinks.length > 0 && !mobileSearchOpen && (
+          <div className="hidden lg:flex flex-1 items-center justify-center gap-6">
+            {centerLinks.map(item => {
+              const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path));
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => navigate(item.path)}
+                  className={clsx(
+                    'text-[13px] font-medium bg-transparent border-none cursor-pointer transition-colors duration-150',
+                    isActive || item.highlight ? 'text-brand-orange' : 'text-charcoal hover:text-brand-orange',
+                  )}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {variant === 'minimal' ? (
           <div className="flex-1 flex items-center justify-end">
             {backTo && (
@@ -822,7 +854,10 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
                 Omitted entirely when hideSearch (page already has its own
                 larger dedicated search bar below the navbar). */}
             {!hideSearch && (
-              <div className={clsx('min-w-0 justify-center', mobileSearchOpen ? 'flex flex-1' : 'hidden sm:flex sm:flex-1')}>
+              <div className={clsx(
+                'min-w-0 justify-center',
+                mobileSearchOpen ? 'flex flex-1' : clsx('hidden sm:flex sm:flex-1', centerLinks?.length && 'lg:flex-none lg:max-w-[300px]'),
+              )}>
                 <SearchBox
                   value={searchValue}
                   onChange={searchOnChange}

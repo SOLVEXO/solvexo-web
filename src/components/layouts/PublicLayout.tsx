@@ -1,131 +1,27 @@
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { clsx } from 'clsx';
-import { TokenStorage } from '@/api/services/auth';
-import { NotificationBell, ProfileAvatar, CurrencySelector, SolvexoLogo } from '@/components/comman/ui';
+import { Outlet } from 'react-router-dom';
+import { BuyerNavbar } from '@/components/comman/ui/BuyerNavbar';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Data
+// Marketing/discovery links — centered in the real BuyerNavbar itself (see
+// `centerLinks` prop) instead of a separate strip underneath it, so this page
+// reads as one continuous marketplace product with one navigation bar.
 // ─────────────────────────────────────────────────────────────────────────────
-const NAV_ITEMS = [
-  { label: 'Marketplace', path: '/marketplace', orange: false },
-  { label: 'Sellers',     path: '/sellers',     orange: true  },
-  { label: 'Pricing',     path: '/pricing',     orange: true  },
-  { label: 'Learn',       path: '/EducationMarketplace',   orange: false },
-  { label: 'FAQ',         path: '/faq',         orange: false },
+const CENTER_LINKS = [
+  { label: 'Marketplace',    path: '/marketplace' },
+  { label: 'Education',      path: '/EducationMarketplace' },
+  { label: 'Pricing',        path: '/pricing' },
+  { label: 'FAQ',            path: '/faq' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NavBtn (desktop only)
-// ─────────────────────────────────────────────────────────────────────────────
-function NavBtn({
-  children, onClick, variant = 'primary',
-}: { children: string; onClick: () => void; variant?: 'primary' | 'ghost' }) {
-  return (
-    <button
-      onClick={onClick}
-      className={clsx(
-        'inline-flex items-center justify-center py-[6px] px-[14px] rounded-md border-0',
-        'text-[13px] font-medium cursor-pointer transition-all duration-[180ms] whitespace-nowrap',
-        variant === 'primary'
-          ? 'bg-brand-orange text-white hover:opacity-[0.88]'
-          : 'bg-transparent text-slate border border-bone hover:bg-cream',
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// NavLinks — center navigation (desktop only)
-// ─────────────────────────────────────────────────────────────────────────────
-function NavLinks({ pathname }: { pathname: string }) {
-  const navigate = useNavigate();
-  return (
-    <div className="hidden md:flex items-center gap-4 lg:gap-7">
-      {NAV_ITEMS.map(item => {
-        const isActive      = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path));
-        const isHighlighted = item.orange || isActive;
-        return (
-          <button
-            key={item.label}
-            onClick={() => navigate(item.path)}
-            className={clsx(
-              'text-[13px] font-medium bg-transparent border-none cursor-pointer',
-              'transition-colors duration-150 pb-[2px] border-b-2',
-              isHighlighted
-                ? 'text-brand-orange border-brand-orange'
-                : 'text-charcoal border-transparent hover:text-brand-orange',
-            )}
-          >
-            {item.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// NavActions — right side of navbar
-// ─────────────────────────────────────────────────────────────────────────────
-function NavActions() {
-  const navigate = useNavigate();
-  if (TokenStorage.isLoggedIn()) {
-    return (
-      <div className="flex items-center gap-3">
-        <NotificationBell />
-        <ProfileAvatar />
-        <CurrencySelector />
-      </div>
-    );
-  }
-  return (
-    <>
-      {/* Desktop: sign in + currency last so it sits in the right corner */}
-      <div className="hidden md:flex items-center gap-[10px]">
-        <NavBtn variant="primary" onClick={() => navigate('/login')}>Sign In</NavBtn>
-        <CurrencySelector />
-      </div>
-      {/* Mobile: compact currency toggle + sign in */}
-      <div className="md:hidden flex items-center gap-2">
-        <button
-          onClick={() => navigate('/login')}
-          className="text-[13px] font-medium text-white border-none rounded-md px-3 py-[6px] bg-brand-orange cursor-pointer hover:bg-brand-deep-orange transition-colors"
-        >
-          Sign In
-        </button>
-        <CurrencySelector />
-      </div>
-    </>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Navbar — top bar (no hamburger; mobile handled by BottomNav)
-// ─────────────────────────────────────────────────────────────────────────────
-function Navbar() {
-  const navigate     = useNavigate();
-  const { pathname } = useLocation();
-
-  return (
-    <header className="sticky top-0 z-50 bg-white border-b border-bone h-16 flex items-center">
-      <nav className="w-full flex items-center justify-between px-4 md:px-12">
-        <div onClick={() => navigate('/')} className="cursor-pointer"><SolvexoLogo /></div>
-        <NavLinks pathname={pathname} />
-        <NavActions />
-      </nav>
-    </header>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PublicLayout — marketing top navbar only; BottomNav is provided by BuyerLayout
+// PublicLayout — the real marketplace header (search, wishlist, cart, account)
+// with marketing/discovery links centered in it. BottomNav is provided by
+// BuyerLayout.
 // ─────────────────────────────────────────────────────────────────────────────
 export function PublicLayout() {
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      <BuyerNavbar centerLinks={CENTER_LINKS} hideSearch />
       <main><Outlet /></main>
     </div>
   );

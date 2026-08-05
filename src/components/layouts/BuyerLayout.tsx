@@ -48,6 +48,8 @@ function BottomNav() {
             <button
               key={tab.id}
               onClick={() => handleTab(tab)}
+              aria-current={active ? 'page' : undefined}
+              aria-label={tab.badge ? `${tab.label}, ${tab.badge} items` : tab.label}
               className="flex-1 flex flex-col items-center justify-center pt-[10px] pb-[12px] gap-[4px] cursor-pointer bg-transparent border-none relative"
             >
               {/* Active pill at top edge */}
