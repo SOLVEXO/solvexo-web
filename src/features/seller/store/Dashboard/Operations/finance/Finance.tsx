@@ -2,8 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import { ArrowRight, Download, Plus, X, Star, AlertTriangle } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
-import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Button } from '@/components/comman/ui/Button';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Badge } from '@/components/comman/ui/Badge';
@@ -456,7 +455,7 @@ export function StoreFinance() {
 
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="Finance & Payouts"
         subtitle="Track earnings, payouts, fees, and tax reports."
         actions={

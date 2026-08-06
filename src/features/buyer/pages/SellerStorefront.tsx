@@ -11,6 +11,7 @@ import { useStoreBanners } from '@/hooks/useStoreBanners';
 import { useStorefrontProductSection } from '@/hooks/useStorefrontProductSections';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 import {
   Star, ArrowLeft, Users, ShoppingCart, Heart, Zap, ChevronDown,
   Store, Package, Loader2, MessageCircle, BadgeCheck, Award, Gift, RefreshCw, Check,
@@ -150,6 +151,7 @@ export function SellerStorefront() {
   const [following,          setFollowing]         = useState(false);
   const [followLoading,      setFollowLoading]     = useState(false);
   const [followStatusLoaded, setFollowStatusLoaded] = useState(false);
+  const [followError,        setFollowError]       = useState('');
   const [msgLoading,         setMsgLoading]        = useState(false);
   const [msgError,           setMsgError]          = useState('');
   const [tags,           setTags]          = useState<string[]>([]);
@@ -171,6 +173,7 @@ export function SellerStorefront() {
 
   const { addToCart, adding } = useCartContext();
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
+  const { requireAuth } = useAuthGate();
 
   // Resolve config (real or default)
   const cfg = useMemo(() => getCfg(store?.builderConfig ?? null), [store?.builderConfig]);
@@ -318,38 +321,50 @@ export function SellerStorefront() {
   useEffect(() => { loadProducts(); }, [loadProducts]);
 
   // ── Follow toggle ───────────────────────────────────────────────────────────
+  // Guarded the same way as Cart/Wishlist — a guest sees the inline "sign in
+  // to continue" prompt instead of being bounced to a bare /login page, and
+  // the follow itself still goes through right after they sign in.
   const handleFollow = async () => {
-    if (!store || !isLoggedIn) { navigate('/login'); return; }
-    setFollowLoading(true);
-    try {
-      const res = await apiFollowStore(store.storeId);
-      setFollowing(res.data.following);
-      setStore(prev => prev ? {
-        ...prev,
-        followersCount: res.data.following
-          ? prev.followersCount + 1
-          : Math.max(0, prev.followersCount - 1),
-      } : prev);
-    } catch {}
-    finally { setFollowLoading(false); }
+    if (!store) return;
+    requireAuth(async () => {
+      setFollowLoading(true);
+      setFollowError('');
+      try {
+        const res = await apiFollowStore(store.storeId);
+        setFollowing(res.data.following);
+        setStore(prev => prev ? {
+          ...prev,
+          followersCount: res.data.following
+            ? prev.followersCount + 1
+            : Math.max(0, prev.followersCount - 1),
+        } : prev);
+      } catch (err) {
+        // Was a silent catch — the button just reset with no explanation on
+        // failure. Same inline-feedback treatment as the Message button's
+        // msgError right below it.
+        setFollowError(err instanceof Error ? err.message : 'Could not follow this store. Please try again.');
+      }
+      finally { setFollowLoading(false); }
+    }, 'Sign in to follow this store.');
   };
 
   // ── Message seller ──────────────────────────────────────────────────────────
   const handleMessage = async () => {
     if (!store) return;
-    if (!isLoggedIn) { navigate('/login'); return; }
-    setMsgLoading(true);
-    setMsgError('');
-    try {
-      const conv = await apiStartConversation({ storeId: store.storeId });
-      navigate(`/account/messages?conversation=${conv._id}`);
-    } catch (err) {
-      // Stay on the page and say why instead of silently dropping the buyer
-      // onto an empty inbox (e.g. blocked, or messaging their own store).
-      setMsgError(err instanceof Error ? err.message : 'Could not start a conversation.');
-    } finally {
-      setMsgLoading(false);
-    }
+    requireAuth(async () => {
+      setMsgLoading(true);
+      setMsgError('');
+      try {
+        const conv = await apiStartConversation({ storeId: store.storeId });
+        navigate(`/account/messages?conversation=${conv._id}`);
+      } catch (err) {
+        // Stay on the page and say why instead of silently dropping the buyer
+        // onto an empty inbox (e.g. blocked, or messaging their own store).
+        setMsgError(err instanceof Error ? err.message : 'Could not start a conversation.');
+      } finally {
+        setMsgLoading(false);
+      }
+    }, 'Sign in to message this seller.');
   };
 
   // ── Loading / Error states ──────────────────────────────────────────────────
@@ -499,6 +514,11 @@ export function SellerStorefront() {
                   : following ? 'Following ✓' : 'Follow Store'
                 }
               </button>
+              {followError && (
+                <p className="text-[11px] text-white bg-black/30 rounded-md px-2 py-1 max-w-[220px] text-center sm:text-right">
+                  {followError}
+                </p>
+              )}
 
               <button
                 onClick={handleMessage}
@@ -674,7 +694,15 @@ export function SellerStorefront() {
                 const pType      = p.productType ?? p.type ?? 'physical';
                 const isPhysical = pType === 'physical';
                 const typeLabel  = isPhysical ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
-                const vId        = p.variantId ?? p._id;
+                // `variantId` is only ever null when the product has zero active
+                // variants (see StoreService.getPublicStoreProducts — it's the
+                // cheapest active variant's own id, not the product's id). Falling
+                // back to `p._id` would silently send the product id to the cart
+                // API as a variant id; falling back to '' (the same convention
+                // ProductCard/Marketplace/EducationMarketplace already use for
+                // this exact case) makes every `vId` check below a real, working
+                // guard instead of always-truthy.
+                const vId        = p.variantId ?? '';
                 return (
                 <Card key={p._id} padding="none" hover onClick={() => navigate(`/marketplace/${p._id}`)} className="group overflow-hidden bg-white">
                   {/* Accent bar — sweeps in on hover using the store's own theme
@@ -691,10 +719,13 @@ export function SellerStorefront() {
                       : <Package size={28} className="text-brand-orange" />
                     }
                     <button
-                      onClick={e => { e.stopPropagation(); toggleWishlist(p._id, vId); }}
-                      disabled={wishlisting === vId}
+                      onClick={e => { e.stopPropagation(); if (vId) toggleWishlist(p._id, vId); }}
+                      disabled={!vId || wishlisting === vId}
                       aria-label={isWishlisted(p._id, vId) ? 'Remove from wishlist' : 'Save to wishlist'}
-                      className="absolute bottom-[6px] right-[6px] w-6 h-6 rounded-full bg-[rgba(255,255,255,0.92)] flex items-center justify-center cursor-pointer border-none transition-transform duration-150 hover:scale-110"
+                      className={clsx(
+                        'absolute bottom-[6px] right-[6px] w-6 h-6 rounded-full bg-[rgba(255,255,255,0.92)] flex items-center justify-center border-none transition-transform duration-150',
+                        vId ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed opacity-50',
+                      )}
                     >
                       <Heart size={11} className={clsx(isWishlisted(p._id, vId) ? 'text-[#e11d48] fill-[#e11d48]' : 'text-slate fill-none')} />
                     </button>
@@ -752,11 +783,12 @@ export function SellerStorefront() {
                       {cfg.showAddToCart && (
                         <Button
                           variant="secondary" size="sm" className="inline-flex"
-                          disabled={adding === vId}
+                          disabled={!vId || adding === vId}
+                          title={!vId ? 'Currently unavailable' : undefined}
                           onClick={e => { e.stopPropagation(); if (vId) addToCart(p._id, vId, isPhysical ? 'physical' : 'digital'); }}
                         >
                           {adding === vId ? <Loader2 size={11} className="animate-spin" /> : <ShoppingCart size={11} />}
-                          <span className="hidden lg:inline">{adding === vId ? 'Adding…' : 'Add to Cart'}</span>
+                          <span className="hidden lg:inline">{!vId ? 'Unavailable' : adding === vId ? 'Adding…' : 'Add to Cart'}</span>
                         </Button>
                       )}
                     </div>

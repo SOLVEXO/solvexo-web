@@ -382,7 +382,7 @@ function AboutMegaContent({ onNavigate }: { onNavigate: (path: string) => void }
             <button
               key={title}
               onClick={() => onNavigate(path)}
-              className="relative flex flex-col items-start text-left bg-white rounded-2xl border border-bone overflow-hidden cursor-pointer group p-4 transition-all duration-300 hover:-translate-y-[3px] hover:border-brand-orange/25 hover:shadow-[0_10px_28px_rgba(20,15,10,0.07)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              className="relative flex flex-col items-start text-left bg-white rounded-2xl border border-bone overflow-hidden cursor-pointer group p-4 transition-all duration-300 hover:-translate-y-[3px] hover:border-brand-orange/25 hover:shadow-raised focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
             >
               {/* Sweep-in top accent — same hover language as RailCard/StoreFeatureCard */}
               <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />

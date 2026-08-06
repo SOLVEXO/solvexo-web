@@ -5,7 +5,7 @@ import {
   useCampaigns, useCampaignActions, usePlatformCoupons, usePlatformCouponActions,
 } from '@/hooks/admin/useAdminMarketing';
 import type { Campaign, CampaignStatus, DiscountType, CampaignSponsorType, PlatformCoupon } from '@/api/services/marketing/adminMarketing';
-import { Button, Modal, Input, Textarea, Select, Table, StatusBadge, Badge, Toggle, TabBar, ImageUpload, ActionMenu, EmptyState } from '@/components/comman/ui';
+import { Button, Modal, Input, Textarea, Select, Table, StatusBadge, Badge, Toggle, TabBar, ImageUpload, ActionMenu, EmptyState, AdminPageHeader } from '@/components/comman/ui';
 import type { TableColumn, Tab } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate, formatCurrency } from '@/components/comman/analytics/format';
@@ -494,6 +494,64 @@ function RejectPromotionModal({ request, onClose, onRejected }: { request: Promo
   );
 }
 
+// Approving activates a paid placement (the seller is charged and their
+// creative goes live) — same weight as Reject, which already requires a
+// typed reason before submitting. This used to fire on a single click with
+// no confirmation. The oversubscription conflict check that used to run
+// silently after approval now runs while the confirm dialog is open, so the
+// admin sees it *before* committing, not as a surprise afterward.
+function ApprovePromotionModal({ request, onClose, onApproved }: { request: PromotionRequest; onClose: () => void; onApproved: () => void }) {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [conflictNote, setConflictNote] = useState<string | null>(null);
+  const [checkingConflicts, setCheckingConflicts] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiAdminCheckPromotionConflicts(request.placement, request.startAt, request.endAt, request._id)
+      .then(res => {
+        if (cancelled) return;
+        if (res.data.isOversubscribed) {
+          setConflictNote(`${res.data.overlappingCount} other request(s) already overlap this window for ${PLACEMENT_LABEL[request.placement]} (visible slots: ${res.data.visibleLimit}). Approving will oversubscribe the placement.`);
+        }
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setCheckingConflicts(false); });
+    return () => { cancelled = true; };
+  }, [request]);
+
+  async function submit() {
+    setSubmitting(true);
+    setError('');
+    try {
+      await apiAdminApprovePromotionRequest(request._id);
+      onApproved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to approve request.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal title="Approve promotion request?" onClose={onClose} footer={<>
+      <Button variant="outline" onClick={onClose} disabled={submitting}>Cancel</Button>
+      <Button variant="primary" onClick={submit} loading={submitting}>Approve</Button>
+    </>}>
+      <div className="flex flex-col gap-3">
+        <p className="text-[13px] text-charcoal leading-[1.6]">
+          Approve this <strong>{PLACEMENT_LABEL[request.placement]}</strong> placement request for {formatDate(request.startAt)} – {formatDate(request.endAt)}? This activates a paid placement — the seller is charged {formatCurrency(request.priceUSD)} and their creative goes live in that slot for the approved window.
+        </p>
+        {checkingConflicts && <p className="text-[12px] text-slate">Checking for placement conflicts…</p>}
+        {conflictNote && (
+          <div className="bg-[#fdf3e7] border border-[#f5d9a8] rounded-lg px-3 py-2.5 text-[12px] text-[#9a6a17]">{conflictNote}</div>
+        )}
+        {error && <p className="text-[12px] text-error">{error}</p>}
+      </div>
+    </Modal>
+  );
+}
+
 const PLACEMENT_STYLE: Record<PromotionPlacement, { Icon: typeof Store; accent: string; bg: string }> = {
   homepageHero: { Icon: Store, accent: '#8C8A82', bg: '#F0EEE6' },
   marketplaceHero: { Icon: Store, accent: '#1D5EAE', bg: '#EAF1FB' },
@@ -775,8 +833,7 @@ function PromotionsTab() {
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('pending');
   const [rejecting, setRejecting] = useState<PromotionRequest | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [conflictNote, setConflictNote] = useState<string | null>(null);
+  const [approving, setApproving] = useState<PromotionRequest | null>(null);
   const [analytics, setAnalytics] = useState<(PromotionAnalyticsData & { platformRevenueUSD: number }) | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -798,23 +855,6 @@ function PromotionsTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
-  async function approve(r: PromotionRequest) {
-    setBusyId(r._id);
-    setConflictNote(null);
-    try {
-      const conflicts = await apiAdminCheckPromotionConflicts(r.placement, r.startAt, r.endAt, r._id);
-      if (conflicts.data.isOversubscribed) {
-        setConflictNote(`Heads up: ${conflicts.data.overlappingCount} other request(s) already overlap this window for ${PLACEMENT_LABEL[r.placement]} (visible slots: ${conflicts.data.visibleLimit}). Approving will oversubscribe the placement.`);
-      }
-      await apiAdminApprovePromotionRequest(r._id);
-      refetch();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to approve request.');
-    } finally {
-      setBusyId(null);
-    }
-  }
-
   const columns: TableColumn<PromotionRequest>[] = [
     { key: 'creative', header: '', render: (r) => <img src={r.creativeUrl} alt="" className="w-16 h-9 object-cover rounded-md bg-cream" /> },
     { key: 'placement', header: 'Placement', render: (r) => <span className="text-[13px] font-medium text-charcoal">{PLACEMENT_LABEL[r.placement]}</span> },
@@ -825,11 +865,11 @@ function PromotionsTab() {
       key: 'actions', header: 'Actions', align: 'center',
       render: (r) => r.status === 'pending' ? (
         <div className="flex items-center gap-1.5 justify-center">
-          <button onClick={() => approve(r)} disabled={busyId === r._id}
+          <button onClick={() => setApproving(r)}
             className="px-2.5 py-1 rounded-md text-[11px] font-semibold text-white bg-success border-0 cursor-pointer disabled:opacity-50 flex items-center gap-1">
             <Check size={12} /> Approve
           </button>
-          <button onClick={() => setRejecting(r)} disabled={busyId === r._id}
+          <button onClick={() => setRejecting(r)}
             className="px-2.5 py-1 rounded-md text-[11px] font-semibold text-error bg-error-bg border-0 cursor-pointer disabled:opacity-50 flex items-center gap-1">
             <X size={12} /> Reject
           </button>
@@ -873,8 +913,6 @@ function PromotionsTab() {
         </div>
       </div>
 
-      {conflictNote && <div className="bg-[#fdf3e7] border border-[#f5d9a8] rounded-lg px-4 py-2.5 text-[12.5px] text-[#9a6a17]">{conflictNote}</div>}
-
       <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
         {error ? (
           <div className="p-5"><AnalyticsErrorState message={error} onRetry={refetch} /></div>
@@ -897,6 +935,14 @@ function PromotionsTab() {
         />
       )}
 
+      {approving && (
+        <ApprovePromotionModal
+          request={approving}
+          onClose={() => setApproving(null)}
+          onApproved={() => { setApproving(null); refetch(); }}
+        />
+      )}
+
       {showCalendar && <PromotionCalendarModal onClose={() => setShowCalendar(false)} />}
       {showSettings && <PromotionSettingsModal onClose={() => setShowSettings(false)} />}
     </div>
@@ -910,15 +956,13 @@ export function AdminMarketing() {
   const [tab, setTab] = useState('campaigns');
 
   return (
-    <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
-      <div>
-        <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Marketing</h1>
-        <p className="text-[12px] text-slate">Platform-wide sale campaigns and coupon codes, separate from each seller's own store coupons.</p>
-      </div>
-
+    <>
+      <AdminPageHeader title="Marketing" subtitle="Platform-wide sale campaigns and coupon codes, separate from each seller's own store coupons." />
+      <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       <TabBar tabs={TABS} active={tab} onChange={setTab} />
 
       {tab === 'campaigns' ? <CampaignsTab /> : tab === 'coupons' ? <CouponsTab /> : <PromotionsTab />}
-    </div>
+      </div>
+    </>
   );
 }

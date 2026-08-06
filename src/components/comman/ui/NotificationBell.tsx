@@ -85,7 +85,7 @@ export function NotificationBell() {
     } else if (role === 'admin') {
       navigate('/admin/settings?tab=notifications');
     } else {
-      navigate('/account/settings?tab=notifications');
+      navigate('/account/notifications');
     }
   };
 

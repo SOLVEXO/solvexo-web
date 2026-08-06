@@ -130,14 +130,9 @@ export function AdminFaqs() {
     {
       key: 'actions', header: 'Actions',
       render: f => (
-        <div className="flex items-center gap-2">
-          <button onClick={() => setEditing(f)} className="text-[12px] font-medium text-info bg-transparent border-none cursor-pointer flex items-center gap-1 outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
-            <Pencil size={11} /> Edit
-          </button>
-          <span className="text-bone text-[13px]">|</span>
-          <button onClick={() => { setDeleting(f); setActionError(''); }} className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer flex items-center gap-1 outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-brand-orange/50">
-            <Trash2 size={11} /> Delete
-          </button>
+        <div className="flex gap-[6px]">
+          <Button size="xs" variant="outline" icon={<Pencil size={11} />} onClick={() => setEditing(f)}>Edit</Button>
+          <Button size="xs" variant="danger" icon={<Trash2 size={11} />} onClick={() => { setDeleting(f); setActionError(''); }}>Delete</Button>
         </div>
       ),
     },
@@ -145,7 +140,7 @@ export function AdminFaqs() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
+      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
         <div>
           <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">FAQs</h1>
           <p className="text-[12px] text-slate mt-[2px]">{stats.active} active · {stats.inactive} inactive</p>
@@ -153,7 +148,7 @@ export function AdminFaqs() {
         <Button icon={<Plus size={14} />} onClick={() => setEditing('new')}>Add FAQ</Button>
       </div>
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-4">
+      <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-4">
         {actionError && (
           <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">
             {actionError}

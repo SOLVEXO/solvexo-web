@@ -137,6 +137,8 @@ export function AdminBanners() {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [toggleBusyId, setToggleBusyId] = useState<string | null>(null);
+  const [toggleErrorId, setToggleErrorId] = useState<string | null>(null);
+  const [toggleError, setToggleError] = useState('');
 
   async function handleDelete() {
     if (!deleting) return;
@@ -155,12 +157,17 @@ export function AdminBanners() {
 
   async function togglePause(b: Banner) {
     setToggleBusyId(b._id);
+    setToggleErrorId(null);
+    setToggleError('');
     try {
       if (b.status === 'paused') await apiResumeBanner(b._id);
       else await apiPauseBanner(b._id);
       refetch();
-    } catch {
-      // best-effort — the toggle button just stays in its previous state on failure
+    } catch (err) {
+      // Same inline-error convention as Delete/the form modal on this page —
+      // this was the one action here that silently did nothing on failure.
+      setToggleErrorId(b._id);
+      setToggleError(err instanceof Error ? err.message : `Failed to ${b.status === 'paused' ? 'resume' : 'pause'} this banner.`);
     } finally {
       setToggleBusyId(null);
     }
@@ -168,7 +175,7 @@ export function AdminBanners() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
+      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
         <div>
           <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Banners</h1>
           <p className="text-[12px] text-slate mt-[2px]">
@@ -180,7 +187,7 @@ export function AdminBanners() {
         </Button>
       </div>
 
-      <div className="px-7 pt-5 pb-8">
+      <div className="px-4 sm:px-7 pt-5 pb-8">
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -244,6 +251,9 @@ export function AdminBanners() {
                         <Trash2 size={11} />
                       </button>
                     </div>
+                    {toggleErrorId === b._id && (
+                      <p className="text-[11px] text-error leading-snug">{toggleError}</p>
+                    )}
                   </div>
                 </div>
               );

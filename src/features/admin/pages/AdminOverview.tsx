@@ -13,6 +13,7 @@ import { formatCurrency, formatNumber, formatPercent } from '@/components/comman
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { EmptyState } from '@/components/comman/ui/EmptyState';
+import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 
 // Pure navigation shortcuts to the real queue/alert/moderation pages — no new
 // data fetched here, just quicker access to where that data already lives.
@@ -64,23 +65,9 @@ export function AdminOverview() {
   const maxCategoryRevenue = Math.max(1, ...categories.map(c => c.revenue));
 
   return (
-    <div className="px-7 pt-6 pb-8 flex flex-col gap-5">
-
-      {/* ── Header ── */}
-      <div className="flex items-center gap-3">
-        <div className="flex size-9 items-center justify-center rounded-xl bg-brand-pale-orange text-brand-deep-orange shrink-0">
-          <LayoutGrid size={17} />
-        </div>
-        <div>
-          <h1 className="text-[18px] font-bold text-charcoal leading-tight">
-            Platform Overview
-          </h1>
-          <p className="text-[12px] text-slate">
-            Last 30 days across the Solvexo platform.
-          </p>
-        </div>
-      </div>
-
+    <>
+      <AdminPageHeader title="Platform Overview" subtitle="Last 30 days across the Solvexo platform." icon={<LayoutGrid size={17} />} />
+      <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       {error && (
         <div className="dash-section-enter flex items-center gap-3 px-4 py-3 rounded-xl bg-error-bg border border-error/10 text-[12.5px]">
           <span className="flex size-8 items-center justify-center rounded-full bg-error/10 text-error shrink-0">
@@ -166,6 +153,7 @@ export function AdminOverview() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

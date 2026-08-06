@@ -68,7 +68,7 @@ export function AdminAnalytics() {
   const params = useMemo(() => toBaseAnalyticsParams(filters), [filters]);
 
   return (
-    <div className="px-7 pt-6 pb-8 flex flex-col gap-5">
+    <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       <div>
         <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Platform Analytics</h1>
         <p className="text-[12px] text-slate">Marketplace-wide revenue, sellers, customers, products, orders, payments & growth.</p>

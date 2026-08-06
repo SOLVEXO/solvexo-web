@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useLeads, useLeadDetail, useLeadActions } from '@/hooks/admin/useAdminMarketplace';
 import type { LeadRow, LeadVerificationStatus } from '@/api/services/marketplace/adminMarketplace';
-import { Table, Button, Modal, SearchInput, FilterDropdown, Badge, StatusBadge, SkeletonBox } from '@/components/comman/ui';
+import { Table, Button, Modal, SearchInput, FilterDropdown, Badge, StatusBadge, SkeletonBox, AdminPageHeader } from '@/components/comman/ui';
 import type { TableColumn } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate } from '@/components/comman/analytics/format';
@@ -67,7 +67,7 @@ const VERIFICATION_STATUS_OPTIONS = [
 function LeadDetailModal({ leadId, onClose, onApprove, onReject, onMarkUnderReview, processingId }: {
   leadId: string;
   onClose: () => void;
-  onApprove: (id: string) => void;
+  onApprove: (lead: { id: string; storeName: string }) => void;
   onReject: (lead: { id: string; storeName: string }) => void;
   onMarkUnderReview: (id: string) => void;
   processingId: string | null;
@@ -201,7 +201,7 @@ function LeadDetailModal({ leadId, onClose, onApprove, onReject, onMarkUnderRevi
             <Button variant="outline" size="sm" icon={<X size={13} />} onClick={() => onReject({ id: data.id, storeName: data.storeName })} disabled={!reviewable || processingId === data.id}>
               Reject
             </Button>
-            <Button variant="primary" size="sm" icon={<Check size={13} />} onClick={() => onApprove(data.id)} disabled={!reviewable || !data.canApprove} loading={processingId === data.id}>
+            <Button variant="primary" size="sm" icon={<Check size={13} />} onClick={() => onApprove({ id: data.id, storeName: data.storeName })} disabled={!reviewable || !data.canApprove} loading={processingId === data.id}>
               Approve
             </Button>
           </div>
@@ -231,13 +231,18 @@ export function AdminLeads() {
 
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<{ id: string; storeName: string } | null>(null);
+  const [approving, setApproving] = useState<{ id: string; storeName: string } | null>(null);
   const [reason, setReason] = useState('');
   const reasonTooShort = reason.trim().length > 0 && reason.trim().length < 10;
   const canConfirmReject = reason.trim().length >= 10;
 
-  async function handleApprove(id: string) {
-    const ok = await approve(id);
-    if (ok) { setViewingId(null); refetch(); }
+  // Approving activates the store on the live marketplace — same weight as
+  // Reject, which already asks for a reason before submitting. This used to
+  // fire on a single click with no confirmation at all.
+  async function handleConfirmApprove() {
+    if (!approving) return;
+    const ok = await approve(approving.id);
+    if (ok) { setApproving(null); refetch(); }
   }
 
   async function handleMarkUnderReview(id: string) {
@@ -304,8 +309,8 @@ export function AdminLeads() {
           <Button
             variant="primary" size="xs"
             icon={<Check size={12} />}
-            onClick={() => handleApprove(lead.id)}
-            loading={processingId === lead.id}
+            onClick={() => setApproving({ id: lead.id, storeName: lead.storeName })}
+            disabled={processingId === lead.id}
           >
             Approve
           </Button>
@@ -315,15 +320,13 @@ export function AdminLeads() {
   ];
 
   return (
-    <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Leads</h1>
-          <p className="text-[12px] text-slate">New stores submitted through onboarding — review business verification and approve or reject before they go live.</p>
-        </div>
-        <Button variant="outline" size="sm" icon={<RefreshCw size={13} />} onClick={refetch}>Refresh</Button>
-      </div>
-
+    <>
+      <AdminPageHeader
+        title="Leads"
+        subtitle="New stores submitted through onboarding — review business verification and approve or reject before they go live."
+        actions={<Button variant="outline" size="sm" icon={<RefreshCw size={13} />} onClick={refetch}>Refresh</Button>}
+      />
+      <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       {actionError && <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
 
       <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
@@ -355,11 +358,26 @@ export function AdminLeads() {
         <LeadDetailModal
           leadId={viewingId}
           onClose={() => setViewingId(null)}
-          onApprove={handleApprove}
+          onApprove={lead => { setViewingId(null); setApproving(lead); }}
           onReject={lead => { setViewingId(null); setRejecting(lead); }}
           onMarkUnderReview={handleMarkUnderReview}
           processingId={processingId}
         />
+      )}
+
+      {approving && (
+        <Modal
+          title="Approve this store?"
+          onClose={() => setApproving(null)}
+          footer={<>
+            <Button variant="ghost" onClick={() => setApproving(null)} disabled={processingId === approving.id}>Cancel</Button>
+            <Button variant="primary" onClick={handleConfirmApprove} loading={processingId === approving.id}>Approve Store</Button>
+          </>}
+        >
+          <p className="text-[13px] text-charcoal leading-[1.6]">
+            Approve "<strong>{approving.storeName}</strong>"? This activates the store and makes it eligible for the marketplace — it becomes visible and purchasable right away.
+          </p>
+        </Modal>
       )}
 
       {rejecting && (
@@ -386,6 +404,7 @@ export function AdminLeads() {
           {reasonTooShort && <p className="text-[11px] text-error mt-1">Please provide a bit more detail (at least 10 characters).</p>}
         </Modal>
       )}
-    </div>
+      </div>
+    </>
   );
 }

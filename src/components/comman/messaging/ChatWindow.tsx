@@ -40,6 +40,10 @@ interface ChatWindowProps {
   otherTyping?:    boolean;
   onTyping?:       (isTyping: boolean) => void;
   conversationId?: string | null;
+  /** Surfaces useMessages()'s error state — covers both REST failures (load/send)
+   *  and the socket's `messaging:error` (e.g. no longer authorized for this
+   *  conversation), which previously had no listener at all. */
+  error?:          string;
 
   /** Present only when the conversation has a browsable store catalog — enables "Share Product". */
   storeId?:        string;
@@ -62,7 +66,7 @@ export function ChatWindow({
   open, headerName, headerImage, headerVerified, subtitleOverride, menuItems, onBack, shortcuts,
   messages, msgLoading, currentUserId, otherPartyId, hasMore, loadingMore, onLoadMore,
   sending, uploading, onSend, onUpload, onEditMessage, onDeleteMessage, onRetry,
-  otherOnline, otherTyping, onTyping, conversationId, storeId,
+  otherOnline, otherTyping, onTyping, conversationId, storeId, error,
 }: ChatWindowProps) {
   const [text,      setText]      = useState('');
   const [replyTo,   setReplyTo]   = useState<Message | null>(null);
@@ -188,6 +192,12 @@ export function ChatWindow({
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {error && (
+        <div className="border-b border-error-border bg-error-bg px-4 py-[9px] text-[12.5px] text-error">
+          {error}
         </div>
       )}
 

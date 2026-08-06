@@ -177,20 +177,6 @@ function StoreBannerFormModal({ storeId, onClose, onSaved }: { storeId: string; 
   );
 }
 
-const CAMPAIGNS = [
-  { name: 'Back to School Sale',      status: 'Sent',   info: 'Sent May 15, 2025',     sent: 2840, opened: 1136, clicked: 284, revenue: '$1,480' },
-  { name: 'Welcome New Buyers',       status: 'Active', info: 'Automated — ongoing',    sent: 362,  opened: 181,  clicked: 54,  revenue: '$620'   },
-  { name: 'Summer Discount Blast',    status: 'Draft',  info: 'Scheduled Jun 1, 2025', sent: 0,    opened: 0,    clicked: 0,   revenue: '—'      },
-  { name: 'Re-engage At-Risk Buyers', status: 'Paused', info: 'Paused Apr 30, 2025',   sent: 38,   opened: 12,   clicked: 4,   revenue: '$180'   },
-];
-
-const statusStyle: Record<string, { bg: string; color: string }> = {
-  Sent:   { bg: '#E3F4EA', color: '#1E7A3C' },
-  Active: { bg: '#E3F4EA', color: '#1E7A3C' },
-  Draft:  { bg: '#F0EEE6', color: '#5A5852' },
-  Paused: { bg: '#FFF4DC', color: '#B36200' },
-};
-
 const emptyForm = { code: '', discountType: '' as DiscountType | '', value: '', minOrder: '', usageLimit: '', expiryDate: '' };
 
 const INPUT_CLS = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50';
@@ -1168,50 +1154,10 @@ export function StoreMarketing() {
           </div>
         )}
 
-        {/* Email Tab — no backend yet, static preview */}
-        {tab === 'email' && (
-          <div className="flex flex-col gap-5">
-            <div className="flex items-center justify-between">
-              <p className="text-[15px] font-bold text-carbon">Email Campaigns</p>
-              <button className="px-3.5 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
-                + New Campaign
-              </button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {CAMPAIGNS.map(campaign => {
-                const st = statusStyle[campaign.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
-                return (
-                  <div key={campaign.name} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 transition-transform duration-200 hover:-translate-y-[1px]">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-sm font-semibold text-carbon">{campaign.name}</p>
-                      <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold shrink-0 ml-2" style={{ background: st.bg, color: st.color }}>
-                        {campaign.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate mb-3.5">{campaign.info}</p>
-                    {campaign.sent > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-3.5">
-                        {[['Sent', campaign.sent.toLocaleString()],['Opened', campaign.opened.toLocaleString()],['Clicked', campaign.clicked.toLocaleString()],['Revenue', campaign.revenue]].map(([label, val]) => (
-                          <div key={label} className="text-center bg-cream rounded-lg py-2 px-1">
-                            <p className="text-sm font-bold text-carbon">{val}</p>
-                            <p className="text-[10px] text-slate">{label}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Edit</button>
-                      <button className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">View</button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Coming Soon Tabs */}
-        {(tab === 'cart' || tab === 'affiliate' || tab === 'giftcards') && (
+        {/* Coming Soon Tabs — Email Campaigns has no backend yet (no automation/
+            send/open-tracking exists), so it gets the same honest placeholder as
+            the other unbuilt tabs instead of fabricated performance numbers. */}
+        {(tab === 'email' || tab === 'cart' || tab === 'affiliate' || tab === 'giftcards') && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="text-brand-orange mb-4">
               {(() => { const found = TABS.find(t => t.id === tab); return found ? <found.Icon size={48} /> : null; })()}

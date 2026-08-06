@@ -3,8 +3,7 @@ import {
   PenLine, TrendingUp, BookOpen, Search, Mail, ImagePlus, type LucideIcon,
 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
-import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { useAiStudioCredits } from '@/hooks/seller/useAiStudio';
 import { CreditsHeader } from './components/CreditsHeader';
 import { ListingWriterTool } from './tools/ListingWriterTool';
@@ -32,7 +31,7 @@ export function StoreAIStudio() {
 
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="AI Studio"
         subtitle="AI-powered tools to grow your Solvexo business."
       />

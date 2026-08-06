@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { clsx } from 'clsx';
 import { Star, Users, Store, TrendingUp, BadgeCheck, PackageCheck, UserPlus, UserCheck } from 'lucide-react';
 import { apiFollowStore, type PublicStoreListItem } from '@/api/services/store';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 import { CoverImage } from './CoverImage';
 
 // ── Featured seller card — cover, avatar, badges, rating/followers/products, follow ──
@@ -12,18 +13,21 @@ export function StoreFeatureCard({ store, onClick, className }: {
 }) {
   const [following, setFollowing] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
+  const { requireAuth } = useAuthGate();
   const isVerified = store.badges?.includes('verified');
   const isTopSeller = store.badges?.includes('top_seller');
 
-  const handleFollow = async (e: React.MouseEvent) => {
+  const handleFollow = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (followBusy) return;
-    setFollowBusy(true);
-    try {
-      const res = await apiFollowStore(store.storeId);
-      setFollowing(res.data.following);
-    } catch { /* non-critical — button just stays in prior state */ }
-    finally { setFollowBusy(false); }
+    requireAuth(async () => {
+      setFollowBusy(true);
+      try {
+        const res = await apiFollowStore(store.storeId);
+        setFollowing(res.data.following);
+      } catch { /* non-critical — button just stays in prior state */ }
+      finally { setFollowBusy(false); }
+    }, 'Sign in to follow this store.');
   };
 
   return (

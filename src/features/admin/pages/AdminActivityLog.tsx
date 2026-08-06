@@ -6,7 +6,7 @@ import {
   apiExportAdminActivityLog, ADMIN_ACTIVITY_CATEGORIES,
   type AdminActivityLogEntry, type AdminActivityCategory,
 } from '@/api/services/activityLog';
-import { Table, Badge, Button, SearchInput, FilterDropdown, type TableColumn } from '@/components/comman/ui';
+import { Table, Badge, Button, SearchInput, FilterDropdown, AdminPageHeader, type TableColumn } from '@/components/comman/ui';
 import type { BadgeColor } from '@/types';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate } from '@/components/comman/analytics/format';
@@ -120,16 +120,17 @@ export function AdminActivityLog() {
   ];
 
   return (
-    <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Activity Log</h1>
-          <p className="text-[12px] text-slate">Platform-wide audit trail — every seller store plus platform-level actions, in one place.</p>
-        </div>
-        <Button variant="outline" size="sm" icon={<Download size={12} />} loading={exporting} onClick={handleExport}>
-          Export CSV
-        </Button>
-      </div>
+    <>
+      <AdminPageHeader
+        title="Activity Log"
+        subtitle="Platform-wide audit trail — every seller store plus platform-level actions, in one place."
+        actions={
+          <Button variant="outline" size="sm" icon={<Download size={12} />} loading={exporting} onClick={handleExport}>
+            Export CSV
+          </Button>
+        }
+      />
+      <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
 
       {exportError && <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{exportError}</div>}
 
@@ -162,6 +163,7 @@ export function AdminActivityLog() {
           />
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

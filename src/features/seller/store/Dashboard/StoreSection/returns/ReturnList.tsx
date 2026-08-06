@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
-import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Modal, Textarea, Button, Table, type TableColumn } from '@/components/comman/ui';
 import {
   apiGetSellerReturns, apiReturnAction,
@@ -172,7 +171,7 @@ export function StoreReturnList() {
 
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="Returns & Refunds"
         subtitle="Process return requests, issue refunds, and send replacements."
       />

@@ -215,8 +215,9 @@ export default function StoreEditProduct() {
     if (cached) { init(cached.product, cached.variant); setFetching(false); return; }
     apiGetMyProductById(productId)
       .then(res => {
-        const stub: ProductVariant = { _id: '', productId, sku: '', price: 0, compareAtPrice: null, options: [], stock: 0, unlimitedStock: false, shippingWeight: null, images: [], isDefault: true, status: 'active', isDelete: false, createdAt: '', updatedAt: '' };
-        init(res.data.product, stub);
+        const fallback: ProductVariant = { _id: '', productId, sku: '', price: 0, compareAtPrice: null, options: [], stock: 0, unlimitedStock: false, shippingWeight: null, images: [], isDefault: true, status: 'active', isDelete: false, createdAt: '', updatedAt: '' };
+        const variant = res.data.defaultVariant ?? res.data.variants?.[0] ?? fallback;
+        init(res.data.product, variant);
       })
       .catch(() => navigate(`/seller/store/${storeId}/products`, { replace: true }))
       .finally(() => setFetching(false));

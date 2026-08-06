@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Users, ShoppingBag, DollarSign } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
-import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { apiGetStoreCustomers, apiUpdateStoreCustomer, type StoreCustomer } from '@/api/services/store';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
@@ -114,7 +113,7 @@ export default function StoreCustomerList() {
 
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="Customers"
         subtitle="Manage buyer relationships and followers for this store."
       />

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminAnnouncements, useAnnouncementActions } from '@/hooks/admin/useAdminAnnouncements';
 import type { Announcement, AnnouncementAudience, AnnouncementStatus } from '@/api/services/announcements/adminAnnouncements';
-import { Button, Modal, Input, Textarea, Select, Table, StatusBadge, Badge, FilterDropdown, SearchInput } from '@/components/comman/ui';
+import { Button, Modal, Input, Textarea, Select, Table, StatusBadge, Badge, FilterDropdown, SearchInput, AdminPageHeader } from '@/components/comman/ui';
 import type { TableColumn } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate } from '@/components/comman/analytics/format';
@@ -222,12 +222,9 @@ export function AdminAnnouncements() {
   ];
 
   return (
-    <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
-      <div>
-        <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Announcements</h1>
-        <p className="text-[12px] text-slate">Broadcast platform-wide messages to users and sellers.</p>
-      </div>
-
+    <>
+      <AdminPageHeader title="Announcements" subtitle="Broadcast platform-wide messages to users and sellers." />
+      <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       <CreateAnnouncementCard onCreated={refetch} />
 
       {actionError && (
@@ -274,6 +271,7 @@ export function AdminAnnouncements() {
           {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
         </Modal>
       )}
-    </div>
+      </div>
+    </>
   );
 }

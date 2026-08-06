@@ -6,6 +6,7 @@ import {
   type WishlistListItem,
 } from '@/api/services/wishlist';
 import { TokenStorage } from '@/api/services/auth';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 
 export interface WishlistContextValue {
   wishlistItems:      WishlistListItem[];
@@ -33,6 +34,7 @@ function wKey(productId: string, variantId: string) {
 }
 
 export function WishlistProvider({ children }: { children: ReactNode }) {
+  const { requireAuth } = useAuthGate();
   const [wishlistItems, setWishlistItems] = useState<WishlistListItem[]>([]);
   const [loading,       setLoading]       = useState(true);
   const [wishlisting,   setWishlisting]   = useState<string | null>(null);
@@ -69,38 +71,60 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   );
 
   const addToWishlist = useCallback(async (productId: string, variantId: string) => {
-    const k = wKey(productId, variantId);
-    setWishlisting(variantId);
-    // Optimistic
-    setWishlistedKeys(prev => new Set(prev).add(k));
-    try {
-      const res = await apiAddToWishlist(productId, variantId);
-      idMap.current.set(k, res.data.wishlist._id);
-      // The "already in wishlist" branch of this endpoint re-fetches the
-      // product/variant by id and can come back null if either was since
-      // deleted/unlisted — unlike the initial GET /wishlist list, which
-      // already filters those out server-side. Skip pushing a broken item
-      // into state rather than crash every consumer that reads
-      // item.product.* downstream.
-      if (res.data.product && res.data.variant) {
-        setWishlistItems(prev => {
-          if (prev.some(i => i.product._id === productId)) return prev;
-          return [...prev, { product: res.data.product, variants: [res.data.variant] }];
-        });
+    // Same guard as CartContext.addToCart — a guest tapping the wishlist
+    // heart never reaches apiAddToWishlist, so the 401 that would otherwise
+    // hard-redirect to /login never fires; requireAuth re-runs this call
+    // once they sign in via the prompt.
+    requireAuth(async () => {
+      const k = wKey(productId, variantId);
+      setWishlisting(variantId);
+      // Optimistic
+      setWishlistedKeys(prev => new Set(prev).add(k));
+      try {
+        const res = await apiAddToWishlist(productId, variantId);
+        idMap.current.set(k, res.data.wishlist._id);
+        // The "already in wishlist" branch of this endpoint re-fetches the
+        // product/variant by id and can come back null if either was since
+        // deleted/unlisted — unlike the initial GET /wishlist list, which
+        // already filters those out server-side. Skip pushing a broken item
+        // into state rather than crash every consumer that reads
+        // item.product.* downstream.
+        if (res.data.product && res.data.variant) {
+          setWishlistItems(prev => {
+            if (prev.some(i => i.product._id === productId)) return prev;
+            return [...prev, { product: res.data.product, variants: [res.data.variant] }];
+          });
+        }
+      } catch {
+        setWishlistedKeys(prev => { const s = new Set(prev); s.delete(k); return s; });
+      } finally {
+        setWishlisting(null);
       }
-    } catch {
-      setWishlistedKeys(prev => { const s = new Set(prev); s.delete(k); return s; });
-    } finally {
-      setWishlisting(null);
-    }
-  }, []);
+    }, 'Sign in to save items to your wishlist.');
+  }, [requireAuth]);
 
   const removeFromWishlist = useCallback(async (productId: string, variantId: string) => {
     const k = wKey(productId, variantId);
     setWishlisting(variantId);
+
+    // Snapshot the removed item (and its position) from inside the updater
+    // itself, rather than reading the `wishlistItems` state variable in this
+    // closure — this callback's deps are `[]`, so that variable can be stale.
+    // On failure below, this is what lets rollback restore the *item*, not
+    // just the key — a partial rollback (heart shows wishlisted again, but
+    // the Wishlist page still doesn't list it) is exactly the desync bug
+    // this replaces.
+    let removedItem: WishlistListItem | undefined;
+    let removedIndex = -1;
+
     // Optimistic
     setWishlistedKeys(prev => { const s = new Set(prev); s.delete(k); return s; });
-    setWishlistItems(prev => prev.filter(i => i.product._id !== productId));
+    setWishlistItems(prev => {
+      const idx = prev.findIndex(i => i.product._id === productId);
+      if (idx !== -1) { removedItem = prev[idx]; removedIndex = idx; }
+      return prev.filter(i => i.product._id !== productId);
+    });
+
     try {
       let wishlistId = idMap.current.get(k);
       if (!wishlistId) {
@@ -114,8 +138,18 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       }
       await apiRemoveFromWishlist(wishlistId);
     } catch {
-      // Rollback keys (don't restore items list for simplicity)
+      // Roll back both pieces of state together, restoring the item as
+      // close to its original position as possible.
       setWishlistedKeys(prev => new Set(prev).add(k));
+      if (removedItem) {
+        const restored = removedItem;
+        setWishlistItems(prev => {
+          if (prev.some(i => i.product._id === productId)) return prev;
+          const next = [...prev];
+          next.splice(Math.min(removedIndex, next.length), 0, restored);
+          return next;
+        });
+      }
     } finally {
       setWishlisting(null);
     }

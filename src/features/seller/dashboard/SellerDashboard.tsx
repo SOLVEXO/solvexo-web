@@ -291,7 +291,7 @@ interface QuickAction { Icon: LucideIcon; label: string; path: string; gradient:
 
 const QUICK_ACTIONS: QuickAction[] = [
   { Icon: Store,     label: 'My Stores',    path: '/seller/stores',    gradient: 'from-brand-pale-orange to-brand-pale-orange', iconColor: '#D97757' },
-  { Icon: Sparkles,  label: 'Create Store', path: '/seller/store',     gradient: 'from-[#f3e8ff] to-[#ede0fe]',         iconColor: '#A855F7' },
+  { Icon: Sparkles,  label: 'Create Store', path: '/onboard',          gradient: 'from-[#f3e8ff] to-[#ede0fe]',         iconColor: '#A855F7' },
   { Icon: BarChart2, label: 'Analytics',    path: '/seller/analytics', gradient: 'from-info-bg to-[#dcebfa]',         iconColor: '#0EA5E9' },
   { Icon: Settings,  label: 'Settings',     path: '/seller/settings',  gradient: 'from-cream to-bone',                  iconColor: '#8C8A82' },
 ];
@@ -363,6 +363,15 @@ export function SellerDashboard() {
   const { stores, loading: storesLoading, error: storesError, refetch: refetchStores } = useMyStores();
   const hasStore = stores.length > 0;
   const activeStoreCount = stores.filter(s => s.status === 'active').length;
+
+  // "View All" next to Top Products / Recent Orders: there's no cross-store
+  // products/orders list page today, so the only destination that actually
+  // matches the label is the one store's own list when there's exactly one
+  // store to disambiguate to — otherwise fall back to the store picker
+  // rather than guessing which store's list to open.
+  const singleStoreId = stores.length === 1 ? stores[0]._id : null;
+  const goToTopProducts = () => navigate(singleStoreId ? `/seller/store/${singleStoreId}/products` : '/seller/stores');
+  const goToRecentOrders = () => navigate(singleStoreId ? `/seller/store/${singleStoreId}/orders` : '/seller/stores');
 
   const [overview, setOverview]       = useState<SellerOverviewData | null>(null);
   const [revenueSeries, setRevenueSeries] = useState<RevenuePoint[]>([]);
@@ -483,7 +492,7 @@ export function SellerDashboard() {
             <div className="px-[18px] pt-4 pb-3 flex items-center justify-between border-b border-bone">
               <p className="text-sm font-bold text-charcoal">Top Products</p>
               {hasStore && (
-                <button onClick={() => navigate('/seller/stores')} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
+                <button onClick={goToTopProducts} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
                   View All <ArrowRight size={14} />
                 </button>
               )}
@@ -521,7 +530,7 @@ export function SellerDashboard() {
             <div className="px-5 pt-4 pb-[10px] flex items-center justify-between">
               <p className="text-sm font-bold text-charcoal">Recent Orders</p>
               {hasStore && (
-                <button onClick={() => navigate('/seller/stores')} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
+                <button onClick={goToRecentOrders} className="bg-transparent border-0 cursor-pointer text-[13px] text-slate font-medium flex items-center gap-1 hover:text-charcoal transition-colors">
                   View All <ArrowRight size={14} />
                 </button>
               )}

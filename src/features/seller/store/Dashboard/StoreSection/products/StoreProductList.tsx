@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ShoppingBag, Plus,
   AlertCircle, RefreshCw, TrendingUp,
-  Eye, Pencil,
+  Eye, Pencil, Trash2,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
@@ -14,9 +14,12 @@ import {
   SearchInput,
   SkeletonBox,
   ActionMenu,
+  Modal,
+  Button,
 } from '@/components/comman/ui';
 import {
   apiGetStoreInventory,
+  apiDeleteProduct,
   type InventoryProduct,
 } from '@/api/services/product';
 import { currencySymbol } from '@/utils/currency';
@@ -34,6 +37,9 @@ export default function StoreProductList() {
   const [search,        setSearch]        = useState('');
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState('');
+  const [deleteTarget,  setDeleteTarget]  = useState<InventoryProduct | null>(null);
+  const [deleting,      setDeleting]      = useState(false);
+  const [deleteError,   setDeleteError]   = useState('');
 
   const LIMIT = 10;
   const SEARCH_LIMIT = 1000;
@@ -89,6 +95,21 @@ export default function StoreProductList() {
     setLoading(true);
     setError('');
     setRefreshKey(k => k + 1);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await apiDeleteProduct(deleteTarget.productId);
+      setDeleteTarget(null);
+      setRefreshKey(k => k + 1);
+    } catch (err: unknown) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete product.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const filtered = isSearching
@@ -166,8 +187,9 @@ export default function StoreProductList() {
         <ActionMenu
           align="right"
           items={[
-            { label: 'View Detail',  onClick: () => goDetail(p), icon: <Eye    size={13} /> },
-            { label: 'Edit Product', onClick: () => goEdit(p),   icon: <Pencil size={13} /> },
+            { label: 'View Detail',    onClick: () => goDetail(p),                icon: <Eye    size={13} /> },
+            { label: 'Edit Product',   onClick: () => goEdit(p),                  icon: <Pencil size={13} /> },
+            { label: 'Delete Product', onClick: () => { setDeleteError(''); setDeleteTarget(p); }, icon: <Trash2 size={13} />, danger: true },
           ]}
         />
       ),
@@ -275,6 +297,22 @@ export default function StoreProductList() {
         )}
 
       </div>
+
+      {deleteTarget && (
+        <Modal title="Delete this product?" onClose={() => setDeleteTarget(null)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button variant="danger" onClick={handleDeleteConfirm} loading={deleting}>Delete Product</Button>
+          </>
+        }>
+          <p className="text-[13px] text-slate">
+            <span className="font-semibold text-charcoal">{deleteTarget.name}</span> will be removed from your store and the marketplace. This can't be undone.
+          </p>
+          {deleteError && (
+            <p className="text-[12px] text-error mt-3">{deleteError}</p>
+          )}
+        </Modal>
+      )}
     </>
   );
 }

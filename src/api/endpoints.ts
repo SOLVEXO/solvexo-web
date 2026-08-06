@@ -306,6 +306,7 @@ export const ENDPOINTS = {
     CREATE_PHYSICAL: '/api/products/add-physical-product',
     CREATE_DIGITAL: '/api/products/add-digital-product',
     EDIT_PRODUCT: '/api/products/edit-product',
+    DELETE_PRODUCT: (id: string) => `/api/products/delete-product/${id}`,
     GET_MY_ALL_PRODUCT: (id: string) => `/api/inventory/getStoreInventory/${id}`,
     GET_MY_PRODUCT_BY_ID: (id: string) => `/api/products/get-my-product/${id}`,
     EDUCATION_FACETS: '/api/products/education/facets',

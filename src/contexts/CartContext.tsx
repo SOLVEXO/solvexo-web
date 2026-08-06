@@ -4,6 +4,7 @@ import {
   type Cart, type CartItem,
 } from '@/api/services/cart';
 import { TokenStorage } from '@/api/services/auth';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 
 // ── localStorage: variantId → type map ────────────────────────────────────────
 const TYPES_KEY = 'solvexo_cart_types';
@@ -63,6 +64,7 @@ function syncCart(setCart: (c: Cart) => void) {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { requireAuth } = useAuthGate();
   const [cart,    setCart]    = useState<Cart | null>(null);
   const [loading, setLoading] = useState(false);
   const [adding,  setAdding]  = useState<string | null>(null);
@@ -87,64 +89,78 @@ export function CartProvider({ children }: { children: ReactNode }) {
     productVariantId: string,
     type?: 'physical' | 'digital',
   ) => {
-    setAdding(productVariantId);
-    if (type) storeType(productVariantId, type);
-    setError(null);
-    try {
-      const res = await apiAddToCart(productId, productVariantId);
-      setCart(mergeTypes(res.data));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add item to cart.');
-    } finally {
-      setAdding(null);
-    }
-  }, []);
+    // A guest never reaches apiAddToCart at all — the 401 that would
+    // otherwise bounce them to a bare /login page never happens, since the
+    // request is never made. requireAuth re-runs this exact call once the
+    // guest signs in via the prompt, so the intended add still goes through.
+    requireAuth(async () => {
+      setAdding(productVariantId);
+      if (type) storeType(productVariantId, type);
+      setError(null);
+      try {
+        const res = await apiAddToCart(productId, productVariantId);
+        setCart(mergeTypes(res.data));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to add item to cart.');
+      } finally {
+        setAdding(null);
+      }
+    }, 'Sign in to add items to your cart.');
+  }, [requireAuth]);
 
   const updateQty = useCallback(async (
     productId: string, productVariantId: string, action: 'increase' | 'decrease',
   ) => {
-    setCart(prev => {
-      if (!prev) return prev;
-      const items = (prev.items ?? []).map(item => {
-        if (item.productVariantId !== productVariantId) return item;
-        const newQty    = action === 'increase' ? item.quantity + 1 : Math.max(1, item.quantity - 1);
-        const unitPrice = item.unitPrice ?? item.price ?? 0;
-        return { ...item, quantity: newQty, itemTotal: unitPrice * newQty };
+    // Guarded for the same reason as addToCart above — reachable by a guest
+    // via the "Buy Now" quantity>1 flow (one addToCart call followed by
+    // several updateQty calls), which would otherwise still hit a 401 here
+    // even with addToCart itself guarded.
+    requireAuth(async () => {
+      setCart(prev => {
+        if (!prev) return prev;
+        const items = (prev.items ?? []).map(item => {
+          if (item.productVariantId !== productVariantId) return item;
+          const newQty    = action === 'increase' ? item.quantity + 1 : Math.max(1, item.quantity - 1);
+          const unitPrice = item.unitPrice ?? item.price ?? 0;
+          return { ...item, quantity: newQty, itemTotal: unitPrice * newQty };
+        });
+        const totalItems = items.reduce((s, i) => s + i.quantity, 0);
+        const totalPrice = items.reduce((s, i) => s + (i.itemTotal ?? 0), 0);
+        return { ...prev, items, totalItems, totalPrice };
       });
-      const totalItems = items.reduce((s, i) => s + i.quantity, 0);
-      const totalPrice = items.reduce((s, i) => s + (i.itemTotal ?? 0), 0);
-      return { ...prev, items, totalItems, totalPrice };
-    });
 
-    setError(null);
-    try {
-      await apiUpdateCartQuantity(productId, productVariantId, action);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update quantity.');
-    } finally {
-      syncCart(c => setCart(c));
-    }
-  }, []);
+      setError(null);
+      try {
+        await apiUpdateCartQuantity(productId, productVariantId, action);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to update quantity.');
+      } finally {
+        syncCart(c => setCart(c));
+      }
+    }, 'Sign in to update your cart.');
+  }, [requireAuth]);
 
   const removeItem = useCallback(async (productId: string, productVariantId: string) => {
-    removeType(productVariantId);
-    setCart(prev => {
-      if (!prev) return prev;
-      const items      = (prev.items ?? []).filter(i => i.productVariantId !== productVariantId);
-      const totalItems = items.reduce((s, i) => s + i.quantity, 0);
-      const totalPrice = items.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
-      return { ...prev, items, totalItems, totalPrice };
-    });
+    requireAuth(async () => {
+      removeType(productVariantId);
+      setCart(prev => {
+        if (!prev) return prev;
+        const items      = (prev.items ?? []).filter(i => i.productVariantId !== productVariantId);
+        const totalItems = items.reduce((s, i) => s + i.quantity, 0);
+        const totalPrice = items.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
+        return { ...prev, items, totalItems, totalPrice };
+      });
 
-    setError(null);
-    try {
-      await apiRemoveCartItem(productId, productVariantId);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove item.');
-    } finally {
-      syncCart(c => setCart(c));
-    }
-  }, []);
+      setError(null);
+      try {
+        await apiRemoveCartItem(productId, productVariantId);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to remove item.');
+      } finally {
+        syncCart(c => setCart(c));
+      }
+    }, 'Sign in to update your cart.');
+  }, [requireAuth]);
 
   const clearCart = useCallback(async () => {
     if (!cart?._id) return;

@@ -197,8 +197,11 @@ export interface EditProductData {
 }
 
 export interface GetProductData {
-  product: StoreProduct;
+  product:        StoreProduct;
+  variants:       ProductVariant[];
+  defaultVariant: ProductVariant | null;
 }
+
 
 export interface InventoryProduct {
   productId:    string;
@@ -275,6 +278,12 @@ export function apiEditDigitalProduct(_id: string, payload: EditDigitalPayload) 
 export function apiGetMyProductById(id: string) {
   return client.get<never, ApiResponse<GetProductData>>(
     ENDPOINTS.PRODUCT.GET_MY_PRODUCT_BY_ID(id),
+  );
+}
+
+export function apiDeleteProduct(id: string) {
+  return client.delete<never, ApiResponse<null>>(
+    ENDPOINTS.PRODUCT.DELETE_PRODUCT(id),
   );
 }
 

@@ -455,7 +455,7 @@ export function SearchBox({
             id={panelId}
             role="listbox"
             aria-label="Search suggestions"
-            className="dropdown-enter absolute left-0 right-0 top-[calc(100%+6px)] z-30 bg-white border border-bone rounded-2xl overflow-y-auto overscroll-contain shadow-[0_6px_20px_-4px_rgba(20,15,10,0.08)] max-h-[460px]"
+            className="dropdown-enter absolute left-0 right-0 top-[calc(100%+6px)] z-30 bg-white border border-bone rounded-2xl overflow-y-auto overscroll-contain shadow-card-hover max-h-[460px]"
           >
             {!isTyping ? (
               <>

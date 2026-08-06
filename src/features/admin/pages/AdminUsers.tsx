@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminUsersStats, useAdminUsersList, useAdminUserActions } from '@/hooks/admin/useAdminUsers';
 import type { AccountRole, AccountRow } from '@/api/services/users/adminUsers';
-import { Table, StatusBadge, Badge, Button, Modal, SkeletonBox, SearchInput, FilterDropdown } from '@/components/comman/ui';
+import { Table, StatusBadge, Badge, Button, Modal, SkeletonBox, SearchInput, FilterDropdown, MetricCard, AdminPageHeader } from '@/components/comman/ui';
 import type { TableColumn } from '@/components/comman/ui';
 import type { BadgeColor } from '@/types';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
@@ -21,16 +21,6 @@ const STATUS_OPTIONS = [
 
 function initialsOf(name: string) {
   return name.split(' ').filter(Boolean).slice(0, 2).map((s) => s[0]).join('').toUpperCase() || '—';
-}
-
-function MetricCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
-      <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{label}</p>
-      <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{value}</p>
-      {sub && <p className="text-[12px] text-slate mt-1">{sub}</p>}
-    </div>
-  );
 }
 
 // ── Account detail modal ──────────────────────────────────────────────────────
@@ -141,30 +131,26 @@ export function AdminUsers() {
       key: 'actions',
       header: 'Actions',
       render: (u) => (
-        <div className="flex items-center gap-2">
-          <button onClick={() => setViewing(u)} className="text-[12px] font-medium text-info bg-transparent border-none cursor-pointer flex items-center gap-1">
-            <Eye size={12} /> View
-          </button>
-          <span className="text-bone text-[13px]">|</span>
-          <button
-            onClick={() => setConfirming(u)}
+        <div className="flex gap-[6px]">
+          <Button size="xs" variant="outline" icon={<Eye size={11} />} onClick={() => setViewing(u)}>View</Button>
+          <Button
+            size="xs"
+            variant={u.status === 'suspended' ? 'secondary' : 'danger'}
+            icon={u.status === 'suspended' ? <CheckCircle2 size={11} /> : <Ban size={11} />}
             disabled={processingId === u.id}
-            className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer disabled:opacity-40"
+            onClick={() => setConfirming(u)}
           >
             {u.status === 'suspended' ? 'Unsuspend' : 'Suspend'}
-          </button>
+          </Button>
         </div>
       ),
     },
   ];
 
   return (
-    <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
-      <div>
-        <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Users &amp; Sellers</h1>
-        <p className="text-[12px] text-slate">Manage all platform users, sellers and accounts.</p>
-      </div>
-
+    <>
+      <AdminPageHeader title="Users & Sellers" subtitle="Manage all platform users, sellers and accounts." />
+      <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       {actionError && <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
 
       {statsError ? (
@@ -224,6 +210,7 @@ export function AdminUsers() {
           </p>
         </Modal>
       )}
-    </div>
+      </div>
+    </>
   );
 }

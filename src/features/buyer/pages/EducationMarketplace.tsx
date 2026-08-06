@@ -330,15 +330,15 @@ function EducationWelcomeStrip({
         <p className="text-[19px] sm:text-[22px] font-bold text-carbon tracking-[-0.01em]">Welcome to Solvexo</p>
         <div className="hidden sm:flex items-center gap-[6px] text-[13.5px] font-semibold text-charcoal">
           <button onClick={() => onNavigate('/faq')} className="flex items-center gap-[9px] rounded-full pl-[5px] pr-[14px] py-[5px] bg-cream border border-transparent cursor-pointer transition-all duration-150 hover:bg-brand-pale-orange/70 hover:border-brand-orange/15 hover:text-brand-deep-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-            <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-[0_1px_3px_rgba(20,15,10,0.06)]"><ShieldCheck size={16} className="text-brand-orange" /></span>
+            <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-card"><ShieldCheck size={16} className="text-brand-orange" /></span>
             Buyer Protection
           </button>
           <button onClick={() => sellEntry.go()} className="flex items-center gap-[9px] rounded-full pl-[5px] pr-[14px] py-[5px] bg-cream border border-transparent cursor-pointer transition-all duration-150 hover:bg-brand-pale-orange/70 hover:border-brand-orange/15 hover:text-brand-deep-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-            <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-[0_1px_3px_rgba(20,15,10,0.06)]"><Store size={16} className="text-brand-orange" /></span>
+            <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-card"><Store size={16} className="text-brand-orange" /></span>
             Sell Your Resources
           </button>
           <button onClick={() => onNavigate('/marketplace')} className="flex items-center gap-[9px] rounded-full pl-[5px] pr-[14px] py-[5px] bg-cream border border-transparent cursor-pointer transition-all duration-150 hover:bg-brand-pale-orange/70 hover:border-brand-orange/15 hover:text-brand-deep-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
-            <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-[0_1px_3px_rgba(20,15,10,0.06)]"><GraduationCap size={16} className="text-brand-orange" /></span>
+            <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-card"><GraduationCap size={16} className="text-brand-orange" /></span>
             Marketplace
           </button>
         </div>

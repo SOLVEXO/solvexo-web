@@ -6,6 +6,7 @@ import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetAllProducts, type MarketplaceProduct, type ProductVariant } from '@/api/services/marketplace';
 import { apiGetPublicStoreProducts, apiGetPublicStore, apiFollowStore, apiGetFollowStatus, type PublicStoreProduct, type PublicStoreData } from '@/api/services/store';
@@ -302,6 +303,7 @@ export function ProductDetail() {
   const { detail, loading, error, refetch } = useProductById(id);
   const { addToCart, updateQty, adding } = useCartContext();
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
+  const { requireAuth } = useAuthGate();
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [addedFeedback, setAddedFeedback] = useState(false);
@@ -400,14 +402,16 @@ export function ProductDetail() {
     return () => { cancelled = true; };
   }, [product?.categoryId, product?._id]);
 
-  async function handleFollow() {
+  function handleFollow() {
     if (!storeId || followBusy) return;
-    setFollowBusy(true);
-    try {
-      const res = await apiFollowStore(storeId);
-      setFollowing(res.data.following);
-    } catch { /* non-critical */ }
-    finally { setFollowBusy(false); }
+    requireAuth(async () => {
+      setFollowBusy(true);
+      try {
+        const res = await apiFollowStore(storeId);
+        setFollowing(res.data.following);
+      } catch { /* non-critical */ }
+      finally { setFollowBusy(false); }
+    }, 'Sign in to follow this store.');
   }
 
   async function handleAddToCart(navigateToCart: boolean) {

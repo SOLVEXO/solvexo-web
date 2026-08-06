@@ -6,10 +6,11 @@ import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { useCountdownToMidnight } from '@/hooks/useCountdownToMidnight';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
-import { AppDownloadBanner, Footer, SkeletonBox, CoverImage, FloatingAppWidget } from '@/components/comman/ui';
+import { AppDownloadBanner, Footer, SkeletonBox, CoverImage, FloatingAppWidget, SearchBox } from '@/components/comman/ui';
 import { FlashSaleCard, FlashSaleCardSkeleton } from '@/components/comman/marketplace/FlashSaleCard';
 import {
   ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles,
@@ -32,21 +33,24 @@ const compactCurrency = new Intl.NumberFormat('en', { notation: 'compact', maxim
 function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick: () => void }) {
   const [following, setFollowing] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
+  const { requireAuth } = useAuthGate();
 
   const isVerified  = store.badges?.includes('verified');
   const isFeatured  = store.badges?.includes('featured');
   const isTopSeller = store.badges?.includes('top_seller');
   const isTopRated  = store.reviewCount > 0 && store.averageRating >= 4.8;
 
-  const handleFollow = async (e: React.MouseEvent) => {
+  const handleFollow = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (followBusy) return;
-    setFollowBusy(true);
-    try {
-      const res = await apiFollowStore(store.storeId);
-      setFollowing(res.data.following);
-    } catch { /* non-critical — button just stays in prior state */ }
-    finally { setFollowBusy(false); }
+    requireAuth(async () => {
+      setFollowBusy(true);
+      try {
+        const res = await apiFollowStore(store.storeId);
+        setFollowing(res.data.following);
+      } catch { /* non-critical — button just stays in prior state */ }
+      finally { setFollowBusy(false); }
+    }, 'Sign in to follow this store.');
   };
 
   return (
@@ -189,6 +193,15 @@ export function Homepage() {
   const { addToCart, adding } = useCartContext();
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
   const countdown = useCountdownToMidnight();
+
+  // Homepage has no results of its own to filter — searching here always
+  // means "take me to the Marketplace with this query", same convention as
+  // clicking a trending term anywhere else in the app.
+  const [heroSearch, setHeroSearch] = useState('');
+  const submitHeroSearch = (term?: string) => {
+    const q = (term ?? heroSearch).trim();
+    navigate(q ? `/marketplace?search=${encodeURIComponent(q)}` : '/marketplace');
+  };
   const storesTrackRef = useRef<HTMLDivElement>(null);
   const [storesActiveIndex, setStoresActiveIndex] = useState(0);
 
@@ -323,10 +336,26 @@ export function Homepage() {
               commerce, in one place.
             </p>
 
-            {/* CTAs */}
+            {/* Primary interaction — search comes before the CTAs, not after,
+               so a shopper's very first instinct (type what you want) has
+               somewhere obvious to go, exactly the same SearchBox/suggestions
+               UX Marketplace's own hero search already uses. */}
+            <div className="mb-5 w-full">
+              <SearchBox
+                size="lg"
+                value={heroSearch}
+                onChange={setHeroSearch}
+                placeholder="Search products, courses, stores…"
+                popularStores={topStores}
+                onSubmit={submitHeroSearch}
+              />
+            </div>
+
+            {/* CTAs — secondary to search now: one for "I want to sell", one
+               for "just let me browse everything". */}
             <div className="flex flex-col sm:flex-row items-start gap-3 mb-8">
               <Button size="md" onClick={sellEntry.go} loading={sellEntry.loading} className="w-full sm:w-auto">
-                Start for Free <ArrowRight size={13} className="inline align-middle ml-1" />
+                Start Selling Free <ArrowRight size={13} className="inline align-middle ml-1" />
               </Button>
               <button
                 onClick={() => navigate('/marketplace')}

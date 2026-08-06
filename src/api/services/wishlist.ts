@@ -30,6 +30,13 @@ export interface WishlistProduct {
   sellerId:         string;
   slug:             string;
   description:      string;
+  // Always present on the raw backend document (Product.productType/type are
+  // both `required: true` in the schema) — the wishlist endpoints never
+  // .select() the product, so these ride along already; they were just never
+  // declared on this type, which is what let Wishlist.tsx hardcode 'physical'
+  // below instead of reading the product's real type.
+  productType?:     'physical' | 'digital' | 'educational';
+  type?:            'physical' | 'digital';
   categoryId:       string;
   subCategoryId:    string | null;
   images:           string[];

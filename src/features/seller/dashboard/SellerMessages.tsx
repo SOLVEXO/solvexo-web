@@ -81,7 +81,7 @@ export function SellerMessages() {
   const { conversation, pin, mute, archive, restore, remove } = useConversation(activeId);
   const {
     messages, loading: msgLoading, loadingMore, sending, send, retry, edit, remove: removeMessage, markSeen, hasMore, loadMore,
-    otherOnline, otherTyping, sendTyping,
+    otherOnline, otherTyping, sendTyping, error: msgError,
   } = useMessages(activeId);
   const { block, unblock, report } = useModeration();
 
@@ -210,6 +210,7 @@ export function SellerMessages() {
           onTyping={sendTyping}
           conversationId={activeId}
           storeId={storeId}
+          error={msgError}
         />
       </div>
     </>

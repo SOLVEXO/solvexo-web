@@ -248,8 +248,12 @@ export function StoreOrderList() {
         title="Orders"
         subtitle={loading ? 'Loading…' : `${totalOrders} order${totalOrders !== 1 ? 's' : ''}`}
         actions={
-          <button className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-4 py-[9px] text-[13px] font-medium cursor-pointer">
-            Export CSV
+          <button
+            disabled
+            title="Order export isn't available yet — coming soon"
+            className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-4 py-[9px] text-[13px] font-medium opacity-50 cursor-not-allowed"
+          >
+            Export CSV (Coming Soon)
           </button>
         }
       />

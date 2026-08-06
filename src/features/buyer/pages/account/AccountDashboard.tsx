@@ -9,7 +9,7 @@ import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useNotification } from '@/contexts/NotificationContext';
 import { apiGetMyOrders, type OrderSummary, type OrderStatus } from '@/api/services/orders';
 import { apiGetMyAddresses } from '@/api/services/address';
-import { Card, MetricCard, PageHeader, Badge, ProgressBar, Button, SkeletonBox, EmptyState } from '@/components/comman/ui';
+import { Card, MetricCard, PageHeader, Badge, ProgressBar, Button, SkeletonBox, EmptyState, Avatar } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
 
 const STATUS_COLOR: Record<OrderStatus, 'orange' | 'blue' | 'green' | 'red'> = {
@@ -23,9 +23,9 @@ function RecentOrderRow({ order }: { order: OrderSummary }) {
   return (
     <button
       onClick={() => navigate('/account/orders')}
-      className="w-full flex items-center gap-3 px-4 py-3 text-left bg-transparent border-none cursor-pointer hover:bg-cream transition-colors rounded-[10px]"
+      className="group w-full flex items-center gap-3 px-4 py-3 text-left bg-transparent border-none cursor-pointer hover:bg-cream transition-colors rounded-[10px]"
     >
-      <div className="w-9 h-9 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0">
+      <div className="w-9 h-9 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110">
         <Package size={14} className="text-brand-orange" />
       </div>
       <div className="flex-1 min-w-0">
@@ -39,7 +39,7 @@ function RecentOrderRow({ order }: { order: OrderSummary }) {
         <span className="text-[12.5px] font-bold text-carbon whitespace-nowrap">
           {currencySymbol(order.currency)} {order.totalAmount.toLocaleString()}
         </span>
-        <ChevronRight size={13} className="text-bone shrink-0" />
+        <ChevronRight size={13} className="text-bone shrink-0 transition-transform duration-200 group-hover:translate-x-[2px] group-hover:text-brand-orange" />
       </div>
     </button>
   );
@@ -57,9 +57,57 @@ function WishlistPreviewImg({ src, name }: { src?: string; name: string }) {
   return <img loading="lazy" decoding="async" src={src} alt={name} onError={() => setErr(true)} className="w-12 h-12 rounded-[9px] object-cover shrink-0 border border-[#edebe2]" />;
 }
 
+// ── Welcome hero — same warm-hero language the Seller dashboard already uses
+// (dot-grid overlay, glow orb, avatar + greeting + primary actions), just
+// recolored to the buyer's own warm brand-orange gradient instead of
+// Seller's dark carbon one. Deliberate: this is a customer workspace, not a
+// business-operations one, so it should feel like a different product built
+// on the same system, not an identical dark dashboard reused verbatim. ──
+function WelcomeHero({ name, image, memberSince }: { name?: string; image?: string | null; memberSince: string }) {
+  const navigate = useNavigate();
+  return (
+    <div className="dash-section-enter relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-orange via-[#c9694a] to-brand-deep-orange px-6 py-6 sm:px-7 sm:py-7 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.08]"
+        style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '22px 22px' }}
+      />
+      <div className="pointer-events-none absolute -top-16 -right-10 size-56 rounded-full bg-white/15 blur-3xl" />
+
+      <div className="relative flex items-center gap-4 flex-1 min-w-0">
+        {image ? (
+          <img
+            loading="lazy" decoding="async"
+            src={image} alt={name ?? 'You'}
+            className="size-14 rounded-2xl object-cover ring-2 ring-white/25 shrink-0"
+          />
+        ) : (
+          <div className="size-14 rounded-2xl bg-white/15 ring-2 ring-white/25 flex items-center justify-center shrink-0">
+            <Avatar name={name ?? 'You'} size={44} />
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="text-[20px] sm:text-[22px] font-bold text-white leading-tight truncate">
+            Welcome back{name ? `, ${name.split(' ')[0]}` : ''}
+          </p>
+          <p className="text-[12px] text-white/75 mt-1">Member since {memberSince}</p>
+        </div>
+      </div>
+
+      <div className="relative flex items-center gap-2 flex-wrap shrink-0">
+        <Button variant="outline" size="sm" className="!bg-white/10 !border-white/20 !text-white hover:!bg-white/20" onClick={() => navigate('/account/orders')}>
+          Track Orders
+        </Button>
+        <Button variant="dark" size="sm" icon={<Store size={14} />} onClick={() => navigate('/marketplace')}>
+          Continue Shopping
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function AccountDashboard() {
   const navigate = useNavigate();
-  const { profile, loading: profileLoading } = useGetProfile();
+  const { profile } = useGetProfile();
   const { wishlistItems, wishlistCount, loading: wishlistLoading } = useWishlistContext();
   const { unreadCount } = useNotification();
 
@@ -99,11 +147,7 @@ export function AccountDashboard() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader
-        eyebrow="Account"
-        title={profileLoading ? 'Welcome back' : `Welcome back, ${profile?.name?.split(' ')[0] ?? 'there'}`}
-        description={`Member since ${memberSince} · Here's what's happening with your account.`}
-      />
+      <WelcomeHero name={profile?.name} image={profile?.profileImage} memberSince={memberSince} />
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
@@ -132,7 +176,7 @@ export function AccountDashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
+      <div className="dash-section-enter grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
         <div className="min-w-0 flex flex-col gap-5">
           {/* Recent orders */}
           <Card padding="none">
@@ -194,10 +238,12 @@ export function AccountDashboard() {
                   <button
                     key={item.product._id}
                     onClick={() => navigate(`/marketplace/${item.product._id}`)}
-                    className="flex flex-col items-start gap-1.5 bg-transparent border-none cursor-pointer p-0 text-left w-[84px]"
+                    className="group flex flex-col items-start gap-1.5 bg-transparent border-none cursor-pointer p-0 text-left w-[84px] transition-transform duration-200 hover:-translate-y-[2px]"
                   >
-                    <WishlistPreviewImg src={item.product.images?.[0]} name={item.product.name} />
-                    <p className="text-[11px] text-charcoal font-medium line-clamp-2 leading-tight">{item.product.name}</p>
+                    <div className="overflow-hidden rounded-[10px]">
+                      <WishlistPreviewImg src={item.product.images?.[0]} name={item.product.name} />
+                    </div>
+                    <p className="text-[11px] text-charcoal font-medium line-clamp-2 leading-tight group-hover:text-brand-orange transition-colors">{item.product.name}</p>
                   </button>
                 ))}
               </div>
@@ -218,7 +264,7 @@ export function AccountDashboard() {
                 : 'Complete your profile for a smoother checkout experience.'}
             </p>
             {completionPct < 100 && (
-              <Button variant="outline" size="sm" fullWidth className="mt-3" onClick={() => navigate('/account/settings?tab=profile')}>
+              <Button variant="outline" size="sm" fullWidth className="mt-3" onClick={() => navigate('/account/profile')}>
                 Complete Profile
               </Button>
             )}
@@ -241,7 +287,7 @@ export function AccountDashboard() {
               <span className="text-[12px] text-graphite flex-1">Password protection</span>
               <Badge color="green" size="sm">Active</Badge>
             </div>
-            <Button variant="outline" size="sm" fullWidth onClick={() => navigate('/account/settings?tab=security')}>
+            <Button variant="outline" size="sm" fullWidth onClick={() => navigate('/account/security')}>
               Manage Security
             </Button>
           </Card>
@@ -253,19 +299,20 @@ export function AccountDashboard() {
             </p>
             <div className="flex flex-col gap-1.5">
               {[
-                { label: 'Edit Profile',      path: '/account/settings?tab=profile' },
-                { label: 'Add New Address',   path: '/account/settings?tab=addresses' },
-                { label: 'Track Orders',      path: '/account/orders' },
-                { label: 'Notification Settings', path: '/account/settings?tab=notifications' },
-                { label: 'Browse Marketplace', path: '/marketplace' },
+                { label: 'Edit Profile',      path: '/account/profile',      Icon: UserCog },
+                { label: 'Add New Address',   path: '/account/addresses',    Icon: MapPin },
+                { label: 'Track Orders',      path: '/account/orders',       Icon: Package },
+                { label: 'Notification Settings', path: '/account/notifications', Icon: Bell },
+                { label: 'Browse Marketplace', path: '/marketplace',         Icon: Store },
               ].map(a => (
                 <button
                   key={a.path}
                   onClick={() => navigate(a.path)}
-                  className="w-full flex items-center justify-between px-3 py-[9px] rounded-[8px] text-[12.5px] text-charcoal bg-cream hover:bg-bone border-none cursor-pointer transition-colors"
+                  className="group w-full flex items-center gap-2.5 px-3 py-[9px] rounded-[8px] text-[12.5px] text-charcoal bg-cream hover:bg-brand-pale-orange border-none cursor-pointer transition-colors"
                 >
-                  {a.label}
-                  <ChevronRight size={13} className="text-slate" />
+                  <a.Icon size={14} className="text-brand-orange shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                  <span className="flex-1 text-left">{a.label}</span>
+                  <ChevronRight size={13} className="text-slate shrink-0 transition-transform duration-200 group-hover:translate-x-[2px]" />
                 </button>
               ))}
             </div>

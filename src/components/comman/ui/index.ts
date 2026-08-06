@@ -13,6 +13,8 @@ export { Avatar }                            from './Avatar';
 
 export { MetricCard }                        from './MetricCard';
 
+export { AdminPageHeader }                   from './AdminPageHeader';
+
 export { Divider, Tag }                      from './Divider';
 
 export { SolvexoLogo, SolvexoIcon }          from './SolvexoLogo';

@@ -8,7 +8,7 @@ import {
   Settings, Sparkles, ChevronLeft, Monitor, Store,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
-  PanelLeftClose, PanelLeftOpen, AlertTriangle, XCircle, Clock, LogOut, ShieldCheck, Lock,
+  PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, ShieldCheck, Lock,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
@@ -653,13 +653,38 @@ function findLockedNavItem(pathname: string, storeId: string): NavItem | null {
   return null;
 }
 
+// Shown instead of the real page when the store fetch itself failed (404,
+// timeout, 500) — so a genuine backend failure is never indistinguishable
+// from "this store just has no data yet" (every nested page would otherwise
+// render its fields as blank/zero once `loading` flips false with `store`
+// still null). Mirrors `MyStoreCard`'s error state on the top-level seller
+// dashboard rather than inventing a second error-state design.
+function StoreWorkspaceError({ error, onRetry }: { error: string; onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center text-center gap-4 px-6 py-16 max-w-[440px] mx-auto">
+      <div className="size-14 rounded-full bg-error-bg flex items-center justify-center">
+        <AlertCircle size={22} className="text-error" />
+      </div>
+      <div>
+        <p className="text-[16px] font-bold text-carbon mb-1.5">Couldn't load your store</p>
+        <p className="text-[13px] text-slate leading-[1.6]">{error}</p>
+      </div>
+      <Button variant="primary" size="md" onClick={onRetry}>Try Again</Button>
+    </div>
+  );
+}
+
 // Swaps in for `<Outlet/>` — renders the real nested route unless it's a
 // verification-locked feature being reached by direct URL/bookmark/back
 // button (nav-click already redirects to /verification before ever getting
-// here, but a locked feature must never be reachable just by typing its URL).
+// here, but a locked feature must never be reachable just by typing its URL),
+// or the store fetch itself failed, in which case every nested page is
+// blocked behind one shared retry state instead of each page needing its
+// own error handling.
 function GatedOutlet() {
-  const { store, storeId } = useStoreWorkspace();
+  const { store, storeId, loading, error, refetch } = useStoreWorkspace();
   const { pathname } = useLocation();
+  if (!loading && error) return <StoreWorkspaceError error={error} onRetry={refetch} />;
   // Same `status === 'active'` boundary as the sidebar — see the comment
   // on `verified` in StoreSidebar for why this isn't `verificationStatus`.
   if (!store || store.status === 'active') return <Outlet />;

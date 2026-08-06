@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useModerationStats, useModerationQueue, useModerationActions } from '@/hooks/admin/useAdminModeration';
 import type { ModerationReportRow, ModerationTargetType, RiskLevel } from '@/api/services/moderation/adminModeration';
-import { Table, Badge, Button, Modal, SkeletonBox, SearchInput, FilterDropdown } from '@/components/comman/ui';
+import { Table, Badge, Button, Modal, SkeletonBox, SearchInput, FilterDropdown, MetricCard, AdminPageHeader } from '@/components/comman/ui';
 import type { TableColumn } from '@/components/comman/ui';
 import type { BadgeColor } from '@/types';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
@@ -33,16 +33,6 @@ const RISK_OPTIONS = [
 function RiskBadge({ risk }: { risk: RiskLevel }) {
   const r = RISK[risk];
   return <Badge color={r.color} size="sm"><r.Icon size={10} /> {r.label}</Badge>;
-}
-
-function MetricCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
-      <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{label}</p>
-      <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{value}</p>
-      {sub && <p className="text-[12px] text-slate mt-1">{sub}</p>}
-    </div>
-  );
 }
 
 // ── Report detail modal ───────────────────────────────────────────────────────
@@ -149,12 +139,9 @@ export function AdminModeration() {
   ];
 
   return (
-    <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
-      <div>
-        <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Content Moderation</h1>
-        <p className="text-[12px] text-slate">Review flagged listings, sellers, and reports.</p>
-      </div>
-
+    <>
+      <AdminPageHeader title="Content Moderation" subtitle="Review flagged listings, sellers, and reports." />
+      <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       {actionError && <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
 
       {statsError ? (
@@ -221,6 +208,7 @@ export function AdminModeration() {
           </p>
         </Modal>
       )}
-    </div>
+      </div>
+    </>
   );
 }

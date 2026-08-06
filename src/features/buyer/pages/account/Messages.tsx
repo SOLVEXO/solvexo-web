@@ -65,7 +65,7 @@ export function Messages() {
 
   const {
     messages, loading: msgLoading, loadingMore, sending, send, retry, edit, remove, markSeen, hasMore, loadMore,
-    otherOnline, otherTyping, sendTyping,
+    otherOnline, otherTyping, sendTyping, error: msgError,
   } = useMessages(activeId);
   const { block, unblock, report } = useModeration();
 
@@ -182,6 +182,7 @@ export function Messages() {
             onTyping={sendTyping}
             conversationId={activeId}
             storeId={active?.storeId}
+            error={msgError}
           />
         </div>
       </Card>

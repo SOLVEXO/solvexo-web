@@ -125,7 +125,7 @@ export function ActivityLogTab() {
         ))}
       </div>
 
-      <div className="grid grid-cols-[240px_1fr] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4">
 
         {/* LEFT: Filters */}
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">

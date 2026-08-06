@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
-import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   StarRating, EmptyState, SkeletonBox, Card, Badge,
   Table, type TableColumn, ActionMenu, type ActionMenuItem,
@@ -176,7 +175,7 @@ export function StoreReviews() {
 
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="Reviews & Reputation"
         subtitle="Monitor, respond to, and learn from customer feedback."
       />

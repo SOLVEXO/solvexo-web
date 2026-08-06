@@ -53,6 +53,14 @@ export function useMessages(conversationId: string | null) {
       setOtherOnline(info.otherOnline);
     }
 
+    // Emitted by the gateway when `join-conversation` is rejected (e.g. no
+    // longer a participant — removed mid-session, or a stale deep link).
+    // Previously had no listener at all, so this failed completely silently:
+    // no messaging:joined ever arrived, but nothing told the user why.
+    function handleMessagingError(message: string) {
+      setError(message || 'You no longer have access to this conversation.');
+    }
+
     function handleNew(message: Message) {
       if (message.conversationId !== conversationId) return;
       setMessages(prev => prev.some(m => m._id === message._id) ? prev : [...prev, message]);
@@ -85,6 +93,7 @@ export function useMessages(conversationId: string | null) {
 
     socket.emit('join-conversation', conversationId);
     socket.on('messaging:joined', handleJoined);
+    socket.on('messaging:error', handleMessagingError);
     socket.on('message:new', handleNew);
     socket.on('message:edited', handleEdited);
     socket.on('message:deleted', handleDeleted);
@@ -94,6 +103,7 @@ export function useMessages(conversationId: string | null) {
     return () => {
       socket.emit('leave-conversation', conversationId);
       socket.off('messaging:joined', handleJoined);
+      socket.off('messaging:error', handleMessagingError);
       socket.off('message:new', handleNew);
       socket.off('message:edited', handleEdited);
       socket.off('message:deleted', handleDeleted);

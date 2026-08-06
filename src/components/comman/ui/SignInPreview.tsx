@@ -11,7 +11,7 @@ import { Input } from './Input';
 import { Button } from './Button';
 
 /* ── Minimal inline brand marks — same simplified style used across auth ────── */
-function GoogleIcon() {
+export function GoogleIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 18 18" fill="none">
       <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
@@ -21,14 +21,14 @@ function GoogleIcon() {
     </svg>
   );
 }
-function AppleGlyph() {
+export function AppleGlyph() {
   return (
     <svg width="15" height="15" viewBox="0 0 18 18" fill="none">
       <path d="M14.044 9.52c-.02-2.22 1.815-3.293 1.897-3.348-1.033-1.511-2.638-1.718-3.207-1.736-1.363-.14-2.665.806-3.354.806-.69 0-1.755-.788-2.885-.766-1.482.022-2.853.866-3.614 2.197-1.54 2.674-.395 6.633 1.107 8.8.737 1.062 1.61 2.253 2.758 2.21 1.11-.044 1.527-.714 2.868-.714 1.34 0 1.713.714 2.884.69 1.193-.02 1.946-1.082 2.677-2.147.845-1.23 1.19-2.42 1.208-2.482-.027-.012-2.316-.888-2.339-3.51ZM11.78 3.06c.613-.742 1.026-1.773.912-2.8-.883.035-1.95.587-2.582 1.33-.567.655-1.063 1.703-.93 2.707 1 .077 2.02-.508 2.6-1.237Z" fill="#141413"/>
     </svg>
   );
 }
-function FacebookIcon() {
+export function FacebookIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 18 18" fill="none">
       <rect width="18" height="18" rx="4" fill="#1877F2"/>
@@ -37,8 +37,8 @@ function FacebookIcon() {
   );
 }
 
-type Provider = 'google' | 'apple' | 'facebook';
-const SOCIALS: { Icon: () => React.JSX.Element; label: string; provider: Provider }[] = [
+export type Provider = 'google' | 'apple' | 'facebook';
+export const SOCIALS: { Icon: () => React.JSX.Element; label: string; provider: Provider }[] = [
   { Icon: GoogleIcon,   label: 'Google',   provider: 'google'   },
   { Icon: AppleGlyph,   label: 'Apple',    provider: 'apple'    },
   { Icon: FacebookIcon, label: 'Facebook', provider: 'facebook' },

@@ -1,7 +1,7 @@
-import { useState, memo } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { clsx } from 'clsx';
 import { Modal } from '@/components/comman/ui/Modal';
-import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame, BadgeCheck, Store, ScanEye } from 'lucide-react';
+import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame, BadgeCheck, Store, ScanEye, Check } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 import { currencySymbol } from '@/utils/currency';
@@ -132,6 +132,22 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
 
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const openQuickView = (e: React.MouseEvent) => { e.stopPropagation(); setQuickViewOpen(true); };
+
+  // "Added ✓" confirmation — fires once when `isAdding` finishes (true→false),
+  // not merely absent. Every other state (idle/adding/out-of-stock) already
+  // had a distinct look; this was the one gap — the highest-frequency action
+  // on this card gave no positive confirmation once the spinner disappeared.
+  const [justAdded, setJustAdded] = useState(false);
+  const wasAdding = useRef(false);
+  useEffect(() => {
+    if (wasAdding.current && !isAdding) {
+      setJustAdded(true);
+      const t = setTimeout(() => setJustAdded(false), 1500);
+      wasAdding.current = isAdding;
+      return () => clearTimeout(t);
+    }
+    wasAdding.current = isAdding;
+  }, [isAdding]);
 
   const variants        = product.variants ?? [];
 
@@ -414,11 +430,13 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
                 'flex items-center justify-center gap-[6px] rounded-lg border transition-colors duration-150 font-semibold text-[12px] h-9 px-4 shrink-0',
                 stock <= 0
                   ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                  : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white active:scale-[0.98] cursor-pointer',
+                  : justAdded
+                    ? 'bg-success text-white border-success'
+                    : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white active:scale-[0.98] cursor-pointer',
               )}
             >
-              {isAdding ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
-              <span className="whitespace-nowrap">{stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}</span>
+              {isAdding ? <Loader2 size={14} className="animate-spin" /> : justAdded ? <Check size={14} /> : <ShoppingCart size={14} />}
+              <span className="whitespace-nowrap">{stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : justAdded ? 'Added' : 'Add to Cart'}</span>
             </button>
           )}
         </div>
@@ -430,17 +448,19 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
               disabled={stock <= 0}
               aria-label={stock <= 0 ? 'Out of stock' : 'Add to cart'}
               className={clsx(
-                'flex items-center justify-center gap-[6px] rounded-lg border transition-colors duration-150 font-semibold text-[11.5px]',
+                'flex items-center justify-center gap-[6px] rounded-lg border transition-[background-color,border-color,color,transform] duration-150 font-semibold text-[11.5px] active:scale-[0.96]',
                 compact ? 'w-7 h-7' : 'flex-1 h-8',
                 stock <= 0
                   ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                  : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white active:scale-[0.98] cursor-pointer',
+                  : justAdded
+                    ? 'bg-success text-white border-success'
+                    : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white cursor-pointer',
               )}
             >
-              {isAdding ? <Loader2 size={13} className="animate-spin" /> : <ShoppingCart size={13} />}
+              {isAdding ? <Loader2 size={13} className="animate-spin" /> : justAdded ? <Check size={13} /> : <ShoppingCart size={13} />}
               {!compact && (
                 <span className="whitespace-nowrap">
-                  {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}
+                  {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : justAdded ? 'Added' : 'Add to Cart'}
                 </span>
               )}
             </button>
@@ -505,11 +525,13 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
                   'flex-1 flex items-center justify-center gap-[7px] rounded-lg border h-11 font-semibold text-[13px] transition-colors duration-150',
                   stock <= 0
                     ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                    : 'bg-brand-orange text-white border-brand-orange hover:bg-brand-deep-orange cursor-pointer',
+                    : justAdded
+                      ? 'bg-success text-white border-success'
+                      : 'bg-brand-orange text-white border-brand-orange hover:bg-brand-deep-orange cursor-pointer',
                 )}
               >
-                {isAdding ? <Loader2 size={15} className="animate-spin" /> : <ShoppingCart size={15} />}
-                {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : 'Add to Cart'}
+                {isAdding ? <Loader2 size={15} className="animate-spin" /> : justAdded ? <Check size={15} /> : <ShoppingCart size={15} />}
+                {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : justAdded ? 'Added to Cart' : 'Add to Cart'}
               </button>
               <button
                 onClick={() => { setQuickViewOpen(false); onClick(product._id); }}

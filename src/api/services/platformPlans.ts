@@ -62,7 +62,7 @@ export interface EntitlementsSummary {
   currentPlanId: string | null;
   maxProducts: { limit: number; used: number; allowed: boolean };
   maxStaffAccounts: { limit: number; used: number; allowed: boolean };
-  maxPosLocations: { limit: number };
+  maxPosLocations: { limit: number; used: number; allowed: boolean };
   aiCredits: { monthlyAllowance: number; balance: number };
   transactionFeeRate: number;
   dedicatedAccountManager: boolean;

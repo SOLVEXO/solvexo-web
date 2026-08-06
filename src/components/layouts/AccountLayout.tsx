@@ -4,6 +4,7 @@ import { clsx } from 'clsx';
 import {
   LayoutDashboard, ShoppingBag, Heart, Star,
   Settings as SettingsIcon, MessageSquare, Menu, Landmark,
+  User, Shield, MapPin, Bell, RefreshCw,
   ChevronLeft, PanelLeftClose, PanelLeftOpen, type LucideIcon,
 } from 'lucide-react';
 import { useWishlistContext } from '@/contexts/WishlistContext';
@@ -41,13 +42,18 @@ function useNavGroups(): NavGroup[] {
     {
       group: 'Updates',
       items: [
-        { id: 'messages', label: 'Messages', Icon: MessageSquare, path: 'messages', badge: messagesUnread },
+        { id: 'messages',      label: 'Messages',      Icon: MessageSquare, path: 'messages', badge: messagesUnread },
+        { id: 'notifications', label: 'Notifications', Icon: Bell,          path: 'notifications' },
       ],
     },
     {
       group: 'Account',
       items: [
-        { id: 'settings', label: 'Settings', Icon: SettingsIcon, path: 'settings' },
+        { id: 'profile',       label: 'Profile',        Icon: User,      path: 'profile' },
+        { id: 'security',      label: 'Login & Security', Icon: Shield,  path: 'security' },
+        { id: 'addresses',     label: 'Addresses',      Icon: MapPin,    path: 'addresses' },
+        { id: 'subscriptions', label: 'Subscriptions',  Icon: RefreshCw, path: 'subscriptions' },
+        { id: 'settings',      label: 'Settings',       Icon: SettingsIcon, path: 'settings' },
       ],
     },
   ];

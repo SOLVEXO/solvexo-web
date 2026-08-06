@@ -313,7 +313,7 @@ export default function StorePlanBilling() {
                 max={entitlements.aiCredits.monthlyAllowance}
                 Icon={Sparkles}
               />
-              <UsageBar label="POS Locations" used={0} max={entitlements.maxPosLocations.limit} Icon={MonitorSmartphone} />
+              <UsageBar label="POS Locations" used={entitlements.maxPosLocations.used} max={entitlements.maxPosLocations.limit} Icon={MonitorSmartphone} />
             </div>
           </div>
         )}

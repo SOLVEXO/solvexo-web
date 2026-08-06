@@ -1,5 +1,6 @@
+import { useState, useEffect, useRef } from 'react';
 import { clsx } from 'clsx';
-import { ShoppingCart, Heart, Loader2, Star } from 'lucide-react';
+import { ShoppingCart, Heart, Loader2, Star, Check } from 'lucide-react';
 import { ProductImage } from './ProductCard';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
@@ -74,6 +75,20 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
   // Stock tracking only applies to physical goods with tracking enabled — digital/educational
   // products, and any physical variant marked unlimitedStock, are always available.
   const stock = isDigital || defaultVariant?.unlimitedStock ? Infinity : (defaultVariant?.stock ?? 0);
+
+  // Same "Added ✓" confirmation as ProductCard's Add to Cart — this rail is
+  // the other high-traffic add-to-cart entry point (Homepage Flash Sale).
+  const [justAdded, setJustAdded] = useState(false);
+  const wasAdding = useRef(false);
+  useEffect(() => {
+    if (wasAdding.current && !isAdding) {
+      setJustAdded(true);
+      const t = setTimeout(() => setJustAdded(false), 1500);
+      wasAdding.current = isAdding;
+      return () => clearTimeout(t);
+    }
+    wasAdding.current = isAdding;
+  }, [isAdding]);
 
   return (
     <div
@@ -174,10 +189,12 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
                   'shrink-0 flex items-center justify-center w-6 h-6 rounded-full border transition-all duration-200',
                   stock <= 0
                     ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                    : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.95] cursor-pointer',
+                    : justAdded
+                      ? 'bg-success text-white border-success'
+                      : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.95] cursor-pointer',
                 )}
               >
-                {isAdding ? <Loader2 size={11} className="animate-spin" /> : <ShoppingCart size={11} />}
+                {isAdding ? <Loader2 size={11} className="animate-spin" /> : justAdded ? <Check size={11} /> : <ShoppingCart size={11} />}
               </button>
             </div>
           </div>
@@ -236,10 +253,12 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
                 'shrink-0 flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200',
                 stock <= 0
                   ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                  : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.95] cursor-pointer',
+                  : justAdded
+                    ? 'bg-success text-white border-success'
+                    : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.95] cursor-pointer',
               )}
             >
-              {isAdding ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
+              {isAdding ? <Loader2 size={14} className="animate-spin" /> : justAdded ? <Check size={14} /> : <ShoppingCart size={14} />}
             </button>
           </div>
         </div>

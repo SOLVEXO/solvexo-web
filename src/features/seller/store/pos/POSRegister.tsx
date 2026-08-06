@@ -12,10 +12,14 @@ function POSRegisterInner() {
   // Owner entry — no PIN screen, no register picker. Resolve everything
   // silently (own employee identity + a register + a session) and land
   // straight on the terminal dashboard.
-  useEffect(() => {
-    if (hydrating || employee) return;
+  function openPos() {
     setError('');
     autoOpenPos().catch(err => setError(err instanceof Error ? err.message : 'Failed to open POS.'));
+  }
+
+  useEffect(() => {
+    if (hydrating || employee) return;
+    openPos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrating, employee]);
 
@@ -28,8 +32,12 @@ function POSRegisterInner() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-3 bg-pos-bg">
         <p className="text-[13px] text-error text-center max-w-[360px]">{error}</p>
+        {/* Re-runs the same open-register call, rather than a full page
+            reload — this is a live in-person register mid-shift, and a
+            reload would re-hydrate the whole session from scratch for no
+            reason a plain retry doesn't already cover. */}
         <button
-          onClick={() => window.location.reload()}
+          onClick={openPos}
           className="px-4 py-2 bg-carbon border border-carbon rounded-lg text-[12px] text-white cursor-pointer"
         >
           Retry

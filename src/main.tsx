@@ -6,18 +6,21 @@ import { CartProvider } from '@/contexts/CartContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { CurrencyPreferenceProvider } from '@/contexts/CurrencyPreferenceContext';
+import { AuthGateProvider } from '@/contexts/AuthGateContext';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <CurrencyPreferenceProvider>
-      <CartProvider>
-        <WishlistProvider>
-          <NotificationProvider>
-            <RouterProvider router={router} />
-          </NotificationProvider>
-        </WishlistProvider>
-      </CartProvider>
-    </CurrencyPreferenceProvider>
+    <AuthGateProvider>
+      <CurrencyPreferenceProvider>
+        <CartProvider>
+          <WishlistProvider>
+            <NotificationProvider>
+              <RouterProvider router={router} />
+            </NotificationProvider>
+          </WishlistProvider>
+        </CartProvider>
+      </CurrencyPreferenceProvider>
+    </AuthGateProvider>
   </StrictMode>,
 );

@@ -53,6 +53,12 @@ const AccountReviews       = lazy(() => named(import('@/features/buyer/pages/MyR
 const AccountPayments      = lazy(() => named(import('@/features/buyer/pages/account/Payments'),                 'Payments'));
 const AccountSettings      = lazy(() => named(import('@/features/buyer/pages/account/Settings'),                 'Settings'));
 const AccountMessages      = lazy(() => named(import('@/features/buyer/pages/account/Messages'),                 'Messages'));
+// Real routes replacing Settings' old ?tab=<name> query-param switcher.
+const AccountProfile       = lazy(() => named(import('@/features/buyer/pages/account/PersonalInfo'),             'PersonalInfo'));
+const AccountSecurity      = lazy(() => named(import('@/features/buyer/pages/account/Security'),                 'Security'));
+const AccountAddresses     = lazy(() => named(import('@/features/buyer/pages/account/Addresses'),                'Addresses'));
+const AccountNotifications = lazy(() => named(import('@/features/buyer/pages/account/Notifications'),            'Notifications'));
+const AccountSubscriptions = lazy(() => named(import('@/features/buyer/pages/MySubscriptionsPage'),              'SubscriptionsTab'));
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 const AdminLoginPage       = lazy(() => named(import('@/features/auth/pages/admin/AdminLoginPage'),             'AdminLoginPage'));
@@ -158,6 +164,11 @@ export const router = createBrowserRouter([
               { path: 'wishlist',      element: <AccountWishlist /> },
               { path: 'reviews',       element: <AccountReviews /> },
               { path: 'payments',      element: <AccountPayments /> },
+              { path: 'profile',       element: <AccountProfile /> },
+              { path: 'security',      element: <AccountSecurity /> },
+              { path: 'addresses',     element: <AccountAddresses /> },
+              { path: 'notifications', element: <AccountNotifications /> },
+              { path: 'subscriptions', element: <AccountSubscriptions /> },
               { path: 'settings',      element: <AccountSettings /> },
               { path: 'messages',      element: <AccountMessages /> },
             ],

@@ -115,6 +115,11 @@ export function Wishlist() {
         {wishlistItems.map(item => {
           const p = item.product;
           const variant = item.variants?.[0];
+          // Same domain-wide rule used by ProductCard/ProductDetail/SellerStorefront/etc.:
+          // productType can be 'educational' (which still counts as non-physical for
+          // cart/shipping purposes), so check it before the stricter `type` field.
+          const pType = p.productType ?? p.type ?? 'physical';
+          const isPhysical = pType === 'physical';
           const isRemoving = removingId === variant?._id || wishlisting === variant?._id;
           const isAdding = addingId === variant?._id || adding === variant?._id;
 
@@ -175,7 +180,7 @@ export function Wishlist() {
               <div className="flex flex-col gap-[8px] justify-center shrink-0">
                 {variant && (
                   <button
-                    onClick={() => handleAddToCart(p._id, variant._id, 'physical')}
+                    onClick={() => handleAddToCart(p._id, variant._id, isPhysical ? 'physical' : 'digital')}
                     disabled={isAdding}
                     className={clsx(
                       'flex items-center gap-[6px] px-[16px] py-[9px] rounded-[10px] text-[12px] font-bold bg-brand-orange text-white border-none whitespace-nowrap',

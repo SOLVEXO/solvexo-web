@@ -4,7 +4,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { Input, Textarea } from '@/components/comman/ui/Input';
-import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
+import { SkeletonBox, Table, MetricCard, type TableColumn } from '@/components/comman/ui';
 import {
   apiAdminListPlatformPlans, apiAdminCreatePlatformPlan, apiAdminUpdatePlatformPlan, apiAdminArchivePlatformPlan,
   apiAdminGetPlatformPlanRevenue, apiAdminGetPlatformPlanSubscribers, apiAdminListAddonPurchases,
@@ -314,7 +314,7 @@ export function AdminPlatformPlans() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
+      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
         <div>
           <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Platform Plans</h1>
           <p className="text-[12px] text-slate mt-[2px]">Seller-to-Solvexo billing tiers, limits, and add-ons.</p>
@@ -325,7 +325,7 @@ export function AdminPlatformPlans() {
         </div>
       </div>
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error">{error}</p>}
 
         {showAddons && (
@@ -338,12 +338,10 @@ export function AdminPlatformPlans() {
         )}
 
         <div className="grid grid-cols-3 gap-3">
-          {(loading && !revenue) ? Array.from({ length: 3 }).map((_, i) => <div key={i} className="bg-white border border-bone rounded-[10px] h-[84px] animate-pulse" />)
+          {(loading && !revenue)
+            ? Array.from({ length: 3 }).map((_, i) => <MetricCard key={i} label="" value="" loading />)
             : metrics.map(m => (
-              <div key={m.label} className="bg-white border border-bone rounded-[10px] px-5 py-4">
-                <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
-                <p className="text-[24px] font-bold text-carbon">{m.value}</p>
-              </div>
+              <MetricCard key={m.label} label={m.label} value={m.value} icon={<m.Icon size={16} />} />
             ))}
         </div>
 

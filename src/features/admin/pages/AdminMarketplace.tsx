@@ -3,11 +3,11 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useMarketplaceStats, useMarketplaceListings, useMarketplaceListingActions } from '@/hooks/admin/useAdminMarketplace';
 import type { MarketplaceListingRow, ListingStatus } from '@/api/services/marketplace/adminMarketplace';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
-import { Table, StatusBadge, Button, Modal, SkeletonBox, SearchInput, FilterDropdown } from '@/components/comman/ui';
+import { Table, StatusBadge, Button, Modal, SkeletonBox, SearchInput, FilterDropdown, MetricCard, AdminPageHeader, ActionMenu } from '@/components/comman/ui';
 import type { TableColumn } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatCurrency, formatNumber } from '@/components/comman/analytics/format';
-import { Star, StoreIcon, RefreshCw, GraduationCap } from 'lucide-react';
+import { Star, StoreIcon, RefreshCw, GraduationCap, Trash2 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Active' },
@@ -24,17 +24,6 @@ function flattenCategories(nodes: CategoryNode[]): { value: string; label: strin
     if (n.children?.length) out.push(...flattenCategories(n.children));
   }
   return out;
-}
-
-function MetricCard({ label, value, sub, trend }: { label: string; value: string; sub?: string; trend?: string }) {
-  return (
-    <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
-      <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{label}</p>
-      <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{value}</p>
-      {trend && <p className="text-[12px] text-success mt-1">▲ {trend}</p>}
-      {sub && <p className="text-[12px] text-slate mt-1">{sub}</p>}
-    </div>
-  );
 }
 
 export function AdminMarketplace() {
@@ -104,30 +93,28 @@ export function AdminMarketplace() {
       render: (r) => {
         const hasEducatorBadge = (r.storeBadges ?? []).includes('verified_educator');
         return (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => toggleFeatured(r)}
+          <div className="flex items-center gap-[6px]">
+            <Button
+              size="xs"
+              variant={r.isFeatured ? 'outline' : 'secondary'}
+              icon={<Star size={11} />}
               disabled={processingId === r.id}
-              className="text-[11px] font-medium bg-transparent border-none cursor-pointer disabled:opacity-40"
-              style={{ color: r.isFeatured ? '#8C8A82' : '#D97757' }}
+              onClick={() => toggleFeatured(r)}
             >
               {r.isFeatured ? 'Unfeature' : 'Feature'}
-            </button>
-            <span className="text-bone text-[13px]">|</span>
-            <button
-              onClick={() => toggleEducatorBadge(r)}
-              disabled={processingId === r.storeId}
-              title="Grant/revoke this store's 'Verified Educator' badge"
-              className="text-[11px] font-medium bg-transparent border-none cursor-pointer disabled:opacity-40 flex items-center gap-1"
-              style={{ color: hasEducatorBadge ? '#8C8A82' : '#2D8A4E' }}
-            >
-              <GraduationCap size={12} />
-              {hasEducatorBadge ? 'Unbadge Educator' : 'Verify Educator'}
-            </button>
-            <span className="text-bone text-[13px]">|</span>
-            <button onClick={() => setRemoving(r)} disabled={processingId === r.id} className="text-[11px] font-medium text-error bg-transparent border-none cursor-pointer disabled:opacity-40">
-              Remove
-            </button>
+            </Button>
+            <ActionMenu
+              align="right"
+              items={[
+                {
+                  label: hasEducatorBadge ? 'Unbadge Educator' : 'Verify Educator',
+                  icon: <GraduationCap size={13} />,
+                  disabled: processingId === r.storeId,
+                  onClick: () => toggleEducatorBadge(r),
+                },
+                { label: 'Remove Listing', icon: <Trash2 size={13} />, danger: true, onClick: () => setRemoving(r) },
+              ]}
+            />
           </div>
         );
       },
@@ -135,15 +122,13 @@ export function AdminMarketplace() {
   ];
 
   return (
-    <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Marketplace Management</h1>
-          <p className="text-[12px] text-slate">Review, feature and manage all marketplace listings.</p>
-        </div>
-        <Button variant="outline" size="sm" icon={<RefreshCw size={13} />} onClick={refreshAll}>Refresh</Button>
-      </div>
-
+    <>
+      <AdminPageHeader
+        title="Marketplace Management"
+        subtitle="Review, feature and manage all marketplace listings."
+        actions={<Button variant="outline" size="sm" icon={<RefreshCw size={13} />} onClick={refreshAll}>Refresh</Button>}
+      />
+      <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       {actionError && <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
 
       {statsError ? (
@@ -198,6 +183,7 @@ export function AdminMarketplace() {
           </p>
         </Modal>
       )}
-    </div>
+      </div>
+    </>
   );
 }

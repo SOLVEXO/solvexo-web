@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef, type ReactNode, type CSSProperties } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Palette, LayoutGrid, PanelTop, Package, PanelBottom, Globe,
   Monitor, Smartphone, Tablet, Lock, Plus, Trash2, RotateCcw, Check, Loader2,
-  ShoppingCart, Star,
+  ShoppingCart, Star, Store as StoreIcon,
   type LucideIcon,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -12,6 +12,7 @@ import { useUpdateStore } from '@/hooks/store/useUpdateStore';
 import { useGetStore } from '@/hooks/store/useGetStore';
 import { StorePageHeader } from '@/components/layouts/StoreLayout';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { Button } from '@/components/comman/ui/Button';
 import { apiSaveBuilderConfig, apiGetBuilderConfig, apiGetMyStores, type MyStoreItem } from '@/api/services/store';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -662,6 +663,7 @@ function StoreSelector({
 export function StoreBuilder() {
   usePageTitle('Store Builder');
 
+  const navigate = useNavigate();
   const { storeId: urlStoreId } = useParams<{ storeId: string }>();
   const { store }   = useGetStore(urlStoreId ?? '');
   const { execute: updateStore, loading: saving, error: saveError } = useUpdateStore();
@@ -673,8 +675,12 @@ export function StoreBuilder() {
   const [cfg,           setCfg]           = useState<Config>(DEFAULT);
 
   // ── Store selector state ─────────────────────────────────────────────────────
-  const [myStores,    setMyStores]    = useState<MyStoreItem[]>([]);
-  const [selectedId,  setSelectedId]  = useState<string>(urlStoreId ?? 'all');
+  const [myStores,       setMyStores]       = useState<MyStoreItem[]>([]);
+  // Distinguishes "haven't heard back yet" from "confirmed: zero stores" —
+  // without this, a seller with no stores would see the full builder UI
+  // before the fetch resolves, since an empty array looks the same either way.
+  const [myStoresLoaded, setMyStoresLoaded] = useState(false);
+  const [selectedId,     setSelectedId]     = useState<string>(urlStoreId ?? 'all');
 
   // Active storeId for loading config (undefined when 'all')
   const activeStoreId = selectedId !== 'all' ? selectedId : urlStoreId;
@@ -687,8 +693,15 @@ export function StoreBuilder() {
         setMyStores(res.data ?? []);
         if ((res.data ?? []).length === 1) setSelectedId(res.data[0]._id);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setMyStoresLoaded(true));
   }, [urlStoreId]);
+
+  // No store to build against — the theme/section editor below has nothing
+  // to attach a save to. Route the seller to store creation instead of
+  // rendering a fully-interactive builder that would report false success
+  // the moment they click Publish.
+  const noStoreToBuild = !urlStoreId && myStoresLoaded && myStores.length === 0;
 
   // Load builderConfig whenever active store changes
   const synced = useRef<string | null>(null);
@@ -752,6 +765,11 @@ export function StoreBuilder() {
 
   const handleSave = async () => {
     const configPayload = cfg as unknown as Record<string, unknown>;
+    // Tracks whether a save actually happened — "Saved!" must never render
+    // for a no-op (e.g. myStores hasn't loaded yet, or there's nothing to
+    // apply "all" to), since that's exactly the false-success bug this
+    // guards against.
+    let persisted = false;
 
     if (selectedId === 'all') {
       if (myStores.length > 0) {
@@ -762,6 +780,7 @@ export function StoreBuilder() {
             updateStore({ storeId: s._id, name: cfg.storeName, description: cfg.tagline }),
           ]).then(() => localStorage.setItem(`sb-${s._id}`, JSON.stringify(cfg))),
         ));
+        persisted = true;
       }
       // If myStores hasn't loaded yet, do nothing — user can retry once list loads
     } else {
@@ -772,14 +791,37 @@ export function StoreBuilder() {
           apiSaveBuilderConfig({ storeId: sid, builderConfig: configPayload }),
           updateStore({ storeId: sid, name: cfg.storeName, description: cfg.tagline }),
         ]);
+        persisted = true;
       }
     }
 
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    if (persisted) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    }
   };
 
   const PageHeader = urlStoreId ? StorePageHeader : SellerPageHeader;
+
+  if (noStoreToBuild) {
+    return (
+      <>
+        <PageHeader title="Store Builder" subtitle="Customize your storefront — changes preview live." />
+        <div className="flex flex-col items-center text-center gap-4 px-6 py-16 max-w-[440px] mx-auto">
+          <div className="size-14 rounded-full bg-brand-pale-orange flex items-center justify-center">
+            <StoreIcon size={22} className="text-brand-orange" />
+          </div>
+          <div>
+            <p className="text-[16px] font-bold text-carbon mb-1.5">Create your store first</p>
+            <p className="text-[13px] text-slate leading-[1.6]">
+              There's no store yet to customize — set one up first, then come back here to design its storefront.
+            </p>
+          </div>
+          <Button variant="primary" size="md" onClick={() => navigate('/onboard')}>Create Store</Button>
+        </div>
+      </>
+    );
+  }
 
   const headerActions = (
     <>

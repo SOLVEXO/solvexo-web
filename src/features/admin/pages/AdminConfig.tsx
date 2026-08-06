@@ -9,7 +9,7 @@ import {
   useUpdateMaintenanceMode,
 } from '@/hooks/admin/useAdminConfig';
 import type { PlatformConfig, FeatureFlags, AiConfig, EmailConfig, ManualPaymentConfig } from '@/api/services/config/adminConfig';
-import { Toggle, Input, Textarea, Select, Button, Modal, SkeletonBox } from '@/components/comman/ui';
+import { Toggle, Input, Textarea, Select, Button, Modal, SkeletonBox, AdminPageHeader } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { AlertCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
@@ -362,12 +362,9 @@ export function AdminConfig() {
   }
 
   return (
-    <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
-      <div>
-        <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Platform Config</h1>
-        <p className="text-[12px] text-slate">Feature flags, AI settings, email config and system controls.</p>
-      </div>
-
+    <>
+      <AdminPageHeader title="Platform Config" subtitle="Feature flags, AI settings, email config and system controls." />
+      <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       {loading && !config ? (
         <ConfigSkeleton />
       ) : error && !config ? (
@@ -385,6 +382,7 @@ export function AdminConfig() {
           <ManualPaymentConfigCard config={config} onSaved={setConfig} />
         </>
       ) : null}
-    </div>
+      </div>
+    </>
   );
 }

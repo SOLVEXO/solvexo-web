@@ -4,8 +4,7 @@ import {
   FileText, ArrowRightLeft, Link2, Eye, Search, LineChart, Sparkles,
 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
-import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 
 import { OverviewTab } from './tabs/OverviewTab';
@@ -43,7 +42,7 @@ export function StoreSEO() {
 
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="SEO Center"
         subtitle="Optimize your store, products, and pages for search engines."
       />

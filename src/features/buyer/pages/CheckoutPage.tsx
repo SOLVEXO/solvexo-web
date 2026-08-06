@@ -872,7 +872,7 @@ export function CheckoutPage() {
                         <AlertCircle size={14} className="mt-[2px] flex-shrink-0" />
                         No saved addresses. Please add one first.
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => navigate('/account/settings?tab=addresses')}>
+                      <Button variant="ghost" size="sm" onClick={() => navigate('/account/addresses')}>
                         Go to Addresses
                       </Button>
                     </div>
@@ -949,7 +949,7 @@ export function CheckoutPage() {
                             <div className="border-t border-bone px-4 py-2">
                               <button
                                 type="button"
-                                onClick={() => navigate('/account/settings?tab=addresses')}
+                                onClick={() => navigate('/account/addresses')}
                                 className="text-[12px] text-brand-orange font-medium cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                               >
                                 + Add new address
