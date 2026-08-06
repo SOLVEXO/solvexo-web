@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { RefreshCcw, ReceiptText } from 'lucide-react';
 import { Avatar } from '@/components/comman/ui/Avatar';
 import { Badge } from '@/components/comman/ui/Badge';
 import { apiGetSales, apiGetSaleById, apiVoidSale, type Sale, type SaleStatus } from '@/api/services/pos/posSales';
@@ -6,6 +7,7 @@ import { apiGetDailyReport, type DailyReport } from '@/api/services/pos/posRepor
 import { usePosSession } from '../context/PosSessionContext';
 import { ReceiptOverlay } from './sale/ReceiptOverlay';
 import { RefundOverlay } from './RefundOverlay';
+import { DarkSkeleton, DarkEmptyState } from './manage/darkUi';
 
 const STATUS_COLORS: Record<SaleStatus, 'green' | 'yellow' | 'red' | 'gray'> = {
   completed:           'green',
@@ -109,8 +111,8 @@ export function OrdersTab() {
             <option value="partially_refunded">Partially refunded</option>
             <option value="voided">Voided</option>
           </select>
-          <button onClick={reload} className="bg-carbon border-0 rounded-lg px-3 py-[6px] text-[11px] cursor-pointer text-pos-faint">
-            Refresh
+          <button onClick={reload} className="flex items-center gap-[5px] bg-carbon border-0 rounded-lg px-3 py-[6px] text-[11px] cursor-pointer text-pos-faint transition-colors hover:text-white hover:bg-charcoal">
+            <RefreshCcw size={11} /> Refresh
           </button>
         </div>
 
@@ -133,11 +135,32 @@ export function OrdersTab() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-[12px] text-pos-muted">Loading…</td></tr>
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="border-b border-pos-surface">
+                  <td className="px-4 py-3"><DarkSkeleton height={12} className="w-16" /></td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <DarkSkeleton height={24} className="w-6 rounded-full shrink-0" />
+                      <DarkSkeleton height={12} className="w-20" />
+                    </div>
+                  </td>
+                  <td className="px-4 py-3"><DarkSkeleton height={12} className="w-8" /></td>
+                  <td className="px-4 py-3"><DarkSkeleton height={12} className="w-14" /></td>
+                  <td className="px-4 py-3"><DarkSkeleton height={18} className="w-24 rounded-full" /></td>
+                  <td className="px-4 py-3"><DarkSkeleton height={12} className="w-12" /></td>
+                  <td className="px-4 py-3"><DarkSkeleton height={22} className="w-16" /></td>
+                </tr>
+              ))
             ) : sales.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-[12px] text-pos-muted">No transactions found.</td></tr>
+              <tr><td colSpan={7}>
+                <DarkEmptyState
+                  icon={<ReceiptText size={22} className="text-pos-muted" />}
+                  title={statusFilter ? 'No transactions with this status' : 'No transactions yet'}
+                  description={statusFilter ? 'Try a different status filter.' : 'Completed sales will show up here.'}
+                />
+              </td></tr>
             ) : sales.map(s => (
-              <tr key={s._id} className="border-b border-pos-surface">
+              <tr key={s._id} className="pos-item-enter border-b border-pos-surface transition-colors hover:bg-carbon/40">
                 <td className="px-4 py-3">
                   <span className="text-[12px] font-bold text-brand-orange">{s.saleNumber}</span>
                 </td>
@@ -166,14 +189,14 @@ export function OrdersTab() {
                   <div className="flex gap-[6px]">
                     <button
                       onClick={() => handleViewReceipt(s._id)}
-                      className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-pos-faint"
+                      className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-pos-faint transition-colors hover:text-white hover:bg-charcoal"
                     >
                       Receipt
                     </button>
                     {(s.status === 'completed' || s.status === 'partially_refunded') && employee?.role === 'manager' && (
                       <button
                         onClick={() => setRefundingSale(s)}
-                        className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-error"
+                        className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-error transition-colors hover:bg-error/15"
                       >
                         Refund
                       </button>
@@ -181,7 +204,7 @@ export function OrdersTab() {
                     {s.status === 'completed' && employee?.role === 'manager' && (
                       <button
                         onClick={() => setVoidingSale(s)}
-                        className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-error"
+                        className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-error transition-colors hover:bg-error/15"
                       >
                         Void
                       </button>
@@ -256,8 +279,9 @@ function VoidConfirmOverlay({ sale, onClose, onConfirm }: { sale: Sale; onClose:
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4">
-      <div className="w-full max-w-[340px] bg-pos-surface border border-carbon rounded-2xl p-5">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4">
+      <div className="pos-overlay-enter absolute inset-0 bg-black/70" onClick={onClose} aria-hidden="true" />
+      <div className="pos-panel-enter relative w-full max-w-[340px] bg-pos-surface border border-carbon rounded-2xl p-5">
         <p className="text-[14px] font-bold text-white mb-2">Void {sale.saleNumber}?</p>
         <p className="text-[12px] text-pos-muted mb-3">This restores stock and reverses the sale from register totals. This cannot be undone.</p>
         <input

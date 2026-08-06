@@ -34,7 +34,7 @@ export function DialogShell({ onClose, children, align = 'center', className, st
         align === 'top' ? 'items-start pt-[12vh]' : 'items-center',
       )}
     >
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className="dialog-overlay-enter absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
 
       <div
         ref={dialogRef}
@@ -45,7 +45,7 @@ export function DialogShell({ onClose, children, align = 'center', className, st
         tabIndex={-1}
         onKeyDown={onKeyDown}
         style={style}
-        className={clsx('relative flex flex-col w-full bg-white rounded-2xl border border-bone overflow-hidden outline-none', className)}
+        className={clsx('dialog-panel-enter relative flex flex-col w-full bg-white rounded-2xl border border-bone overflow-hidden outline-none', className)}
       >
         {children}
       </div>

@@ -324,6 +324,21 @@
 .dropdown-enter { animation: dropdown-enter 180ms var(--ease-out); transform-origin: top right; }
 .drawer-enter-right { animation: drawer-enter-right 240ms var(--ease-out); }
 
+/* Centered dialog shell (Modal/CommandPalette/DateTimePickerModal's shared
+   DialogShell) — backdrop fade + panel fade/scale/rise, same motion language
+   as the POS panel-enter above, so every modal in the app finally animates
+   in instead of popping instantly. */
+@keyframes dialog-overlay-enter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes dialog-panel-enter {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.dialog-overlay-enter { animation: dialog-overlay-enter 180ms var(--ease-out); }
+.dialog-panel-enter { animation: dialog-panel-enter 220ms var(--ease-out); }
+
 /* ── Top ribbon banners (deals/announcement bars) ── */
 @keyframes banner-slide-down {
   from { opacity: 0; transform: translateY(-6px); }

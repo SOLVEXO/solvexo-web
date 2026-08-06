@@ -3,7 +3,7 @@ import { MessageCircle, Eye, Trash2 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminContact } from '@/hooks/admin/useAdminContact';
 import { apiUpdateContactStatus, apiDeleteContactSubmission, type ContactSubmission, type ContactSubmissionStatus } from '@/api/services/contact';
-import { Button, Modal, StatusBadge, ActionMenu, Table, type TableColumn } from '@/components/comman/ui';
+import { Button, Modal, StatusBadge, ActionMenu, Table, AdminPageHeader, type TableColumn } from '@/components/comman/ui';
 
 const STATUS_LABEL: Record<ContactSubmissionStatus, string> = {
   new: 'New', read: 'Read', resolved: 'Resolved',
@@ -110,14 +110,12 @@ export function AdminContactMessages() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
-        <div>
-          <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Contact Messages</h1>
-          <p className="text-[12px] text-slate mt-[2px]">{stats.new} new · {stats.read} read · {stats.resolved} resolved</p>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Contact Messages"
+        subtitle={`${stats.new} new · ${stats.read} read · ${stats.resolved} resolved`}
+      />
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-4">
+      <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-4">
         {actionError && (
           <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">
             {actionError}

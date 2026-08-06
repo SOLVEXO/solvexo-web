@@ -9,6 +9,7 @@ import { Modal } from '@/components/comman/ui/Modal';
 import { Input, Textarea, Select } from '@/components/comman/ui/Input';
 import { EmptyState } from '@/components/comman/ui/EmptyState';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
+import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 
 // ── Add Category modal ───────────────────────────────────────────────────────
 // Admins can create either a main category (no parent) or a subcategory under
@@ -164,15 +165,13 @@ export function AdminCategories() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
-        <div>
-          <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Categories</h1>
-          <p className="text-[12px] text-slate mt-[2px]">{totalMain} main categories · {totalSubs} subcategories</p>
-        </div>
-        <Button icon={<Plus size={14} />} onClick={() => setAdding(true)}>Add Category</Button>
-      </div>
+      <AdminPageHeader
+        title="Categories"
+        subtitle={`${totalMain} main categories · ${totalSubs} subcategories`}
+        actions={<Button icon={<Plus size={14} />} onClick={() => setAdding(true)}>Add Category</Button>}
+      />
 
-      <div className="px-7 pt-5 pb-8">
+      <div className="px-4 sm:px-7 pt-5 pb-8">
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           {loading ? (
             <div className="px-4 py-4 flex flex-col gap-3">

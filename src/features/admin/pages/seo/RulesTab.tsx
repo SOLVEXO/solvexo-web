@@ -3,6 +3,7 @@ import { Card } from '@/components/comman/ui/Card';
 import { Select } from '@/components/comman/ui/Input';
 import { Toggle } from '@/components/comman/ui/Toggle';
 import { Badge } from '@/components/comman/ui/Badge';
+import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { useSeoRules, useSeoRuleMutations } from '@/hooks/admin/seo/useSeoSettings';
 import type { SeoRuleConfig } from '@/api/services/seo/admin/settings.service';
@@ -26,7 +27,24 @@ export function RulesTab() {
   const [busyCode, setBusyCode] = useState<string | null>(null);
 
   if (error) return <AnalyticsErrorState message={error} onRetry={refetch} />;
-  if (loading) return <p className="text-[12px] text-slate">Loading rules…</p>;
+  if (loading) {
+    return (
+      <Card padding="none" className="max-w-[720px]">
+        {[1, 2, 3, 4, 5].map(i => (
+          <div key={i} className={`px-5 py-4 flex items-center justify-between gap-4 ${i < 5 ? 'border-b border-[#f0eee6]' : ''}`}>
+            <div className="min-w-0 flex flex-col gap-[6px]">
+              <SkeletonBox height={13} width={140} />
+              <SkeletonBox height={16} width={60} rounded="9999px" />
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <SkeletonBox height={32} width={110} rounded="8px" />
+              <SkeletonBox height={22} width={40} rounded="9999px" />
+            </div>
+          </div>
+        ))}
+      </Card>
+    );
+  }
 
   const handleToggle = async (rule: SeoRuleConfig, enabled: boolean) => {
     setBusyCode(rule.code);

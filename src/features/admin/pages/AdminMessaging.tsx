@@ -7,6 +7,7 @@ import type { ReportStatus, TargetType, Conversation, Report } from '@/api/servi
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { useFocusTrap } from '@/components/comman/ui/useFocusTrap';
 import { Table, type TableColumn } from '@/components/comman/ui/Table';
+import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
 
 type MainTab = 'conversations' | 'reports';
 
@@ -21,14 +22,14 @@ function ConversationDrawer({ conversationId, onClose }: { conversationId: strin
   useFocusTrap(panelRef, onClose);
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="dialog-overlay-enter absolute inset-0 bg-black/40" onClick={onClose} />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative w-[420px] max-w-[92vw] h-full bg-white border-l border-bone flex flex-col outline-none"
+        className="drawer-enter-right relative w-[420px] max-w-[92vw] h-full bg-white border-l border-bone flex flex-col outline-none"
       >
         <div className="px-5 py-4 border-b border-bone flex items-center justify-between shrink-0">
           <div>
@@ -229,12 +230,9 @@ export function AdminMessaging() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10">
-        <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Messaging</h1>
-        <p className="text-[12px] text-slate mt-[2px]">Oversee buyer–seller conversations and moderation reports.</p>
-      </div>
+      <AdminPageHeader title="Messaging" subtitle="Oversee buyer–seller conversations and moderation reports." />
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-5">
         <div className="flex gap-2">
           {(['conversations', 'reports'] as MainTab[]).map(t => (
             <button

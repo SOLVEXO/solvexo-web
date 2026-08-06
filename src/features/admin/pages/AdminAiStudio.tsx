@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { LayoutDashboard, ListChecks, Wallet, Receipt, Sparkles } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { TabBar, type Tab } from '@/components/comman/ui';
+import { TabBar, AdminPageHeader, type Tab } from '@/components/comman/ui';
 
 import { OverviewTab } from './ai-studio/OverviewTab';
 import { GenerationsTab } from './ai-studio/GenerationsTab';
@@ -22,12 +22,10 @@ export function AdminAiStudio() {
   const [activeTab, setActiveTab] = useState('overview');
 
   return (
-    <div className="px-7 pt-6 pb-8 flex flex-col gap-5">
-      <div>
-        <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">AI Studio</h1>
-        <p className="text-[12px] text-slate">Cross-store AI usage oversight, credit wallets, and Solvexo's own AI-generated content.</p>
-      </div>
+    <div>
+      <AdminPageHeader title="AI Studio" subtitle="Cross-store AI usage oversight, credit wallets, and Solvexo's own AI-generated content." />
 
+      <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
       {activeTab === 'overview'     && <OverviewTab />}
@@ -35,6 +33,7 @@ export function AdminAiStudio() {
       {activeTab === 'wallets'      && <WalletsTab />}
       {activeTab === 'transactions' && <TransactionsTab />}
       {activeTab === 'generate'     && <PlatformGenerateTab />}
+      </div>
     </div>
   );
 }

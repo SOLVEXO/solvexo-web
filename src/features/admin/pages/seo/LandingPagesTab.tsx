@@ -20,6 +20,8 @@ export function LandingPagesTab() {
   const [slug, setSlug] = useState('');
   const [title, setTitle] = useState('');
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
+  const [deleting, setDeleting] = useState<LandingPageRow | null>(null);
+  const [deletingBusy, setDeletingBusy] = useState(false);
 
   const openNew = () => { setSlug(''); setTitle(''); setStatus('draft'); setEditing('new'); };
   const openEdit = (row: LandingPageRow) => { setSlug(row.slug); setTitle(row.title); setStatus(row.status as 'draft' | 'published'); setEditing(row); };
@@ -31,8 +33,14 @@ export function LandingPagesTab() {
     if (ok) { setEditing(null); refetch(); }
   };
 
-  const handleDelete = async (row: LandingPageRow) => {
-    if (confirm(`Delete landing page "${row.title}"?`) && await deleteLandingPage(row._id)) refetch();
+  const handleDeleteConfirm = async () => {
+    if (!deleting) return;
+    setDeletingBusy(true);
+    try {
+      if (await deleteLandingPage(deleting._id)) { setDeleting(null); refetch(); }
+    } finally {
+      setDeletingBusy(false);
+    }
   };
 
   const columns: TableColumn<LandingPageRow>[] = [
@@ -46,7 +54,7 @@ export function LandingPagesTab() {
           <button onClick={() => openEdit(r)} className="p-1.5 rounded-md hover:bg-cream text-slate hover:text-carbon cursor-pointer border-0 bg-transparent" aria-label="Edit landing page">
             <Pencil size={13} />
           </button>
-          <button onClick={() => handleDelete(r)} className="p-1.5 rounded-md hover:bg-error-bg text-slate hover:text-error cursor-pointer border-0 bg-transparent" aria-label="Delete landing page">
+          <button onClick={() => setDeleting(r)} className="p-1.5 rounded-md hover:bg-error-bg text-slate hover:text-error cursor-pointer border-0 bg-transparent" aria-label="Delete landing page">
             <Trash2 size={13} />
           </button>
         </div>
@@ -109,6 +117,23 @@ export function LandingPagesTab() {
               <option value="published">Published</option>
             </Select>
           </Field>
+        </Modal>
+      )}
+
+      {deleting && (
+        <Modal
+          title="Delete Landing Page"
+          onClose={() => setDeleting(null)}
+          footer={
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setDeleting(null)}>Cancel</Button>
+              <Button variant="danger" size="sm" loading={deletingBusy} onClick={handleDeleteConfirm}>Delete</Button>
+            </>
+          }
+        >
+          <p className="text-[13px] text-charcoal">
+            Delete landing page <span className="font-semibold text-carbon">"{deleting.title}"</span>? This cannot be undone.
+          </p>
         </Modal>
       )}
     </div>

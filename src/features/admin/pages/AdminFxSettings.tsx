@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { RefreshCw, History, AlertTriangle } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Button, Input, Toggle, StatusBadge, SkeletonBox, EmptyState, Table, type TableColumn } from '@/components/comman/ui';
+import { Button, Input, Toggle, StatusBadge, SkeletonBox, EmptyState, Table, AdminPageHeader, type TableColumn } from '@/components/comman/ui';
 import { apiGetPlatformConfig, apiUpdateFxConfig, type FxConfig } from '@/api/services/config/adminConfig';
 import { apiGetCurrentRates, apiGetFxHistory, apiGetFxStaleness, apiOverrideFxRate, type CurrentRatesMap, type ExchangeRateHistoryRow } from '@/api/services/exchangeRate';
 
@@ -152,15 +152,13 @@ export function AdminFxSettings() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
-        <div>
-          <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">FX Settings</h1>
-          <p className="text-[12px] text-slate mt-[2px]">The single authoritative PKR/USD exchange rate used across checkout, settlement, and refunds.</p>
-        </div>
-        <Button variant="outline" size="sm" icon={<RefreshCw size={14} />} onClick={load}>Refresh</Button>
-      </div>
+      <AdminPageHeader
+        title="FX Settings"
+        subtitle="The single authoritative PKR/USD exchange rate used across checkout, settlement, and refunds."
+        actions={<Button variant="outline" size="sm" icon={<RefreshCw size={14} />} onClick={load}>Refresh</Button>}
+      />
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-5">
         <div className="flex gap-4 flex-wrap">
           {loading ? (
             <SkeletonBox className="h-24 w-full" />

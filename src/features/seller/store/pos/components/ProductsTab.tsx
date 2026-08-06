@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Search, Plus, PackageSearch, PackageX } from 'lucide-react';
 import { Badge } from '@/components/comman/ui/Badge';
 import { apiGetPosProducts, apiSearchPosProducts, type PosProduct } from '@/api/services/pos/posProducts';
 import { usePosSession } from '../context/PosSessionContext';
+import { DarkSkeleton, DarkEmptyState } from './manage/darkUi';
 
 interface FlatRow {
   productId: string;
@@ -60,17 +62,20 @@ export function ProductsTab() {
       {/* Header */}
       <div className="flex items-center gap-[10px] mb-5">
         <p className="text-[16px] font-bold text-white flex-1">Product Catalog</p>
-        <input
-          value={search}
-          onChange={e => { setSearch(e.target.value); setPage(1); }}
-          placeholder="Search SKU or name..."
-          className="bg-pos-surface border border-carbon rounded-lg px-[14px] py-2 text-[13px] text-white outline-none"
-        />
+        <div className="relative">
+          <Search size={13} className="absolute left-[11px] top-1/2 -translate-y-1/2 text-pos-muted pointer-events-none" />
+          <input
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Search SKU or name..."
+            className="bg-pos-surface border border-carbon rounded-lg pl-[30px] pr-[14px] py-2 text-[13px] text-white outline-none transition-colors focus:border-brand-orange"
+          />
+        </div>
         <button
           onClick={() => navigate(`/seller/store/${storeId}/products/add`)}
-          className="px-4 py-2 bg-brand-orange border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer"
+          className="flex items-center gap-[6px] px-4 py-2 bg-brand-orange border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer transition-colors hover:bg-brand-deep-orange"
         >
-          + Add Product
+          <Plus size={13} /> Add Product
         </button>
       </div>
 
@@ -91,13 +96,36 @@ export function ProductsTab() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-[12px] text-pos-muted">Loading…</td></tr>
+              Array.from({ length: 6 }).map((_, i) => (
+                <tr key={i} className="border-b border-carbon">
+                  <td className="px-4 py-[10px]"><DarkSkeleton height={12} className="w-14" /></td>
+                  <td className="px-4 py-[10px]">
+                    <div className="flex items-center gap-2">
+                      <DarkSkeleton height={24} className="w-6 shrink-0" />
+                      <DarkSkeleton height={12} className="w-32" />
+                    </div>
+                  </td>
+                  <td className="px-4 py-[10px]"><DarkSkeleton height={12} className="w-12" /></td>
+                  <td className="px-4 py-[10px]"><DarkSkeleton height={12} className="w-16" /></td>
+                  <td className="px-4 py-[10px]"><DarkSkeleton height={18} className="w-20 rounded-full" /></td>
+                  <td className="px-4 py-[10px]"><DarkSkeleton height={22} className="w-12" /></td>
+                </tr>
+              ))
             ) : error ? (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-[12px] text-error">{error}</td></tr>
+              <tr><td colSpan={6}>
+                <DarkEmptyState icon={<PackageX size={22} className="text-error" />} title="Couldn't load products" description={error} />
+              </td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-[12px] text-pos-muted">No products found.</td></tr>
+              <tr><td colSpan={6}>
+                <DarkEmptyState
+                  icon={<PackageSearch size={22} className="text-pos-muted" />}
+                  title={search ? 'No products match your search' : 'No products yet'}
+                  description={search ? 'Try a different SKU or name.' : 'Add your first product to start selling in-store.'}
+                  action={search ? undefined : { label: 'Add Product', onClick: () => navigate(`/seller/store/${storeId}/products/add`) }}
+                />
+              </td></tr>
             ) : rows.map(row => (
-              <tr key={row.variantId} className="border-b border-carbon">
+              <tr key={row.variantId} className="pos-item-enter border-b border-carbon transition-colors hover:bg-carbon/40">
                 <td className="px-4 py-[10px]">
                   <span className="text-[11px] font-mono text-pos-muted">{row.sku}</span>
                 </td>
@@ -129,7 +157,7 @@ export function ProductsTab() {
                 <td className="px-4 py-[10px]">
                   <button
                     onClick={() => navigate(`/seller/store/${storeId}/products/edit/${row.productId}`)}
-                    className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-pos-faint"
+                    className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-pos-faint transition-colors hover:text-white hover:bg-charcoal"
                   >
                     Edit
                   </button>

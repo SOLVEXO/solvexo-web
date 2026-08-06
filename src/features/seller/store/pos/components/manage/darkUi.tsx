@@ -17,9 +17,9 @@ export interface DarkModalProps {
 export function DarkModal({ title, onClose, children, footer, width = 440 }: DarkModalProps) {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="pos-overlay-enter absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div
-        className="relative flex flex-col w-full max-h-[90vh] bg-pos-surface border border-carbon rounded-2xl overflow-hidden"
+        className="pos-panel-enter relative flex flex-col w-full max-h-[90vh] bg-pos-surface border border-carbon rounded-2xl overflow-hidden"
         style={{ maxWidth: width }}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-carbon shrink-0">
