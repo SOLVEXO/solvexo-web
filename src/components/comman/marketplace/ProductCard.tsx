@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import { clsx } from 'clsx';
 import { Modal } from '@/components/comman/ui/Modal';
-import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame, BadgeCheck, Store, ScanEye, Check } from 'lucide-react';
+import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame, BadgeCheck, Store, ScanEye, Check, AlertCircle } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 import { currencySymbol } from '@/utils/currency';
@@ -101,11 +101,16 @@ export function StarRating({ rating, count }: { rating: number; count?: number }
 // same visual language as FlashSaleCard's Homepage rail tile, just in a
 // grid-card shape instead of a rail-card shape. Fix bugs here once, they're
 // fixed everywhere.
-export const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, isAdding, isWishlisted, isWishlisting, onToggleWishlist, compact = false, layout = 'grid' }: {
+export const ProductCard = memo(function ProductCard({ product, onClick, onAddToCart, isAdding, addToCartFailed = false, isWishlisted, isWishlisting, onToggleWishlist, compact = false, layout = 'grid' }: {
   product:          MarketplaceProduct;
   onClick:          (id: string) => void;
   onAddToCart:      (e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => void;
   isAdding:         boolean;
+  /** True for a few seconds right after this card's own Add to Cart request
+   *  failed (network/API error) — shows a recoverable error state on the
+   *  button ("Try Again") instead of silently reverting to idle, the one
+   *  state this progression was missing (idle → loading → success → error). */
+  addToCartFailed?: boolean;
   isWishlisted:     boolean;
   isWishlisting:    boolean;
   onToggleWishlist: (e: React.MouseEvent, id: string, variantId: string) => void;
@@ -140,14 +145,14 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   const [justAdded, setJustAdded] = useState(false);
   const wasAdding = useRef(false);
   useEffect(() => {
-    if (wasAdding.current && !isAdding) {
+    if (wasAdding.current && !isAdding && !addToCartFailed) {
       setJustAdded(true);
       const t = setTimeout(() => setJustAdded(false), 1500);
       wasAdding.current = isAdding;
       return () => clearTimeout(t);
     }
     wasAdding.current = isAdding;
-  }, [isAdding]);
+  }, [isAdding, addToCartFailed]);
 
   const variants        = product.variants ?? [];
 
@@ -430,13 +435,15 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
                 'flex items-center justify-center gap-[6px] rounded-lg border transition-colors duration-150 font-semibold text-[12px] h-9 px-4 shrink-0',
                 stock <= 0
                   ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                  : justAdded
-                    ? 'bg-success text-white border-success'
-                    : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white active:scale-[0.98] cursor-pointer',
+                  : addToCartFailed
+                    ? 'bg-error-bg text-error border-error/40 hover:bg-error hover:text-white cursor-pointer'
+                    : justAdded
+                      ? 'bg-success text-white border-success'
+                      : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white active:scale-[0.98] cursor-pointer',
               )}
             >
-              {isAdding ? <Loader2 size={14} className="animate-spin" /> : justAdded ? <Check size={14} /> : <ShoppingCart size={14} />}
-              <span className="whitespace-nowrap">{stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : justAdded ? 'Added' : 'Add to Cart'}</span>
+              {isAdding ? <Loader2 size={14} className="animate-spin" /> : addToCartFailed ? <AlertCircle size={14} /> : justAdded ? <Check size={14} /> : <ShoppingCart size={14} />}
+              <span className="whitespace-nowrap">{stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : addToCartFailed ? 'Try Again' : justAdded ? 'Added' : 'Add to Cart'}</span>
             </button>
           )}
         </div>
@@ -452,15 +459,17 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
                 compact ? 'w-7 h-7' : 'flex-1 h-8',
                 stock <= 0
                   ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                  : justAdded
-                    ? 'bg-success text-white border-success'
-                    : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white cursor-pointer',
+                  : addToCartFailed
+                    ? 'bg-error-bg text-error border-error/40 hover:bg-error hover:text-white cursor-pointer'
+                    : justAdded
+                      ? 'bg-success text-white border-success'
+                      : 'bg-brand-pale-orange/40 text-brand-deep-orange border-brand-orange/70 hover:bg-brand-orange hover:text-white cursor-pointer',
               )}
             >
-              {isAdding ? <Loader2 size={13} className="animate-spin" /> : justAdded ? <Check size={13} /> : <ShoppingCart size={13} />}
+              {isAdding ? <Loader2 size={13} className="animate-spin" /> : addToCartFailed ? <AlertCircle size={13} /> : justAdded ? <Check size={13} /> : <ShoppingCart size={13} />}
               {!compact && (
                 <span className="whitespace-nowrap">
-                  {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : justAdded ? 'Added' : 'Add to Cart'}
+                  {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : addToCartFailed ? 'Try Again' : justAdded ? 'Added' : 'Add to Cart'}
                 </span>
               )}
             </button>
@@ -525,13 +534,15 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
                   'flex-1 flex items-center justify-center gap-[7px] rounded-lg border h-11 font-semibold text-[13px] transition-colors duration-150',
                   stock <= 0
                     ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                    : justAdded
-                      ? 'bg-success text-white border-success'
-                      : 'bg-brand-orange text-white border-brand-orange hover:bg-brand-deep-orange cursor-pointer',
+                    : addToCartFailed
+                      ? 'bg-error text-white border-error hover:bg-error/90 cursor-pointer'
+                      : justAdded
+                        ? 'bg-success text-white border-success'
+                        : 'bg-brand-orange text-white border-brand-orange hover:bg-brand-deep-orange cursor-pointer',
                 )}
               >
-                {isAdding ? <Loader2 size={15} className="animate-spin" /> : justAdded ? <Check size={15} /> : <ShoppingCart size={15} />}
-                {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : justAdded ? 'Added to Cart' : 'Add to Cart'}
+                {isAdding ? <Loader2 size={15} className="animate-spin" /> : addToCartFailed ? <AlertCircle size={15} /> : justAdded ? <Check size={15} /> : <ShoppingCart size={15} />}
+                {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : addToCartFailed ? 'Try Again' : justAdded ? 'Added to Cart' : 'Add to Cart'}
               </button>
               <button
                 onClick={() => { setQuickViewOpen(false); onClick(product._id); }}

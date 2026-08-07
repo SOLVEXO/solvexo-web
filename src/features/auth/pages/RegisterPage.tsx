@@ -8,7 +8,7 @@ import { Input }       from '@/components/comman/ui/Input';
 import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import { RoleChoiceCards } from '@/components/comman/ui/RoleChoiceCards';
 import { SocialLoginRow } from '@/components/comman/ui/SocialIcons';
-import { Eye, EyeOff, ArrowRight, ArrowLeft, ShoppingBag, Store, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, ArrowLeft, ShoppingBag, Store, TrendingUp, AlertTriangle, Info } from 'lucide-react';
 import { useForm }     from '@/hooks/useForm';
 import { registerSchema, type RegisterFormData } from '@/utils/validation/schemas';
 import { TokenStorage, getRoleRedirect, type AppRole } from '@/api/services/auth';
@@ -193,10 +193,18 @@ export function RegisterPage() {
             {isSeller ? 'Create Seller Account' : 'Create Buyer Account'}
           </Button>
 
-          {(register.error || social.error) && (
+          {register.error && (
             <div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
               <AlertTriangle size={14} className="shrink-0" />
-              <span>{register.error || social.error}</span>
+              <span>{register.error}</span>
+            </div>
+          )}
+          {/* Not a failure — a known, honestly-labeled unavailable feature —
+             so it gets the neutral "info" treatment instead of the red error one. */}
+          {!register.error && social.error && (
+            <div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info">
+              <Info size={14} className="shrink-0" />
+              <span>{social.error}</span>
             </div>
           )}
 

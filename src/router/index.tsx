@@ -1,5 +1,6 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { getStoreSlugFromHost } from '@/utils/storefrontUrl';
 
 // Root wrapper (reference nav + outlet + global Suspense)
 import { RootLayout }   from '@/components/layouts/RootLayout';
@@ -35,6 +36,10 @@ const named = <T extends Record<string, unknown>>(
 // ── Public / Buyer ────────────────────────────────────────────────────────────
 const OrderSuccessPage     = lazy(() => named(import('@/features/buyer/pages/OrderSuccessPage'),                'OrderSuccessPage'));
 const SellerStorefront     = lazy(() => named(import('@/features/buyer/pages/SellerStorefront'),                'SellerStorefront'));
+const StorefrontLayout     = lazy(() => named(import('@/features/storefront/StorefrontLayout'),                  'StorefrontLayout'));
+const StorefrontCustomPage = lazy(() => named(import('@/features/buyer/pages/StorefrontCustomPage'),             'StorefrontCustomPage'));
+const StorefrontBlogIndex  = lazy(() => named(import('@/features/buyer/pages/StorefrontBlogIndex'),              'StorefrontBlogIndex'));
+const StorefrontBlogPost   = lazy(() => named(import('@/features/buyer/pages/StorefrontBlogPost'),               'StorefrontBlogPost'));
 const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/EducationMarketplace'),            'EducationMarketplace'));
 const PricingPage          = lazy(() => named(import('@/features/buyer/pages/PricingPage'),                     'PricingPage'));
 const ForSellersPage       = lazy(() => named(import('@/features/buyer/pages/ForSellersPage'),                  'ForSellersPage'));
@@ -70,6 +75,7 @@ const NewPasswordPage      = lazy(() => named(import('@/features/auth/pages/NewP
 const SellerDashboard      = lazy(() => named(import('@/features/seller/dashboard/SellerDashboard'),            'SellerDashboard'));
 const SellerAnalytics      = lazy(() => named(import('@/features/seller/dashboard/SellerAnalytics'),             'SellerAnalytics'));
 const StoreBuilder         = lazy(() => named(import('@/features/seller/dashboard/storemodule/StoreBuilder'),   'StoreBuilder'));
+const StoreBuilderRedirect = lazy(() => named(import('@/features/seller/dashboard/storemodule/StoreBuilderRedirect'), 'StoreBuilderRedirect'));
 const SellerSettings       = lazy(() => named(import('@/features/seller/dashboard/settings/SellerSettings'),   'SellerSettings'));
 const SellerShipping       = lazy(() => named(import('@/features/seller/dashboard/SellerShipping'),             'SellerShipping'));
 const SellerMessages       = lazy(() => named(import('@/features/seller/dashboard/SellerMessages'),             'SellerMessages'));
@@ -128,8 +134,35 @@ const AdminSettings      = lazy(() => named(import('@/features/admin/pages/setti
 const AdminSEO           = lazy(() => named(import('@/features/admin/pages/AdminSEO'),                          'AdminSEO'));
 const AdminAiStudio      = lazy(() => named(import('@/features/admin/pages/AdminAiStudio'),                     'AdminAiStudio'));
 
-// ── Router ────────────────────────────────────────────────────────────────────
-export const router = createBrowserRouter([
+// ── Storefront subdomain router ────────────────────────────────────────────────
+// A store's own subdomain (`hello.solvexo.store`) serves ONLY its storefront
+// — home/blog/custom-pages — never the marketplace/seller/admin app. Kept as
+// a wholly separate route tree (not a branch of the main tree) since a
+// `:pageSlug` catch-all would otherwise have to coexist with dozens of
+// unrelated top-level paths (`/marketplace`, `/cart`, `/admin`, ...) on the
+// same origin — instead the two trees never overlap, selected once at boot
+// by `getStoreSlugFromHost()` below.
+const storefrontRouter = createBrowserRouter([
+  {
+    element: <RootLayout />,
+    children: [
+      {
+        path: '/',
+        element: <StorefrontLayout />,
+        children: [
+          { index: true, element: <SellerStorefront /> },
+          { path: 'blog', element: <StorefrontBlogIndex /> },
+          { path: 'blog/:postSlug', element: <StorefrontBlogPost /> },
+          { path: ':pageSlug', element: <StorefrontCustomPage /> },
+        ],
+      },
+      { path: '*', element: <Navigate to="/" replace /> },
+    ],
+  },
+]);
+
+// ── Main app router (marketplace/buyer/seller/admin — the apex domain) ────────
+const mainRouter = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
@@ -179,7 +212,6 @@ export const router = createBrowserRouter([
           { path: 'checkout',        element: <CheckoutPage /> },
           { path: 'order-success',   element: <OrderSuccessPage /> },
           { path: 'marketplace/:id', element: <ProductDetail /> },
-          { path: ':slug', element: <SellerStorefront /> },
           { path: 'EducationMarketplace',   element: <EducationMarketplace /> },
         ],
       },
@@ -209,7 +241,7 @@ export const router = createBrowserRouter([
           { path: 'dashboard',     element: <SellerDashboard /> },
           { path: 'analytics',     element: <SellerAnalytics /> },
           { path: 'stores',        element: <SellerStoreList /> },
-          { path: 'store',         element: <StoreBuilder /> },
+          { path: 'store',         element: <StoreBuilderRedirect /> },
           { path: 'settings',      element: <SellerSettings /> },
         ],
       },
@@ -289,3 +321,7 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
+// Decided once at module load — the hostname doesn't change without a full
+// page reload, so this never needs to be reactive.
+export const router = getStoreSlugFromHost() ? storefrontRouter : mainRouter;

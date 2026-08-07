@@ -35,8 +35,8 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
     links: [
       { label: 'FAQ',              path: '/faq' },
       { label: 'Contact Us',       path: '/contact-us' },
-      { label: 'Shipping Info' },
-      { label: 'Returns & Refunds' },
+      { label: 'Shipping Info',    path: '/faq' },
+      { label: 'Returns & Refunds', path: '/faq' },
     ],
   },
   {
@@ -259,16 +259,20 @@ export function Footer() {
               The commerce OS for sellers, creators and educators — one marketplace for physical goods, digital downloads and learning resources.
             </p>
 
+            {/* Decorative only — no real social accounts to link to yet, same
+               honest treatment as the App Store/Google Play badges below
+               (role="img", not a button, so it never invites a click that
+               does nothing). */}
             <div className="flex items-center gap-2.5 mt-5">
               {SOCIALS.map(({ label, Glyph }) => (
-                <button
+                <div
                   key={label}
+                  role="img"
                   aria-label={label}
-                  title={label}
-                  className="w-10 h-10 rounded-full border border-white/[0.12] bg-white/[0.03] flex items-center justify-center text-[#b0aea8] hover:text-brand-orange hover:border-brand-orange/50 hover:bg-brand-orange/10 transition-colors duration-200 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon"
+                  className="w-10 h-10 rounded-full border border-white/[0.12] bg-white/[0.03] flex items-center justify-center text-[#b0aea8] select-none"
                 >
                   <Glyph />
-                </button>
+                </div>
               ))}
             </div>
 

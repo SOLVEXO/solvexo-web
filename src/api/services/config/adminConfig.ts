@@ -14,6 +14,7 @@ export interface FeatureFlags {
   storeBuilder: boolean;
   bulkProductImport: boolean;
   promotions: boolean;
+  storefrontBlog: boolean;
 }
 
 export interface AiConfig {

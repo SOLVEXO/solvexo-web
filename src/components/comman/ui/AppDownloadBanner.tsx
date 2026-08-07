@@ -16,7 +16,7 @@ const FEATURES = [
 ];
 
 // ── Shared iOS-style status bar — time + signal/wifi/battery glyphs ───────────
-function StatusBar({ dark = false }: { dark?: boolean }) {
+export function StatusBar({ dark = false }: { dark?: boolean }) {
   const tone = dark ? 'text-white' : 'text-carbon';
   return (
     <div className={clsx('h-8 flex items-center justify-between px-[16px] pt-[4px] text-[9px] font-semibold', tone)}>
@@ -112,7 +112,7 @@ const FLASH_DEAL_PRODUCTS = [
   { name: 'Air Purifier',        color: '#EBF7EF', price: 129.99, compareAt: 199.99, pct: 35 },
 ];
 
-function HomeScreenMockup() {
+export function HomeScreenMockup() {
   return (
     <div className="relative w-full h-full bg-white overflow-hidden flex flex-col">
       <StatusBar />
@@ -179,7 +179,7 @@ function HomeScreenMockup() {
   );
 }
 
-function PhoneShell({ className, primary = true, children }: { className?: string; primary?: boolean; children: React.ReactNode }) {
+export function PhoneShell({ className, primary = true, children }: { className?: string; primary?: boolean; children: React.ReactNode }) {
   return (
     <div className={clsx('relative shrink-0 w-[188px] xl:w-[204px] aspect-[9/19]', primary ? 'z-[1]' : 'opacity-95', className)}>
       {/* Side buttons — the detail that reads "real phone" instead of a bare rounded rectangle */}

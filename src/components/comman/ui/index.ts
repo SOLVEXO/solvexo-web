@@ -100,7 +100,9 @@ export type { LegalSection }                 from './LegalPageLayout';
 
 export { Footer }                            from './Footer';
 
-export { AppDownloadBanner }                  from './AppDownloadBanner';
+export { AppDownloadBanner, PhoneShell, StatusBar } from './AppDownloadBanner';
+
+export { ClosingCtaBanner }                   from './ClosingCtaBanner';
 
 export { TrustServiceStrip }                  from './TrustServiceStrip';
 

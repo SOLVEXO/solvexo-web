@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AreaChart } from '@/components/comman/charts';
 import {
   ArrowRight, Store, AlertCircle, DollarSign, Package, ShoppingBag, Repeat,
-  BarChart2, Settings, Sparkles, CircleCheck,
+  BarChart2, Settings, Sparkles, CircleCheck, PackagePlus, Rocket,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/comman/ui/Button';
@@ -75,6 +75,47 @@ function WorkspaceHero({ storeCount, activeCount }: { storeCount: number; active
         </Button>
         <Button variant="primary" size="sm" icon={<Sparkles size={14} />} onClick={() => navigate('/onboard')}>
           Create Store
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ── New-seller guided setup — replaces the metrics/chart/orders rows (which
+// have nothing real to show yet) with one coherent "get started" panel
+// instead of three separate blank widgets each repeating "create a store".
+// No fabricated numbers anywhere here — just the real path to the first sale. ──
+const GETTING_STARTED_STEPS: { Icon: LucideIcon; title: string; description: string }[] = [
+  { Icon: Store,       title: 'Create your store',  description: 'Set up your store profile, branding, and business details.' },
+  { Icon: PackagePlus, title: 'Add your products', description: 'List physical goods, digital downloads, or courses to sell.' },
+  { Icon: Rocket,       title: 'Start selling',     description: 'Go live on the marketplace and start taking real orders.' },
+];
+
+function NewSellerGuide() {
+  const navigate = useNavigate();
+  return (
+    <div className="dash-section-enter bg-white border border-bone rounded-2xl px-6 py-7 sm:px-8 sm:py-8">
+      <div className="max-w-[560px] mx-auto text-center mb-7">
+        <p className="text-[16px] font-bold text-carbon mb-1">Let's get your store live</p>
+        <p className="text-[13px] text-slate leading-[1.6]">
+          You don't have a store yet — your revenue, orders, and product performance will show up here once you do. It only takes a few minutes to get started.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-[720px] mx-auto mb-7">
+        {GETTING_STARTED_STEPS.map(({ Icon, title, description }, i) => (
+          <div key={title} className="relative flex flex-col items-center text-center gap-2 px-3 py-4 rounded-xl bg-cream">
+            <span className="absolute top-2 left-2 text-[10px] font-bold text-slate/50">{i + 1}</span>
+            <span className="flex size-10 items-center justify-center rounded-full bg-white border border-bone text-brand-orange">
+              <Icon size={17} />
+            </span>
+            <p className="text-[12.5px] font-semibold text-charcoal">{title}</p>
+            <p className="text-[11px] text-slate leading-[1.5]">{description}</p>
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-center">
+        <Button variant="primary" icon={<Sparkles size={14} />} onClick={() => navigate('/onboard')}>
+          Create Your Store
         </Button>
       </div>
     </div>
@@ -452,20 +493,25 @@ export function SellerDashboard() {
           </div>
         )}
 
+        {/* ── New seller: one clear next step instead of a wall of empty
+            widgets repeating "create a store" — everything below needs a
+            real store to show real data, so it's hidden rather than shown
+            blank. ── */}
+        {!storesLoading && !hasStore && <NewSellerGuide />}
+
         {/* ── Row 1: Metric Cards ── */}
+        {(storesLoading || hasStore) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {(loading || storesLoading) ? (
             Array.from({ length: 4 }).map((_, i) => <MetricCard key={i} label="" value="" loading />)
-          ) : !hasStore ? (
-            <div className="col-span-full bg-white border border-bone rounded-2xl px-5 py-6 text-center text-[13px] text-slate">
-              Create a store to see your revenue, orders, and product metrics here.
-            </div>
           ) : metrics.map((m) => (
             <MetricCard key={m.label} label={m.label} value={m.value} trend={m.trend ?? undefined} trendUp={m.trendUp} sub={m.sub ?? undefined} icon={m.icon} color={m.color} sparkline={m.sparkline} />
           ))}
         </div>
+        )}
 
         {/* ── Revenue chart — dominant, full-width ── */}
+        {(storesLoading || hasStore) && (
         <AreaChart
           data={chartData}
           dataKey="sales"
@@ -476,15 +522,19 @@ export function SellerDashboard() {
           valuePrefix={currencySymbol(currency)}
           yTickFormatter={v => `${currencySymbol(currency)}${v.toLocaleString()}`}
         />
+        )}
 
         {/* ── Row: My Stores + Platform Billing + Quick Actions ── */}
+        {(storesLoading || hasStore) && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <MyStoreCard stores={stores} loading={storesLoading} error={storesError} onRetry={refetchStores} />
           {hasStore ? <PlatformBillingCard /> : null}
           <QuickActionsRow />
         </div>
+        )}
 
         {/* ── Row: Top Products + Recent Orders ── */}
+        {(storesLoading || hasStore) && (
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
 
           {/* Top Products */}
@@ -548,6 +598,7 @@ export function SellerDashboard() {
             )}
           </div>
         </div>
+        )}
 
       </div>
     </>

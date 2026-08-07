@@ -70,7 +70,16 @@ export function CoverImage({
         <div
           className={clsx('absolute inset-0', fallbackClassName ?? 'bg-gradient-to-br from-brand-pale-orange to-[#fde8da]')}
           style={fallbackStyle}
-        />
+        >
+          {/* A flat gradient with nothing else in it reads as "nothing loaded"
+             rather than an intentional empty state — same subtle dot-grid
+             texture already used on the seller WorkspaceHero, so "no cover
+             photo yet" still looks designed instead of blank. */}
+          <div
+            className="absolute inset-0 opacity-[0.05]"
+            style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, var(--color-carbon) 1px, transparent 0)', backgroundSize: '18px 18px' }}
+          />
+        </div>
       )}
 
       {overlay && (src || backgroundOverride) && (

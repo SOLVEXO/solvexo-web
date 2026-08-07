@@ -51,7 +51,7 @@ export function AuthSplitLayout({
   children,
 }: AuthSplitLayoutProps) {
   return (
-    <div className="fixed inset-x-0 top-[44px] bottom-0 w-full overflow-hidden bg-cream flex">
+    <div className={clsx('fixed inset-x-0 bottom-0 w-full overflow-hidden bg-cream flex', import.meta.env.DEV ? 'top-[44px]' : 'top-0')}>
 
       {/* ── Branding panel (desktop only, fixed 35%) ───────────────────────── */}
       <div className={clsx('hidden lg:flex lg:w-[35%] h-full min-w-0 relative overflow-hidden bg-gradient-to-br', panelGradient)}>

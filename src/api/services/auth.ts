@@ -1,30 +1,38 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
+import { setAuthCookie, getAuthCookie, deleteAuthCookie } from '@/utils/authCookie';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TOKEN STORAGE
+// TOKEN STORAGE — cookie-backed (domain-wide: `.solvexo.store`/`localhost`),
+// NOT localStorage. A seller storefront lives on its own subdomain
+// (`hello.solvexo.store`), and localStorage is locked to one exact origin —
+// a token saved on the main domain would be invisible there, logging every
+// buyer out the moment they land on a store. A cookie scoped to the shared
+// root domain fixes that; the public API here is unchanged so every existing
+// call site (`TokenStorage.isLoggedIn()` etc., all over the app) keeps
+// working synchronously with zero changes. See `utils/authCookie.ts`.
 // ─────────────────────────────────────────────────────────────────────────────
 export const TokenStorage = {
   save(accessToken: string, refreshToken: string) {
-    localStorage.setItem('accessToken',  accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
+    setAuthCookie('accessToken',  accessToken);
+    setAuthCookie('refreshToken', refreshToken);
   },
   saveUser(user: object) {
-    localStorage.setItem('user', JSON.stringify(user));
+    setAuthCookie('user', JSON.stringify(user));
   },
   clear() {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+    deleteAuthCookie('accessToken');
+    deleteAuthCookie('refreshToken');
+    deleteAuthCookie('user');
     sessionStorage.removeItem('authCtx');
   },
-  getToken()     { return localStorage.getItem('accessToken'); },
-  getRefresh()   { return localStorage.getItem('refreshToken'); },
+  getToken()     { return getAuthCookie('accessToken'); },
+  getRefresh()   { return getAuthCookie('refreshToken'); },
   getUser<T = Record<string, unknown>>(): T | null {
-    const u = localStorage.getItem('user');
+    const u = getAuthCookie('user');
     return u ? (JSON.parse(u) as T) : null;
   },
-  isLoggedIn()   { return !!localStorage.getItem('accessToken'); },
+  isLoggedIn()   { return !!getAuthCookie('accessToken'); },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,6 +75,12 @@ export interface AuthCtx {
   role:    AppRole;
   userId?: string;
   flow?:   'register' | 'forgot';
+  /** Set once the forgot-password OTP step passes its own client-side format
+   *  check, so NewPasswordPage can submit it together with the new password
+   *  without asking the user to re-type it — the backend's reset-password
+   *  endpoint only accepts otp+newPassword in one call, there is no separate
+   *  "just verify the code" endpoint for this flow (unlike registration). */
+  otp?:    string;
 }
 
 export const AuthContext = {

@@ -9,7 +9,7 @@ import { Input } from '@/components/comman/ui/Input';
 import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import { RoleSegmentedControl } from '@/components/comman/ui/RoleSegmentedControl';
 import { SocialLoginRow } from '@/components/comman/ui/SocialIcons';
-import { Eye, EyeOff, ShieldCheck, Sparkles, Zap, AlertTriangle, ShoppingBag, Store } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, Sparkles, Zap, AlertTriangle, Info, ShoppingBag, Store } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import { TokenStorage, LastRolePreference, getRoleRedirect, type AppRole } from '@/api/services/auth';
@@ -132,10 +132,18 @@ export function LoginPage() {
         Sign In
       </Button>
 
-      {(login.error || social.error) && (
+      {login.error && (
         <div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
           <AlertTriangle size={14} className="shrink-0" />
-          <span>{login.error || social.error}</span>
+          <span>{login.error}</span>
+        </div>
+      )}
+      {/* Not a failure — a known, honestly-labeled unavailable feature — so
+         it gets the neutral "info" treatment instead of the red error one. */}
+      {!login.error && social.error && (
+        <div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info">
+          <Info size={14} className="shrink-0" />
+          <span>{social.error}</span>
         </div>
       )}
 

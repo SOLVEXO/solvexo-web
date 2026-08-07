@@ -13,7 +13,7 @@ export function useForgotPassword() {
     try {
       await apiForgotPassword({ email, role });
       AuthContext.set({ email, role, flow: 'forgot' });
-      navigate('/new-password');
+      navigate('/verify-otp');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {

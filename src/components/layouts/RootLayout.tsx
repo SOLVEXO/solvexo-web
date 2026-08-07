@@ -41,7 +41,10 @@ export function RootLayout() {
           top bar instead of starting under it. Anything that used to read
           window.scrollY / call window.scrollTo now goes through scrollRootRef
           (see utils/scrollRoot.ts) instead, since window itself no longer scrolls. */}
-      <div ref={el => { scrollRootRef.current = el; }} className="fixed inset-x-0 top-[44px] bottom-0 overflow-y-auto">
+      <div
+        ref={el => { scrollRootRef.current = el; }}
+        className={`fixed inset-x-0 bottom-0 overflow-y-auto ${import.meta.env.DEV ? 'top-[44px]' : 'top-0'}`}
+      >
         {/* keyed by pathname so navigating to a new route always remounts past a caught error */}
         <ErrorBoundary key={pathname}>
           <Suspense fallback={<PageSpinner />}>

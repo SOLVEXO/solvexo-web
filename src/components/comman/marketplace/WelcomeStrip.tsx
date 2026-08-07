@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ChevronRight, ShieldCheck, Store, GraduationCap } from 'lucide-react';
+import { clsx } from 'clsx';
+import { ShieldCheck, Store, GraduationCap, Tag } from 'lucide-react';
 import { Modal, DealsBanner } from '@/components/comman/ui';
-import { CategoryBarIcon, CategoriesMegaContent } from './MegaMenuBar';
+import { CategoriesMegaContent } from './MegaMenuBar';
 import { BannerCarousel, type BannerCarouselItem } from './BannerCarousel';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import type { CategoryNode } from '@/api/services/categories';
@@ -64,24 +65,47 @@ export function WelcomeStrip({
         </div>
       </div>
 
-      {/* One row: Categories for you, the real Hero Banner, and the real
-         DealsBanner — side by side, all visible together, not stacked. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.4fr_1fr] lg:grid-rows-[220px] gap-4">
+      {/* One row: Categories for you, the real Hero Banner (when a caller
+         actually has one to show — e.g. Marketplace now runs its own
+         full-width hero carousel above instead and passes none here), and
+         the real DealsBanner — side by side, not stacked. Column template
+         collapses to 2 columns instead of leaving the hero's column empty
+         when there's no hero to fill it. */}
+      <div className={clsx(
+        'grid grid-cols-1 lg:grid-rows-[220px] gap-4',
+        hasHero ? 'lg:grid-cols-[0.8fr_1.4fr_1fr]' : 'lg:grid-cols-[0.8fr_1fr]',
+      )}>
         {/* Categories for you — click opens the full categories/subcategories/
            popular-products mega-panel as a big modal. */}
         {hasCategories && (
-          <div className="bg-cream rounded-[14px] p-3 flex flex-col lg:h-full lg:overflow-y-auto">
-            <p className="text-[11.5px] font-bold text-carbon mb-2">Categories for you</p>
-            <div className="flex flex-col gap-[2px]">
+          <div className="bg-cream rounded-[14px] p-3 flex flex-col lg:h-full">
+            <div className="flex items-center justify-between mb-2 shrink-0">
+              <p className="text-[11.5px] font-bold text-carbon">Categories for you</p>
+              <button
+                onClick={() => setModalCategoryId(categories[0]?._id ?? null)}
+                className="text-[10px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer p-0 hover:text-brand-deep-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              >
+                See all
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-[7px] lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pr-0.5 content-start">
               {categories.slice(0, 6).map(cat => (
                 <button
                   key={cat._id}
                   onClick={() => setModalCategoryId(cat._id)}
-                  className="group flex items-center gap-2 rounded-lg px-1.5 py-[6px] bg-transparent border-none text-left cursor-pointer transition-colors duration-150 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                  className="group flex flex-col items-center justify-center gap-[6px] rounded-xl bg-white border border-transparent px-1.5 py-[10px] text-center cursor-pointer transition-all duration-200 hover:-translate-y-[2px] hover:border-brand-orange/25 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                 >
-                  <CategoryBarIcon category={cat} />
-                  <span className="flex-1 min-w-0 text-[11.5px] font-medium text-charcoal truncate">{cat.name}</span>
-                  <ChevronRight size={12} className="shrink-0 text-slate/50 group-hover:text-brand-orange transition-colors" />
+                  <span className="relative flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-pale-orange to-[#fdf6f0] ring-1 ring-black/[0.03] overflow-hidden shrink-0 transition-transform duration-200 group-hover:scale-110">
+                    {cat.image
+                      ? <img loading="lazy" decoding="async" src={cat.image} alt="" className="w-full h-full object-cover" />
+                      : <Tag size={15} className="text-brand-orange" />}
+                  </span>
+                  <span className="w-full text-[10.5px] font-semibold text-charcoal leading-tight line-clamp-1 group-hover:text-brand-orange transition-colors">
+                    {cat.name}
+                  </span>
+                  {typeof cat.productCount === 'number' && cat.productCount > 0 && (
+                    <span className="text-[9px] text-slate leading-none">{cat.productCount} items</span>
+                  )}
                 </button>
               ))}
             </div>

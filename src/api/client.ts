@@ -1,4 +1,10 @@
 import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+// Cookie-backed (not localStorage) so the token is visible from any seller
+// storefront subdomain, not just the exact origin it was issued on — see
+// `utils/authCookie.ts`. Imported directly (not via `services/auth.ts`'s
+// `TokenStorage`) to avoid a circular import, since `auth.ts` itself imports
+// this `client` module.
+import { getAuthCookie, deleteAuthCookie } from '@/utils/authCookie';
 
 // Endpoints where a 401 means "this specific attempt was rejected" (wrong
 // password, invalid/expired OTP, invalid reset token, invalid social token)
@@ -49,7 +55,7 @@ client.interceptors.request.use(
         { isNetworkError: false, status: undefined },
       ));
     }
-    const token = localStorage.getItem('accessToken');
+    const token = getAuthCookie('accessToken');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -90,9 +96,9 @@ client.interceptors.response.use(
     // response for that one request, and must show inline on the form.
     const isAuthAttempt = AUTH_ATTEMPT_PATHS.some(p => err.config?.url?.includes(p));
     if (err.response?.status === 401 && !isAuthAttempt) {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
+      deleteAuthCookie('accessToken');
+      deleteAuthCookie('refreshToken');
+      deleteAuthCookie('user');
       sessionStorage.removeItem('authCtx');
       // Carries the page the user was on back through login so a session
       // expiring mid-task doesn't strand them on the role's default

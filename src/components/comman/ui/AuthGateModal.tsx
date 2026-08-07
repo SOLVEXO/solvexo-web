@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Lock } from 'lucide-react';
+import { AlertTriangle, Info, Lock } from 'lucide-react';
 import { apiLogin, TokenStorage, LastRolePreference, type AppRole } from '@/api/services/auth';
 import { useSocialLogin } from '@/hooks/auth/useSocialLogin';
 import { useForm } from '@/hooks/useForm';
@@ -126,8 +126,8 @@ export function AuthGateModal() {
           })}
         </div>
         {social.error && (
-          <p className="text-[11.5px] text-error flex items-start gap-1">
-            <AlertTriangle size={12} className="shrink-0 mt-[1px]" /> {social.error}
+          <p className="text-[11.5px] text-info flex items-start gap-1">
+            <Info size={12} className="shrink-0 mt-[1px]" /> {social.error}
           </p>
         )}
 

@@ -1,4 +1,5 @@
 import { io, type Socket } from 'socket.io-client';
+import { getAuthCookie } from '@/utils/authCookie';
 
 // Ref-counted singleton: several messaging hooks (conversation list, thread,
 // message list) can be mounted at once while the messaging page is open —
@@ -8,7 +9,7 @@ let refCount = 0;
 
 export function acquireMessagingSocket(): Socket {
   if (!socket) {
-    const token = localStorage.getItem('accessToken');
+    const token = getAuthCookie('accessToken');
     const base = (import.meta.env.VITE_API_URL as string) ?? '';
     socket = io(`${base}/messaging`, {
       auth: { token },

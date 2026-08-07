@@ -6,6 +6,7 @@ import { TokenStorage } from '@/api/services/auth';
 import { apiGetRecentSearches, apiSearchStores } from '@/api/services/search';
 import { apiGetAllProducts, type MarketplaceProduct } from '@/api/services/marketplace';
 import type { PublicStoreListItem } from '@/api/services/store';
+import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { ProductImage } from '@/components/comman/marketplace/ProductCard';
 import { Button } from './Button';
 import { SolvexoLogo } from './SolvexoLogo';
@@ -73,7 +74,7 @@ export interface BuyerNavbarProps {
    *  Education, Pricing, FAQ, Sell on Solvexo) so that navigation lives in
    *  the one real navbar instead of a separate strip underneath it. Omitted
    *  everywhere else (Marketplace, ProductDetail, etc.) — unaffected. */
-  centerLinks?: { label: string; path: string; highlight?: boolean }[];
+  centerLinks?: { label: string; path: string; highlight?: boolean; children?: { label: string; path: string }[] }[];
 }
 
 const RECENT_KEY = 'solvexo_recent_searches';
@@ -338,7 +339,7 @@ export function SearchBox({
 
   const goToStore = (slug: string) => {
     setOpen(false);
-    navigate(`/${slug}`);
+    window.location.href = getStorefrontUrl(slug);
   };
 
   // Arrow-key navigation across every suggestion — moves real DOM focus (not
@@ -751,6 +752,64 @@ function AccountActions() {
   );
 }
 
+// A centerLinks entry with `children` — hover (desktop pointer) or click opens
+// a small panel of real sub-pages (e.g. FAQ/Contact/Privacy under "Resources"),
+// closes on outside click so it never lingers open while browsing elsewhere.
+function NavDropdown({ label, children }: { label: string; children: { label: string; path: string }[] }) {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [open]);
+
+  const isActive = children.some(c => pathname.startsWith(c.path));
+
+  return (
+    <div
+      ref={rootRef}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        className={clsx(
+          'flex items-center gap-1 text-[13px] font-medium bg-transparent border-none cursor-pointer transition-colors duration-150',
+          isActive ? 'text-brand-orange' : 'text-charcoal hover:text-brand-orange',
+        )}
+      >
+        {label}
+        <ChevronDown size={13} className={clsx('transition-transform duration-150', open && 'rotate-180')} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[180px] rounded-xl border border-bone bg-white shadow-raised py-1.5 z-50">
+          {children.map(c => (
+            <button
+              key={c.path}
+              onClick={() => { navigate(c.path); setOpen(false); }}
+              className={clsx(
+                'w-full text-left px-3.5 py-2 text-[13px] bg-transparent border-none cursor-pointer transition-colors duration-150',
+                pathname.startsWith(c.path) ? 'text-brand-orange' : 'text-charcoal hover:bg-cream hover:text-brand-orange',
+              )}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Shrinks slightly and gains a solid background + border once the page scrolls — the same
 // "compact sticky header" behavior applies everywhere BuyerNavbar is used
 // (Marketplace, Product Detail, Seller Storefront, Category/Search views).
@@ -822,6 +881,9 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
           <div className="hidden lg:flex flex-1 items-center justify-center gap-6">
             {centerLinks.map(item => {
               const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path));
+              if (item.children?.length) {
+                return <NavDropdown key={item.label} label={item.label} children={item.children} />;
+              }
               return (
                 <button
                   key={item.label}

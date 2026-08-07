@@ -208,10 +208,11 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
       <aside className={clsx(
         'bg-carbon flex flex-col',
         'transition-all duration-300 ease-in-out',
-        // Mobile: fixed overlay, starts below ReferenceNav (44px)
-        'fixed top-[44px] bottom-0 left-0 z-50 w-[220px]',
+        // Mobile: fixed overlay, starts below ReferenceNav (44px) — dev only,
+        // that bar doesn't exist in production, so there's nothing to clear.
+        'fixed bottom-0 left-0 z-50 w-[220px]', import.meta.env.DEV ? 'top-[44px]' : 'top-0',
         // Desktop: static inline, full viewport height, width toggles
-        'lg:static lg:z-auto lg:shrink-0 lg:h-[calc(100vh-44px)] lg:top-auto lg:bottom-auto',
+        'lg:static lg:z-auto lg:shrink-0 lg:top-auto lg:bottom-auto', import.meta.env.DEV ? 'lg:h-[calc(100vh-44px)]' : 'lg:h-screen',
         open
           ? 'translate-x-0 lg:w-[220px]'
           : '-translate-x-full lg:translate-x-0 lg:w-[60px]',
@@ -724,7 +725,7 @@ export function StoreLayout() {
   return (
     <StoreWorkspaceProvider>
       <StoreSidebarCtx.Provider value={{ toggle }}>
-        <div className="flex h-[calc(100vh-44px)] bg-cream overflow-hidden">
+        <div className={clsx('flex bg-cream overflow-hidden', import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen')}>
           <StoreSidebar open={sidebarOpen} onToggle={toggle} onClose={onClose} />
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             <AnnouncementBanner audience="sellers" />

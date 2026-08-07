@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { clsx } from 'clsx';
-import { ShoppingCart, Heart, Loader2, Star, Check } from 'lucide-react';
+import { ShoppingCart, Heart, Loader2, Star, Check, AlertCircle } from 'lucide-react';
 import { ProductImage } from './ProductCard';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
@@ -31,11 +31,14 @@ export function FlashSaleCardSkeleton() {
 // one shared component would mean two designs fighting inside the same
 // markup. Same product data, same handlers/signatures as ProductCard —
 // only the presentation is different. ──
-export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishlisted, isWishlisting, onToggleWishlist, compact = false }: {
+export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, addToCartFailed = false, isWishlisted, isWishlisting, onToggleWishlist, compact = false }: {
   product:          MarketplaceProduct;
   onClick:          (id: string) => void;
   onAddToCart:      (e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => void;
   isAdding:         boolean;
+  /** Same recoverable-error signal as ProductCard's — a few seconds of
+   *  "Try Again" right after this card's own add-to-cart request failed. */
+  addToCartFailed?: boolean;
   isWishlisted:     boolean;
   isWishlisting:    boolean;
   onToggleWishlist: (e: React.MouseEvent, id: string, variantId: string) => void;
@@ -81,14 +84,14 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
   const [justAdded, setJustAdded] = useState(false);
   const wasAdding = useRef(false);
   useEffect(() => {
-    if (wasAdding.current && !isAdding) {
+    if (wasAdding.current && !isAdding && !addToCartFailed) {
       setJustAdded(true);
       const t = setTimeout(() => setJustAdded(false), 1500);
       wasAdding.current = isAdding;
       return () => clearTimeout(t);
     }
     wasAdding.current = isAdding;
-  }, [isAdding]);
+  }, [isAdding, addToCartFailed]);
 
   return (
     <div
@@ -189,12 +192,14 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
                   'shrink-0 flex items-center justify-center w-6 h-6 rounded-full border transition-all duration-200',
                   stock <= 0
                     ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                    : justAdded
-                      ? 'bg-success text-white border-success'
-                      : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.95] cursor-pointer',
+                    : addToCartFailed
+                      ? 'bg-error text-white border-error'
+                      : justAdded
+                        ? 'bg-success text-white border-success'
+                        : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.95] cursor-pointer',
                 )}
               >
-                {isAdding ? <Loader2 size={11} className="animate-spin" /> : justAdded ? <Check size={11} /> : <ShoppingCart size={11} />}
+                {isAdding ? <Loader2 size={11} className="animate-spin" /> : addToCartFailed ? <AlertCircle size={11} /> : justAdded ? <Check size={11} /> : <ShoppingCart size={11} />}
               </button>
             </div>
           </div>
@@ -253,12 +258,14 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, isWishl
                 'shrink-0 flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200',
                 stock <= 0
                   ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                  : justAdded
-                    ? 'bg-success text-white border-success'
-                    : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.95] cursor-pointer',
+                  : addToCartFailed
+                    ? 'bg-error text-white border-error'
+                    : justAdded
+                      ? 'bg-success text-white border-success'
+                      : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.95] cursor-pointer',
               )}
             >
-              {isAdding ? <Loader2 size={14} className="animate-spin" /> : justAdded ? <Check size={14} /> : <ShoppingCart size={14} />}
+              {isAdding ? <Loader2 size={14} className="animate-spin" /> : addToCartFailed ? <AlertCircle size={14} /> : justAdded ? <Check size={14} /> : <ShoppingCart size={14} />}
             </button>
           </div>
         </div>

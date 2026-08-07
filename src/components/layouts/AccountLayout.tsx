@@ -255,7 +255,14 @@ export function AccountLayout() {
   const close  = () => setSidebarOpen(false);
 
   return (
-    <div className="bg-cream flex h-[calc(100vh-108px)] md:h-[calc(100vh-44px)] overflow-hidden">
+    <div className={clsx(
+      'bg-cream flex overflow-hidden',
+      // 108px mobile / 44px desktop = BuyerLayout's fixed bottom tab bar
+      // (64px, mobile-only) plus the dev-only ReferenceNav (44px, top) — that
+      // second bar doesn't exist in production, so only the real bottom tab
+      // bar is ever subtracted there (and nothing on desktop, where it's hidden).
+      import.meta.env.DEV ? 'h-[calc(100vh-108px)] md:h-[calc(100vh-44px)]' : 'h-[calc(100vh-64px)] md:h-screen',
+    )}>
       <AccountSidebar open={sidebarOpen} onToggle={toggle} onClose={close} />
 
       <div className="flex flex-col flex-1 min-w-0 min-h-0">

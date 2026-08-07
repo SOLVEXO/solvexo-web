@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useVerifyOtp } from '@/hooks/auth/useVerifyOtp';
 import { Button } from '@/components/comman/ui/Button';
 import { OTPInput } from '@/components/comman/ui/OTPInput';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
 import { runSchema, otpSchema } from '@/utils/validation/schemas';
-import { AuthContext, apiResendOtp, type AppRole } from '@/api/services/auth';
+import { AuthContext, apiResendOtp, apiForgotPassword, type AppRole } from '@/api/services/auth';
 import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { Mail, ShieldCheck, KeyRound, Fingerprint } from 'lucide-react';
@@ -23,7 +24,7 @@ const IDENTITY_HIGHLIGHTS = [
   { Icon: ShieldCheck, text: 'Your account stays protected throughout' },
 ];
 
-function ResendTimer({ email, role }: { email: string; role: AppRole }) {
+function ResendTimer({ email, role, isIdentity }: { email: string; role: AppRole; isIdentity: boolean }) {
   const [seconds,    setSeconds]    = useState(59);
   const [canResend,  setCanResend]  = useState(false);
   const [sending,    setSending]    = useState(false);
@@ -50,7 +51,15 @@ function ResendTimer({ email, role }: { email: string; role: AppRole }) {
     setSending(true);
     setError('');
     try {
-      await apiResendOtp({ email, role });
+      // Registration's resend-otp endpoint 400s with "User already verified"
+      // for a forgot-password OTP — that account is, correctly, already
+      // verified. Forgot-password's own endpoint already regenerates and
+      // re-emails a fresh code, so it doubles as the real "resend" here.
+      if (isIdentity) {
+        await apiForgotPassword({ email, role });
+      } else {
+        await apiResendOtp({ email, role });
+      }
       setSeconds(59);
       setCanResend(false);
       setResendKey(k => k + 1);
@@ -80,6 +89,7 @@ function ResendTimer({ email, role }: { email: string; role: AppRole }) {
 
 export function VerifyOTPPage() {
   usePageTitle('Verify OTP');
+  const navigate   = useNavigate();
   const verifyOtp  = useVerifyOtp();
   const [otp, setOtp]     = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
@@ -97,6 +107,18 @@ export function VerifyOTPPage() {
     const code = otp.join('');
     const errs = runSchema(otpSchema, { otp: code });
     if (errs.otp) { setError(errs.otp); return; }
+
+    if (isIdentity) {
+      // There's no standalone "verify this reset code" backend endpoint —
+      // reset-password only accepts otp+newPassword together in one call.
+      // Carry the code forward instead of re-verifying it here; if it's
+      // actually wrong/expired, that surfaces on the next step when the
+      // combined request is made, with a way back to re-enter it.
+      AuthContext.set({ email: userEmail, role: userRole, flow: 'forgot', otp: code });
+      navigate('/new-password');
+      return;
+    }
+
     await verifyOtp.execute(code);
     if (verifyOtp.error) setError(verifyOtp.error);
   };
@@ -145,7 +167,7 @@ export function VerifyOTPPage() {
 
       <div className="flex items-center justify-center gap-[6px] mt-5">
         <span className="text-[13px] text-slate">Didn't receive it?</span>
-        <ResendTimer email={userEmail} role={userRole} />
+        <ResendTimer email={userEmail} role={userRole} isIdentity={isIdentity} />
       </div>
     </AuthSplitLayout>
   );

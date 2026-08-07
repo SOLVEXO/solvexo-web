@@ -10,7 +10,17 @@ const CENTER_LINKS = [
   { label: 'Marketplace',    path: '/marketplace' },
   { label: 'Education',      path: '/EducationMarketplace' },
   { label: 'Pricing',        path: '/pricing' },
-  { label: 'FAQ',            path: '/faq' },
+  { label: 'Become a Seller', path: '/sellers' },
+  {
+    label: 'Resources', path: '/faq',
+    children: [
+      { label: 'FAQ',              path: '/faq' },
+      { label: 'Contact Us',       path: '/contact-us' },
+      { label: 'Privacy Policy',   path: '/privacy-policy' },
+      { label: 'Terms of Service', path: '/terms-of-service' },
+      { label: 'Cookie Policy',    path: '/cookie-policy' },
+    ],
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

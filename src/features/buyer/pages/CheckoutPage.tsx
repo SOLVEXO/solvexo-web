@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { useCartContext } from '@/contexts/CartContext';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
 import { apiGetMyAddresses, type Address } from '@/api/services/address';
@@ -1413,7 +1414,7 @@ export function CheckoutPage() {
                 {savingsHints.map(hint => (
                   <button
                     key={hint.storeId}
-                    onClick={() => hint.storeSlug && navigate(`/${hint.storeSlug}`)}
+                    onClick={() => hint.storeSlug && (window.location.href = getStorefrontUrl(hint.storeSlug))}
                     className="w-full text-left px-3.5 py-3 rounded-lg bg-brand-pale-orange border border-brand-orange/20 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                   >
                     <p className="text-[12.5px] font-semibold text-brand-deep-orange">

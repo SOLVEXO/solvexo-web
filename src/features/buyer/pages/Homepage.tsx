@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { useCountdownToMidnight } from '@/hooks/useCountdownToMidnight';
 import { useCartContext } from '@/contexts/CartContext';
@@ -10,12 +11,13 @@ import { useAuthGate } from '@/contexts/AuthGateContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
-import { AppDownloadBanner, Footer, SkeletonBox, CoverImage, FloatingAppWidget, SearchBox } from '@/components/comman/ui';
+import { Footer, SkeletonBox, CoverImage, FloatingAppWidget, TrustServiceStrip, ClosingCtaBanner } from '@/components/comman/ui';
 import { FlashSaleCard, FlashSaleCardSkeleton } from '@/components/comman/marketplace/FlashSaleCard';
 import {
-  ArrowRight, ShoppingBag, BookOpen, Download, Store, Monitor, Sparkles,
+  ArrowRight, ArrowLeft, ShoppingBag, BookOpen, Download, Store, Sparkles,
   Star, TrendingUp, BadgeCheck, Crown, UserPlus, UserCheck, Quote,
-  Gift, Megaphone, BarChart3, MessageCircle,
+  Gift, BarChart3, ShieldCheck, Globe, Rocket, Headphones, Zap, Truck,
+  RotateCcw, Loader2, Tag, ChevronRight,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -23,6 +25,8 @@ import {
   type PublicStoreListItem, type PlatformStats, type Testimonial,
 } from '@/api/services/store';
 import { apiGetAllProducts, type MarketplaceProduct } from '@/api/services/marketplace';
+import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
+import homepageHero from '@/assets/homepage-hero.webp';
 
 const compactNumber = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const compactCurrency = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1, style: 'currency', currency: 'USD' });
@@ -155,28 +159,37 @@ function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick:
   );
 }
 
-// bg values reference existing theme tokens (via CSS var, since these render
-// through an inline style — see FEATURES.map below) instead of repeating
-// their hex values as untracked magic numbers.
-const FEATURES: { Icon: LucideIcon; title: string; bg: string; desc: string; path: string }[] = [
-  { Icon: ShoppingBag,   title: 'Marketplace',           bg: 'var(--color-brand-pale-orange)', desc: 'Join thousands of buyers discovering your products in the Solvexo marketplace.',         path: '/marketplace' },
-  { Icon: BookOpen,      title: 'Educational Resources', bg: 'var(--color-success-bg)',         desc: 'Sell lesson plans, courses, worksheets and digital curricula to educators worldwide.',    path: '/EducationMarketplace'   },
-  { Icon: Download,      title: 'Digital Downloads',     bg: 'var(--color-info-bg)',            desc: 'Sell ebooks, music, software, templates and files with instant delivery.',                path: '/marketplace' },
-  { Icon: Store,         title: 'Your Own Store',        bg: 'var(--color-warning-bg)',         desc: 'Launch a branded store with a custom domain, no coding required.',                        path: '/sellers'     },
-  { Icon: Monitor,       title: 'Point of Sale',         bg: 'var(--color-brand-pale-orange)',  desc: 'Accept payments in-person with the Solvexo POS app, fully synced to your dashboard.',     path: '/sellers'     },
-  { Icon: Sparkles,      title: 'AI Commerce Tools',     bg: 'var(--color-accent-violet-bg)',   desc: 'Write listings, optimize pricing, auto-generate descriptions with built-in AI.',           path: '/sellers'     },
-  { Icon: Gift,          title: 'Loyalty & Rewards',     bg: 'var(--color-warning-bg)',         desc: 'Turn one-time buyers into repeat customers with points, tiers and perks.',                 path: '/sellers'     },
-  { Icon: Megaphone,     title: 'Marketing & Campaigns', bg: 'var(--color-brand-pale-orange)',  desc: 'Run coupons, sales campaigns and seasonal promotions across your storefront.',            path: '/sellers'     },
-  { Icon: BarChart3,     title: 'Analytics & Insights',  bg: 'var(--color-info-bg)',            desc: 'Track revenue, orders and customers with real-time dashboards and reports.',              path: '/sellers'     },
-  { Icon: MessageCircle, title: 'Buyer Messaging',       bg: 'var(--color-success-bg)',         desc: 'Chat directly with buyers to answer questions and close more sales.',                    path: '/sellers'     },
+// Compact platform-capability strip directly under the hero — bg values
+// reference existing theme tokens via CSS var (rendered through an inline
+// style, see PLATFORM_HIGHLIGHTS.map below) instead of repeating hex values
+// as untracked magic numbers.
+const PLATFORM_HIGHLIGHTS: { Icon: LucideIcon; title: string; sub: string; bg: string }[] = [
+  { Icon: ShoppingBag,  title: 'Marketplace',      sub: 'Grow your business',   bg: 'var(--color-brand-pale-orange)' },
+  { Icon: BookOpen,     title: 'Educational',      sub: 'Sell courses & more',  bg: 'var(--color-info-bg)' },
+  { Icon: Download,     title: 'Digital Products', sub: 'Instant downloads',    bg: 'var(--color-success-bg)' },
+  { Icon: Sparkles,     title: 'AI Commerce',      sub: 'Smart tools to grow',  bg: 'var(--color-accent-violet-bg)' },
+  { Icon: ShieldCheck,  title: 'Secure & Safe',    sub: 'Buyer protection',     bg: 'var(--color-warning-bg)' },
+  { Icon: Gift,         title: 'Loyalty Rewards',  sub: 'Earn points & perks',  bg: 'var(--color-brand-pale-orange)' },
+];
+
+const HERO_TRUST_ROW: { Icon: LucideIcon; label: string }[] = [
+  { Icon: Rocket,      label: 'Easy to Start' },
+  { Icon: ShieldCheck, label: 'Secure Payments' },
+  { Icon: Globe,       label: 'Global Reach' },
+  { Icon: Headphones,  label: '24/7 Support' },
+];
+
+const HOME_TRUST_BAR: { Icon: LucideIcon; label: string; sub: string }[] = [
+  { Icon: Tag,         label: 'Best Prices',     sub: 'Unbeatable deals' },
+  { Icon: Truck,       label: 'Free Shipping',   sub: 'On orders over Rs. 3,000' },
+  { Icon: RotateCcw,   label: 'Easy Returns',    sub: '30-day money back' },
+  { Icon: ShieldCheck, label: 'Secure Payments', sub: '100% protected' },
 ];
 
 export function Homepage() {
   const navigate = useNavigate();
   const sellEntry = useSellEntry();
   usePageTitle('Home');
-
-  const [showAllFeatures, setShowAllFeatures] = useState(false);
 
   const [topStores, setTopStores] = useState<PublicStoreListItem[]>([]);
   const [storesLoading, setStoresLoading] = useState(true);
@@ -190,20 +203,24 @@ export function Homepage() {
   const [productPool, setProductPool] = useState<MarketplaceProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
 
+  const [categories, setCategories] = useState<CategoryNode[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
   const { addToCart, adding } = useCartContext();
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
   const countdown = useCountdownToMidnight();
 
-  // Homepage has no results of its own to filter — searching here always
-  // means "take me to the Marketplace with this query", same convention as
-  // clicking a trending term anywhere else in the app.
-  const [heroSearch, setHeroSearch] = useState('');
-  const submitHeroSearch = (term?: string) => {
-    const q = (term ?? heroSearch).trim();
-    navigate(q ? `/marketplace?search=${encodeURIComponent(q)}` : '/marketplace');
-  };
   const storesTrackRef = useRef<HTMLDivElement>(null);
   const [storesActiveIndex, setStoresActiveIndex] = useState(0);
+
+  const flashTrackRef = useRef<HTMLDivElement>(null);
+  const scrollFlashDeals = (dir: 1 | -1) => {
+    const track = flashTrackRef.current;
+    if (!track) return;
+    const card = track.children[0] as HTMLElement | undefined;
+    const step = (card?.offsetWidth ?? 200) + 24; // card width + gap-6
+    track.scrollBy({ left: dir * step, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -243,13 +260,24 @@ export function Homepage() {
 
   // Pool used to surface real, currently-active discounts (Flash Sale) — same
   // approach as Marketplace's own flash-deal computation, so the "-X% OFF"
-  // badges always reflect a genuine compareAtPrice set by the seller.
+  // badges always reflect a genuine compareAtPrice set by the seller. Also
+  // doubles as the source for the hero's device-mockup product thumbnails,
+  // so nothing in the hero is a fabricated/stock image.
   useEffect(() => {
     let cancelled = false;
     apiGetAllProducts(1, 24)
       .then(res => { if (!cancelled) setProductPool(res.data?.products ?? []); })
       .catch(() => { /* non-critical — flash sale section just stays hidden */ })
       .finally(() => { if (!cancelled) setProductsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetCategoryTree()
+      .then(res => { if (!cancelled) setCategories(res.data ?? []); })
+      .catch(() => { /* non-critical — section just stays hidden */ })
+      .finally(() => { if (!cancelled) setCategoriesLoading(false); });
     return () => { cancelled = true; };
   }, []);
 
@@ -264,7 +292,7 @@ export function Homepage() {
 
   useEffect(() => {
     let cancelled = false;
-    apiGetTestimonials(3)
+    apiGetTestimonials(5)
       .then(res => { if (!cancelled) setTestimonials(res.data ?? []); })
       .catch(() => { /* non-critical — section just stays hidden */ })
       .finally(() => { if (!cancelled) setTestimonialsLoading(false); });
@@ -293,10 +321,14 @@ export function Homepage() {
     if (variantId) toggleWishlist(id, variantId);
   }, [toggleWishlist]);
 
+  // Shared by the hero stat row and the closing "Trusted by" band — real
+  // platform numbers only, each entry omitted entirely until its backing
+  // field has actually loaded (no fake placeholders).
   const statItems = stats ? [
-    { value: `${compactNumber.format(stats.storesCount)}+`,  label: 'Active Stores'  },
-    { value: `${compactCurrency.format(stats.gmv)}+`,        label: 'GMV Processed'  },
-    { value: stats.ratingCount > 0 ? `${stats.avgRating.toFixed(1)}★` : '—', label: 'Store Rating' },
+    { value: `${compactNumber.format(stats.sellersCount)}+`,  label: 'Active Sellers' },
+    { value: `${compactCurrency.format(stats.gmv)}+`,         label: 'GMV Processed' },
+    { value: `${compactNumber.format(stats.buyersCount)}+`,   label: 'Happy Buyers' },
+    ...(stats.ratingCount > 0 ? [{ value: `${stats.avgRating.toFixed(1)}★`, label: 'Store Rating' }] : []),
   ] : [];
 
   return (
@@ -319,7 +351,7 @@ export function Homepage() {
             <div className="inline-flex items-center gap-2 rounded-full px-[14px] py-[5px] mb-5 border border-[rgba(217,119,87,0.35)] bg-[rgba(217,119,87,0.12)]">
               <Sparkles size={12} className="text-brand-orange shrink-0" />
               <span className="text-[12px] font-medium text-brand-orange">
-                AI-powered commerce. One platform.
+                AI-Powered Commerce Platform
               </span>
             </div>
 
@@ -330,56 +362,49 @@ export function Homepage() {
               </span>
             </h1>
 
-            <p className="text-[13px] sm:text-sm text-[#b0aea8] leading-[1.75] mb-7 max-w-[440px]">
-              Sell physical products, digital downloads, and educational resources — with
-              AI-powered tools, a built-in marketplace, and point-of-sale. Everything
-              commerce, in one place.
+            <p className="text-[13px] sm:text-sm text-[#b0aea8] leading-[1.75] mb-6 max-w-[440px]">
+              Sell physical products, digital downloads and educational resources — all in one powerful platform.
             </p>
 
-            {/* Primary interaction — search comes before the CTAs, not after,
-               so a shopper's very first instinct (type what you want) has
-               somewhere obvious to go, exactly the same SearchBox/suggestions
-               UX Marketplace's own hero search already uses. */}
-            <div className="mb-5 w-full">
-              <SearchBox
-                size="lg"
-                value={heroSearch}
-                onChange={setHeroSearch}
-                placeholder="Search products, courses, stores…"
-                popularStores={topStores}
-                onSubmit={submitHeroSearch}
-              />
+            {/* Trust row — quick-scan reasons to stay, ahead of the CTAs */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6">
+              {HERO_TRUST_ROW.map(({ Icon, label }) => (
+                <div key={label} className="flex items-center gap-[6px]">
+                  <Icon size={14} className="text-brand-orange shrink-0" />
+                  <span className="text-[12px] text-[#c7c5bf] whitespace-nowrap">{label}</span>
+                </div>
+              ))}
             </div>
 
-            {/* CTAs — secondary to search now: one for "I want to sell", one
-               for "just let me browse everything". */}
+            {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-start gap-3 mb-8">
-              <Button size="md" onClick={sellEntry.go} loading={sellEntry.loading} className="w-full sm:w-auto">
-                Start Selling Free <ArrowRight size={13} className="inline align-middle ml-1" />
+              <Button size="md" onClick={() => navigate('/marketplace')} className="w-full sm:w-auto">
+                Explore Marketplace <ArrowRight size={13} className="inline align-middle ml-1" />
               </Button>
               <button
-                onClick={() => navigate('/marketplace')}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] transition-colors cursor-pointer"
+                onClick={sellEntry.go}
+                disabled={sellEntry.loading}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] transition-colors cursor-pointer disabled:opacity-60"
               >
-                Browse Marketplace
+                {sellEntry.loading ? <Loader2 size={13} className="animate-spin" /> : null}
+                Start Selling
               </button>
             </div>
 
             {/* Stats — real platform numbers, hidden until they load (no fake
-               placeholders), presented as a glass pill strip for real depth
-               rather than plain stacked text. */}
+               placeholders), plain columns with thin dividers. */}
             {(statsLoading || statItems.length > 0) && (
-              <div className="inline-flex flex-wrap gap-1 rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-sm p-2">
+              <div className="flex flex-wrap gap-x-6 gap-y-3">
                 {statsLoading
-                  ? Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="px-4 py-2">
-                        <SkeletonBox width={48} height={22} className="mb-1" />
-                        <SkeletonBox width={64} height={11} />
+                  ? Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i}>
+                        <SkeletonBox width={52} height={22} className="mb-1" />
+                        <SkeletonBox width={72} height={11} />
                       </div>
                     ))
                   : statItems.map(({ value, label }, i) => (
-                      <div key={label} className={clsx('px-4 py-2', i > 0 && 'border-l border-white/10')}>
-                        <p className="text-[20px] sm:text-[22px] font-bold text-brand-orange leading-none">{value}</p>
+                      <div key={label} className={clsx(i > 0 && 'pl-6 border-l border-white/10')}>
+                        <p className="text-[20px] sm:text-[22px] font-bold text-white leading-none">{value}</p>
                         <p className="text-[10px] sm:text-[11px] text-white/50 mt-1 whitespace-nowrap">{label}</p>
                       </div>
                     ))}
@@ -387,59 +412,37 @@ export function Homepage() {
             )}
           </div>
 
-          {/* Floating commerce-mode cards — desktop only, fills the hero's right-side negative space.
-             Each card is a rotation wrapper (static tilt, scattered "mockup stack" composition) around
-             an inner auth-float element (vertical drift) — combined in one transform they'd fight each
-             other, so the rotate and the animation live on separate nested elements. */}
-          <div className="hidden lg:grid grid-cols-2 gap-3 w-[400px] shrink-0">
-            {[
-              { ...FEATURES[0], delay: '0s',  accent: '#D97757', tag: 'CORE',     rotate: '-2deg', shift: '-2px', featured: true },
-              { ...FEATURES[5], delay: '-1s', accent: '#B95A3A', tag: 'AI',       rotate: '3deg',  shift: '3px',  featured: false },
-              { ...FEATURES[1], delay: '-2s', accent: '#1A72C2', tag: 'LEARN',    rotate: '-3deg', shift: '-3px', featured: false },
-              { ...FEATURES[6], delay: '-3s', accent: '#C08B1E', tag: 'LOYALTY',  rotate: '2.5deg', shift: '2px', featured: false },
-              { ...FEATURES[4], delay: '-4s', accent: '#2D8A4E', tag: 'POS',      rotate: '-3.5deg', shift: '-2px', featured: false },
-              { ...FEATURES[8], delay: '-5s', accent: '#7C3AED', tag: 'INSIGHTS', rotate: '4deg',  shift: '3px',  featured: false },
-            ].map(f => (
-              // Rotation lives on this outer, static wrapper — the auth-float keyframes below
-              // fully replace `transform` on whatever element they're applied to, so a rotate
-              // sitting on the *same* element as the animation would get overwritten every frame.
-              <div key={f.title} style={{ transform: `rotate(${f.rotate}) translateY(${f.shift})` }}>
-                <div
-                  className="auth-float group relative rounded-2xl rounded-tl-md border overflow-hidden cursor-default backdrop-blur-sm transition-[background-color] duration-200 active:scale-[0.98]"
-                  style={{
-                    animationDelay: f.delay,
-                    borderColor: f.featured ? `${f.accent}40` : 'rgba(255,255,255,0.09)',
-                    background: f.featured ? `${f.accent}0D` : 'rgba(255,255,255,0.035)',
-                    padding: '12px 12px 12px 16px',
-                  }}
-                >
-                  {/* Hover tint — a separate overlay so it can react to :hover independently of the
-                     inline-styled base colors (inline styles always win over a Tailwind hover: class
-                     on the same property, so the hover effect has to live on its own layer) */}
-                  <div className="absolute inset-0 bg-white/0 group-hover:bg-white/[0.04] transition-colors duration-200 pointer-events-none" />
+          {/* Hero visual — single pre-composed graphic (devices + real
+             product cutouts), desktop only, fills the hero's right-side
+             negative space. */}
+          <div className="hidden lg:block relative w-[700px] shrink-0">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-[340px] h-[340px] rounded-full bg-[radial-gradient(circle,var(--color-brand-orange)_0%,transparent_70%)] opacity-[0.22] blur-2xl" />
+            </div>
+            <img
+              src={homepageHero}
+              alt="Solvexo marketplace preview"
+              width={2440}
+              height={1636}
+              className="relative z-[1] w-full h-auto"
+            />
+          </div>
+        </div>
+      </section>
 
-                  {/* Accent bar — this card's identity color, thin and flat (no glow) */}
-                  <div className="absolute left-0 top-3 bottom-3 w-[2px] rounded-full transition-opacity duration-200 opacity-70 group-hover:opacity-100" style={{ background: f.accent }} />
-
-                  {/* Category tag — replaces the numbered badge; the featured card also gets a "Flagship" marker */}
-                  <span
-                    className="absolute top-3 right-3 px-[6px] py-[2px] rounded-[4px] text-[8px] font-bold uppercase tracking-[0.09em]"
-                    style={{ color: f.accent, border: `1px solid ${f.accent}3D`, background: `${f.accent}14` }}
-                  >
-                    {f.featured ? 'Flagship · ' : ''}{f.tag}
-                  </span>
-
-                  <div className="flex items-center gap-[10px] mb-[9px]">
-                    <div
-                      className="w-9 h-9 rounded-[10px] rounded-tl-[3px] border flex items-center justify-center shrink-0"
-                      style={{ borderColor: `${f.accent}40`, background: `${f.accent}12` }}
-                    >
-                      <f.Icon size={16} style={{ color: f.accent }} />
-                    </div>
-                    <p className="text-[13px] font-bold text-white leading-[1.2] tracking-[-0.01em] pr-5">{f.title}</p>
-                  </div>
-                  <p className="text-[10px] text-white/45 leading-[1.5] line-clamp-2">{f.desc}</p>
-                </div>
+      {/* ── Platform highlights strip — directly under the hero, no gap ──────────── */}
+      <section className="bg-white border-b border-bone">
+        <div className="px-4 sm:px-6 lg:px-12 py-6 sm:py-7">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-y-5 gap-x-4">
+            {PLATFORM_HIGHLIGHTS.map((f, i) => (
+              <div key={f.title} className={clsx('flex items-center gap-3', i > 0 && 'lg:border-l lg:border-bone lg:pl-4')}>
+                <span className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: f.bg }}>
+                  <f.Icon size={18} className="text-brand-orange" />
+                </span>
+                <span className="min-w-0">
+                  <p className="text-[12.5px] font-bold text-carbon leading-tight">{f.title}</p>
+                  <p className="text-[10.5px] text-slate leading-tight mt-[1px]">{f.sub}</p>
+                </span>
               </div>
             ))}
           </div>
@@ -457,8 +460,8 @@ export function Homepage() {
                 <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-[6px]">
                   Limited Time Offers
                 </p>
-                <h2 className="font-serif text-[26px] sm:text-[32px] font-bold text-carbon leading-[1.2] mb-1">
-                  Flash Sale
+                <h2 className="font-serif text-[26px] sm:text-[32px] font-bold text-carbon leading-[1.2] mb-1 flex items-center gap-2">
+                  Flash Sale <Zap size={22} className="text-brand-orange fill-brand-orange" />
                 </h2>
                 <p className="flex items-center gap-[6px] text-[12.5px] sm:text-[13px] text-slate max-w-md">
                   <span className="relative flex h-[6px] w-[6px] shrink-0">
@@ -488,87 +491,172 @@ export function Homepage() {
               </div>
             </div>
 
-            {/* Carousel — horizontal scroll instead of a wrapping grid, generous
-               gaps and edge padding so cards never feel compressed */}
-            <div className="flex gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0">
-              {productsLoading
-                ? Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="shrink-0 w-[200px] sm:w-[calc((100%-48px)/3)] lg:w-[calc((100%-72px)/4)]">
-                      <FlashSaleCardSkeleton />
-                    </div>
-                  ))
-                : flashDeals.map(({ product }) => {
-                    const variants = product.variants ?? [];
-                    const defVariant = variants.find(v => v.isDefault) ?? variants[0];
-                    const vId = defVariant?._id ?? '';
-                    return (
-                      <div key={product._id} className="shrink-0 snap-start w-[200px] sm:w-[calc((100%-48px)/3)] lg:w-[calc((100%-72px)/4)]">
-                        <FlashSaleCard
-                          product={product}
-                          onClick={handleCardClick}
-                          isAdding={adding === vId}
-                          onAddToCart={handleAddToCart}
-                          isWishlisted={isWishlisted(product._id, vId)}
-                          isWishlisting={wishlisting === vId}
-                          onToggleWishlist={handleToggleWishlist}
-                        />
+            {/* Carousel — horizontal scroll, generous gaps and edge padding so
+               cards never feel compressed, plus explicit prev/next arrows
+               (in addition to native swipe/scroll) for a mouse-driven desktop
+               user who won't think to drag the row. */}
+            <div className="relative">
+              {!productsLoading && flashDeals.length > 4 && (
+                <button
+                  onClick={() => scrollFlashDeals(-1)}
+                  aria-label="Previous deals"
+                  className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-[1] w-9 h-9 rounded-full bg-white border border-bone shadow-raised items-center justify-center cursor-pointer hover:border-brand-orange/40 hover:text-brand-orange transition-colors"
+                >
+                  <ArrowLeft size={15} />
+                </button>
+              )}
+              <div ref={flashTrackRef} className="flex gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0">
+                {productsLoading
+                  ? Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="shrink-0 w-[200px] sm:w-[calc((100%-48px)/3)] lg:w-[calc((100%-72px)/4)]">
+                        <FlashSaleCardSkeleton />
                       </div>
-                    );
-                  })}
+                    ))
+                  : flashDeals.map(({ product }) => {
+                      const variants = product.variants ?? [];
+                      const defVariant = variants.find(v => v.isDefault) ?? variants[0];
+                      const vId = defVariant?._id ?? '';
+                      return (
+                        <div key={product._id} className="shrink-0 snap-start w-[200px] sm:w-[calc((100%-48px)/3)] lg:w-[calc((100%-72px)/4)]">
+                          <FlashSaleCard
+                            product={product}
+                            onClick={handleCardClick}
+                            isAdding={adding === vId}
+                            onAddToCart={handleAddToCart}
+                            isWishlisted={isWishlisted(product._id, vId)}
+                            isWishlisting={wishlisting === vId}
+                            onToggleWishlist={handleToggleWishlist}
+                          />
+                        </div>
+                      );
+                    })}
+              </div>
+              {!productsLoading && flashDeals.length > 4 && (
+                <button
+                  onClick={() => scrollFlashDeals(1)}
+                  aria-label="Next deals"
+                  className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-[1] w-9 h-9 rounded-full bg-white border border-bone shadow-raised items-center justify-center cursor-pointer hover:border-brand-orange/40 hover:text-brand-orange transition-colors"
+                >
+                  <ArrowRight size={15} />
+                </button>
+              )}
             </div>
           </div>
         </section>
       )}
 
-      {/* ── Feature Categories ───────────────────────────────────────────────────── */}
-      <section className="py-10 sm:py-12 lg:py-14">
-        <div className="px-4 sm:px-6 lg:px-12">
-          <p className="text-[11px] font-semibold text-brand-orange text-center uppercase tracking-[0.1em] mb-2">
-            Built for every type of seller
-          </p>
-          <h2 className="font-serif text-[24px] sm:text-[28px] lg:text-[32px] font-bold text-carbon text-center mb-3 max-w-sm mx-auto leading-[1.2]">
-            One platform. Infinite possibilities.
-          </h2>
-          <div className="w-10 h-[3px] rounded-full bg-gradient-to-r from-brand-orange to-[#f0a57a] mx-auto mb-10" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(showAllFeatures ? FEATURES : FEATURES.slice(0, 6)).map(f => (
-              <Card
-                key={f.title} hover padding="none" onClick={() => navigate(f.path)}
-                className="group relative overflow-hidden"
-              >
-                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
-                <div className="p-5">
-                  <div
-                    className="w-10 h-10 rounded-[10px] flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3"
-                    style={{ background: f.bg }}
-                  >
-                    <f.Icon size={18} className="text-brand-orange" />
-                  </div>
-                  <p className="text-[15px] font-bold text-carbon mb-1">{f.title}</p>
-                  <p className="text-[12px] text-slate leading-[1.6] mb-3">{f.desc}</p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={(e) => { e.stopPropagation(); navigate(f.path); }}
-                    className="group/btn"
-                  >
-                    Learn More <ArrowRight size={13} className="inline align-middle ml-1 transition-transform duration-200 group-hover/btn:translate-x-[3px]" />
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
+      {/* ── Trust bar — policy statements, not measured metrics ──────────────────── */}
+      <TrustServiceStrip variant="dark" items={HOME_TRUST_BAR} />
 
-          {FEATURES.length > 6 && (
-            <div className="flex justify-center mt-8">
-              <Button variant="outline" size="sm" pill onClick={() => setShowAllFeatures(s => !s)}>
-                {showAllFeatures ? 'View Less' : 'View More'}
-                <ArrowRight size={13} className={clsx('inline align-middle ml-1 transition-transform duration-200', showAllFeatures && '-rotate-90')} />
+      {/* ── 3-up promo row — Sell / AI tools / Loyalty, each a real platform feature ── */}
+      <section className="py-10 sm:py-12 px-4 sm:px-6 lg:px-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-orange to-brand-deep-orange p-5 flex items-center gap-4 min-h-[150px]">
+            <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-white/10" />
+            <div className="absolute right-3 -top-9 w-20 h-20 rounded-full bg-white/10" />
+            <div className="relative z-[1] min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-white mb-1">Become a Seller</p>
+              <p className="text-[12px] text-white/85 leading-snug mb-4">Start your business in minutes.</p>
+              <Button variant="dark" size="sm" onClick={sellEntry.go} loading={sellEntry.loading} className="w-fit">
+                Start Selling <ArrowRight size={12} className="inline align-middle ml-1" />
               </Button>
             </div>
-          )}
+            <div className="relative z-[1] shrink-0 w-[72px] h-[72px] rounded-full bg-white/15 border border-white/25 backdrop-blur-sm flex items-center justify-center">
+              <Store size={32} className="text-white" />
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl bg-carbon p-5 flex items-center gap-4 min-h-[150px]">
+            <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-accent-violet/15" />
+            <div className="absolute right-3 -top-9 w-20 h-20 rounded-full bg-accent-violet/10" />
+            <div className="relative z-[1] min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-white mb-1">AI Commerce Tools</p>
+              <p className="text-[12px] text-white/60 leading-snug mb-4">Smart features to boost your sales.</p>
+              <Button variant="primary" size="sm" onClick={() => navigate('/sellers')} className="w-fit">
+                Explore Tools <ArrowRight size={12} className="inline align-middle ml-1" />
+              </Button>
+            </div>
+            <div className="relative z-[1] shrink-0 w-[72px] h-[72px] rounded-full bg-accent-violet/20 border border-accent-violet/30 flex items-center justify-center">
+              <BarChart3 size={32} className="text-accent-violet" />
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl bg-brand-pale-orange p-5 flex items-center gap-4 min-h-[150px]">
+            <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-white/40" />
+            <div className="absolute right-3 -top-9 w-20 h-20 rounded-full bg-white/30" />
+            <div className="relative z-[1] min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-carbon mb-1">Earn Rewards</p>
+              <p className="text-[12px] text-charcoal/70 leading-snug mb-4">Give buyers points, tiers &amp; perks.</p>
+              <Button variant="secondary" size="sm" onClick={() => navigate('/sellers')} className="w-fit">
+                Explore Tools <ArrowRight size={12} className="inline align-middle ml-1" />
+              </Button>
+            </div>
+            <div className="relative z-[1] shrink-0 w-[72px] h-[72px] rounded-full bg-white border border-white flex items-center justify-center shadow-md">
+              <Gift size={32} className="text-brand-orange" />
+            </div>
+          </div>
         </div>
       </section>
+
+      {/* ── Shop by Category — real category-tree data ───────────────────────────── */}
+      {(categoriesLoading || categories.length > 0) && (
+        <section className="py-10 sm:py-12 lg:py-14 border-t border-bone">
+          <div className="px-4 sm:px-6 lg:px-12">
+            <div className="flex items-end justify-between gap-4 mb-7">
+              <div>
+                <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-[6px]">
+                  Browse Top Categories
+                </p>
+                <h2 className="font-serif text-[22px] sm:text-[26px] font-bold text-carbon leading-[1.2]">
+                  Shop by Category
+                </h2>
+              </div>
+              <Button variant="link" size="sm" onClick={() => navigate('/marketplace')} className="shrink-0 whitespace-nowrap">
+                View All <ArrowRight size={13} className="inline align-middle ml-1" />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
+              {categoriesLoading
+                ? Array.from({ length: 7 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-bone bg-white overflow-hidden">
+                      <div className="aspect-square animate-pulse bg-bone" />
+                      <div className="p-3">
+                        <SkeletonBox width="70%" height={12} className="mb-2" />
+                        <SkeletonBox width="50%" height={10} />
+                      </div>
+                    </div>
+                  ))
+                : categories.slice(0, 12).map(cat => (
+                    <button
+                      key={cat._id}
+                      onClick={() => navigate(`/marketplace?category=${cat._id}`)}
+                      className="group flex flex-col text-left rounded-2xl border border-bone bg-white overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-[3px] hover:border-brand-orange/30 hover:shadow-raised focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                    >
+                      <span className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-brand-pale-orange to-[#fdf6f0]">
+                        {cat.image
+                          ? <img loading="lazy" decoding="async" src={cat.image} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                          : <span className="absolute inset-0 flex items-center justify-center"><Tag size={26} className="text-brand-orange/50" /></span>}
+                      </span>
+                      <span className="flex flex-col px-3 py-3">
+                        <span className="text-[12.5px] font-semibold text-charcoal leading-tight line-clamp-1 mb-[6px] group-hover:text-brand-orange transition-colors">
+                          {cat.name}
+                        </span>
+                        <span className="flex items-center justify-between gap-2">
+                          <span className="text-[10.5px] text-slate whitespace-nowrap">
+                            {typeof cat.productCount === 'number' && cat.productCount > 0 ? `${compactNumber.format(cat.productCount)}+ Items` : 'Browse'}
+                          </span>
+                          <span className="shrink-0 w-6 h-6 rounded-full bg-brand-pale-orange text-brand-orange flex items-center justify-center group-hover:bg-brand-orange group-hover:text-white transition-colors">
+                            <ChevronRight size={13} />
+                          </span>
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── Top Stores ───────────────────────────────────────────────────────────── */}
       {(storesLoading || topStores.length > 0) && (
@@ -630,7 +718,7 @@ export function Homepage() {
                   ))
                 : topStores.map(s => (
                     <div key={s.storeId} className="shrink-0 snap-start w-[210px] sm:w-[calc((100%-24px)/3)] md:w-[calc((100%-36px)/4)] lg:w-[calc((100%-48px)/5)]">
-                      <TopStoreCard store={s} onClick={() => navigate(`/${s.slug}`)} />
+                      <TopStoreCard store={s} onClick={() => window.location.href = getStorefrontUrl(s.slug)} />
                     </div>
                   ))}
             </div>
@@ -657,6 +745,8 @@ export function Homepage() {
         </section>
       )}
 
+      <ClosingCtaBanner />
+
       {/* ── Social Proof — real reviews only; section hides itself until there's enough real content ── */}
       {(testimonialsLoading || testimonials.length > 0) && (
         <section className="bg-cream border-t border-bone py-10 sm:py-12 lg:py-14">
@@ -667,10 +757,14 @@ export function Homepage() {
             <h2 className="font-serif text-[24px] sm:text-[28px] font-bold text-carbon text-center mb-10 max-w-md mx-auto leading-[1.2]">
               Real stories from real sellers
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* flex-wrap + centered, not a fixed 3-column grid — real
+               testimonial count varies, and a rigid grid left fewer-than-3
+               cards stranded on the left with a lopsided empty gap instead of
+               sitting centered as a deliberate row. */}
+            <div className="flex flex-wrap justify-center gap-4">
               {testimonialsLoading
                 ? Array.from({ length: 3 }).map((_, i) => (
-                    <Card key={i} padding="none">
+                    <Card key={i} padding="none" className="w-full sm:w-[340px]">
                       <div className="p-5">
                         <div className="flex items-center justify-between mb-3">
                           <SkeletonBox width={70} height={12} />
@@ -689,7 +783,7 @@ export function Homepage() {
                     </Card>
                   ))
                 : testimonials.map(t => (
-                    <Card key={t.id} padding="none" hover className="group relative overflow-hidden">
+                    <Card key={t.id} padding="none" hover className="group relative overflow-hidden w-full sm:w-[340px]">
                       <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
                       <div className="p-5">
                         <div className="flex items-center justify-between mb-3">
@@ -720,33 +814,6 @@ export function Homepage() {
           </div>
         </section>
       )}
-
-      {/* ── CTA — layered gradient + glow instead of a flat fill, so the
-         platform's closing moment carries the same depth as the hero. ── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-orange to-brand-deep-orange py-12 sm:py-14 lg:py-18 px-4 sm:px-6 text-center">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute w-[320px] h-[320px] rounded-full -top-32 -left-16 bg-white/10 blur-3xl" />
-          <div className="absolute w-[260px] h-[260px] rounded-full -bottom-24 -right-10 bg-carbon/15 blur-3xl" />
-        </div>
-        <div className="relative z-[1] max-w-lg mx-auto">
-          <h2 className="font-serif text-[26px] sm:text-[30px] lg:text-[34px] font-bold text-white mb-3 leading-[1.2] tracking-[-0.01em]">
-            Ready to start selling?
-          </h2>
-          <p className="text-[13px] sm:text-[14px] text-white/85 mb-7 leading-[1.7]">
-            {stats && stats.sellersCount > 0
-              ? `Join ${compactNumber.format(stats.sellersCount)}+ sellers on Solvexo. Free to start, no credit card required.`
-              : 'Free to start, no credit card required.'}
-          </p>
-          <Button variant="dark" size="md" onClick={sellEntry.go} loading={sellEntry.loading}>
-            Create Your Account <ArrowRight size={13} className="inline align-middle ml-1" />
-          </Button>
-        </div>
-      </section>
-
-      {/* ── App Download ─────────────────────────────────────────────────────────── */}
-      <section className="px-4 sm:px-6 lg:px-12 py-12 sm:py-14">
-        <AppDownloadBanner />
-      </section>
 
       <Footer />
       <FloatingAppWidget />

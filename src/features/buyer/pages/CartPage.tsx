@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
 import { Button } from '@/components/comman/ui/Button';
-import { BuyerNavbar, Breadcrumb, Footer, EmptyState, SkeletonBox } from '@/components/comman/ui';
+import { BuyerNavbar, Breadcrumb, Footer, SkeletonBox, getRecentlyViewed } from '@/components/comman/ui';
 import {
   Minus, Plus, Trash2, ShoppingBag, ImageOff,
-  Loader2, Package, Download, ChevronRight,
+  Loader2, Package, Download, ChevronRight, ShieldCheck, RotateCcw, Lock,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { currencySymbol } from '@/utils/currency';
@@ -65,6 +65,11 @@ export function CartPage() {
 
   const isEmpty = !loading && !items.length;
 
+  // Real, honest recall — the shopper's own recently-viewed products
+  // (client-tracked from ProductDetail, same source the navbar's search
+  // dropdown already uses), never a fabricated "trending" list.
+  const recentlyViewed = isEmpty ? getRecentlyViewed() : [];
+
   // Every line is converted from its OWN native (seller) currency into the
   // buyer's currently-selected display currency — this is what makes the
   // navbar PKR/USD switch actually update prices here, and it's also what
@@ -106,15 +111,68 @@ export function CartPage() {
           </div>
         )}
 
-        {/* ── Empty ── */}
+        {/* ── Empty — a guided moment, not a dead end: a real re-entry path
+            back into the catalog (via the shopper's own recently-viewed
+            products, when there are any) plus honest trust reassurance,
+            instead of just an icon and one button. ── */}
         {isEmpty && (
-          <div className="bg-white rounded-xl border border-bone">
-            <EmptyState
-              icon={<ShoppingBag size={30} className="text-brand-orange" />}
-              title="Your cart is empty"
-              description="Browse the marketplace and add products to get started."
-              action={{ label: 'Browse Marketplace', onClick: () => navigate('/marketplace') }}
-            />
+          <div className="flex flex-col gap-5">
+            <div className="relative overflow-hidden bg-white rounded-2xl border border-bone px-6 py-10 sm:py-12 flex flex-col items-center text-center">
+              <div className="absolute inset-0 bg-gradient-to-b from-brand-pale-orange/40 to-transparent pointer-events-none" />
+              <span className="relative flex size-16 items-center justify-center rounded-full bg-brand-pale-orange mb-4">
+                <ShoppingBag size={26} className="text-brand-orange" />
+              </span>
+              <p className="relative text-[19px] font-bold text-carbon mb-1">Your cart is empty</p>
+              <p className="relative text-[13px] text-slate max-w-[360px] leading-[1.6] mb-5">
+                Nothing here yet — browse the marketplace to find products, digital downloads, and courses from verified sellers.
+              </p>
+              <div className="relative flex items-center gap-2 flex-wrap justify-center">
+                <Button variant="primary" onClick={() => navigate('/marketplace')}>Browse Marketplace</Button>
+                <Button variant="outline" onClick={() => navigate('/EducationMarketplace')}>Explore Education</Button>
+              </div>
+            </div>
+
+            {/* Continue where you left off — the shopper's own recently-viewed
+                products, real client-tracked history, shown only when it exists. */}
+            {recentlyViewed.length > 0 && (
+              <div className="bg-white rounded-xl border border-bone p-5">
+                <p className="text-[13px] font-bold text-carbon mb-3">Continue where you left off</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {recentlyViewed.slice(0, 4).map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => navigate(`/marketplace/${item.id}`)}
+                      className="group flex flex-col text-left bg-transparent border border-transparent rounded-xl p-1.5 cursor-pointer transition-all duration-200 hover:border-bone hover:-translate-y-[2px]"
+                    >
+                      <div className="aspect-square rounded-lg overflow-hidden bg-brand-pale-orange mb-2">
+                        {item.image
+                          ? <img loading="lazy" decoding="async" src={item.image} alt="" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.05]" />
+                          : <div className="w-full h-full flex items-center justify-center"><ImageOff size={16} className="text-brand-orange opacity-50" /></div>}
+                      </div>
+                      <span className="text-[11px] font-medium text-charcoal leading-tight line-clamp-2 group-hover:text-brand-orange transition-colors">{item.name}</span>
+                      {item.price != null && (
+                        <span className="text-[11px] font-bold text-carbon mt-[2px]">{displaySymbol}{convert(item.price, item.currency).toLocaleString()}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Trust reassurance — same real, already-established language as
+                the Marketplace welcome strip's Buyer Protection link, not new
+                claims invented for this page. */}
+            <div className="flex items-center justify-center gap-5 sm:gap-8 flex-wrap text-[11.5px] text-slate">
+              <button onClick={() => navigate('/faq')} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors">
+                <ShieldCheck size={14} className="text-success" /> Buyer Protection
+              </button>
+              <button onClick={() => navigate('/faq')} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors">
+                <Lock size={14} className="text-success" /> Secure Checkout
+              </button>
+              <button onClick={() => navigate('/faq')} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors">
+                <RotateCcw size={14} className="text-success" /> Easy Returns
+              </button>
+            </div>
           </div>
         )}
 

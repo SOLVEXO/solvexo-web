@@ -10,6 +10,7 @@ import { useAuthGate } from '@/contexts/AuthGateContext';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetAllProducts, type MarketplaceProduct, type ProductVariant } from '@/api/services/marketplace';
 import { apiGetPublicStoreProducts, apiGetPublicStore, apiFollowStore, apiGetFollowStatus, type PublicStoreProduct, type PublicStoreData } from '@/api/services/store';
+import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { Button } from '@/components/comman/ui/Button';
 import { Badge } from '@/components/comman/ui/Badge';
 import { Card } from '@/components/comman/ui/Card';
@@ -201,6 +202,24 @@ function QuantityStepper({ qty, max, onChange }: { qty: number; max: number; onC
       >
         <Plus size={13} />
       </button>
+    </div>
+  );
+}
+
+// ── Seller-tab avatar — a real uploaded store logo is rarely a perfect
+// square (banner-shaped logos are common), so `object-cover` on a small
+// circle was cropping to a random slice of the logo instead of showing the
+// whole mark. `object-contain` on a padded white disc shows the complete
+// logo shrunk-to-fit; `onError` falls back to initials instead of a broken
+// image if the URL 404s. ──
+function SellerLogoAvatar({ logo, name }: { logo?: string | null; name: string }) {
+  const [errored, setErrored] = useState(false);
+  const initials = (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  return (
+    <div className="w-[60px] h-[60px] rounded-full bg-success-bg text-success flex items-center justify-center font-bold text-[18px] flex-shrink-0 overflow-hidden border-2 border-white outline outline-1 outline-bone">
+      {logo && !errored
+        ? <img loading="lazy" decoding="async" src={logo} alt="" onError={() => setErrored(true)} className="w-full h-full object-contain p-1.5 bg-white" />
+        : initials}
     </div>
   );
 }
@@ -688,11 +707,7 @@ export function ProductDetail() {
                   <div>
                     <CoverImage src={storeData?.coverImage} className="h-[100px] -mx-6 -mt-6" />
                     <div className="relative flex items-start gap-[14px] mb-5 flex-wrap -mt-8">
-                      <div className="w-[60px] h-[60px] rounded-full bg-success-bg text-success flex items-center justify-center font-bold text-[18px] flex-shrink-0 overflow-hidden border-2 border-white outline outline-1 outline-bone">
-                        {storeData?.logo
-                          ? <img loading="lazy" decoding="async" src={storeData.logo} alt="" className="w-full h-full object-cover" />
-                          : (product.sellerName ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                      </div>
+                      <SellerLogoAvatar logo={storeData?.logo} name={product.sellerName ?? 'Unknown Seller'} />
                       <div className="flex-1 min-w-0 pt-8">
                         <div className="flex items-center gap-[6px] flex-wrap">
                           <span className="text-[16px] font-bold text-carbon">{storeData?.name ?? product.sellerName ?? 'Unknown Seller'}</span>
@@ -720,7 +735,7 @@ export function ProductDetail() {
                         )}
                       </div>
                       <div className="flex gap-2 shrink-0 pt-8">
-                        <Button variant="secondary" size="sm" disabled={!product.storeSlug} onClick={() => product.storeSlug && navigate(`/${product.storeSlug}`)}>
+                        <Button variant="secondary" size="sm" disabled={!product.storeSlug} onClick={() => product.storeSlug && (window.location.href = getStorefrontUrl(product.storeSlug))}>
                           Visit Store <ArrowRight size={13} className="inline align-middle ml-1" />
                         </Button>
                         {storeId && (

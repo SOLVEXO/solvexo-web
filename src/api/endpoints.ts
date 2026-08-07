@@ -175,6 +175,47 @@ export const ENDPOINTS = {
     },
   },
 
+  // ── STORE THEME (navbar/footer/colors — replaces STORE.SAVE_BUILDER_CONFIG) ─
+  STORE_THEME: {
+    GET:            (storeId: string) => `/api/store-theme/${storeId}`,
+    UPDATE_THEME:   (storeId: string) => `/api/store-theme/${storeId}/theme`,
+    UPDATE_HEADER:  (storeId: string) => `/api/store-theme/${storeId}/header`,
+    UPDATE_FOOTER:  (storeId: string) => `/api/store-theme/${storeId}/footer`,
+    UPDATE_IDENTITY_BANNER: (storeId: string) => `/api/store-theme/${storeId}/identity-banner`,
+    PUBLIC:         (storeId: string) => `/api/public/store-theme/${storeId}`,
+  },
+
+  // ── STORE PAGES (home + custom pages, each composed of sections/blocks) ────
+  STORE_PAGES: {
+    LIST:             (storeId: string) => `/api/store-pages/${storeId}`,
+    GET:              (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}`,
+    CREATE:           (storeId: string) => `/api/store-pages/${storeId}`,
+    UPDATE:           (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}`,
+    UPDATE_SECTIONS:  (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}/sections`,
+    PUBLISH:          (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}/publish`,
+    UNPUBLISH:        (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}/unpublish`,
+    DELETE:           (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}`,
+
+    PUBLIC_HOME: (storeId: string) => `/api/public/store-pages/${storeId}/home`,
+    PUBLIC_LIST: (storeId: string) => `/api/public/store-pages/${storeId}/list`,
+    PUBLIC_PAGE: (storeId: string, slug: string) => `/api/public/store-pages/${storeId}/page/${slug}`,
+  },
+
+  // ── STORE BLOG ───────────────────────────────────────────────────────────
+  STORE_BLOG: {
+    LIST:            (storeId: string) => `/api/store-blog/${storeId}`,
+    GET:             (storeId: string, postId: string) => `/api/store-blog/${storeId}/${postId}`,
+    CREATE:          (storeId: string) => `/api/store-blog/${storeId}`,
+    UPDATE:          (storeId: string, postId: string) => `/api/store-blog/${storeId}/${postId}`,
+    UPDATE_CONTENT:  (storeId: string, postId: string) => `/api/store-blog/${storeId}/${postId}/content`,
+    PUBLISH:         (storeId: string, postId: string) => `/api/store-blog/${storeId}/${postId}/publish`,
+    UNPUBLISH:       (storeId: string, postId: string) => `/api/store-blog/${storeId}/${postId}/unpublish`,
+    DELETE:          (storeId: string, postId: string) => `/api/store-blog/${storeId}/${postId}`,
+
+    PUBLIC_LIST: (storeId: string) => `/api/public/store-blog/${storeId}`,
+    PUBLIC_POST: (storeId: string, slug: string) => `/api/public/store-blog/${storeId}/${slug}`,
+  },
+
   // ── ACTIVITY LOG ──────────────────────────────────────────────────────────
   ACTIVITY_LOG: {
     LIST:   (storeId: string) => `/api/activity-log/${storeId}`,

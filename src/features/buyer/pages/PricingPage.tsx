@@ -117,14 +117,18 @@ export function PricingPage() {
         </div>
       </div>
 
-      {/* ── Plan Cards — live from the admin-managed platform-plan catalog ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 md:px-8 lg:px-12 pb-16 max-w-[1200px] mx-auto">
+      {/* ── Plan Cards — live from the admin-managed platform-plan catalog.
+          A flex-wrap row (not a fixed 4-column grid) so however many real
+          plans exist — 2 today, maybe more later — always sit centered as a
+          deliberate row instead of left-aligned with a lopsided dead gap
+          where the missing columns would have been. ── */}
+      <div className="flex flex-wrap justify-center gap-4 px-4 md:px-8 lg:px-12 pb-16 max-w-[1200px] mx-auto">
         {plansLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-[20px] p-7 bg-white border-2 border-bone animate-pulse h-[420px]" />
+            <div key={i} className="w-full sm:w-[300px] rounded-[20px] p-7 bg-white border-2 border-bone animate-pulse h-[420px]" />
           ))
         ) : plans.length === 0 ? (
-          <div className="col-span-full text-center py-10 text-[13px] text-slate">
+          <div className="text-center py-10 text-[13px] text-slate">
             Pricing is being updated — check back shortly, or <a href="mailto:support@solvexo.com" className="text-brand-orange underline">contact sales</a>.
           </div>
         ) : plans.map(plan => {
@@ -133,7 +137,7 @@ export function PricingPage() {
             <div
               key={plan._id}
               className={clsx(
-                'rounded-[20px] p-7 relative border-2',
+                'w-full sm:w-[300px] rounded-[20px] p-7 relative border-2',
                 isFeatured
                   ? 'bg-carbon border-brand-orange'
                   : 'bg-white border-bone',

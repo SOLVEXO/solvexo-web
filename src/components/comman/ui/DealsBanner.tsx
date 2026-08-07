@@ -86,6 +86,20 @@ function CampaignImage({ src, fit = 'contain' }: { src: string | null; fit?: 'co
   );
 }
 
+// Premium compact countdown digit — light-card flavor of `CountdownUnit`
+// above (that one is styled for the dark/orange 3-column banner; this one
+// needs to read on the light warm surface of the compact+label promo card).
+// Remounted via a `key` at the call site each time `value` changes so the
+// existing `countdown-tick` keyframe (index.css) replays on every real tick
+// instead of being a static digit.
+function MiniCountdownUnit({ value }: { value: number }) {
+  return (
+    <div className="countdown-tick flex h-[24px] w-[24px] items-center justify-center rounded-[7px] border border-bone bg-white text-[11px] font-bold tabular-nums leading-none text-carbon shadow-[0_1px_2px_rgba(20,15,10,0.06)] sm:h-[26px] sm:w-[26px]">
+      {String(value).padStart(2, '0')}
+    </div>
+  );
+}
+
 const ROTATE_MS = 6000;
 // Showing a raw low opt-in count ("1 store participating") undersells the
 // sale more than it informs — below this, the line is just omitted rather
@@ -108,7 +122,7 @@ const MIN_STORE_COUNT_TO_SHOW = 3;
  * card's top edge for emphasis), then countdown + CTA. Below lg it stacks to
  * one column (text → image → countdown), growing to fit instead of forcing
  * the same fixed height. */
-export function DealsBanner({ className, storeType, compact = false }: {
+export function DealsBanner({ className, storeType, compact = false, label = false }: {
   className?: string;
   storeType?: string;
   /** Forces the single-column mobile-style stack (text → image → countdown)
@@ -116,6 +130,11 @@ export function DealsBanner({ className, storeType, compact = false }: {
    *  height — for embedding inside a narrower host layout (e.g. Marketplace's
    *  WelcomeStrip hero cell) instead of as its own full-width page section. */
   compact?: boolean;
+  /** Compact-only: shows the campaign's name + discount headline to the left
+   *  of the image instead of the bare image alone — for a host card (e.g.
+   *  Marketplace's hero Flash Sale card) that has room to say what the deal
+   *  actually is, rather than a shopper having to click through to find out. */
+  label?: boolean;
 }) {
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<PublicCampaign[]>([]);
@@ -191,11 +210,23 @@ export function DealsBanner({ className, storeType, compact = false }: {
           assumption would spill out past the visible rounded card. */}
       <div className={clsx('relative w-full h-full transition-transform duration-200 hover:-translate-y-[2px]', compact && 'overflow-hidden rounded-[20px]')}>
         {compact ? (
-          /* Compact background — plain and neutral, not the orange
-             promo-copy gradient (that gradient existed to carry white text;
-             compact mode has none, it's just the image, so an orange frame
-             behind it was only ever wasted letterboxing). */
-          <div className="absolute inset-0 overflow-hidden rounded-[20px] border border-bone bg-white" />
+          label ? (
+            /* Compact + label: a warm off-white promo surface (not a solid
+               orange fill) — a subtle brand-tinted gradient, a faint dot
+               texture, and two soft orange glows for depth, restrained
+               enough to read as a premium light card rather than a loud
+               banner. Deliberately distinct from the dark/solid-orange
+               treatment used everywhere else in this file. */
+            <div className="absolute inset-0 overflow-hidden rounded-[20px] border border-brand-orange/15 bg-white shadow-[0_1px_2px_rgba(20,15,10,0.05),0_20px_36px_-26px_rgba(185,90,58,0.4)]">
+              <div className="gradient-drift absolute inset-0 bg-gradient-to-r from-white via-cream to-brand-pale-orange" />
+              <div className="pointer-events-none absolute inset-0 opacity-[0.05] bg-[radial-gradient(circle_at_1px_1px,#B95A3A_1px,transparent_0)] bg-[length:18px_18px]" />
+              <div className="pointer-events-none absolute -top-14 right-[8%] size-36 rounded-full bg-brand-orange/10 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-16 right-[-4%] size-32 rounded-full bg-brand-deep-orange/10 blur-3xl" />
+              <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-black/[0.06] to-transparent" />
+            </div>
+          ) : (
+            <div className="absolute inset-0 overflow-hidden rounded-[20px] border border-bone bg-white" />
+          )
         ) : (
           <div className="absolute inset-0 overflow-hidden rounded-[20px] border border-black/10">
             <div className="gradient-drift absolute inset-0 bg-gradient-to-br from-brand-orange via-[#e28b63] to-[#f3a27a]" />
@@ -211,6 +242,73 @@ export function DealsBanner({ className, storeType, compact = false }: {
         )}
 
         {compact ? (
+          label ? (
+            /* Compact + label: image first (left), then the real campaign
+               data (name/discount from the API response), then a live
+               countdown + "Shop Now" CTA on the right — a self-contained
+               promo card rather than a bare thumbnail needing an external
+               countdown row next to it. */
+            <button
+              key={campaign._id}
+              onClick={() => navigate(`/marketplace?campaign=${campaign._id}`)}
+              className="group relative z-[1] flex w-full flex-col items-stretch border-none bg-transparent p-0 outline-none cursor-pointer overflow-hidden rounded-[20px] text-left sm:h-full sm:flex-row"
+            >
+              {/* `fit="contain"` here (not `cover`) — the source banner image
+                  is a full promo graphic (product photo + its own badge/QR
+                  code/text), so cropping it to fill the box was cutting real
+                  content off. Contain shows it whole, floating on its own
+                  raised white "pedestal" panel with a soft brand-orange glow
+                  behind it for depth, rather than a flat inset thumbnail.
+                  Wide + fixed-size regardless of the image's own aspect
+                  ratio, so whichever campaign is showing always lands in the
+                  same box instead of resizing the card around it. */}
+              <div className="relative flex h-[92px] w-full shrink-0 items-center justify-center p-2.5 sm:h-full sm:w-[150px] sm:py-3 sm:pl-3 sm:pr-0 md:w-[190px]">
+                <div className="pointer-events-none absolute inset-3 -z-[1] rounded-[18px] bg-brand-orange/15 blur-xl" />
+                <div className="relative h-full w-full rounded-[14px] border border-black/[0.06] bg-white p-2 shadow-[0_10px_22px_-12px_rgba(185,90,58,0.4)]">
+                  <CampaignImage src={campaign.bannerImage} fit="contain" />
+                </div>
+                {hasPercentOff && (
+                  <span className="absolute left-1 top-1 z-[1] inline-flex items-center rounded-full bg-brand-deep-orange px-[8px] py-[3px] text-[9px] font-bold leading-none text-white shadow-[0_3px_8px_-1px_rgba(185,90,58,0.55)]">
+                    -{campaign.discountValue}% OFF
+                  </span>
+                )}
+              </div>
+
+              <div className="hidden w-px shrink-0 self-stretch bg-gradient-to-b from-transparent via-black/[0.07] to-transparent sm:my-3 sm:block" />
+
+              <div className="flex min-w-0 flex-1 flex-col justify-center gap-[5px] px-3.5 py-1.5 sm:px-4 sm:py-0">
+                <span className="inline-flex w-fit items-center gap-[5px] rounded-full bg-brand-pale-orange px-[9px] py-[4px] text-[9px] font-bold uppercase tracking-wide text-brand-deep-orange">
+                  <Zap size={10} className="fill-brand-deep-orange" /> Limited Time
+                </span>
+                <span className="font-serif text-[16px] font-bold leading-tight tracking-[-0.005em] text-carbon truncate sm:text-[18px]">{campaign.name}</span>
+                <span className="flex items-center gap-[6px] text-[12px] font-bold leading-none text-brand-deep-orange truncate">
+                  <span className="inline-block h-[10px] w-[3px] shrink-0 rounded-full bg-brand-orange" />
+                  {discountHeadline}
+                </span>
+                {metaText && (
+                  <span className="text-[10px] text-slate truncate">{metaText}</span>
+                )}
+              </div>
+
+              <div className="hidden w-px shrink-0 self-stretch bg-gradient-to-b from-transparent via-black/[0.07] to-transparent sm:my-3 sm:block" />
+
+              <div className="flex shrink-0 items-center justify-between gap-3 border-t border-black/[0.05] bg-mist/50 px-3.5 py-2.5 sm:flex-col sm:justify-center sm:gap-[9px] sm:border-t-0 sm:bg-transparent sm:px-4 sm:py-0">
+                <div className="flex flex-col items-center gap-[3px]">
+                  <span className="text-[7.5px] font-bold uppercase tracking-[0.1em] text-slate">Ends In</span>
+                  <div className="flex items-center gap-[3px]">
+                    <MiniCountdownUnit key={`h${countdown.hours}`} value={countdown.hours} />
+                    <span className="pb-[1px] text-[11px] font-bold leading-none text-brand-deep-orange/50">:</span>
+                    <MiniCountdownUnit key={`m${countdown.minutes}`} value={countdown.minutes} />
+                    <span className="pb-[1px] text-[11px] font-bold leading-none text-brand-deep-orange/50">:</span>
+                    <MiniCountdownUnit key={`s${countdown.seconds}`} value={countdown.seconds} />
+                  </div>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-[6px] whitespace-nowrap rounded-full bg-brand-orange px-4 py-[8px] text-[11px] font-bold text-white shadow-[0_6px_16px_-4px_rgba(185,90,58,0.55)] transition-all duration-200 ease-out group-hover:-translate-y-[1px] group-hover:bg-brand-deep-orange group-hover:shadow-[0_10px_20px_-4px_rgba(185,90,58,0.6)] group-active:translate-y-0 group-active:shadow-[0_4px_10px_-2px_rgba(185,90,58,0.45)]">
+                  Shop Now <ArrowRight size={11} className="transition-transform duration-200 ease-out group-hover:translate-x-[3px]" />
+                </span>
+              </div>
+            </button>
+          ) : (
           /* Compact: the image alone, filling the card completely edge-to-
              edge (fit="cover") — one fixed, consistent size every campaign
              image sits in, so nothing peeks out around it regardless of the
@@ -230,6 +328,7 @@ export function DealsBanner({ className, storeType, compact = false }: {
               </span>
             )}
           </button>
+          )
         ) : (
           <button
             key={campaign._id}

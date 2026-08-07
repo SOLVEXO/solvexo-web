@@ -133,6 +133,13 @@ export function ReferenceNav() {
     return pathname.startsWith(path);
   };
 
+  // A dev-only route-jump convenience bar — every real page is already
+  // reachable through the actual navbar/mega menu/footer, so this has no
+  // reason to exist for a real visitor and every layout's 44px offset below
+  // is dev-only too (see the `import.meta.env.DEV` ternaries in
+  // RootLayout/StoreLayout/SellerLayout/AdminLayout/AuthSplitLayout).
+  if (!import.meta.env.DEV) return null;
+
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, height: 44,

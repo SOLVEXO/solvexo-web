@@ -1,4 +1,4 @@
-import { useState, useId } from 'react';
+import { useState, useId, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -9,7 +9,6 @@ import { useForm } from '@/hooks/useForm';
 import { newPasswordSchema, type NewPasswordFormData } from '@/utils/validation/schemas';
 import { AuthContext } from '@/api/services/auth';
 import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
-import { OTPInput } from '@/components/comman/ui/OTPInput';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { PasswordSecurityMockup } from '@/features/auth/components/mockups/AuthMockups';
 
@@ -98,30 +97,33 @@ export function NewPasswordPage() {
   const navigate      = useNavigate();
   usePageTitle('New Password');
   const resetPassword = useResetPassword();
-  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
-  const [otpError, setOtpError]   = useState('');
-  const otp = otpDigits.join('');
 
   const ctx       = AuthContext.get();
   const userEmail = ctx?.email ?? '';
+  const otp       = ctx?.otp ?? '';
+
+  // Landing here without a code means the OTP step was skipped (direct URL,
+  // refresh after AuthContext's sessionStorage was cleared, etc.) — there's
+  // nothing to submit yet, so send them back to get one instead of showing
+  // a form that can only ever fail.
+  useEffect(() => {
+    if (!otp) navigate('/forgot-password', { replace: true });
+  }, [otp, navigate]);
 
   const { values, errors, setValue, blur, handleSubmit } = useForm(
     newPasswordSchema,
     { password: '', confirmPassword: '' },
     {
       onSubmit: async (data: NewPasswordFormData) => {
-        if (!otp || otp.length < 6) { setOtpError('Enter the 6-digit code from your email.'); return; }
-        setOtpError('');
+        if (!otp) return;
         await resetPassword.execute(otp, data.password);
       },
     },
   );
 
-  const handleOtpChange = (i: number, val: string) => {
-    const next = [...otpDigits]; next[i] = val; setOtpDigits(next); setOtpError('');
-  };
-
   const passwordsMatch = values.password === values.confirmPassword && values.confirmPassword !== '';
+
+  if (!otp) return null;
 
   if (resetPassword.success) {
     return (
@@ -143,18 +145,9 @@ export function NewPasswordPage() {
       <div className="lg:hidden flex justify-center mb-6"><SolvexoLogo size={32} /></div>
 
       <h1 className="text-[22px] font-bold text-carbon text-center lg:text-left mb-2">Reset your password</h1>
-      {userEmail && (
-        <p className="text-[13px] text-slate text-center lg:text-left mb-5 leading-[1.6]">
-          Enter the code sent to <strong className="text-carbon">{userEmail}</strong>
-        </p>
-      )}
-
-      {/* OTP */}
-      <div className="mb-4">
-        <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Verification Code</label>
-        <OTPInput values={otpDigits} onChange={handleOtpChange} />
-        {otpError && <p className="text-[11px] text-error text-center mt-[-8px] mb-2">{otpError}</p>}
-      </div>
+      <p className="text-[13px] text-slate text-center lg:text-left mb-5 leading-[1.6]">
+        {userEmail ? <>Almost done, <strong className="text-carbon">{userEmail}</strong> — choose a new password to finish resetting your account.</> : 'Choose a new password to finish resetting your account.'}
+      </p>
 
       {/* New password */}
       <div className="mb-3">
@@ -179,9 +172,22 @@ export function NewPasswordPage() {
       </div>
 
       {resetPassword.error && (
-        <div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mb-4 text-[13px] text-error">
-          <AlertTriangle size={14} className="shrink-0" />
-          <span>{resetPassword.error}</span>
+        <div role="alert" className="flex flex-col gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mb-4 text-[13px] text-error">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={14} className="shrink-0" />
+            <span>{resetPassword.error}</span>
+          </div>
+          {/* The code entered on the previous step is what's actually being
+             checked here (the backend verifies it together with the new
+             password) — if it was wrong or has expired, the only way back
+             is to re-enter it, not retry this same form. */}
+          <button
+            type="button"
+            onClick={() => navigate('/verify-otp')}
+            className="self-start text-[12.5px] font-semibold text-error underline bg-transparent border-none cursor-pointer p-0"
+          >
+            Re-enter code
+          </button>
         </div>
       )}
 

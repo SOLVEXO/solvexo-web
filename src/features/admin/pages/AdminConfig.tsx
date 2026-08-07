@@ -24,6 +24,7 @@ const FLAG_META: { key: keyof FeatureFlags; label: string; desc: string }[] = [
   { key: 'storeBuilder',       label: 'Store Builder',        desc: 'Let sellers customize their storefront' },
   { key: 'bulkProductImport',  label: 'Bulk Product Import',  desc: 'Allow CSV import for product listings' },
   { key: 'promotions',         label: 'Promotions',           desc: 'Store banners, promotion requests, and paid placements' },
+  { key: 'storefrontBlog',     label: 'Storefront Blog',      desc: 'Let sellers publish a blog on their storefront' },
 ];
 
 const AI_MODELS = ['claude-sonnet-5', 'claude-haiku-4-5', 'claude-opus-4-8'];

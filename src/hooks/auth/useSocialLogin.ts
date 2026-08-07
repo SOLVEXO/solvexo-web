@@ -5,12 +5,14 @@ import { apiSocialLogin, TokenStorage, getRoleRedirect, type SocialLoginPayload 
 // No real provider SDK is wired into the frontend yet (no Google Identity Services,
 // Facebook JS SDK, or Sign in with Apple JS) — clicking a social button used to open a
 // fake account-picker modal, which is misleading in a QA build. Surface the real gap
-// instead: which backend key is still missing so it's clear this just needs config,
-// not a rebuild.
+// honestly, but as a plain-language "not available yet" notice — the env-var/config
+// detail belongs in code comments for whoever wires this up, never in a message a
+// real visitor sees (an env var name in a user-facing banner reads as broken, not
+// "temporarily unavailable", and undermines trust on the exact screen meant to build it).
 const NOT_CONFIGURED_MESSAGE: Record<SocialLoginPayload['authProvider'], string> = {
-  google:   'Google Sign-In isn\'t wired up yet — backend needs GOOGLE_CLIENT_ID configured and a real Google auth flow added to the frontend.',
-  facebook: 'Facebook Login isn\'t wired up yet — backend needs FACEBOOK_APP_ID/FACEBOOK_APP_SECRET configured and a real Facebook auth flow added to the frontend.',
-  apple:    'Sign in with Apple isn\'t wired up yet — backend needs APPLE_CLIENT_ID configured and a real Apple auth flow added to the frontend.',
+  google:   'Sign in with Google isn\'t available yet — please continue with your email and password.',
+  facebook: 'Sign in with Facebook isn\'t available yet — please continue with your email and password.',
+  apple:    'Sign in with Apple isn\'t available yet — please continue with your email and password.',
 };
 
 export function useSocialLogin() {

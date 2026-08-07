@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { useProductsByCategory } from '@/hooks/marketplace/useProductsByCategory';
 import { useProductSearch } from '@/hooks/marketplace/useProductSearch';
 import type { MarketplaceSortBy } from '@/api/services/marketplace';
@@ -10,16 +11,18 @@ import { useCountdownToMidnight } from '@/hooks/useCountdownToMidnight';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
-import { Pagination, FilterDropdown, BuyerNavbar, SearchBox, AppDownloadBanner, Footer, TrustServiceStrip, StoreFeatureCard, FloatingAppWidget, EmptyState } from '@/components/comman/ui';
+import { Pagination, FilterDropdown, BuyerNavbar, AppDownloadBanner, Footer, TrustServiceStrip, StoreFeatureCard, FloatingAppWidget, EmptyState, DealsBanner, useCountdown } from '@/components/comman/ui';
 import { ProductCard, ProductCardSkeleton } from '@/components/comman/marketplace/ProductCard';
 import { FlashSaleCard } from '@/components/comman/marketplace/FlashSaleCard';
 import { FilterAccordionSection, FilterRadioRow, FilterCheckboxRow, FilterStarRow, ActiveFilterChip, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
-import { MegaMenuBar } from '@/components/comman/marketplace/MegaMenuBar';
-import { WelcomeStrip } from '@/components/comman/marketplace/WelcomeStrip';
+import { MegaMenuBar, CategoryBarIcon, CategoriesMegaContent } from '@/components/comman/marketplace/MegaMenuBar';
+import { Modal } from '@/components/comman/ui/Modal';
+import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import {
   ShoppingBag,
   SlidersHorizontal, X, Zap, LayoutGrid, LayoutList,
-  RefreshCcw,
+  RefreshCcw, ShieldCheck, Wallet, Headset, ArrowRight,
+  Store as StoreIcon, Truck, Smartphone,
 } from 'lucide-react';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { currencySymbol } from '@/utils/currency';
@@ -88,6 +91,17 @@ const SORT_OPTIONS = [
   { value: 'price-asc',  label: 'Price: Low–High' },
   { value: 'price-desc', label: 'Price: High–Low' },
   { value: 'best-rated', label: 'Best Rated'      },
+  { value: 'popularity', label: 'Best Sellers'    },
+];
+
+// Bottom-of-page trust strip — plain facts (distinct wording/set from the
+// persuasive header badges above), matching the plain-fact strip most
+// marketplaces put right before the footer.
+const BOTTOM_TRUST_ITEMS = [
+  { Icon: Truck,       label: 'Free Shipping'   },
+  { Icon: RefreshCcw,  label: 'Easy Returns'    },
+  { Icon: ShieldCheck, label: 'Secure Payments' },
+  { Icon: Headset,     label: '24/7 Support'    },
 ];
 
 
@@ -102,6 +116,11 @@ export function Marketplace() {
   const [viewMode,      setViewMode]      = useState<'grid' | 'list'>('grid');
   const [page,          setPage]          = useState(() => { const p = Number(searchParams.get('page')); return p > 0 ? p : 1; });
   const [mobileFilters, setMobileFilters] = useState(false);
+  // "More" at the end of the category quick-link row — opens the categories/
+  // subcategories/popular-products mega-panel (CategoriesMegaContent, reused
+  // as-is from the navbar's own "All Categories" dropdown), not a second/
+  // duplicated category browser.
+  const [categoriesModalOpen, setCategoriesModalOpen] = useState(false);
   // The floating Filters tab starts fully off-screen (not just invisible —
   // translated past the viewport edge) and slides in shortly after the page
   // has settled, instead of being visible immediately on load.
@@ -169,6 +188,8 @@ export function Marketplace() {
       .catch(() => { if (!cancelled) setCampaignFilterInfo(null); });
     return () => { cancelled = true; };
   }, [campaignFilterId]);
+
+  const campaignFilterCountdown = useCountdown(campaignFilterInfo?.endDate ?? '');
 
   const clearCampaignFilter = useCallback(() => {
     const next = new URLSearchParams(searchParams);
@@ -243,7 +264,8 @@ export function Marketplace() {
   const serverSortBy: MarketplaceSortBy | undefined =
     sortBy === 'price-asc' ? 'price_asc' :
     sortBy === 'price-desc' ? 'price_desc' :
-    sortBy === 'best-rated' ? 'rating' : undefined;
+    sortBy === 'best-rated' ? 'rating' :
+    sortBy === 'popularity' ? 'popularity' : undefined;
   const serverProductType = filters.type.length === 1
     ? (filters.type[0].toLowerCase() as 'physical' | 'digital' | 'educational')
     : undefined;
@@ -262,7 +284,20 @@ export function Marketplace() {
   );
   const searchResult = useProductSearch(search, page, LIMIT);
   const { products, total, loading, error, refetch } = search ? searchResult : browseResult;
-  const { addToCart, adding }    = useCartContext();
+  const { addToCart, adding, error: cartError, clearError: clearCartError } = useCartContext();
+  // Tracks which product's Add to Cart request just failed, so that one
+  // card (and only that one) can show a real recoverable-error state
+  // ("Try Again") instead of the button silently reverting to idle — the
+  // shopper otherwise has no signal a click didn't work.
+  const [addToCartFailedId, setAddToCartFailedId] = useState<string | null>(null);
+  const lastAddAttemptRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!cartError || !lastAddAttemptRef.current) return;
+    const failedId = lastAddAttemptRef.current;
+    setAddToCartFailedId(failedId);
+    const t = setTimeout(() => { setAddToCartFailedId(id => id === failedId ? null : id); clearCartError(); }, 2600);
+    return () => clearTimeout(t);
+  }, [cartError, clearCartError]);
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
   const { currency: displayCurrency, convert } = useCurrencyPreference();
   const priceSymbol = currencySymbol(displayCurrency);
@@ -360,7 +395,10 @@ export function Marketplace() {
   const handleCardClick = useCallback((id: string) => navigate(`/marketplace/${id}`), [navigate]);
   const handleAddToCart = useCallback((e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => {
     e.stopPropagation();
-    if (variantId) addToCart(id, variantId, type);
+    if (!variantId) return;
+    lastAddAttemptRef.current = variantId;
+    setAddToCartFailedId(prev => prev === variantId ? null : prev);
+    addToCart(id, variantId, type);
   }, [addToCart]);
   const handleToggleWishlist = useCallback((e: React.MouseEvent, id: string, variantId: string) => {
     e.stopPropagation();
@@ -397,7 +435,6 @@ export function Marketplace() {
     <div className="min-h-screen bg-cream">
 
       <BuyerNavbar
-        hideSearch
         search={{
           value: searchInput,
           onChange: setSearchInput,
@@ -407,6 +444,19 @@ export function Marketplace() {
           popularStores: topStores,
         }}
       />
+
+      {/* ── Flash Sale strip — the real active platform sale campaign
+         (self-fetching `DealsBanner`, compact mode with `label`), sitting
+         right between the navbar and the category/mega-menu bar so it's the
+         first thing a shopper sees below the nav. Owns its own countdown +
+         "Shop Now" CTA internally. Renders nothing if there's no active
+         campaign, same honest fallback DealsBanner already has everywhere
+         else it's used. ── */}
+      {!isBrowsing && flashDeals.length > 0 && (
+        <div className="bg-gradient-to-b from-brand-pale-orange/60 via-brand-pale-orange/25 to-transparent px-4 sm:px-6 lg:px-10 py-4">
+          <DealsBanner compact label className="h-auto w-full sm:h-[124px]" />
+        </div>
+      )}
 
       {/* ── Marketplace navigation — single merged row: All Categories + Flash
          Sale/Top Picks/Featured Stores/About (real discovery features, kept —
@@ -423,48 +473,114 @@ export function Marketplace() {
         countdown={countdown}
         onShopCategory={handleCategoryChange}
         onProductClick={handleCardClick}
-        onStoreClick={slug => navigate(`/${slug}`)}
+        onStoreClick={slug => window.location.href = getStorefrontUrl(slug)}
         onTrendingTerm={term => { setSearchInput(term); setSearch(term); }}
         onNavigate={navigate}
       />
 
-      {/* ── Big search bar — the real navbar SearchBox (same suggestions
-         dropdown, same searchInput/search state), just rendered at its `lg`
-         scale as a standalone hero search. The navbar's own compact copy is
-         hidden on this page (hideSearch above) so this is the one and only
-         search entry point, not a second, disconnected one. ── */}
-      <div className="bg-gradient-to-b from-brand-pale-orange/60 via-brand-pale-orange/25 to-transparent px-4 sm:px-6 lg:px-10 py-7 sm:py-9 flex justify-center">
-        <SearchBox
-          size="lg"
-          value={searchInput}
-          onChange={setSearchInput}
-          placeholder="Search for products, brands, and stores..."
-          categories={categories.map(c => ({ id: c._id, name: c.name }))}
-          onCategorySelect={handleCategoryChange}
-          popularStores={topStores}
-          onSubmit={term => setSearch((term ?? searchInput).trim().toLowerCase())}
-        />
+      {/* ── Full-width hero carousel — real marketplace/category banner data,
+         edge-to-edge under the nav row rather than boxed inside a card.
+         Uses BannerCarousel as-is (real impression/click tracking, Ken
+         Burns pan, swipe-safe dot indicators) — not a new
+         carousel implementation. ── */}
+      {banners.length > 0 && (
+        <div className="relative w-full h-[200px] sm:h-[320px] lg:h-[420px] xl:h-[460px] overflow-hidden">
+          <BannerCarousel entityType="banner" banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))} />
+        </div>
+      )}
+
+      {/* ── Category quick-links — icon + name + real product count per
+         top-level category (same data the sidebar's Category filter and
+         the mega-menu already use), plus a "More" link into the full
+         categories mega-panel. Reuses CategoryBarIcon (real uploaded image,
+         falls back to a tag glyph) rather than inventing a second icon
+         mapping. Sits right under the hero carousel, above the search bar/
+         Flash Sale card. ── */}
+      {categories.length > 0 && (
+        <div className="px-4 sm:px-6 lg:px-10 pt-5 pb-2">
+          <div className="flex items-center gap-3 sm:gap-5 overflow-x-auto scrollbar-hide pb-1">
+            {categories.slice(0, 8).map(cat => (
+              <button
+                key={cat._id}
+                onClick={() => handleCategoryChange(cat._id)}
+                className={clsx(
+                  'flex flex-col items-center gap-[6px] shrink-0 w-[76px] text-center cursor-pointer group bg-transparent border-none p-0',
+                  selectedCategory === cat._id && 'text-brand-orange',
+                )}
+              >
+                <span className={clsx(
+                  'flex size-11 items-center justify-center rounded-full border transition-colors duration-150',
+                  selectedCategory === cat._id ? 'border-brand-orange bg-brand-pale-orange' : 'border-bone bg-white group-hover:border-brand-orange/40',
+                )}>
+                  <CategoryBarIcon category={cat} />
+                </span>
+                <span className="text-[11px] font-semibold text-charcoal leading-tight line-clamp-1 group-hover:text-brand-orange transition-colors">{cat.name}</span>
+                {typeof cat.productCount === 'number' && (
+                  <span className="text-[9.5px] text-slate leading-none">{cat.productCount.toLocaleString()}+ items</span>
+                )}
+              </button>
+            ))}
+            {categories.length > 8 && (
+              <button
+                onClick={() => setCategoriesModalOpen(true)}
+                className="flex flex-col items-center gap-[6px] shrink-0 w-[76px] text-center cursor-pointer group bg-transparent border-none p-0"
+              >
+                <span className="flex size-11 items-center justify-center rounded-full bg-brand-orange text-white group-hover:bg-brand-deep-orange transition-colors">
+                  <ArrowRight size={16} />
+                </span>
+                <span className="text-[11px] font-semibold text-charcoal leading-tight">More</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Page header — breadcrumb, H1 + subtitle, and the 4 "why shop here"
+         reassurance badges (Buyer Protection/Secure Payments/Easy Returns/
+         24/7 Support) — a distinct set from the plain-fact strip at the
+         bottom of the page (Free Shipping/Easy Returns/Secure Payments/
+         24/7 Support), same as Amazon/Daraz separating a persuasive header
+         row from the factual footer row. ── */}
+      <div className="px-4 sm:px-6 lg:px-10 pt-5">
+        <div className="flex items-start justify-between gap-6 flex-wrap">
+          <div>
+            <h1 className="font-serif text-[28px] sm:text-[34px] lg:text-[38px] font-bold text-carbon tracking-[-0.01em] leading-tight">Marketplace</h1>
+            <p className="text-[13px] sm:text-[14px] text-slate mt-1">Discover top products from trusted sellers</p>
+          </div>
+          <div className="hidden lg:flex items-center gap-5 pt-1">
+            {[
+              { Icon: ShieldCheck, label: 'Buyer Protection', sub: 'Shop with confidence'  },
+              { Icon: Wallet,      label: 'Secure Payments',  sub: '100% secure payments'  },
+              { Icon: RefreshCcw,  label: 'Easy Returns',     sub: '30-day returns'        },
+              { Icon: Headset,     label: '24/7 Support',     sub: "We're here to help"    },
+            ].map(({ Icon, label, sub }) => (
+              <div key={label} className="flex items-center gap-[10px]">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white border border-bone shadow-card">
+                  <Icon size={16} className="text-brand-orange" strokeWidth={2} />
+                </span>
+                <span className="min-w-0">
+                  <p className="text-[12.5px] font-semibold text-charcoal leading-tight whitespace-nowrap">{label}</p>
+                  <p className="text-[10.5px] text-slate leading-tight mt-[1px] whitespace-nowrap">{sub}</p>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* ── "Welcome to Solvexo" discovery strip — Categories for you, plus
-         the real Hero Banner and DealsBanner side by side. Replaces the old
-         separately-stacked DealsBanner + full-bleed hero sections that used
-         to sit here. ── */}
-      <div className="px-4 sm:px-6 lg:px-10 pb-5">
-        <WelcomeStrip
-          categories={categories}
-          topPicks={topPicks}
-          banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))}
-          onShopCategory={handleCategoryChange}
-          onProductClick={handleCardClick}
-          onTrendingTerm={term => { setSearchInput(term); setSearch(term); }}
-          onNavigate={navigate}
-        />
-      </div>
-
-      {/* ── Trust & Service strip — now below the hero, not right after the
-         navbar, so the hero image is the first thing a visitor sees. ── */}
-      <TrustServiceStrip />
+      {categoriesModalOpen && (
+        <Modal title="All Categories" onClose={() => setCategoriesModalOpen(false)} width={900}>
+          <CategoriesMegaContent
+            categories={categories}
+            spotlight={topPicks}
+            showSpotlight={false}
+            fixedHeight={520}
+            onShopCategory={id => { handleCategoryChange(id); setCategoriesModalOpen(false); }}
+            onProductClick={id => { handleCardClick(id); setCategoriesModalOpen(false); }}
+            onTrendingTerm={term => { setSearchInput(term); setSearch(term); setCategoriesModalOpen(false); }}
+          />
+        </Modal>
+      )}
 
       {/* ── Flash Sale — a compact, always-visible rail (real discount signal
          from the same `flashDeals` pool the mega-menu dropdown already uses),
@@ -473,7 +589,7 @@ export function Marketplace() {
          shopper's own filtered results. Reuses FlashSaleCard as-is (already
          used by Homepage's rail) rather than a new component. ── */}
       {!isBrowsing && flashDeals.length > 0 && (
-        <div className="px-4 sm:px-6 lg:px-10 pt-5">
+        <div id="flash-sale-rail" className="px-4 sm:px-6 lg:px-10 pt-5 scroll-mt-[76px]">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-error-bg text-error">
@@ -504,6 +620,7 @@ export function Marketplace() {
                     product={p}
                     onClick={handleCardClick}
                     isAdding={adding === vId}
+                    addToCartFailed={addToCartFailedId === vId}
                     onAddToCart={handleAddToCart}
                     isWishlisted={isWishlisted(p._id, vId)}
                     isWishlisting={wishlisting === vId}
@@ -532,7 +649,8 @@ export function Marketplace() {
         )}
 
         {/* Sort/view toolbar — Filters now lives on its own tab stuck to the
-           left edge of the viewport (see below), not in this row. */}
+           left edge of the viewport on mobile/tablet (see below); a real
+           persistent sidebar takes over at `lg` instead. */}
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <span className="text-[13px] font-medium text-slate">
             {!loading && (error ? 'Error loading' : <>Showing <span className="text-carbon font-semibold">{countLabel}</span></>)}
@@ -575,7 +693,7 @@ export function Marketplace() {
             </p>
             <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
               {storeResults.map(s => (
-                <StoreFeatureCard key={s.storeId} store={s} onClick={slug => navigate(`/${slug}`)} />
+                <StoreFeatureCard key={s.storeId} store={s} onClick={slug => window.location.href = getStorefrontUrl(slug)} />
               ))}
             </div>
           </div>
@@ -589,23 +707,64 @@ export function Marketplace() {
             shows a small recognizable preview of the same image). */}
         {campaignFilterId && (
           campaignFilterInfo?.bannerImage ? (
-            <div className="relative mb-5 overflow-hidden rounded-[14px] h-[140px] sm:h-[170px]">
-              <img src={campaignFilterInfo.bannerImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/10" />
-              <button
-                onClick={clearCampaignFilter}
-                className="absolute top-3 right-3 flex items-center gap-1 rounded-full border border-white/30 bg-black/30 px-3 min-h-10 text-[12px] font-semibold text-white cursor-pointer hover:bg-black/45 backdrop-blur-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-              >
-                <X size={12} /> Clear
-              </button>
-              <div className="absolute inset-x-0 bottom-0 px-4 pb-3.5 pt-8 sm:px-5">
-                <p className="font-serif text-[18px] sm:text-[22px] font-bold text-white leading-tight">{campaignFilterInfo.name}</p>
-                <p className="text-[12px] sm:text-[13px] text-white/85 mt-1">
-                  {!loading && `${total} product${total === 1 ? '' : 's'} from participating stores`}
-                  {campaignFilterInfo.discountType && campaignFilterInfo.discountValue != null && (
-                    <> · {campaignFilterInfo.discountType === 'percentage' ? `Up to ${campaignFilterInfo.discountValue}% off` : `${priceSymbol}${convert(campaignFilterInfo.discountValue as number, campaignFilterInfo.currency ?? 'USD')} off`}</>
+            /* Same layered orange→light-orange promo card as the hero Flash
+               Sale strip's `DealsBanner label` card (animated gradient,
+               soft highlight, dot texture, glow blobs) — image first (left,
+               wide + fixed-size so any campaign's image lands in the same
+               box), then the real campaign data from the API response,
+               then a live countdown + a way to leave the filter on the
+               right. */
+            <div className="relative mb-5 h-[110px] w-full overflow-hidden rounded-2xl border border-brand-orange/20">
+              <div className="gradient-drift absolute inset-0 bg-gradient-to-r from-brand-orange via-[#e28b63] to-brand-pale-orange" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.22),transparent_55%)]" />
+              <div className="pointer-events-none absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle_at_1px_1px,#ffffff_1px,transparent_0)] bg-[length:14px_14px]" />
+              <div className="pointer-events-none absolute -top-8 left-[30%] size-24 rounded-full bg-white/15 blur-2xl" />
+              <div className="pointer-events-none absolute -bottom-10 right-[15%] size-28 rounded-full bg-[#7a3520]/20 blur-2xl" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/30" />
+
+              <div className="relative z-[1] flex h-full items-stretch gap-4 px-5 py-4">
+                <div className="relative flex items-center justify-center w-[160px] sm:w-[220px] h-full shrink-0 py-3 pl-3">
+                  <div className="relative h-full w-full rounded-[14px] border border-white/25 bg-white/10 backdrop-blur-sm p-2 shadow-[0_8px_20px_-8px_rgba(0,0,0,0.35)]">
+                    <img src={campaignFilterInfo.bannerImage} alt="" className="max-h-full max-w-full object-contain rounded-[10px]" />
+                  </div>
+                  {campaignFilterInfo.discountType === 'percentage' && campaignFilterInfo.discountValue != null && (
+                    <span className="absolute top-1 right-1 rotate-6 flex flex-col items-center justify-center size-[30px] rounded-full bg-error text-white border-2 border-white/50 shadow-md z-[1]">
+                      <span className="text-[8px] font-bold leading-none">-{campaignFilterInfo.discountValue}%</span>
+                      <span className="text-[4px] font-semibold uppercase tracking-wide leading-none mt-[0.5px]">off</span>
+                    </span>
                   )}
-                </p>
+                </div>
+
+                <div className="flex-1 min-w-0 flex flex-col justify-center gap-[5px] pl-4 pr-3">
+                  <span className="inline-flex w-fit items-center gap-[5px] rounded-full bg-white px-[9px] py-[4px] text-[9px] font-bold uppercase tracking-wide text-brand-deep-orange shadow-sm">
+                    <Zap size={10} className="fill-brand-deep-orange" /> Limited Time
+                  </span>
+                  <span className="font-serif text-[17px] font-bold text-carbon leading-tight truncate">{campaignFilterInfo.name}</span>
+                  <span className="text-[12px] font-semibold text-brand-deep-orange leading-none truncate">
+                    {campaignFilterInfo.discountType === 'percentage' ? `UP TO ${campaignFilterInfo.discountValue}% OFF` : campaignFilterInfo.discountType === 'fixed' && campaignFilterInfo.discountValue != null ? `${priceSymbol}${convert(campaignFilterInfo.discountValue as number, campaignFilterInfo.currency ?? 'USD')} OFF` : 'SPECIAL DEALS'}
+                  </span>
+                  <span className="text-[10px] text-charcoal/60 truncate">
+                    {!loading && `${total} product${total === 1 ? '' : 's'} from participating stores`}
+                  </span>
+                </div>
+
+                <div className="hidden sm:block w-px self-stretch my-4 bg-white/30 shrink-0" />
+
+                <div className="flex flex-col items-center justify-center gap-[8px] shrink-0 pl-3 pr-4">
+                  <div className="flex items-center gap-[3px]">
+                    {[['H', campaignFilterCountdown.hours], ['M', campaignFilterCountdown.minutes], ['S', campaignFilterCountdown.seconds]].map(([label, val]) => (
+                      <div key={label as string} className="flex flex-col items-center justify-center w-[28px] h-[28px] rounded-[8px] bg-carbon text-white shadow-sm">
+                        <span className="text-[10px] font-bold tabular-nums leading-none">{String(val).padStart(2, '0')}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={clearCampaignFilter}
+                    className="inline-flex items-center gap-[5px] rounded-full bg-white border border-white/50 px-3.5 py-[6px] text-[11px] font-bold text-brand-deep-orange whitespace-nowrap shadow-md cursor-pointer hover:bg-brand-pale-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                  >
+                    <X size={11} /> Clear
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
@@ -634,101 +793,208 @@ export function Marketplace() {
           )
         )}
 
-        {/* ── Products area — full width, no persistent sidebar (Filters
-           lives in the toolbar above, opening the same panel as a bottom
-           sheet at every breakpoint). ── */}
-        <div>
-
-          {/* Active filter chips — one removable chip per applied facet */}
-          {activeFilterChips.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              {activeFilterChips.map(chip => (
-                <ActiveFilterChip key={chip.key} label={chip.label} onRemove={chip.onRemove} />
-              ))}
+        {/* ── Filters sidebar + products — a real persistent left column at
+           `lg` and up (Amazon/Daraz-style), same FilterPanel the mobile
+           bottom-sheet drawer below already renders (one filter UI, two
+           places it can appear, not a second implementation). ── */}
+        <div className="lg:flex lg:items-start lg:gap-6">
+          <aside className="hidden lg:block w-[264px] shrink-0">
+            <div className="bg-white rounded-2xl border border-bone p-4 sticky top-[88px]">
+              <div className="flex items-center justify-between mb-1">
+                <p className="flex items-center gap-[7px] text-[13.5px] font-bold text-carbon">
+                  <SlidersHorizontal size={14} className="text-charcoal" /> Filters
+                </p>
+                {activeFilterCount > 0 && (
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-1 text-[11px] font-medium text-slate hover:text-brand-orange transition-colors duration-200 cursor-pointer bg-transparent border-none p-0"
+                  >
+                    <RefreshCcw size={11} /> Reset All
+                  </button>
+                )}
+              </div>
+              <FilterPanel filters={filters} onChange={toggleFilter} onPriceRangeChange={setPriceRange} categories={categories} selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
             </div>
-          )}
+          </aside>
 
-          {/* Mobile: product count (sm+ already shows this inline in the toolbar above) */}
-          <p className="sm:hidden text-[12px] text-slate mb-3">
-            {!loading && !error && countLabel}
-          </p>
+          <div className="flex-1 min-w-0">
+                {/* Active filter chips — one removable chip per applied facet */}
+                {activeFilterChips.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    {activeFilterChips.map(chip => (
+                      <ActiveFilterChip key={chip.key} label={chip.label} onRemove={chip.onRemove} />
+                    ))}
+                  </div>
+                )}
 
-          {error && !loading && (
-            <div className="p-6 flex flex-col items-center gap-3 text-center bg-error-bg rounded-[12px] border border-error-border text-error text-[13px]">
-              <span>{error}</span>
-              <Button variant="outline" size="sm" onClick={refetch}>Try again</Button>
-            </div>
-          )}
+                {/* Mobile: product count (sm+ already shows this inline in the toolbar above) */}
+                <p className="sm:hidden text-[12px] text-slate mb-3">
+                  {!loading && !error && countLabel}
+                </p>
 
-          {/* No sidebar to share width with anymore, so the grid gets a wider
-              ceiling: 2 @ 320-767 → 3 @ md → 4 @ lg → 5 @ xl, denser like a
-              full-width marketplace grid instead of stopping at 4 columns.
-              List view collapses to a single column of horizontal rows. */}
-          <div
-            id="marketplace-grid"
-            className={clsx(
-              'scroll-mt-[76px]',
-              viewMode === 'list'
-                ? 'flex flex-col gap-3'
-                : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5',
-            )}
-          >
-            {loading
-              ? Array.from({ length: 10 }).map((_, i) => <ProductCardSkeleton key={i} layout={viewMode} />)
-              : filtered.map(p => {
-                  const defVariant = (p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0];
-                  const vId = defVariant?._id ?? '';
-                  return (
-                    <ProductCard
-                      key={p._id}
-                      layout={viewMode}
-                      product={p}
-                      onClick={handleCardClick}
-                      isAdding={adding === vId}
-                      onAddToCart={handleAddToCart}
-                      isWishlisted={isWishlisted(p._id, vId)}
-                      isWishlisting={wishlisting === vId}
-                      onToggleWishlist={handleToggleWishlist}
+                {error && !loading && (
+                  <div className="p-6 flex flex-col items-center gap-3 text-center bg-error-bg rounded-[12px] border border-error-border text-error text-[13px]">
+                    <span>{error}</span>
+                    <Button variant="outline" size="sm" onClick={refetch}>Try again</Button>
+                  </div>
+                )}
+
+                {/* With a persistent sidebar sharing width at `lg`+, the grid
+                    stops one column short of the old sidebar-less ceiling:
+                    2 @ 320-767 → 3 @ md → 4 @ lg/xl instead of 5, so cards
+                    never get cramped against the filter column. */}
+                <div
+                  id="marketplace-grid"
+                  className={clsx(
+                    'scroll-mt-[76px]',
+                    viewMode === 'list'
+                      ? 'flex flex-col gap-3'
+                      : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5',
+                  )}
+                >
+                  {loading
+                    ? Array.from({ length: 10 }).map((_, i) => <ProductCardSkeleton key={i} layout={viewMode} />)
+                    : filtered.map(p => {
+                        const defVariant = (p.variants ?? []).find(v => v.isDefault) ?? p.variants?.[0];
+                        const vId = defVariant?._id ?? '';
+                        return (
+                          <ProductCard
+                            key={p._id}
+                            layout={viewMode}
+                            product={p}
+                            onClick={handleCardClick}
+                            isAdding={adding === vId}
+                            addToCartFailed={addToCartFailedId === vId}
+                            onAddToCart={handleAddToCart}
+                            isWishlisted={isWishlisted(p._id, vId)}
+                            isWishlisting={wishlisting === vId}
+                            onToggleWishlist={handleToggleWishlist}
+                          />
+                        );
+                      })
+                  }
+                </div>
+
+                {!loading && !error && filtered.length === 0 && (
+                  <div>
+                    <EmptyState
+                      icon={<ShoppingBag size={30} className="text-brand-orange" />}
+                      title={search || activeFilterCount > 0 ? 'No products match' : 'No products yet'}
+                      description={
+                        search || activeFilterCount > 0
+                          ? 'No products match your search or filters.'
+                          : 'No products found in this category yet.'
+                      }
+                      action={
+                        search
+                          ? { label: 'Clear search', onClick: () => { setSearchInput(''); setSearch(''); } }
+                          : activeFilterCount > 0
+                          ? { label: 'Clear filters', onClick: clearFilters }
+                          : undefined
+                      }
                     />
-                  );
-                })
-            }
+                    {/* A dead-end result shouldn't be a dead end — real categories,
+                       not a fabricated "you might also like" list, so a shopper
+                       always has somewhere else to go from here. */}
+                    {categories.length > 0 && (
+                      <div className="flex flex-col items-center gap-3 -mt-2 pb-2">
+                        <p className="text-[12px] font-semibold text-slate">Or browse a category instead</p>
+                        <div className="flex flex-wrap justify-center gap-2 max-w-[560px]">
+                          {categories.slice(0, 8).map(cat => (
+                            <button
+                              key={cat._id}
+                              onClick={() => handleCategoryChange(cat._id)}
+                              className="px-[14px] py-[7px] rounded-full text-[12.5px] font-medium bg-cream text-charcoal border border-bone hover:border-brand-orange hover:text-brand-orange transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                            >
+                              {cat.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!loading && !error && totalPages > 1 && (
+                  <div className="flex flex-col items-center gap-2 mt-8 pb-2">
+                    <Pagination page={page} total={total} perPage={LIMIT} onChange={goToPage} />
+                    <p className="text-[12px] text-slate text-center">
+                      Page {page} of {totalPages} · {total} products total
+                    </p>
+                  </div>
+                )}
           </div>
-
-          {!loading && !error && filtered.length === 0 && (
-            <EmptyState
-              icon={<ShoppingBag size={30} className="text-brand-orange" />}
-              title={search || activeFilterCount > 0 ? 'No products match' : 'No products yet'}
-              description={
-                search || activeFilterCount > 0
-                  ? 'No products match your search or filters.'
-                  : 'No products found in this category yet.'
-              }
-              action={
-                search
-                  ? { label: 'Clear search', onClick: () => { setSearchInput(''); setSearch(''); } }
-                  : activeFilterCount > 0
-                  ? { label: 'Clear filters', onClick: clearFilters }
-                  : undefined
-              }
-            />
-          )}
-
-          {!loading && !error && totalPages > 1 && (
-            <div className="flex flex-col items-center gap-2 mt-8 pb-2">
-              <Pagination page={page} total={total} perPage={LIMIT} onChange={goToPage} />
-              <p className="text-[12px] text-slate text-center">
-                Page {page} of {totalPages} · {total} products total
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* ── App download + footer ────────────────────────────────────────────── */}
-      <div className="px-4 sm:px-6 lg:px-10 pb-8 pt-2">
+      {/* ── 3-up promo row — Become a Seller / Safe & Secure Shopping / Download
+         the App, same gradient-card language as Homepage's own 3-up promo
+         row (reused visual pattern, not a new one). Each links somewhere
+         real: seller onboarding, the existing Buyer Protection FAQ entry
+         point, and a scroll down to the honest "coming soon" AppDownloadBanner
+         right below — never a fake/dead link. ── */}
+      <div className="px-4 sm:px-6 lg:px-10 pt-2 pb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-orange to-brand-deep-orange p-5 flex items-center gap-4 min-h-[136px]">
+            <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-white/10" />
+            <div className="absolute right-3 -top-9 w-20 h-20 rounded-full bg-white/10" />
+            <div className="relative z-[1] min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-white mb-1">Become a Seller</p>
+              <p className="text-[12px] text-white/85 leading-snug mb-4">Start your business in minutes.</p>
+              <Button variant="dark" size="sm" onClick={() => navigate('/sellers')} className="w-fit">
+                Start Selling <ArrowRight size={12} className="inline align-middle ml-1" />
+              </Button>
+            </div>
+            <div className="relative z-[1] shrink-0 w-[64px] h-[64px] rounded-full bg-white/15 border border-white/25 backdrop-blur-sm flex items-center justify-center">
+              <StoreIcon size={28} className="text-white" />
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl bg-carbon p-5 flex items-center gap-4 min-h-[136px]">
+            <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-success/15" />
+            <div className="absolute right-3 -top-9 w-20 h-20 rounded-full bg-success/10" />
+            <div className="relative z-[1] min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-white mb-1">Safe &amp; Secure Shopping</p>
+              <p className="text-[12px] text-white/60 leading-snug mb-4">Your security is our top priority.</p>
+              <Button variant="primary" size="sm" onClick={() => navigate('/faq')} className="w-fit">
+                Learn More <ArrowRight size={12} className="inline align-middle ml-1" />
+              </Button>
+            </div>
+            <div className="relative z-[1] shrink-0 w-[64px] h-[64px] rounded-full bg-success/20 border border-success/30 flex items-center justify-center">
+              <ShieldCheck size={28} className="text-success" />
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl bg-brand-pale-orange p-5 flex items-center gap-4 min-h-[136px]">
+            <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-white/40" />
+            <div className="absolute right-3 -top-9 w-20 h-20 rounded-full bg-white/30" />
+            <div className="relative z-[1] min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-carbon mb-1">Download Solvexo App</p>
+              <p className="text-[12px] text-charcoal/70 leading-snug mb-4">Shop anywhere, anytime.</p>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => document.getElementById('app-download')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="w-fit"
+              >
+                Download Now <ArrowRight size={12} className="inline align-middle ml-1" />
+              </Button>
+            </div>
+            <div className="relative z-[1] shrink-0 w-[64px] h-[64px] rounded-full bg-white border border-white flex items-center justify-center shadow-md">
+              <Smartphone size={28} className="text-brand-orange" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── App download + bottom trust strip + footer — the same
+         Free Shipping/Easy Returns/Secure Payments/24/7 Support facts most
+         marketplaces put right above the footer, distinct from the
+         reassurance badges in the page header above. ── */}
+      <div id="app-download" className="px-4 sm:px-6 lg:px-10 pb-8 scroll-mt-[76px]">
         <AppDownloadBanner />
       </div>
+      <TrustServiceStrip items={BOTTOM_TRUST_ITEMS} />
       <Footer />
       <FloatingAppWidget />
 
@@ -743,7 +1009,7 @@ export function Marketplace() {
         aria-expanded={mobileFilters}
         aria-label="Toggle filters"
         className={clsx(
-          'fixed left-0 top-1/2 -translate-y-1/2 z-[58] flex flex-col items-center gap-3 rounded-r-2xl border border-l-0 border-white/10 py-4 px-[9px] text-white bg-gradient-to-b from-charcoal to-brand-orange shadow-[0_8px_24px_-4px_rgba(217,119,87,0.4),0_4px_14px_rgba(20,15,10,0.25)] cursor-pointer transition-all duration-500 ease-out hover:px-3 hover:brightness-110 hover:shadow-[0_10px_28px_-4px_rgba(217,119,87,0.5),0_4px_14px_rgba(20,15,10,0.3)]',
+          'lg:hidden fixed left-0 top-1/2 -translate-y-1/2 z-[58] flex flex-col items-center gap-3 rounded-r-2xl border border-l-0 border-white/10 py-4 px-[9px] text-white bg-gradient-to-b from-charcoal to-brand-orange shadow-[0_8px_24px_-4px_rgba(217,119,87,0.4),0_4px_14px_rgba(20,15,10,0.25)] cursor-pointer transition-all duration-500 ease-out hover:px-3 hover:brightness-110 hover:shadow-[0_10px_28px_-4px_rgba(217,119,87,0.5),0_4px_14px_rgba(20,15,10,0.3)]',
           showFilterTab ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0',
           (mobileFilters || activeFilterCount > 0) && 'ring-2 ring-brand-orange/50',
         )}
@@ -768,7 +1034,7 @@ export function Marketplace() {
 
       <div
         className={clsx(
-          'fixed inset-0 bg-black/40 z-[59] transition-opacity duration-300',
+          'lg:hidden fixed inset-0 bg-black/40 z-[59] transition-opacity duration-300',
           mobileFilters ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
         )}
         onClick={() => setMobileFilters(false)}
@@ -779,7 +1045,7 @@ export function Marketplace() {
         aria-modal="true"
         aria-hidden={!mobileFilters}
         className={clsx(
-          'fixed top-0 left-0 h-full w-[300px] max-w-[85vw] z-[60] bg-white shadow-2xl outline-none overflow-y-auto',
+          'lg:hidden fixed top-0 left-0 h-full w-[300px] max-w-[85vw] z-[60] bg-white shadow-2xl outline-none overflow-y-auto',
           'transition-transform duration-300 ease-out',
           mobileFilters ? 'translate-x-0' : '-translate-x-full',
         )}

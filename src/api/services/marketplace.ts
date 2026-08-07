@@ -121,7 +121,7 @@ interface ProductByIdResponse {
   };
 }
 
-export type MarketplaceSortBy = 'newest' | 'price_asc' | 'price_desc' | 'rating';
+export type MarketplaceSortBy = 'newest' | 'price_asc' | 'price_desc' | 'rating' | 'popularity';
 
 export function apiGetAllProducts(
   page = 1, limit = 10, categoryId?: string,
