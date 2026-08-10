@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
+import { TokenStorage } from '@/api/services/auth';
 import { Button } from '@/components/comman/ui/Button';
 import { BuyerNavbar, Breadcrumb, Footer, SkeletonBox, getRecentlyViewed } from '@/components/comman/ui';
 import {
@@ -33,6 +34,10 @@ function CartItemImage({ images, name }: { images?: string[]; name: string }) {
 export function CartPage() {
   const navigate = useNavigate();
   usePageTitle('Cart');
+
+  if (!TokenStorage.isLoggedIn()) {
+    return <Navigate to="/login" replace />;
+  }
 
   const { cart, loading, cartCount, updateQty, removeItem, clearCart, error, clearError } = useCartContext();
   const [clearing,   setClearing]   = useState(false);
@@ -90,7 +95,7 @@ export function CartPage() {
 
       <BuyerNavbar/>
 
-      <div className="max-w-[960px] mx-auto px-4 md:px-6 py-6 md:py-8">
+      <div className={clsx('max-w-[960px] mx-auto px-4 md:px-6 py-6 md:py-8', !isEmpty && items.length > 0 && 'pb-[88px] lg:pb-8')}>
         <Breadcrumb className="mb-4" items={[
           { label: 'Home', path: '/' },
           { label: 'Marketplace', path: '/marketplace'},
@@ -409,6 +414,24 @@ export function CartPage() {
           </div>
         )}
       </div>
+
+      {/* Mobile sticky checkout bar — mirrors ProductDetail's sticky Add to
+          Cart bar, sits just above the bottom nav (CartPage is login-gated,
+          so BottomNav is always the plain logged-in height here). */}
+      {!isEmpty && items.length > 0 && (
+        <div className="fixed bottom-[64px] inset-x-0 z-40 lg:hidden bg-white border-t border-bone px-4 py-3 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] text-slate leading-none mb-[3px]">Total</p>
+            <p className="text-[17px] font-extrabold text-carbon leading-none truncate">{displaySymbol}{displayTotal.toLocaleString()}</p>
+          </div>
+          <Button
+            variant="primary" size="md" className="justify-center flex-1 max-w-[220px]"
+            onClick={() => navigate('/checkout')}
+          >
+            Checkout <ChevronRight size={14} />
+          </Button>
+        </div>
+      )}
 
       <Footer />
     </div>

@@ -61,12 +61,6 @@ export function AdminLoginPage() {
       accentIconClass="text-error"
       visual={<AdminControlMockup />}
     >
-      <div className="lg:hidden flex justify-center mb-6">
-        <div className="size-11 rounded-xl bg-error flex items-center justify-center">
-          <Shield size={20} className="text-white" />
-        </div>
-      </div>
-
       <h1 className="text-[22px] font-bold text-carbon mb-1.5 text-center lg:text-left">
         Admin Sign In
       </h1>

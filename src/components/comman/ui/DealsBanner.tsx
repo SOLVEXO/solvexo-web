@@ -56,7 +56,7 @@ export function CountdownUnit({ value, label, size = 'md' }: { value: number; la
 // fallback (a plain decorative icon, not a fake photo) when there's no real
 // image or it fails to load. Local error state is keyed by campaign id at the
 // call site, so switching campaigns doesn't get stuck on a stale error. ──
-function CampaignImage({ src, fit = 'contain' }: { src: string | null; fit?: 'contain' | 'cover' }) {
+function CampaignImage({ src, fit = 'contain', rounded = true }: { src: string | null; fit?: 'contain' | 'cover'; rounded?: boolean }) {
   const [errored, setErrored] = useState(false);
 
   if (!src || errored) {
@@ -80,7 +80,8 @@ function CampaignImage({ src, fit = 'contain' }: { src: string | null; fit?: 'co
       onError={() => setErrored(true)}
       className={clsx(
         'transition-transform duration-300 ease-out group-hover:scale-[1.03]',
-        fit === 'cover' ? 'absolute inset-0 w-full h-full object-cover rounded-[20px]' : 'max-h-full max-w-full object-contain rounded-[10px]',
+        fit === 'cover' ? 'absolute inset-0 w-full h-full object-cover' : 'max-h-full max-w-full object-contain',
+        rounded && (fit === 'cover' ? 'rounded-[20px]' : 'rounded-[10px]'),
       )}
     />
   );
@@ -94,7 +95,7 @@ function CampaignImage({ src, fit = 'contain' }: { src: string | null; fit?: 'co
 // instead of being a static digit.
 function MiniCountdownUnit({ value }: { value: number }) {
   return (
-    <div className="countdown-tick flex h-[24px] w-[24px] items-center justify-center rounded-[7px] border border-bone bg-white text-[11px] font-bold tabular-nums leading-none text-carbon shadow-[0_1px_2px_rgba(20,15,10,0.06)] sm:h-[26px] sm:w-[26px]">
+    <div className="countdown-tick flex h-[24px] w-[24px] items-center justify-center rounded-[7px] border border-bone bg-white text-[11px] font-bold tabular-nums leading-none text-carbon sm:h-[26px] sm:w-[26px]">
       {String(value).padStart(2, '0')}
     </div>
   );
@@ -208,22 +209,17 @@ export function DealsBanner({ className, storeType, compact = false, label = fal
           such bleed (see the CENTER column below), so it clips normally —
           without that, stacked content taller than the host's own height
           assumption would spill out past the visible rounded card. */}
-      <div className={clsx('relative w-full h-full transition-transform duration-200 hover:-translate-y-[2px]', compact && 'overflow-hidden rounded-[20px]')}>
+      <div className={clsx('relative w-full h-full transition-transform duration-200 hover:-translate-y-[2px]', compact && (label ? 'overflow-hidden' : 'overflow-hidden rounded-[20px]'))}>
         {compact ? (
           label ? (
-            /* Compact + label: a warm off-white promo surface (not a solid
-               orange fill) — a subtle brand-tinted gradient, a faint dot
-               texture, and two soft orange glows for depth, restrained
-               enough to read as a premium light card rather than a loud
-               banner. Deliberately distinct from the dark/solid-orange
-               treatment used everywhere else in this file. */
-            <div className="absolute inset-0 overflow-hidden rounded-[20px] border border-brand-orange/15 bg-white shadow-[0_1px_2px_rgba(20,15,10,0.05),0_20px_36px_-26px_rgba(185,90,58,0.4)]">
-              <div className="gradient-drift absolute inset-0 bg-gradient-to-r from-white via-cream to-brand-pale-orange" />
-              <div className="pointer-events-none absolute inset-0 opacity-[0.05] bg-[radial-gradient(circle_at_1px_1px,#B95A3A_1px,transparent_0)] bg-[length:18px_18px]" />
-              <div className="pointer-events-none absolute -top-14 right-[8%] size-36 rounded-full bg-brand-orange/10 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-16 right-[-4%] size-32 rounded-full bg-brand-deep-orange/10 blur-3xl" />
-              <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-black/[0.06] to-transparent" />
-            </div>
+            /* Compact + label: an orange-to-charcoal gradient surface (not
+               true black — `charcoal`, not `carbon` — reads as warm/modern
+               rather than heavy) — same family as the dark/solid-orange
+               treatment used elsewhere in this file, just its own gradient.
+               No rounding here (unlike every other variant) — this card is
+               meant to sit full-width/edge-to-edge against the page, not
+               read as a floating rounded card. */
+            <div className="absolute inset-0 overflow-hidden border border-black/10 bg-gradient-to-r from-brand-orange via-brand-deep-orange via-65% to-charcoal" />
           ) : (
             <div className="absolute inset-0 overflow-hidden rounded-[20px] border border-bone bg-white" />
           )
@@ -251,59 +247,120 @@ export function DealsBanner({ className, storeType, compact = false, label = fal
             <button
               key={campaign._id}
               onClick={() => navigate(`/marketplace?campaign=${campaign._id}`)}
-              className="group relative z-[1] flex w-full flex-col items-stretch border-none bg-transparent p-0 outline-none cursor-pointer overflow-hidden rounded-[20px] text-left sm:h-full sm:flex-row"
+              className="group relative z-[1] flex w-full flex-col items-stretch border-none bg-transparent p-0 outline-none cursor-pointer overflow-hidden text-left sm:h-full sm:flex-row"
             >
-              {/* `fit="contain"` here (not `cover`) — the source banner image
-                  is a full promo graphic (product photo + its own badge/QR
-                  code/text), so cropping it to fill the box was cutting real
-                  content off. Contain shows it whole, floating on its own
-                  raised white "pedestal" panel with a soft brand-orange glow
-                  behind it for depth, rather than a flat inset thumbnail.
-                  Wide + fixed-size regardless of the image's own aspect
-                  ratio, so whichever campaign is showing always lands in the
-                  same box instead of resizing the card around it. */}
-              <div className="relative flex h-[92px] w-full shrink-0 items-center justify-center p-2.5 sm:h-full sm:w-[150px] sm:py-3 sm:pl-3 sm:pr-0 md:w-[190px]">
-                <div className="pointer-events-none absolute inset-3 -z-[1] rounded-[18px] bg-brand-orange/15 blur-xl" />
-                <div className="relative h-full w-full rounded-[14px] border border-black/[0.06] bg-white p-2 shadow-[0_10px_22px_-12px_rgba(185,90,58,0.4)]">
-                  <CampaignImage src={campaign.bannerImage} fit="contain" />
+              {/* Below `sm`, the image fills its box edge-to-edge (`cover`,
+                  no padding) — there's no room there for the letterboxed
+                  "contain" treatment to still read as intentional. At `sm`
+                  and up there's real space either side, so it switches to
+                  `contain`: the source banner image is a full promo graphic
+                  (product photo + its own badge/QR code/text), and cropping
+                  it there was cutting real content off. Wide + fixed-size
+                  regardless of the image's own aspect ratio, so whichever
+                  campaign is showing always lands in the same box instead of
+                  resizing the card around it. No rounding on either — this
+                  card has none. */}
+              <div className="relative h-[150px] w-full shrink-0 sm:h-full sm:w-[280px] md:w-[340px]">
+                <div className="absolute inset-0 sm:hidden">
+                  <CampaignImage src={campaign.bannerImage} fit="cover" rounded={false} />
+                </div>
+                {/* `cover` here, not `contain` — the box is short (the card
+                    itself is only ~100px tall), so a `contain` image sizes
+                    to that height and never actually gets visually bigger
+                    no matter how wide the box grows; `cover` fills the box
+                    on both axes, so widening the box really does widen the
+                    visible photo. */}
+                <div className="hidden sm:block sm:absolute sm:inset-y-2 sm:inset-x-0">
+                  <CampaignImage src={campaign.bannerImage} fit="cover" />
                 </div>
                 {hasPercentOff && (
-                  <span className="absolute left-1 top-1 z-[1] inline-flex items-center rounded-full bg-brand-deep-orange px-[8px] py-[3px] text-[9px] font-bold leading-none text-white shadow-[0_3px_8px_-1px_rgba(185,90,58,0.55)]">
+                  <span className="absolute right-1 top-1 sm:right-auto sm:left-1 z-[1] inline-flex items-center rounded-full bg-brand-deep-orange px-[8px] py-[3px] text-[9px] font-bold leading-none text-white">
                     -{campaign.discountValue}% OFF
                   </span>
                 )}
+
+                {/* Mobile only, top-left — Limited Time badge, then the
+                   title + sponsor line stacked right under it (mirrors the
+                   OFF badge's opposite corner). Text-shadow instead of a
+                   scrim here, since there's no gradient backing behind
+                   this block. */}
+                <div className="absolute left-1 right-1 top-1 z-[1] flex flex-col items-start gap-[3px] sm:hidden">
+                  <span className="inline-flex items-center gap-[4px] rounded-full bg-white/90 px-[7px] py-[2.5px] text-[8.5px] font-bold uppercase tracking-wide text-brand-deep-orange">
+                    <Zap size={9} className="fill-brand-deep-orange" /> Limited Time
+                  </span>
+                  <span className="font-serif text-[13px] font-bold leading-tight text-white truncate max-w-full" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.85)' }}>
+                    {campaign.name}
+                  </span>
+                  {metaText && (
+                    <span className="text-[8.5px] text-white/90 truncate max-w-full" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.85)' }}>
+                      {metaText}
+                    </span>
+                  )}
+                </div>
+
+                {/* Mobile only: discount + countdown/CTA sit directly on the
+                   image (dark scrim for legibility) instead of in their own
+                   section below it — the sm:flex column version further
+                   down carries the same content for sm and up. */}
+                <div className="absolute inset-x-0 bottom-0 z-[1] flex flex-col gap-[3px] bg-gradient-to-t from-black/75 via-black/45 to-transparent px-3 pt-9 pb-[9px] sm:hidden">
+                  <span className="flex items-center gap-[5px] text-[11px] font-bold leading-none text-white truncate">
+                    <span className="inline-block h-[9px] w-[3px] shrink-0 rounded-full bg-brand-orange" />
+                    {discountHeadline}
+                  </span>
+
+                  {/* Countdown + CTA — also on the image on mobile (the
+                     sm:flex column further down carries the same content,
+                     styled for a light background, for sm and up). */}
+                  <div className="flex items-center justify-between gap-3 mt-[3px]">
+                    <div className="flex flex-col items-center gap-[3px]">
+                      <span className="text-[7.5px] font-bold uppercase tracking-[0.1em] text-white/70">Ends In</span>
+                      <div className="flex items-center gap-[3px]">
+                        <MiniCountdownUnit key={`h${countdown.hours}`} value={countdown.hours} />
+                        <span className="pb-[1px] text-[11px] font-bold leading-none text-white/50">:</span>
+                        <MiniCountdownUnit key={`m${countdown.minutes}`} value={countdown.minutes} />
+                        <span className="pb-[1px] text-[11px] font-bold leading-none text-white/50">:</span>
+                        <MiniCountdownUnit key={`s${countdown.seconds}`} value={countdown.seconds} />
+                      </div>
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-[6px] whitespace-nowrap rounded-full bg-brand-orange px-4 py-[8px] text-[11px] font-bold text-white transition-all duration-200 ease-out group-hover:-translate-y-[1px] group-hover:bg-brand-deep-orange group-active:translate-y-0">
+                      Shop Now <ArrowRight size={11} className="transition-transform duration-200 ease-out group-hover:translate-x-[3px]" />
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="hidden w-px shrink-0 self-stretch bg-gradient-to-b from-transparent via-black/[0.07] to-transparent sm:my-3 sm:block" />
+              <div className="hidden w-px shrink-0 self-stretch bg-white/15 sm:my-3 sm:block" />
 
-              <div className="flex min-w-0 flex-1 flex-col justify-center gap-[5px] px-3.5 py-1.5 sm:px-4 sm:py-0">
-                <span className="inline-flex w-fit items-center gap-[5px] rounded-full bg-brand-pale-orange px-[9px] py-[4px] text-[9px] font-bold uppercase tracking-wide text-brand-deep-orange">
+              <div className="hidden min-w-0 flex-1 flex-col justify-center gap-[5px] px-3.5 py-1.5 sm:flex sm:px-4 sm:py-0">
+                <span className="inline-flex w-fit items-center gap-[5px] rounded-full bg-white/90 px-[9px] py-[4px] text-[9px] font-bold uppercase tracking-wide text-brand-deep-orange">
                   <Zap size={10} className="fill-brand-deep-orange" /> Limited Time
                 </span>
-                <span className="font-serif text-[16px] font-bold leading-tight tracking-[-0.005em] text-carbon truncate sm:text-[18px]">{campaign.name}</span>
-                <span className="flex items-center gap-[6px] text-[12px] font-bold leading-none text-brand-deep-orange truncate">
+                <span className="font-serif text-[16px] font-bold leading-tight tracking-[-0.005em] text-white truncate sm:text-[18px]">{campaign.name}</span>
+                <span className="flex items-center gap-[6px] text-[12px] font-bold leading-none text-white truncate">
                   <span className="inline-block h-[10px] w-[3px] shrink-0 rounded-full bg-brand-orange" />
                   {discountHeadline}
                 </span>
                 {metaText && (
-                  <span className="text-[10px] text-slate truncate">{metaText}</span>
+                  <span className="text-[10px] text-white/70 truncate">{metaText}</span>
                 )}
               </div>
 
-              <div className="hidden w-px shrink-0 self-stretch bg-gradient-to-b from-transparent via-black/[0.07] to-transparent sm:my-3 sm:block" />
+              <div className="hidden w-px shrink-0 self-stretch bg-white/15 sm:my-3 sm:block" />
 
-              <div className="flex shrink-0 items-center justify-between gap-3 border-t border-black/[0.05] bg-mist/50 px-3.5 py-2.5 sm:flex-col sm:justify-center sm:gap-[9px] sm:border-t-0 sm:bg-transparent sm:px-4 sm:py-0">
+              {/* sm and up only now — on mobile this same countdown+CTA
+                 renders inside the image overlay above instead. */}
+              <div className="hidden sm:flex sm:shrink-0 sm:flex-col sm:items-center sm:justify-center sm:gap-[9px] sm:px-4 sm:py-0">
                 <div className="flex flex-col items-center gap-[3px]">
-                  <span className="text-[7.5px] font-bold uppercase tracking-[0.1em] text-slate">Ends In</span>
+                  <span className="text-[7.5px] font-bold uppercase tracking-[0.1em] text-white/70">Ends In</span>
                   <div className="flex items-center gap-[3px]">
                     <MiniCountdownUnit key={`h${countdown.hours}`} value={countdown.hours} />
-                    <span className="pb-[1px] text-[11px] font-bold leading-none text-brand-deep-orange/50">:</span>
+                    <span className="pb-[1px] text-[11px] font-bold leading-none text-white/50">:</span>
                     <MiniCountdownUnit key={`m${countdown.minutes}`} value={countdown.minutes} />
-                    <span className="pb-[1px] text-[11px] font-bold leading-none text-brand-deep-orange/50">:</span>
+                    <span className="pb-[1px] text-[11px] font-bold leading-none text-white/50">:</span>
                     <MiniCountdownUnit key={`s${countdown.seconds}`} value={countdown.seconds} />
                   </div>
                 </div>
-                <span className="inline-flex shrink-0 items-center gap-[6px] whitespace-nowrap rounded-full bg-brand-orange px-4 py-[8px] text-[11px] font-bold text-white shadow-[0_6px_16px_-4px_rgba(185,90,58,0.55)] transition-all duration-200 ease-out group-hover:-translate-y-[1px] group-hover:bg-brand-deep-orange group-hover:shadow-[0_10px_20px_-4px_rgba(185,90,58,0.6)] group-active:translate-y-0 group-active:shadow-[0_4px_10px_-2px_rgba(185,90,58,0.45)]">
+                <span className="inline-flex shrink-0 items-center gap-[6px] whitespace-nowrap rounded-full bg-brand-orange px-4 py-[8px] text-[11px] font-bold text-white transition-all duration-200 ease-out group-hover:-translate-y-[1px] group-hover:bg-brand-deep-orange group-active:translate-y-0">
                   Shop Now <ArrowRight size={11} className="transition-transform duration-200 ease-out group-hover:translate-x-[3px]" />
                 </span>
               </div>

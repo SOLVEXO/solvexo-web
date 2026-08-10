@@ -1,21 +1,22 @@
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard, ShoppingBag, Heart, Star,
-  Settings as SettingsIcon, MessageSquare, Menu, Landmark,
+  MessageSquare, Landmark,
   User, Shield, MapPin, Bell, RefreshCw,
   ChevronLeft, PanelLeftClose, PanelLeftOpen, type LucideIcon,
 } from 'lucide-react';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useConversations } from '@/hooks/messaging/useConversations';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
+import { useEdgeSwipeBack } from '@/hooks/useEdgeSwipeBack';
 
 // ── Nav model ─────────────────────────────────────────────────────────────────
-interface NavItem { id: string; label: string; Icon: LucideIcon; path: string; badge?: number }
-interface NavGroup { group: string; items: NavItem[] }
+export interface NavItem { id: string; label: string; Icon: LucideIcon; path: string; badge?: number }
+export interface NavGroup { group: string; items: NavItem[] }
 
-function useNavGroups(): NavGroup[] {
+export function useNavGroups(): NavGroup[] {
   const { wishlistCount } = useWishlistContext();
   // Reuses the same live-updating (socket-backed) conversations hook the
   // Messages page itself uses, so this badge tracks in real time just like
@@ -53,7 +54,6 @@ function useNavGroups(): NavGroup[] {
         { id: 'security',      label: 'Login & Security', Icon: Shield,  path: 'security' },
         { id: 'addresses',     label: 'Addresses',      Icon: MapPin,    path: 'addresses' },
         { id: 'subscriptions', label: 'Subscriptions',  Icon: RefreshCw, path: 'subscriptions' },
-        { id: 'settings',      label: 'Settings',       Icon: SettingsIcon, path: 'settings' },
       ],
     },
   ];
@@ -70,34 +70,27 @@ export function findAccountNavLabel(pathname: string, groups: NavGroup[]): strin
   return 'My Account';
 }
 
-// ── Sidebar (mirrors the seller StoreLayout dark sidebar) ─────────────────────
-interface SidebarProps { open: boolean; onToggle: () => void; onClose: () => void }
+// ── Sidebar (mirrors the seller StoreLayout dark sidebar) — desktop only.
+// Mobile navigation lives entirely in AccountDashboard's own menu list now
+// (native-app style: a flat list of destinations + a back arrow on each
+// sub-page), not a hamburger-triggered copy of this same rail. ─────────────
+interface SidebarProps { open: boolean; onToggle: () => void }
 
-function AccountSidebar({ open, onToggle, onClose }: SidebarProps) {
+function AccountSidebar({ open, onToggle }: SidebarProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const navGroups = useNavGroups();
 
   const isActive = (path: string) => pathname === `/account/${path}` || pathname.startsWith(`/account/${path}/`);
 
-  const go = (path: string) => {
-    navigate(`/account/${path}`);
-    // Only auto-close the mobile overlay drawer — on desktop the sidebar is
-    // a persistent rail and clicking a nav item must not collapse it.
-    if (window.innerWidth < 1024) onClose();
-  };
+  const go = (path: string) => navigate(`/account/${path}`);
 
   return (
-    <>
-      {open && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />}
-
-      <aside className={clsx(
-        'bg-carbon flex flex-col',
-        'transition-all duration-300 ease-in-out',
-        'fixed top-[44px] bottom-0 left-0 z-50 w-[220px]',
-        'lg:static lg:z-auto lg:shrink-0 lg:h-[calc(100vh-44px)] lg:top-auto lg:bottom-auto',
-        open ? 'translate-x-0 lg:w-[220px]' : '-translate-x-full lg:translate-x-0 lg:w-[60px]',
-      )}>
+    <aside className={clsx(
+      'hidden lg:flex bg-carbon flex-col shrink-0 h-[calc(100vh-44px)]',
+      'transition-[width] duration-300 ease-in-out',
+      open ? 'w-[220px]' : 'w-[60px]',
+    )}>
 
         {/* Back to home + toggle */}
         <div className={clsx('flex items-center pt-[14px] pb-[10px] shrink-0', open ? 'px-4 gap-2' : 'flex-col gap-[6px] px-[10px]')}>
@@ -202,7 +195,6 @@ function AccountSidebar({ open, onToggle, onClose }: SidebarProps) {
           </div>
         )}
       </aside>
-    </>
   );
 }
 
@@ -218,17 +210,24 @@ function AccountContentSkeleton() {
   );
 }
 
-// ── Mobile top bar ────────────────────────────────────────────────────────────
-function MobileTopBar({ label, onOpen }: { label: string; onOpen: () => void }) {
+// ── Mobile top bar — plain title on the account "home" (dashboard) screen,
+// a back arrow (to that same home) on every other account page. Replaces the
+// old hamburger-opens-a-drawer pattern: mobile navigation now happens by
+// tapping a row in AccountDashboard's own menu list, so there's no separate
+// drawer left to open. ─────────────────────────────────────────────────────
+function MobileTopBar({ label, isRoot, onBack }: { label: string; isRoot: boolean; onBack: () => void }) {
   return (
-    <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-bone shrink-0">
-      <span className="text-[14px] font-semibold text-charcoal">{label}</span>
-      <button
-        onClick={onOpen}
-        className="w-10 h-10 flex items-center justify-center rounded-[8px] border border-bone bg-cream cursor-pointer"
-      >
-        <Menu size={16} className="text-charcoal" />
-      </button>
+    <div className="lg:hidden flex items-center gap-2 px-4 py-3 bg-white border-b border-bone shrink-0">
+      {!isRoot && (
+        <button
+          onClick={onBack}
+          aria-label="Back to My Account"
+          className="w-9 h-9 -ml-1 flex items-center justify-center rounded-full bg-transparent border-0 cursor-pointer text-charcoal hover:bg-cream transition-colors"
+        >
+          <ChevronLeft size={18} />
+        </button>
+      )}
+      <span className="text-[14px] font-semibold text-charcoal">{isRoot ? 'My Account' : label}</span>
     </div>
   );
 }
@@ -236,37 +235,34 @@ function MobileTopBar({ label, onOpen }: { label: string; onOpen: () => void }) 
 // ── Layout ────────────────────────────────────────────────────────────────────
 export function AccountLayout() {
   const { pathname } = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const navGroups = useNavGroups();
   const currentLabel = findAccountNavLabel(pathname, navGroups);
-
-  useEffect(() => {
-    let wasMobile = window.innerWidth < 1024;
-    const onResize = () => {
-      const isMobile = window.innerWidth < 1024;
-      if (wasMobile && !isMobile) setSidebarOpen(true);
-      wasMobile = isMobile;
-    };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
+  const isRoot = pathname === '/account/dashboard';
+  const goHome = () => navigate('/account/dashboard');
+  // Edge-swipe-back on every account sub-page, same gesture ProductDetail
+  // uses — no-op on the root screen itself (nothing to swipe back to here).
+  const swipeHandlers = useEdgeSwipeBack(isRoot ? undefined : goHome);
 
   const toggle = () => setSidebarOpen(o => !o);
-  const close  = () => setSidebarOpen(false);
 
   return (
-    <div className={clsx(
-      'bg-cream flex overflow-hidden',
-      // 108px mobile / 44px desktop = BuyerLayout's fixed bottom tab bar
-      // (64px, mobile-only) plus the dev-only ReferenceNav (44px, top) — that
-      // second bar doesn't exist in production, so only the real bottom tab
-      // bar is ever subtracted there (and nothing on desktop, where it's hidden).
-      import.meta.env.DEV ? 'h-[calc(100vh-108px)] md:h-[calc(100vh-44px)]' : 'h-[calc(100vh-64px)] md:h-screen',
-    )}>
-      <AccountSidebar open={sidebarOpen} onToggle={toggle} onClose={close} />
+    <div
+      className={clsx(
+        'bg-cream flex overflow-hidden',
+        // 108px mobile / 44px desktop = BuyerLayout's fixed bottom tab bar
+        // (64px, mobile-only) plus the dev-only ReferenceNav (44px, top) — that
+        // second bar doesn't exist in production, so only the real bottom tab
+        // bar is ever subtracted there (and nothing on desktop, where it's hidden).
+        import.meta.env.DEV ? 'h-[calc(100vh-108px)] md:h-[calc(100vh-44px)]' : 'h-[calc(100vh-64px)] md:h-screen',
+      )}
+      {...swipeHandlers}
+    >
+      <AccountSidebar open={sidebarOpen} onToggle={toggle} />
 
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
-        <MobileTopBar label={currentLabel} onOpen={() => setSidebarOpen(true)} />
+        <MobileTopBar label={currentLabel} isRoot={isRoot} onBack={goHome} />
         <main className="flex-1 min-h-0 min-w-0 px-4 md:px-7 py-4 md:py-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Suspense fallback={<AccountContentSkeleton />}>
             <Outlet />

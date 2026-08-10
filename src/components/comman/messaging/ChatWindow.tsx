@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { MessageCircle, Search, X, Store as StoreIcon } from 'lucide-react';
 import type { ActionMenuItem } from '@/components/comman/ui';
 import type { Message, SendMessagePayload } from '@/api/services/messaging';
 import type { OptimisticMessage } from '@/hooks/messaging/useMessages';
 import { useSearchMessages } from '@/hooks/messaging/useMessages';
+import { useEdgeSwipeBack } from '@/hooks/useEdgeSwipeBack';
 import { ChatHeader, type ChatHeaderShortcut } from './ChatHeader';
 import { MessageThread } from './MessageThread';
 import { MessageInput } from './MessageInput';
@@ -77,7 +78,7 @@ export function ChatWindow({
   const [sharingProduct, setSharingProduct] = useState(false);
   const [query, setQuery] = useState('');
   const { results, search, loading: searching } = useSearchMessages(conversationId ?? null);
-  const touchStartX = useRef<number | null>(null);
+  const swipeHandlers = useEdgeSwipeBack(onBack);
 
   if (!open) {
     return (
@@ -130,18 +131,6 @@ export function ChatWindow({
     if (v.trim().length >= 2) search(v.trim());
   }
 
-  // Edge-swipe-to-go-back: only registers a gesture that starts within 24px
-  // of the left edge and travels right — avoids hijacking normal scrolling.
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX < 24 ? e.touches[0].clientX : null;
-  };
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current == null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (dx > 60) onBack?.();
-    touchStartX.current = null;
-  };
-
   const headerShortcuts: ChatHeaderShortcut[] = [
     ...(storeId ? [{ icon: <StoreIcon size={17} />, label: 'View Store', onClick: () => window.open(`/store/${storeId}`, '_blank') }] : []),
     ...(shortcuts ?? []),
@@ -150,8 +139,7 @@ export function ChatWindow({
   return (
     <div
       className="flex-1 flex flex-col min-w-0 h-full transition-transform duration-200 ease-out"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
+      {...swipeHandlers}
     >
       <ChatHeader
         name={headerName}

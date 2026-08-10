@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
 import { TokenStorage } from '@/api/services/auth';
@@ -7,6 +8,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { getNotificationIcon } from './notificationIcon';
+import { useDropdownPosition } from '@/hooks/useDropdownPosition';
 
 function formatRelativeTime(dateStr: string): string {
   try {
@@ -41,14 +43,16 @@ export function NotificationBell() {
 
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const pos = useDropdownPosition(containerRef, isOpen);
 
   // Close dropdown on outside click
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
+      const t = e.target as Node;
+      if (containerRef.current?.contains(t) || panelRef.current?.contains(t)) return;
+      setIsOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -111,8 +115,12 @@ export function NotificationBell() {
       </button>
 
       {/* Bell Dropdown Popup */}
-      {isOpen && (
-        <div className="absolute right-0 top-[calc(100%+10px)] bg-white border border-bone rounded-[16px] w-[320px] md:w-[350px] max-w-[calc(100vw-2rem)] overflow-hidden flex flex-col">
+      {isOpen && createPortal(
+        <div
+          ref={panelRef}
+          style={pos}
+          className="dropdown-enter fixed z-[9999] bg-white border border-bone rounded-[16px] w-[320px] md:w-[350px] max-w-[calc(100vw-2rem)] overflow-hidden flex flex-col"
+        >
           {/* Header */}
           <div className="px-4 py-3 border-b border-bone flex items-center justify-between bg-cream/30">
             <div className="flex items-center gap-1.5">
@@ -212,7 +220,8 @@ export function NotificationBell() {
           >
             View all notification settings
           </button>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* Slide-in real-time push toast overlay */}

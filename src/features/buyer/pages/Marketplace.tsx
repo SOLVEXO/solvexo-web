@@ -11,7 +11,7 @@ import { useCountdownToMidnight } from '@/hooks/useCountdownToMidnight';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { Button } from '@/components/comman/ui/Button';
-import { Pagination, FilterDropdown, BuyerNavbar, AppDownloadBanner, Footer, TrustServiceStrip, StoreFeatureCard, FloatingAppWidget, EmptyState, DealsBanner, useCountdown } from '@/components/comman/ui';
+import { Pagination, FilterDropdown, BuyerNavbar, AppDownloadBanner, Footer, TrustServiceStrip, StoreFeatureCard, EmptyState, DealsBanner, useCountdown, SkeletonBox } from '@/components/comman/ui';
 import { ProductCard, ProductCardSkeleton } from '@/components/comman/marketplace/ProductCard';
 import { FlashSaleCard } from '@/components/comman/marketplace/FlashSaleCard';
 import { FilterAccordionSection, FilterRadioRow, FilterCheckboxRow, FilterStarRow, ActiveFilterChip, PriceRangeSlider, PRICE_MIN, PRICE_MAX } from '@/components/comman/marketplace/FilterAccordionSection';
@@ -301,12 +301,13 @@ export function Marketplace() {
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
   const { currency: displayCurrency, convert } = useCurrencyPreference();
   const priceSymbol = currencySymbol(displayCurrency);
-  const { banners: marketplaceBanners } = useBanners('marketplaceHero');
+  const { banners: marketplaceBanners, loading: marketplaceBannersLoading } = useBanners('marketplaceHero');
   // Category Hero — same hero region, but scoped to the `categoryHero`
   // placement whenever the shopper is browsing a specific category (via the
   // mega-menu/sidebar/?category= link), instead of the generic marketplace-wide banner.
-  const { banners: categoryBanners } = useBanners('categoryHero');
+  const { banners: categoryBanners, loading: categoryBannersLoading } = useBanners('categoryHero');
   const banners = selectedCategory ? categoryBanners : marketplaceBanners;
+  const bannersLoading = selectedCategory ? categoryBannersLoading : marketplaceBannersLoading;
   const countdown = useCountdownToMidnight();
 
   // Marketplace-wide pool (unfiltered by the user's current category/search) used to
@@ -447,15 +448,18 @@ export function Marketplace() {
 
       {/* ── Flash Sale strip — the real active platform sale campaign
          (self-fetching `DealsBanner`, compact mode with `label`), sitting
-         right between the navbar and the category/mega-menu bar so it's the
-         first thing a shopper sees below the nav. Owns its own countdown +
-         "Shop Now" CTA internally. Renders nothing if there's no active
-         campaign, same honest fallback DealsBanner already has everywhere
-         else it's used. ── */}
-      {!isBrowsing && flashDeals.length > 0 && (
-        <div className="bg-gradient-to-b from-brand-pale-orange/60 via-brand-pale-orange/25 to-transparent px-4 sm:px-6 lg:px-10 py-4">
-          <DealsBanner compact label className="h-auto w-full sm:h-[124px]" />
-        </div>
+         flush between the navbar and the category/mega-menu bar — full
+         width, no gutter/background wrapper around it, so it reads as one
+         continuous strip rather than a card floating with margin on all
+         sides. Owns its own countdown + "Shop Now" CTA internally. Renders
+         nothing if there's no active campaign, same honest fallback
+         DealsBanner already has everywhere else it's used — no longer
+         gated on the unrelated `flashDeals` product pool (that gate made
+         this mount only once a separate, slower products fetch resolved,
+         so it visibly popped in late even after its own campaign data was
+         already ready). ── */}
+      {!isBrowsing && (
+        <DealsBanner compact label className="h-auto w-full sm:h-[100px]" />
       )}
 
       {/* ── Marketplace navigation — single merged row: All Categories + Flash
@@ -482,10 +486,17 @@ export function Marketplace() {
          edge-to-edge under the nav row rather than boxed inside a card.
          Uses BannerCarousel as-is (real impression/click tracking, Ken
          Burns pan, swipe-safe dot indicators) — not a new
-         carousel implementation. ── */}
-      {banners.length > 0 && (
+         carousel implementation. The hero's own height is reserved and a
+         skeleton shown the instant the page mounts, while `apiGetBanners` is
+         still in flight — previously this whole block rendered nothing
+         until the fetch resolved, so the hero popped in late and shoved
+         everything below it down (a real layout shift, not just a "slow"
+         feeling). ── */}
+      {(banners.length > 0 || bannersLoading) && (
         <div className="relative w-full h-[200px] sm:h-[320px] lg:h-[420px] xl:h-[460px] overflow-hidden">
-          <BannerCarousel entityType="banner" banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))} />
+          {banners.length > 0
+            ? <BannerCarousel entityType="banner" banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))} />
+            : <SkeletonBox className="absolute inset-0 w-full h-full" rounded="0" />}
         </div>
       )}
 
@@ -996,7 +1007,6 @@ export function Marketplace() {
       </div>
       <TrustServiceStrip items={BOTTOM_TRUST_ITEMS} />
       <Footer />
-      <FloatingAppWidget />
 
       {/* ── Filters — a real sidebar, not an inline panel or a bottom sheet.
          A slim vertical ribbon tab stays stuck to the left edge of the

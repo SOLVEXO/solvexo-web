@@ -11,6 +11,7 @@ import { apiGetMyOrders, type OrderSummary, type OrderStatus } from '@/api/servi
 import { apiGetMyAddresses } from '@/api/services/address';
 import { Card, MetricCard, PageHeader, Badge, ProgressBar, Button, SkeletonBox, EmptyState, Avatar } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
+import { useNavGroups } from '@/components/layouts/AccountLayout';
 
 const STATUS_COLOR: Record<OrderStatus, 'orange' | 'blue' | 'green' | 'red'> = {
   pending: 'orange', processing: 'blue', shipped: 'blue',
@@ -105,6 +106,103 @@ function WelcomeHero({ name, image, memberSince }: { name?: string; image?: stri
   );
 }
 
+// ── Mobile-only profile hero — centered avatar/name/email/role badge on a
+// gradient, with a stats strip overlapping its bottom edge (rounded-top
+// white sheet pulled up over the gradient) — the native-app "profile tab"
+// pattern, distinct from desktop's left-aligned WelcomeHero further down.
+function MobileProfileHero({
+  name, email, image, totalOrders, wishlistCount, addressCount,
+}: {
+  name?: string; email?: string; image?: string | null;
+  totalOrders: number | null; wishlistCount: number; addressCount: number | null;
+}) {
+  return (
+    <div className="lg:hidden -mx-4 -mt-4">
+      <div className="relative overflow-hidden bg-gradient-to-br from-brand-orange via-[#d98a6f] to-[#f0b8a0] px-6 pt-8 pb-12 flex flex-col items-center text-center">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.08]"
+          style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '22px 22px' }}
+        />
+        {image ? (
+          <img
+            loading="lazy" decoding="async"
+            src={image} alt={name ?? 'You'}
+            className="relative size-24 rounded-full object-cover ring-4 ring-white/40"
+          />
+        ) : (
+          <div className="relative size-24 rounded-full bg-white/15 ring-4 ring-white/40 flex items-center justify-center">
+            <Avatar name={name ?? 'You'} size={80} />
+          </div>
+        )}
+        <p className="relative text-[19px] font-bold text-white mt-3 leading-tight">{name ?? 'Welcome'}</p>
+        {email && <p className="relative text-[13px] text-white/75 mt-[2px]">{email}</p>}
+        <span className="relative inline-flex mt-3 px-4 py-[6px] rounded-full bg-white/20 text-[11px] font-semibold text-white">
+          Buyer Account
+        </span>
+      </div>
+
+      <div className="relative -mt-6 mx-4 rounded-t-[24px] bg-white px-2 pt-5 pb-4 flex items-center">
+        <div className="flex-1 flex flex-col items-center gap-[2px]">
+          <span className="text-[19px] font-bold text-brand-orange leading-none">{totalOrders ?? 0}</span>
+          <span className="text-[11px] text-slate">Orders</span>
+        </div>
+        <div className="w-px h-9 bg-bone" />
+        <div className="flex-1 flex flex-col items-center gap-[2px]">
+          <span className="text-[19px] font-bold text-brand-orange leading-none">{wishlistCount}</span>
+          <span className="text-[11px] text-slate">Wishlist</span>
+        </div>
+        <div className="w-px h-9 bg-bone" />
+        <div className="flex-1 flex flex-col items-center gap-[2px]">
+          <span className="text-[19px] font-bold text-brand-orange leading-none">{addressCount ?? 0}</span>
+          <span className="text-[11px] text-slate">Addresses</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Mobile-only navigation menu — a flat, grouped list of every account
+// destination (icon + label + chevron, matching the native-app "account
+// home" pattern), reusing AccountLayout's own nav data so there's exactly
+// one source of truth for what's in the account section. Desktop already
+// has this as the persistent sidebar rail, so this renders lg:hidden only.
+function MobileAccountMenu() {
+  const navigate = useNavigate();
+  const navGroups = useNavGroups().filter(g => g.group !== 'Overview');
+
+  return (
+    <div className="lg:hidden flex flex-col gap-4">
+      {navGroups.map(section => (
+        <Card key={section.group} padding="none" className="rounded-2xl overflow-hidden">
+          <div className="px-5 pt-4 pb-2">
+            <p className="text-[10.5px] font-bold text-slate uppercase tracking-[0.06em]">{section.group}</p>
+          </div>
+          <div className="divide-y divide-[#f5f4ef]">
+            {section.items.map(item => (
+              <button
+                key={item.id}
+                onClick={() => navigate(`/account/${item.path}`)}
+                className="w-full flex items-center gap-3 px-5 py-[13px] bg-transparent border-0 cursor-pointer text-left hover:bg-cream transition-colors"
+              >
+                <div className="w-8 h-8 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0">
+                  <item.Icon size={15} className="text-brand-orange" />
+                </div>
+                <span className="flex-1 text-[13px] font-medium text-charcoal">{item.label}</span>
+                {!!item.badge && item.badge > 0 && (
+                  <span className="text-[10px] font-bold px-[7px] py-[2px] rounded-full bg-brand-orange text-white shrink-0">
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
+                )}
+                <ChevronRight size={15} className="text-slate shrink-0" />
+              </button>
+            ))}
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export function AccountDashboard() {
   const navigate = useNavigate();
   const { profile } = useGetProfile();
@@ -135,7 +233,7 @@ export function AccountDashboard() {
   const completionChecks = [
     !!profile?.name,
     !!profile?.phone,
-    !!profile?.address,
+    !!addressCount,
     !!profile?.profileImage,
     !!profile?.isVerified,
   ];
@@ -147,10 +245,25 @@ export function AccountDashboard() {
 
   return (
     <div className="flex flex-col gap-5">
-      <WelcomeHero name={profile?.name} image={profile?.profileImage} memberSince={memberSince} />
+      <MobileProfileHero
+        name={profile?.name}
+        email={profile?.email}
+        image={profile?.profileImage}
+        totalOrders={totalOrders}
+        wishlistCount={wishlistCount}
+        addressCount={addressCount}
+      />
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+      <div className="hidden lg:block">
+        <WelcomeHero name={profile?.name} image={profile?.profileImage} memberSince={memberSince} />
+      </div>
+
+      <MobileAccountMenu />
+
+      {/* Summary cards — desktop only; the mobile profile hero above already
+         shows Orders/Wishlist/Addresses in its own stats strip, so this grid
+         would just repeat the same three numbers a second time on mobile. */}
+      <div className="hidden lg:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard
           label="Total Orders"
           value={totalOrders ?? 0}
@@ -176,7 +289,12 @@ export function AccountDashboard() {
         />
       </div>
 
-      <div className="dash-section-enter grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
+      {/* Recent Orders / Wishlist Preview / Account Completion / Security
+         Status / Quick Actions — desktop only. On mobile the profile hero +
+         menu list above already cover navigation, and these are dashboard-
+         style widgets that just add clutter to what's meant to be a clean
+         native-app menu screen there. */}
+      <div className="hidden lg:grid dash-section-enter grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
         <div className="min-w-0 flex flex-col gap-5">
           {/* Recent orders */}
           <Card padding="none">
@@ -292,8 +410,10 @@ export function AccountDashboard() {
             </Button>
           </Card>
 
-          {/* Quick actions */}
-          <Card>
+          {/* Quick actions — desktop only; on mobile MobileAccountMenu above
+             already covers every one of these destinations (and more), so
+             this would just be a second, redundant copy of the same links. */}
+          <Card className="hidden lg:block">
             <p className="text-[12px] font-semibold text-charcoal mb-3 flex items-center gap-1.5">
               <Sparkles size={13} className="text-brand-orange" /> Quick Actions
             </p>

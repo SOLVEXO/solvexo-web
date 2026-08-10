@@ -61,7 +61,9 @@ export function Security() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader eyebrow="Account" title="Login & Security" description="Manage your password and account security." />
+      <div className="hidden lg:block">
+        <PageHeader eyebrow="Account" title="Login & Security" description="Manage your password and account security." />
+      </div>
 
       <Card padding="none" className="rounded-2xl overflow-hidden">
         <div className="px-6 py-5 bg-gradient-to-br from-brand-pale-orange/60 to-cream flex items-center gap-3 border-b border-bone">

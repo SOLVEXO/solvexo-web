@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useEdgeSwipeBack } from '@/hooks/useEdgeSwipeBack';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 import { useCartContext } from '@/contexts/CartContext';
@@ -17,7 +18,7 @@ import { Card } from '@/components/comman/ui/Card';
 import { SkeletonBox } from '@/components/comman/ui/SkeletonBox';
 import { TabBar } from '@/components/comman/ui/TabBar';
 import { Modal } from '@/components/comman/ui/Modal';
-import { BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, CoverImage, pushRecentlyViewed, FloatingAppWidget } from '@/components/comman/ui';
+import { BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, CoverImage, pushRecentlyViewed } from '@/components/comman/ui';
 import {
   ArrowRight, Package, Download, ClipboardList, CheckCircle, Minus, Plus,
   ShoppingCart, Star, Link2, Share2, ImageOff, Heart, ShieldCheck, Truck,
@@ -318,6 +319,7 @@ export function ProductDetail() {
   const navigate = useNavigate();
   const { id = '' } = useParams<{ id: string }>();
   usePageTitle('Product Detail');
+  const swipeHandlers = useEdgeSwipeBack(() => navigate(-1));
 
   const { detail, loading, error, refetch } = useProductById(id);
   const { addToCart, updateQty, adding } = useCartContext();
@@ -466,7 +468,7 @@ export function ProductDetail() {
   ] : [];
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-cream" {...swipeHandlers}>
       <BuyerNavbar backTo={{ label: 'Marketplace', path: '/marketplace' }} />
 
       {loading && <DetailSkeleton />}
@@ -851,7 +853,6 @@ export function ProductDetail() {
         <div className="pb-[76px] lg:pb-0">
           <div className="px-4 md:px-6 lg:px-10 pb-8"><AppDownloadBanner /></div>
           <Footer />
-          <FloatingAppWidget />
         </div>
       )}
 
@@ -874,7 +875,7 @@ export function ProductDetail() {
 
 
       {previewOpen && (
-        <Modal title="Preview" onClose={() => { setPreviewOpen(false); resetPreview(); }} width={560}>
+        <Modal title="Preview" onClose={() => { setPreviewOpen(false); resetPreview(); }} width={560} mobileSheet>
           {previewLoading && (
             <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-slate">
               <Loader2 size={16} className="animate-spin" /> Loading preview…

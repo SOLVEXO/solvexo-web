@@ -6,16 +6,10 @@ import { useSocialLogin } from '@/hooks/auth/useSocialLogin';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import { useAuthGate } from '@/contexts/AuthGateContext';
-import { GoogleIcon, AppleGlyph, FacebookIcon, SOCIALS } from './SignInPreview';
+import { SocialLoginRow } from './SocialIcons';
 import { Modal } from './Modal';
 import { Input } from './Input';
 import { Button } from './Button';
-
-// Icon lookup for the shared SOCIALS list — kept here rather than in
-// SignInPreview since only this file needs to render them generically.
-const SOCIAL_ICON: Record<string, () => React.JSX.Element> = {
-  google: GoogleIcon, apple: AppleGlyph, facebook: FacebookIcon,
-};
 
 // Renders the "sign in to continue" prompt whenever a guest-only action
 // (add to cart, wishlist, follow, message) gets gated by useAuthGate(). Signs
@@ -68,8 +62,10 @@ export function AuthGateModal() {
   return (
     <Modal title="Sign in to continue" onClose={close} width={400}>
       <div className="flex flex-col gap-4">
-        <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-[10px] bg-brand-pale-orange">
-          <Lock size={15} className="text-brand-orange shrink-0 mt-[1px]" />
+        <div className="flex items-center gap-3 px-3.5 py-3 rounded-[14px] bg-brand-pale-orange">
+          <span className="flex items-center justify-center size-9 rounded-full bg-white shrink-0">
+            <Lock size={16} className="text-brand-orange" />
+          </span>
           <p className="text-[12.5px] text-charcoal leading-[1.5]">{pending.reason}</p>
         </div>
 
@@ -98,7 +94,7 @@ export function AuthGateModal() {
             <p className="text-[11.5px] text-error flex items-center gap-1"><AlertTriangle size={12} className="shrink-0" /> {submitError}</p>
           )}
 
-          <Button type="submit" variant="primary" size="sm" fullWidth loading={submitting} className="justify-center mt-1">
+          <Button type="submit" variant="primary" size="md" pill fullWidth loading={submitting} className="justify-center mt-1">
             Sign In
           </Button>
         </form>
@@ -108,23 +104,7 @@ export function AuthGateModal() {
           <span className="text-[10px] text-slate whitespace-nowrap">or continue with</span>
           <div className="flex-1 h-px bg-bone" />
         </div>
-        <div className="flex items-center gap-2">
-          {SOCIALS.map(({ label, provider }) => {
-            const Icon = SOCIAL_ICON[provider];
-            return (
-              <button
-                key={provider}
-                type="button"
-                onClick={() => social.notConfigured(provider)}
-                aria-label={`Continue with ${label}`}
-                title={label}
-                className="flex-1 h-9 rounded-[9px] border border-bone bg-white flex items-center justify-center cursor-pointer hover:bg-cream hover:border-slate/30 transition-colors"
-              >
-                <Icon />
-              </button>
-            );
-          })}
-        </div>
+        <SocialLoginRow onSelect={social.notConfigured} disabled={submitting} />
         {social.error && (
           <p className="text-[11.5px] text-info flex items-start gap-1">
             <Info size={12} className="shrink-0 mt-[1px]" /> {social.error}

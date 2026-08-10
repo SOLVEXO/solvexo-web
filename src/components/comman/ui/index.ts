@@ -110,7 +110,7 @@ export { SignInPreview }                      from './SignInPreview';
 
 export { MarketplaceAppPromo, HomeAppPromo, EducationAppPromo, AuthAppPromo } from './AppPromoCard';
 
-export { FloatingAppWidget }                  from './FloatingAppWidget';
+export { AppOpenPrompt, AppOpenFab }          from './AppOpenPrompt';
 
 export { MiniCart }                           from './MiniCart';
 

@@ -7,7 +7,6 @@ import { OTPInput } from '@/components/comman/ui/OTPInput';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
 import { runSchema, otpSchema } from '@/utils/validation/schemas';
 import { AuthContext, apiResendOtp, apiForgotPassword, type AppRole } from '@/api/services/auth';
-import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { Mail, ShieldCheck, KeyRound, Fingerprint } from 'lucide-react';
 import { InboxMockup, IdentityMockup } from '@/features/auth/components/mockups/AuthMockups';
@@ -132,8 +131,6 @@ export function VerifyOTPPage() {
       highlights={isIdentity ? IDENTITY_HIGHLIGHTS : EMAIL_HIGHLIGHTS}
       visual={isIdentity ? <IdentityMockup /> : <InboxMockup />}
     >
-      <div className="lg:hidden flex justify-center mb-6"><SolvexoLogo size={32} /></div>
-
       <h1 className="text-[22px] font-bold text-carbon text-center mb-2">
         {isIdentity ? 'Verify your identity' : 'Verify your email'}
       </h1>

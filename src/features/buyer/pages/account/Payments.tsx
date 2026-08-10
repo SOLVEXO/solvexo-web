@@ -98,7 +98,7 @@ export function Payments() {
   if (loading) {
     return (
       <Card padding="none">
-        <div className="px-5 pt-5 pb-4 border-b border-bone">
+        <div className="hidden lg:block px-5 pt-5 pb-4 border-b border-bone">
           <PageHeader eyebrow="Account" title="Bank Transfer Payments" />
         </div>
         <div className="divide-y divide-[#f5f4ef]">
@@ -113,7 +113,7 @@ export function Payments() {
   if (!loading && proofs.length === 0) {
     return (
       <Card padding="none">
-        <div className="px-5 pt-5 pb-4 border-b border-bone">
+        <div className="hidden lg:block px-5 pt-5 pb-4 border-b border-bone">
           <PageHeader eyebrow="Account" title="Bank Transfer Payments" />
         </div>
         <EmptyState
@@ -129,7 +129,7 @@ export function Payments() {
   return (
     <div>
       <Card padding="none">
-        <div className="px-5 pt-5 pb-4 border-b border-bone">
+        <div className="hidden lg:block px-5 pt-5 pb-4 border-b border-bone">
           <PageHeader eyebrow="Account" title="Bank Transfer Payments" description={`${proofs.length} submission${proofs.length !== 1 ? 's' : ''}`} />
         </div>
         {error && <p className="px-5 py-3 text-[12px] text-error">{error}</p>}

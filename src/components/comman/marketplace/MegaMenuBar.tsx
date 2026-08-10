@@ -465,8 +465,8 @@ interface MegaMenuExtraTrigger {
 const DEFAULT_EXTRA_TRIGGERS: MegaMenuExtraTrigger[] = [
   { key: 'flash-sale',       label: 'Flash Sale',      icon: Flame,    chevron: true,  className: '' },
   { key: 'top-picks',        label: 'Top Picks',       icon: Star,     chevron: true,  className: '' },
-  { key: 'featured-sellers', label: 'Featured Stores', icon: Store,    chevron: true,  className: 'hidden sm:flex' },
-  { key: 'about',            label: 'About Solvexo',   icon: Sparkles, chevron: false, className: 'hidden sm:flex' },
+  { key: 'featured-sellers', label: 'Featured Stores', icon: Store,    chevron: true,  className: '' },
+  { key: 'about',            label: 'About Solvexo',   icon: Sparkles, chevron: false, className: '' },
 ];
 
 export function MegaMenuBar({
@@ -535,86 +535,96 @@ export function MegaMenuBar({
     <div className="relative" onMouseLeave={scheduleClose}>
       {/* ── Merged navigation row — "All Categories" + Flash Sale/Top Picks/Featured
          Stores/About triggers (left), Verified Sellers/Verified Stores/Track
-         Order/Help Center/Contact (right). Previously two separate white rows
-         (a "category line" and a "welcome line") that duplicated the same
-         navigational weight — merged into one to remove that redundancy. ── */}
+         Order/Help Center/Contact (right, pushed there via `ml-auto` when
+         everything fits). Previously two separate white rows (a "category
+         line" and a "welcome line") that duplicated the same navigational
+         weight — merged into one to remove that redundancy. Nothing in this
+         row is breakpoint-hidden any more — below the width where it all
+         fits, the row wraps (`flex-wrap`) onto additional lines instead of
+         either scrolling sideways or silently dropping items, so every
+         link stays visible and reachable on a small screen too. ── */}
       <div className="bg-white border-b border-bone">
         <div className={clsx(
-          'flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-10',
+          'flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-6 lg:px-10',
           compact ? 'py-[7px]' : 'py-[11px]',
         )}>
-          <div className={clsx('flex items-center min-w-0 flex-1 overflow-x-auto scrollbar-hide', compact ? 'gap-4' : 'gap-5')}>
+          {/* Every item below is a direct child of this one flex-wrap row —
+             deliberately flat (no intermediate "left group"/"right group"
+             wrapper divs) so `flex-wrap` actually wraps individual buttons
+             onto new lines on a narrow screen. Nesting a second flex row
+             inside a wrap child does NOT make that child's own contents
+             wrap — it just overflows past the viewport edge, which is
+             exactly the bug this flattened structure fixes. */}
+          <button
+            aria-haspopup="true"
+            aria-expanded={active === 'categories'}
+            onMouseEnter={() => openMenu('categories')}
+            onClick={() => setActive(a => a === 'categories' ? null : 'categories')}
+            className={triggerCls('categories', clsx('shrink-0', compact && 'text-[11.5px] py-1'))}
+          >
+            {categoriesLabel}
+            <ChevronDown size={compact ? 12 : 14} className={clsx('transition-transform duration-200', active === 'categories' && 'rotate-180')} />
+            <span className={triggerUnderlineCls('categories')} />
+          </button>
+
+          {extraTriggers.length > 0 && <span className="hidden sm:block w-px h-4 bg-bone shrink-0" />}
+
+          {/* Segmented nav. Default: each trigger carries its own icon and a
+             filled hover/active pill, so Flash Sale/Top Picks/Featured
+             Stores/About read as real discovery features rather than a row
+             of afterthought links. Compact: plain small text (no icon, no
+             pill) — a thin Alibaba-style utility link, matching the
+             Verified Sellers/Track Order group on the right. */}
+          {extraTriggers.map(item => (
             <button
+              key={item.key}
               aria-haspopup="true"
-              aria-expanded={active === 'categories'}
-              onMouseEnter={() => openMenu('categories')}
-              onClick={() => setActive(a => a === 'categories' ? null : 'categories')}
-              className={triggerCls('categories', clsx('shrink-0', compact && 'text-[11.5px] py-1'))}
+              aria-expanded={active === item.key}
+              onMouseEnter={() => openMenu(item.key)}
+              onClick={() => setActive(a => a === item.key ? null : item.key)}
+              className={clsx(
+                'group flex items-center whitespace-nowrap shrink-0 border-none cursor-pointer transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+                compact
+                  ? clsx('gap-1 py-1 text-[11.5px] font-medium bg-transparent', active === item.key ? 'text-brand-orange' : 'text-slate hover:text-brand-orange')
+                  : clsx('gap-[6px] py-[7px] px-[11px] rounded-full text-[12.5px] font-semibold', active === item.key ? 'text-brand-deep-orange bg-brand-pale-orange' : 'text-charcoal hover:bg-cream'),
+                item.className,
+              )}
             >
-              {categoriesLabel}
-              <ChevronDown size={compact ? 12 : 14} className={clsx('transition-transform duration-200', active === 'categories' && 'rotate-180')} />
-              <span className={triggerUnderlineCls('categories')} />
+              {!compact && (
+                <item.icon
+                  size={13}
+                  className={clsx('shrink-0 transition-colors duration-200', active === item.key ? 'text-brand-orange' : 'text-slate group-hover:text-brand-orange')}
+                />
+              )}
+              {item.label}
+              {item.chevron && <ChevronDown size={compact ? 11 : 12} className={clsx('transition-transform duration-200', active === item.key && 'rotate-180')} />}
             </button>
+          ))}
 
-            {extraTriggers.length > 0 && <span className="hidden sm:block w-px h-4 bg-bone shrink-0" />}
-
-            {/* Segmented nav. Default: each trigger carries its own icon and a
-               filled hover/active pill, so Flash Sale/Top Picks/Featured
-               Stores/About read as real discovery features rather than a row
-               of afterthought links. Compact: plain small text (no icon, no
-               pill) — a thin Alibaba-style utility link, matching the
-               Verified Sellers/Track Order group on the right. */}
-            {extraTriggers.map(item => (
-              <button
-                key={item.key}
-                aria-haspopup="true"
-                aria-expanded={active === item.key}
-                onMouseEnter={() => openMenu(item.key)}
-                onClick={() => setActive(a => a === item.key ? null : item.key)}
-                className={clsx(
-                  'group flex items-center whitespace-nowrap shrink-0 border-none cursor-pointer transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
-                  compact
-                    ? clsx('gap-1 py-1 text-[11.5px] font-medium bg-transparent', active === item.key ? 'text-brand-orange' : 'text-slate hover:text-brand-orange')
-                    : clsx('gap-[6px] py-[7px] px-[11px] rounded-full text-[12.5px] font-semibold', active === item.key ? 'text-brand-deep-orange bg-brand-pale-orange' : 'text-charcoal hover:bg-cream'),
-                  item.className,
-                )}
-              >
-                {!compact && (
-                  <item.icon
-                    size={13}
-                    className={clsx('shrink-0 transition-colors duration-200', active === item.key ? 'text-brand-orange' : 'text-slate group-hover:text-brand-orange')}
-                  />
-                )}
-                {item.label}
-                {item.chevron && <ChevronDown size={compact ? 11 : 12} className={clsx('transition-transform duration-200', active === item.key && 'rotate-180')} />}
-              </button>
-            ))}
-          </div>
-
-          <div className={clsx(
-            'hidden lg:flex items-center shrink-0 text-slate whitespace-nowrap',
-            compact ? 'gap-3 text-[11.5px]' : 'gap-4 text-[12.5px]',
+          <span className={clsx(
+            'flex items-center gap-x-4 gap-y-2 flex-wrap text-slate whitespace-nowrap ml-auto',
+            compact ? 'text-[11.5px]' : 'text-[12.5px]',
           )}>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 shrink-0">
               <BadgeCheck size={compact ? 11 : 13} className="text-success" /> Verified Sellers
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 shrink-0">
               <ShieldCheck size={compact ? 11 : 13} className="text-success" /> Verified Stores
             </span>
-            <span className="w-px h-4 bg-bone" />
+            <span className="w-px h-4 bg-bone shrink-0" />
             <button
               onClick={() => onNavigate(TokenStorage.isLoggedIn() ? '/account/orders' : '/login')}
-              className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+              className="shrink-0 bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
             >
               Track Order
             </button>
-            <button onClick={() => onNavigate('/faq')} className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+            <button onClick={() => onNavigate('/faq')} className="shrink-0 bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
               Help Center
             </button>
-            <button onClick={() => onNavigate('/contact-us')} className="bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+            <button onClick={() => onNavigate('/contact-us')} className="shrink-0 bg-transparent border-none cursor-pointer text-slate hover:text-brand-orange transition-colors p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
               Contact
             </button>
-          </div>
+          </span>
         </div>
       </div>
 

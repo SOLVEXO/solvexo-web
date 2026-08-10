@@ -56,7 +56,6 @@ const AccountOrders        = lazy(() => named(import('@/features/buyer/pages/MyO
 const AccountWishlist      = lazy(() => named(import('@/features/buyer/pages/account/Wishlist'),                 'Wishlist'));
 const AccountReviews       = lazy(() => named(import('@/features/buyer/pages/MyReviewsPage'),                    'ReviewsTab'));
 const AccountPayments      = lazy(() => named(import('@/features/buyer/pages/account/Payments'),                 'Payments'));
-const AccountSettings      = lazy(() => named(import('@/features/buyer/pages/account/Settings'),                 'Settings'));
 const AccountMessages      = lazy(() => named(import('@/features/buyer/pages/account/Messages'),                 'Messages'));
 // Real routes replacing Settings' old ?tab=<name> query-param switcher.
 const AccountProfile       = lazy(() => named(import('@/features/buyer/pages/account/PersonalInfo'),             'PersonalInfo'));
@@ -202,7 +201,8 @@ const mainRouter = createBrowserRouter([
               { path: 'addresses',     element: <AccountAddresses /> },
               { path: 'notifications', element: <AccountNotifications /> },
               { path: 'subscriptions', element: <AccountSubscriptions /> },
-              { path: 'settings',      element: <AccountSettings /> },
+              // Settings merged into Profile — old bookmarks/links still land somewhere real.
+              { path: 'settings',      element: <Navigate to="/account/profile" replace /> },
               { path: 'messages',      element: <AccountMessages /> },
             ],
           },

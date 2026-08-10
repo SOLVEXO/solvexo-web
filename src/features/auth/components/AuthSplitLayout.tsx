@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
-import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
+import { SolvexoLogo, SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 
 interface AuthHighlight {
   Icon: LucideIcon;
@@ -51,7 +51,36 @@ export function AuthSplitLayout({
   children,
 }: AuthSplitLayoutProps) {
   return (
-    <div className={clsx('fixed inset-x-0 bottom-0 w-full overflow-hidden bg-cream flex', import.meta.env.DEV ? 'top-[44px]' : 'top-0')}>
+    <div className={clsx('fixed inset-x-0 bottom-0 w-full overflow-hidden bg-cream flex flex-col lg:flex-row', import.meta.env.DEV ? 'top-[44px]' : 'top-0')}>
+
+      {/* ── Mobile branding strip (below lg only) — centered icon, headline,
+         subtext, on the same gradient/dot-grid/glow language as the desktop
+         panel. Sized with vh-based clamp()s (same technique as the desktop
+         panel) so it shrinks on short phone screens instead of pushing the
+         form into its own internal scroll — the whole point is that no
+         screen, of any height, ever needs to scroll to see the form. The
+         sheet below is pulled up over its bottom edge (rounded-t + negative
+         margin) for the curved hero→sheet transition, not a flat seam. */}
+      <div className={clsx('lg:hidden shrink-0 relative overflow-hidden bg-gradient-to-br px-5 text-center pt-[clamp(10px,2.5vh,20px)] pb-[clamp(14px,4vh,32px)]', panelGradient)}>
+        <div className="absolute inset-0 opacity-[0.07]" style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
+          backgroundSize: '20px 20px',
+        }} />
+        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-56 h-40 rounded-full bg-brand-orange/25 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="mb-[clamp(6px,1.5vh,12px)]">
+            {brandingHeader ?? <SolvexoIcon size={44} />}
+          </div>
+
+          <h2 className="font-serif text-[clamp(16px,3.2vh,22px)] font-bold text-white leading-[1.2] max-w-[300px] mb-[clamp(3px,1vh,8px)]">
+            {heading}
+          </h2>
+          <p className="text-[clamp(10px,1.8vh,12px)] text-white/70 leading-[1.4] max-w-[300px]">
+            {subtext}
+          </p>
+        </div>
+      </div>
 
       {/* ── Branding panel (desktop only, fixed 35%) ───────────────────────── */}
       <div className={clsx('hidden lg:flex lg:w-[35%] h-full min-w-0 relative overflow-hidden bg-gradient-to-br', panelGradient)}>
@@ -108,11 +137,19 @@ export function AuthSplitLayout({
          screens, and on the rare oversized form only the invisible-scrollbar
          internal scroll (never a visible bar, never the page) kicks in. ── */}
       {bare ? (
-        <div className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col">
+        <div className={clsx(
+          'flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col',
+          'rounded-t-[28px] -mt-6 relative z-10 bg-cream shadow-[0_-6px_20px_rgba(0,0,0,0.06)]',
+          'lg:rounded-none lg:mt-0 lg:shadow-none',
+        )}>
           {children}
         </div>
       ) : (
-        <div className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col items-center px-4 py-[clamp(12px,3vh,32px)]">
+        <div className={clsx(
+          'flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col items-center px-4 py-[clamp(12px,3vh,32px)]',
+          'rounded-t-[28px] -mt-6 relative z-10 bg-cream shadow-[0_-6px_20px_rgba(0,0,0,0.06)]',
+          'lg:rounded-none lg:mt-0 lg:shadow-none',
+        )}>
           <div className={clsx('w-full my-auto', maxWidth)}>
             {children}
           </div>

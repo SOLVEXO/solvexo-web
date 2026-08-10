@@ -508,8 +508,8 @@ export function OrdersTab() {
   return (
     <div>
     <Card padding="none">
-      {/* Header */}
-      <div className="px-5 pt-5 pb-4 border-b border-bone">
+      {/* Header — desktop only; mobile's AccountLayout top bar already shows "Orders". */}
+      <div className="hidden lg:block px-5 pt-5 pb-4 border-b border-bone">
         <PageHeader
           eyebrow="Account"
           title="Orders"

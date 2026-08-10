@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useId } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { ArrowLeft, ArrowRight, Search, Clock, LayoutGrid, X, TrendingUp, Tag, Star, Sparkles, ChevronDown, Check, Store as StoreIcon, Lightbulb, Trash2, Eye } from 'lucide-react';
 import { TokenStorage } from '@/api/services/auth';
@@ -89,6 +90,10 @@ function pushLocalRecentSearch(term: string) {
   const next = [t, ...getLocalRecentSearches().filter(s => s.toLowerCase() !== t.toLowerCase())].slice(0, 5);
   try { localStorage.setItem(RECENT_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
 }
+function removeLocalRecentSearch(term: string) {
+  const next = getLocalRecentSearches().filter(s => s.toLowerCase() !== term.toLowerCase());
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+}
 
 function useUncontrolledSearch() {
   const navigate = useNavigate();
@@ -117,18 +122,32 @@ function SearchSectionLabel({ icon, tone = 'neutral', children }: { icon: React.
 
 // ── Compact suggestion row — Recent/Trending searches as a real row (icon +
 // term, full-width, hover fill), not a chip cloud. ──
-function SuggestionRow({ icon, label, onClick }: { icon: React.ReactNode; label: React.ReactNode; onClick: () => void }) {
+function SuggestionRow({ icon, label, onClick, onRemove }: { icon: React.ReactNode; label: React.ReactNode; onClick: () => void; onRemove?: () => void }) {
   return (
-    <button
-      data-search-item
-      onClick={onClick}
-      className="w-full flex items-center gap-[11px] px-2 py-[9px] rounded-lg bg-transparent border-none text-left cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:bg-cream"
-    >
-      <span className="flex size-7 items-center justify-center rounded-full bg-cream text-slate shrink-0">
-        {icon}
-      </span>
-      <span className="flex-1 text-[13px] text-charcoal truncate">{label}</span>
-    </button>
+    <div className="group w-full flex items-center gap-[11px] pl-2 pr-1 rounded-lg hover:bg-cream">
+      <button
+        data-search-item
+        onClick={onClick}
+        className="flex-1 min-w-0 flex items-center gap-[11px] py-[9px] bg-transparent border-none text-left cursor-pointer focus-visible:outline-none"
+      >
+        <span className="flex size-7 items-center justify-center rounded-full bg-cream text-slate shrink-0 group-hover:bg-white">
+          {icon}
+        </span>
+        <span className="flex-1 text-[13px] text-charcoal truncate">{label}</span>
+      </button>
+      {/* Single-item remove — separate from the section's "Clear History"
+         bulk action, so a shopper can drop just one stale term. */}
+      {onRemove && (
+        <button
+          data-search-item
+          onClick={e => { e.stopPropagation(); onRemove(); }}
+          aria-label="Remove search"
+          className="shrink-0 p-[6px] rounded-full bg-transparent border-none cursor-pointer text-slate hover:text-charcoal hover:bg-bone transition-colors"
+        >
+          <X size={13} />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -230,13 +249,35 @@ export interface SearchBoxProps extends BuyerNavbarSearchConfig {
   onSubmit: (term?: string) => void;
   autoFocus?: boolean;
   size?: 'md' | 'lg';
+  /** Fires when the shopper explicitly backs out of the full-screen mobile
+   *  search (the back arrow) — lets a standalone host (e.g. BuyerLayout's
+   *  global search, mounted with no other UI around it) unmount this
+   *  instead of it collapsing back to a bare, out-of-context search icon. */
+  onClose?: () => void;
 }
 export function SearchBox({
-  value, onChange, placeholder, categories, onCategorySelect, popularStores, onSubmit, autoFocus, size = 'md',
+  value, onChange, placeholder, categories, onCategorySelect, popularStores, onSubmit, autoFocus, size = 'md', onClose,
 }: SearchBoxProps) {
   const isLg = size === 'lg';
   const navigate = useNavigate();
   const panelId = useId();
+  // Portals the open mobile take-over straight to <body> — this component
+  // usually lives deep inside a page's own layout, and any ancestor along
+  // that path (there's always at least one) can silently trap a nested
+  // z-index inside its own stacking context, leaving the fixed bottom nav
+  // (or anything else fixed) visibly poking through on top of it. A body
+  // portal sidesteps that entirely, the same fix ActionMenu's dropdown
+  // already uses for the identical problem. Desktop keeps the plain
+  // anchored-dropdown, non-portaled — no stacking issue there since it's
+  // never full-screen.
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639.98px)');
+    setIsMobileViewport(mq.matches);
+    const onMqChange = () => setIsMobileViewport(mq.matches);
+    mq.addEventListener('change', onMqChange);
+    return () => mq.removeEventListener('change', onMqChange);
+  }, []);
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -259,6 +300,14 @@ export function SearchBox({
   const clearHistory = () => {
     try { localStorage.removeItem(RECENT_KEY); } catch { /* storage unavailable */ }
     setLocalRecent([]);
+  };
+
+  // Single-item remove — same "device-list only" honesty constraint as
+  // clearHistory above: a synced-only entry (account history with no
+  // delete endpoint) simply doesn't get a remove button at the call site.
+  const removeRecent = (term: string) => {
+    removeLocalRecentSearch(term);
+    setLocalRecent(prev => prev.filter(t => t.toLowerCase() !== term.toLowerCase()));
   };
 
   useEffect(() => {
@@ -289,7 +338,7 @@ export function SearchBox({
     }
 
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); onClose?.(); }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -330,15 +379,18 @@ export function SearchBox({
     onChange(term);
     onSubmit(term);
     setOpen(false);
+    onClose?.();
   };
 
   const goToProduct = (id: string) => {
     setOpen(false);
+    onClose?.();
     navigate(`/marketplace/${id}`);
   };
 
   const goToStore = (slug: string) => {
     setOpen(false);
+    onClose?.();
     window.location.href = getStorefrontUrl(slug);
   };
 
@@ -361,8 +413,8 @@ export function SearchBox({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); moveFocus('down'); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); moveFocus('up'); }
-    else if (e.key === 'Enter' && document.activeElement === inputRef.current) { onSubmit(); setOpen(false); }
-    else if (e.key === 'Escape') { setOpen(false); inputRef.current?.blur(); }
+    else if (e.key === 'Enter' && document.activeElement === inputRef.current) { onSubmit(); setOpen(false); onClose?.(); }
+    else if (e.key === 'Escape') { setOpen(false); inputRef.current?.blur(); onClose?.(); }
   };
 
   const query = value.trim().toLowerCase();
@@ -388,8 +440,23 @@ export function SearchBox({
   const hasTypingContent = matchingProducts.length > 0 || matchingCategories.length > 0 || storeMatches.length > 0 || poolLoading || storesLoading;
   const hasSuggestions = isTyping ? hasTypingContent : hasEmptyStateContent;
 
-  return (
-    <div ref={ref} className={clsx('relative flex justify-center', isLg ? 'w-full' : 'flex-1 px-2 sm:px-4')} onKeyDown={handleKeyDown}>
+  const closeFullScreen = () => { setOpen(false); inputRef.current?.blur(); onClose?.(); };
+
+  const panel = (
+    <div
+      ref={ref}
+      className={clsx(
+        'relative flex justify-center',
+        isLg ? 'w-full' : 'flex-1 px-2 sm:px-4',
+        // Below `sm`, an open search takes over the whole screen — a real
+        // native-app search page (back arrow + input pinned at top, results
+        // filling the rest) instead of a small dropdown hanging off the
+        // input. `sm:` and up keeps the original anchored-dropdown behavior
+        // unchanged — a mouse user doesn't need a full takeover.
+        open && 'max-sm:fixed max-sm:inset-0 max-sm:z-[9999] max-sm:flex-col max-sm:justify-start max-sm:bg-white max-sm:px-3 max-sm:pt-3',
+      )}
+      onKeyDown={handleKeyDown}
+    >
       {/* Input and dropdown share this one sized wrapper so they're always
          exactly the same width — the dropdown reads as an extension of the
          input, not a separately-floating box. */}
@@ -399,7 +466,11 @@ export function SearchBox({
          comfortably between the logo and the account icons. lg is a
          standalone hero search bar (Marketplace, above the banner), so it
          gets its own, much wider cap instead. */}
-      <div className={clsx('relative w-full', isLg ? 'max-w-[820px]' : 'sm:max-w-[360px] lg:max-w-[480px]')}>
+      <div className={clsx(
+        'relative w-full',
+        isLg ? 'max-w-[820px]' : 'sm:max-w-[360px] lg:max-w-[480px]',
+        open && 'max-sm:flex max-sm:flex-1 max-sm:min-h-0 max-sm:flex-col max-sm:max-w-none',
+      )}>
         <div
           className={clsx(
             'group relative flex items-center bg-white border w-full',
@@ -410,8 +481,19 @@ export function SearchBox({
             open
               ? 'border-brand-orange shadow-[0_2px_12px_rgba(217,119,87,0.12)] ring-[3px] ring-brand-orange/10'
               : isLg ? 'border-brand-orange shadow-[0_6px_24px_rgba(217,119,87,0.16)]' : 'border-bone hover:border-border-hover',
+            open && 'max-sm:shrink-0',
           )}
         >
+          {open && (
+            <button
+              type="button"
+              onClick={closeFullScreen}
+              aria-label="Close search"
+              className="hidden max-sm:flex shrink-0 items-center justify-center -ml-1 mr-[2px] w-6 h-6 bg-transparent border-none cursor-pointer text-charcoal"
+            >
+              <ArrowLeft size={17} />
+            </button>
+          )}
           <Search size={isLg ? 19 : 15} className={clsx('shrink-0 transition-colors duration-200', open || isLg ? 'text-brand-orange' : 'text-slate')} />
           <input
             ref={inputRef}
@@ -456,7 +538,7 @@ export function SearchBox({
             id={panelId}
             role="listbox"
             aria-label="Search suggestions"
-            className="dropdown-enter absolute left-0 right-0 top-[calc(100%+6px)] z-30 bg-white border border-bone rounded-2xl overflow-y-auto overscroll-contain shadow-card-hover max-h-[460px]"
+            className="dropdown-enter absolute left-0 right-0 top-[calc(100%+6px)] z-30 bg-white border border-bone rounded-2xl overflow-y-auto overscroll-contain shadow-card-hover max-h-[460px] max-sm:relative max-sm:top-0 max-sm:mt-3 max-sm:flex-1 max-sm:max-h-none max-sm:rounded-none max-sm:border-0 max-sm:shadow-none"
           >
             {!isTyping ? (
               <>
@@ -475,7 +557,13 @@ export function SearchBox({
                     </div>
                     <div className="flex flex-col">
                       {recent.map(term => (
-                        <SuggestionRow key={term} icon={<Clock size={13} />} label={term} onClick={() => pick(term)} />
+                        <SuggestionRow
+                          key={term}
+                          icon={<Clock size={13} />}
+                          label={term}
+                          onClick={() => pick(term)}
+                          onRemove={localRecent.some(t => t.toLowerCase() === term.toLowerCase()) ? () => removeRecent(term) : undefined}
+                        />
                       ))}
                     </div>
                   </div>
@@ -515,7 +603,7 @@ export function SearchBox({
                           key={cat.id}
                           data-search-item
                           onClick={() => {
-                            if (onCategorySelect) { onCategorySelect(cat.id); setOpen(false); }
+                            if (onCategorySelect) { onCategorySelect(cat.id); setOpen(false); onClose?.(); }
                             else pick(cat.name);
                           }}
                           className="flex items-center gap-[6px] max-w-[170px] px-[12px] py-[7px] rounded-full text-[11.5px] font-medium bg-white text-charcoal border border-bone hover:border-brand-orange hover:bg-brand-pale-orange hover:text-brand-deep-orange focus-visible:outline-none focus-visible:border-brand-orange focus-visible:bg-brand-pale-orange transition-colors duration-150 cursor-pointer"
@@ -630,7 +718,7 @@ export function SearchBox({
                           icon={<Tag size={13} />}
                           label={<HighlightMatch text={cat.name} query={query} />}
                           onClick={() => {
-                            if (onCategorySelect) { onCategorySelect(cat.id); setOpen(false); }
+                            if (onCategorySelect) { onCategorySelect(cat.id); setOpen(false); onClose?.(); }
                             else pick(cat.name);
                           }}
                         />
@@ -641,7 +729,7 @@ export function SearchBox({
 
                 <button
                   data-search-item
-                  onClick={() => { onSubmit(value); setOpen(false); }}
+                  onClick={() => { onSubmit(value); setOpen(false); onClose?.(); }}
                   className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-transparent border-none text-left cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:bg-cream"
                 >
                   <span className="text-[12.5px] font-semibold text-brand-orange">
@@ -656,6 +744,8 @@ export function SearchBox({
       </div>
     </div>
   );
+
+  return open && isMobileViewport ? createPortal(panel, document.body) : panel;
 }
 
 // Real SVG flags, not emoji — Windows has no built-in flag glyphs for
@@ -706,11 +796,11 @@ export function CurrencySelector() {
       trigger={
         <>
           <active.Flag className="w-4 h-3 rounded-[2px] shrink-0 object-cover" />
-          <span>{active.code}</span>
-          <ChevronDown size={12} className="text-slate" />
+          <span className="hidden sm:inline">{active.code}</span>
+          <ChevronDown size={12} className="hidden sm:inline text-slate" />
         </>
       }
-      triggerClassName="flex items-center gap-1.5 text-[12px] font-semibold text-charcoal border border-bone rounded-md pl-2 pr-[7px] py-1 bg-white hover:bg-cream transition-colors cursor-pointer shrink-0"
+      triggerClassName="flex items-center gap-1.5 text-[12px] font-semibold text-charcoal border border-bone rounded-md pl-2 pr-2 sm:pr-[7px] py-1 bg-white hover:bg-cream transition-colors cursor-pointer shrink-0"
       items={CURRENCY_OPTIONS.map(c => ({
         label: (
           <span className="flex items-center gap-2 flex-1">
@@ -813,24 +903,35 @@ function NavDropdown({ label, children }: { label: string; children: { label: st
 // Shrinks slightly and gains a solid background + border once the page scrolls — the same
 // "compact sticky header" behavior applies everywhere BuyerNavbar is used
 // (Marketplace, Product Detail, Seller Storefront, Category/Search views).
+// On mobile it also hides on scroll-down and reappears on scroll-up (the
+// native-app pattern) — gated behind a 120px threshold + a real directional
+// move so tiny scroll jitter near the top never flickers it.
 function useCompactOnScroll() {
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden]     = useState(false);
+  const lastY = useRef(0);
   useEffect(() => {
     const el = scrollRootRef.current;
     if (!el) return;
-    const onScroll = () => setScrolled(el.scrollTop > 8);
+    const onScroll = () => {
+      const y = el.scrollTop;
+      setScrolled(y > 8);
+      if (y > 120 && y > lastY.current + 4) setHidden(true);
+      else if (y < lastY.current - 4 || y <= 8) setHidden(false);
+      lastY.current = y;
+    };
     onScroll();
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
   }, []);
-  return scrolled;
+  return { scrolled, hidden };
 }
 
 export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColor, backTo, hideSearch = false, centerLinks }: BuyerNavbarProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const uncontrolled = useUncontrolledSearch();
-  const scrolled = useCompactOnScroll();
+  const { scrolled, hidden } = useCompactOnScroll();
   const searchValue    = search?.value    ?? uncontrolled.value;
   const searchOnChange = search?.onChange ?? uncontrolled.onChange;
   // Below sm (~640px) there isn't room for logo + a real search input + wishlist/cart/
@@ -839,6 +940,23 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
   // that expands to a full-width row in its place, same pattern as Amazon/Shopify mobile.
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
+  // The bottom-nav "Shop"/search tab links here with `?openSearch=1` so
+  // tapping it feels like a native app's dedicated search screen — landing
+  // straight on a focused search input instead of just a generic browse
+  // page the shopper still has to go tap search on.
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('openSearch') !== '1') return;
+    setMobileSearchOpen(true);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete('openSearch');
+      return next;
+    }, { replace: true });
+    // Only ever react to the param this navbar instance mounted with.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleSearchSubmit = useCallback((term?: string) => {
     pushLocalRecentSearch(term ?? searchValue);
     if (!search) uncontrolled.submit(term);
@@ -846,8 +964,9 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
 
   return (
     <nav className={clsx(
-      'sticky top-0 z-50 backdrop-blur-md transition-colors duration-200 border-b',
+      'sticky top-0 z-50 backdrop-blur-md transition-[background-color,border-color,transform] duration-200 border-b',
       scrolled ? 'bg-white border-bone' : 'bg-white/90 border-transparent',
+      hidden ? '-translate-y-full md:translate-y-0' : 'translate-y-0',
     )}>
       <div className={clsx(
         'flex items-center gap-3 sm:gap-5 px-4 sm:px-6 lg:px-10 transition-[height] duration-200',
@@ -954,8 +1073,13 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
 
             {/* Actions — hidden on mobile while search is expanded so the input gets full width.
                With hideSearch there's no flex-1 search container to push this group to the
-               right edge, so it takes ml-auto itself in that case. */}
-            <div className={clsx('items-center gap-1.5 sm:gap-2.5 shrink-0', mobileSearchOpen ? 'hidden sm:flex' : 'flex', hideSearch && 'ml-auto')}>
+               right edge, so it takes ml-auto itself in that case. `overflow-x-auto` is a
+               safety net, not the primary fix — on a narrow phone this many icons (wishlist/
+               cart/notifications/avatar/currency) plus the logo genuinely don't all fit, and
+               previously the excess (usually the currency picker, being last) just rendered
+               past the screen edge with no way to reach it at all. This guarantees every
+               icon stays reachable by a horizontal swipe even in the tightest case. */}
+            <div className={clsx('items-center gap-1.5 sm:gap-2.5 min-w-0 overflow-x-auto scrollbar-hide', mobileSearchOpen ? 'hidden sm:flex' : 'flex', hideSearch && 'ml-auto')}>
               {backTo && (
                 <div className="hidden md:inline-flex">
                   <Button variant="ghost" size="sm" onClick={() => navigate(backTo.path)}>

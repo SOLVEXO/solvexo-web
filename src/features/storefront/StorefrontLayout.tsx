@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
-import { SkeletonBox, StoreAnnouncementBar, FloatingAppWidget } from '@/components/comman/ui';
+import { SkeletonBox, StoreAnnouncementBar } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { Store, ArrowLeft } from 'lucide-react';
 import { apiGetPublicStore, type PublicStoreData } from '@/api/services/store';
@@ -116,7 +116,6 @@ export function StorefrontLayout() {
         )}
         <Outlet />
         <StorefrontFooter />
-        <FloatingAppWidget />
       </div>
     </StorefrontProvider>
   );

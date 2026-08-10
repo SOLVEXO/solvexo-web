@@ -20,7 +20,7 @@ import { FilterAccordionSection, FilterChipPill, FilterRadioRow, FilterCheckboxR
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { FlashSaleCard } from '@/components/comman/marketplace/FlashSaleCard';
 import { MegaMenuBar, RailCard, MegaSectionLabel } from '@/components/comman/marketplace/MegaMenuBar';
-import { BuyerNavbar, AppDownloadBanner, Footer, FilterDropdown, Modal, DealsBanner, TrustServiceStrip, Pagination, EmptyState, FloatingAppWidget } from '@/components/comman/ui';
+import { BuyerNavbar, AppDownloadBanner, Footer, FilterDropdown, Modal, DealsBanner, TrustServiceStrip, Pagination, EmptyState } from '@/components/comman/ui';
 import { ArrowRight, Sparkles, SlidersHorizontal, Loader2, RefreshCcw, GraduationCap, ShieldCheck, Store, X, Zap, LayoutGrid, LayoutList, Wallet, Headset, Truck, Smartphone } from 'lucide-react';
 
 // Bottom-of-page trust strip — plain facts, distinct set/wording from the
@@ -914,7 +914,6 @@ export function EducationMarketplace() {
 
       <div className="theme-brand-default">
         <Footer />
-        <FloatingAppWidget />
       </div>
 
       {/* ── Filters — a real sidebar, not an inline panel or a bottom sheet,

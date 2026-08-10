@@ -136,7 +136,7 @@
 }
 
 /* ── Escape hatch for cross-page global chrome (Navbar, Footer,
-   AppDownloadBanner, FloatingAppWidget) rendered inside a page that uses
+   AppDownloadBanner) rendered inside a page that uses
    .theme-education above — these are site-wide chrome, not page-specific
    content, so they must stay the true brand orange even on that page.
    Wrap just that piece in this class to reset the variables back down. ── */
@@ -339,12 +339,30 @@
 .dialog-overlay-enter { animation: dialog-overlay-enter 180ms var(--ease-out); }
 .dialog-panel-enter { animation: dialog-panel-enter 220ms var(--ease-out); }
 
+/* Bottom-sheet variant of the same DialogShell (align="bottom") — panel
+   rises up from the bottom edge instead of fading/scaling in place, the
+   native-app action-sheet motion instead of a website popup. */
+@keyframes sheet-panel-enter {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.sheet-panel-enter { animation: sheet-panel-enter 280ms var(--ease-out); }
+
 /* ── Top ribbon banners (deals/announcement bars) ── */
 @keyframes banner-slide-down {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .banner-slide-down { animation: banner-slide-down 260ms var(--ease-out); }
+
+/* Buyer-side page-to-page transition — BuyerLayout fully remounts on every
+   navigation (RootLayout keys its ErrorBoundary by pathname), so this plays
+   fresh on every page change automatically, no per-page wiring needed. */
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-fade-in { animation: page-fade-in 220ms var(--ease-out); }
 
 /* Slow ambient zoom on the active Hero/storefront carousel slide — subtle
    "Ken Burns" drift so a static photo doesn't feel inert while it's on screen. */

@@ -4,7 +4,6 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useForgotPassword } from '@/hooks/auth/useForgotPassword';
 import { Button } from '@/components/comman/ui/Button';
 import { Input } from '@/components/comman/ui/Input';
-import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import { useForm } from '@/hooks/useForm';
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/utils/validation/schemas';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
@@ -38,10 +37,6 @@ export function ForgotPasswordPage() {
       highlights={HIGHLIGHTS}
       visual={<SecurityMockup />}
     >
-      <div className="lg:hidden flex justify-center mb-6">
-        <SolvexoLogo size={32} />
-      </div>
-
       <div className="size-11 rounded-xl bg-brand-pale-orange flex items-center justify-center mb-4 mx-auto lg:mx-0">
         <Mail size={19} className="text-brand-orange" />
       </div>

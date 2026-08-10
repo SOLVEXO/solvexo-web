@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { clsx } from 'clsx';
 import { Ban, Flag, Trash2 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useConversations, useSearchConversations } from '@/hooks/messaging/useConversations';
@@ -132,10 +133,22 @@ export function Messages() {
 
   return (
     <div className="flex flex-col gap-5 h-full">
-      <PageHeader eyebrow="Account" title="Messages" description="Chat with sellers about your orders and questions." />
-      <Card padding="none" className="flex-1 min-h-0 min-h-[560px]">
+      {/* Desktop only — on mobile, AccountLayout's own top bar already shows
+         "Messages" with a back arrow, and ChatList below has its own title
+         too, so this would be a third repeat of the same word on one screen. */}
+      <div className="hidden lg:block">
+        <PageHeader eyebrow="Account" title="Messages" description="Chat with sellers about your orders and questions." />
+      </div>
+      <Card padding="none" className="flex-1 min-h-0 min-h-[560px] -mx-4 rounded-none border-x-0 lg:mx-0 lg:rounded-xl lg:border-x">
         <div className="flex overflow-hidden h-full">
-          <div className={activeId ? 'hidden md:flex' : 'flex'}>
+          {/* This wrapper had no width of its own — a plain flex item with
+             no flex-grow shrinks to content, so ChatList's `w-full` below
+             was resolving against an undefined/shrunk parent instead of
+             the actual screen width. `w-full` here (mobile) fixes that;
+             `md:w-auto md:shrink-0` lets ChatList's own fixed/resizable
+             width (`md:w-[var(--list-w)]`) take over at the two-pane
+             breakpoint instead of stretching further than that. */}
+          <div className={clsx(activeId ? 'hidden md:flex' : 'flex', 'w-full md:w-auto md:shrink-0')}>
             <ChatList
               title="Messages"
               entries={list.map(c => toBuyerEntry(c, online))}

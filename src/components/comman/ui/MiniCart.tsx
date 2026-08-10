@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { ShoppingCart, X, ImageOff, ArrowRight } from 'lucide-react';
 import { useCartContext, type CartItem } from '@/contexts/CartContext';
+import { useDropdownPosition } from '@/hooks/useDropdownPosition';
 import { Button } from './Button';
 
 const CLOSE_DELAY_MS = 150;
@@ -33,9 +35,11 @@ function lineTotal(item: CartItem) {
 export function MiniCart({ accentColor }: { accentColor?: string }) {
   const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [open, setOpen] = useState(false);
   const { cart, cartCount } = useCartContext();
+  const pos = useDropdownPosition(ref, open);
 
   const clearCloseTimer = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } };
   const scheduleClose = () => { clearCloseTimer(); closeTimer.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS); };
@@ -43,7 +47,9 @@ export function MiniCart({ accentColor }: { accentColor?: string }) {
   useEffect(() => {
     if (!open) return;
     const onClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (ref.current?.contains(t) || panelRef.current?.contains(t)) return;
+      setOpen(false);
     };
     const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', onClickOutside);
@@ -90,8 +96,14 @@ export function MiniCart({ accentColor }: { accentColor?: string }) {
         )}
       </button>
 
-      {open && (
-        <div className="dropdown-enter absolute right-0 top-[calc(100%+10px)] z-[100] w-[320px] max-w-[calc(100vw-2rem)]">
+      {open && createPortal(
+        <div
+          ref={panelRef}
+          onMouseEnter={() => { clearCloseTimer(); setOpen(true); }}
+          onMouseLeave={scheduleClose}
+          style={pos}
+          className="dropdown-enter fixed z-[9999] w-[320px] max-w-[calc(100vw-2rem)]"
+        >
           <div className="absolute -top-[7px] right-[14px] w-3 h-3 bg-white border-t border-l border-bone rotate-45" />
           <div className="relative bg-white border border-bone rounded-[16px] overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-bone">
@@ -157,7 +169,8 @@ export function MiniCart({ accentColor }: { accentColor?: string }) {
             </>
           )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

@@ -56,7 +56,7 @@ export function Wishlist() {
   if (wLoading) {
     return (
       <Card padding="none">
-        <div className="px-5 pt-5 pb-4 border-b border-bone">
+        <div className="hidden lg:block px-5 pt-5 pb-4 border-b border-bone">
           <PageHeader eyebrow="Account" title="Wishlist" />
         </div>
         <div className="divide-y divide-[#f5f4ef]">
@@ -82,7 +82,7 @@ export function Wishlist() {
   if (wishlistCount === 0) {
     return (
       <Card padding="none">
-        <div className="px-5 pt-5 pb-4 border-b border-bone">
+        <div className="hidden lg:block px-5 pt-5 pb-4 border-b border-bone">
           <PageHeader eyebrow="Account" title="Wishlist" />
         </div>
         <EmptyState

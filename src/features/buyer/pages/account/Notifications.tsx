@@ -5,7 +5,9 @@ import { PageHeader, NotificationsPanel } from '@/components/comman/ui';
 export function Notifications() {
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader eyebrow="Account" title="Notifications" description="Choose what you get notified about." />
+      <div className="hidden lg:block">
+        <PageHeader eyebrow="Account" title="Notifications" description="Choose what you get notified about." />
+      </div>
       <NotificationsPanel />
     </div>
   );

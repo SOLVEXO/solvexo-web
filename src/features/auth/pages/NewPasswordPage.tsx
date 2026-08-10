@@ -8,7 +8,6 @@ import { Eye, EyeOff, ArrowRight, Check, Circle, Lock, ShieldCheck, KeyRound, Al
 import { useForm } from '@/hooks/useForm';
 import { newPasswordSchema, type NewPasswordFormData } from '@/utils/validation/schemas';
 import { AuthContext } from '@/api/services/auth';
-import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { PasswordSecurityMockup } from '@/features/auth/components/mockups/AuthMockups';
 
@@ -128,7 +127,6 @@ export function NewPasswordPage() {
   if (resetPassword.success) {
     return (
       <AuthSplitLayout heading="Password updated." subtext="You're all set — sign back in with your new password." highlights={HIGHLIGHTS} visual={<PasswordSecurityMockup />}>
-        <div className="lg:hidden flex justify-center mb-6"><SolvexoLogo size={32} /></div>
         <h1 className="text-[22px] font-bold text-carbon text-center mb-2">Password updated!</h1>
         <p className="text-[13px] text-slate text-center leading-[1.6] mb-6">
           Your password has been changed. You can now sign in.
@@ -142,8 +140,6 @@ export function NewPasswordPage() {
 
   return (
     <AuthSplitLayout heading="Almost there. Set a new password." subtext="Enter the code we emailed you and choose a new password to finish." highlights={HIGHLIGHTS} visual={<PasswordSecurityMockup />}>
-      <div className="lg:hidden flex justify-center mb-6"><SolvexoLogo size={32} /></div>
-
       <h1 className="text-[22px] font-bold text-carbon text-center lg:text-left mb-2">Reset your password</h1>
       <p className="text-[13px] text-slate text-center lg:text-left mb-5 leading-[1.6]">
         {userEmail ? <>Almost done, <strong className="text-carbon">{userEmail}</strong> — choose a new password to finish resetting your account.</> : 'Choose a new password to finish resetting your account.'}

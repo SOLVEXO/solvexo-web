@@ -5,7 +5,6 @@ import { useRegister } from '@/hooks/auth/useRegister';
 import { useSocialLogin } from '@/hooks/auth/useSocialLogin';
 import { Button }      from '@/components/comman/ui/Button';
 import { Input }       from '@/components/comman/ui/Input';
-import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 import { RoleChoiceCards } from '@/components/comman/ui/RoleChoiceCards';
 import { SocialLoginRow } from '@/components/comman/ui/SocialIcons';
 import { Eye, EyeOff, ArrowRight, ArrowLeft, ShoppingBag, Store, TrendingUp, AlertTriangle, Info } from 'lucide-react';
@@ -17,8 +16,8 @@ import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MarketplaceMockup, DashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
 
 const ROLE_OPTIONS = [
-  { value: 'user',   label: 'Buyer',  description: 'Browse and purchase from the marketplace', Icon: ShoppingBag },
-  { value: 'seller', label: 'Seller', description: 'Create a store and sell to thousands of buyers', Icon: Store },
+  { value: 'user',   label: 'Buyer',  description: 'Browse and purchase from the marketplace', Icon: ShoppingBag, accent: 'orange' as const },
+  { value: 'seller', label: 'Seller', description: 'Create a store and sell to thousands of buyers', Icon: Store, accent: 'success' as const },
 ];
 
 const HIGHLIGHTS = [
@@ -27,12 +26,12 @@ const HIGHLIGHTS = [
   { Icon: TrendingUp,  text: 'Grow your business with built-in analytics' },
 ];
 
-// Register is two screens, not one crowded form: the role choice is the
-// first meaningful decision a new user makes (mirrors how Login's role
-// switch works, and reuses the exact same RoleChoiceCards component so the
-// two pages read as one design language), and only once that's picked does
-// the account-detail form — identical for both roles, just relabelled —
-// appear. Nothing about the backend payload/validation changes here.
+// Register is three screens, not one crowded form: role choice (mirrors
+// Login's own role step, same RoleChoiceCards component so the two pages
+// read as one design language) → a social/email entry step (mirrors
+// Login's "sign in or create account" — stacked pills only, no bare email
+// field yet) → the account-detail form — identical for both roles, just
+// relabelled. Nothing about the backend payload/validation changes here.
 export function RegisterPage() {
   const navigate  = useNavigate();
   const [searchParams] = useSearchParams();
@@ -45,7 +44,7 @@ export function RegisterPage() {
   // click already WAS the role decision, so the role screen is skipped
   // entirely instead of asking the same question twice.
   const presetRole = searchParams.get('role') === 'seller' ? 'seller' : searchParams.get('role') === 'user' ? 'user' : '';
-  const [screen, setScreen] = useState<'role' | 'details'>(presetRole ? 'details' : 'role');
+  const [screen, setScreen] = useState<'role' | 'entry' | 'details'>(presetRole ? 'entry' : 'role');
 
   const { values, errors, set, setValue, blur, handleSubmit } = useForm(
     registerSchema,
@@ -87,22 +86,20 @@ export function RegisterPage() {
   return (
     <AuthSplitLayout
       panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
-      heading={isSeller ? 'Launch your store today' : 'Start selling or shopping today'}
+      heading={isSeller
+        ? <>Launch your <span className="text-brand-orange">store</span> today</>
+        : <>Start <span className="text-brand-orange">selling</span> or shopping today</>}
       subtext="Create your free Solvexo account and join a growing community of buyers and creators."
       highlights={HIGHLIGHTS}
       maxWidth="max-w-[520px]"
       visual={isSeller ? <DashboardMockup /> : <MarketplaceMockup />}
     >
-      <div className="lg:hidden flex justify-center mb-5">
-        <SolvexoLogo size={32} />
-      </div>
-
       {screen === 'role' ? (
         <>
           <h1 className="text-[22px] font-bold text-carbon mb-1 text-center lg:text-left">
-            How do you want to use Solvexo?
+            How do you want to use <span className="text-brand-orange">Solvexo</span>?
           </h1>
-          <p className="text-[13px] text-slate mb-5 text-center lg:text-left">
+          <p className="text-[13px] text-slate mb-3 lg:mb-5 text-center lg:text-left">
             Choose what fits you best — you can always add the other side of the marketplace later.
           </p>
 
@@ -110,19 +107,58 @@ export function RegisterPage() {
             options={ROLE_OPTIONS}
             value={values.role}
             onChange={val => setValue('role', val)}
-            className="mb-5"
+            className="mb-3 lg:mb-5"
           />
 
           <Button
             variant="primary" size="md" fullWidth
-            onClick={() => roleChosen && setScreen('details')}
+            onClick={() => roleChosen && setScreen('entry')}
             disabled={!roleChosen}
             iconRight={<ArrowRight size={14} />}
           >
             Continue
           </Button>
 
-          <p className="text-center text-[12px] text-slate mt-4">
+          <p className="text-center text-[12px] text-slate mt-3 lg:mt-4">
+            Already have an account?{' '}
+            <Button variant="link" size="sm" onClick={() => navigate('/login')} className="font-semibold!">
+              Sign In
+            </Button>
+          </p>
+        </>
+      ) : screen === 'entry' ? (
+        <>
+          <button
+            onClick={() => setScreen('role')}
+            className="inline-flex items-center gap-[6px] text-[12px] font-medium text-slate bg-transparent border-none cursor-pointer mb-3 lg:mb-4 hover:text-charcoal transition-colors"
+          >
+            <ArrowLeft size={12} /> Signing up as <strong className="text-charcoal">{activeRoleLabel}</strong> — change
+          </button>
+
+          <h1 className="text-[22px] font-bold text-carbon mb-1 text-center lg:text-left">
+            Create your <span className="text-brand-orange">account</span>
+          </h1>
+          <p className="text-[13px] text-slate mb-3 lg:mb-5 text-center lg:text-left">
+            Sign up with email, or continue with a social account
+          </p>
+
+          {/* Stacked pills, Alibaba-style: 3 social + "Continue with email"
+             as a 4th outlined pill — no bare email field on this screen. */}
+          <SocialLoginRow
+            layout="stacked"
+            onSelect={social.notConfigured}
+            onEmailSelect={() => setScreen('details')}
+            disabled={social.loading}
+          />
+
+          {social.error && (
+            <div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info">
+              <Info size={14} className="shrink-0" />
+              <span>{social.error}</span>
+            </div>
+          )}
+
+          <p className="text-center text-[12px] text-slate mt-3 lg:mt-4">
             Already have an account?{' '}
             <Button variant="link" size="sm" onClick={() => navigate('/login')} className="font-semibold!">
               Sign In
@@ -132,20 +168,22 @@ export function RegisterPage() {
       ) : (
         <>
           <button
-            onClick={() => setScreen('role')}
-            className="inline-flex items-center gap-[6px] text-[12px] font-medium text-slate bg-transparent border-none cursor-pointer mb-4 hover:text-charcoal transition-colors"
+            onClick={() => setScreen('entry')}
+            className="inline-flex items-center gap-[6px] text-[12px] font-medium text-slate bg-transparent border-none cursor-pointer mb-3 lg:mb-4 hover:text-charcoal transition-colors"
           >
-            <ArrowLeft size={12} /> Signing up as <strong className="text-charcoal">{activeRoleLabel}</strong> — change
+            <ArrowLeft size={12} /> Use a different sign-up method
           </button>
 
           <h1 className="text-[22px] font-bold text-carbon mb-1 text-center lg:text-left">
-            {isSeller ? 'Create your seller account' : 'Create your buyer account'}
+            {isSeller
+              ? <>Create your <span className="text-brand-orange">seller</span> account</>
+              : <>Create your <span className="text-brand-orange">buyer</span> account</>}
           </h1>
-          <p className="text-[13px] text-slate mb-5 text-center lg:text-left">
+          <p className="text-[13px] text-slate mb-3 lg:mb-5 text-center lg:text-left">
             Join Solvexo — Commerce. Solved.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 lg:gap-3">
             <Input
               label="Full Name" placeholder="Enter Your Name" autoComplete="name"
               value={values.name} onChange={set('name')} onBlur={blur('name')}
@@ -188,7 +226,7 @@ export function RegisterPage() {
             onClick={handleSubmit}
             loading={register.loading}
             iconRight={!register.loading && <ArrowRight size={14} />}
-            className="mt-4"
+            className="mt-3 lg:mt-4"
           >
             {isSeller ? 'Create Seller Account' : 'Create Buyer Account'}
           </Button>
@@ -209,7 +247,7 @@ export function RegisterPage() {
           )}
 
           {/* OR divider */}
-          <div className="flex items-center gap-3 my-4">
+          <div className="flex items-center gap-3 my-2.5 lg:my-4">
             <div className="flex-1 h-px bg-bone" />
             <span className="text-[11px] text-slate">or sign up with</span>
             <div className="flex-1 h-px bg-bone" />
@@ -219,7 +257,7 @@ export function RegisterPage() {
           <SocialLoginRow
             onSelect={social.notConfigured}
             disabled={social.loading || register.loading}
-            className="mb-4"
+            className="mb-3 lg:mb-4"
           />
 
           <p className="text-center text-[12px] text-slate mt-2">

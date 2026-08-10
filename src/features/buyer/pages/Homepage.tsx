@@ -11,7 +11,7 @@ import { useAuthGate } from '@/contexts/AuthGateContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
-import { Footer, SkeletonBox, CoverImage, FloatingAppWidget, TrustServiceStrip, ClosingCtaBanner } from '@/components/comman/ui';
+import { Footer, SkeletonBox, CoverImage, TrustServiceStrip, ClosingCtaBanner } from '@/components/comman/ui';
 import { FlashSaleCard, FlashSaleCardSkeleton } from '@/components/comman/marketplace/FlashSaleCard';
 import {
   ArrowRight, ArrowLeft, ShoppingBag, BookOpen, Download, Store, Sparkles,
@@ -206,6 +206,10 @@ export function Homepage() {
   const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
+  const categoriesTrackRef = useRef<HTMLDivElement>(null);
+  const [categoriesActiveIndex, setCategoriesActiveIndex] = useState(0);
+  const [categoriesAutoplayPaused, setCategoriesAutoplayPaused] = useState(false);
+
   const { addToCart, adding } = useCartContext();
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
   const countdown = useCountdownToMidnight();
@@ -257,6 +261,25 @@ export function Homepage() {
     if (card) track.scrollTo({ left: card.offsetLeft, behavior: 'smooth' });
     setStoresActiveIndex(index);
   };
+
+  // Auto-slide Shop by Category — same one-card-at-a-time, loop-back-at-the-
+  // end, pause-on-hover/touch pattern as the Top Stores row above, so this
+  // one row keeps moving on its own on every screen size instead of needing
+  // a responsive multi-column grid.
+  useEffect(() => {
+    if (categoriesAutoplayPaused || categories.length === 0) return;
+    const id = setInterval(() => {
+      const track = categoriesTrackRef.current;
+      if (!track) return;
+      const cards = Array.from(track.children) as HTMLElement[];
+      if (cards.length === 0) return;
+      const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+      const nextIndex = atEnd ? 0 : categoriesActiveIndex + 1;
+      track.scrollTo({ left: cards[nextIndex]?.offsetLeft ?? 0, behavior: 'smooth' });
+      setCategoriesActiveIndex(nextIndex);
+    }, 2600);
+    return () => clearInterval(id);
+  }, [categoriesAutoplayPaused, categories.length, categoriesActiveIndex]);
 
   // Pool used to surface real, currently-active discounts (Flash Sale) — same
   // approach as Marketplace's own flash-deal computation, so the "-X% OFF"
@@ -616,10 +639,17 @@ export function Homepage() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
+            <div
+              ref={categoriesTrackRef}
+              onMouseEnter={() => setCategoriesAutoplayPaused(true)}
+              onMouseLeave={() => setCategoriesAutoplayPaused(false)}
+              onTouchStart={() => setCategoriesAutoplayPaused(true)}
+              onTouchEnd={() => setTimeout(() => setCategoriesAutoplayPaused(false), 1500)}
+              className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-1 snap-x snap-mandatory scroll-smooth"
+            >
               {categoriesLoading
                 ? Array.from({ length: 7 }).map((_, i) => (
-                    <div key={i} className="rounded-2xl border border-bone bg-white overflow-hidden">
+                    <div key={i} className="w-[130px] sm:w-[150px] shrink-0 rounded-2xl border border-bone bg-white overflow-hidden">
                       <div className="aspect-square animate-pulse bg-bone" />
                       <div className="p-3">
                         <SkeletonBox width="70%" height={12} className="mb-2" />
@@ -631,7 +661,7 @@ export function Homepage() {
                     <button
                       key={cat._id}
                       onClick={() => navigate(`/marketplace?category=${cat._id}`)}
-                      className="group flex flex-col text-left rounded-2xl border border-bone bg-white overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-[3px] hover:border-brand-orange/30 hover:shadow-raised focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                      className="group w-[130px] sm:w-[150px] shrink-0 snap-start flex flex-col text-left rounded-2xl border border-bone bg-white overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-[3px] hover:border-brand-orange/30 hover:shadow-raised focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                     >
                       <span className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-brand-pale-orange to-[#fdf6f0]">
                         {cat.image
@@ -816,7 +846,6 @@ export function Homepage() {
       )}
 
       <Footer />
-      <FloatingAppWidget />
     </div>
   );
 }

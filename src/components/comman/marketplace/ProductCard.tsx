@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import { clsx } from 'clsx';
 import { Modal } from '@/components/comman/ui/Modal';
-import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame, BadgeCheck, Store, ScanEye, Check, AlertCircle } from 'lucide-react';
+import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame, BadgeCheck, Store, ScanEye, Check, AlertCircle, ShieldCheck, RotateCcw, Truck } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 import { currencySymbol } from '@/utils/currency';
@@ -491,11 +491,14 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
     </div>
 
     {quickViewOpen && (
-      <Modal title="Quick View" onClose={() => setQuickViewOpen(false)} width={640}>
+      <Modal title="Quick View" onClose={() => setQuickViewOpen(false)} width={680} mobileSheet>
         <div className="flex flex-col sm:flex-row gap-5">
-          <div className="w-full sm:w-[220px] shrink-0 aspect-[4/5] rounded-xl overflow-hidden bg-bone">
+          <div className="w-full sm:w-[240px] shrink-0 aspect-[4/5] rounded-xl overflow-hidden bg-bone border border-bone">
             <ProductImage images={product.images ?? []} name={product.name} className="w-full h-full object-cover" />
           </div>
+
+          <div className="hidden sm:block w-px shrink-0 bg-[#f0ede5]" />
+
           <div className="flex-1 min-w-0 flex flex-col">
             <span className={clsx(
               'self-start px-[7px] py-[2px] rounded-md text-[9.5px] font-bold tracking-[0.01em] border mb-2',
@@ -515,18 +518,31 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
               </p>
             )}
             <StarRating rating={product.averageRating} count={ratingCount} />
-            <div className="flex items-baseline gap-[6px] mt-3">
-              <span className={clsx('font-bold text-[22px] tracking-tight', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
-                {subscriberPrice != null ? `${priceSymbol} ${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `${priceSymbol} ${lowestPrice.toLocaleString()}` : '—'}
+
+            {product.description && (
+              <p className="text-[12px] text-slate leading-relaxed mt-2 line-clamp-2">
+                {product.description}
+              </p>
+            )}
+
+            <div className="flex items-center justify-between gap-3 rounded-[10px] bg-cream border border-bone px-3 py-[10px] mt-3">
+              <div className="flex items-baseline gap-[6px]">
+                <span className={clsx('font-bold text-[22px] tracking-tight', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
+                  {subscriberPrice != null ? `${priceSymbol} ${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `${priceSymbol} ${lowestPrice.toLocaleString()}` : '—'}
+                </span>
+                {compareAt != null && compareAt > (lowestPrice ?? 0) && (
+                  <span className="text-[13px] text-slate/70 line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
+                )}
+              </div>
+              <span className={clsx(
+                'shrink-0 px-[8px] py-[3px] rounded-full text-[10.5px] font-semibold',
+                stock <= 0 ? 'bg-error-bg text-error' : stock <= 5 ? 'bg-amber-50 text-amber-600' : 'bg-success-bg text-success',
+              )}>
+                {stock <= 0 ? 'Out of stock' : stock <= 5 ? `Only ${stock} left` : 'In stock'}
               </span>
-              {compareAt != null && compareAt > (lowestPrice ?? 0) && (
-                <span className="text-[13px] text-slate/70 line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
-              )}
             </div>
-            <p className={clsx('text-[11.5px] font-semibold mt-2', stock <= 0 ? 'text-error' : stock <= 5 ? 'text-amber-600' : 'text-success')}>
-              {stock <= 0 ? 'Out of stock' : stock <= 5 ? `Only ${stock} left in stock` : 'In stock'}
-            </p>
-            <div className="flex items-center gap-2 mt-auto pt-5">
+
+            <div className="flex items-center gap-2 mt-4">
               <button
                 onClick={e => { onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital'); }}
                 disabled={stock <= 0}
@@ -551,13 +567,19 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
                 View Full Details
               </button>
             </div>
+
+            <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#f0ede5] text-[11px] text-slate">
+              <span className="flex items-center gap-[5px]"><ShieldCheck size={13} className="text-success shrink-0" /> Secure checkout</span>
+              {isPhysical && <span className="flex items-center gap-[5px]"><Truck size={13} className="text-brand-orange shrink-0" /> Fast delivery</span>}
+              <span className="flex items-center gap-[5px]"><RotateCcw size={13} className="text-brand-orange shrink-0" /> Easy returns</span>
+            </div>
           </div>
         </div>
       </Modal>
     )}
 
     {previewOpen && (
-      <Modal title="Preview" onClose={closePreview} width={560}>
+      <Modal title="Preview" onClose={closePreview} width={560} mobileSheet>
         {previewLoading && (
           <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-slate">
             <Loader2 size={16} className="animate-spin" /> Loading preview…
