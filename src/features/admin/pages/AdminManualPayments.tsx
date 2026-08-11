@@ -33,7 +33,7 @@ function ReviewModal({ proof, onClose, onDone }: { proof: AdminManualPaymentProo
   }
 
   return (
-    <Modal
+    <Modal mobileSheet
       title="Manual Payment Review"
       width={560}
       onClose={onClose}
@@ -69,10 +69,10 @@ function ReviewModal({ proof, onClose, onDone }: { proof: AdminManualPaymentProo
           <StatusBadge status={STATUS_LABEL[proof.status]} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 bg-cream border border-bone rounded-[8px] px-3 py-3 text-[12.5px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-cream border border-bone rounded-[8px] px-3 py-3 text-[12.5px]">
           <div><span className="text-slate">Amount (USD)</span><p className="font-semibold text-carbon">${proof.amountUSD.toFixed(2)}</p></div>
           <div><span className="text-slate">Amount transferred (PKR)</span><p className="font-semibold text-carbon">PKR {proof.amountPKR.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p></div>
-          <div><span className="text-slate">Transaction ref</span><p className="font-medium text-carbon font-mono">{proof.transactionReference || '—'}</p></div>
+          <div><span className="text-slate">Transaction ref</span><p className="font-medium text-carbon font-mono break-all">{proof.transactionReference || '—'}</p></div>
           <div><span className="text-slate">Sender name</span><p className="font-medium text-carbon">{proof.senderName || '—'}</p></div>
           <div><span className="text-slate">Orders</span><p className="font-medium text-carbon">{proof.orderIds.length}</p></div>
           <div><span className="text-slate">Submitted</span><p className="font-medium text-carbon">{formatDate(proof.createdAt)}</p></div>
@@ -165,14 +165,14 @@ export function AdminManualPayments() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
+      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Manual Payments</h1>
           <p className="text-[12px] text-slate mt-[2px]">Bank-transfer payments (Pakistan track) awaiting proof verification.</p>
         </div>
       </div>
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-4">
+      <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-4">
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="px-5 py-[14px] border-b border-bone flex items-center gap-[10px] flex-wrap">
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as ManualPaymentProofStatus | '')}

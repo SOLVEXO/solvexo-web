@@ -32,7 +32,7 @@ export function SellerShipping() {
         }
       />
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* ── Metrics ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -50,13 +50,13 @@ export function SellerShipping() {
         </div>
 
         {/* ── Tab bar ── */}
-        <div className="border-b border-bone">
-          <div className="flex items-center gap-0">
+        <div className="border-b border-bone overflow-x-auto -mx-7 px-7 sm:mx-0 sm:px-0 sm:overflow-visible">
+          <div className="flex items-center gap-0 w-max sm:w-auto">
             {TABS.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] cursor-pointer border-none bg-transparent transition-all duration-[120ms] -mb-px"
+                className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] cursor-pointer border-none bg-transparent transition-all duration-[120ms] -mb-px whitespace-nowrap shrink-0"
                 style={{
                   fontWeight: activeTab === tab.id ? 600 : 500,
                   borderBottom: `2px solid ${activeTab === tab.id ? '#D97757' : 'transparent'}`,
@@ -86,9 +86,9 @@ export function SellerShipping() {
           ) : (
             <div className="flex flex-col gap-3.5">
               {zones.map(zone => (
-                <div key={zone._id} className="bg-white border border-bone rounded-[10px] px-[22px] py-[18px]">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
+                <div key={zone._id} className="bg-white border border-bone rounded-[10px] px-4 sm:px-[22px] py-[18px]">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-carbon mb-[3px]">{zone.city}, {zone.province}</p>
                       <p className="text-xs text-slate">{zone.country} · Est. delivery {zone.estimatedDeliveryTime}</p>
                     </div>

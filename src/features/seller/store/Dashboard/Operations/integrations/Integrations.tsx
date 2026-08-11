@@ -56,13 +56,13 @@ export function StoreIntegrations() {
               placeholder="Search apps..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="border-none outline-none text-[13px] py-2 w-[200px] text-charcoal bg-transparent"
+              className="border-none outline-none text-[13px] py-2 w-[120px] sm:w-[200px] text-charcoal bg-transparent"
             />
           </div>
         }
       />
 
-      <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 pb-8 pt-5 flex flex-col gap-5">
 
         <ComingSoonBanner message="Apps & Integrations isn't connected to a real integrations backend yet — connections, API keys, and webhooks shown are illustrative." />
 
@@ -107,7 +107,7 @@ export function StoreIntegrations() {
         {activeTab === 'connected' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredApps.map(app => (
-              <div key={app.id} className="bg-white border border-bone rounded-[10px] px-[22px] py-5 relative transition-transform duration-200 hover:-translate-y-[1px]">
+              <div key={app.id} className="bg-white border border-bone rounded-[10px] px-4 sm:px-[22px] py-5 relative transition-transform duration-200 hover:-translate-y-[1px]">
                 <div className="absolute top-4 right-4">
                   <span className="px-[9px] py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#e3f4ea] text-[#1e7a3c] flex items-center gap-1">
                     <Check size={10} /> Connected
@@ -146,7 +146,7 @@ export function StoreIntegrations() {
         )}
 
         {/* Developer Tools */}
-        <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 mt-1">
+        <div className="bg-white border border-bone rounded-[10px] px-4 sm:px-[22px] py-5 mt-1">
           <p className="text-[15px] font-bold text-carbon mb-5">Developer Tools — API &amp; Webhooks</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
             <div>

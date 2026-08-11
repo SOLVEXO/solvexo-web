@@ -82,12 +82,12 @@ export function OrdersTab() {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
 
       {/* Day stats */}
-      <div className="flex gap-[14px] mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-[14px] mb-5">
         {dayStats.map(({ label, value, sub }) => (
-          <div key={label} className="flex-1 bg-pos-surface border border-carbon rounded-xl p-4">
+          <div key={label} className="bg-pos-surface border border-carbon rounded-xl p-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.08em] mb-1 text-pos-muted">{label}</p>
             <p className="text-[20px] font-bold text-white truncate">{value}</p>
             <p className="text-[11px] mt-[2px] text-pos-muted">{sub}</p>
@@ -97,7 +97,7 @@ export function OrdersTab() {
 
       {/* Transactions table */}
       <div className="bg-pos-surface border border-carbon rounded-xl overflow-hidden">
-        <div className="flex items-center gap-[10px] px-4 py-[14px] border-b border-carbon">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-[10px] px-4 py-[14px] border-b border-carbon">
           <p className="text-[14px] font-semibold text-white flex-1">Recent Transactions</p>
           <select
             value={statusFilter}
@@ -120,6 +120,7 @@ export function OrdersTab() {
           <p className="px-4 py-3 text-[12px] text-error">{error}</p>
         )}
 
+        <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -215,6 +216,7 @@ export function OrdersTab() {
             ))}
           </tbody>
         </table>
+        </div>
 
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-3 px-4 py-3 border-t border-carbon">
@@ -292,13 +294,13 @@ function VoidConfirmOverlay({ sale, onClose, onConfirm }: { sale: Sale; onClose:
         />
         {error && <p className="text-[11px] text-error mb-2">{error}</p>}
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-[9px] bg-carbon border-0 rounded-lg text-[12px] text-pos-faint cursor-pointer">
+          <button onClick={onClose} className="flex-1 py-[9px] min-h-11 lg:min-h-0 bg-carbon border-0 rounded-lg text-[12px] text-pos-faint cursor-pointer">
             Cancel
           </button>
           <button
             onClick={confirm}
             disabled={saving}
-            className="flex-1 py-[9px] bg-error border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer disabled:opacity-50"
+            className="flex-1 py-[9px] min-h-11 lg:min-h-0 bg-error border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer disabled:opacity-50"
           >
             {saving ? 'Voiding…' : 'Void Sale'}
           </button>

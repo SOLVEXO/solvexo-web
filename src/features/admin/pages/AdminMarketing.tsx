@@ -77,7 +77,7 @@ function CreateCampaignModal({ campaign, onClose, onSaved }: { campaign?: Campai
   }
 
   return (
-    <Modal
+    <Modal mobileSheet
       title={isEdit ? 'Edit Sale Campaign' : 'Create Sale Campaign'}
       width={520}
       onClose={onClose}
@@ -297,7 +297,7 @@ function CampaignsTab() {
       {editing && <CreateCampaignModal campaign={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); refetch(); }} />}
 
       {deleting && (
-        <Modal
+        <Modal mobileSheet
           title="Delete Campaign"
           onClose={() => setDeleting(null)}
           footer={<>
@@ -345,7 +345,7 @@ function CreateCouponModal({ coupon, onClose, onSaved }: { coupon?: PlatformCoup
   }
 
   return (
-    <Modal
+    <Modal mobileSheet
       title={isEdit ? 'Edit Platform Coupon' : 'Create Platform Coupon'}
       width={480}
       onClose={onClose}
@@ -357,14 +357,14 @@ function CreateCouponModal({ coupon, onClose, onSaved }: { coupon?: PlatformCoup
       <div className="flex flex-col gap-4">
         <Input label="Coupon Code" placeholder="WELCOME10" value={code} disabled={isEdit} onChange={(e) => setCode(e.target.value.toUpperCase())} />
         {isEdit && <p className="text-[11px] text-slate -mt-2.5">Code and discount type can't be changed after creation — delete and create a new coupon instead.</p>}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Select label="Discount Type" value={discountType} disabled={isEdit} onChange={(e) => setDiscountType(e.target.value as 'percentage' | 'fixed')}>
             <option value="percentage">Percentage</option>
             <option value="fixed">Fixed amount</option>
           </Select>
           <Input label="Discount Value" type="number" min={0} value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input label="Min Order Amount" type="number" min={0} placeholder="Optional" value={minOrderAmount} onChange={(e) => setMinOrderAmount(e.target.value)} />
           <Input label="Usage Limit" type="number" min={1} placeholder="Unlimited" value={usageLimit} onChange={(e) => setUsageLimit(e.target.value)} />
         </div>
@@ -445,7 +445,7 @@ function CouponsTab() {
       {editing && <CreateCouponModal coupon={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); refetch(); }} />}
 
       {deleting && (
-        <Modal
+        <Modal mobileSheet
           title="Delete Coupon"
           onClose={() => setDeleting(null)}
           footer={<>
@@ -482,7 +482,7 @@ function RejectPromotionModal({ request, onClose, onRejected }: { request: Promo
   }
 
   return (
-    <Modal title="Reject Promotion Request" onClose={onClose} footer={<>
+    <Modal mobileSheet title="Reject Promotion Request" onClose={onClose} footer={<>
       <Button variant="outline" onClick={onClose}>Cancel</Button>
       <Button variant="danger" onClick={submit} loading={submitting}>Reject</Button>
     </>}>
@@ -534,7 +534,7 @@ function ApprovePromotionModal({ request, onClose, onApproved }: { request: Prom
   }
 
   return (
-    <Modal title="Approve promotion request?" onClose={onClose} footer={<>
+    <Modal mobileSheet title="Approve promotion request?" onClose={onClose} footer={<>
       <Button variant="outline" onClick={onClose} disabled={submitting}>Cancel</Button>
       <Button variant="primary" onClick={submit} loading={submitting}>Approve</Button>
     </>}>
@@ -592,7 +592,7 @@ function PromotionCalendarModal({ onClose }: { onClose: () => void }) {
   const conflictCount = (data?.promotions ?? []).filter((p, _, all) => all.some((o) => overlaps(p, o))).length;
 
   return (
-    <Modal title="Promotion Calendar" onClose={onClose} width={680}>
+    <Modal mobileSheet title="Promotion Calendar" onClose={onClose} width={680}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2 text-[12px] text-slate">
           <CalendarIcon size={13} className="text-brand-orange" />
@@ -606,7 +606,7 @@ function PromotionCalendarModal({ onClose }: { onClose: () => void }) {
         ) : (
           <>
             {/* Summary strip */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-white border border-bone rounded-[10px] px-3.5 py-3">
                 <p className="text-[10px] font-medium text-slate uppercase tracking-[0.06em] mb-1">Scheduled</p>
                 <p className="text-[18px] font-bold text-carbon leading-[1.15]">{totalPromotions}</p>
@@ -751,7 +751,7 @@ function PromotionSettingsModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="Promotion Settings" onClose={onClose} width={640}>
+    <Modal mobileSheet title="Promotion Settings" onClose={onClose} width={640}>
       {loading || !limits ? (
         <p className="text-[13px] text-slate">Loading…</p>
       ) : (
@@ -898,8 +898,8 @@ function PromotionsTab() {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-auto">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full sm:w-auto">
           <option value="pending">Pending Review</option>
           <option value="approved">Approved</option>
           <option value="active">Live</option>
@@ -907,7 +907,7 @@ function PromotionsTab() {
           <option value="expired">Ended</option>
           <option value="">All</option>
         </Select>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" size="sm" icon={<CalendarIcon size={13} />} onClick={() => setShowCalendar(true)}>View Calendar</Button>
           <Button variant="outline" size="sm" icon={<Settings size={13} />} onClick={() => setShowSettings(true)}>Pricing & Limits</Button>
         </div>

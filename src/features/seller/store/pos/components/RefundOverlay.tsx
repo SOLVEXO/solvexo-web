@@ -88,20 +88,20 @@ export function RefundOverlay({ sale, actingEmployeeId, onClose, onDone }: Refun
           <button
             onClick={submitPartialRefund}
             disabled={saving || !hasPartialSelection}
-            className="w-full py-[9px] bg-brand-orange border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer disabled:opacity-40"
+            className="w-full py-[9px] min-h-11 lg:min-h-0 bg-brand-orange border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer disabled:opacity-40"
           >
             {saving ? 'Processing…' : 'Refund Selected Items'}
           </button>
           <button
             onClick={submitFullRefund}
             disabled={saving}
-            className="w-full py-[9px] bg-error border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer disabled:opacity-50"
+            className="w-full py-[9px] min-h-11 lg:min-h-0 bg-error border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer disabled:opacity-50"
           >
             Refund Full Sale
           </button>
           <button
             onClick={onClose}
-            className="w-full py-[9px] bg-carbon border-0 rounded-lg text-[12px] text-pos-faint cursor-pointer"
+            className="w-full py-[9px] min-h-11 lg:min-h-0 bg-carbon border-0 rounded-lg text-[12px] text-pos-faint cursor-pointer"
           >
             Cancel
           </button>

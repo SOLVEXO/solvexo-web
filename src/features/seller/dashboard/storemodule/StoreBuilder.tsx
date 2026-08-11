@@ -240,7 +240,7 @@ export function StoreBuilder() {
         actions={<SaveStatus message={message} />}
       />
 
-      <div className="px-7 pt-4 sticky top-0 z-10 bg-[#FAF9F5]/95 backdrop-blur-sm">
+      <div className="px-4 lg:px-7 pt-4 sticky top-0 z-10 bg-[#FAF9F5]/95 backdrop-blur-sm">
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide border-b border-bone">
           {TABS.map(t => {
             const active = tab === t.id;
@@ -257,7 +257,7 @@ export function StoreBuilder() {
         </div>
       </div>
 
-      <div className={`px-7 py-5 grid grid-cols-1 gap-5 items-start ${tab === 'pages' && previewOpen ? 'lg:grid-cols-[280px_1fr_400px]' : 'lg:grid-cols-[280px_1fr]'}`}>
+      <div className={`px-4 lg:px-7 py-5 grid grid-cols-1 gap-5 items-start ${tab === 'pages' && previewOpen ? 'lg:grid-cols-[280px_1fr_400px]' : 'lg:grid-cols-[280px_1fr]'}`}>
         {tab === 'pages' ? (
           <>
             <div className="bg-white border border-bone rounded-2xl p-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">

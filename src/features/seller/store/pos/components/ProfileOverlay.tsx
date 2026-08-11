@@ -128,7 +128,7 @@ function ChangePinForm({ storeId, employeeId }: { storeId: string; employeeId: s
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full flex items-center justify-center gap-[6px] py-[9px] bg-carbon border-0 rounded-lg text-[12px] text-pos-faint cursor-pointer"
+        className="w-full flex items-center justify-center gap-[6px] py-[9px] min-h-11 lg:min-h-0 bg-carbon border-0 rounded-lg text-[12px] text-pos-faint cursor-pointer"
       >
         <KeyRound size={12} /> Change My PIN
       </button>
@@ -151,7 +151,7 @@ function ChangePinForm({ storeId, employeeId }: { storeId: string; employeeId: s
         <button
           onClick={submit}
           disabled={saving}
-          className="px-4 py-[8px] bg-brand-orange border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer disabled:opacity-50"
+          className="px-4 py-[8px] min-h-11 lg:min-h-0 bg-brand-orange border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer disabled:opacity-50"
         >
           {saving ? 'Saving…' : 'Save'}
         </button>

@@ -41,7 +41,7 @@ export function AdminFinance() {
   const params = useMemo(() => toAdminFinanceParams(filters), [filters]);
 
   return (
-    <div className="px-7 pt-6 pb-8 flex flex-col gap-5">
+    <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       <div>
         <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Finance &amp; Payouts</h1>
         <p className="text-[12px] text-slate">Platform revenue, commission, seller balances, and the payout approval queue.</p>

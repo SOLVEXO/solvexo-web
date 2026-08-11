@@ -254,9 +254,20 @@ export interface SearchBoxProps extends BuyerNavbarSearchConfig {
    *  global search, mounted with no other UI around it) unmount this
    *  instead of it collapsing back to a bare, out-of-context search icon. */
   onClose?: () => void;
+  /** Forces the full-screen "phone takeover" rendering unconditionally,
+   *  instead of the default `isMobileViewport` (<640px) check + self-portal.
+   *  For a caller that already hosts this component inside its OWN fixed
+   *  full-screen container reachable from a wider range than 640px — e.g.
+   *  BuyerLayout's global search, triggered from the bottom nav which stays
+   *  visible up to 768px (`md`). Without this, the width window between
+   *  640-767px fell through: not narrow enough for the internal <640px
+   *  check, so it rendered as a plain in-flow block whatever container it
+   *  happened to be mounted in, instead of ever taking over the screen. */
+  alwaysFullScreen?: boolean;
 }
 export function SearchBox({
   value, onChange, placeholder, categories, onCategorySelect, popularStores, onSubmit, autoFocus, size = 'md', onClose,
+  alwaysFullScreen = false,
 }: SearchBoxProps) {
   const isLg = size === 'lg';
   const navigate = useNavigate();
@@ -272,12 +283,13 @@ export function SearchBox({
   // never full-screen.
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   useEffect(() => {
+    if (alwaysFullScreen) return; // host already guarantees the full-screen context; no viewport check needed
     const mq = window.matchMedia('(max-width: 639.98px)');
     setIsMobileViewport(mq.matches);
     const onMqChange = () => setIsMobileViewport(mq.matches);
     mq.addEventListener('change', onMqChange);
     return () => mq.removeEventListener('change', onMqChange);
-  }, []);
+  }, [alwaysFullScreen]);
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -302,12 +314,19 @@ export function SearchBox({
     setLocalRecent([]);
   };
 
-  // Single-item remove — same "device-list only" honesty constraint as
-  // clearHistory above: a synced-only entry (account history with no
-  // delete endpoint) simply doesn't get a remove button at the call site.
+  // Single-item remove — clears it from local storage for good, and also
+  // drops it from `syncedRecent` in memory for this session (there's no
+  // backend endpoint to actually delete one synced entry, so it can still
+  // reappear next time the account history is fetched fresh — but the tap
+  // has to make the row disappear right now regardless of which list the
+  // term came from, or a term present in both looked completely broken:
+  // removing it locally did nothing since the merged list was still
+  // pulling it from `syncedRecent`).
   const removeRecent = (term: string) => {
+    const t = term.toLowerCase();
     removeLocalRecentSearch(term);
-    setLocalRecent(prev => prev.filter(t => t.toLowerCase() !== term.toLowerCase()));
+    setLocalRecent(prev => prev.filter(s => s.toLowerCase() !== t));
+    setSyncedRecent(prev => prev.filter(s => s.toLowerCase() !== t));
   };
 
   useEffect(() => {
@@ -446,14 +465,35 @@ export function SearchBox({
     <div
       ref={ref}
       className={clsx(
-        'relative flex justify-center',
         isLg ? 'w-full' : 'flex-1 px-2 sm:px-4',
         // Below `sm`, an open search takes over the whole screen — a real
         // native-app search page (back arrow + input pinned at top, results
         // filling the rest) instead of a small dropdown hanging off the
         // input. `sm:` and up keeps the original anchored-dropdown behavior
         // unchanged — a mouse user doesn't need a full takeover.
-        open && 'max-sm:fixed max-sm:inset-0 max-sm:z-[9999] max-sm:flex-col max-sm:justify-start max-sm:bg-white max-sm:px-3 max-sm:pt-3',
+        // `inset-0` would tuck the top edge under ReferenceNav's 44px dev-only
+        // bar (see AdminLayout/BuyerNavbar's own `top-[44px]`-in-DEV pattern
+        // elsewhere) — production has no such bar, so `top-0` there is exact.
+        open && !alwaysFullScreen && clsx(
+          'max-sm:fixed max-sm:right-0 max-sm:bottom-0 max-sm:left-0 max-sm:z-[9999] max-sm:flex-col max-sm:justify-start max-sm:bg-white max-sm:px-3 max-sm:pt-3',
+          import.meta.env.DEV ? 'max-sm:top-[44px]' : 'max-sm:top-0',
+        ),
+        // The full-screen and normal-anchored states are written as two
+        // complete, mutually exclusive literal class strings — never
+        // composed piecemeal from separate flags — because several of these
+        // utilities share a CSS property with their counterpart in the
+        // other state (position, justify-content), and Tailwind's
+        // generated stylesheet decides which bare utility wins by its own
+        // fixed internal ordering, not by className string order. Mixing
+        // `justify-center` (here) with a conditionally-added `justify-start`
+        // silently kept `justify-center` active despite `alwaysFullScreen`,
+        // which is exactly what collapsed the layout down to a sliver.
+        open && alwaysFullScreen
+          ? clsx(
+              'fixed right-0 bottom-0 left-0 z-[9999] flex flex-col justify-start bg-white px-3 pt-3',
+              import.meta.env.DEV ? 'top-[44px]' : 'top-0',
+            )
+          : 'relative flex justify-center',
       )}
       onKeyDown={handleKeyDown}
     >
@@ -468,8 +508,13 @@ export function SearchBox({
          gets its own, much wider cap instead. */}
       <div className={clsx(
         'relative w-full',
-        isLg ? 'max-w-[820px]' : 'sm:max-w-[360px] lg:max-w-[480px]',
-        open && 'max-sm:flex max-sm:flex-1 max-sm:min-h-0 max-sm:flex-col max-sm:max-w-none',
+        // `max-w-none` (below) and this base max-w share the same property —
+        // only applying one or the other, never both as bare classes,
+        // avoids the exact same ordering trap as the position/justify fix above.
+        open && alwaysFullScreen ? 'max-w-none' : (isLg ? 'max-w-[820px]' : 'sm:max-w-[360px] lg:max-w-[480px]'),
+        open && (alwaysFullScreen
+          ? 'flex flex-1 min-h-0 flex-col'
+          : 'max-sm:flex max-sm:flex-1 max-sm:min-h-0 max-sm:flex-col max-sm:max-w-none'),
       )}>
         <div
           className={clsx(
@@ -481,7 +526,7 @@ export function SearchBox({
             open
               ? 'border-brand-orange shadow-[0_2px_12px_rgba(217,119,87,0.12)] ring-[3px] ring-brand-orange/10'
               : isLg ? 'border-brand-orange shadow-[0_6px_24px_rgba(217,119,87,0.16)]' : 'border-bone hover:border-border-hover',
-            open && 'max-sm:shrink-0',
+            open && (alwaysFullScreen ? 'shrink-0' : 'max-sm:shrink-0'),
           )}
         >
           {open && (
@@ -489,7 +534,10 @@ export function SearchBox({
               type="button"
               onClick={closeFullScreen}
               aria-label="Close search"
-              className="hidden max-sm:flex shrink-0 items-center justify-center -ml-1 mr-[2px] w-6 h-6 bg-transparent border-none cursor-pointer text-charcoal"
+              className={clsx(
+                'shrink-0 items-center justify-center -ml-1 mr-[2px] w-6 h-6 bg-transparent border-none cursor-pointer text-charcoal',
+                alwaysFullScreen ? 'flex' : 'hidden max-sm:flex',
+              )}
             >
               <ArrowLeft size={17} />
             </button>
@@ -538,7 +586,18 @@ export function SearchBox({
             id={panelId}
             role="listbox"
             aria-label="Search suggestions"
-            className="dropdown-enter absolute left-0 right-0 top-[calc(100%+6px)] z-30 bg-white border border-bone rounded-2xl overflow-y-auto overscroll-contain shadow-card-hover max-h-[460px] max-sm:relative max-sm:top-0 max-sm:mt-3 max-sm:flex-1 max-sm:max-h-none max-sm:rounded-none max-sm:border-0 max-sm:shadow-none"
+            className={clsx(
+              'dropdown-enter z-30 bg-white overflow-y-auto overscroll-contain',
+              // Two complete, mutually exclusive literal strings (not
+              // composed from separate flags) for the same reason as the
+              // outer panel above — `absolute`/`relative` share the
+              // `position` property, and several other pairs here
+              // (top-[...]/top-0, max-h-[460px]/max-h-none) share their own
+              // properties too.
+              alwaysFullScreen
+                ? 'relative top-0 mt-3 flex-1 max-h-none border-0 rounded-none shadow-none'
+                : 'absolute left-0 right-0 top-[calc(100%+6px)] border border-bone rounded-2xl shadow-card-hover max-h-[460px] max-sm:relative max-sm:top-0 max-sm:mt-3 max-sm:flex-1 max-sm:max-h-none max-sm:rounded-none max-sm:border-0 max-sm:shadow-none',
+            )}
           >
             {!isTyping ? (
               <>
@@ -562,7 +621,7 @@ export function SearchBox({
                           icon={<Clock size={13} />}
                           label={term}
                           onClick={() => pick(term)}
-                          onRemove={localRecent.some(t => t.toLowerCase() === term.toLowerCase()) ? () => removeRecent(term) : undefined}
+                          onRemove={() => removeRecent(term)}
                         />
                       ))}
                     </div>
@@ -745,7 +804,10 @@ export function SearchBox({
     </div>
   );
 
-  return open && isMobileViewport ? createPortal(panel, document.body) : panel;
+  // alwaysFullScreen callers already host this inside their own fixed
+  // full-screen container (see BuyerLayout's global search) — portaling to
+  // <body> again on top of that would just be a redundant second layer.
+  return !alwaysFullScreen && open && isMobileViewport ? createPortal(panel, document.body) : panel;
 }
 
 // Real SVG flags, not emoji — Windows has no built-in flag glyphs for
@@ -1040,6 +1102,13 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
                 mobileSearchOpen ? 'flex flex-1' : clsx('hidden sm:flex sm:flex-1', centerLinks?.length && 'lg:flex-none lg:max-w-[300px]'),
               )}>
                 <SearchBox
+                  // Forces a fresh mount every time the icon tap opens this
+                  // row — `autoFocus` only ever fires at real mount time, so
+                  // without this, toggling the prop on an already-mounted
+                  // instance focused nothing and the shopper had to tap the
+                  // (now-visible) input a second time before the full-screen
+                  // search actually opened.
+                  key={mobileSearchOpen ? 'open' : 'closed'}
                   value={searchValue}
                   onChange={searchOnChange}
                   placeholder={search?.placeholder}
@@ -1048,6 +1117,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
                   popularStores={search?.popularStores}
                   onSubmit={term => { handleSearchSubmit(term); setMobileSearchOpen(false); }}
                   autoFocus={mobileSearchOpen}
+                  onClose={() => setMobileSearchOpen(false)}
                 />
               </div>
             )}

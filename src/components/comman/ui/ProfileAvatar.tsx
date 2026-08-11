@@ -1,4 +1,5 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
@@ -7,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { TokenStorage, apiLogout } from '@/api/services/auth';
+import { CopyIconButton } from './CopyIconButton';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RoleChip
@@ -96,7 +98,10 @@ function DropdownHeader({
         <AvatarImage profileImage={profileImage} name={name} initials={initials} size="md" />
         <div className="flex-1 min-w-0">
           <p className="text-[14px] font-bold text-carbon leading-tight truncate">{name ?? '—'}</p>
-          <p className="text-[11px] text-slate truncate mt-[2px] mb-[7px]">{email ?? '—'}</p>
+          <div className="flex items-center gap-1 mt-[2px] mb-[7px]">
+            <p className="text-[11px] text-slate truncate min-w-0">{email ?? '—'}</p>
+            {email && <CopyIconButton value={email} title="Copy email" size={11} className="text-slate hover:text-charcoal" />}
+          </div>
           <div className="flex items-center gap-[5px] flex-wrap">
             {hasBuyer  && <RoleChip role="buyer"  />}
             {hasSeller && <RoleChip role="seller" />}
@@ -237,30 +242,63 @@ function ProfileDropdown({
 // ProfileAvatar
 // ─────────────────────────────────────────────────────────────────────────────
 const CLOSE_DELAY_MS = 150;
+const PANEL_WIDTH = 272;
+const PANEL_HEIGHT_ESTIMATE = 320;
 
 export function ProfileAvatar() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; right?: number }>({});
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { profile, loading } = useGetProfile();
 
   const clearCloseTimer = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } };
   const scheduleClose = () => { clearCloseTimer(); closeTimer.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS); };
 
+  // The dropdown used to be a plain absolutely-positioned child of the
+  // trigger — any scrollable/clipped ancestor between it and the page root
+  // (e.g. BuyerNavbar's icon row, which deliberately has `overflow-x-auto`
+  // as a mobile safety net for the wishlist/cart/account icons) silently
+  // clipped or trapped it, exactly like ActionMenu's dropdown would if it
+  // weren't already portaled to <body>. Computing a fixed position against
+  // the trigger's real screen coordinates and portaling out is the same
+  // fix, applied here for the same reason.
+  const calcPos = useCallback(() => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const GAP = 10;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpward = spaceBelow < PANEL_HEIGHT_ESTIMATE + GAP && rect.top > PANEL_HEIGHT_ESTIMATE;
+    setPos({
+      [openUpward ? 'bottom' : 'top']: openUpward ? window.innerHeight - rect.top + GAP : rect.bottom + GAP,
+      right: Math.max(8, window.innerWidth - rect.right),
+    });
+  }, []);
+
   useEffect(() => {
     if (!open) return;
-    const onClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    calcPos();
+    const onOutside = (e: MouseEvent) => {
+      const t = e.target as Node;
+      const insideTrigger = triggerRef.current?.contains(t) ?? false;
+      const insidePanel = panelRef.current?.contains(t) ?? false;
+      if (!insideTrigger && !insidePanel) setOpen(false);
     };
     const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('mousedown', onClickOutside);
+    const onReflow = () => calcPos();
+    document.addEventListener('mousedown', onOutside);
     document.addEventListener('keydown', onKeyDown);
+    window.addEventListener('scroll', onReflow, true);
+    window.addEventListener('resize', onReflow);
     return () => {
-      document.removeEventListener('mousedown', onClickOutside);
+      document.removeEventListener('mousedown', onOutside);
       document.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('scroll', onReflow, true);
+      window.removeEventListener('resize', onReflow);
     };
-  }, [open]);
+  }, [open, calcPos]);
 
   useEffect(() => () => clearCloseTimer(), []);
 
@@ -275,31 +313,47 @@ export function ProfileAvatar() {
   };
 
   return (
-    <div
-      ref={ref}
-      className="relative"
-      onMouseEnter={() => { clearCloseTimer(); setOpen(true); }}
-      onMouseLeave={scheduleClose}
-    >
-      <AvatarTrigger
-        open={open}
-        onClick={() => setOpen(p => !p)}
-        profileImage={profile?.profileImage}
-        name={profile?.name}
-        initials={initials}
-        loading={loading}
-      />
-      <div className={clsx(
-        'absolute right-0 top-[calc(100%+10px)] z-[100] transition-all duration-200 origin-top-right',
-        open ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-1 pointer-events-none',
-      )}>
-        <ProfileDropdown
-          profile={profile}
+    <>
+      <div
+        ref={triggerRef}
+        className="relative"
+        onMouseEnter={() => { clearCloseTimer(); setOpen(true); }}
+        onMouseLeave={scheduleClose}
+      >
+        <AvatarTrigger
+          open={open}
+          onClick={() => setOpen(p => !p)}
+          profileImage={profile?.profileImage}
+          name={profile?.name}
           initials={initials}
-          onNavigate={handleNavigate}
-          onLogout={handleLogout}
+          loading={loading}
         />
       </div>
-    </div>
+
+      {createPortal(
+        <div
+          ref={panelRef}
+          // Re-armed here too — the panel is now a DOM sibling of the
+          // trigger (not a child of it), so without this, moving the mouse
+          // from the avatar into the menu would read as "left" and close it
+          // mid-hover.
+          onMouseEnter={clearCloseTimer}
+          onMouseLeave={scheduleClose}
+          style={{ position: 'fixed', zIndex: 100, width: PANEL_WIDTH, ...pos }}
+          className={clsx(
+            'transition-all duration-200 origin-top-right',
+            open ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-1 pointer-events-none',
+          )}
+        >
+          <ProfileDropdown
+            profile={profile}
+            initials={initials}
+            onNavigate={handleNavigate}
+            onLogout={handleLogout}
+          />
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }

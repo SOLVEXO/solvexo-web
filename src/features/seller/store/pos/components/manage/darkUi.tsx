@@ -117,7 +117,7 @@ export function DarkButton({ variant = 'primary', icon, loading, disabled, class
   return (
     <button
       className={clsx(
-        'px-4 py-[9px] rounded-lg text-[12px] font-semibold cursor-pointer flex items-center justify-center gap-[6px]',
+        'px-4 py-[9px] min-h-11 lg:min-h-0 rounded-lg text-[12px] font-semibold cursor-pointer flex items-center justify-center gap-[6px]',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         VARIANT_CLASSES[variant],
         className,

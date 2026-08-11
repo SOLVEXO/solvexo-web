@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
   ShoppingCart, User, Tag, Pause, ImageOff, Minus, Plus,
@@ -44,9 +45,38 @@ export function CartPanel({ sale }: CartPanelProps) {
   } = sale;
 
   const isResuming = !!resumingSaleId;
+  const itemCount = cart.reduce((s, i) => s + i.qty, 0);
+  // The floating mobile trigger must stay reachable even with an empty cart
+  // whenever sales are queued waiting to sync — that banner lives inside this
+  // same panel and would otherwise become invisible/unreachable on mobile.
+  const hasMobileContent = cart.length > 0 || pendingSyncCount > 0;
+
+  // Mobile only — desktop always shows the panel inline (lg:flex overrides
+  // this regardless of state, see className below). On phones the full panel
+  // is a bottom sheet opened from the floating "View Cart" bar instead of a
+  // permanent side column squeezed under the product grid.
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  function handleReset() {
+    resetSale();
+    setMobileOpen(false);
+  }
 
   return (
-    <div className="w-full lg:w-[320px] shrink-0 flex flex-col relative bg-pos-surface-2 lg:min-h-0">
+    <>
+    <div
+      className={clsx(
+        'w-full shrink-0 flex-col relative bg-pos-surface-2',
+        'lg:flex lg:static lg:inset-auto lg:z-auto lg:w-[320px] lg:max-h-none lg:min-h-0 lg:rounded-none lg:border-t-0',
+        mobileOpen
+          ? 'flex fixed inset-x-0 bottom-0 top-auto z-[80] max-h-[85vh] rounded-t-[24px] border-t border-pos-border-strong pos-panel-enter'
+          : 'hidden',
+      )}
+    >
+      {/* Mobile sheet drag handle */}
+      <div className="lg:hidden flex justify-center pt-[10px] pb-[2px] shrink-0">
+        <span className="w-9 h-[4px] rounded-full bg-pos-border-strong" />
+      </div>
 
       {/* Cart header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-pos-border shrink-0">
@@ -61,6 +91,13 @@ export function CartPanel({ sale }: CartPanelProps) {
           )}
         </div>
         <div className="flex gap-[6px]">
+          <button
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close cart"
+            className="lg:hidden h-11 w-11 shrink-0 flex items-center justify-center rounded-xl border border-pos-border bg-pos-surface text-pos-faint cursor-pointer transition-all duration-150 active:scale-95 hover:border-pos-border-strong"
+          >
+            <X size={16} />
+          </button>
           <button
             onClick={() => setPosView(posView === 'customer' ? 'charge' : 'customer')}
             className={clsx(
@@ -331,7 +368,7 @@ export function CartPanel({ sale }: CartPanelProps) {
         {cart.length > 0 && (
           <div className="flex gap-2 mt-[10px]">
             <button
-              onClick={resetSale}
+              onClick={handleReset}
               className="flex-1 h-11 bg-pos-surface border border-pos-border rounded-xl cursor-pointer flex items-center justify-center gap-[6px] transition-all duration-150 hover:border-pos-border-strong active:scale-95"
             >
               <X size={13} className="text-pos-muted" />
@@ -353,8 +390,53 @@ export function CartPanel({ sale }: CartPanelProps) {
 
       {/* Receipt overlay */}
       {posView === 'receipt' && lastSale && (
-        <ReceiptOverlay sale={lastSale} resetSale={resetSale} />
+        <ReceiptOverlay sale={lastSale} resetSale={handleReset} />
       )}
+
+      {/* Safe-area clearance below the footer for phones with a home indicator */}
+      <div className="lg:hidden h-[env(safe-area-inset-bottom)] shrink-0" />
     </div>
+
+    {/* Mobile-only backdrop behind the open cart sheet */}
+    {mobileOpen && (
+      <div
+        onClick={() => setMobileOpen(false)}
+        aria-hidden="true"
+        className="lg:hidden fixed inset-0 z-[75] bg-black/60 pos-overlay-enter"
+      />
+    )}
+
+    {/* Mobile-only floating trigger — opens the sheet above. Shown for a
+        non-empty cart (normal case) or, with an empty cart, whenever sales
+        are still queued waiting to sync, so that banner stays reachable. */}
+    {!mobileOpen && hasMobileContent && (
+      <button
+        onClick={() => setMobileOpen(true)}
+        className={clsx(
+          'lg:hidden fixed inset-x-3 z-[70] h-14 rounded-2xl border-0 cursor-pointer',
+          'bottom-[calc(0.75rem+env(safe-area-inset-bottom))]',
+          cart.length > 0
+            ? 'bg-gradient-to-b from-brand-orange to-brand-deep-orange shadow-[0_8px_24px_rgba(0,0,0,0.35)]'
+            : 'bg-warning shadow-[0_8px_24px_rgba(0,0,0,0.35)]',
+          'flex items-center justify-between px-5 transition-transform duration-150 active:scale-[0.98]',
+        )}
+      >
+        {cart.length > 0 ? (
+          <>
+            <span className="flex items-center gap-[8px] text-[13px] font-semibold text-white">
+              <ShoppingCart size={16} />
+              View Cart · {itemCount} item{itemCount !== 1 ? 's' : ''}
+            </span>
+            <span className="text-[16px] font-bold text-white">${total.toFixed(2)}</span>
+          </>
+        ) : (
+          <span className="flex items-center gap-[8px] text-[13px] font-semibold text-carbon">
+            <CloudOff size={16} />
+            {pendingSyncCount} sale{pendingSyncCount !== 1 ? 's' : ''} waiting to sync
+          </span>
+        )}
+      </button>
+    )}
+    </>
   );
 }

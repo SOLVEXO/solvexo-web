@@ -22,7 +22,7 @@ export function AuditTab({ storeId }: AuditTabProps) {
   if (error && !loading) {
     return (
       <div className="flex flex-col gap-4">
-        <Card className="flex items-center justify-between">
+        <Card className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <p className="text-[15px] font-bold text-carbon mb-1">SEO Audit</p>
             <p className="text-[12px] text-slate">No audit has been run for this store yet.</p>

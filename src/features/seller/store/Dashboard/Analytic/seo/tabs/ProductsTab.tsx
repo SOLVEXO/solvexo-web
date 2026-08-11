@@ -47,7 +47,7 @@ export function ProductsTab({ storeId, storeSlug }: ProductsTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-2 flex-wrap">
         <Button variant="outline" size="sm" icon={<Download size={13} />} loading={bulkSubmitting} onClick={() => exportCsv(storeId)}>
           Export CSV
         </Button>
@@ -83,6 +83,7 @@ export function ProductsTab({ storeId, storeSlug }: ProductsTabProps) {
         <Modal
           title="Bulk Apply SEO Template"
           onClose={() => setBulkOpen(false)}
+          mobileSheet
           footer={
             <>
               <Button variant="ghost" size="sm" onClick={() => setBulkOpen(false)}>Cancel</Button>
@@ -127,6 +128,7 @@ function ProductSeoEditModal({ storeId, productId, storeSlug, onClose, onSaved }
       title="Edit Product SEO"
       onClose={onClose}
       width={560}
+      mobileSheet
       footer={
         <>
           <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>

@@ -44,7 +44,7 @@ export function PagesTab({ storeId }: PagesTabProps) {
 
   return (
     <Card className="max-w-[640px]">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between gap-2 flex-wrap mb-4">
         <p className="text-[15px] font-bold text-carbon">Pages SEO</p>
         <Button variant="primary" size="sm" loading={submitting} onClick={handleSave}>Save Changes</Button>
       </div>

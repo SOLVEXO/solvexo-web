@@ -180,7 +180,7 @@ export function StoreReviews() {
         subtitle="Monitor, respond to, and learn from customer feedback."
       />
 
-      <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 pb-8 pt-5 flex flex-col gap-5">
 
         {actionError && (
           <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">
@@ -252,11 +252,11 @@ export function StoreReviews() {
         {/* ── Reviews table ── */}
         <Card padding="none">
           {/* Filters */}
-          <div className="flex items-center gap-[10px] flex-wrap px-5 py-4 border-b border-bone">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-[10px] px-5 py-4 border-b border-bone">
             <select
               value={ratingFilter}
               onChange={e => { setRatingFilter(e.target.value); setPage(1); }}
-              className="w-[150px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
+              className="w-full sm:w-[150px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
             >
               <option value="">All Ratings</option>
               <option value="5">5 Stars</option>
@@ -268,7 +268,7 @@ export function StoreReviews() {
             <select
               value={sortFilter}
               onChange={e => setSortFilter(e.target.value)}
-              className="w-[140px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
+              className="w-full sm:w-[140px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
             >
               <option value="">All</option>
               <option value="replied">Replied</option>
@@ -315,7 +315,7 @@ export function StoreReviews() {
       )}
 
       {deletingReview && (
-        <Modal title="Remove Review" onClose={() => setDeletingReview(null)} footer={
+        <Modal title="Remove Review" onClose={() => setDeletingReview(null)} mobileSheet footer={
           <>
             <Button variant="ghost" onClick={() => setDeletingReview(null)} disabled={deleteBusy}>Cancel</Button>
             <Button variant="danger" onClick={confirmModerateDelete} loading={deleteBusy}>Remove Review</Button>

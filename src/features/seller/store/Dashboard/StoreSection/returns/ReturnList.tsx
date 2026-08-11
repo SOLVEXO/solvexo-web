@@ -176,10 +176,10 @@ export function StoreReturnList() {
         subtitle="Process return requests, issue refunds, and send replacements."
       />
 
-      <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 pb-8 pt-5 flex flex-col gap-5">
 
         {/* ── Metrics row ── */}
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             { label: 'Open Requests',  value: stats?.openRequests ?? 0 },
             { label: 'Return Rate',    value: stats?.returnRate ?? '—' },

@@ -225,7 +225,7 @@ export default function StorePlanBilling() {
 
   if (loading && !current) {
     return (
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
         <div className="bg-white border border-bone rounded-[10px] px-5 py-4 flex flex-col gap-4">
           <SkeletonBox width={180} height={16} rounded="4px" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -246,7 +246,7 @@ export default function StorePlanBilling() {
     <>
       <StorePageHeader title="Billing Center" subtitle="Your store's Solvexo subscription, usage limits, payment method, and billing history." />
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error">{error}</p>}
         {actionError && (
           <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">
@@ -280,7 +280,7 @@ export default function StorePlanBilling() {
                   Renews {new Date(current.nextBillingDate).toLocaleDateString()}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${
                   isPastDue ? 'bg-error-bg text-error' : isCancelPending ? 'bg-[#fdf2da] text-[#946200]' : 'bg-[#e3f4ea] text-[#1e7a3c]'
                 }`}>
@@ -367,12 +367,12 @@ export default function StorePlanBilling() {
           ) : (
             <div className="flex flex-col">
               {addons.map(a => (
-                <div key={a._id} className="flex items-center justify-between px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
-                  <div>
+                <div key={a._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
+                  <div className="min-w-0">
                     <p className="text-[13px] font-medium text-carbon">{ADDON_LABELS[a.addonType]}</p>
                     <p className="text-[11px] text-slate">Qty {a.quantity} · ${a.amountUSD.toFixed(2)}/mo</p>
                   </div>
-                  <button onClick={() => { setCancelingAddon(a); setActionError(''); }} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-error cursor-pointer">Cancel</button>
+                  <button onClick={() => { setCancelingAddon(a); setActionError(''); }} className="px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] text-error cursor-pointer shrink-0">Cancel</button>
                 </div>
               ))}
             </div>
@@ -388,15 +388,15 @@ export default function StorePlanBilling() {
           ) : (
             <div className="flex flex-col">
               {invoices.map(inv => (
-                <div key={inv._id} className="flex items-center justify-between px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
-                  <div>
+                <div key={inv._id} className="flex items-center justify-between gap-3 flex-wrap px-5 py-3 border-b border-[#f0eee6] last:border-b-0">
+                  <div className="min-w-0">
                     <p className="text-[13px] font-medium text-carbon">{inv.invoiceNumber}</p>
                     <p className="text-[11px] text-slate">
                       {new Date(inv.createdAt).toLocaleDateString()} · ${inv.amountUSD.toFixed(2)}
                       {inv.refundedAmountUSD > 0 && <span className="text-error"> · ${inv.refundedAmountUSD.toFixed(2)} refunded</span>}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2.5 shrink-0">
                     <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${INVOICE_STATUS_STYLE[inv.status] ?? 'bg-bone text-slate'}`}>
                       {inv.status.replace('_', ' ')}
                     </span>

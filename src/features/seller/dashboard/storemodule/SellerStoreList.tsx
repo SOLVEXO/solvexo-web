@@ -115,7 +115,7 @@ export function SellerStoreList() {
         }
       />
 
-      <div className="px-7 py-6 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 py-6 flex flex-col gap-5">
 
         {/* Summary */}
         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>

@@ -162,7 +162,7 @@ export function SellerMessages() {
       />
 
       <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 108px)' }}>
-        <div className={activeId ? 'hidden md:flex' : 'flex'}>
+        <div className={activeId ? 'hidden md:flex md:w-auto md:shrink-0' : 'flex w-full md:w-auto md:shrink-0'}>
           <ChatList
             title="Chats"
             entries={list.map(c => toEntry(c, online))}

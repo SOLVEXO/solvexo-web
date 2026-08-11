@@ -78,7 +78,7 @@ function LeadDetailModal({ leadId, onClose, onApprove, onReject, onMarkUnderRevi
   const reviewable = data?.verificationStatus === 'pending' || data?.verificationStatus === 'under_review';
 
   return (
-    <Modal title="Review Lead" onClose={onClose} width={640}>
+    <Modal mobileSheet title="Review Lead" onClose={onClose} width={640}>
       {loading && (
         <div className="flex flex-col gap-3">
           <SkeletonBox height={20} width="60%" />
@@ -118,7 +118,7 @@ function LeadDetailModal({ leadId, onClose, onApprove, onReject, onMarkUnderRevi
 
           <div>
             <p className="text-[12px] font-bold text-carbon mb-2">Seller Contact</p>
-            <div className="grid grid-cols-2 gap-3 bg-cream rounded-lg p-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-cream rounded-lg p-3">
               <DetailRow label="Name" value={data.seller.name} />
               <DetailRow label="Email" value={data.seller.email} />
               <DetailRow label="Phone" value={data.seller.phone} />
@@ -128,7 +128,7 @@ function LeadDetailModal({ leadId, onClose, onApprove, onReject, onMarkUnderRevi
 
           <div>
             <p className="text-[12px] font-bold text-carbon mb-2">Business Information</p>
-            <div className="grid grid-cols-2 gap-3 bg-cream rounded-lg p-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-cream rounded-lg p-3">
               <DetailRow label="Country" value={data.country} />
               <DetailRow label="Business Type" value={data.businessType} />
               <DetailRow label="Legal Business Name" value={data.legalBusinessName} />
@@ -366,7 +366,7 @@ export function AdminLeads() {
       )}
 
       {approving && (
-        <Modal
+        <Modal mobileSheet
           title="Approve this store?"
           onClose={() => setApproving(null)}
           footer={<>
@@ -381,7 +381,7 @@ export function AdminLeads() {
       )}
 
       {rejecting && (
-        <Modal
+        <Modal mobileSheet
           title="Reject Lead"
           onClose={() => { setRejecting(null); setReason(''); }}
           footer={<>

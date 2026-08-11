@@ -81,7 +81,7 @@ export function MonitoringTab() {
       </Card>
 
       <Card padding="none">
-        <div className="px-5 py-3 border-b border-bone flex items-center justify-between">
+        <div className="px-5 py-3 border-b border-bone flex items-center justify-between gap-2 flex-wrap">
           <p className="text-[13px] font-semibold text-carbon">Index Coverage Snapshots</p>
           <Button variant="outline" size="xs" icon={<RefreshCw size={11} />} loading={submitting} onClick={handleRefreshIndex}>Refresh</Button>
         </div>
@@ -95,7 +95,7 @@ export function MonitoringTab() {
       </Card>
 
       <Card padding="none">
-        <div className="px-5 py-3 border-b border-bone flex items-center justify-between">
+        <div className="px-5 py-3 border-b border-bone flex items-center justify-between gap-2 flex-wrap">
           <p className="text-[13px] font-semibold text-carbon">Core Web Vitals</p>
           <Button variant="outline" size="xs" icon={<RefreshCw size={11} />} loading={submitting} onClick={handleRefreshCwv}>Refresh</Button>
         </div>

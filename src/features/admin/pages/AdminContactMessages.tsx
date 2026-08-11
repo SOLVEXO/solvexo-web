@@ -16,7 +16,7 @@ function formatDate(iso: string) {
 // ── Detail modal ─────────────────────────────────────────────────────────────
 function DetailModal({ submission, onClose }: { submission: ContactSubmission; onClose: () => void }) {
   return (
-    <Modal title={submission.topic} width={520} onClose={onClose} footer={<Button variant="outline" onClick={onClose}>Close</Button>}>
+    <Modal mobileSheet title={submission.topic} width={520} onClose={onClose} footer={<Button variant="outline" onClick={onClose}>Close</Button>}>
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div>
@@ -148,7 +148,7 @@ export function AdminContactMessages() {
       {viewing && <DetailModal submission={viewing} onClose={() => setViewing(null)} />}
 
       {deleting && (
-        <Modal
+        <Modal mobileSheet
           title="Delete Submission"
           onClose={() => setDeleting(null)}
           footer={

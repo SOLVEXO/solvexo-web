@@ -19,6 +19,7 @@ export function ProductGrid({ sale }: ProductGridProps) {
     lookupBarcode, barcodeError,
     cart, addItem,
     heldSales, heldSalesLoading, resumeHeldSale, discardHeldSale,
+    pendingSyncCount,
   } = sale;
 
   function cartQtyFor(variantId: string) {
@@ -164,6 +165,10 @@ export function ProductGrid({ sale }: ProductGridProps) {
           ))}
         </div>
       )}
+
+      {/* Reserves room so the mobile floating cart/sync-status bar never
+          covers the last product row / pagination / held-sales bar. */}
+      {(cart.length > 0 || pendingSyncCount > 0) && <div className="lg:hidden h-20 shrink-0" aria-hidden="true" />}
     </div>
   );
 }

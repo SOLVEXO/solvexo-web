@@ -34,7 +34,7 @@ function AccountDetailModal({ account, onClose, onChanged }: { account: AccountR
   }
 
   return (
-    <Modal
+    <Modal mobileSheet
       title="Account Details"
       onClose={onClose}
       footer={<>
@@ -193,7 +193,7 @@ export function AdminUsers() {
       {viewing && <AccountDetailModal account={viewing} onClose={() => setViewing(null)} onChanged={() => { setViewing(null); refreshAll(); }} />}
 
       {confirming && (
-        <Modal
+        <Modal mobileSheet
           title={confirming.status === 'suspended' ? 'Unsuspend Account' : 'Suspend Account'}
           onClose={() => setConfirming(null)}
           footer={<>

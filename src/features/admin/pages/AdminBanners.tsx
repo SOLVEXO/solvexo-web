@@ -81,7 +81,7 @@ function BannerFormModal({
   }
 
   return (
-    <Modal
+    <Modal mobileSheet
       title={isEdit ? 'Edit Banner' : 'Add Banner'}
       onClose={onClose}
       footer={
@@ -118,7 +118,7 @@ function BannerFormModal({
         </div>
         <Input label="Link URL (optional)" placeholder="https://example.com/sale" value={urlOnTap} onChange={e => setUrlOnTap(e.target.value)} />
         <Input label="Display Order" type="number" min={0} value={order} onChange={e => setOrder(e.target.value)} />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input label="Starts (optional)" type="datetime-local" value={startAt} onChange={e => setStartAt(e.target.value)} />
           <Input label="Ends (optional)" type="datetime-local" value={endAt} onChange={e => setEndAt(e.target.value)} />
         </div>
@@ -175,14 +175,14 @@ export function AdminBanners() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
-        <div>
+      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
           <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Banners</h1>
           <p className="text-[12px] text-slate mt-[2px]">
             Manage promotional banners across Homepage, Marketplace, Education Marketplace, and Category placements. How many rotate at once per placement is configured in Platform Config.
           </p>
         </div>
-        <Button icon={<Plus size={14} />} onClick={() => setEditing('new')}>
+        <Button icon={<Plus size={14} />} onClick={() => setEditing('new')} className="shrink-0">
           Add Banner
         </Button>
       </div>
@@ -272,7 +272,7 @@ export function AdminBanners() {
       )}
 
       {deleting && (
-        <Modal
+        <Modal mobileSheet
           title="Delete Banner"
           onClose={() => setDeleting(null)}
           footer={

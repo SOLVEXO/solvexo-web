@@ -61,10 +61,10 @@ export function SummaryTab({ onShiftClosed }: SummaryTabProps) {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
 
       {/* Header */}
-      <div className="flex items-center gap-[10px] mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-[10px] mb-6">
         <p className="text-[18px] font-bold text-white flex-1">Shift Summary</p>
         <p className="text-[12px] text-pos-muted">
           Opened {openedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · {openedAt.toLocaleDateString()}
@@ -73,7 +73,7 @@ export function SummaryTab({ onShiftClosed }: SummaryTabProps) {
         {session.status === 'open' && (
           <button
             onClick={() => setShowClose(true)}
-            className="px-4 py-2 bg-[#C1303020] border border-error rounded-lg text-[12px] font-semibold text-error cursor-pointer"
+            className="px-4 py-2 min-h-11 lg:min-h-0 bg-[#C1303020] border border-error rounded-lg text-[12px] font-semibold text-error cursor-pointer"
           >
             Close Shift
           </button>
@@ -172,13 +172,13 @@ function CloseShiftOverlay({
         />
         {error && <p className="text-[11px] text-error mb-2">{error}</p>}
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-[9px] bg-carbon border-0 rounded-lg text-[12px] text-pos-faint cursor-pointer">
+          <button onClick={onClose} className="flex-1 py-[9px] min-h-11 lg:min-h-0 bg-carbon border-0 rounded-lg text-[12px] text-pos-faint cursor-pointer">
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={saving}
-            className="flex-1 py-[9px] bg-error border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer disabled:opacity-50"
+            className="flex-1 py-[9px] min-h-11 lg:min-h-0 bg-error border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer disabled:opacity-50"
           >
             {saving ? 'Closing…' : 'Confirm & Close'}
           </button>

@@ -45,7 +45,7 @@ function ReportDetailModal({ report, onClose, onApproved }: { report: Moderation
   }
 
   return (
-    <Modal
+    <Modal mobileSheet
       title="Report Details"
       onClose={onClose}
       footer={<>
@@ -191,7 +191,7 @@ export function AdminModeration() {
       )}
 
       {removing && (
-        <Modal
+        <Modal mobileSheet
           title="Remove Flagged Item"
           onClose={() => setRemoving(null)}
           footer={<>

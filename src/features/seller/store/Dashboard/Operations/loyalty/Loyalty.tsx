@@ -3,7 +3,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Modal } from '@/components/comman/ui/Modal';
 import { EmptyState, SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
-import { Star, Trophy, Gift, Users, Settings, Award, Gem, Trash2 } from 'lucide-react';
+import { Star, Trophy, Gift, Users, Settings, Award, Gem, Trash2, Plus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
   apiGetLoyaltyOverview, apiGetLoyaltyProgram, apiUpdateLoyaltyProgram, apiUpdateEarningRules,
@@ -64,17 +64,17 @@ export function StoreLoyalty() {
         subtitle="Build lasting customer relationships with a points-based loyalty program."
         actions={
           <>
-            <button onClick={() => setShowSettings(true)} className="px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
-              Program Settings
+            <button onClick={() => setShowSettings(true)} className="flex items-center gap-1.5 px-2.5 sm:px-4 py-[7px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
+              <Settings size={13} className="sm:hidden" /> <span className="hidden sm:inline">Program Settings</span>
             </button>
-            <button onClick={() => setShowCreateReward(true)} className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
-              + Create Reward
+            <button onClick={() => setShowCreateReward(true)} className="flex items-center gap-1.5 px-2.5 sm:px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
+              <Plus size={13} /> <span className="hidden sm:inline">Create Reward</span>
             </button>
           </>
         }
       />
 
-      <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 pb-8 pt-5 flex flex-col gap-5">
 
         {program && !program.isEnabled && (
           <div className="bg-[#fff4dc] border border-[#f0d9a0] rounded-[10px] px-4 py-3 text-xs text-[#8a6200]">
@@ -82,21 +82,23 @@ export function StoreLoyalty() {
           </div>
         )}
 
-        <div className="flex items-center gap-0.5 border-b border-bone">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className="px-4 py-[10px] text-[13px] font-medium cursor-pointer border-none rounded-tl-lg rounded-tr-lg flex items-center gap-1.5 transition-colors duration-150 hover:text-brand-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
-              style={{
-                background: activeTab === tab.id ? '#fff' : 'transparent',
-                color: activeTab === tab.id ? '#141413' : '#8C8A82',
-                borderBottom: activeTab === tab.id ? '2px solid #D97757' : '2px solid transparent',
-              }}
-            >
-              <tab.Icon size={13} /> {tab.label}
-            </button>
-          ))}
+        <div className="border-b border-bone overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-0.5 w-max">
+            {TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="px-4 py-[10px] text-[13px] font-medium cursor-pointer border-none rounded-tl-lg rounded-tr-lg flex items-center gap-1.5 shrink-0 whitespace-nowrap transition-colors duration-150 hover:text-brand-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+                style={{
+                  background: activeTab === tab.id ? '#fff' : 'transparent',
+                  color: activeTab === tab.id ? '#141413' : '#8C8A82',
+                  borderBottom: activeTab === tab.id ? '2px solid #D97757' : '2px solid transparent',
+                }}
+              >
+                <tab.Icon size={13} /> {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {activeTab === 'overview' && <OverviewTab storeId={storeId} />}
@@ -237,7 +239,7 @@ function TiersTab({ storeId, program, onSaved }: { storeId: string; program: Loy
     <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5 flex flex-col gap-4">
       <p className="text-[14px] font-bold text-carbon">Tier Thresholds</p>
       {tiers.map((tier, i) => (
-        <div key={i} className="grid grid-cols-[1fr_140px_1fr_32px] gap-2.5 items-end">
+        <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_140px_1fr_32px] gap-2.5 items-end">
           <div>
             <label className="text-xs font-medium text-graphite mb-[5px] block">Tier Name</label>
             <input value={tier.name} onChange={e => update(i, { name: e.target.value })}
@@ -356,7 +358,7 @@ function RewardsTab({ storeId, showCreate, onCloseCreate }: { storeId: string; s
       )}
 
       {showCreate && (
-        <Modal title="Create Reward" onClose={onCloseCreate} footer={
+        <Modal title="Create Reward" onClose={onCloseCreate} mobileSheet footer={
           <>
             <button onClick={onCloseCreate} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Cancel</button>
             <button onClick={handleCreate} className="px-4 py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">Create</button>
@@ -523,7 +525,7 @@ function ProgramSettingsModal({ storeId, program, onClose, onSaved }: { storeId:
   }
 
   return (
-    <Modal title="Program Settings" onClose={onClose} footer={
+    <Modal title="Program Settings" onClose={onClose} mobileSheet footer={
       <>
         <button onClick={onClose} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Cancel</button>
         <button onClick={save} disabled={saving} className="px-4 py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">
@@ -569,7 +571,7 @@ function AwardPointsModal({ storeId, member, onClose }: { storeId: string; membe
   }
 
   return (
-    <Modal title={`Award Points — ${member.user?.name ?? 'Member'}`} onClose={onClose} width={480} footer={
+    <Modal title={`Award Points — ${member.user?.name ?? 'Member'}`} onClose={onClose} width={480} mobileSheet footer={
       <>
         <button onClick={onClose} className="px-4 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">Cancel</button>
         <button onClick={submit} disabled={saving} className="px-4 py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50">

@@ -36,9 +36,9 @@ export function OverviewTab() {
             {Object.entries(data?.byTool ?? {}).map(([tool, counts]) => {
               const total = counts.succeeded + counts.failed + counts.processing;
               return (
-                <div key={tool} className="flex items-center justify-between py-2 border-b border-[#f0eee6] last:border-b-0">
-                  <span className="text-[13px] text-carbon">{TOOL_LABELS[tool] ?? tool}</span>
-                  <div className="flex items-center gap-3 text-[11px]">
+                <div key={tool} className="flex items-center justify-between gap-3 py-2 border-b border-[#f0eee6] last:border-b-0">
+                  <span className="text-[13px] text-carbon truncate min-w-0">{TOOL_LABELS[tool] ?? tool}</span>
+                  <div className="flex items-center gap-3 text-[11px] shrink-0">
                     <span className="text-success">{counts.succeeded} succeeded</span>
                     <span className="text-error">{counts.failed} failed</span>
                     <span className="text-slate">{total} total</span>

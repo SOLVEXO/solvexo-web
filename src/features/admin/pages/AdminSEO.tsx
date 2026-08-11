@@ -37,7 +37,7 @@ export function AdminSEO() {
   const [activeTab, setActiveTab] = useState('analytics');
 
   return (
-    <div className="px-7 pt-6 pb-8 flex flex-col gap-5">
+    <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       <div>
         <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Platform SEO</h1>
         <p className="text-[12px] text-slate">Marketplace-wide search visibility, structured data, and technical SEO controls.</p>

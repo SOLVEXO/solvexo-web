@@ -99,7 +99,7 @@ function GlobalDefaultCard() {
       )}
 
       {editing && (
-        <Modal
+        <Modal mobileSheet
           title="Edit Global Default Commission"
           onClose={() => setEditing(false)}
           footer={
@@ -146,7 +146,7 @@ function SellerOverrideModal({ onClose, onSaved }: { onClose: () => void; onSave
   }
 
   return (
-    <Modal
+    <Modal mobileSheet
       title="Set Seller Commission Override"
       onClose={onClose}
       footer={
@@ -241,12 +241,12 @@ export function AdminCommissionRules() {
       <GlobalDefaultCard />
 
       <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
-        <div className="px-5 py-[14px] border-b border-bone flex items-center justify-between">
-          <div>
+        <div className="px-5 py-[14px] border-b border-bone flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
             <p className="text-[14px] font-bold text-charcoal">Seller Overrides</p>
             <p className="text-[11px] text-slate">Always wins over plan-tier and global rates.</p>
           </div>
-          <Button icon={<Plus size={14} />} size="sm" onClick={() => setAdding(true)}>Add Override</Button>
+          <Button icon={<Plus size={14} />} size="sm" onClick={() => setAdding(true)} className="shrink-0">Add Override</Button>
         </div>
 
         {error ? (
@@ -271,7 +271,7 @@ export function AdminCommissionRules() {
       )}
 
       {removingRow && (
-        <Modal
+        <Modal mobileSheet
           title="Remove Commission Override?"
           onClose={() => setRemovingRow(null)}
           footer={

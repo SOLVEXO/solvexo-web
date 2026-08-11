@@ -71,7 +71,7 @@ function WalletDetailModal({ wallet, onClose, onAdjusted }: {
   };
 
   return (
-    <Modal title={`Wallet — ${wallet.storeName ?? wallet.storeId}`} onClose={onClose} width={600}>
+    <Modal title={`Wallet — ${wallet.storeName ?? wallet.storeId}`} onClose={onClose} width={600} mobileSheet>
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3 text-[12px]">
           <div><span className="text-slate">Balance: </span><span className="text-carbon font-semibold">{ledger?.balance ?? wallet.balance}</span></div>
@@ -81,7 +81,7 @@ function WalletDetailModal({ wallet, onClose, onAdjusted }: {
         <div className="border border-bone rounded-lg p-3">
           <p className="text-[12px] font-semibold text-carbon mb-3">Manual Adjustment</p>
           {error && <p className="text-[12px] text-error mb-2">{error}</p>}
-          <div className="flex gap-2 mb-3">
+          <div className="flex flex-wrap gap-2 mb-3">
             <Field label="Direction" className="mb-0 w-[130px]">
               <Select value={direction} onChange={e => setDirection(e.target.value as 'grant' | 'deduct')}>
                 <option value="grant">Grant</option>

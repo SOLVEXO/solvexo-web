@@ -1,11 +1,11 @@
-import { type ReactNode, useState, useRef, useEffect, createContext, useContext } from 'react';
+import { type ReactNode, useState, useRef, useEffect } from 'react';
 import { ActiveStoreProvider, useActiveStore } from '@/contexts/ActiveStoreContext';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useLogout } from '@/hooks/auth/useLogout';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
-import { Modal, Button } from '@/components/comman/ui';
+import { Modal, Button, CopyIconButton } from '@/components/comman/ui';
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
@@ -16,9 +16,6 @@ import {
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { NotificationBell, AnnouncementBanner, CurrencySelector } from '@/components/comman/ui';
-
-// ── Sidebar context (lets SellerPageHeader consume the toggle) ────────────────
-const SellerSidebarCtx = createContext<{ toggle: () => void }>({ toggle: () => {} });
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface NavItem {
@@ -200,9 +197,12 @@ function isDropdown(item: NavEntry): item is NavDropdown {
   return 'children' in item;
 }
 
-interface SellerSidebarProps { open: boolean; onToggle: () => void; onClose: () => void; }
+interface SellerSidebarProps { open: boolean; onToggle: () => void; }
 
-function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
+// Desktop only now — mobile navigation is `SellerBottomNav` below, a real
+// bottom tab bar (this sidebar's 4 items map 1:1 onto 4 tabs) instead of a
+// hamburger-triggered copy of this same dark rail.
+function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
@@ -248,25 +248,11 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
 
   return (
     <>
-      {/* Mobile backdrop */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={onClose}
-        />
-      )}
-
       <aside className={clsx(
-        'bg-carbon flex flex-col',
-        'transition-all duration-300 ease-in-out',
-        // Mobile: fixed overlay, starts below ReferenceNav (44px) — dev only,
-        // that bar doesn't exist in production, so there's nothing to clear.
-        'fixed bottom-0 left-0 z-50 w-[220px]', import.meta.env.DEV ? 'top-[44px]' : 'top-0',
-        // Desktop: static inline, full viewport height, width toggles
-        'lg:static lg:z-auto lg:shrink-0 lg:top-auto lg:bottom-auto', import.meta.env.DEV ? 'lg:h-[calc(100vh-44px)]' : 'lg:h-screen',
-        open
-          ? 'translate-x-0 lg:w-[220px]'
-          : '-translate-x-full lg:translate-x-0 lg:w-[60px]',
+        'hidden lg:flex bg-carbon flex-col shrink-0',
+        'transition-[width] duration-300 ease-in-out',
+        import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen',
+        open ? 'w-[220px]' : 'w-[60px]',
       )}>
 
         {/* Header: logo + toggle */}
@@ -423,7 +409,12 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
                 ) : (
                   <>
                     <p className="text-[12px] font-medium text-white leading-[1.3] truncate">{profile?.name ?? '—'}</p>
-                    <p className="text-[10px] text-slate leading-[1.3] truncate">{profile?.email ?? '—'}</p>
+                    <div className="flex items-center gap-1 min-w-0">
+                      <p className="text-[10px] text-slate leading-[1.3] truncate">{profile?.email ?? '—'}</p>
+                      {profile?.email && (
+                        <CopyIconButton value={profile.email} title="Copy email" size={11} className="text-slate hover:text-white" />
+                      )}
+                    </div>
                   </>
                 )}
               </div>
@@ -456,6 +447,49 @@ function SellerSidebar({ open, onToggle, onClose }: SellerSidebarProps) {
   );
 }
 
+// ── Mobile bottom tab bar — real navigation, not a hamburger-triggered copy
+// of the desktop sidebar. The sidebar's 4 items map 1:1 onto these 4 tabs,
+// icon-only + a small underline for the active tab, same pattern as the
+// buyer side's BottomNav. Desktop keeps the sidebar exactly as it was. ────
+const SELLER_TABS: { id: string; Icon: LucideIcon; label: string; path: string }[] = [
+  { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard',  path: '/seller/dashboard' },
+  { id: 'stores',    Icon: Store,           label: 'My Stores',  path: '/seller/stores'    },
+  { id: 'analytics', Icon: BarChart2,       label: 'Analytics',  path: '/seller/analytics' },
+  { id: 'settings',  Icon: Settings,        label: 'Settings',   path: '/seller/settings'  },
+];
+
+function SellerBottomNav() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
+
+  return (
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-bone">
+      <div className="flex items-stretch">
+        {SELLER_TABS.map(tab => {
+          const active = isActive(tab.path);
+          return (
+            <button
+              key={tab.id}
+              onClick={() => navigate(tab.path)}
+              aria-current={active ? 'page' : undefined}
+              aria-label={tab.label}
+              className="flex-1 flex flex-col items-center justify-center py-[11px] gap-[5px] cursor-pointer bg-transparent border-none"
+            >
+              <tab.Icon
+                size={21}
+                strokeWidth={active ? 2.2 : 1.8}
+                className={clsx('transition-colors duration-150', active ? 'text-brand-orange' : 'text-slate')}
+              />
+              <span className={clsx('w-[16px] h-[3px] rounded-full transition-colors duration-150', active ? 'bg-brand-orange' : 'bg-transparent')} />
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
 // ── Page Header (exported for seller pages) ───────────────────────────────────
 export interface SellerPageHeaderProps {
   title:     string;
@@ -464,21 +498,11 @@ export interface SellerPageHeaderProps {
 }
 
 export function SellerPageHeader({ title, subtitle, actions }: SellerPageHeaderProps) {
-  const { toggle } = useContext(SellerSidebarCtx);
   return (
     <div className="bg-white/90 backdrop-blur-md border-b border-bone px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={toggle}
-          aria-label="Toggle sidebar"
-          className="lg:hidden size-8 rounded-md border border-bone flex items-center justify-center text-slate hover:bg-cream transition-colors cursor-pointer shrink-0"
-        >
-          <PanelLeftOpen size={16} />
-        </button>
-        <div>
-          <h1 className="text-[18px] font-bold text-carbon leading-[1.3]">{title}</h1>
-          {subtitle && <p className="text-[12px] text-slate mt-0.5">{subtitle}</p>}
-        </div>
+      <div>
+        <h1 className="text-[18px] font-bold text-carbon leading-[1.3]">{title}</h1>
+        {subtitle && <p className="text-[12px] text-slate mt-0.5">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-[10px]">
         {actions}
@@ -492,21 +516,8 @@ export function SellerPageHeader({ title, subtitle, actions }: SellerPageHeaderP
 // ── Layout ────────────────────────────────────────────────────────────────────
 export function SellerLayout() {
   const { pathname: currentPath } = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
-
-  useEffect(() => {
-    let wasMobile = window.innerWidth < 1024;
-    const onResize = () => {
-      const isMobile = window.innerWidth < 1024;
-      if (wasMobile && !isMobile) setSidebarOpen(true);
-      wasMobile = isMobile;
-    };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  const toggle  = () => setSidebarOpen(o => !o);
-  const onClose = () => setSidebarOpen(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const toggle = () => setSidebarOpen(o => !o);
 
   const user = TokenStorage.getUser<{ role?: AppRole }>();
   if (!TokenStorage.isLoggedIn() || user?.role !== 'seller') {
@@ -515,17 +526,16 @@ export function SellerLayout() {
 
   return (
     <ActiveStoreProvider>
-      <SellerSidebarCtx.Provider value={{ toggle }}>
-        <div className={clsx('flex bg-cream', import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen')}>
-          <SellerSidebar open={sidebarOpen} onToggle={toggle} onClose={onClose} />
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-            <AnnouncementBanner audience="sellers" />
-            <div className="flex-1 overflow-y-auto overflow-x-hidden">
-              <Outlet />
-            </div>
+      <div className={clsx('flex bg-cream', import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen')}>
+        <SellerSidebar open={sidebarOpen} onToggle={toggle} />
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <AnnouncementBanner audience="sellers" />
+          <div className="flex-1 overflow-y-auto overflow-x-hidden pb-[64px] lg:pb-0">
+            <Outlet />
           </div>
         </div>
-      </SellerSidebarCtx.Provider>
+      </div>
+      <SellerBottomNav />
     </ActiveStoreProvider>
   );
 }

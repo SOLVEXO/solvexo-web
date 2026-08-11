@@ -57,23 +57,23 @@ export function ProductsTab() {
   }, [storeId, page, search]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
 
       {/* Header */}
-      <div className="flex items-center gap-[10px] mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-[10px] mb-5">
         <p className="text-[16px] font-bold text-white flex-1">Product Catalog</p>
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Search size={13} className="absolute left-[11px] top-1/2 -translate-y-1/2 text-pos-muted pointer-events-none" />
           <input
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search SKU or name..."
-            className="bg-pos-surface border border-carbon rounded-lg pl-[30px] pr-[14px] py-2 text-[13px] text-white outline-none transition-colors focus:border-brand-orange"
+            className="w-full sm:w-auto bg-pos-surface border border-carbon rounded-lg pl-[30px] pr-[14px] py-2 text-[13px] text-white outline-none transition-colors focus:border-brand-orange"
           />
         </div>
         <button
           onClick={() => navigate(`/seller/store/${storeId}/products/add`)}
-          className="flex items-center gap-[6px] px-4 py-2 bg-brand-orange border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer transition-colors hover:bg-brand-deep-orange"
+          className="flex items-center justify-center gap-[6px] px-4 py-2 bg-brand-orange border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer transition-colors hover:bg-brand-deep-orange"
         >
           <Plus size={13} /> Add Product
         </button>
@@ -81,6 +81,7 @@ export function ProductsTab() {
 
       {/* Table */}
       <div className="bg-pos-surface border border-carbon rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -166,6 +167,7 @@ export function ProductsTab() {
             ))}
           </tbody>
         </table>
+        </div>
 
         {!search && totalPages > 1 && (
           <div className="flex items-center justify-center gap-3 px-4 py-3 border-t border-carbon">

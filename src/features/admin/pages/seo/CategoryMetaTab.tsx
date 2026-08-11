@@ -50,7 +50,7 @@ export function CategoryMetaTab() {
 
       {searchedId && (
         <Card>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between gap-2 flex-wrap mb-4">
             <p className="text-[15px] font-bold text-carbon">Category SEO</p>
             <Button variant="primary" size="sm" loading={submitting} onClick={handleSave}>Save Changes</Button>
           </div>

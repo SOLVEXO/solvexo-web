@@ -110,6 +110,7 @@ function StoreBannerFormModal({ storeId, onClose, onSaved }: { storeId: string; 
     <Modal
       title="Add Store Banner"
       onClose={onClose}
+      mobileSheet
       footer={
         <>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
@@ -130,7 +131,7 @@ function StoreBannerFormModal({ storeId, onClose, onSaved }: { storeId: string; 
           <FileDropSelect value={mobileFile} onChange={setMobileFile} label="Click to upload mobile banner" />
           <p className="mt-1.5 text-[11px] text-slate/70">Recommended: 1440×600px (minimum 640px wide).</p>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-[12px] font-medium text-charcoal mb-1.5">Type</label>
             <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as StoreBannerType }))}
@@ -146,7 +147,7 @@ function StoreBannerFormModal({ storeId, onClose, onSaved }: { storeId: string; 
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-[12px] font-medium text-charcoal mb-1.5">CTA Label (optional)</label>
             <input value={form.ctaLabel} onChange={e => setForm(f => ({ ...f, ctaLabel: e.target.value }))} placeholder="Shop Now"
@@ -159,7 +160,7 @@ function StoreBannerFormModal({ storeId, onClose, onSaved }: { storeId: string; 
               className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] outline-none transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-[12px] font-medium text-charcoal mb-1.5">Starts (optional)</label>
             <input type="datetime-local" value={form.startAt} onChange={e => setForm(f => ({ ...f, startAt: e.target.value }))}
@@ -263,6 +264,7 @@ function PromotionRequestFormModal({ storeId, onClose, onSaved }: { storeId: str
     <Modal
       title="Request a Platform Promotion"
       onClose={onClose}
+      mobileSheet
       footer={
         <>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
@@ -296,7 +298,7 @@ function PromotionRequestFormModal({ storeId, onClose, onSaved }: { storeId: str
           </div>
           <p className="text-[11px] text-slate mt-1.5">Any number of hours/days/weeks/months — pricing matches whichever unit fits the window. Or skip this and pick exact Start/End below.</p>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input label="Starts" type="datetime-local" value={startAt} onChange={e => setStartAt(e.target.value)} />
           <Input label="Ends" type="datetime-local" value={endAt} onChange={e => setEndAt(e.target.value)} />
         </div>
@@ -360,7 +362,7 @@ function PromotionPaymentModal({ request, onClose, onPaid }: { request: Promotio
   }
 
   return (
-    <Modal title={`Pay for ${PLACEMENT_LABEL[request.placement]}`} onClose={onClose}>
+    <Modal title={`Pay for ${PLACEMENT_LABEL[request.placement]}`} onClose={onClose} mobileSheet>
       {!isStripeConfigured() ? (
         <p className="text-[13px] text-slate">Online payments aren't configured yet.</p>
       ) : error ? (
@@ -683,7 +685,7 @@ export function StoreMarketing() {
         subtitle="Drive traffic, recover sales, and reward customers."
       />
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* Metrics — coupon numbers are real; email/cart features below have no backend yet */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -714,7 +716,7 @@ export function StoreMarketing() {
         {/* Store Banners Tab */}
         {tab === 'banners' && (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <p className="text-[15px] font-bold text-carbon">Store Banners</p>
                 <p className="text-[12.5px] text-slate mt-0.5">
@@ -774,7 +776,7 @@ export function StoreMarketing() {
         {/* Promotion Requests Tab */}
         {tab === 'promotions' && (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <p className="text-[15px] font-bold text-carbon">Promotion Requests</p>
                 <p className="text-[12.5px] text-slate mt-0.5">
@@ -855,7 +857,7 @@ export function StoreMarketing() {
         {/* Featured & Collections Tab */}
         {tab === 'featured' && (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <p className="text-[15px] font-bold text-carbon">Featured Products</p>
                 <p className="text-[12.5px] text-slate mt-0.5">
@@ -925,7 +927,7 @@ export function StoreMarketing() {
                 <input value={announcement.message} onChange={e => setAnnouncement(f => ({ ...f, message: e.target.value }))} placeholder="e.g. Free shipping on all orders this week!"
                   className={INPUT_CLS} />
               </div>
-              <div className="grid grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Type</label>
                   <select value={announcement.type} onChange={e => setAnnouncement(f => ({ ...f, type: e.target.value as StoreAnnouncementType }))} className={`${INPUT_CLS} cursor-pointer`}>
@@ -941,7 +943,7 @@ export function StoreMarketing() {
                 <label className="text-xs font-medium text-graphite mb-[5px] block">CTA Link (optional)</label>
                 <input value={announcement.ctaLink} onChange={e => setAnnouncement(f => ({ ...f, ctaLink: e.target.value }))} placeholder="https://…" className={INPUT_CLS} />
               </div>
-              <div className="grid grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Starts (optional)</label>
                   <input type="datetime-local" value={announcement.startAt} onChange={e => setAnnouncement(f => ({ ...f, startAt: e.target.value }))} className={INPUT_CLS} />
@@ -1174,7 +1176,7 @@ export function StoreMarketing() {
       </div>
 
       {deletingCoupon && (
-        <Modal title="Delete Coupon" onClose={() => setDeletingCoupon(null)} footer={
+        <Modal title="Delete Coupon" onClose={() => setDeletingCoupon(null)} mobileSheet footer={
           <>
             <Button variant="ghost" onClick={() => setDeletingCoupon(null)} disabled={deleteBusy}>Cancel</Button>
             <Button variant="danger" onClick={confirmDelete} loading={deleteBusy}>Delete Coupon</Button>

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  User, KeyRound, ShieldCheck, Bell, Camera,
+  User, KeyRound, ShieldCheck, Bell, Camera, ChevronLeft, ChevronRight,
   Settings, Check, Loader2, Eye, EyeOff, type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -8,6 +8,10 @@ import { useEditProfile } from '@/hooks/auth/useEditProfile';
 import { useChangePassword } from '@/hooks/auth/useChangePassword';
 import { useUpload } from '@/hooks/upload/useUpload';
 import { NotificationsPanel } from '@/components/comman/ui';
+import { AdminPageHeader } from '@/components/comman/ui/AdminPageHeader';
+import { AdminNavMenu } from '@/components/layouts/AdminLayout';
+import { apiAdminAnalyticsOverview, type AdminOverviewData } from '@/api/services/analytics/adminAnalytics';
+import { formatCurrency, formatNumber } from '@/components/comman/analytics/format';
 
 // ── Types & Nav ───────────────────────────────────────────────────────────────
 // No "Delete Account" here — admin self-deletion isn't supported by the
@@ -28,12 +32,100 @@ const NAV: { group: string; isDanger?: boolean; items: { id: Section; label: str
   },
 ];
 
-// ── Page Header ───────────────────────────────────────────────────────────────
-function AdminPageHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+// ── Mobile-only admin hero — same native-app account-hub pattern already
+// built for Seller/Store Settings (avatar/name/identity + a real stats
+// strip). Stats reuse the exact same 30-day platform overview call
+// AdminOverview.tsx already makes — never fabricated numbers.
+function MobileAdminHero({
+  name, email, image, isVerified, overview, loading,
+}: {
+  name?: string; email?: string; image?: string | null; isVerified?: boolean;
+  overview: AdminOverviewData | null; loading: boolean;
+}) {
   return (
-    <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10">
-      <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">{title}</h1>
-      {subtitle && <p className="text-[12px] text-slate mt-[2px]">{subtitle}</p>}
+    <div className="lg:hidden -mx-4 -mt-5">
+      <div className="relative overflow-hidden bg-gradient-to-br from-carbon via-[#241f1b] to-brand-deep-orange px-6 pt-8 pb-12 flex flex-col items-center text-center">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.08]"
+          style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '22px 22px' }}
+        />
+        {image ? (
+          <img
+            loading="lazy" decoding="async"
+            src={image} alt={name ?? 'Admin'}
+            className="relative size-24 rounded-full object-cover ring-4 ring-white/40"
+          />
+        ) : (
+          <div className="relative size-24 rounded-full bg-white/15 ring-4 ring-white/40 flex items-center justify-center text-white text-[26px] font-bold">
+            {name ? name.slice(0, 2).toUpperCase() : 'AD'}
+          </div>
+        )}
+        <p className="relative text-[19px] font-bold text-white mt-3 leading-tight">{name ?? 'Admin'}</p>
+        {email && <p className="relative text-[13px] text-white/75 mt-[2px]">{email}</p>}
+        <div className="relative flex items-center gap-1.5 mt-3">
+          <span className="inline-flex px-4 py-[6px] rounded-full bg-white/15 text-[11px] font-semibold text-white">
+            Admin Account
+          </span>
+          {isVerified && (
+            <span className="inline-flex items-center gap-1 px-3 py-[6px] rounded-full bg-white/15 text-[11px] font-semibold text-white">
+              <Check size={10} /> Verified
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="relative -mt-6 mx-4 rounded-t-[24px] bg-white px-2 pt-5 pb-4 flex items-center">
+        <div className="flex-1 flex flex-col items-center gap-[2px]">
+          <span className="text-[19px] font-bold text-brand-orange leading-none">{loading || !overview ? '—' : formatNumber(overview.totalSellers)}</span>
+          <span className="text-[11px] text-slate">Sellers</span>
+        </div>
+        <div className="w-px h-9 bg-bone" />
+        <div className="flex-1 flex flex-col items-center gap-[2px]">
+          <span className="text-[19px] font-bold text-brand-orange leading-none">{loading || !overview ? '—' : formatCurrency(overview.totalGMV)}</span>
+          <span className="text-[11px] text-slate">GMV (30d)</span>
+        </div>
+        <div className="w-px h-9 bg-bone" />
+        <div className="flex-1 flex flex-col items-center gap-[2px]">
+          <span className="text-[19px] font-bold text-brand-orange leading-none">{loading || !overview ? '—' : formatNumber(overview.newUsers)}</span>
+          <span className="text-[11px] text-slate">New Users</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Mobile-only navigation menu — this page's own local "Account" tabs
+// (Profile/Security/2FA/Notifications), same grouped-card pattern as
+// Seller/Store Settings. The rest of the admin panel's modules render below
+// via the shared AdminNavMenu.
+function MobileAdminMenu({ active, onSelect }: { active: Section; onSelect: (id: Section) => void }) {
+  return (
+    <div className="lg:hidden bg-white border border-bone rounded-2xl overflow-hidden">
+      {NAV.map(group => (
+        <div key={group.group}>
+          <div className="px-5 pt-4 pb-2">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.06em] text-slate">{group.group}</p>
+          </div>
+          <div className="divide-y divide-[#f5f4ef]">
+            {group.items.map(item => {
+              const isActive = active === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onSelect(item.id)}
+                  className={`w-full flex items-center gap-3 px-5 py-[13px] bg-transparent border-0 cursor-pointer text-left transition-colors ${isActive ? 'bg-cream' : 'hover:bg-cream'}`}
+                >
+                  <div className="w-8 h-8 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0">
+                    <item.Icon size={15} className="text-brand-orange" />
+                  </div>
+                  <span className="flex-1 text-[13px] font-medium text-charcoal">{item.label}</span>
+                  <ChevronRight size={15} className="text-slate shrink-0" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -63,11 +155,17 @@ function ProfileSkeleton() {
 // ── Main Component ────────────────────────────────────────────────────────────
 export function AdminSettings() {
   const [active,    setActive]    = useState<Section>('profile');
+  // Mobile-only: whether we've drilled into a section from the account-hub
+  // menu below — mirrors the same pattern on Seller/Store Settings. Desktop
+  // ignores this; it always shows the content + sidebar.
+  const [mobileDrilledIn, setMobileDrilledIn] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
   const [phone,     setPhone]     = useState('');
   const [address,   setAddress]   = useState('');
   const [profileImage, setProfileImage] = useState('');
+  const [overview, setOverview] = useState<AdminOverviewData | null>(null);
+  const [overviewLoading, setOverviewLoading] = useState(true);
 
   const { profile, loading: profileLoading } = useGetProfile();
   const { execute: editProfile, loading: saving, error: saveError, success: saved } = useEditProfile();
@@ -88,6 +186,13 @@ export function AdminSettings() {
     setAddress(profile.address ?? '');
     setProfileImage(profile.profileImage ?? '');
   }, [profile]);
+
+  useEffect(() => {
+    apiAdminAnalyticsOverview({ range: '30d' })
+      .then(res => setOverview(res.data))
+      .catch(() => {})
+      .finally(() => setOverviewLoading(false));
+  }, []);
 
   const handleSave = () => {
     const name = `${firstName} ${lastName}`.trim();
@@ -112,15 +217,53 @@ export function AdminSettings() {
     <>
       <AdminPageHeader title="Settings" subtitle="Manage your admin account and preferences." />
 
-      <div className="px-7 pt-5 pb-8">
-        <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 260px' }}>
+      <div className="px-4 sm:px-7 pt-5 pb-8">
+
+        {/* Mobile-only account hub — hero (avatar/name/role + real platform
+           stats) + this page's own Account menu + every other admin module
+           below it. Hidden once a section has been opened. */}
+        {!mobileDrilledIn && (
+          <div className="lg:hidden flex flex-col gap-4 mb-5">
+            <MobileAdminHero
+              name={profile?.name}
+              email={profile?.email}
+              image={profileImage}
+              isVerified={profile?.isVerified}
+              overview={overview}
+              loading={overviewLoading}
+            />
+            <MobileAdminMenu active={active} onSelect={id => { setActive(id); setMobileDrilledIn(true); }} />
+
+            {/* Every other admin module (Commerce/People/Growth/Finance/
+               Content/Analytics/System) — not the dashboard, which stays a
+               pure glance page. 'settings' is excluded since this local
+               Account menu above already covers it. */}
+            <AdminNavMenu excludeItemIds={['settings']} />
+          </div>
+        )}
+
+        {/* Mobile-only back bar — shown only once a section is open. */}
+        {mobileDrilledIn && (
+          <div className="lg:hidden flex items-center gap-2 mb-4">
+            <button
+              onClick={() => setMobileDrilledIn(false)}
+              aria-label="Back to account menu"
+              className="size-8 -ml-1 flex items-center justify-center rounded-full bg-transparent border-none cursor-pointer text-charcoal hover:bg-cream transition-colors"
+            >
+              <ChevronLeft size={19} />
+            </button>
+            <p className="text-[15px] font-bold text-carbon">{activeItem?.label ?? 'Settings'}</p>
+          </div>
+        )}
+
+        <div className={`${mobileDrilledIn ? 'grid' : 'hidden lg:grid'} grid-cols-1 lg:grid-cols-[1fr_260px] gap-5`}>
 
           {/* ── LEFT: Content ── */}
           <div>
 
             {/* Profile */}
             {active === 'profile' && (
-              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6">
+              <div className="bg-white border border-bone rounded-[10px] px-4 sm:px-[26px] py-6">
                 <p className="text-[16px] font-bold text-charcoal mb-[22px]">Profile</p>
 
                 {profileLoading ? <ProfileSkeleton /> : (
@@ -128,14 +271,14 @@ export function AdminSettings() {
                     {/* Avatar */}
                     <div className="flex items-center gap-4 mb-[22px]">
                       <label className={`relative flex-shrink-0 ${photoUploading ? 'cursor-wait' : 'cursor-pointer'}`}>
-                        <div className="w-[76px] h-[76px] rounded-full bg-[#fdecea] text-[#c0392b] text-[26px] font-bold flex items-center justify-center overflow-hidden">
+                        <div className="w-[76px] h-[76px] rounded-full bg-brand-pale-orange text-brand-deep-orange text-[26px] font-bold flex items-center justify-center overflow-hidden">
                           {photoUploading
                             ? <Loader2 size={24} className="animate-spin" />
                             : profileImage
                               ? <img loading="lazy" decoding="async" src={profileImage} alt={profile?.name} className="w-full h-full object-cover" />
                               : (profile?.name?.slice(0, 2).toUpperCase() ?? 'AD')}
                         </div>
-                        <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-error flex items-center justify-center">
+                        <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-brand-orange flex items-center justify-center">
                           <Camera size={12} className="text-white" />
                         </span>
                         <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handlePhotoChange} disabled={photoUploading} />
@@ -171,7 +314,7 @@ export function AdminSettings() {
                       <label className="text-[12px] font-medium text-graphite mb-[5px] block">Email</label>
                       <div className="flex items-center gap-[10px]">
                         <input readOnly value={profile?.email ?? ''}
-                          className="flex-1 px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-cream box-border" />
+                          className="flex-1 min-w-0 px-3 py-[9px] text-[13px] border border-bone rounded-lg outline-none text-slate bg-cream box-border" />
                         {profile?.isVerified && (
                           <span className="px-[10px] py-1 rounded-[5px] text-[11px] font-semibold bg-[#e3f4ea] text-[#1e7a3c] flex items-center gap-1 flex-shrink-0">
                             <Check size={10} /> Verified
@@ -213,7 +356,7 @@ export function AdminSettings() {
                       <button
                         onClick={handleSave}
                         disabled={saving}
-                        className={`px-6 py-[10px] bg-error border-none rounded-lg text-[13px] font-semibold text-white flex items-center gap-2 ${saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                        className={`px-6 py-[10px] bg-brand-orange hover:bg-brand-deep-orange border-none rounded-lg text-[13px] font-semibold text-white flex items-center gap-2 transition-colors duration-150 ${saving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                       >
                         {saving && <Loader2 size={13} className="animate-spin" />}
                         {saving ? 'Saving…' : 'Save Changes'}
@@ -228,7 +371,7 @@ export function AdminSettings() {
 
             {/* Email & Password section */}
             {active === 'security' && (
-              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6">
+              <div className="bg-white border border-bone rounded-[10px] px-4 sm:px-[26px] py-6">
                 <p className="text-[16px] font-bold text-charcoal mb-[22px]">Email &amp; Password</p>
 
                 <div className="mb-5">
@@ -272,7 +415,7 @@ export function AdminSettings() {
                   <button
                     onClick={handleChangePassword}
                     disabled={pwSaving || !currentPassword || !newPassword}
-                    className={`px-6 py-[10px] bg-error border-none rounded-lg text-[13px] font-semibold text-white flex items-center gap-2 ${pwSaving || !currentPassword || !newPassword ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                    className={`px-6 py-[10px] bg-brand-orange hover:bg-brand-deep-orange border-none rounded-lg text-[13px] font-semibold text-white flex items-center gap-2 transition-colors duration-150 ${pwSaving || !currentPassword || !newPassword ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                   >
                     {pwSaving && <Loader2 size={13} className="animate-spin" />}
                     {pwSaving ? 'Updating…' : 'Update Password'}
@@ -290,7 +433,7 @@ export function AdminSettings() {
 
             {/* Other sections */}
             {active !== 'profile' && active !== 'security' && active !== 'notifications' && (
-              <div className="bg-white border border-bone rounded-[10px] px-[26px] py-6">
+              <div className="bg-white border border-bone rounded-[10px] px-4 sm:px-[26px] py-6">
                 <div className="flex flex-col items-center justify-center py-[60px] text-center">
                   <div className="text-slate mb-[14px]">
                     {activeItem ? <activeItem.Icon size={40} /> : <Settings size={40} />}
@@ -306,8 +449,8 @@ export function AdminSettings() {
             )}
           </div>
 
-          {/* ── RIGHT: Nav sidebar ── */}
-          <div>
+          {/* ── RIGHT: Nav sidebar — desktop only ── */}
+          <div className="hidden lg:block">
             <div className="bg-white border border-bone rounded-[10px] sticky top-[70px]" style={{ padding: 0 }}>
               {NAV.map((group, gi) => (
                 <div key={group.group}>
@@ -320,7 +463,7 @@ export function AdminSettings() {
                   {group.items.map(item => {
                     const isActive  = active === item.id;
                     const isDanger  = group.isDanger;
-                    const activeColor = isDanger ? '#C0392B' : '#C13030';
+                    const activeColor = isDanger ? '#C0392B' : '#D97757';
                     return (
                       <button
                         key={item.id}
@@ -328,7 +471,7 @@ export function AdminSettings() {
                         className="w-full flex items-center gap-[10px] px-4 py-[9px] cursor-pointer border-none text-left transition-colors duration-[120ms]"
                         style={{
                           borderLeft: `3px solid ${isActive ? activeColor : 'transparent'}`,
-                          background: isActive ? (isDanger ? '#FDECEA' : '#FFF0F0') : 'transparent',
+                          background: isActive ? (isDanger ? '#FDECEA' : '#FBECE4') : 'transparent',
                           color: isActive ? activeColor : (isDanger ? '#C0392B' : '#4A4945'),
                         }}
                         onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#FAF9F5'; }}

@@ -170,7 +170,7 @@ export function AdminMarketplace() {
       </div>
 
       {removing && (
-        <Modal
+        <Modal mobileSheet
           title="Remove Listing"
           onClose={() => setRemoving(null)}
           footer={<>

@@ -416,7 +416,7 @@ export function StoreFinance() {
 
   if (loading) {
     return (
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
         <SkeletonBox height={110} rounded="12px" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => <SkeletonBox key={i} height={90} rounded="10px" />)}
@@ -431,7 +431,7 @@ export function StoreFinance() {
 
   if (error || !dashboard) {
     return (
-      <div className="px-7 pt-5 pb-8">
+      <div className="px-4 lg:px-7 pt-5 pb-8">
         <div className="flex flex-col items-center gap-3 text-center bg-white border border-bone rounded-[10px] px-6 py-12">
           <div className="w-11 h-11 rounded-full bg-error-bg flex items-center justify-center">
             <AlertTriangle size={20} className="text-error" />
@@ -447,7 +447,7 @@ export function StoreFinance() {
 
   if (!activeWallet) {
     return (
-      <div className="px-7 pt-5 pb-8">
+      <div className="px-4 lg:px-7 pt-5 pb-8">
         <p className="text-[13px] text-slate">No sales yet — your wallet will appear here once you make your first sale.</p>
       </div>
     );
@@ -470,7 +470,7 @@ export function StoreFinance() {
         }
       />
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
 
         {/* Wallet selector — a seller can hold more than one currency
             (e.g. a PKR wallet from bank-transfer/COD sales and a USD wallet
@@ -494,7 +494,7 @@ export function StoreFinance() {
         )}
 
         {/* Balance Card */}
-        <div className="bg-carbon rounded-xl px-7 py-6 flex flex-wrap justify-between items-center gap-4">
+        <div className="bg-carbon rounded-xl px-5 sm:px-7 py-6 flex flex-wrap justify-between items-center gap-4">
           <div>
             <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.1em] mb-2">Available Balance ({activeWallet.currency})</p>
             <p className="text-[32px] font-bold text-white leading-[1.1] mb-3">{fmt(activeWallet.availableBalance, activeWallet.currency)}</p>

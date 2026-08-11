@@ -37,7 +37,7 @@ function FaqFormModal({ faq, onClose, onSaved }: { faq: Faq | null; onClose: () 
   }
 
   return (
-    <Modal
+    <Modal mobileSheet
       title={isEdit ? 'Edit FAQ' : 'Add FAQ'}
       width={520}
       onClose={onClose}
@@ -140,12 +140,12 @@ export function AdminFaqs() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
-        <div>
+      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
           <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">FAQs</h1>
           <p className="text-[12px] text-slate mt-[2px]">{stats.active} active · {stats.inactive} inactive</p>
         </div>
-        <Button icon={<Plus size={14} />} onClick={() => setEditing('new')}>Add FAQ</Button>
+        <Button icon={<Plus size={14} />} onClick={() => setEditing('new')} className="shrink-0">Add FAQ</Button>
       </div>
 
       <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-4">
@@ -186,7 +186,7 @@ export function AdminFaqs() {
       )}
 
       {deleting && (
-        <Modal
+        <Modal mobileSheet
           title="Delete FAQ"
           onClose={() => setDeleting(null)}
           footer={

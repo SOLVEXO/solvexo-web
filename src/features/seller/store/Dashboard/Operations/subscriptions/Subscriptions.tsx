@@ -91,7 +91,7 @@ function BenefitEditor({ benefit, onChange, onRemove, categories }: {
 
       {benefit.type === 'discount' && (
         <>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Select label="Applies to" value={benefit.scope ?? 'store'} onChange={e => set('scope', e.target.value as PlanBenefit['scope'])}>
               <option value="store">Entire store</option>
               <option value="category">Selected categories</option>
@@ -123,7 +123,7 @@ function BenefitEditor({ benefit, onChange, onRemove, categories }: {
               value={(benefit.productIds ?? []).join(', ')}
               onChange={e => set('productIds', e.target.value.split(',').map(s => s.trim()).filter(Boolean))} />
           )}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Input label="Max $ off (optional)" type="number" min={0} value={benefit.maxDiscountAmountUSD ?? ''} onChange={e => set('maxDiscountAmountUSD', e.target.value ? Number(e.target.value) : undefined)} />
             <Input label="Min order $ (optional)" type="number" min={0} value={benefit.minOrderValueUSD ?? ''} onChange={e => set('minOrderValueUSD', e.target.value ? Number(e.target.value) : undefined)} />
           </div>
@@ -152,7 +152,7 @@ function BenefitEditor({ benefit, onChange, onRemove, categories }: {
       )}
 
       {benefit.type === 'credits' && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Input label="Credits per cycle" type="number" min={0} value={benefit.creditsPerCycle ?? ''} onChange={e => set('creditsPerCycle', Number(e.target.value))} />
           <Select label="Credit type" value={benefit.creditType ?? 'download'} onChange={e => set('creditType', e.target.value as PlanBenefit['creditType'])}>
             <option value="download">Download</option>
@@ -232,6 +232,7 @@ function PlanFormModal({ storeId, plan, onClose, onSaved }: {
       title={isEdit ? 'Edit Plan' : 'Create Plan'}
       width={620}
       onClose={onClose}
+      mobileSheet
       footer={<>
         <Button variant="outline" onClick={onClose}>Cancel</Button>
         <Button onClick={submit} loading={saving}>{isEdit ? 'Save Changes' : 'Create Plan'}</Button>
@@ -313,14 +314,14 @@ function SubscriberDetailModal({ storeId, subId, onClose }: { storeId: string; s
   }
 
   return (
-    <Modal title="Subscriber Detail" width={560} onClose={onClose}>
+    <Modal title="Subscriber Detail" width={560} onClose={onClose} mobileSheet>
       {loading || !data ? (
         <div className="flex flex-col gap-3">
           {Array.from({ length: 5 }).map((_, i) => <SkeletonBox key={i} height={30} rounded="6px" />)}
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-2 text-[12px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[12px]">
             <div><p className="text-slate">Customer</p><p className="font-semibold text-charcoal">{data.customer?.name} ({data.customer?.email})</p></div>
             <div><p className="text-slate">Plan</p><p className="font-semibold text-charcoal">{data.plan?.name ?? '—'}</p></div>
             <div><p className="text-slate">Status</p><p className="font-semibold text-charcoal capitalize">{data.status}</p></div>
@@ -352,6 +353,7 @@ function SubscriberDetailModal({ storeId, subId, onClose }: { storeId: string; s
         <Modal
           title="Refund Invoice"
           onClose={() => setConfirmingRefund(null)}
+          mobileSheet
           footer={
             <>
               <Button variant="ghost" onClick={() => setConfirmingRefund(null)} disabled={refundingId === confirmingRefund._id}>Cancel</Button>
@@ -547,14 +549,14 @@ export function StoreSubscriptions() {
         actions={
           <>
             <Button variant="outline" size="sm" icon={<Download size={13} />} onClick={() => apiExportSubscribersCsv(storeId, store?.name ?? 'store')}>
-              Export Subscribers
+              <span className="hidden sm:inline">Export Subscribers</span>
             </Button>
-            <Button size="sm" icon={<Plus size={13} />} onClick={() => setEditingPlan('new')}>Create Plan</Button>
+            <Button size="sm" icon={<Plus size={13} />} onClick={() => setEditingPlan('new')}><span className="hidden sm:inline">Create Plan</span></Button>
           </>
         }
       />
 
-      <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 pb-8 pt-5 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error">{error}</p>}
         {actionError && (
           <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">
@@ -654,10 +656,10 @@ export function StoreSubscriptions() {
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           <div className="flex items-center justify-between px-5 py-[14px] border-b border-bone flex-wrap gap-2">
             <p className="text-[15px] font-bold text-carbon">Subscribers</p>
-            <div className="flex items-center gap-0.5 bg-[#f5f4ef] rounded-lg p-[3px]">
+            <div className="flex items-center gap-0.5 bg-[#f5f4ef] rounded-lg p-[3px] max-w-full overflow-x-auto scrollbar-none">
               {SUB_TABS.map(t => (
                 <button key={t.id} onClick={() => { setStatusTab(t.id); setPage(1); }}
-                  className="px-[14px] py-[5px] rounded-[6px] text-xs font-medium cursor-pointer border-none transition-all duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+                  className="px-[14px] py-[5px] rounded-[6px] text-xs font-medium cursor-pointer border-none shrink-0 whitespace-nowrap transition-all duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
                   style={{ background: statusTab === t.id ? '#141413' : 'transparent', color: statusTab === t.id ? '#fff' : '#8C8A82' }}>
                   {t.label}
                 </button>
@@ -735,7 +737,7 @@ export function StoreSubscriptions() {
       )}
 
       {archivingPlan && (
-        <Modal title="Archive Plan" width={420} onClose={() => setArchivingPlan(null)}
+        <Modal title="Archive Plan" width={420} onClose={() => setArchivingPlan(null)} mobileSheet
           footer={<>
             <Button variant="outline" onClick={() => setArchivingPlan(null)}>Back</Button>
             <Button variant="danger" loading={archiveBusy} onClick={() => submitArchive(archiveNeedsForce)}>
@@ -751,7 +753,7 @@ export function StoreSubscriptions() {
       )}
 
       {cancelReasonFor && (
-        <Modal title="Cancel Subscription" width={420} onClose={() => { setCancelReasonFor(null); setCancelError(''); }}
+        <Modal title="Cancel Subscription" width={420} onClose={() => { setCancelReasonFor(null); setCancelError(''); }} mobileSheet
           footer={<>
             <Button variant="outline" onClick={() => { setCancelReasonFor(null); setCancelError(''); }}>Back</Button>
             <Button variant="danger" loading={busyId === cancelReasonFor._id} onClick={submitCancel}>

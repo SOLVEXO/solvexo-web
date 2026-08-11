@@ -408,7 +408,7 @@ export default function StoreDashboard() {
       <StorePageHeader title="Dashboard" subtitle="" />
 
       {loading || metricsLoading ? <DashSkeleton /> : (
-        <div className="px-7 py-6 flex flex-col gap-5">
+        <div className="px-4 lg:px-7 py-6 flex flex-col gap-5">
 
           <StoreHero store={store} />
 
@@ -459,8 +459,12 @@ export default function StoreDashboard() {
             <StoreInfoCard />
           </div>
 
-          {/* Quick Actions */}
-          <QuickActionsRow storeId={storeId} />
+          {/* Quick Actions — desktop only; on mobile StoreNavMenu above (and
+             the bottom-nav's Menu sheet, reachable from any page) already
+             cover every one of these destinations (and more). */}
+          <div className="hidden lg:block">
+            <QuickActionsRow storeId={storeId} />
+          </div>
 
         </div>
       )}

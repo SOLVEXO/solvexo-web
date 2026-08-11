@@ -101,7 +101,7 @@ export function FinancePayoutMethodsTab() {
       </div>
 
       {rejecting && (
-        <Modal
+        <Modal mobileSheet
           title="Reject Payout Method"
           onClose={() => setRejecting(null)}
           footer={

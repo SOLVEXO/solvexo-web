@@ -39,7 +39,7 @@ export function CanonicalTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-[15px] font-bold text-carbon">Platform Canonical Rules</p>
         <Button variant="primary" size="sm" icon={<Plus size={13} />} onClick={openNew}>New Rule</Button>
       </div>
@@ -68,6 +68,7 @@ export function CanonicalTab() {
         <Modal
           title={editing === 'new' ? 'New Canonical Rule' : 'Edit Canonical Rule'}
           onClose={() => setEditing(null)}
+          mobileSheet
           footer={
             <>
               <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>Cancel</Button>

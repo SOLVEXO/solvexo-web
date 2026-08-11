@@ -5,7 +5,7 @@ import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, ChevronLeft, Monitor, Store,
+  Settings, Sparkles, ChevronLeft, ChevronRight, Monitor, Store,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, ShieldCheck, Lock,
@@ -35,13 +35,10 @@ export function useStoreWorkspace(): StoreWorkspaceValue {
   return ctx;
 }
 
-// ── Sidebar toggle context (for StorePageHeader on mobile) ────────────────────
-const StoreSidebarCtx = createContext<{ toggle: () => void }>({ toggle: () => {} });
-
 // ── Sidebar Nav ───────────────────────────────────────────────────────────────
-interface NavItem { id: string; Icon: LucideIcon; label: string; path: string }
+export interface NavItem { id: string; Icon: LucideIcon; label: string; path: string }
 
-const NAV: { group: string; items: NavItem[] }[] = [
+export const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: 'Overview',
     items: [
@@ -105,11 +102,129 @@ const NAV: { group: string; items: NavItem[] }[] = [
 // Available before the store's business verification is approved — every
 // other nav item is locked (see spec: seller workspace must stay restricted
 // until `verificationStatus === 'verified'`, not just gated on plan tools).
-const ALLOWED_PRE_VERIFICATION = new Set(['dashboard', 'verification', 'settings']);
+export const ALLOWED_PRE_VERIFICATION = new Set(['dashboard', 'verification', 'settings']);
 
-function isItemLocked(item: NavItem, verified: boolean, posEnabled: boolean): boolean {
+export function isItemLocked(item: NavItem, verified: boolean, posEnabled: boolean): boolean {
   if (item.id === 'pos' && !posEnabled) return true;
   return !verified && !ALLOWED_PRE_VERIFICATION.has(item.id);
+}
+
+// ── Shared grouped nav menu — the mobile "account hub" content for a store
+// workspace, reused wherever the full list of store sections needs to be
+// browsable (currently StoreSettings' mobile menu) — one source of truth
+// instead of a duplicate copy per page, per the project's "never create
+// duplicate logic" rule. `excludeGroups` always drops 'Overview' (Dashboard
+// has its own bottom-nav tab, Analytics is reachable from the dashboard
+// page's own metric cards) plus whatever else the caller already covers
+// some other way (e.g. StoreSettings excludes 'settings' from Settings
+// group since its own General tab already covers that destination).
+export function StoreNavMenu({ storeId, verified, posEnabled, onNavigate, excludeGroups = [], excludeItemIds = [] }: {
+  storeId: string; verified: boolean; posEnabled: boolean; onNavigate?: () => void;
+  excludeGroups?: string[]; excludeItemIds?: string[];
+}) {
+  const navigate = useNavigate();
+  const hiddenGroups = new Set(['Overview', ...excludeGroups]);
+  const hiddenItems = new Set(excludeItemIds);
+  return (
+    <div className="flex flex-col gap-4">
+      {NAV.filter(section => !hiddenGroups.has(section.group))
+        .map(section => ({ ...section, items: section.items.filter(item => !hiddenItems.has(item.id)) }))
+        .filter(section => section.items.length > 0)
+        .map(section => (
+        <div key={section.group} className="bg-white border border-bone rounded-2xl overflow-hidden">
+          <div className="px-5 pt-4 pb-2">
+            <p className="text-[10.5px] font-bold text-slate uppercase tracking-[0.06em]">{section.group}</p>
+          </div>
+          <div className="divide-y divide-[#f3f2ec]">
+            {section.items.map(item => {
+              const locked = isItemLocked(item, verified, posEnabled);
+              const isLockedByVerification = locked && item.id !== 'pos';
+              const go = () => {
+                onNavigate?.();
+                if (isLockedByVerification) { navigate(`/seller/store/${storeId}/verification`); return; }
+                if (locked) return;
+                navigate(`/seller/store/${storeId}/${item.path}`);
+              };
+              return (
+                <button
+                  key={item.id}
+                  onClick={go}
+                  className="w-full flex items-center gap-3 px-5 py-[13px] bg-transparent border-0 cursor-pointer text-left hover:bg-cream transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0">
+                    {isLockedByVerification ? <Lock size={15} className="text-brand-orange" /> : <item.Icon size={15} className="text-brand-orange" />}
+                  </div>
+                  <span className={clsx('flex-1 text-[13px] font-medium', locked ? 'text-slate' : 'text-charcoal')}>{item.label}</span>
+                  {isLockedByVerification ? (
+                    <span className="text-[9px] font-bold uppercase tracking-[0.03em] px-[7px] py-[2px] rounded-full bg-brand-orange text-white shrink-0">Locked</span>
+                  ) : (
+                    <ChevronRight size={15} className="text-slate shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Mobile bottom tab bar — real navigation for the most frequent
+// destinations, same icon-only pattern as SellerBottomNav. The last tab
+// ("Settings") is where every OTHER section lives (Sales/Catalog/Customers/
+// Growth/Finance, plus Integrations/Business Verification) via StoreSettings'
+// own mobile menu — Dashboard itself stays a pure metrics page, it doesn't
+// double as a menu of everything.
+const STORE_TABS: { id: string; Icon: LucideIcon; label: string; path: string }[] = [
+  { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', path: 'dashboard' },
+  { id: 'orders',    Icon: Package,         label: 'Orders',    path: 'orders'    },
+  { id: 'products',  Icon: ShoppingBag,     label: 'Products',  path: 'products'  },
+  { id: 'messages',  Icon: MessageSquare,   label: 'Messages',  path: 'messages'  },
+  { id: 'settings',  Icon: Settings,        label: 'Settings',  path: 'settings'  },
+];
+
+function StoreBottomNav() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { store, storeId } = useStoreWorkspace();
+  const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
+  const verified   = store?.status === 'active';
+
+  const isActive = (path: string) => pathname === `/seller/store/${storeId}/${path}`;
+
+  const goToTab = (tabId: string, path: string) => {
+    const navItem = NAV.flatMap(s => s.items).find(i => i.id === tabId);
+    const locked = navItem ? isItemLocked(navItem, verified, posEnabled) : false;
+    if (locked) { navigate(`/seller/store/${storeId}/verification`); return; }
+    navigate(`/seller/store/${storeId}/${path}`);
+  };
+
+  return (
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-bone">
+      <div className="flex items-stretch">
+        {STORE_TABS.map(tab => {
+          const active = isActive(tab.path);
+          return (
+            <button
+              key={tab.id}
+              onClick={() => goToTab(tab.id, tab.path)}
+              aria-current={active ? 'page' : undefined}
+              aria-label={tab.label}
+              className="flex-1 flex flex-col items-center justify-center py-[11px] gap-[5px] cursor-pointer bg-transparent border-none"
+            >
+              <tab.Icon
+                size={21}
+                strokeWidth={active ? 2.2 : 1.8}
+                className={clsx('transition-colors duration-150', active ? 'text-brand-orange' : 'text-slate')}
+              />
+              <span className={clsx('w-[16px] h-[3px] rounded-full transition-colors duration-150', active ? 'bg-brand-orange' : 'bg-transparent')} />
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
 }
 
 function buildPaletteItems(
@@ -135,9 +250,12 @@ function buildPaletteItems(
 }
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
-interface StoreSidebarProps { open: boolean; onToggle: () => void; onClose: () => void; }
+// Desktop only now — mobile navigation is the "menu" list on StoreDashboard
+// (mirrors the buyer Account section's redesign: a real native-app menu
+// screen + back-arrow drill-in, not a hamburger-triggered copy of this rail).
+interface StoreSidebarProps { open: boolean; onToggle: () => void; }
 
-function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
+function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   const navigate     = useNavigate();
   const { pathname } = useLocation();
   const { store, storeId, loading } = useStoreWorkspace();
@@ -197,25 +315,11 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
 
   return (
     <>
-      {/* Mobile backdrop */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={onClose}
-        />
-      )}
-
       <aside className={clsx(
-        'bg-carbon flex flex-col',
-        'transition-all duration-300 ease-in-out',
-        // Mobile: fixed overlay, starts below ReferenceNav (44px) — dev only,
-        // that bar doesn't exist in production, so there's nothing to clear.
-        'fixed bottom-0 left-0 z-50 w-[220px]', import.meta.env.DEV ? 'top-[44px]' : 'top-0',
-        // Desktop: static inline, full viewport height, width toggles
-        'lg:static lg:z-auto lg:shrink-0 lg:top-auto lg:bottom-auto', import.meta.env.DEV ? 'lg:h-[calc(100vh-44px)]' : 'lg:h-screen',
-        open
-          ? 'translate-x-0 lg:w-[220px]'
-          : '-translate-x-full lg:translate-x-0 lg:w-[60px]',
+        'hidden lg:flex bg-carbon flex-col shrink-0',
+        'transition-[width] duration-300 ease-in-out',
+        import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen',
+        open ? 'w-[220px]' : 'w-[60px]',
       )}>
 
         {/* Back to stores + toggle */}
@@ -436,17 +540,27 @@ export interface StorePageHeaderProps {
 }
 
 export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderProps) {
-  const { toggle } = useContext(StoreSidebarCtx);
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { storeId } = useStoreWorkspace();
+  const dashboardPath = `/seller/store/${storeId}/dashboard`;
+  const isDashboard = pathname === dashboardPath;
+
   return (
     <div className="bg-white/90 backdrop-blur-md border-b border-bone px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
       <div className="flex items-center gap-3">
-        <button
-          onClick={toggle}
-          aria-label="Toggle sidebar"
-          className="lg:hidden size-8 rounded-md border border-bone flex items-center justify-center text-slate hover:bg-cream transition-colors cursor-pointer shrink-0"
-        >
-          <PanelLeftOpen size={16} />
-        </button>
+        {/* Mobile only, and only away from the dashboard "menu" screen —
+           real drill-in navigation (back to the menu) instead of a
+           hamburger that used to open a copy of the desktop sidebar. */}
+        {!isDashboard && (
+          <button
+            onClick={() => navigate(dashboardPath)}
+            aria-label="Back to Store Dashboard"
+            className="lg:hidden size-8 -ml-1 rounded-md flex items-center justify-center text-charcoal hover:bg-cream transition-colors cursor-pointer shrink-0"
+          >
+            <ChevronLeft size={19} />
+          </button>
+        )}
         <div>
           <h1 className="text-[18px] font-bold text-carbon leading-[1.3]">{title}</h1>
           {subtitle && <p className="text-[12px] text-slate mt-0.5">{subtitle}</p>}
@@ -697,21 +811,8 @@ function GatedOutlet() {
 // ── Layout ────────────────────────────────────────────────────────────────────
 export function StoreLayout() {
   const { pathname: currentPath } = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
-
-  useEffect(() => {
-    let wasMobile = window.innerWidth < 1024;
-    const onResize = () => {
-      const isMobile = window.innerWidth < 1024;
-      if (wasMobile && !isMobile) setSidebarOpen(true);
-      wasMobile = isMobile;
-    };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  const toggle  = () => setSidebarOpen(o => !o);
-  const onClose = () => setSidebarOpen(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const toggle = () => setSidebarOpen(o => !o);
 
   const user = TokenStorage.getUser<{ role?: AppRole }>();
   if (!TokenStorage.isLoggedIn() || user?.role !== 'seller') {
@@ -724,19 +825,18 @@ export function StoreLayout() {
 
   return (
     <StoreWorkspaceProvider>
-      <StoreSidebarCtx.Provider value={{ toggle }}>
-        <div className={clsx('flex bg-cream overflow-hidden', import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen')}>
-          <StoreSidebar open={sidebarOpen} onToggle={toggle} onClose={onClose} />
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-            <AnnouncementBanner audience="sellers" />
-            <StoreVerificationBanner />
-            <PlatformBillingBanner />
-            <div className="flex-1 overflow-y-auto">
-              <GatedOutlet />
-            </div>
+      <div className={clsx('flex bg-cream overflow-hidden', import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen')}>
+        <StoreSidebar open={sidebarOpen} onToggle={toggle} />
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <AnnouncementBanner audience="sellers" />
+          <StoreVerificationBanner />
+          <PlatformBillingBanner />
+          <div className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">
+            <GatedOutlet />
           </div>
         </div>
-      </StoreSidebarCtx.Provider>
+      </div>
+      <StoreBottomNav />
     </StoreWorkspaceProvider>
   );
 }

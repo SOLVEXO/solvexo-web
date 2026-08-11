@@ -89,20 +89,20 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
   }
 
   return (
-    <Modal title={isEdit ? 'Edit Platform Plan' : 'Create Platform Plan'} width={640} onClose={onClose}
+    <Modal mobileSheet title={isEdit ? 'Edit Platform Plan' : 'Create Platform Plan'} width={640} onClose={onClose}
       footer={<><Button variant="outline" onClick={onClose}>Cancel</Button><Button onClick={submit} loading={saving}>{isEdit ? 'Save Changes' : 'Create Plan'}</Button></>}>
       <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input label="Plan Name" value={name} onChange={e => setName(e.target.value)} />
           <Input label="Badge (optional)" placeholder="Popular" value={badge} onChange={e => setBadge(e.target.value)} />
         </div>
         <Textarea label="Description" rows={2} value={description} onChange={e => setDescription(e.target.value)} />
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Input label="Monthly $" type="number" min={0} value={monthlyPrice} onChange={e => setMonthlyPrice(e.target.value)} disabled={isFree} />
           <Input label="Yearly $ (optional)" type="number" min={0} value={yearlyPrice} onChange={e => setYearlyPrice(e.target.value)} disabled={isFree} />
           <Input label="Trial Days" type="number" min={0} value={trialDays} onChange={e => setTrialDays(e.target.value)} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             label="Sort order (lower = shown first)" type="number" value={sortOrder}
             onChange={e => setSortOrder(e.target.value)}
@@ -189,7 +189,7 @@ function SubscribersModal({ plan, onClose }: { plan: PlatformPlan; onClose: () =
   }
 
   return (
-    <Modal title={`Subscribers — ${plan.name}`} width={560} onClose={onClose}>
+    <Modal mobileSheet title={`Subscribers — ${plan.name}`} width={560} onClose={onClose}>
       {loading ? (
         <div className="flex flex-col gap-2">{Array.from({ length: 4 }).map((_, i) => <SkeletonBox key={i} height={40} rounded="6px" />)}</div>
       ) : subs.length === 0 ? (
@@ -209,7 +209,7 @@ function SubscribersModal({ plan, onClose }: { plan: PlatformPlan; onClose: () =
       )}
 
       {refunding && (
-        <Modal
+        <Modal mobileSheet
           title="Refund Invoice"
           onClose={() => setRefunding(false)}
           footer={refundSuccess ? (
@@ -314,12 +314,12 @@ export function AdminPlatformPlans() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between">
+      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Platform Plans</h1>
           <p className="text-[12px] text-slate mt-[2px]">Seller-to-Solvexo billing tiers, limits, and add-ons.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" onClick={() => setShowAddons(s => !s)}>{showAddons ? 'Hide Add-ons' : 'View Add-on Purchases'}</Button>
           <Button icon={<Plus size={14} />} onClick={() => setEditing('new')}>Create Plan</Button>
         </div>
@@ -398,7 +398,7 @@ export function AdminPlatformPlans() {
       {viewingSubscribersFor && <SubscribersModal plan={viewingSubscribersFor} onClose={() => setViewingSubscribersFor(null)} />}
 
       {archiving && (
-        <Modal
+        <Modal mobileSheet
           title="Archive Plan"
           onClose={() => setArchiving(null)}
           footer={

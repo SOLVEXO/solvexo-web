@@ -123,11 +123,11 @@ export default function StoreCustomerList() {
       </div>
 
       {activeTab === 'followers' ? (
-        <div className="px-7 pt-5 pb-8">
+        <div className="px-4 md:px-7 pt-5 pb-8">
           <FollowersTab />
         </div>
       ) : (
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 md:px-7 pt-5 pb-8 flex flex-col gap-5">
 
         <div className="flex flex-wrap gap-3">
           <MetricCard label="Total Customers" value={total.toLocaleString()} icon={<Users size={16} />} loading={loading && page === 1 && customers.length === 0} />
@@ -135,8 +135,8 @@ export default function StoreCustomerList() {
           <MetricCard label="Total Revenue"    value={formatMoneyCompact(summary.totalRevenue, store?.baseCurrency)} icon={<DollarSign size={16} />} loading={loading && page === 1 && customers.length === 0} />
         </div>
 
-        <div className="flex gap-4 items-start">
-          <div className="bg-white border border-bone rounded-[10px] flex-1 min-w-0 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4 items-start">
+          <div className="bg-white border border-bone rounded-[10px] min-w-0 overflow-hidden">
             <div className="px-5 py-3.5 border-b border-bone">
               <SearchInput value={search} onChange={setSearch} placeholder="Search customers…" className="max-w-[260px]" />
             </div>
@@ -162,8 +162,8 @@ export default function StoreCustomerList() {
 
           {/* Edit panel */}
           {sel && (
-            <div className="w-[300px] shrink-0">
-              <div className="bg-white border border-bone rounded-[10px] px-[18px] py-5 sticky top-[70px]">
+            <div className="w-full lg:w-[300px] shrink-0">
+              <div className="bg-white border border-bone rounded-[10px] px-[18px] py-5 lg:sticky lg:top-[70px]">
                 <div className="flex flex-col items-center text-center pb-4 border-b border-[#f0eee6] mb-3.5">
                   <div className="w-[52px] h-[52px] rounded-full text-base font-bold flex items-center justify-center mb-2.5 bg-[#f0eee6] text-[#5a5852]">
                     {initialsOf(sel.name)}

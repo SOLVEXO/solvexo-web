@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { Outlet, useLocation, useNavigation } from 'react-router-dom';
 import { ReferenceNav } from './ReferenceNav';
 import { ErrorBoundary } from '@/components/comman/ErrorBoundary';
@@ -28,6 +28,18 @@ function TopProgressBar() {
 
 export function RootLayout() {
   const { pathname } = useLocation();
+
+  // `window` never scrolls in this app (see the div below) and nothing
+  // resets *its* scroll position on navigation either — so the scroll
+  // container kept whatever offset the previous page was left at, and the
+  // next page rendered already scrolled down by that same amount. From a
+  // product-search result that could genuinely land you on the new page's
+  // footer instead of its top, looking like navigation went to the wrong
+  // place entirely.
+  useEffect(() => {
+    scrollRootRef.current?.scrollTo({ top: 0 });
+  }, [pathname]);
+
   return (
     <>
       <TopProgressBar />

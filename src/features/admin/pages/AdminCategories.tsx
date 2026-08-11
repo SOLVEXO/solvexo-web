@@ -57,7 +57,7 @@ function AddCategoryModal({ mainCategories, onClose, onSaved }: {
   }
 
   return (
-    <Modal
+    <Modal mobileSheet
       title="Add Category"
       width={520}
       onClose={onClose}

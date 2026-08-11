@@ -66,8 +66,8 @@ export function SettingsTab() {
       </Card>
 
       <Card>
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-[13px] font-semibold text-carbon">AI SEO — Platform Kill Switch</p>
             <p className="text-[11px] text-slate mt-[2px]">When disabled, sellers cannot generate AI SEO suggestions platform-wide.</p>
           </div>

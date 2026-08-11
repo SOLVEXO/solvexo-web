@@ -9,11 +9,9 @@ import {
   Table,      type TableColumn,
   MetricCard,
   Badge,      StatusBadge,
-  EmptyState,
   Card,
   Avatar,
   SearchInput,
-  SkeletonBox,
   ActionMenu,
 } from '@/components/comman/ui';
 import {
@@ -258,7 +256,7 @@ export function StoreOrderList() {
         }
       />
 
-      <div className="px-7 py-5 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 py-5 flex flex-col gap-5">
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -305,19 +303,19 @@ export function StoreOrderList() {
         {/* Table */}
         {!error && (
           <Card padding="none">
-            <div className="px-5 pt-4 pb-3 flex items-center gap-3 flex-wrap">
+            <div className="px-4 sm:px-5 pt-4 pb-3 flex flex-col gap-2.5">
               <p className="text-[14px] font-bold text-charcoal shrink-0">All Orders</p>
-              <div className="flex items-center gap-2 ml-auto flex-wrap">
-                <SearchInput
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Search orders…"
-                  className="w-[200px]"
-                />
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder="Search orders…"
+                className="w-full sm:w-[200px] sm:ml-auto"
+              />
+              <div className="flex items-center gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-end">
                 <select
                   value={statusF || 'All Status'}
                   onChange={e => setStatusF(e.target.value === 'All Status' ? '' : e.target.value)}
-                  className="text-[13px] px-3 py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer"
+                  className="text-[13px] px-3 py-2 sm:py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0"
                 >
                   {['All Status', 'pending', 'completed', 'cancelled', 'processing'].map(o => (
                     <option key={o} value={o}>{o === 'All Status' ? 'All Status' : o.charAt(0).toUpperCase() + o.slice(1)}</option>
@@ -326,7 +324,7 @@ export function StoreOrderList() {
                 <select
                   value={typeF || 'All Types'}
                   onChange={e => setTypeF(e.target.value === 'All Types' ? '' : e.target.value)}
-                  className="text-[13px] px-3 py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer"
+                  className="text-[13px] px-3 py-2 sm:py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0"
                 >
                   {['All Types', 'digital', 'physical'].map(o => (
                     <option key={o} value={o}>{o === 'All Types' ? 'All Types' : o.charAt(0).toUpperCase() + o.slice(1)}</option>
@@ -334,59 +332,40 @@ export function StoreOrderList() {
                 </select>
                 <button
                   onClick={() => { setSearch(''); setStatusF(''); setTypeF(''); }}
-                  className="text-[12px] text-slate border border-bone rounded-[6px] px-3 py-[7px] bg-white cursor-pointer hover:bg-bone shrink-0"
+                  className="text-[12px] text-slate border border-bone rounded-[6px] px-3 py-2 sm:py-[7px] bg-white cursor-pointer hover:bg-bone shrink-0"
                 >
                   Clear
                 </button>
                 <button
                   onClick={handleRetry}
-                  className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[7px] hover:bg-bone shrink-0"
+                  className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-2 sm:py-[7px] hover:bg-bone shrink-0"
                 >
                   <RefreshCw size={11} /> Refresh
                 </button>
               </div>
             </div>
 
-            {loading ? (
-              <div className="px-5 pb-5 flex flex-col gap-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <SkeletonBox width={80}  height={13} rounded="4px" />
-                    <SkeletonBox width={30}  height={30} rounded="999px" />
-                    <SkeletonBox width="20%" height={13} />
-                    <SkeletonBox width="25%" height={13} className="ml-auto" />
-                    <SkeletonBox width="6%"  height={22} rounded="999px" />
-                    <SkeletonBox width="8%"  height={13} />
-                    <SkeletonBox width="8%"  height={13} />
-                    <SkeletonBox width={56}  height={22} rounded="999px" />
-                    <SkeletonBox width={28}  height={28} rounded="7px" />
-                  </div>
-                ))}
-              </div>
-            ) : filtered.length === 0 ? (
-              <EmptyState
-                icon={<ShoppingCart size={30} className="text-brand-orange opacity-55" />}
-                title={search || statusF || typeF ? 'No orders match your filters' : 'No orders yet'}
-                description={
+            <Table
+              columns={columns}
+              data={filtered}
+              keyExtractor={o => o.orderId}
+              loading={loading}
+              emptyState={{
+                icon: <ShoppingCart size={30} className="text-brand-orange opacity-55" />,
+                title: search || statusF || typeF ? 'No orders match your filters' : 'No orders yet',
+                description:
                   search || statusF || typeF
                     ? 'Try adjusting your search or filters.'
-                    : 'Orders from your store will appear here once customers start purchasing.'
-                }
-              />
-            ) : (
-              <Table
-                columns={columns}
-                data={filtered}
-                keyExtractor={o => o.orderId}
-                pagination={{
-                  page,
-                  total:    totalOrders,
-                  perPage:  LIMIT,
-                  onChange: handlePageChange,
-                  label:    'orders',
-                }}
-              />
-            )}
+                    : 'Orders from your store will appear here once customers start purchasing.',
+              }}
+              pagination={{
+                page,
+                total:    totalOrders,
+                perPage:  LIMIT,
+                onChange: handlePageChange,
+                label:    'orders',
+              }}
+            />
           </Card>
         )}
 

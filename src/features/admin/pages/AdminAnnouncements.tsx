@@ -72,7 +72,7 @@ function EditAnnouncementModal({ announcement, onClose, onSaved }: { announcemen
   }
 
   return (
-    <Modal
+    <Modal mobileSheet
       title="Edit Announcement"
       width={520}
       onClose={onClose}
@@ -107,7 +107,7 @@ function ScheduleModal({ announcement, onClose, onSaved }: { announcement: Annou
   }
 
   return (
-    <Modal
+    <Modal mobileSheet
       title="Schedule Announcement"
       onClose={onClose}
       footer={<>
@@ -257,7 +257,7 @@ export function AdminAnnouncements() {
       {scheduling && <ScheduleModal announcement={scheduling} onClose={() => setScheduling(null)} onSaved={() => { setScheduling(null); refetch(); }} />}
 
       {deleting && (
-        <Modal
+        <Modal mobileSheet
           title="Delete Announcement"
           onClose={() => setDeleting(null)}
           footer={<>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShoppingBag, Plus,
+  ShoppingBag, Plus, Download,
   AlertCircle, RefreshCw,
   AlertTriangle,
   Eye, Pencil,
@@ -169,20 +169,25 @@ export function StoreInventory() {
         subtitle={loading ? 'Loading…' : `${totalProducts} product${totalProducts !== 1 ? 's' : ''}`}
         actions={
           <>
-            <button className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
-              Export
+            <button
+              title="Export"
+              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+            >
+              <Download size={14} className="sm:hidden" />
+              <span className="hidden sm:inline">Export</span>
             </button>
             <button
               onClick={goAdd}
-              className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-4 py-[9px] text-[13px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50"
+              title="Add Product"
+              className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50"
             >
-              <Plus size={15} /> Add Product
+              <Plus size={15} /> <span className="hidden sm:inline">Add Product</span>
             </button>
           </>
         }
       />
 
-      <div className="px-7 py-5 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 py-5 flex flex-col gap-5">
 
         {/* Stats */}
         <ProductStatsGrid stats={stats} loading={loading} />
@@ -232,14 +237,14 @@ export function StoreInventory() {
         {/* Table */}
         {!error && (
           <Card padding="none">
-            <div className="px-5 pt-4 pb-3 flex items-center justify-between gap-3">
+            <div className="px-5 pt-4 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <p className="text-[14px] font-bold text-charcoal shrink-0">All Products</p>
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="flex items-center gap-2 sm:ml-auto">
                 <SearchInput
                   value={search}
                   onChange={setSearch}
                   placeholder="Search by name or SKU…"
-                  className="w-[220px]"
+                  className="w-full sm:w-[220px]"
                 />
                 <button
                   onClick={handleRetry}

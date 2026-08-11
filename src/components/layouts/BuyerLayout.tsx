@@ -151,12 +151,19 @@ export function BuyerLayout() {
         <BottomNav isLoggedIn={isLoggedIn} onOpenSearch={() => setSearchOpen(true)} />
       </div>
       {searchOpen && (
+        // This trigger (the bottom nav's Search tab) stays reachable up to
+        // 768px (`md:hidden`), wider than SearchBox's own default <640px
+        // full-screen threshold — `alwaysFullScreen` makes it take over the
+        // whole screen unconditionally here, instead of only below 640px,
+        // so there's no width window where it falls back to rendering as a
+        // plain in-flow block wherever it happens to be mounted.
         <SearchBox
           value={searchQuery}
           onChange={setSearchQuery}
           onSubmit={submitSearch}
           autoFocus
           onClose={() => setSearchOpen(false)}
+          alwaysFullScreen
         />
       )}
       <AppOpenPrompt />

@@ -38,6 +38,7 @@ function AddSubcategoryModal({ mainCategoryId, onClose, onCreated }: {
       title="Add Subcategory"
       width={460}
       onClose={onClose}
+      mobileSheet
       footer={
         <>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
@@ -78,7 +79,7 @@ export default function StoreCategories() {
         subtitle="Your store's main category and its subcategories."
       />
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5 max-w-[640px]">
+      <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5 max-w-[640px]">
 
         {/* Main category */}
         <div className="bg-white border border-bone rounded-[10px] px-5 py-4 flex items-center gap-3">
@@ -100,12 +101,12 @@ export default function StoreCategories() {
 
         {/* Subcategories */}
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
-          <div className="px-5 py-[14px] border-b border-bone flex items-center justify-between">
+          <div className="px-5 py-[14px] border-b border-bone flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-[13px] font-bold text-charcoal">Subcategories</p>
               <p className="text-[11px] text-slate mt-0.5">Used to tag your products more precisely.</p>
             </div>
-            <Button icon={<Plus size={13} />} size="sm" onClick={() => setAdding(true)} disabled={!store?.categoryId}>
+            <Button icon={<Plus size={13} />} size="sm" onClick={() => setAdding(true)} disabled={!store?.categoryId} className="shrink-0">
               Add Subcategory
             </Button>
           </div>
@@ -126,8 +127,8 @@ export default function StoreCategories() {
               {subcategories.map(sub => (
                 <div key={sub._id} className="flex items-center gap-2.5 px-5 py-3 border-b border-[#f0eee6] last:border-b-0 transition-colors duration-150 hover:bg-cream">
                   <Tag size={13} className="text-slate shrink-0" />
-                  <span className="text-[13px] font-medium text-carbon flex-1">{sub.name}</span>
-                  {sub.description && <span className="text-[11px] text-slate truncate max-w-[220px]">{sub.description}</span>}
+                  <span className="text-[13px] font-medium text-carbon flex-1 truncate">{sub.name}</span>
+                  {sub.description && <span className="hidden sm:inline text-[11px] text-slate truncate max-w-[220px]">{sub.description}</span>}
                 </div>
               ))}
             </div>

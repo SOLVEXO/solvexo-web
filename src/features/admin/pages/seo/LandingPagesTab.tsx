@@ -98,6 +98,7 @@ export function LandingPagesTab() {
         <Modal
           title={editing === 'new' ? 'New Landing Page' : 'Edit Landing Page'}
           onClose={() => setEditing(null)}
+          mobileSheet
           footer={
             <>
               <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>Cancel</Button>
@@ -124,6 +125,7 @@ export function LandingPagesTab() {
         <Modal
           title="Delete Landing Page"
           onClose={() => setDeleting(null)}
+          mobileSheet
           footer={
             <>
               <Button variant="ghost" size="sm" onClick={() => setDeleting(null)}>Cancel</Button>

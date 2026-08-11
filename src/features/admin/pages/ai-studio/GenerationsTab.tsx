@@ -109,7 +109,7 @@ function GenerationDetailModal({ generationId, onClose }: { generationId: string
   const { data, loading } = useAdminAiGeneration(generationId);
 
   return (
-    <Modal title="Generation Detail" onClose={onClose} width={640}>
+    <Modal title="Generation Detail" onClose={onClose} width={640} mobileSheet>
       {loading || !data ? (
         <p className="text-[12px] text-slate">Loading…</p>
       ) : (

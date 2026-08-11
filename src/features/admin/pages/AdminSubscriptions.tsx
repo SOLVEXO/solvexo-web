@@ -216,7 +216,7 @@ function StoreDetailModal({ storeId, onClose }: { storeId: string; onClose: () =
   }
 
   return (
-    <Modal title={data?.store.name ?? 'Store'} width={560} onClose={onClose}>
+    <Modal mobileSheet title={data?.store.name ?? 'Store'} width={560} onClose={onClose}>
       {loadError ? (
         <div className="flex flex-col items-center gap-3 py-6 text-center">
           <p className="text-[13px] text-error">{loadError}</p>
@@ -310,7 +310,7 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
   }
 
   return (
-    <Modal title="Subscription Detail" width={600} onClose={onClose}>
+    <Modal mobileSheet title="Subscription Detail" width={600} onClose={onClose}>
       {loadError ? (
         <div className="flex flex-col items-center gap-3 py-6 text-center">
           <p className="text-[13px] text-error">{loadError}</p>
@@ -374,7 +374,7 @@ function SubscriptionDetailModal({ subId, onClose }: { subId: string; onClose: (
       )}
 
       {confirmingRefund && (
-        <Modal
+        <Modal mobileSheet
           title="Refund Invoice"
           onClose={() => setConfirmingRefund(null)}
           footer={
@@ -452,12 +452,12 @@ export function AdminSubscriptions() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-7 py-[14px] sticky top-0 z-10">
+      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10">
         <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Subscriptions</h1>
         <p className="text-[12px] text-slate mt-[2px]">Platform-wide subscription revenue, store breakdown, and payment failures.</p>
       </div>
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-5">
         {error && <p className="text-[13px] text-error">{error}</p>}
 
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
@@ -472,10 +472,10 @@ export function AdminSubscriptions() {
         </div>
 
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
-          <div className="px-5 py-[14px] border-b border-bone flex items-center gap-[10px]">
+          <div className="px-5 py-[14px] border-b border-bone flex items-center gap-[10px] overflow-x-auto scrollbar-hide">
             {(['stores', 'failures', 'webhooks', 'insights'] as Tab[]).map(t => (
               <button key={t} onClick={() => setTab(t)}
-                className="px-[14px] py-[6px] rounded-lg text-[13px] font-medium cursor-pointer border-none capitalize"
+                className="px-[14px] py-[6px] rounded-lg text-[13px] font-medium cursor-pointer border-none capitalize shrink-0 whitespace-nowrap"
                 style={{ background: tab === t ? '#141413' : 'transparent', color: tab === t ? '#fff' : '#8C8A82' }}>
                 {t === 'stores' ? 'Store Breakdown' : t === 'failures' ? 'Payment Failures' : t === 'webhooks' ? 'Stripe Webhooks' : 'Insights'}
               </button>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, LogIn } from 'lucide-react';
+import { Mail, LogIn, Delete } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { OTPInput } from '@/components/comman/ui/OTPInput';
 import { useForm } from '@/hooks/useForm';
@@ -52,6 +52,21 @@ export function PinLoginScreen({ storeId, onSuccess }: PinLoginScreenProps) {
     setValue('pin', next.join(''));
   };
 
+  // Thumb-friendly on-screen keypad (mobile only, lg:hidden below) — feeds
+  // the exact same `pin` field the OTP boxes above use, just without relying
+  // on the device's own keyboard/autocomplete bar for a 4-digit PIN.
+  function pushDigit(d: string) {
+    const idx = pinDigits.findIndex(v => v === '');
+    if (idx === -1) return;
+    handlePinChange(idx, d);
+  }
+  function popDigit() {
+    for (let i = pinDigits.length - 1; i >= 0; i--) {
+      if (pinDigits[i] !== '') { handlePinChange(i, ''); return; }
+    }
+  }
+  const KEYPAD_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'back'];
+
   return (
     <div className="relative flex-1 flex items-center justify-center bg-pos-bg px-4 py-10 overflow-hidden">
       {/* Ambient branding glow — same "premium dark hero" language as the rest of the app */}
@@ -89,6 +104,35 @@ export function PinLoginScreen({ storeId, onSuccess }: PinLoginScreenProps) {
             <label className="block text-[11.5px] font-semibold text-pos-faint mb-2 uppercase tracking-[0.04em] text-center">4-Digit PIN</label>
             <OTPInput values={pinDigits} onChange={handlePinChange} length={4} />
             {errors.pin && <p className="text-[11.5px] text-error text-center -mt-1">{errors.pin}</p>}
+
+            <div className="lg:hidden grid grid-cols-3 gap-[10px] mt-4">
+              {KEYPAD_KEYS.map((k, i) => {
+                if (k === '') return <div key={i} aria-hidden="true" />;
+                if (k === 'back') {
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={popDigit}
+                      aria-label="Backspace"
+                      className="h-14 rounded-2xl bg-pos-surface border border-pos-border text-pos-faint cursor-pointer flex items-center justify-center transition-all duration-150 active:scale-[0.95] hover:border-pos-border-strong hover:text-white"
+                    >
+                      <Delete size={20} />
+                    </button>
+                  );
+                }
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => pushDigit(k)}
+                    className="h-14 rounded-2xl bg-pos-surface border border-pos-border text-[20px] font-bold text-white cursor-pointer transition-all duration-150 active:scale-[0.95] hover:border-pos-border-strong"
+                  >
+                    {k}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {apiError && (

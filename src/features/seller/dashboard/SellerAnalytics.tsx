@@ -20,7 +20,7 @@ export function SellerAnalytics() {
     return (
       <>
         <SellerPageHeader title="Analytics" subtitle="Understand your store performance and growth trends." />
-        <div className="px-7 pt-5 pb-8 flex flex-col gap-3">
+        <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-3">
           <SkeletonBox height={44} width="100%" rounded="10px" />
           <SkeletonBox height={220} width="100%" rounded="10px" />
         </div>
@@ -32,7 +32,7 @@ export function SellerAnalytics() {
     return (
       <>
         <SellerPageHeader title="Analytics" subtitle="Understand your store performance and growth trends." />
-        <div className="px-7 pt-5 pb-8">
+        <div className="px-4 lg:px-7 pt-5 pb-8">
           <EmptyState
             icon={<Store size={28} className="text-slate" />}
             title="No stores yet"
@@ -60,7 +60,7 @@ export function SellerAnalytics() {
         ) : undefined}
       />
 
-      <div className="px-7 pt-5 pb-8">
+      <div className="px-4 lg:px-7 pt-5 pb-8">
         <SellerAnalyticsView storeId={storeId} currency={currency} />
       </div>
     </>

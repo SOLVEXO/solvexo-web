@@ -103,7 +103,7 @@ export function FinancePayoutsTab() {
       )}
 
       {rejectingId && (
-        <Modal
+        <Modal mobileSheet
           title="Reject Payout"
           onClose={() => { setRejectingId(null); setReason(''); }}
           footer={

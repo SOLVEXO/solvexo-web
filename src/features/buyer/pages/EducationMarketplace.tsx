@@ -20,7 +20,7 @@ import { FilterAccordionSection, FilterChipPill, FilterRadioRow, FilterCheckboxR
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import { FlashSaleCard } from '@/components/comman/marketplace/FlashSaleCard';
 import { MegaMenuBar, RailCard, MegaSectionLabel } from '@/components/comman/marketplace/MegaMenuBar';
-import { BuyerNavbar, AppDownloadBanner, Footer, FilterDropdown, Modal, DealsBanner, TrustServiceStrip, Pagination, EmptyState } from '@/components/comman/ui';
+import { BuyerNavbar, AppDownloadBanner, Footer, FilterDropdown, Modal, DealsBanner, TrustServiceStrip, Pagination, EmptyState, SkeletonBox } from '@/components/comman/ui';
 import { ArrowRight, Sparkles, SlidersHorizontal, Loader2, RefreshCcw, GraduationCap, ShieldCheck, Store, X, Zap, LayoutGrid, LayoutList, Wallet, Headset, Truck, Smartphone } from 'lucide-react';
 
 // Bottom-of-page trust strip — plain facts, distinct set/wording from the
@@ -347,7 +347,7 @@ export function EducationMarketplace() {
   const [flashSalePaused, setFlashSalePaused] = useState(false);
 
   const { levels, otherLevels, loading: facetsLoading } = useEducationFacets();
-  const { banners } = useBanners('educationHero');
+  const { banners, loading: bannersLoading } = useBanners('educationHero');
   const countdown = useCountdownToMidnight();
   const [topStores, setTopStores] = useState<PublicStoreListItem[]>([]);
 
@@ -501,14 +501,16 @@ export function EducationMarketplace() {
 
       {/* ── Flash Sale strip — the real active platform sale campaign
          scoped to educational resources (self-fetching `DealsBanner`,
-         compact mode with `label`), sitting right between the navbar and
-         the grade-levels/mega-menu bar, same as the general Marketplace
-         page. Owns its own countdown + "Shop Now" CTA internally. Renders
-         nothing if there's no active campaign. ── */}
-      {!isBrowsing && flashDeals.length > 0 && (
-        <div className="bg-gradient-to-b from-brand-pale-orange/60 via-brand-pale-orange/25 to-transparent px-4 sm:px-6 lg:px-10 py-4">
-          <DealsBanner compact label storeType="educational_resources" className="h-[110px] w-full" />
-        </div>
+         compact mode with `label`), sitting flush between the navbar and
+         the grade-levels/mega-menu bar — full width, no gutter/background
+         wrapper, same treatment as the general Marketplace page. Owns its
+         own countdown + "Shop Now" CTA internally. Renders nothing if
+         there's no active campaign — no longer gated on the unrelated
+         `flashDeals` product pool (that gate made this mount only once a
+         separate, slower products fetch resolved, so it visibly popped in
+         late even after its own campaign data was already ready). ── */}
+      {!isBrowsing && (
+        <DealsBanner compact label storeType="educational_resources" className="h-auto w-full sm:h-[100px]" />
       )}
 
       {/* ── Education navigation — Grade Levels / Flash Sale / Top Picks /
@@ -537,10 +539,16 @@ export function EducationMarketplace() {
 
       {/* ── Full-width hero carousel — real education-hero banner data,
          edge-to-edge under the nav row, same treatment as the general
-         Marketplace page. ── */}
-      {banners.length > 0 && (
+         Marketplace page. Space is reserved and a skeleton shown the
+         instant the page mounts, while the banner fetch is still in
+         flight — previously this whole block rendered nothing until the
+         fetch resolved, popping in late and shoving everything below it
+         down. ── */}
+      {(banners.length > 0 || bannersLoading) && (
         <div className="relative w-full h-[200px] sm:h-[320px] lg:h-[420px] xl:h-[460px] overflow-hidden">
-          <BannerCarousel entityType="banner" banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))} />
+          {banners.length > 0
+            ? <BannerCarousel entityType="banner" banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))} />
+            : <SkeletonBox className="absolute inset-0 w-full h-full" rounded="0" />}
         </div>
       )}
 

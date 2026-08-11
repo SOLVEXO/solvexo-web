@@ -19,6 +19,8 @@ export { Divider, Tag }                      from './Divider';
 
 export { SolvexoLogo, SolvexoIcon }          from './SolvexoLogo';
 
+export { CopyIconButton }                    from './CopyIconButton';
+
 export { RadioButton }                       from './RadioButton';
 export type { RadioOption }                  from './RadioButton';
 

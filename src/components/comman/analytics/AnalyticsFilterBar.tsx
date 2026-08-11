@@ -44,7 +44,7 @@ export function AnalyticsFilterBar<T extends BaseAnalyticsUIFilters>({
         />
 
         {filters.range === 'custom' && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Input
               type="date"
               value={filters.from}

@@ -88,7 +88,7 @@ function MaintenanceCard({ config, onSaved }: { config: PlatformConfig; onSaved:
       </div>
 
       {confirming && (
-        <Modal
+        <Modal mobileSheet
           title="Enable Maintenance Mode?"
           onClose={() => setConfirming(false)}
           footer={
