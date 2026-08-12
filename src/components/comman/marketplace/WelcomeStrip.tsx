@@ -58,7 +58,7 @@ export function WelcomeStrip({
             <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-card"><Store size={16} className="text-brand-orange" /></span>
             Sell on Solvexo
           </button>
-          <button onClick={() => onNavigate('/EducationMarketplace')} className="flex items-center gap-[9px] rounded-full pl-[5px] pr-[14px] py-[5px] bg-cream border border-transparent cursor-pointer transition-all duration-150 hover:bg-brand-pale-orange/70 hover:border-brand-orange/15 hover:text-brand-deep-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
+          <button onClick={() => onNavigate('/education')} className="flex items-center gap-[9px] rounded-full pl-[5px] pr-[14px] py-[5px] bg-cream border border-transparent cursor-pointer transition-all duration-150 hover:bg-brand-pale-orange/70 hover:border-brand-orange/15 hover:text-brand-deep-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange">
             <span className="flex size-8 items-center justify-center rounded-full bg-white shrink-0 shadow-card"><GraduationCap size={16} className="text-brand-orange" /></span>
             Education Marketplace
           </button>

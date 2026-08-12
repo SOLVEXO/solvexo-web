@@ -6,6 +6,7 @@ import { ENDPOINTS } from '../endpoints';
 export interface Category {
   _id:           string;
   name:          string;
+  slug:          string;
   parentId:      string | null;
   image:         string | null;
   description:   string | null;

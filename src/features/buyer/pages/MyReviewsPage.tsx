@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Star, ImageOff, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import {
   Card, EmptyState, StarRating, SkeletonBox,
@@ -8,14 +8,17 @@ import {
 } from '@/components/comman/ui';
 import { apiGetMyReviews, apiDeleteReview, type MyReviewEntry } from '@/api/services/rating';
 import { ReviewFormModal } from '@/features/buyer/components/ReviewFormModal';
+import { useToast } from '@/contexts/ToastContext';
 
 const PER_PAGE = 10;
 
 export function ReviewsTab() {
   const navigate = useNavigate();
+  const toast = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [reviews, setReviews] = useState<MyReviewEntry[]>([]);
   const [total, setTotal]     = useState(0);
-  const [page, setPage]       = useState(1);
+  const [page, setPage]       = useState(() => { const p = Number(searchParams.get('page')); return p > 0 ? p : 1; });
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -38,6 +41,14 @@ export function ReviewsTab() {
     return () => { cancelled = true; };
   }, [page, refreshKey]);
 
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (page > 1) next.set('page', String(page));
+    else next.delete('page');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
   async function confirmDelete() {
     if (!deleting) return;
     setDeleteBusy(true);
@@ -46,8 +57,11 @@ export function ReviewsTab() {
       await apiDeleteReview(deleting.reviewId);
       setDeleting(null);
       setRefreshKey(k => k + 1);
+      toast.success('Review deleted');
     } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : 'Failed to delete review.');
+      const message = err instanceof Error ? err.message : 'Failed to delete review.';
+      setDeleteError(message);
+      toast.error(message);
     } finally {
       setDeleteBusy(false);
     }

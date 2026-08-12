@@ -10,6 +10,7 @@ import { AuthContext, apiResendOtp, apiForgotPassword, type AppRole } from '@/ap
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { Mail, ShieldCheck, KeyRound, Fingerprint } from 'lucide-react';
 import { InboxMockup, IdentityMockup } from '@/features/auth/components/mockups/AuthMockups';
+import { useToast } from '@/contexts/ToastContext';
 
 const EMAIL_HIGHLIGHTS = [
   { Icon: Mail,        text: 'Check your inbox for a 6-digit code' },
@@ -24,6 +25,7 @@ const IDENTITY_HIGHLIGHTS = [
 ];
 
 function ResendTimer({ email, role, isIdentity }: { email: string; role: AppRole; isIdentity: boolean }) {
+  const toast = useToast();
   const [seconds,    setSeconds]    = useState(59);
   const [canResend,  setCanResend]  = useState(false);
   const [sending,    setSending]    = useState(false);
@@ -62,6 +64,7 @@ function ResendTimer({ email, role, isIdentity }: { email: string; role: AppRole
       setSeconds(59);
       setCanResend(false);
       setResendKey(k => k + 1);
+      toast.success('Code resent');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to resend code.');
     } finally {

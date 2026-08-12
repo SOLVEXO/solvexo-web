@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
-import { TokenStorage } from '@/api/services/auth';
 import { Button } from '@/components/comman/ui/Button';
 import { BuyerNavbar, Breadcrumb, Footer, SkeletonBox, getRecentlyViewed } from '@/components/comman/ui';
 import {
@@ -35,10 +34,10 @@ export function CartPage() {
   const navigate = useNavigate();
   usePageTitle('Cart');
 
-  if (!TokenStorage.isLoggedIn()) {
-    return <Navigate to="/login" replace />;
-  }
-
+  // No login gate here — a guest's cart (localStorage, see CartContext) is
+  // fully viewable/editable. Only "Proceed to Checkout" below requires
+  // login (CheckoutPage's own gate), matching how Amazon/Daraz let a guest
+  // manage their cart freely and only ask for an account at checkout.
   const { cart, loading, cartCount, updateQty, removeItem, clearCart, error, clearError } = useCartContext();
   const [clearing,   setClearing]   = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -133,7 +132,7 @@ export function CartPage() {
               </p>
               <div className="relative flex items-center gap-2 flex-wrap justify-center">
                 <Button variant="primary" onClick={() => navigate('/marketplace')}>Browse Marketplace</Button>
-                <Button variant="outline" onClick={() => navigate('/EducationMarketplace')}>Explore Education</Button>
+                <Button variant="outline" onClick={() => navigate('/education')}>Explore Education</Button>
               </div>
             </div>
 
@@ -146,7 +145,7 @@ export function CartPage() {
                   {recentlyViewed.slice(0, 4).map(item => (
                     <button
                       key={item.id}
-                      onClick={() => navigate(`/marketplace/${item.id}`)}
+                      onClick={() => navigate(`/product/${item.id}`)}
                       className="group flex flex-col text-left bg-transparent border border-transparent rounded-xl p-1.5 cursor-pointer transition-all duration-200 hover:border-bone hover:-translate-y-[2px]"
                     >
                       <div className="aspect-square rounded-lg overflow-hidden bg-brand-pale-orange mb-2">

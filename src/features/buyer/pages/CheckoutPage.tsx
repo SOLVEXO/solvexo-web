@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { useCartContext } from '@/contexts/CartContext';
+import { TokenStorage } from '@/api/services/auth';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
 import { apiGetMyAddresses, type Address } from '@/api/services/address';
 import { apiCreateCheckout, apiApplyCoupon, apiRemoveCoupon, type Checkout, type CheckoutSummary, type SubscriptionSavingsHint } from '@/api/services/checkout';
@@ -307,6 +308,15 @@ function PaymentMethodOptions({
 export function CheckoutPage() {
   usePageTitle('Checkout');
   const navigate  = useNavigate();
+
+  // The one point in the buyer flow that actually requires login — browsing
+  // and Add to Cart both work as a guest (see CartContext's guest cart).
+  // `redirect` lands them straight back here post-login, with their cart
+  // already merged onto their real account (CartContext's
+  // 'solvexo:auth-login' listener), same pattern CartPage used to use.
+  if (!TokenStorage.isLoggedIn()) {
+    return <Navigate to={`/login?redirect=${encodeURIComponent('/checkout')}`} replace />;
+  }
 
   const { cart, loading: cartLoading, cartCount, clearCart } = useCartContext();
 

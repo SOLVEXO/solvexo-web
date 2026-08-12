@@ -7,6 +7,7 @@ import { useEditProfile } from '@/hooks/auth/useEditProfile';
 import { apiDeleteAccount } from '@/api/services/users';
 import { TokenStorage } from '@/api/services/auth';
 import { Card, PageHeader, Badge, SkeletonBox, Modal, Button } from '@/components/comman/ui';
+import { useToast } from '@/contexts/ToastContext';
 
 const INPUT_CLS = 'w-full py-[11px] px-[14px] text-[13px] border border-bone rounded-[10px] outline-none text-charcoal bg-white box-border focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 transition-colors';
 const LABEL_CLS = 'text-[12px] font-medium text-graphite mb-[6px] block';
@@ -27,6 +28,7 @@ function SectionHeading({ icon, title }: { icon: React.ReactNode; title: string 
 // notes for the intended `profile` → PersonalInfo mapping this completes.
 export function PersonalInfo() {
   const navigate = useNavigate();
+  const toast = useToast();
   const { profile, loading } = useGetProfile();
   const { execute: editProfile, loading: saving, error: saveError, success: saved } = useEditProfile();
 
@@ -57,6 +59,8 @@ export function PersonalInfo() {
       TokenStorage.clear();
       invalidateProfileCache();
       navigate('/login');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete account.');
     } finally {
       setDeleting(false);
     }

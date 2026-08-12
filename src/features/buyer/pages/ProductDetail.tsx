@@ -8,6 +8,7 @@ import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useAuthGate } from '@/contexts/AuthGateContext';
+import { useToast } from '@/contexts/ToastContext';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetAllProducts, type MarketplaceProduct, type ProductVariant } from '@/api/services/marketplace';
 import { apiGetPublicStoreProducts, apiGetPublicStore, apiFollowStore, apiGetFollowStatus, type PublicStoreProduct, type PublicStoreData } from '@/api/services/store';
@@ -317,14 +318,15 @@ function ProductRail({ title, children }: { title: string; children: React.React
 
 export function ProductDetail() {
   const navigate = useNavigate();
-  const { id = '' } = useParams<{ id: string }>();
+  const { slug = '' } = useParams<{ slug: string }>();
   usePageTitle('Product Detail');
   const swipeHandlers = useEdgeSwipeBack(() => navigate(-1));
 
-  const { detail, loading, error, refetch } = useProductById(id);
+  const { detail, loading, error, refetch } = useProductById(slug);
   const { addToCart, updateQty, adding } = useCartContext();
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
   const { requireAuth } = useAuthGate();
+  const toast = useToast();
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [addedFeedback, setAddedFeedback] = useState(false);
@@ -335,7 +337,7 @@ export function ProductDetail() {
   const [followBusy, setFollowBusy] = useState(false);
 
   const [previewOpen, setPreviewOpen] = useState(false);
-  const { data: previewData, loading: previewLoading, error: previewError, load: loadPreview, reset: resetPreview } = useProductPreview(id);
+  const { data: previewData, loading: previewLoading, error: previewError, load: loadPreview, reset: resetPreview } = useProductPreview(slug);
 
   const [sellerProducts, setSellerProducts] = useState<PublicStoreProduct[]>([]);
   const [sellerProductsTotal, setSellerProductsTotal] = useState(0);
@@ -344,6 +346,17 @@ export function ProductDetail() {
   const [activeTab, setActiveTab] = useState('seller');
 
   const product = detail?.product ?? null;
+
+  // The backend resolves this route's :slug param by slug OR raw id (id
+  // kept as a permanent fallback for old bookmarked links) — if we got here
+  // via a raw id (or any other stale form), normalize the address bar to
+  // the product's real current slug.
+  useEffect(() => {
+    if (product && product.slug && product.slug !== slug) {
+      navigate(`/product/${product.slug}`, { replace: true });
+    }
+  }, [product, slug, navigate]);
+
   const variants = detail?.variants ?? [];
   const activeVariant = selectedVariant ?? detail?.defaultVariant ?? null;
   const allImages = [...(product?.images ?? []), ...(activeVariant?.images ?? [])].filter((v, i, a) => a.indexOf(v) === i);
@@ -379,7 +392,7 @@ export function ProductDetail() {
   useEffect(() => {
     if (!product) return;
     pushRecentlyViewed({
-      id: product._id,
+      id: product.slug,
       name: product.name,
       image: product.images?.[0] ?? null,
       price: activeVariant?.price ?? null,
@@ -430,7 +443,8 @@ export function ProductDetail() {
       try {
         const res = await apiFollowStore(storeId);
         setFollowing(res.data.following);
-      } catch { /* non-critical */ }
+        toast.success(res.data.following ? 'Following store' : 'Unfollowed store');
+      } catch (err) { toast.error(err instanceof Error ? err.message : 'Could not update follow status.'); }
       finally { setFollowBusy(false); }
     }, 'Sign in to follow this store.');
   }
@@ -807,7 +821,7 @@ export function ProductDetail() {
             <ProductRail title="More from this Seller">
               {sellerProducts.map(p => (
                 <RelatedCard
-                  key={p._id} id={p._id} name={p.name} image={p.images?.[0] ?? null}
+                  key={p._id} id={p.slug} name={p.name} image={p.images?.[0] ?? null}
                   price={p.subscriberPrice ?? p.defaultVariantPrice}
                   // Every product from this same seller shares the seller's
                   // one locked Store.baseCurrency — there's no per-item
@@ -816,7 +830,7 @@ export function ProductDetail() {
                   // correct native currency to convert from here.
                   currency={storeData?.baseCurrency}
                   rating={p.averageRating}
-                  onClick={pid => navigate(`/marketplace/${pid}`)}
+                  onClick={slug => navigate(`/product/${slug}`)}
                 />
               ))}
             </ProductRail>
@@ -833,12 +847,12 @@ export function ProductDetail() {
                   const wishlisted = dv ? isWishlisted(p._id, dv._id) : false;
                   return (
                     <RelatedCard
-                      key={p._id} id={p._id} name={p.name} image={p.images?.[0] ?? null}
+                      key={p._id} id={p.slug} name={p.name} image={p.images?.[0] ?? null}
                       price={dv?.price ?? null} compareAtPrice={dv?.compareAtPrice ?? null} currency={dv?.currency}
                       rating={p.averageRating} reviewCount={p.totalRatings} sold={p.purchaseCount}
                       isNew={new Date(p.createdAt).getTime() >= fourteenDaysAgo}
                       isBestseller={topSeller > 0 && p.purchaseCount === topSeller}
-                      onClick={pid => navigate(`/marketplace/${pid}`)}
+                      onClick={slug => navigate(`/product/${slug}`)}
                       wishlist={dv ? { active: wishlisted, onToggle: () => toggleWishlist(p._id, dv._id) } : undefined}
                     />
                   );

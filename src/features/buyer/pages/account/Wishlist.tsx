@@ -139,7 +139,7 @@ export function Wishlist() {
 
               <div className="flex-1 min-w-0 flex flex-col gap-[7px]">
                 <p
-                  onClick={() => navigate(`/marketplace/${p._id}`)}
+                  onClick={() => navigate(`/product/${p.slug}`)}
                   className="font-bold text-[14px] text-carbon cursor-pointer leading-snug hover:text-brand-orange transition-colors line-clamp-1"
                 >
                   {p.name}

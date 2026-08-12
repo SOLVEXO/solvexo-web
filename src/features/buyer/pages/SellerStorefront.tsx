@@ -9,6 +9,7 @@ import {
   Star, Users, Loader2, MessageCircle, BadgeCheck, Award, Gift, RefreshCw, Check, Store,
 } from 'lucide-react';
 import { apiFollowStore, apiGetFollowStatus } from '@/api/services/store';
+import { useToast } from '@/contexts/ToastContext';
 import { apiStartConversation } from '@/api/services/messaging';
 import { apiGetPublicHomePage, type StorePageData } from '@/api/services/storePages';
 import { apiGetMyBalance, apiGetRewards, apiRedeemReward, type LoyaltyBalance, type Reward } from '@/api/services/loyalty';
@@ -75,6 +76,7 @@ export function SellerStorefront() {
   const displaySymbol = currencySymbol(displayCurrency);
   const isLoggedIn = TokenStorage.isLoggedIn();
   const { requireAuth } = useAuthGate();
+  const toast = useToast();
 
   const [homePage, setHomePage] = useState<StorePageData | null>(null);
   const [total, setTotal] = useState(0);
@@ -177,8 +179,9 @@ export function SellerStorefront() {
     try {
       const res = await apiRedeemReward(store.storeId, reward._id);
       setLoyalty(prev => prev ? { ...prev, pointsBalance: res.data.remainingBalance } : prev);
-    } catch {
-      // insufficient points / out of stock — surfaced by the axios error interceptor
+      toast.success('Reward redeemed');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to redeem reward.');
     } finally {
       setRedeemingId(null);
     }

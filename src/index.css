@@ -462,6 +462,13 @@
 }
 .countdown-tick { animation: countdown-tick 320ms var(--ease-out); }
 
+/* Action-feedback toast — slides up + fades in from the bottom-right stack. */
+@keyframes toast-enter {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.toast-enter { animation: toast-enter 220ms var(--ease-out) both; }
+
 /* Wishlist heart "pop" — replayed via a `key` swap on the icon (same remount
    trick as countdown-tick) whenever isWishlisted flips, so saving/unsaving a
    product gets a quick tactile confirmation instead of a flat color swap. */

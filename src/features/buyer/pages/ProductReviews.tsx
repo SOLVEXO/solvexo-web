@@ -7,6 +7,7 @@ import { useFocusTrap } from '@/components/comman/ui/useFocusTrap';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetProductReviews, apiDeleteReview, apiToggleReviewHelpful, type ProductReviewEntry, type ProductReviewStats } from '@/api/services/rating';
 import { ReviewFormModal } from '../components/ReviewFormModal';
+import { useToast } from '@/contexts/ToastContext';
 
 const AVATAR_PALETTE = [
   ['#FDECEA', '#C0392B'], ['#EAF3FB', '#2156A8'], ['#EAF7EF', '#1E7A3C'],
@@ -301,6 +302,7 @@ interface ProductReviewsSectionProps {
 }
 
 export function ProductReviewsSection({ productId, storeName }: ProductReviewsSectionProps) {
+  const toast = useToast();
   const [allReviews, setAllReviews] = useState<ProductReviewEntry[]>([]);
   const [stats, setStats] = useState<ProductReviewStats | null>(null);
   const [page, setPage] = useState(1);
@@ -381,8 +383,11 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
       await apiDeleteReview(deleting.reviewId);
       setDeleting(null);
       setRefreshKey(k => k + 1);
+      toast.success('Review deleted');
     } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : 'Failed to delete review.');
+      const message = err instanceof Error ? err.message : 'Failed to delete review.';
+      setDeleteError(message);
+      toast.error(message);
     } finally {
       setDeleteBusy(false);
     }

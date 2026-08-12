@@ -207,12 +207,21 @@ const mainRouter = createBrowserRouter([
             ],
           },
           // Pages with their own embedded navbar (no PublicLayout wrapper needed)
-          { path: 'marketplace',     element: <Marketplace /> },
+          // `:slugOrId` is optional (bare `/marketplace` browses everything) and
+          // does double duty: a category slug narrows the browse view, while a
+          // 24-hex-char value is treated by Marketplace as a legacy bookmarked
+          // product id (old `/marketplace/:id` product links) and resolved/
+          // redirected to the new canonical `/product/:slug` — see
+          // Marketplace.tsx's handling of `slugOrId`. Can't be two separate
+          // sibling routes since both shapes share the identical path pattern.
+          { path: 'marketplace/:slugOrId?', element: <Marketplace /> },
           { path: 'cart',            element: <CartPage /> },
           { path: 'checkout',        element: <CheckoutPage /> },
           { path: 'order-success',   element: <OrderSuccessPage /> },
-          { path: 'marketplace/:id', element: <ProductDetail /> },
-          { path: 'EducationMarketplace',   element: <EducationMarketplace /> },
+          { path: 'product/:slug',   element: <ProductDetail /> },
+          { path: 'education/:levelSlug?', element: <EducationMarketplace /> },
+          // Old mis-cased path — static alias, same idiom as 'settings' above.
+          { path: 'EducationMarketplace', element: <Navigate to="/education" replace /> },
         ],
       },
 

@@ -206,6 +206,7 @@ export interface PublicStoreProductsParams {
 
 export interface PublicStoreProduct {
   _id:         string;
+  slug:        string;
   name:        string;
   images?:     string[];
   type?:       'physical' | 'digital';

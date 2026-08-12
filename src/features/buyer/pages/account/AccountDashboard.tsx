@@ -355,7 +355,7 @@ export function AccountDashboard() {
                 {wishlistItems.slice(0, 4).map(item => (
                   <button
                     key={item.product._id}
-                    onClick={() => navigate(`/marketplace/${item.product._id}`)}
+                    onClick={() => navigate(`/product/${item.product.slug}`)}
                     className="group flex flex-col items-start gap-1.5 bg-transparent border-none cursor-pointer p-0 text-left w-[84px] transition-transform duration-200 hover:-translate-y-[2px]"
                   >
                     <div className="overflow-hidden rounded-[10px]">

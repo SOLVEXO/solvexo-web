@@ -8,7 +8,7 @@ import { BuyerNavbar } from '@/components/comman/ui/BuyerNavbar';
 // ─────────────────────────────────────────────────────────────────────────────
 const CENTER_LINKS = [
   { label: 'Marketplace',    path: '/marketplace' },
-  { label: 'Education',      path: '/EducationMarketplace' },
+  { label: 'Education',      path: '/education' },
   { label: 'Pricing',        path: '/pricing' },
   { label: 'Become a Seller', path: '/sellers' },
 ];

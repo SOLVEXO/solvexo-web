@@ -10,7 +10,7 @@ import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { type CategoryNode } from '@/api/services/categories';
 import { type PublicStoreListItem } from '@/api/services/store';
 import { QrGlyph } from '@/components/comman/ui/AppPromoParts';
-import { StoreFeatureCard } from '@/components/comman/ui';
+import { StoreFeatureCard, useCompactOnScroll } from '@/components/comman/ui';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { currencySymbol } from '@/utils/currency';
 
@@ -33,7 +33,7 @@ export function RailCard({ product, onClick, badge, rank, size = 'md', stockLabe
   const isSm      = size === 'sm';
   return (
     <button
-      onClick={() => onClick(product._id)}
+      onClick={() => onClick(product.slug)}
       className={clsx(
         'relative shrink-0 text-left bg-white rounded-[14px] border border-bone overflow-hidden cursor-pointer group transition-all duration-200 hover:-translate-y-[3px] hover:border-brand-orange/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
         isSm ? 'w-[92px] sm:w-[104px]' : 'w-[112px] sm:w-[126px]',
@@ -364,7 +364,7 @@ const ABOUT_CARDS: { Icon: LucideIcon; bg: string; title: string; description: s
 ];
 const ABOUT_QUICK_LINKS = [
   { label: 'Marketplace',         path: '/marketplace' },
-  { label: 'Education Marketplace', path: '/EducationMarketplace' },
+  { label: 'Education Marketplace', path: '/education' },
   { label: 'AI Commerce',         path: '/sellers' },
   { label: 'POS',                 path: '/sellers' },
   { label: 'Help Center',         path: '/faq' },
@@ -507,6 +507,11 @@ export function MegaMenuBar({
 }) {
   const [active, setActive] = useState<MegaMenuKey | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Same scroll-direction signal BuyerNavbar uses for its own mobile
+  // hide-on-scroll-down/show-on-scroll-up — so when this bar sits directly
+  // under that navbar, the two hide and reappear together as one unit
+  // instead of the navbar sliding away while this one stays put.
+  const { hidden } = useCompactOnScroll();
 
   const clearCloseTimer = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } };
   const scheduleClose = () => { clearCloseTimer(); closeTimer.current = setTimeout(() => setActive(null), 150); };
@@ -522,7 +527,7 @@ export function MegaMenuBar({
   useEffect(() => () => clearCloseTimer(), []);
 
   const triggerCls = (key: MegaMenuKey, extra?: string) => clsx(
-    'group relative flex items-center gap-[6px] py-2 text-[13px] font-semibold bg-transparent border-none cursor-pointer whitespace-nowrap transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
+    'group relative flex items-center gap-[6px] py-2 text-[13px] font-semibold border-none cursor-pointer whitespace-nowrap transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
     active === key ? 'text-brand-orange' : 'text-charcoal hover:text-brand-orange',
     extra,
   );
@@ -538,14 +543,18 @@ export function MegaMenuBar({
          Order/Help Center/Contact (right, pushed there via `ml-auto` when
          everything fits). Previously two separate white rows (a "category
          line" and a "welcome line") that duplicated the same navigational
-         weight — merged into one to remove that redundancy. Nothing in this
-         row is breakpoint-hidden any more — below the width where it all
-         fits, the row wraps (`flex-wrap`) onto additional lines instead of
-         either scrolling sideways or silently dropping items, so every
-         link stays visible and reachable on a small screen too. ── */}
-      <div className="bg-white border-b border-bone">
+         weight — merged into one to remove that redundancy. Below the width
+         where it all fits, the row scrolls horizontally (single line, swipeable
+         — same `scrollbar-hide` chip-row pattern used elsewhere in this app)
+         instead of wrapping onto extra lines — wrapping grew tall enough on
+         narrow screens to cover other fixed UI (e.g. the mobile Filter tab),
+         and it doesn't grow at all now, same as the navbar above it. ── */}
+      <div className={clsx(
+        'bg-white border-b border-bone transition-transform duration-200',
+        hidden ? '-translate-y-full md:translate-y-0' : 'translate-y-0',
+      )}>
         <div className={clsx(
-          'flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-6 lg:px-10',
+          'flex flex-nowrap items-center gap-x-4 overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-10',
           compact ? 'py-[7px]' : 'py-[11px]',
         )}>
           {/* Every item below is a direct child of this one flex-wrap row —
@@ -560,21 +569,33 @@ export function MegaMenuBar({
             aria-expanded={active === 'categories'}
             onMouseEnter={() => openMenu('categories')}
             onClick={() => setActive(a => a === 'categories' ? null : 'categories')}
-            className={triggerCls('categories', clsx('shrink-0', compact && 'text-[11.5px] py-1'))}
+            className={triggerCls('categories', clsx(
+              // Mobile: a real chip (rounded, filled), same native-app feel
+              // as the rest of this row on a small screen — regardless of
+              // `compact`, which only governs the *desktop* thin-utility-bar
+              // look from `md:` up. `md:` (768px), not `sm:`, so this switches
+              // at the exact same breakpoint BuyerLayout's bottom nav bar
+              // hides at (`md:hidden`) — the whole page should flip from
+              // mobile-app-style chrome to desktop chrome at one shared line,
+              // not several slightly-different ones.
+              'shrink-0 rounded-full px-3 py-[7px]',
+              active === 'categories' ? 'bg-brand-pale-orange' : 'bg-cream',
+              compact && 'md:rounded-none md:bg-transparent md:px-0 md:py-1 md:text-[11.5px]',
+            ))}
           >
             {categoriesLabel}
             <ChevronDown size={compact ? 12 : 14} className={clsx('transition-transform duration-200', active === 'categories' && 'rotate-180')} />
             <span className={triggerUnderlineCls('categories')} />
           </button>
 
-          {extraTriggers.length > 0 && <span className="hidden sm:block w-px h-4 bg-bone shrink-0" />}
+          {extraTriggers.length > 0 && <span className="hidden md:block w-px h-4 bg-bone shrink-0" />}
 
-          {/* Segmented nav. Default: each trigger carries its own icon and a
-             filled hover/active pill, so Flash Sale/Top Picks/Featured
-             Stores/About read as real discovery features rather than a row
-             of afterthought links. Compact: plain small text (no icon, no
-             pill) — a thin Alibaba-style utility link, matching the
-             Verified Sellers/Track Order group on the right. */}
+          {/* Segmented nav. Mobile: always a real chip — icon + filled
+             hover/active pill, native-app tab-bar feel, regardless of
+             `compact`. Desktop (`md:` up — same breakpoint as the bottom nav
+             bar's own `md:hidden`) when `compact`: overridden down to plain
+             small text (no icon, no pill) — a thin Alibaba-style utility
+             link, matching the Verified Sellers/Track Order group on the right. */}
           {extraTriggers.map(item => (
             <button
               key={item.key}
@@ -584,25 +605,31 @@ export function MegaMenuBar({
               onClick={() => setActive(a => a === item.key ? null : item.key)}
               className={clsx(
                 'group flex items-center whitespace-nowrap shrink-0 border-none cursor-pointer transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
-                compact
-                  ? clsx('gap-1 py-1 text-[11.5px] font-medium bg-transparent', active === item.key ? 'text-brand-orange' : 'text-slate hover:text-brand-orange')
-                  : clsx('gap-[6px] py-[7px] px-[11px] rounded-full text-[12.5px] font-semibold', active === item.key ? 'text-brand-deep-orange bg-brand-pale-orange' : 'text-charcoal hover:bg-cream'),
+                'gap-[6px] py-[7px] px-[11px] rounded-full text-[12.5px] font-semibold',
+                active === item.key ? 'text-brand-deep-orange bg-brand-pale-orange' : 'text-charcoal hover:bg-cream',
+                compact && 'md:gap-1 md:py-1 md:px-0 md:rounded-none md:text-[11.5px] md:font-medium md:bg-transparent md:hover:bg-transparent',
+                compact && (active === item.key ? 'md:text-brand-orange' : 'md:text-slate md:hover:text-brand-orange'),
                 item.className,
               )}
             >
-              {!compact && (
-                <item.icon
-                  size={13}
-                  className={clsx('shrink-0 transition-colors duration-200', active === item.key ? 'text-brand-orange' : 'text-slate group-hover:text-brand-orange')}
-                />
-              )}
+              <item.icon
+                size={13}
+                className={clsx(
+                  'shrink-0 transition-colors duration-200',
+                  active === item.key ? 'text-brand-orange' : 'text-slate group-hover:text-brand-orange',
+                  compact && 'md:hidden',
+                )}
+              />
               {item.label}
               {item.chevron && <ChevronDown size={compact ? 11 : 12} className={clsx('transition-transform duration-200', active === item.key && 'rotate-180')} />}
             </button>
           ))}
 
+          {/* Utility links — desktop only. On mobile this row is already a
+              tight, swipeable chip bar (native-app style); cramming these
+              five extra links into it too was the opposite of that look. */}
           <span className={clsx(
-            'flex items-center gap-x-4 gap-y-2 flex-wrap text-slate whitespace-nowrap ml-auto',
+            'hidden md:flex items-center gap-x-4 gap-y-2 flex-wrap text-slate whitespace-nowrap ml-auto',
             compact ? 'text-[11.5px]' : 'text-[12.5px]',
           )}>
             <span className="flex items-center gap-1 shrink-0">

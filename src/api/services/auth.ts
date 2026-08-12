@@ -16,6 +16,12 @@ export const TokenStorage = {
   save(accessToken: string, refreshToken: string) {
     setAuthCookie('accessToken',  accessToken);
     setAuthCookie('refreshToken', refreshToken);
+    // Every real login path (LoginPage, AuthGateModal, social login, OTP
+    // verify) funnels through this one function — firing here, rather than
+    // duplicating a "just logged in" signal at each call site, is what lets
+    // CartContext merge a guest's local cart into the account the instant
+    // any of them succeeds.
+    window.dispatchEvent(new Event('solvexo:auth-login'));
   },
   saveUser(user: object) {
     setAuthCookie('user', JSON.stringify(user));

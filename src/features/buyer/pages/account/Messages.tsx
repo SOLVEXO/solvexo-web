@@ -11,6 +11,7 @@ import { useRecentSearches } from '@/hooks/messaging/useRecentSearches';
 import { apiUploadAttachment, apiDeleteConversation, type Conversation, type MessageType } from '@/api/services/messaging';
 import { ChatList, ChatWindow, type ChatListEntry, type ChatListFilter } from '@/components/comman/messaging';
 import { Card, PageHeader, type ActionMenuItem } from '@/components/comman/ui';
+import { useToast } from '@/contexts/ToastContext';
 
 const TYPE_PREVIEW: Partial<Record<MessageType, string>> = {
   voice: 'Voice note', image: 'Photo', video: 'Video', pdf: 'File', document: 'File', product_share: 'Product shared',
@@ -34,15 +35,16 @@ function toBuyerEntry(c: Conversation, online: Record<string, boolean>): ChatLis
 }
 
 export function Messages() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialConversationId = searchParams.get('conversation');
 
+  const toast = useToast();
   const { profile } = useGetProfile();
   const { conversations, loading: listLoading, error: listError, refetch: refetchList } = useConversations();
   const { results: searchResults, search, loading: searching } = useSearchConversations();
   const { recent, commit, clear } = useRecentSearches('buyer-inbox');
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [filter, setFilter] = useState<'all' | 'unread'>(() => (searchParams.get('filter') === 'unread' ? 'unread' : 'all'));
 
   const isSearching = query.trim().length >= 2;
   const baseList = isSearching ? searchResults : conversations;
@@ -63,6 +65,17 @@ export function Messages() {
   useEffect(() => {
     if (initialConversationId) setActiveId(initialConversationId);
   }, [initialConversationId]);
+
+  // Keep the open conversation + filter tab reflected in the URL so a
+  // refresh/share/back-button reproduces the same view — same convention
+  // used across the other buyer pages.
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (activeId) next.set('conversation', activeId);
+    if (filter === 'unread') next.set('filter', filter);
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId, filter]);
 
   const {
     messages, loading: msgLoading, loadingMore, sending, send, retry, edit, remove, markSeen, hasMore, loadMore,
@@ -105,22 +118,33 @@ export function Messages() {
   const handleBlock = () => {
     if (!active) return;
     void block({ targetId: active.sellerId, targetRole: 'seller', reason: 'Blocked from buyer inbox' }).then(ok => {
-      if (ok) setBlockedSellerId(active.sellerId);
+      if (ok) { setBlockedSellerId(active.sellerId); toast.success('Seller blocked'); }
+      else toast.error('Failed to block seller');
     });
   };
   const handleUnblock = () => {
     if (!blockedSellerId) return;
-    void unblock(blockedSellerId).then(ok => { if (ok) setBlockedSellerId(null); });
+    void unblock(blockedSellerId).then(ok => {
+      if (ok) { setBlockedSellerId(null); toast.success('Seller unblocked'); }
+      else toast.error('Failed to unblock seller');
+    });
   };
   const handleReport = () => {
     if (!active) return;
-    void report({ targetType: 'conversation', targetId: active._id, reason: 'inappropriate', details: 'Reported from buyer inbox' });
+    void report({ targetType: 'conversation', targetId: active._id, reason: 'inappropriate', details: 'Reported from buyer inbox' }).then(ok => {
+      toast[ok ? 'success' : 'error'](ok ? 'Conversation reported' : 'Failed to report conversation');
+    });
   };
   const handleDelete = async () => {
     if (!active) return;
-    await apiDeleteConversation(active._id);
-    setActiveId(null);
-    refetchList();
+    try {
+      await apiDeleteConversation(active._id);
+      setActiveId(null);
+      refetchList();
+      toast.success('Chat deleted');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete chat');
+    }
   };
 
   const menuItems: ActionMenuItem[] = active ? [

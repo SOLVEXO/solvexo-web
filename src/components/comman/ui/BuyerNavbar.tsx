@@ -401,10 +401,10 @@ export function SearchBox({
     onClose?.();
   };
 
-  const goToProduct = (id: string) => {
+  const goToProduct = (slug: string) => {
     setOpen(false);
     onClose?.();
-    navigate(`/marketplace/${id}`);
+    navigate(`/product/${slug}`);
   };
 
   const goToStore = (slug: string) => {
@@ -465,18 +465,18 @@ export function SearchBox({
     <div
       ref={ref}
       className={clsx(
-        isLg ? 'w-full' : 'flex-1 px-2 sm:px-4',
+        isLg ? 'w-full' : 'flex-1 px-2 md:px-4',
         // Below `sm`, an open search takes over the whole screen — a real
         // native-app search page (back arrow + input pinned at top, results
         // filling the rest) instead of a small dropdown hanging off the
-        // input. `sm:` and up keeps the original anchored-dropdown behavior
+        // input. `md:` and up keeps the original anchored-dropdown behavior
         // unchanged — a mouse user doesn't need a full takeover.
         // `inset-0` would tuck the top edge under ReferenceNav's 44px dev-only
         // bar (see AdminLayout/BuyerNavbar's own `top-[44px]`-in-DEV pattern
         // elsewhere) — production has no such bar, so `top-0` there is exact.
         open && !alwaysFullScreen && clsx(
-          'max-sm:fixed max-sm:right-0 max-sm:bottom-0 max-sm:left-0 max-sm:z-[9999] max-sm:flex-col max-sm:justify-start max-sm:bg-white max-sm:px-3 max-sm:pt-3',
-          import.meta.env.DEV ? 'max-sm:top-[44px]' : 'max-sm:top-0',
+          'max-md:fixed max-md:right-0 max-md:bottom-0 max-md:left-0 max-md:z-[9999] max-md:flex-col max-md:justify-start max-md:bg-white max-md:px-3 max-md:pt-3',
+          import.meta.env.DEV ? 'max-md:top-[44px]' : 'max-md:top-0',
         ),
         // The full-screen and normal-anchored states are written as two
         // complete, mutually exclusive literal class strings — never
@@ -511,10 +511,10 @@ export function SearchBox({
         // `max-w-none` (below) and this base max-w share the same property —
         // only applying one or the other, never both as bare classes,
         // avoids the exact same ordering trap as the position/justify fix above.
-        open && alwaysFullScreen ? 'max-w-none' : (isLg ? 'max-w-[820px]' : 'sm:max-w-[360px] lg:max-w-[480px]'),
+        open && alwaysFullScreen ? 'max-w-none' : (isLg ? 'max-w-[820px]' : 'md:max-w-[360px] lg:max-w-[480px]'),
         open && (alwaysFullScreen
           ? 'flex flex-1 min-h-0 flex-col'
-          : 'max-sm:flex max-sm:flex-1 max-sm:min-h-0 max-sm:flex-col max-sm:max-w-none'),
+          : 'max-md:flex max-md:flex-1 max-md:min-h-0 max-md:flex-col max-md:max-w-none'),
       )}>
         <div
           className={clsx(
@@ -526,7 +526,7 @@ export function SearchBox({
             open
               ? 'border-brand-orange shadow-[0_2px_12px_rgba(217,119,87,0.12)] ring-[3px] ring-brand-orange/10'
               : isLg ? 'border-brand-orange shadow-[0_6px_24px_rgba(217,119,87,0.16)]' : 'border-bone hover:border-border-hover',
-            open && (alwaysFullScreen ? 'shrink-0' : 'max-sm:shrink-0'),
+            open && (alwaysFullScreen ? 'shrink-0' : 'max-md:shrink-0'),
           )}
         >
           {open && (
@@ -536,7 +536,7 @@ export function SearchBox({
               aria-label="Close search"
               className={clsx(
                 'shrink-0 items-center justify-center -ml-1 mr-[2px] w-6 h-6 bg-transparent border-none cursor-pointer text-charcoal',
-                alwaysFullScreen ? 'flex' : 'hidden max-sm:flex',
+                alwaysFullScreen ? 'flex' : 'hidden max-md:flex',
               )}
             >
               <ArrowLeft size={17} />
@@ -555,7 +555,7 @@ export function SearchBox({
             placeholder={placeholder ?? 'Search products, categories, stores…'}
             aria-label={placeholder ?? 'Search products, categories, stores'}
             autoFocus={autoFocus}
-            className={clsx('border-0 outline-none text-carbon placeholder:text-slate/80 bg-transparent w-full min-w-0', isLg ? 'text-[15px] sm:text-[16px] py-[8px]' : 'text-[13.5px]')}
+            className={clsx('border-0 outline-none text-carbon placeholder:text-slate/80 bg-transparent w-full min-w-0', isLg ? 'text-[15px] md:text-[16px] py-[8px]' : 'text-[13.5px]')}
           />
           {value && (
             <button
@@ -567,16 +567,16 @@ export function SearchBox({
             </button>
           )}
           {!isLg && !value && !open && (
-            <kbd className="hidden sm:flex items-center gap-[2px] text-[10px] font-semibold text-slate/70 bg-cream border border-bone rounded-[5px] px-[6px] py-[2px] shrink-0 leading-none">
+            <kbd className="hidden md:flex items-center gap-[2px] text-[10px] font-semibold text-slate/70 bg-cream border border-bone rounded-[5px] px-[6px] py-[2px] shrink-0 leading-none">
               {isMac ? '⌘' : 'Ctrl'}K
             </kbd>
           )}
           {isLg && (
             <button
               onClick={() => onSubmit(value)}
-              className="shrink-0 flex items-center gap-2 bg-gradient-to-r from-brand-orange to-brand-deep-orange px-7 sm:px-9 py-[13px] rounded-full text-[15px] font-bold text-white cursor-pointer hover:opacity-95 transition-opacity"
+              className="shrink-0 flex items-center gap-2 bg-gradient-to-r from-brand-orange to-brand-deep-orange px-7 md:px-9 py-[13px] rounded-full text-[15px] font-bold text-white cursor-pointer hover:opacity-95 transition-opacity"
             >
-              <Search size={16} /> <span className="hidden sm:inline">Search</span>
+              <Search size={16} /> <span className="hidden md:inline">Search</span>
             </button>
           )}
         </div>
@@ -596,7 +596,7 @@ export function SearchBox({
               // properties too.
               alwaysFullScreen
                 ? 'relative top-0 mt-3 flex-1 max-h-none border-0 rounded-none shadow-none'
-                : 'absolute left-0 right-0 top-[calc(100%+6px)] border border-bone rounded-2xl shadow-card-hover max-h-[460px] max-sm:relative max-sm:top-0 max-sm:mt-3 max-sm:flex-1 max-sm:max-h-none max-sm:rounded-none max-sm:border-0 max-sm:shadow-none',
+                : 'absolute left-0 right-0 top-[calc(100%+6px)] border border-bone rounded-2xl shadow-card-hover max-h-[460px] max-md:relative max-md:top-0 max-md:mt-3 max-md:flex-1 max-md:max-h-none max-md:rounded-none max-md:border-0 max-md:shadow-none',
             )}
           >
             {!isTyping ? (
@@ -739,7 +739,7 @@ export function SearchBox({
                     ) : (
                       <div className="flex flex-col gap-[2px]">
                         {matchingProducts.map(p => (
-                          <RecommendedProductRow key={p._id} product={p} categoryName={categoryNameFor(p)} query={query} onClick={() => goToProduct(p._id)} />
+                          <RecommendedProductRow key={p._id} product={p} categoryName={categoryNameFor(p)} query={query} onClick={() => goToProduct(p.slug)} />
                         ))}
                       </div>
                     )}
@@ -858,11 +858,11 @@ export function CurrencySelector() {
       trigger={
         <>
           <active.Flag className="w-4 h-3 rounded-[2px] shrink-0 object-cover" />
-          <span className="hidden sm:inline">{active.code}</span>
-          <ChevronDown size={12} className="hidden sm:inline text-slate" />
+          <span className="hidden md:inline">{active.code}</span>
+          <ChevronDown size={12} className="hidden md:inline text-slate" />
         </>
       }
-      triggerClassName="flex items-center gap-1.5 text-[12px] font-semibold text-charcoal border border-bone rounded-md pl-2 pr-2 sm:pr-[7px] py-1 bg-white hover:bg-cream transition-colors cursor-pointer shrink-0"
+      triggerClassName="flex items-center gap-1.5 text-[12px] font-semibold text-charcoal border border-bone rounded-md pl-2 pr-2 md:pr-[7px] py-1 bg-white hover:bg-cream transition-colors cursor-pointer shrink-0"
       items={CURRENCY_OPTIONS.map(c => ({
         label: (
           <span className="flex items-center gap-2 flex-1">
@@ -889,7 +889,7 @@ function AccountActions() {
     );
   }
   return (
-    <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+    <div className="flex items-center gap-1.5 md:gap-2.5 shrink-0">
       <SignInPreview />
       <button
         onClick={() => navigate('/login')}
@@ -966,9 +966,15 @@ function NavDropdown({ label, children }: { label: string; children: { label: st
 // "compact sticky header" behavior applies everywhere BuyerNavbar is used
 // (Marketplace, Product Detail, Seller Storefront, Category/Search views).
 // On mobile it also hides on scroll-down and reappears on scroll-up (the
-// native-app pattern) — gated behind a 120px threshold + a real directional
-// move so tiny scroll jitter near the top never flickers it.
-function useCompactOnScroll() {
+// native-app pattern) — gated behind a 48px threshold + a real directional
+// move so tiny scroll jitter near the top never flickers it, while still
+// reacting quickly once a shopper actually starts scrolling down.
+// Exported so MegaMenuBar can hide/show itself in the exact same
+// scroll-direction rhythm as this navbar when the two are stacked together
+// (Marketplace/EducationMarketplace) — otherwise the navbar slides off on
+// scroll-down but MegaMenuBar stays put, leaving a dead gap where the
+// navbar used to be instead of both moving as one unit.
+export function useCompactOnScroll() {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden]     = useState(false);
   const lastY = useRef(0);
@@ -978,8 +984,8 @@ function useCompactOnScroll() {
     const onScroll = () => {
       const y = el.scrollTop;
       setScrolled(y > 8);
-      if (y > 120 && y > lastY.current + 4) setHidden(true);
-      else if (y < lastY.current - 4 || y <= 8) setHidden(false);
+      if (y > 48 && y > lastY.current + 3) setHidden(true);
+      else if (y < lastY.current - 3 || y <= 8) setHidden(false);
       lastY.current = y;
     };
     onScroll();
@@ -1031,7 +1037,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
       hidden ? '-translate-y-full md:translate-y-0' : 'translate-y-0',
     )}>
       <div className={clsx(
-        'flex items-center gap-3 sm:gap-5 px-4 sm:px-6 lg:px-10 transition-[height] duration-200',
+        'flex items-center gap-3 md:gap-5 px-4 md:px-6 lg:px-10 transition-[height] duration-200',
         scrolled ? 'h-[52px]' : 'h-[60px]',
       )}>
 
@@ -1041,7 +1047,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
           aria-label="Solvexo home"
           className={clsx(
             'items-center gap-[6px] shrink-0 cursor-pointer bg-transparent border-none p-0 outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-brand-orange/40',
-            mobileSearchOpen ? 'hidden sm:flex' : 'flex',
+            mobileSearchOpen ? 'hidden md:flex' : 'flex',
           )}
         >
           <SolvexoLogo size={scrolled ? 28 : 34} className="transition-[width,height] duration-200" />
@@ -1099,7 +1105,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
             {!hideSearch && (
               <div className={clsx(
                 'min-w-0 justify-center',
-                mobileSearchOpen ? 'flex flex-1' : clsx('hidden sm:flex sm:flex-1', centerLinks?.length && 'lg:flex-none lg:max-w-[300px]'),
+                mobileSearchOpen ? 'flex flex-1' : clsx('hidden md:flex md:flex-1', centerLinks?.length && 'lg:flex-none lg:max-w-[300px]'),
               )}>
                 <SearchBox
                   // Forces a fresh mount every time the icon tap opens this
@@ -1126,7 +1132,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
               <button
                 onClick={() => setMobileSearchOpen(true)}
                 aria-label="Search"
-                className="sm:hidden ml-auto shrink-0 w-11 h-11 flex items-center justify-center rounded-full text-charcoal cursor-pointer hover:bg-cream transition-colors"
+                className="md:hidden ml-auto shrink-0 w-11 h-11 flex items-center justify-center rounded-full text-charcoal cursor-pointer hover:bg-cream transition-colors"
               >
                 <Search size={18} />
               </button>
@@ -1135,7 +1141,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
               <button
                 onClick={() => setMobileSearchOpen(false)}
                 aria-label="Close search"
-                className="sm:hidden shrink-0 w-11 h-11 flex items-center justify-center rounded-full bg-cream text-charcoal cursor-pointer"
+                className="md:hidden shrink-0 w-11 h-11 flex items-center justify-center rounded-full bg-cream text-charcoal cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -1149,7 +1155,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
                previously the excess (usually the currency picker, being last) just rendered
                past the screen edge with no way to reach it at all. This guarantees every
                icon stays reachable by a horizontal swipe even in the tightest case. */}
-            <div className={clsx('items-center gap-1.5 sm:gap-2.5 min-w-0 overflow-x-auto scrollbar-hide', mobileSearchOpen ? 'hidden sm:flex' : 'flex', hideSearch && 'ml-auto')}>
+            <div className={clsx('items-center gap-1.5 md:gap-2.5 min-w-0 overflow-x-auto scrollbar-hide', mobileSearchOpen ? 'hidden md:flex' : 'flex', hideSearch && 'ml-auto')}>
               {backTo && (
                 <div className="hidden md:inline-flex">
                   <Button variant="ghost" size="sm" onClick={() => navigate(backTo.path)}>

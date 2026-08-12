@@ -89,7 +89,7 @@ export { NotificationsPanel }                 from './NotificationsPanel';
 
 export { ProfileAvatar }                     from './ProfileAvatar';
 
-export { BuyerNavbar, SearchBox, CurrencySelector, pushRecentlyViewed, getRecentlyViewed } from './BuyerNavbar';
+export { BuyerNavbar, SearchBox, CurrencySelector, pushRecentlyViewed, getRecentlyViewed, useCompactOnScroll } from './BuyerNavbar';
 export type { BuyerNavbarProps, SearchBoxProps, RecentlyViewedItem }                        from './BuyerNavbar';
 
 export { Breadcrumb }                        from './Breadcrumb';

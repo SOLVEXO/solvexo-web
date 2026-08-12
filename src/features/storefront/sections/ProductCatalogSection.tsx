@@ -134,7 +134,7 @@ export function ProductCatalogSection({ settings }: { settings: ProductCatalogSe
               const typeLabel = isPhysical ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
               const vId = p.variantId ?? '';
               return (
-                <Card key={p._id} padding="none" hover onClick={() => { window.location.href = getMainAppUrl(`/marketplace/${p._id}`); }} className="group overflow-hidden bg-white relative">
+                <Card key={p._id} padding="none" hover onClick={() => { window.location.href = getMainAppUrl(`/product/${p.slug}`); }} className="group overflow-hidden bg-white relative">
                   <div className="absolute top-0 left-0 w-full h-[3px] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 z-[1]" style={{ background: cfg.primaryColor }} />
                   <div className="relative w-full h-[110px] sm:h-[150px] lg:h-[170px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">
                     {p.images?.[0] ? <ProductImage src={p.images[0]} alt={p.name} /> : <Package size={28} className="text-brand-orange" />}

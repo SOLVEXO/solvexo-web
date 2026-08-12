@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { RefreshCw, ImageOff } from 'lucide-react';
 import {
   Card, EmptyState, SkeletonBox, Table, type TableColumn,
@@ -15,6 +16,7 @@ import {
   type Subscription, type BuyerPlan, type SubscriptionInvoice, type BillingInterval,
   type SubscriptionTimelineEvent, type BenefitsSummary, type CreditWallet, type NotificationPreferences,
 } from '@/api/services/subscriptions';
+import { useToast } from '@/contexts/ToastContext';
 
 const NOTIF_LABELS: Record<keyof NotificationPreferences, string> = {
   renewalReminders: 'Renewal reminders', paymentFailedAlerts: 'Payment failed alerts',
@@ -35,6 +37,7 @@ const STATUS_COLOR: Record<string, 'green' | 'orange' | 'gray' | 'red'> = {
 function ManageSubscriptionModal({ sub, onClose, onChanged }: {
   sub: EnrichedSub; onClose: () => void; onChanged: () => void;
 }) {
+  const toast = useToast();
   const [invoices, setInvoices] = useState<SubscriptionInvoice[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -76,9 +79,12 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
     setError('');
     try {
       await apiChangeMyPlan(sub._id, selectedPlanId, selectedInterval);
+      toast.success('Plan changed');
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change plan.');
+      const message = err instanceof Error ? err.message : 'Failed to change plan.';
+      setError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -90,9 +96,12 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
     try {
       if (action === 'pause') await apiPauseMySubscription(sub._id);
       else await apiResumeMySubscription(sub._id);
+      toast.success(action === 'pause' ? 'Subscription paused' : 'Subscription resumed');
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Action failed.');
+      const message = err instanceof Error ? err.message : 'Action failed.';
+      setError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -104,9 +113,12 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
     try {
       await apiCancelMySubscription(sub._id, atPeriodEnd);
       setConfirmingCancel(false);
+      toast.success('Subscription cancelled');
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to cancel subscription.');
+      const message = err instanceof Error ? err.message : 'Failed to cancel subscription.';
+      setError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -247,6 +259,7 @@ function ManageSubscriptionModal({ sub, onClose, onChanged }: {
 }
 
 function CreditsPanel() {
+  const toast = useToast();
   const [wallets, setWallets] = useState<CreditWallet[]>([]);
   const [loading, setLoading] = useState(true);
   const [spending, setSpending] = useState<CreditWallet | null>(null);
@@ -273,9 +286,12 @@ function CreditsPanel() {
     try {
       await apiSpendCredit(spending.storeId, spending.creditType, spendAmount, 'Redeemed from My Subscriptions');
       setSpending(null);
+      toast.success('Credit redeemed');
       load();
     } catch (err) {
-      setSpendError(err instanceof Error ? err.message : 'Failed to spend credit.');
+      const message = err instanceof Error ? err.message : 'Failed to spend credit.';
+      setSpendError(message);
+      toast.error(message);
     } finally {
       setSpendBusy(false);
     }
@@ -336,6 +352,7 @@ function CreditsPanel() {
 }
 
 function NotificationPreferencesPanel() {
+  const toast = useToast();
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -343,11 +360,18 @@ function NotificationPreferencesPanel() {
 
   async function toggle(key: keyof NotificationPreferences) {
     if (!prefs) return;
+    const prev = prefs;
     const next = { ...prefs, [key]: !prefs[key] };
     setPrefs(next);
     setSaving(true);
-    try { await apiUpdateNotificationPreferences({ [key]: next[key] }); }
-    finally { setSaving(false); }
+    try {
+      await apiUpdateNotificationPreferences({ [key]: next[key] });
+    } catch (err) {
+      setPrefs(prev);
+      toast.error(err instanceof Error ? err.message : 'Failed to update preference.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!prefs) return null;
@@ -370,9 +394,10 @@ function NotificationPreferencesPanel() {
 }
 
 export function SubscriptionsTab() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [subs, setSubs] = useState<EnrichedSub[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => { const p = Number(searchParams.get('page')); return p > 0 ? p : 1; });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [managing, setManaging] = useState<EnrichedSub | null>(null);
@@ -401,6 +426,14 @@ export function SubscriptionsTab() {
   }, [page]);
 
   useEffect(load, [load]);
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (page > 1) next.set('page', String(page));
+    else next.delete('page');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   const columns: TableColumn<EnrichedSub>[] = [
     {

@@ -11,6 +11,7 @@ import {
 import {
   Table, type TableColumn, ActionMenu, Badge, Card, EmptyState, SkeletonBox, PageHeader, Modal, Button,
 } from '@/components/comman/ui';
+import { useToast } from '@/contexts/ToastContext';
 
 const INPUT_CLS = 'w-full py-[10px] px-[13px] text-[13px] border border-bone rounded-[9px] outline-none text-charcoal bg-white box-border focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 transition-colors';
 const LABEL_CLS = 'text-[12px] font-medium text-graphite mb-[6px] block';
@@ -98,6 +99,7 @@ function AddressForm({ initial, onSave, onCancel, saving }: {
 type AddrView = 'list' | 'add' | 'edit';
 
 export function Addresses() {
+  const toast = useToast();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [addrLoading, setAddrLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -126,8 +128,13 @@ export function Addresses() {
       if (view === 'add') await apiAddAddress(data);
       else if (view === 'edit' && editTarget) await apiUpdateAddress(editTarget._id, data);
       await refreshAddresses();
+      toast.success(view === 'add' ? 'Address added' : 'Address updated');
       goList();
-    } catch { /* keep form open */ }
+    } catch (err) {
+      // Keep the form open so nothing typed is lost — but the failure must
+      // actually be shown, not silently swallowed.
+      toast.error(err instanceof Error ? err.message : 'Failed to save address.');
+    }
     finally { setSaving(false); }
   };
 
@@ -139,8 +146,11 @@ export function Addresses() {
     try {
       await apiSetDefaultAddress(addressId);
       await refreshAddresses();
+      toast.success('Default address updated');
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Failed to set default address.');
+      const message = err instanceof Error ? err.message : 'Failed to set default address.';
+      setActionError(message);
+      toast.error(message);
     } finally {
       setSettingDefaultId(null);
     }
@@ -157,8 +167,11 @@ export function Addresses() {
       await apiDeleteAddress(addressId);
       await refreshAddresses();
       setDeleteTarget(null);
+      toast.success('Address deleted');
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Failed to delete address.');
+      const message = err instanceof Error ? err.message : 'Failed to delete address.';
+      setActionError(message);
+      toast.error(message);
     } finally {
       setDeletingId(null);
     }

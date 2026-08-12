@@ -3,6 +3,7 @@ import { ENDPOINTS } from '../../endpoints';
 
 export interface PublicCampaign {
   _id: string;
+  slug: string;
   name: string;
   description: string | null;
   bannerImage: string | null;

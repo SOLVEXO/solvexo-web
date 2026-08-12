@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
@@ -139,7 +139,7 @@ function EducationFilterPanel({
   levels, otherLevels, facetsLoading,
   activeLevel, onLevelChange, activeOtherSlug, onOtherSlugChange,
   activeSubjects, onToggleSubject,
-  priceRange, onPriceRangeChange, activeRatings, onToggleRating,
+  priceRange, onPriceRangeChange, minRating, onRatingChange,
 }: {
   levels: { level: string; count: number }[];
   otherLevels: { slug: string; displayName: string; count: number }[];
@@ -152,8 +152,8 @@ function EducationFilterPanel({
   onToggleSubject: (s: string) => void;
   priceRange: [number, number];
   onPriceRangeChange: (v: [number, number]) => void;
-  activeRatings: string[];
-  onToggleRating: (r: string) => void;
+  minRating: number | null;
+  onRatingChange: (stars: number | null) => void;
 }) {
   return (
     <div>
@@ -204,7 +204,7 @@ function EducationFilterPanel({
       <FilterAccordionSection title="Rating">
         <div className="flex flex-col">
           {RATING_ITEMS.map(({ label, stars }) => (
-            <FilterStarRow key={label} stars={stars} active={activeRatings.includes(label)} onClick={() => onToggleRating(label)} />
+            <FilterStarRow key={label} stars={stars} active={minRating === stars} onClick={() => onRatingChange(minRating === stars ? null : stars)} />
           ))}
         </div>
       </FilterAccordionSection>
@@ -303,6 +303,12 @@ function EducationCategoriesMegaContent({
 
 export function EducationMarketplace() {
   const navigate = useNavigate();
+  // EDUCATION_LEVELS values are already machine-readable (e.g. 'primary_school'),
+  // so — unlike Marketplace's category slug — this needs no async tree lookup;
+  // the route param IS the filter value, used directly.
+  const { levelSlug } = useParams<{ levelSlug?: string }>();
+  const activeLevel = levelSlug ?? '';
+  const [searchParams, setSearchParams] = useSearchParams();
   usePageTitle('Education');
   const { addToCart, adding, error: cartError, clearError: clearCartError } = useCartContext();
   // Same recoverable-error surfacing as Marketplace.tsx — a failed add-to-cart
@@ -318,13 +324,24 @@ export function EducationMarketplace() {
   }, [cartError, clearCartError]);
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
 
-  const [activeLevel,     setActiveLevel]     = useState('');   // '' = All Levels
-  const [activeOtherSlug, setActiveOtherSlug] = useState('');
-  const [activeSubjects,  setActiveSubjects]  = useState<string[]>([]);
-  const [priceRange,      setPriceRange]      = useState<[number, number]>([PRICE_MIN, PRICE_MAX]);
-  const [activeRatings,   setActiveRatings]   = useState<string[]>([]);
-  const [searchQuery,     setSearchQuery]     = useState('');
-  const [sortBy,          setSortBy]          = useState('newest');
+  // Every one of these is seeded from the URL on first mount so a shared/
+  // bookmarked/back-button link reproduces the exact same browse state —
+  // same convention as the general Marketplace page. `activeLevel` itself
+  // comes from the route param above, not from here.
+  const [activeOtherSlug, setActiveOtherSlug] = useState(() => searchParams.get('otherLevel') ?? '');
+  const [activeSubjects,  setActiveSubjects]  = useState<string[]>(() => searchParams.get('subjects')?.split(',').filter(Boolean) ?? []);
+  const [priceRange,      setPriceRange]      = useState<[number, number]>(() => {
+    const [minStr, maxStr] = searchParams.get('price')?.split('-') ?? [];
+    const minPrice = Number(minStr);
+    const maxPrice = Number(maxStr);
+    return [minPrice > 0 ? minPrice : PRICE_MIN, maxPrice > 0 ? maxPrice : PRICE_MAX];
+  });
+  const [minRating, setMinRating] = useState<number | null>(() => {
+    const r = Number(searchParams.get('rating'));
+    return r >= 1 && r <= 5 ? r : null;
+  });
+  const [searchQuery,     setSearchQuery]     = useState(() => searchParams.get('search') ?? '');
+  const [sortBy,          setSortBy]          = useState(() => searchParams.get('sort') ?? 'newest');
   const [viewMode,        setViewMode]        = useState<'grid' | 'list'>('grid');
   const [showAiTrial,     setShowAiTrial]     = useState(false);
   const [mobileFilters,   setMobileFilters]   = useState(false);
@@ -340,7 +357,7 @@ export function EducationMarketplace() {
     const t = setTimeout(() => setShowFilterTab(true), 700);
     return () => clearTimeout(t);
   }, []);
-  const [page,            setPage]            = useState(1);
+  const [page,            setPage]            = useState(() => { const p = Number(searchParams.get('page')); return p > 0 ? p : 1; });
   // Flash Sale rail auto-advances one card at a time — paused on hover/touch,
   // same behavior as Marketplace's own rail.
   const flashSaleTrackRef = useRef<HTMLDivElement>(null);
@@ -372,7 +389,7 @@ export function EducationMarketplace() {
   const isPriceRangeActive = priceRange[0] !== PRICE_MIN || priceRange[1] !== PRICE_MAX;
   const serverMinPrice = isPriceRangeActive ? priceRange[0] : undefined;
   const serverMaxPrice = isPriceRangeActive && priceRange[1] < PRICE_MAX ? priceRange[1] : undefined;
-  const serverMinRating = activeRatings.includes('4★ & up') ? 4 : activeRatings.includes('3★ & up') ? 3 : undefined;
+  const serverMinRating = minRating ?? undefined;
 
   const { products, total, loading, error } = useProductsByCategory(
     page, LIMIT, undefined, 'educational',
@@ -389,7 +406,36 @@ export function EducationMarketplace() {
   useEffect(() => {
     if (isFirstFacetRun.current) { isFirstFacetRun.current = false; return; }
     setPage(1);
-  }, [activeLevel, activeOtherSlug, sortBy, priceRange[0], priceRange[1], activeRatings.join(',')]);
+  }, [activeLevel, activeOtherSlug, sortBy, priceRange[0], priceRange[1], minRating]);
+
+  // Write the current browse state into the URL — shareable/bookmarkable,
+  // same convention as the general Marketplace page. `activeLevel` lives in
+  // the path segment (see handleLevelChange), not here.
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (activeOtherSlug)           next.set('otherLevel', activeOtherSlug);
+    if (activeSubjects.length)     next.set('subjects', activeSubjects.join(','));
+    if (searchQuery)               next.set('search', searchQuery);
+    if (sortBy !== 'newest')       next.set('sort', sortBy);
+    if (page > 1)                  next.set('page', String(page));
+    if (priceRange[0] !== PRICE_MIN || priceRange[1] !== PRICE_MAX) {
+      next.set('price', `${priceRange[0]}-${priceRange[1]}`);
+    }
+    if (minRating)                 next.set('rating', String(minRating));
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeOtherSlug, activeSubjects.join(','), searchQuery, sortBy, page, priceRange[0], priceRange[1], minRating]);
+
+  // Level selection updates the path segment, preserving other query params
+  // (subjects/price/rating/etc) — mirrors Marketplace's handleCategoryChange.
+  const handleLevelChange = (level: string) => {
+    setActiveOtherSlug('');
+    const rest = new URLSearchParams(searchParams);
+    rest.delete('otherLevel');
+    const qs = rest.toString();
+    const path = level ? `/education/${level}` : '/education';
+    navigate(`${path}${qs ? `?${qs}` : ''}`);
+  };
 
   // Unfiltered educational pool (independent of the sidebar's current level
   // filter) — same approach Marketplace uses for its own Flash Sale/Top Picks
@@ -430,10 +476,6 @@ export function EducationMarketplace() {
   const toggleSubject = useCallback((s: string) => {
     setActiveSubjects(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   }, []);
-  const toggleRating = useCallback((r: string) => {
-    setActiveRatings(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r]);
-  }, []);
-
   // Price/rating/sort are already applied server-side (see serverMinPrice/
   // serverMinRating/serverSortBy above) — only search/subject (no server
   // facet for either) still narrow the already-fetched page here.
@@ -446,7 +488,7 @@ export function EducationMarketplace() {
     return matchesSearch && matchesSubject;
   });
 
-  const handleCardClick = useCallback((id: string) => navigate(`/marketplace/${id}`), [navigate]);
+  const handleCardClick = useCallback((slug: string) => navigate(`/product/${slug}`), [navigate]);
   const handleAddToCart = useCallback((e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => {
     e.stopPropagation();
     if (!variantId) return;
@@ -465,16 +507,16 @@ export function EducationMarketplace() {
   const isBrowsing = !!searchQuery || !!activeLevel || activeSubjects.length > 0;
 
   const activeFilterCount = (activeLevel ? 1 : 0) + (activeOtherSlug ? 1 : 0) + activeSubjects.length
-    + (isPriceRangeActive ? 1 : 0) + activeRatings.length;
+    + (isPriceRangeActive ? 1 : 0) + (minRating ? 1 : 0);
   const clearFilters = () => {
-    setActiveLevel(''); setActiveOtherSlug(''); setActiveSubjects([]);
-    setPriceRange([PRICE_MIN, PRICE_MAX]); setActiveRatings([]);
+    handleLevelChange(''); setActiveSubjects([]);
+    setPriceRange([PRICE_MIN, PRICE_MAX]); setMinRating(null);
   };
 
   // Active filter chip strip — mirrors the general Marketplace's sidebar.
   const activeFilterChips: { key: string; label: string; onRemove: () => void }[] = [
     ...(activeLevel
-      ? [{ key: 'level', label: LEVEL_LABEL[activeLevel] ?? activeLevel, onRemove: () => { setActiveLevel(''); setActiveOtherSlug(''); } }]
+      ? [{ key: 'level', label: LEVEL_LABEL[activeLevel] ?? activeLevel, onRemove: () => handleLevelChange('') }]
       : []),
     ...(activeOtherSlug
       ? [{ key: 'other', label: otherLevels.find(o => o.slug === activeOtherSlug)?.displayName ?? 'Other', onRemove: () => setActiveOtherSlug('') }]
@@ -487,7 +529,9 @@ export function EducationMarketplace() {
         }]
       : []),
     ...activeSubjects.map(s => ({ key: `subject-${s}`, label: s, onRemove: () => toggleSubject(s) })),
-    ...activeRatings.map(r => ({ key: `rating-${r}`, label: r, onRemove: () => toggleRating(r) })),
+    ...(minRating
+      ? [{ key: 'rating', label: `${minRating}★ & up`, onRemove: () => setMinRating(null) }]
+      : []),
   ];
 
   return (
@@ -522,7 +566,7 @@ export function EducationMarketplace() {
         categoriesContent={
           <EducationCategoriesMegaContent
             levels={levels} otherLevels={otherLevels}
-            activeLevel={activeLevel} onLevelChange={l => { setActiveLevel(l); setActiveOtherSlug(''); }}
+            activeLevel={activeLevel} onLevelChange={handleLevelChange}
             activeOtherSlug={activeOtherSlug} onOtherSlugChange={setActiveOtherSlug}
             activeSubjects={activeSubjects} onToggleSubject={toggleSubject}
             topPicks={topPicks} onProductClick={handleCardClick}
@@ -563,7 +607,7 @@ export function EducationMarketplace() {
             {levels.slice(0, 8).map(l => (
               <button
                 key={l.level}
-                onClick={() => { setActiveLevel(l.level); setActiveOtherSlug(''); }}
+                onClick={() => handleLevelChange(l.level)}
                 className={clsx(
                   'flex flex-col items-center gap-[6px] shrink-0 w-[76px] text-center cursor-pointer group bg-transparent border-none p-0',
                   activeLevel === l.level && 'text-brand-orange',
@@ -600,7 +644,7 @@ export function EducationMarketplace() {
         <Modal title="Grade Levels" onClose={() => setLevelsModalOpen(false)} width={900}>
           <EducationCategoriesMegaContent
             levels={levels} otherLevels={otherLevels}
-            activeLevel={activeLevel} onLevelChange={l => { setActiveLevel(l); setActiveOtherSlug(''); }}
+            activeLevel={activeLevel} onLevelChange={handleLevelChange}
             activeOtherSlug={activeOtherSlug} onOtherSlugChange={setActiveOtherSlug}
             activeSubjects={activeSubjects} onToggleSubject={toggleSubject}
             topPicks={topPicks}
@@ -751,11 +795,11 @@ export function EducationMarketplace() {
               </div>
               <EducationFilterPanel
                 levels={levels} otherLevels={otherLevels} facetsLoading={facetsLoading}
-                activeLevel={activeLevel} onLevelChange={l => { setActiveLevel(l); setActiveOtherSlug(''); }}
+                activeLevel={activeLevel} onLevelChange={handleLevelChange}
                 activeOtherSlug={activeOtherSlug} onOtherSlugChange={setActiveOtherSlug}
                 activeSubjects={activeSubjects} onToggleSubject={toggleSubject}
                 priceRange={priceRange} onPriceRangeChange={setPriceRange}
-                activeRatings={activeRatings} onToggleRating={toggleRating}
+                minRating={minRating} onRatingChange={setMinRating}
               />
             </div>
           </aside>
@@ -999,11 +1043,11 @@ export function EducationMarketplace() {
         <div className="px-5 py-4">
           <EducationFilterPanel
             levels={levels} otherLevels={otherLevels} facetsLoading={facetsLoading}
-            activeLevel={activeLevel} onLevelChange={l => { setActiveLevel(l); setActiveOtherSlug(''); }}
+            activeLevel={activeLevel} onLevelChange={handleLevelChange}
             activeOtherSlug={activeOtherSlug} onOtherSlugChange={setActiveOtherSlug}
             activeSubjects={activeSubjects} onToggleSubject={toggleSubject}
             priceRange={priceRange} onPriceRangeChange={setPriceRange}
-            activeRatings={activeRatings} onToggleRating={toggleRating}
+            minRating={minRating} onRatingChange={setMinRating}
           />
         </div>
       </div>

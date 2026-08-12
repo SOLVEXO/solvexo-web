@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { useProductsByCategory } from '@/hooks/marketplace/useProductsByCategory';
 import { useProductSearch } from '@/hooks/marketplace/useProductSearch';
-import type { MarketplaceSortBy } from '@/api/services/marketplace';
+import { apiGetProductById, type MarketplaceSortBy } from '@/api/services/marketplace';
 import { useBanners } from '@/hooks/useBanners';
 import { useCountdownToMidnight } from '@/hooks/useCountdownToMidnight';
 import { useCartContext } from '@/contexts/CartContext';
@@ -41,11 +41,12 @@ const RATING_ITEMS: { label: string; stars: number }[] = [
   { label: '3★ & up', stars: 3 },
 ];
 
-interface FilterState { priceRange: [number, number]; type: string[]; rating: string[]; }
+interface FilterState { priceRange: [number, number]; type: string[]; minRating: number | null; }
 
-function FilterPanel({ filters, onChange, onPriceRangeChange, categories = [], selectedCategory, onCategoryChange }: {
+function FilterPanel({ filters, onToggleType, onRatingChange, onPriceRangeChange, categories = [], selectedCategory, onCategoryChange }: {
   filters:  FilterState;
-  onChange: (key: 'type' | 'rating', value: string) => void;
+  onToggleType: (value: string) => void;
+  onRatingChange: (stars: number | null) => void;
   onPriceRangeChange: (value: [number, number]) => void;
   categories:       CategoryNode[];
   selectedCategory: string;
@@ -70,14 +71,14 @@ function FilterPanel({ filters, onChange, onPriceRangeChange, categories = [], s
       <FilterAccordionSection title="Product Type" activeCount={filters.type.length}>
         <div className="flex flex-col">
           {TYPE_ITEMS.map(label => (
-            <FilterCheckboxRow key={label} label={label} active={filters.type.includes(label)} onClick={() => onChange('type', label)} />
+            <FilterCheckboxRow key={label} label={label} active={filters.type.includes(label)} onClick={() => onToggleType(label)} />
           ))}
         </div>
       </FilterAccordionSection>
-      <FilterAccordionSection title="Rating" activeCount={filters.rating.length}>
+      <FilterAccordionSection title="Rating" activeCount={filters.minRating ? 1 : 0}>
         <div className="flex flex-col">
           {RATING_ITEMS.map(({ label, stars }) => (
-            <FilterStarRow key={label} stars={stars} active={filters.rating.includes(label)} onClick={() => onChange('rating', label)} />
+            <FilterStarRow key={label} stars={stars} active={filters.minRating === stars} onClick={() => onRatingChange(filters.minRating === stars ? null : stars)} />
           ))}
         </div>
       </FilterAccordionSection>
@@ -105,10 +106,55 @@ const BOTTOM_TRUST_ITEMS = [
 ];
 
 
+// Recursively search a category tree (root categories with nested `children`,
+// capped at 2 levels server-side) by slug or id — used to resolve the
+// `:slugOrId` route param and legacy `?category=<id>` links against the tree
+// the page already has loaded, with no extra network round-trip.
+function findCategoryBySlug(nodes: CategoryNode[], slug: string): CategoryNode | null {
+  for (const n of nodes) {
+    if (n.slug === slug) return n;
+    const found = findCategoryBySlug(n.children ?? [], slug);
+    if (found) return found;
+  }
+  return null;
+}
+function findCategoryById(nodes: CategoryNode[], id: string): CategoryNode | null {
+  for (const n of nodes) {
+    if (n._id === id) return n;
+    const found = findCategoryById(n.children ?? [], id);
+    if (found) return found;
+  }
+  return null;
+}
+const OBJECT_ID_RE = /^[0-9a-f]{24}$/i;
+
 export function Marketplace() {
   const navigate = useNavigate();
+  // Optional — bare `/marketplace` browses everything. When present, either
+  // a category slug (new canonical form) or a 24-hex legacy product id (old
+  // bookmarked `/marketplace/:id` product links) — see the resolution
+  // effects below for how each is handled.
+  const { slugOrId } = useParams<{ slugOrId?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   usePageTitle('Marketplace');
+
+  const isLegacyProductId = !!slugOrId && OBJECT_ID_RE.test(slugOrId);
+
+  // A legacy product id resolves+redirects to the new canonical
+  // /product/:slug immediately — it was never a category, so it must never
+  // reach the category-resolution logic below or the product-listing fetch.
+  useEffect(() => {
+    if (!isLegacyProductId || !slugOrId) return;
+    let cancelled = false;
+    apiGetProductById(slugOrId)
+      .then(res => {
+        if (cancelled) return;
+        const resolvedSlug = res.data?.product?.slug;
+        navigate(resolvedSlug ? `/product/${resolvedSlug}` : '/marketplace', { replace: true });
+      })
+      .catch(() => { if (!cancelled) navigate('/marketplace', { replace: true }); });
+    return () => { cancelled = true; };
+  }, [isLegacyProductId, slugOrId, navigate]);
 
   // Every one of these is seeded from the URL on first mount so a shared/
   // bookmarked/back-button link reproduces the exact same browse state.
@@ -134,17 +180,33 @@ export function Marketplace() {
   // mid-interaction.
   const flashSaleTrackRef = useRef<HTMLDivElement>(null);
   const [flashSalePaused, setFlashSalePaused] = useState(false);
-  const [filters, setFilters] = useState<FilterState>({ priceRange: [PRICE_MIN, PRICE_MAX], type: [], rating: [] });
+  const [filters, setFilters] = useState<FilterState>(() => {
+    const [minStr, maxStr] = searchParams.get('price')?.split('-') ?? [];
+    const minPrice = Number(minStr);
+    const maxPrice = Number(maxStr);
+    const ratingParam = Number(searchParams.get('rating'));
+    return {
+      priceRange: [
+        minPrice > 0 ? minPrice : PRICE_MIN,
+        maxPrice > 0 ? maxPrice : PRICE_MAX,
+      ],
+      type: searchParams.get('type')?.split(',').filter(Boolean) ?? [],
+      minRating: ratingParam >= 1 && ratingParam <= 5 ? ratingParam : null,
+    };
+  });
   const isPriceRangeActive = filters.priceRange[0] !== PRICE_MIN || filters.priceRange[1] !== PRICE_MAX;
   const [searchInput, setSearchInput] = useState(() => searchParams.get('search') ?? '');
   const [search,      setSearch]      = useState(() => (searchParams.get('search') ?? '').trim().toLowerCase());
   const [categories,       setCategories]       = useState<CategoryNode[]>([]);
-  // Seeded from ?category= so links from the mega menu / other pages land
-  // pre-filtered to that category.
-  const [selectedCategory, setSelectedCategory] = useState(() => searchParams.get('category') ?? '');
-  // Seeded from ?campaign= — "Shop the Sale" on the DealsBanner lands here
-  // pre-filtered to only that campaign's participating stores.
-  const [campaignFilterId, setCampaignFilterId] = useState(() => searchParams.get('campaign') ?? '');
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  // Resolved from the `:slugOrId` route param against the loaded category
+  // tree once it's available (see the resolution effect below) — this is
+  // the category `_id` every existing filter/fetch below already keys off.
+  const [selectedCategory, setSelectedCategory] = useState('');
+  // A plain derived read, not state — `?campaign=` is the one piece of
+  // browse state that still lives entirely in the query string, so there's
+  // nothing async to resolve and no separate sync effect needed.
+  const campaignFilterId = searchParams.get('campaign') ?? '';
   const [campaignFilterInfo, setCampaignFilterInfo] = useState<PublicCampaign | null>(null);
   const [topStores,        setTopStores]        = useState<PublicStoreListItem[]>([]);
   const [storeResults,     setStoreResults]      = useState<PublicStoreListItem[]>([]);
@@ -153,29 +215,42 @@ export function Marketplace() {
     let cancelled = false;
     apiGetCategoryTree()
       .then(res => { if (!cancelled) setCategories(res.data ?? []); })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setCategoriesLoaded(true); });
     return () => { cancelled = true; };
   }, []);
 
-  // Re-sync category/campaign when ?category=/?campaign= change while already
-  // on this page from a raw navigate() elsewhere (e.g. DealsBanner's "Shop the
-  // Sale") — the initial-mount case is covered by the useState initializers
-  // above. Tracked against a ref of the last URL values we ourselves saw (not
-  // against current state) so this doesn't fight the write-back effect below,
-  // which echoes state into the URL on every change and would otherwise
-  // re-trigger this effect and stomp the page number back to 1 forever.
-  const lastUrlFilters = useRef({ category: selectedCategory, campaign: campaignFilterId });
+  // Resolve the category path segment once the tree has loaded — gated so a
+  // direct /marketplace/:categorySlug visit never fires an unfiltered fetch
+  // first and a filtered one a moment later. A legacy product id never
+  // reaches here (handled by the effect above). A slug that doesn't match
+  // any category (typo'd/stale link) falls back to the unfiltered browse
+  // view rather than hanging in a permanent "still loading" state.
   useEffect(() => {
-    const fromUrl = searchParams.get('category') ?? '';
-    const fromUrlCampaign = searchParams.get('campaign') ?? '';
-    if (fromUrl !== lastUrlFilters.current.category || fromUrlCampaign !== lastUrlFilters.current.campaign) {
-      setSelectedCategory(fromUrl);
-      setCampaignFilterId(fromUrlCampaign);
-      setPage(1);
+    if (isLegacyProductId) return;
+    if (!slugOrId) { setSelectedCategory(''); return; }
+    if (!categoriesLoaded) return;
+    const match = findCategoryBySlug(categories, slugOrId);
+    if (match) {
+      setSelectedCategory(match._id);
+    } else {
+      navigate('/marketplace', { replace: true });
     }
-    lastUrlFilters.current = { category: fromUrl, campaign: fromUrlCampaign };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [slugOrId, isLegacyProductId, categoriesLoaded, categories, navigate]);
+
+  // Legacy `?category=<id>` links (old query-param form) — resolve against
+  // the same loaded tree and redirect into the new path-based form once.
+  useEffect(() => {
+    if (!categoriesLoaded) return;
+    const legacyCategoryId = searchParams.get('category');
+    if (!legacyCategoryId) return;
+    const match = findCategoryById(categories, legacyCategoryId);
+    const rest = new URLSearchParams(searchParams);
+    rest.delete('category');
+    const qs = rest.toString();
+    const path = match ? `/marketplace/${match.slug}` : '/marketplace';
+    navigate(`${path}${qs ? `?${qs}` : ''}`, { replace: true });
+  }, [categoriesLoaded, categories, searchParams, navigate]);
 
   // Campaign metadata (name/discount) for the filter banner — the product
   // list itself only needs the id (passed straight to the backend), but the
@@ -184,7 +259,7 @@ export function Marketplace() {
     if (!campaignFilterId) { setCampaignFilterInfo(null); return; }
     let cancelled = false;
     apiGetPublicActiveCampaigns()
-      .then(res => { if (!cancelled) setCampaignFilterInfo((res.data ?? []).find(c => c._id === campaignFilterId) ?? null); })
+      .then(res => { if (!cancelled) setCampaignFilterInfo((res.data ?? []).find(c => c._id === campaignFilterId || c.slug === campaignFilterId) ?? null); })
       .catch(() => { if (!cancelled) setCampaignFilterInfo(null); });
     return () => { cancelled = true; };
   }, [campaignFilterId]);
@@ -227,24 +302,43 @@ export function Marketplace() {
     // serverMinRating/serverProductType above), so changing them must reset
     // the page like every other facet — otherwise a filter change while on
     // page 3 would fetch page 3 of the NEW filtered set instead of page 1.
-  }, [selectedCategory, campaignFilterId, search, sortBy, filters.priceRange[0], filters.priceRange[1], filters.type.join(','), filters.rating.join(',')]);
+  }, [selectedCategory, campaignFilterId, search, sortBy, filters.priceRange[0], filters.priceRange[1], filters.type.join(','), filters.minRating]);
+
+  // A legacy `?category=<id>` hasn't been resolved into the new path form
+  // yet — skip the write-back below so it doesn't strip that param (via its
+  // own unrelated setSearchParams replace) before the legacy-redirect effect
+  // above gets a chance to read and act on it.
+  const hasPendingLegacyCategory = !!searchParams.get('category');
 
   // Write the current browse state into the URL — shareable/bookmarkable,
   // and what lets a back/forward navigation or a pasted link reproduce this
   // exact view. `replace` so typing/paging doesn't spam browser history.
+  // Category lives in the path segment (see handleCategoryChange), not here.
   useEffect(() => {
+    if (hasPendingLegacyCategory) return;
     const next = new URLSearchParams();
-    if (selectedCategory)    next.set('category', selectedCategory);
     if (campaignFilterId)    next.set('campaign', campaignFilterId);
     if (search)              next.set('search', search);
     if (sortBy !== 'newest') next.set('sort', sortBy);
     if (page > 1)            next.set('page', String(page));
+    if (filters.priceRange[0] !== PRICE_MIN || filters.priceRange[1] !== PRICE_MAX) {
+      next.set('price', `${filters.priceRange[0]}-${filters.priceRange[1]}`);
+    }
+    if (filters.type.length) next.set('type', filters.type.join(','));
+    if (filters.minRating)   next.set('rating', String(filters.minRating));
     setSearchParams(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory, campaignFilterId, search, sortBy, page]);
+  }, [hasPendingLegacyCategory, campaignFilterId, search, sortBy, page, filters.priceRange[0], filters.priceRange[1], filters.type.join(','), filters.minRating]);
 
+  // Category selection updates the path segment (not the query string) —
+  // an explicit navigate rather than local state alone, preserving whatever
+  // other query params (search/sort/filters) are already active.
   const handleCategoryChange = (id: string) => {
     setSelectedCategory(id);
+    const match = id ? findCategoryById(categories, id) : null;
+    const path = match ? `/marketplace/${match.slug}` : '/marketplace';
+    const qs = searchParams.toString();
+    navigate(`${path}${qs ? `?${qs}` : ''}`);
   };
 
   // Browsing (an active search, category, or campaign filter) replaces the
@@ -271,7 +365,13 @@ export function Marketplace() {
     : undefined;
   const serverMinPrice = isPriceRangeActive ? filters.priceRange[0] : undefined;
   const serverMaxPrice = isPriceRangeActive && filters.priceRange[1] < PRICE_MAX ? filters.priceRange[1] : undefined;
-  const serverMinRating = filters.rating.includes('4★ & up') ? 4 : filters.rating.includes('3★ & up') ? 3 : undefined;
+  const serverMinRating = filters.minRating ?? undefined;
+
+  // True while a :categorySlug in the URL hasn't been resolved against the
+  // category tree yet — see the resolution effect above. Keeps the fetch
+  // below from firing once unfiltered (before the tree loads) and again a
+  // moment later once the real category id is known.
+  const categoryPending = !isLegacyProductId && !!slugOrId && !selectedCategory;
 
   // A real search term switches the data source entirely to the dedicated
   // full-catalog search endpoint (useProductSearch) instead of narrowing
@@ -280,7 +380,7 @@ export function Marketplace() {
   // active search intentionally takes priority over those for now.
   const browseResult = useProductsByCategory(
     page, LIMIT, selectedCategory || undefined, serverProductType, undefined, undefined, campaignFilterId || undefined,
-    serverMinPrice, serverMaxPrice, serverMinRating, serverSortBy,
+    serverMinPrice, serverMaxPrice, serverMinRating, serverSortBy, !categoryPending,
   );
   const searchResult = useProductSearch(search, page, LIMIT);
   const { products, total, loading, error, refetch } = search ? searchResult : browseResult;
@@ -355,30 +455,32 @@ export function Marketplace() {
   }, [flashSalePaused, flashDeals.length]);
 
   const totalPages = Math.ceil(total / LIMIT) || 1;
-  const activeFilterCount = (isPriceRangeActive ? 1 : 0) + filters.type.length + filters.rating.length;
+  const activeFilterCount = (isPriceRangeActive ? 1 : 0) + filters.type.length + (filters.minRating ? 1 : 0);
 
   useEffect(() => {
     const id = setTimeout(() => setSearch(searchInput.trim().toLowerCase()), 300);
     return () => clearTimeout(id);
   }, [searchInput]);
 
-  const toggleFilter = (key: 'type' | 'rating', value: string) => {
-    setFilters(prev => {
-      const arr = prev[key];
-      return { ...prev, [key]: arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value] };
-    });
+  const toggleType = (value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      type: prev.type.includes(value) ? prev.type.filter(v => v !== value) : [...prev.type, value],
+    }));
   };
+
+  const setMinRating = (stars: number | null) => setFilters(prev => ({ ...prev, minRating: stars }));
 
   const setPriceRange = (range: [number, number]) => setFilters(prev => ({ ...prev, priceRange: range }));
 
-  const clearFilters = () => setFilters({ priceRange: [PRICE_MIN, PRICE_MAX], type: [], rating: [] });
+  const clearFilters = () => setFilters({ priceRange: [PRICE_MIN, PRICE_MAX], type: [], minRating: null });
 
   // Active filter chip strip — one removable chip per currently-applied facet,
   // so a shopper can see (and undo) exactly what's narrowing the grid without
   // opening the sidebar accordion it came from.
   const activeFilterChips: { key: string; label: string; onRemove: () => void }[] = [
     ...(selectedCategory
-      ? [{ key: 'category', label: categories.find(c => c._id === selectedCategory)?.name ?? 'Category', onRemove: () => handleCategoryChange('') }]
+      ? [{ key: 'category', label: findCategoryById(categories, selectedCategory)?.name ?? 'Category', onRemove: () => handleCategoryChange('') }]
       : []),
     ...(isPriceRangeActive
       ? [{
@@ -387,13 +489,15 @@ export function Marketplace() {
           onRemove: () => setPriceRange([PRICE_MIN, PRICE_MAX]),
         }]
       : []),
-    ...filters.type.map(t => ({ key: `type-${t}`, label: t, onRemove: () => toggleFilter('type', t) })),
-    ...filters.rating.map(r => ({ key: `rating-${r}`, label: r, onRemove: () => toggleFilter('rating', r) })),
+    ...filters.type.map(t => ({ key: `type-${t}`, label: t, onRemove: () => toggleType(t) })),
+    ...(filters.minRating
+      ? [{ key: 'rating', label: `${filters.minRating}★ & up`, onRemove: () => setMinRating(null) }]
+      : []),
   ];
 
   const goToPage = (p: number) => { setPage(p); scrollRootToTop('smooth'); };
 
-  const handleCardClick = useCallback((id: string) => navigate(`/marketplace/${id}`), [navigate]);
+  const handleCardClick = useCallback((slug: string) => navigate(`/product/${slug}`), [navigate]);
   const handleAddToCart = useCallback((e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => {
     e.stopPropagation();
     if (!variantId) return;
@@ -435,20 +539,54 @@ export function Marketplace() {
   return (
     <div className="min-h-screen bg-cream">
 
-      <BuyerNavbar
-        search={{
-          value: searchInput,
-          onChange: setSearchInput,
-          placeholder: 'Search marketplace...',
-          categories: categories.map(c => ({ id: c._id, name: c.name })),
-          onCategorySelect: handleCategoryChange,
-          popularStores: topStores,
-        }}
-      />
+      {/* Navbar + category/mega-menu row stay pinned together as one sticky
+          header block. Sticking each independently doesn't work — a
+          `sticky` element can only stay stuck while its own parent still
+          overlaps the viewport, and MegaMenuBar's own wrapper is barely
+          taller than the row itself, so it would unstick again 1px after
+          its natural position. Wrapping both in one taller sticky container
+          gives the real scroll runway needed. */}
+      {/* `[&>nav]:!border-b-0` — BuyerNavbar draws its own bottom border once
+          scrolled (for when it's used standalone), which reads as a stray
+          divider line now that MegaMenuBar is stacked directly under it as
+          one visually continuous sticky block; MegaMenuBar's own border-b
+          is the only seam that should show. */}
+      <div className="sticky top-0 z-50 [&>nav]:!border-b-0">
+        <BuyerNavbar
+          search={{
+            value: searchInput,
+            onChange: setSearchInput,
+            placeholder: 'Search marketplace...',
+            categories: categories.map(c => ({ id: c._id, name: c.name })),
+            onCategorySelect: handleCategoryChange,
+            popularStores: topStores,
+          }}
+        />
+
+        {/* ── Marketplace navigation — single merged row: All Categories + Flash
+           Sale/Top Picks/Featured Stores/About (real discovery features, kept —
+           not removed), plus the utility links on the right. Sits directly
+           under the navbar so the full navigation is visible before a shopper
+           ever scrolls past the hero. ── */}
+        <MegaMenuBar
+          compact
+          categories={categories}
+          topPicks={topPicks}
+          bestRated={bestRated}
+          flashDeals={flashDeals}
+          topStores={topStores}
+          countdown={countdown}
+          onShopCategory={handleCategoryChange}
+          onProductClick={handleCardClick}
+          onStoreClick={slug => window.location.href = getStorefrontUrl(slug)}
+          onTrendingTerm={term => { setSearchInput(term); setSearch(term); }}
+          onNavigate={navigate}
+        />
+      </div>
 
       {/* ── Flash Sale strip — the real active platform sale campaign
          (self-fetching `DealsBanner`, compact mode with `label`), sitting
-         flush between the navbar and the category/mega-menu bar — full
+         flush between the category/mega-menu bar and the hero — full
          width, no gutter/background wrapper around it, so it reads as one
          continuous strip rather than a card floating with margin on all
          sides. Owns its own countdown + "Shop Now" CTA internally. Renders
@@ -461,26 +599,6 @@ export function Marketplace() {
       {!isBrowsing && (
         <DealsBanner compact label className="h-auto w-full sm:h-[100px]" />
       )}
-
-      {/* ── Marketplace navigation — single merged row: All Categories + Flash
-         Sale/Top Picks/Featured Stores/About (real discovery features, kept —
-         not removed), plus the utility links on the right. Sits above the
-         hero banner/search bar, not below, so the full navigation is visible
-         before a shopper ever scrolls past the hero. ── */}
-      <MegaMenuBar
-        compact
-        categories={categories}
-        topPicks={topPicks}
-        bestRated={bestRated}
-        flashDeals={flashDeals}
-        topStores={topStores}
-        countdown={countdown}
-        onShopCategory={handleCategoryChange}
-        onProductClick={handleCardClick}
-        onStoreClick={slug => window.location.href = getStorefrontUrl(slug)}
-        onTrendingTerm={term => { setSearchInput(term); setSearch(term); }}
-        onNavigate={navigate}
-      />
 
       {/* ── Full-width hero carousel — real marketplace/category banner data,
          edge-to-edge under the nav row rather than boxed inside a card.
@@ -824,7 +942,7 @@ export function Marketplace() {
                   </button>
                 )}
               </div>
-              <FilterPanel filters={filters} onChange={toggleFilter} onPriceRangeChange={setPriceRange} categories={categories} selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
+              <FilterPanel filters={filters} onToggleType={toggleType} onRatingChange={setMinRating} onPriceRangeChange={setPriceRange} categories={categories} selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
             </div>
           </aside>
 
@@ -1089,7 +1207,7 @@ export function Marketplace() {
           </div>
         </div>
         <div className="px-5 py-4 pb-24">
-          <FilterPanel filters={filters} onChange={toggleFilter} onPriceRangeChange={setPriceRange} categories={categories} selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
+          <FilterPanel filters={filters} onToggleType={toggleType} onRatingChange={setMinRating} onPriceRangeChange={setPriceRange} categories={categories} selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
         </div>
 
         {/* Sticky "show results" footer — filtering is already live as you

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import { clsx } from 'clsx';
 import { Modal } from '@/components/comman/ui/Modal';
-import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame, BadgeCheck, Store, ScanEye, Check, AlertCircle, ShieldCheck, RotateCcw, Truck } from 'lucide-react';
+import { ShoppingCart, Star, Heart, ImageOff, Loader2, Eye, Flame, BadgeCheck, Store, Check, AlertCircle } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 import { currencySymbol } from '@/utils/currency';
@@ -135,9 +135,6 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   const openPreview = (e: React.MouseEvent) => { e.stopPropagation(); setPreviewOpen(true); loadPreview(); };
   const closePreview = () => { setPreviewOpen(false); resetPreview(); };
 
-  const [quickViewOpen, setQuickViewOpen] = useState(false);
-  const openQuickView = (e: React.MouseEvent) => { e.stopPropagation(); setQuickViewOpen(true); };
-
   // "Added ✓" confirmation — fires once when `isAdding` finishes (true→false),
   // not merely absent. Every other state (idle/adding/out-of-stock) already
   // had a distinct look; this was the one gap — the highest-frequency action
@@ -155,19 +152,27 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   }, [isAdding, addToCartFailed]);
 
   const variants        = product.variants ?? [];
+  const defaultVariant  = variants.find(v => v.isDefault) ?? variants[0];
 
-  // Variant preview swatches — real per-variant photos (when a product's
-  // variants actually have distinct images), not a fabricated color/size
-  // picker. Selecting one only swaps which photo the card shows; the real
-  // variant selection still happens on the product page.
+  // Variant preview swatches — real photos, not a fabricated color/size
+  // picker. Prefers each variant's own distinct photo (true color/style
+  // variants, when a product actually has more than one variant); most real
+  // products here have only a single variant though, so this falls back to
+  // that one variant's own multi-photo gallery (different angles of the same
+  // item), then to the product's own top-level images, whichever actually
+  // has more than one distinct photo. Selecting one only swaps which photo
+  // the card shows; the real variant selection still happens on the product page.
   const [activeVariantImage, setActiveVariantImage] = useState<string | null>(null);
-  const variantSwatchImages = Array.from(new Set(
+  const variantColorImages = Array.from(new Set(
     variants.map(v => v.images?.[0]).filter((img): img is string => Boolean(img)),
   ));
+  const galleryImages = Array.from(new Set([
+    ...(defaultVariant?.images ?? []),
+    ...(product.images ?? []),
+  ].filter(Boolean)));
+  const variantSwatchImages = variantColorImages.length > 1 ? variantColorImages : galleryImages;
   const showVariantSwatches = !isList && variantSwatchImages.length > 1;
   const activeImageSrc = activeVariantImage ?? product.images?.[0];
-  const secondImage = !activeVariantImage ? (product.images ?? [])[1] : undefined;
-  const defaultVariant = variants.find(v => v.isDefault) ?? variants[0];
   const nativeLowestPrice = variants.length > 0
     ? Math.min(...variants.map(v => v.price))
     : null;
@@ -215,13 +220,13 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
   return (
     <>
     <div
-      onClick={() => onClick(product._id)}
+      onClick={() => onClick(product.slug)}
       className={clsx(
-        // No shadow, no hover border-color change — depth/hover signal comes
-        // from the lift + the accent bar sweeping in + a warm background tint.
-        'group relative bg-white hover:bg-brand-pale-orange/[0.15] rounded-2xl border border-bone overflow-hidden cursor-pointer',
-        'transition-[transform,background-color] duration-300 ease-out',
-        'hover:-translate-y-[4px]',
+        // No shadow, no hover border-color change, no hover lift — the card
+        // stays put; the accent bar sweeping in + a warm background tint are
+        // the only hover signal.
+        'group relative bg-white hover:bg-brand-pale-orange/[0.15] rounded-xl border border-bone overflow-hidden cursor-pointer',
+        'transition-colors duration-300 ease-out',
         isList ? 'flex flex-row items-stretch' : 'h-full flex flex-col',
       )}
     >
@@ -236,64 +241,36 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
       {/* Image — full-bleed to the card's own rounded top corners (parent's
           overflow-hidden clips it), Amazon/Alibaba-style rather than an inset frame. */}
       <div className={clsx('relative shrink-0', isList ? 'w-[112px] sm:w-[168px]' : '')}>
-        <div className={clsx('relative overflow-hidden bg-bone', isList ? 'w-full h-full' : 'aspect-square')}>
+        <div className={clsx('relative overflow-hidden bg-gradient-to-br from-brand-pale-orange to-[#fdf6f0]', isList ? 'w-full h-full' : 'aspect-square')}>
           <ProductImage
             images={activeImageSrc ? [activeImageSrc] : []}
             name={product.name}
-            className={clsx(
-              'absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-out',
-              secondImage ? 'group-hover:opacity-0' : 'group-hover:scale-[1.06]',
-            )}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
           />
-          {/* Second-image swap on hover — real product photo, not a fake effect;
-              only rendered when the product actually has a second image and no
-              variant swatch is actively selected. */}
-          {secondImage && (
-            <img
-              src={secondImage}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              className="absolute inset-0 w-full h-full object-cover opacity-0 scale-[1.03] transition-opacity duration-500 ease-out group-hover:opacity-100"
-            />
-          )}
 
-          {/* Variant swatches — real per-variant photos, fade out on hover so
-              they never collide with the Quick View bar sliding up. */}
+          {/* Variant swatches — real photos, in a soft frosted pill. Always
+              visible (no hover-fade, no Quick View bar to collide with). */}
           {showVariantSwatches && (
-            <div className="absolute bottom-2 right-2 flex items-center gap-[3px] transition-opacity duration-200 group-hover:opacity-0">
+            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-lg p-1 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
               {variantSwatchImages.slice(0, 2).map((img) => (
                 <button
                   key={img}
                   onClick={e => { e.stopPropagation(); setActiveVariantImage(img); }}
                   aria-label="View this variant"
                   className={clsx(
-                    'w-6 h-6 rounded-[6px] overflow-hidden border-2 cursor-pointer',
-                    activeImageSrc === img ? 'border-brand-orange' : 'border-white',
+                    'w-7 h-7 rounded overflow-hidden ring-2 cursor-pointer transition-shadow duration-150',
+                    activeImageSrc === img ? 'ring-brand-orange' : 'ring-transparent',
                   )}
                 >
                   <img src={img} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
               {variantSwatchImages.length > 2 && (
-                <span className="w-6 h-6 rounded-[6px] bg-carbon/75 text-white text-[9px] font-bold flex items-center justify-center">
+                <span className="w-7 h-7 rounded bg-brand-pale-orange text-brand-deep-orange text-[9px] font-bold flex items-center justify-center">
                   +{variantSwatchImages.length - 2}
                 </span>
               )}
             </div>
-          )}
-
-          {/* Quick View — reveals on hover, opens a modal with the data already
-              on this card (no extra fetch). Desktop-hover affordance; still
-              reachable via the card's own click on touch. */}
-          {!isList && (
-            <button
-              onClick={openQuickView}
-              aria-label="Quick view"
-              className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 flex items-center justify-center gap-[6px] py-[7px] bg-carbon/80 backdrop-blur-sm text-white text-[10.5px] font-semibold border-none cursor-pointer transition-transform duration-[250ms] ease-out"
-            >
-              <ScanEye size={13} /> Quick View
-            </button>
           )}
         </div>
 
@@ -332,14 +309,14 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
           disabled={isWishlisting}
           aria-label={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
           className={clsx(
-            'absolute top-2 right-2 w-7 h-7 rounded-full bg-white border border-bone',
+            'absolute top-2 right-2 w-8 h-8 rounded-lg bg-white border border-bone',
             'flex items-center justify-center transition-[transform,background-color] duration-150 hover:bg-brand-pale-orange hover:scale-[1.08]',
             isWishlisting ? 'cursor-wait' : 'cursor-pointer',
           )}
         >
           <Heart
             key={isWishlisted ? 'on' : 'off'}
-            size={13}
+            size={14}
             className={clsx('heart-pop transition-colors duration-150', isWishlisted ? 'text-[#e11d48] fill-[#e11d48]' : 'text-slate')}
           />
         </button>
@@ -351,12 +328,12 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
             disabled={previewLoading}
             aria-label="Preview"
             className={clsx(
-              'absolute bottom-2 left-2 w-7 h-7 rounded-full bg-white border border-bone',
+              'absolute bottom-2 left-2 w-8 h-8 rounded-lg bg-white border border-bone',
               'flex items-center justify-center transition-[transform,background-color] duration-150 hover:bg-brand-pale-orange hover:scale-[1.08]',
               previewLoading ? 'cursor-wait' : 'cursor-pointer',
             )}
           >
-            {previewLoading ? <Loader2 size={13} className="text-brand-orange animate-spin" /> : <Eye size={13} className="text-brand-orange" />}
+            {previewLoading ? <Loader2 size={14} className="text-brand-orange animate-spin" /> : <Eye size={14} className="text-brand-orange" />}
           </button>
         )}
       </div>
@@ -402,7 +379,7 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
               'shrink-0 text-[9px] font-bold px-[6px] py-[1.5px] rounded-full whitespace-nowrap',
               stock <= 0 ? 'bg-error-bg text-error' : stock <= 5 ? 'bg-warning-bg text-warning' : 'bg-success-bg text-success',
             )}>
-              {stock <= 0 ? 'Out of stock' : stock <= 5 ? `${stock} left` : 'In Stock'}
+              {stock <= 0 ? 'Out of stock' : stock <= 5 ? `${stock} left` : Number.isFinite(stock) ? `In Stock (${stock})` : 'In Stock'}
             </span>
           )}
         </div>
@@ -473,110 +450,10 @@ export const ProductCard = memo(function ProductCard({ product, onClick, onAddTo
                 </span>
               )}
             </button>
-            {/* Persistent Quick View — same action as the image's hover-reveal
-                bar, but always reachable, which matters on touch devices
-                that have no hover state at all. */}
-            {!compact && (
-              <button
-                onClick={openQuickView}
-                aria-label="Quick view"
-                className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg border border-bone text-charcoal bg-white hover:bg-brand-pale-orange hover:text-brand-orange transition-colors duration-150 cursor-pointer"
-              >
-                <ScanEye size={14} />
-              </button>
-            )}
           </div>
         )}
       </div>
     </div>
-
-    {quickViewOpen && (
-      <Modal title="Quick View" onClose={() => setQuickViewOpen(false)} width={680} mobileSheet>
-        <div className="flex flex-col sm:flex-row gap-5">
-          <div className="w-full sm:w-[240px] shrink-0 aspect-[4/5] rounded-xl overflow-hidden bg-bone border border-bone">
-            <ProductImage images={product.images ?? []} name={product.name} className="w-full h-full object-cover" />
-          </div>
-
-          <div className="hidden sm:block w-px shrink-0 bg-[#f0ede5]" />
-
-          <div className="flex-1 min-w-0 flex flex-col">
-            <span className={clsx(
-              'self-start px-[7px] py-[2px] rounded-md text-[9.5px] font-bold tracking-[0.01em] border mb-2',
-              isEducational
-                ? 'bg-info-bg text-info border-info/25'
-                : isDigital
-                  ? 'bg-[#ede9fe] text-[#7c3aed] border-[#ddd6fe]'
-                  : 'bg-brand-pale-orange text-brand-deep-orange border-[#f5d0bc]',
-            )}>
-              {typeLabel}
-            </span>
-            <p className="text-[16px] font-bold text-carbon leading-snug mb-1">{product.name}</p>
-            {product.sellerName && (
-              <p className="flex items-center gap-[4px] text-[12px] text-slate mb-2">
-                <Store size={11} className="text-slate/60 shrink-0" /> {product.sellerName}
-                {product.sellerVerified && <BadgeCheck size={13} className="text-brand-orange fill-brand-pale-orange shrink-0" />}
-              </p>
-            )}
-            <StarRating rating={product.averageRating} count={ratingCount} />
-
-            {product.description && (
-              <p className="text-[12px] text-slate leading-relaxed mt-2 line-clamp-2">
-                {product.description}
-              </p>
-            )}
-
-            <div className="flex items-center justify-between gap-3 rounded-[10px] bg-cream border border-bone px-3 py-[10px] mt-3">
-              <div className="flex items-baseline gap-[6px]">
-                <span className={clsx('font-bold text-[22px] tracking-tight', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
-                  {subscriberPrice != null ? `${priceSymbol} ${subscriberPrice.toLocaleString()}` : lowestPrice != null ? `${priceSymbol} ${lowestPrice.toLocaleString()}` : '—'}
-                </span>
-                {compareAt != null && compareAt > (lowestPrice ?? 0) && (
-                  <span className="text-[13px] text-slate/70 line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
-                )}
-              </div>
-              <span className={clsx(
-                'shrink-0 px-[8px] py-[3px] rounded-full text-[10.5px] font-semibold',
-                stock <= 0 ? 'bg-error-bg text-error' : stock <= 5 ? 'bg-amber-50 text-amber-600' : 'bg-success-bg text-success',
-              )}>
-                {stock <= 0 ? 'Out of stock' : stock <= 5 ? `Only ${stock} left` : 'In stock'}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 mt-4">
-              <button
-                onClick={e => { onAddToCart(e, product._id, vId, isPhysical ? 'physical' : 'digital'); }}
-                disabled={stock <= 0}
-                className={clsx(
-                  'flex-1 flex items-center justify-center gap-[7px] rounded-lg border h-11 font-semibold text-[13px] transition-colors duration-150',
-                  stock <= 0
-                    ? 'bg-bone text-slate border-bone cursor-not-allowed'
-                    : addToCartFailed
-                      ? 'bg-error text-white border-error hover:bg-error/90 cursor-pointer'
-                      : justAdded
-                        ? 'bg-success text-white border-success'
-                        : 'bg-brand-orange text-white border-brand-orange hover:bg-brand-deep-orange cursor-pointer',
-                )}
-              >
-                {isAdding ? <Loader2 size={15} className="animate-spin" /> : addToCartFailed ? <AlertCircle size={15} /> : justAdded ? <Check size={15} /> : <ShoppingCart size={15} />}
-                {stock <= 0 ? 'Sold Out' : isAdding ? 'Adding…' : addToCartFailed ? 'Try Again' : justAdded ? 'Added to Cart' : 'Add to Cart'}
-              </button>
-              <button
-                onClick={() => { setQuickViewOpen(false); onClick(product._id); }}
-                className="flex items-center justify-center gap-[6px] rounded-lg border border-bone h-11 px-4 text-[13px] font-semibold text-charcoal bg-white hover:bg-cream transition-colors duration-150 cursor-pointer"
-              >
-                View Full Details
-              </button>
-            </div>
-
-            <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#f0ede5] text-[11px] text-slate">
-              <span className="flex items-center gap-[5px]"><ShieldCheck size={13} className="text-success shrink-0" /> Secure checkout</span>
-              {isPhysical && <span className="flex items-center gap-[5px]"><Truck size={13} className="text-brand-orange shrink-0" /> Fast delivery</span>}
-              <span className="flex items-center gap-[5px]"><RotateCcw size={13} className="text-brand-orange shrink-0" /> Easy returns</span>
-            </div>
-          </div>
-        </div>
-      </Modal>
-    )}
 
     {previewOpen && (
       <Modal title="Preview" onClose={closePreview} width={560} mobileSheet>

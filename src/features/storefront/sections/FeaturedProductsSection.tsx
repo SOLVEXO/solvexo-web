@@ -72,7 +72,7 @@ export function FeaturedProductsSection({ settings }: { settings: FeaturedProduc
           const pType = p.productType ?? p.type ?? 'physical';
           const isDigital = pType !== 'physical';
           return (
-            <button key={p._id} onClick={() => { window.location.href = getMainAppUrl(`/marketplace/${p._id}`); }}
+            <button key={p._id} onClick={() => { window.location.href = getMainAppUrl(`/product/${p.slug}`); }}
               className="group shrink-0 w-[160px] text-left bg-white border border-bone rounded-xl overflow-hidden cursor-pointer transition-colors duration-200 hover:bg-brand-pale-orange/[0.12]">
               <div className="relative p-2">
                 <div className="relative overflow-hidden aspect-square rounded-lg bg-bone">

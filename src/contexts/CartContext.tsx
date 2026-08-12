@@ -1,10 +1,14 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import {
   apiGetCart, apiAddToCart, apiUpdateCartQuantity, apiRemoveCartItem, apiClearCart,
   type Cart, type CartItem,
 } from '@/api/services/cart';
+import { apiGetProductById, type MarketplaceProduct, type ProductVariant } from '@/api/services/marketplace';
 import { TokenStorage } from '@/api/services/auth';
-import { useAuthGate } from '@/contexts/AuthGateContext';
+import {
+  getGuestCartItems, addGuestCartItem, updateGuestCartQty, removeGuestCartItem, clearGuestCart,
+} from '@/utils/guestCart';
+import { useToast } from '@/contexts/ToastContext';
 
 // ── localStorage: variantId → type map ────────────────────────────────────────
 const TYPES_KEY = 'solvexo_cart_types';
@@ -64,23 +68,104 @@ function syncCart(setCart: (c: Cart) => void) {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const { requireAuth } = useAuthGate();
+  const toast = useToast();
   const [cart,    setCart]    = useState<Cart | null>(null);
   const [loading, setLoading] = useState(false);
   const [adding,  setAdding]  = useState<string | null>(null);
   const [error,   setError]   = useState<string | null>(null);
   const clearError = useCallback(() => setError(null), []);
 
+  // Guest-only: caches each product's fetched detail (name/image/variants)
+  // by id, so re-rendering the guest cart after a quantity bump doesn't
+  // re-fetch products already fetched this session.
+  const productCacheRef = useRef<Map<string, { product: MarketplaceProduct; variants: ProductVariant[] }>>(new Map());
+
+  // Builds the same `Cart` shape the server returns, from the guest's
+  // localStorage items — the rest of the app (BuyerNavbar's badge, CartPage,
+  // CheckoutPage) reads `cart`/`cartCount` the same way regardless of which
+  // source it came from.
+  const refreshGuestCartDisplay = useCallback(async () => {
+    const guestItems = getGuestCartItems();
+    if (guestItems.length === 0) { setCart(null); return; }
+
+    setLoading(true);
+    const uniqueProductIds = Array.from(new Set(guestItems.map(i => i.productId)));
+    await Promise.all(uniqueProductIds.map(async pid => {
+      if (productCacheRef.current.has(pid)) return;
+      try {
+        const res = await apiGetProductById(pid);
+        productCacheRef.current.set(pid, { product: res.data.product, variants: res.data.variants });
+      } catch {
+        // Left uncached — this item is dropped from the display below
+        // (e.g. the product was removed/unpublished since it was added).
+      }
+    }));
+
+    const items: CartItem[] = [];
+    for (const gi of guestItems) {
+      const cached = productCacheRef.current.get(gi.productId);
+      const variant = cached?.variants.find(v => v._id === gi.productVariantId);
+      if (!cached || !variant) continue;
+      const unitPrice = variant.price;
+      items.push({
+        productId:        gi.productId,
+        productVariantId: gi.productVariantId,
+        name:             cached.product.name,
+        image:            cached.product.images,
+        images:           cached.product.images,
+        unitPrice,
+        price:            unitPrice,
+        currency:         variant.currency,
+        quantity:         gi.quantity,
+        itemTotal:        unitPrice * gi.quantity,
+        type:             gi.type,
+      });
+    }
+    const totalItems = items.reduce((s, i) => s + i.quantity, 0);
+    const totalPrice = items.reduce((s, i) => s + (i.itemTotal ?? 0), 0);
+    setCart({ userId: 'guest', items, totalItems, totalPrice });
+    setLoading(false);
+  }, []);
+
   const fetchCart = useCallback(() => {
-    if (!TokenStorage.isLoggedIn()) return;
+    if (!TokenStorage.isLoggedIn()) { refreshGuestCartDisplay(); return; }
     setLoading(true);
     apiGetCart()
       .then(res => setCart(mergeTypes(res.data)))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [refreshGuestCartDisplay]);
 
   useEffect(() => { fetchCart(); }, [fetchCart]);
+
+  // Merges a guest's local cart into their real server cart the instant they
+  // log in (any surface — full-page LoginPage, the inline AuthGateModal,
+  // social login, OTP verify — all dispatch this same event from
+  // TokenStorage.save()). Runs sequentially per item, not in parallel,
+  // so concurrent add/increase calls never race on the same server cart doc.
+  useEffect(() => {
+    const onLogin = async () => {
+      const guestItems = getGuestCartItems();
+      if (guestItems.length > 0) {
+        setLoading(true);
+        for (const item of guestItems) {
+          try {
+            await apiAddToCart(item.productId, item.productVariantId);
+            for (let i = 1; i < item.quantity; i++) {
+              await apiUpdateCartQuantity(item.productId, item.productVariantId, 'increase');
+            }
+          } catch {
+            // Product may no longer be available — skip it rather than
+            // blocking the rest of the merge.
+          }
+        }
+        clearGuestCart();
+      }
+      fetchCart();
+    };
+    window.addEventListener('solvexo:auth-login', onLogin);
+    return () => window.removeEventListener('solvexo:auth-login', onLogin);
+  }, [fetchCart]);
 
   const cartCount = cart?.items?.reduce((s, i) => s + i.quantity, 0) ?? 0;
 
@@ -89,91 +174,118 @@ export function CartProvider({ children }: { children: ReactNode }) {
     productVariantId: string,
     type?: 'physical' | 'digital',
   ) => {
-    // A guest never reaches apiAddToCart at all — the 401 that would
-    // otherwise bounce them to a bare /login page never happens, since the
-    // request is never made. requireAuth re-runs this exact call once the
-    // guest signs in via the prompt, so the intended add still goes through.
-    requireAuth(async () => {
-      setAdding(productVariantId);
-      if (type) storeType(productVariantId, type);
-      setError(null);
-      try {
-        const res = await apiAddToCart(productId, productVariantId);
-        setCart(mergeTypes(res.data));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to add item to cart.');
-      } finally {
-        setAdding(null);
-      }
-    }, 'Sign in to add items to your cart.');
-  }, [requireAuth]);
+    if (type) storeType(productVariantId, type);
+    setError(null);
+    setAdding(productVariantId);
+
+    if (!TokenStorage.isLoggedIn()) {
+      addGuestCartItem(productId, productVariantId, type);
+      await refreshGuestCartDisplay();
+      setAdding(null);
+      toast.success('Added to cart');
+      return;
+    }
+
+    try {
+      const res = await apiAddToCart(productId, productVariantId);
+      setCart(mergeTypes(res.data));
+      toast.success('Added to cart');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to add item to cart.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setAdding(null);
+    }
+  }, [refreshGuestCartDisplay, toast]);
 
   const updateQty = useCallback(async (
     productId: string, productVariantId: string, action: 'increase' | 'decrease',
   ) => {
-    // Guarded for the same reason as addToCart above — reachable by a guest
-    // via the "Buy Now" quantity>1 flow (one addToCart call followed by
-    // several updateQty calls), which would otherwise still hit a 401 here
-    // even with addToCart itself guarded.
-    requireAuth(async () => {
-      setCart(prev => {
-        if (!prev) return prev;
-        const items = (prev.items ?? []).map(item => {
-          if (item.productVariantId !== productVariantId) return item;
-          const newQty    = action === 'increase' ? item.quantity + 1 : Math.max(1, item.quantity - 1);
-          const unitPrice = item.unitPrice ?? item.price ?? 0;
-          return { ...item, quantity: newQty, itemTotal: unitPrice * newQty };
-        });
-        const totalItems = items.reduce((s, i) => s + i.quantity, 0);
-        const totalPrice = items.reduce((s, i) => s + (i.itemTotal ?? 0), 0);
-        return { ...prev, items, totalItems, totalPrice };
-      });
+    if (!TokenStorage.isLoggedIn()) {
+      updateGuestCartQty(productVariantId, action);
+      await refreshGuestCartDisplay();
+      return;
+    }
 
-      setError(null);
-      try {
-        await apiUpdateCartQuantity(productId, productVariantId, action);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to update quantity.');
-      } finally {
-        syncCart(c => setCart(c));
-      }
-    }, 'Sign in to update your cart.');
-  }, [requireAuth]);
+    setCart(prev => {
+      if (!prev) return prev;
+      const items = (prev.items ?? []).map(item => {
+        if (item.productVariantId !== productVariantId) return item;
+        const newQty    = action === 'increase' ? item.quantity + 1 : Math.max(1, item.quantity - 1);
+        const unitPrice = item.unitPrice ?? item.price ?? 0;
+        return { ...item, quantity: newQty, itemTotal: unitPrice * newQty };
+      });
+      const totalItems = items.reduce((s, i) => s + i.quantity, 0);
+      const totalPrice = items.reduce((s, i) => s + (i.itemTotal ?? 0), 0);
+      return { ...prev, items, totalItems, totalPrice };
+    });
+
+    setError(null);
+    try {
+      await apiUpdateCartQuantity(productId, productVariantId, action);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update quantity.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      syncCart(c => setCart(c));
+    }
+  }, [refreshGuestCartDisplay, toast]);
 
   const removeItem = useCallback(async (productId: string, productVariantId: string) => {
-    requireAuth(async () => {
-      removeType(productVariantId);
-      setCart(prev => {
-        if (!prev) return prev;
-        const items      = (prev.items ?? []).filter(i => i.productVariantId !== productVariantId);
-        const totalItems = items.reduce((s, i) => s + i.quantity, 0);
-        const totalPrice = items.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
-        return { ...prev, items, totalItems, totalPrice };
-      });
+    removeType(productVariantId);
 
-      setError(null);
-      try {
-        await apiRemoveCartItem(productId, productVariantId);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to remove item.');
-      } finally {
-        syncCart(c => setCart(c));
-      }
-    }, 'Sign in to update your cart.');
-  }, [requireAuth]);
+    if (!TokenStorage.isLoggedIn()) {
+      removeGuestCartItem(productVariantId);
+      await refreshGuestCartDisplay();
+      toast.success('Removed from cart');
+      return;
+    }
+
+    setCart(prev => {
+      if (!prev) return prev;
+      const items      = (prev.items ?? []).filter(i => i.productVariantId !== productVariantId);
+      const totalItems = items.reduce((s, i) => s + i.quantity, 0);
+      const totalPrice = items.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
+      return { ...prev, items, totalItems, totalPrice };
+    });
+
+    setError(null);
+    try {
+      await apiRemoveCartItem(productId, productVariantId);
+      toast.success('Removed from cart');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to remove item.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      syncCart(c => setCart(c));
+    }
+  }, [refreshGuestCartDisplay, toast]);
 
   const clearCart = useCallback(async () => {
+    if (!TokenStorage.isLoggedIn()) {
+      clearGuestCart();
+      clearTypes();
+      setCart(null);
+      toast.success('Cart cleared');
+      return;
+    }
     if (!cart?._id) return;
     clearTypes();
     setCart(null);
     setError(null);
     try {
       await apiClearCart(cart._id);
+      toast.success('Cart cleared');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to clear cart.');
+      const message = err instanceof Error ? err.message : 'Failed to clear cart.';
+      setError(message);
+      toast.error(message);
       syncCart(c => setCart(c));
     }
-  }, [cart]);
+  }, [cart, toast]);
 
   const value = useMemo<CartContextValue>(() => ({
     cart, cartCount, loading, adding, error, clearError, addToCart, updateQty, removeItem, clearCart, refetch: fetchCart,

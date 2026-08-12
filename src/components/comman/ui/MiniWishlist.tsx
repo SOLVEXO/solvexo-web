@@ -129,7 +129,7 @@ export function MiniWishlist() {
                     <div
                       key={item.product._id}
                       className={clsx('flex gap-2.5 p-3', 'cursor-pointer hover:bg-cream/60 transition-colors')}
-                      onClick={() => goTo(`/marketplace/${item.product._id}`)}
+                      onClick={() => goTo(`/product/${item.product.slug}`)}
                     >
                       <WishlistThumb images={item.product.images} name={item.product.name} />
                       <div className="flex-1 min-w-0">

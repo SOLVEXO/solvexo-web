@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Package, Download, Truck, CheckCircle2, Clock, XCircle,
   ChevronDown, MapPin, Box, ShoppingBag,
@@ -12,6 +12,7 @@ import {
   type OrderSummary, type OrderStatus, type OrderLineItem,
 } from '@/api/services/orders';
 import { currencySymbol } from '@/utils/currency';
+import { useToast } from '@/contexts/ToastContext';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Status config
@@ -277,6 +278,7 @@ function FilterTabs({
 // OrderCard
 // ─────────────────────────────────────────────────────────────────────────────
 function OrderCard({ order, onChanged }: { order: OrderSummary; onChanged: () => void }) {
+  const toast = useToast();
   const [expanded, setExpanded] = useState(false);
   const [modal, setModal] = useState<'cancel' | 'return' | null>(null);
 
@@ -426,6 +428,7 @@ function OrderCard({ order, onChanged }: { order: OrderSummary; onChanged: () =>
           onClose={() => setModal(null)}
           onSubmit={async reason => {
             await apiCancelOrder(order.orderId, { reason });
+            toast.success('Order cancelled');
             onChanged();
           }}
         />
@@ -437,6 +440,7 @@ function OrderCard({ order, onChanged }: { order: OrderSummary; onChanged: () =>
           onClose={() => setModal(null)}
           onSubmit={async reason => {
             await apiRequestReturn(order.orderId, { reason });
+            toast.success('Return request submitted');
             onChanged();
           }}
         />
@@ -452,7 +456,18 @@ const ORDERS_PAGE_SIZE = 50;
 
 export function OrdersTab() {
   const navigate = useNavigate();
-  const [activeFilter, setActiveFilter] = useState<'all' | OrderStatus>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeFilter, setActiveFilter] = useState<'all' | OrderStatus>(
+    () => (searchParams.get('status') as OrderStatus | null) ?? 'all',
+  );
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (activeFilter === 'all') next.delete('status');
+    else next.set('status', activeFilter);
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFilter]);
   const [orders, setOrders]   = useState<OrderSummary[]>([]);
   const [totalOrders, setTotalOrders] = useState(0);
   const [page, setPage]       = useState(1);

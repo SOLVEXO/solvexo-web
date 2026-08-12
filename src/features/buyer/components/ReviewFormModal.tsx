@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { StarRating, Button, ImageUpload, Modal } from '@/components/comman/ui';
 import { apiAddReview, apiEditReview } from '@/api/services/rating';
+import { useToast } from '@/contexts/ToastContext';
 
 interface ReviewFormModalProps {
   mode:            'create' | 'edit';
@@ -24,6 +25,7 @@ export function ReviewFormModal({
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState('');
+  const toast = useToast();
 
   async function submit() {
     if (rating < 1) { setError('Please select a star rating.'); return; }
@@ -35,9 +37,12 @@ export function ReviewFormModal({
       } else if (mode === 'edit' && reviewId) {
         await apiEditReview(reviewId, { rating, comment, media });
       }
+      toast.success(mode === 'create' ? 'Review submitted' : 'Review updated');
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save your review.');
+      const message = err instanceof Error ? err.message : 'Failed to save your review.';
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }

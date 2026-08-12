@@ -17,7 +17,7 @@ const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
     heading: 'Shop',
     links: [
       { label: 'Marketplace', path: '/marketplace' },
-      { label: 'Education',   path: '/EducationMarketplace' },
+      { label: 'Education',   path: '/education' },
       { label: 'My Orders',   path: '/account/orders' },
       { label: 'Wishlist',    path: '/account/wishlist' },
     ],

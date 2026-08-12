@@ -7,6 +7,7 @@ import {
 } from '@/api/services/wishlist';
 import { TokenStorage } from '@/api/services/auth';
 import { useAuthGate } from '@/contexts/AuthGateContext';
+import { useToast } from '@/contexts/ToastContext';
 
 export interface WishlistContextValue {
   wishlistItems:      WishlistListItem[];
@@ -35,6 +36,7 @@ function wKey(productId: string, variantId: string) {
 
 export function WishlistProvider({ children }: { children: ReactNode }) {
   const { requireAuth } = useAuthGate();
+  const toast = useToast();
   const [wishlistItems, setWishlistItems] = useState<WishlistListItem[]>([]);
   const [loading,       setLoading]       = useState(true);
   const [wishlisting,   setWishlisting]   = useState<string | null>(null);
@@ -95,13 +97,15 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
             return [...prev, { product: res.data.product, variants: [res.data.variant] }];
           });
         }
-      } catch {
+        toast.success('Added to wishlist');
+      } catch (err) {
         setWishlistedKeys(prev => { const s = new Set(prev); s.delete(k); return s; });
+        toast.error(err instanceof Error ? err.message : 'Failed to add to wishlist.');
       } finally {
         setWishlisting(null);
       }
     }, 'Sign in to save items to your wishlist.');
-  }, [requireAuth]);
+  }, [requireAuth, toast]);
 
   const removeFromWishlist = useCallback(async (productId: string, variantId: string) => {
     const k = wKey(productId, variantId);
@@ -137,7 +141,8 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         idMap.current.set(k, wishlistId);
       }
       await apiRemoveFromWishlist(wishlistId);
-    } catch {
+      toast.success('Removed from wishlist');
+    } catch (err) {
       // Roll back both pieces of state together, restoring the item as
       // close to its original position as possible.
       setWishlistedKeys(prev => new Set(prev).add(k));
@@ -150,10 +155,11 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
           return next;
         });
       }
+      toast.error(err instanceof Error ? err.message : 'Failed to remove from wishlist.');
     } finally {
       setWishlisting(null);
     }
-  }, []);
+  }, [toast]);
 
   const toggleWishlist = useCallback(async (productId: string, variantId: string) => {
     if (wishlistedKeys.has(wKey(productId, variantId))) {
@@ -173,15 +179,17 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     idMap.current.clear();
     try {
       await apiClearWishlist();
+      toast.success('Wishlist cleared');
     } catch (err) {
       // Rollback
       setWishlistItems(prevItems);
       setWishlistedKeys(prevKeys);
+      toast.error(err instanceof Error ? err.message : 'Failed to clear wishlist.');
       throw err;
     } finally {
       setClearing(false);
     }
-  }, [wishlistItems, wishlistedKeys]);
+  }, [wishlistItems, wishlistedKeys, toast]);
 
   const value = useMemo<WishlistContextValue>(() => ({
     wishlistItems,

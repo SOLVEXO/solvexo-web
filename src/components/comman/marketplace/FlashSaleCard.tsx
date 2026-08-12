@@ -95,7 +95,7 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, addToCa
 
   return (
     <div
-      onClick={() => onClick(product._id)}
+      onClick={() => onClick(product.slug)}
       className={clsx(
         'group relative bg-white rounded-2xl border border-bone overflow-hidden cursor-pointer transition-all duration-300 hover:bg-brand-pale-orange/[0.12]',
         !compact && 'h-full flex flex-col hover:-translate-y-[3px]',

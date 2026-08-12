@@ -8,6 +8,7 @@ import { useCountdownToMidnight } from '@/hooks/useCountdownToMidnight';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useAuthGate } from '@/contexts/AuthGateContext';
+import { useToast } from '@/contexts/ToastContext';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
@@ -38,6 +39,7 @@ function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick:
   const [following, setFollowing] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
   const { requireAuth } = useAuthGate();
+  const toast = useToast();
 
   const isVerified  = store.badges?.includes('verified');
   const isFeatured  = store.badges?.includes('featured');
@@ -52,7 +54,8 @@ function TopStoreCard({ store, onClick }: { store: PublicStoreListItem; onClick:
       try {
         const res = await apiFollowStore(store.storeId);
         setFollowing(res.data.following);
-      } catch { /* non-critical — button just stays in prior state */ }
+        toast.success(res.data.following ? 'Following store' : 'Unfollowed store');
+      } catch (err) { toast.error(err instanceof Error ? err.message : 'Could not update follow status.'); }
       finally { setFollowBusy(false); }
     }, 'Sign in to follow this store.');
   };
@@ -334,7 +337,7 @@ export function Homepage() {
     .sort((a, b) => b.pct - a.pct)
     .slice(0, 6);
 
-  const handleCardClick = useCallback((id: string) => navigate(`/marketplace/${id}`), [navigate]);
+  const handleCardClick = useCallback((slug: string) => navigate(`/product/${slug}`), [navigate]);
   const handleAddToCart = useCallback((e: React.MouseEvent, id: string, variantId: string, type: 'physical' | 'digital') => {
     e.stopPropagation();
     if (variantId) addToCart(id, variantId, type);
@@ -660,7 +663,7 @@ export function Homepage() {
                 : categories.slice(0, 12).map(cat => (
                     <button
                       key={cat._id}
-                      onClick={() => navigate(`/marketplace?category=${cat._id}`)}
+                      onClick={() => navigate(`/marketplace/${cat.slug}`)}
                       className="group w-[130px] sm:w-[150px] shrink-0 snap-start flex flex-col text-left rounded-2xl border border-bone bg-white overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-[3px] hover:border-brand-orange/30 hover:shadow-raised focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                     >
                       <span className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-brand-pale-orange to-[#fdf6f0]">

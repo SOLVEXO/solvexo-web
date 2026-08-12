@@ -7,6 +7,11 @@ export function useProductsByCategory(
   educationLevel?: string, normalizedCustomLevel?: string,
   campaignId?: string,
   minPrice?: number, maxPrice?: number, minRating?: number, sortBy?: MarketplaceSortBy,
+  // False while a caller is still resolving something the fetch depends on
+  // (e.g. a category slug → id lookup) — skips the request entirely and
+  // stays in a loading state, instead of firing once unfiltered and again
+  // a moment later once the real filter value is known.
+  enabled = true,
 ) {
   const [products, setProducts] = useState<MarketplaceProduct[]>([]);
   const [total,    setTotal]    = useState(0);
@@ -17,6 +22,7 @@ export function useProductsByCategory(
   const refetch = useCallback(() => setReloadKey(k => k + 1), []);
 
   useEffect(() => {
+    if (!enabled) { setLoading(true); return; }
     let cancelled = false;
     setLoading(true);
     setError('');
@@ -33,7 +39,7 @@ export function useProductsByCategory(
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, categoryId, productType, educationLevel, normalizedCustomLevel, campaignId, minPrice, maxPrice, minRating, sortBy, reloadKey]);
+  }, [page, limit, categoryId, productType, educationLevel, normalizedCustomLevel, campaignId, minPrice, maxPrice, minRating, sortBy, enabled, reloadKey]);
 
   return { products, total, loading, error, refetch };
 }

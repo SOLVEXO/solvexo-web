@@ -39,9 +39,12 @@ const ROTATE_MS = 5000;
 /** Promotional banner carousel — full-bleed background layer. Fills its nearest
  *  `relative`-positioned, sized parent (`absolute inset-0`). Every slide is
  *  mounted up front (the admin-configurable per-placement limit keeps this to
- *  a handful of images) and crossfades via opacity — swapping `src` on an
- *  interval instead would re-fetch/re-decode each slide on every rotation and
- *  flash blank on a slow connection. */
+ *  a handful of images) and slides via `transform: translateX` — swapping
+ *  `src` on an interval instead would re-fetch/re-decode each slide on every
+ *  rotation and flash blank on a slow connection. Each slide's offset is the
+ *  *shortest signed distance* from the active index (wrapping around the
+ *  list), so going from the last slide back to the first (or vice versa)
+ *  slides one step over instead of sweeping across every slide in between. */
 export function BannerCarousel({ banners, entityType, fit = 'cover' }: BannerCarouselProps) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -52,6 +55,7 @@ export function BannerCarousel({ banners, entityType, fit = 'cover' }: BannerCar
   ).current;
 
   const sorted = [...banners].sort((a, b) => a.order - b.order);
+  const len = sorted.length;
   const active = sorted[index];
 
   useEffect(() => {
@@ -123,13 +127,22 @@ export function BannerCarousel({ banners, entityType, fit = 'cover' }: BannerCar
           </picture>
         );
 
+        // Shortest signed distance from the active slide, wrapping around the
+        // list — keeps every slide parked directly off-screen to the left or
+        // right of the active one instead of stacked at a single spot, so
+        // the transform transition below reads as a real slide, not a jump-cut.
+        let diff = i - index;
+        if (diff > len / 2) diff -= len;
+        if (diff < -len / 2) diff += len;
+
         return (
           <div
             key={banner._id}
             aria-hidden={!isActive}
+            style={{ transform: `translateX(${diff * 100}%)` }}
             className={clsx(
-              'absolute inset-0 transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] duration-[900ms]',
-              isActive ? 'opacity-100 z-[1]' : 'opacity-0 pointer-events-none',
+              'absolute inset-0 will-change-transform transition-transform ease-[cubic-bezier(0.65,0,0.35,1)] duration-[650ms]',
+              isActive ? 'z-[1]' : 'pointer-events-none',
             )}
           >
             {isActive && banner.linkUrl ? (
