@@ -978,17 +978,17 @@ export function EducationMarketplace() {
         aria-expanded={mobileFilters}
         aria-label="Toggle filters"
         className={clsx(
-          'lg:hidden fixed left-0 top-1/2 -translate-y-1/2 z-[58] flex flex-col items-center gap-3 rounded-r-2xl border border-l-0 border-white/10 py-4 px-[9px] text-white bg-gradient-to-b from-charcoal to-success shadow-[0_8px_24px_-4px_rgba(45,138,78,0.4),0_4px_14px_rgba(20,15,10,0.25)] cursor-pointer transition-all duration-500 ease-out hover:px-3 hover:brightness-110 hover:shadow-[0_10px_28px_-4px_rgba(45,138,78,0.5),0_4px_14px_rgba(20,15,10,0.3)]',
+          'lg:hidden fixed left-0 top-1/2 -translate-y-1/2 z-[58] flex flex-col items-center gap-2 rounded-r-xl border border-l-0 border-white/10 py-[10px] px-[6px] text-white bg-gradient-to-b from-charcoal to-success shadow-[0_8px_24px_-4px_rgba(45,138,78,0.4),0_4px_14px_rgba(20,15,10,0.25)] cursor-pointer transition-all duration-500 ease-out hover:px-2 hover:brightness-110 hover:shadow-[0_10px_28px_-4px_rgba(45,138,78,0.5),0_4px_14px_rgba(20,15,10,0.3)]',
           showFilterTab ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0',
           (mobileFilters || activeFilterCount > 0) && 'ring-2 ring-success/50',
         )}
       >
-        <SlidersHorizontal size={14} strokeWidth={2} className="shrink-0" />
-        <span className="[writing-mode:vertical-rl] whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.06em] my-1">
+        <SlidersHorizontal size={11} strokeWidth={2} className="shrink-0" />
+        <span className="[writing-mode:vertical-rl] whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.05em] my-0.5">
           Filter Products
         </span>
         {activeFilterCount > 0 && (
-          <span className="min-w-[18px] h-[18px] rounded-full bg-white text-success text-[9px] font-bold flex items-center justify-center px-[4px] leading-none shrink-0">
+          <span className="min-w-[15px] h-[15px] rounded-full bg-white text-success text-[8px] font-bold flex items-center justify-center px-[3px] leading-none shrink-0">
             {activeFilterCount}
           </span>
         )}

@@ -1132,18 +1132,18 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
               <button
                 onClick={() => setMobileSearchOpen(true)}
                 aria-label="Search"
-                className="md:hidden ml-auto shrink-0 w-11 h-11 flex items-center justify-center rounded-full text-charcoal cursor-pointer hover:bg-cream transition-colors"
+                className="md:hidden ml-auto shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-charcoal cursor-pointer hover:bg-cream transition-colors"
               >
-                <Search size={18} />
+                <Search size={16} />
               </button>
             )}
             {!hideSearch && mobileSearchOpen && (
               <button
                 onClick={() => setMobileSearchOpen(false)}
                 aria-label="Close search"
-                className="md:hidden shrink-0 w-11 h-11 flex items-center justify-center rounded-full bg-cream text-charcoal cursor-pointer"
+                className="md:hidden shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-cream text-charcoal cursor-pointer"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             )}
 
@@ -1155,7 +1155,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
                previously the excess (usually the currency picker, being last) just rendered
                past the screen edge with no way to reach it at all. This guarantees every
                icon stays reachable by a horizontal swipe even in the tightest case. */}
-            <div className={clsx('items-center gap-1.5 md:gap-2.5 min-w-0 overflow-x-auto scrollbar-hide', mobileSearchOpen ? 'hidden md:flex' : 'flex', hideSearch && 'ml-auto')}>
+            <div className={clsx('items-center gap-1 md:gap-2.5 min-w-0 overflow-x-auto scrollbar-hide', mobileSearchOpen ? 'hidden md:flex' : 'flex', hideSearch && 'ml-auto')}>
               {backTo && (
                 <div className="hidden md:inline-flex">
                   <Button variant="ghost" size="sm" onClick={() => navigate(backTo.path)}>

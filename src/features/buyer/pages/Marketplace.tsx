@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useStickyBox } from '@/hooks/useStickyBox';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { useProductsByCategory } from '@/hooks/marketplace/useProductsByCategory';
 import { useProductSearch } from '@/hooks/marketplace/useProductSearch';
@@ -21,18 +22,21 @@ import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
 import {
   ShoppingBag,
   SlidersHorizontal, X, Zap, LayoutGrid, LayoutList,
-  RefreshCcw, ShieldCheck, Wallet, Headset, ArrowRight,
-  Store as StoreIcon, Truck, Smartphone,
+  RefreshCcw, Headset, ArrowRight,
+  Shield, CreditCard, BadgeCheck,
 } from 'lucide-react';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { currencySymbol } from '@/utils/currency';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
-import { apiGetTopStores, type PublicStoreListItem } from '@/api/services/store';
+import { apiGetTopStores, apiGetPlatformStats, type PublicStoreListItem, type PlatformStats } from '@/api/services/store';
 import { apiSearchStores } from '@/api/services/search';
 import { scrollRootToTop } from '@/utils/scrollRoot';
 import { apiGetPublicActiveCampaigns, type PublicCampaign } from '@/api/services/marketing/publicCampaigns';
 
 
+
+const compactNumber = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+const compactCurrency = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1, style: 'currency', currency: 'USD' });
 
 // ── Filter data ───────────────────────────────────────────────────────────────
 const TYPE_ITEMS = ['Physical', 'Digital', 'Educational'];
@@ -95,14 +99,31 @@ const SORT_OPTIONS = [
   { value: 'popularity', label: 'Best Sellers'    },
 ];
 
-// Bottom-of-page trust strip — plain facts (distinct wording/set from the
-// persuasive header badges above), matching the plain-fact strip most
-// marketplaces put right before the footer.
-const BOTTOM_TRUST_ITEMS = [
-  { Icon: Truck,       label: 'Free Shipping'   },
-  { Icon: RefreshCcw,  label: 'Easy Returns'    },
-  { Icon: ShieldCheck, label: 'Secure Payments' },
-  { Icon: Headset,     label: '24/7 Support'    },
+// The page's one trust-badges row, sitting right below the product grid and
+// above AppDownloadBanner. Each item gets its own accent color (not a
+// uniform orange) — rendered as a soft mint card via TrustServiceStrip's
+// `variant="card"`.
+const TRUST_ITEMS = [
+  {
+    Icon: Shield, label: 'Buyer Protection', sub: "Get full refund if product isn't as described",
+    accent: { bg: '#E6F1FB', icon: '#1A72C2' },
+  },
+  {
+    Icon: CreditCard, label: 'Secure Payments', sub: '100% secure and trusted payment methods',
+    accent: { bg: '#FBECE4', icon: '#D97757' },
+  },
+  {
+    Icon: RefreshCcw, label: 'Easy Returns', sub: 'Hassle-free returns within 7 days',
+    accent: { bg: '#EBF7EF', icon: '#2D8A4E' },
+  },
+  {
+    Icon: BadgeCheck, label: 'Verified Sellers', sub: 'Shop from trusted and verified stores',
+    accent: { bg: '#F5F0FB', icon: '#7C3AED' },
+  },
+  {
+    Icon: Headset, label: '24/7 Support', sub: "We're here anytime you need us",
+    accent: { bg: '#F1EFE8', icon: '#4A4945' },
+  },
 ];
 
 
@@ -410,6 +431,26 @@ export function Marketplace() {
   const bannersLoading = selectedCategory ? categoryBannersLoading : marketplaceBannersLoading;
   const countdown = useCountdownToMidnight();
 
+  // Real platform trust stats (sellers/GMV/buyers/rating) — same fields and
+  // labels ForSellersPage's own cream stat strip already uses, rendered here
+  // between the deal banner and the hero carousel.
+  const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null);
+  const [platformStatsLoading, setPlatformStatsLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    apiGetPlatformStats()
+      .then(res => { if (!cancelled) setPlatformStats(res.data); })
+      .catch(() => { /* non-critical — strip just stays hidden */ })
+      .finally(() => { if (!cancelled) setPlatformStatsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+  const trustStatItems = platformStats ? [
+    { value: `${compactNumber.format(platformStats.sellersCount)}+`,  label: 'Active Sellers' },
+    { value: `${compactCurrency.format(platformStats.gmv)}+`,         label: 'GMV Processed' },
+    { value: `${compactNumber.format(platformStats.buyersCount)}+`,   label: 'Registered Buyers' },
+    { value: platformStats.ratingCount > 0 ? `${platformStats.avgRating.toFixed(1)} ★` : '—', label: 'Average Rating' },
+  ] : [];
+
   // Marketplace-wide pool (unfiltered by the user's current category/search) used to
   // surface real, currently-active discounts and real purchase/rating signals —
   // independent of whatever the shopper happens to be filtering by right now.
@@ -426,6 +467,20 @@ export function Marketplace() {
     .filter(x => x.pct > 0)
     .sort((a, b) => b.pct - a.pct)
     .slice(0, 10);
+
+  // Desktop filters sidebar sticks to `top-[88px]` (below the sticky navbar
+  // + mega-menu row) while scrolling through the taller product column, and
+  // releases at the row's bottom edge — via `useStickyBox`, not CSS
+  // `position: sticky`, since the app's real scroll container is
+  // RootLayout's custom `position: fixed` wrapper, not `window`, and native
+  // sticky doesn't reliably engage against that. Re-measures whenever the
+  // above-the-fold async content (hero banners/categories/flash deals)
+  // finishes loading and changes this row's natural page position — plain
+  // scroll/resize listeners alone don't catch that, so without this the
+  // sidebar could stick against a still-loading (shorter) layout and then
+  // never re-release once the real content pushed the row further down.
+  const { wrapperRef: filterWrapperRef, contentRef: filterContentRef, wrapperStyle: filterWrapperStyle, contentStyle: filterContentStyle } =
+    useStickyBox(88, [bannersLoading, categories.length, flashDeals.length]);
 
   const topPicks = [...featuredPool]
     .sort((a, b) => (b.purchaseCount + b.averageRating * 10) - (a.purchaseCount + a.averageRating * 10))
@@ -584,26 +639,10 @@ export function Marketplace() {
         />
       </div>
 
-      {/* ── Flash Sale strip — the real active platform sale campaign
-         (self-fetching `DealsBanner`, compact mode with `label`), sitting
-         flush between the category/mega-menu bar and the hero — full
-         width, no gutter/background wrapper around it, so it reads as one
-         continuous strip rather than a card floating with margin on all
-         sides. Owns its own countdown + "Shop Now" CTA internally. Renders
-         nothing if there's no active campaign, same honest fallback
-         DealsBanner already has everywhere else it's used — no longer
-         gated on the unrelated `flashDeals` product pool (that gate made
-         this mount only once a separate, slower products fetch resolved,
-         so it visibly popped in late even after its own campaign data was
-         already ready). ── */}
-      {!isBrowsing && (
-        <DealsBanner compact label className="h-auto w-full sm:h-[100px]" />
-      )}
-
-      {/* ── Full-width hero carousel — real marketplace/category banner data,
-         edge-to-edge under the nav row rather than boxed inside a card.
-         Uses BannerCarousel as-is (real impression/click tracking, Ken
-         Burns pan, swipe-safe dot indicators) — not a new
+      {/* ── Hero carousel — real marketplace/category banner data, inset with
+         side padding + rounded corners as its own floating card rather than
+         edge-to-edge. Uses BannerCarousel as-is (real impression/click
+         tracking, Ken Burns pan, swipe-safe dot indicators) — not a new
          carousel implementation. The hero's own height is reserved and a
          skeleton shown the instant the page mounts, while `apiGetBanners` is
          still in flight — previously this whole block rendered nothing
@@ -611,10 +650,67 @@ export function Marketplace() {
          everything below it down (a real layout shift, not just a "slow"
          feeling). ── */}
       {(banners.length > 0 || bannersLoading) && (
-        <div className="relative w-full h-[200px] sm:h-[320px] lg:h-[420px] xl:h-[460px] overflow-hidden">
-          {banners.length > 0
-            ? <BannerCarousel entityType="banner" banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))} />
-            : <SkeletonBox className="absolute inset-0 w-full h-full" rounded="0" />}
+        <div className="px-4 sm:px-6 lg:px-10 py-3">
+          <div className="relative w-full h-[200px] sm:h-[320px] lg:h-[420px] xl:h-[460px] overflow-hidden rounded-2xl">
+            {banners.length > 0
+              ? <BannerCarousel entityType="banner" banners={banners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.bannerImage, linkUrl: b.urlOnTap }))} />
+              : <SkeletonBox className="absolute inset-0 w-full h-full" rounded="16px" />}
+          </div>
+        </div>
+      )}
+
+      {/* ── Trust stats — real platform numbers (sellers/GMV/buyers/rating),
+         cream band sitting between the hero carousel above and the deal
+         banner below. Same cream/centered treatment ForSellersPage already
+         uses for its own stat strip, reused here for consistency rather
+         than inventing new styling. Renders nothing once loaded if the
+         fetch failed (no fake placeholders). ── */}
+      {(platformStatsLoading || trustStatItems.length > 0) && (
+        <div className="bg-cream">
+          <div className="px-4 sm:px-6 lg:px-10 py-3 sm:py-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-items-center max-w-[1100px] mx-auto">
+              {platformStatsLoading
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="text-center">
+                      <SkeletonBox width={70} height={28} className="mb-1.5 mx-auto" />
+                      <SkeletonBox width={90} height={12} className="mx-auto" />
+                    </div>
+                  ))
+                : trustStatItems.map(s => (
+                    <div key={s.label} className="text-center">
+                      <p className="block text-[22px] sm:text-[26px] font-bold text-brand-orange">{s.value}</p>
+                      <p className="text-[12px] text-slate">{s.label}</p>
+                    </div>
+                  ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Flash Sale strip — the real active platform sale campaign
+         (self-fetching `DealsBanner`, compact mode with `label`), sitting
+         below the hero/trust-stats band, above the category quick-links —
+         inset with the same side padding + vertical breathing room as the
+         hero carousel above it, instead of floating edge-to-edge. Owns its
+         own countdown + "Shop Now" CTA internally. Renders nothing if
+         there's no active campaign, same honest fallback DealsBanner
+         already has everywhere else it's used — no longer gated on the
+         unrelated `flashDeals` product pool (that gate made this mount only
+         once a separate, slower products fetch resolved, so it visibly
+         popped in late even after its own campaign data was already
+         ready). ── */}
+      {!isBrowsing && (
+        <div className="px-4 sm:px-6 lg:px-10 py-3">
+          {/* DealsBanner's own compact+label surface is deliberately unrounded
+             (built for edge-to-edge placement) — now that it's inset with
+             side padding like the hero carousel above it, this wrapper clips
+             it into the same `rounded-2xl` card shape from the outside,
+             matching the hero's own `overflow-hidden rounded-2xl` wrapper,
+             instead of changing the shared component's built-in style (which
+             EducationMarketplace also uses full-bleed, unchanged). */}
+          <div className="overflow-hidden rounded-2xl">
+            <DealsBanner compact label className="h-auto w-full sm:h-[100px]" />
+          </div>
         </div>
       )}
 
@@ -664,49 +760,12 @@ export function Marketplace() {
         </div>
       )}
 
-      {/* ── Page header — breadcrumb, H1 + subtitle, and the 4 "why shop here"
-         reassurance badges (Buyer Protection/Secure Payments/Easy Returns/
-         24/7 Support) — a distinct set from the plain-fact strip at the
-         bottom of the page (Free Shipping/Easy Returns/Secure Payments/
-         24/7 Support), same as Amazon/Daraz separating a persuasive header
-         row from the factual footer row. ── */}
-      <div className="px-4 sm:px-6 lg:px-10 pt-5">
-        <div className="flex items-start justify-between gap-6 flex-wrap">
-          <div>
-            <h1 className="font-serif text-[28px] sm:text-[34px] lg:text-[38px] font-bold text-carbon tracking-[-0.01em] leading-tight">Marketplace</h1>
-            <p className="text-[13px] sm:text-[14px] text-slate mt-1">Discover top products from trusted sellers</p>
-          </div>
-          <div className="hidden lg:flex items-center gap-5 pt-1">
-            {[
-              { Icon: ShieldCheck, label: 'Buyer Protection', sub: 'Shop with confidence'  },
-              { Icon: Wallet,      label: 'Secure Payments',  sub: '100% secure payments'  },
-              { Icon: RefreshCcw,  label: 'Easy Returns',     sub: '30-day returns'        },
-              { Icon: Headset,     label: '24/7 Support',     sub: "We're here to help"    },
-            ].map(({ Icon, label, sub }) => (
-              <div key={label} className="flex items-center gap-[10px]">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white border border-bone shadow-card">
-                  <Icon size={16} className="text-brand-orange" strokeWidth={2} />
-                </span>
-                <span className="min-w-0">
-                  <p className="text-[12.5px] font-semibold text-charcoal leading-tight whitespace-nowrap">{label}</p>
-                  <p className="text-[10.5px] text-slate leading-tight mt-[1px] whitespace-nowrap">{sub}</p>
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {categoriesModalOpen && (
         <Modal title="All Categories" onClose={() => setCategoriesModalOpen(false)} width={900}>
           <CategoriesMegaContent
             categories={categories}
-            spotlight={topPicks}
-            showSpotlight={false}
             fixedHeight={520}
             onShopCategory={id => { handleCategoryChange(id); setCategoriesModalOpen(false); }}
-            onProductClick={id => { handleCardClick(id); setCategoriesModalOpen(false); }}
-            onTrendingTerm={term => { setSearchInput(term); setSearch(term); setCategoriesModalOpen(false); }}
           />
         </Modal>
       )}
@@ -927,8 +986,8 @@ export function Marketplace() {
            bottom-sheet drawer below already renders (one filter UI, two
            places it can appear, not a second implementation). ── */}
         <div className="lg:flex lg:items-start lg:gap-6">
-          <aside className="hidden lg:block w-[264px] shrink-0">
-            <div className="bg-white rounded-2xl border border-bone p-4 sticky top-[88px]">
+          <aside ref={filterWrapperRef} className="hidden lg:block w-[264px] shrink-0" style={filterWrapperStyle}>
+            <div ref={filterContentRef} className="bg-white rounded-2xl border border-bone p-4" style={filterContentStyle}>
               <div className="flex items-center justify-between mb-1">
                 <p className="flex items-center gap-[7px] text-[13.5px] font-bold text-carbon">
                   <SlidersHorizontal size={14} className="text-charcoal" /> Filters
@@ -1056,75 +1115,15 @@ export function Marketplace() {
         </div>
       </div>
 
-      {/* ── 3-up promo row — Become a Seller / Safe & Secure Shopping / Download
-         the App, same gradient-card language as Homepage's own 3-up promo
-         row (reused visual pattern, not a new one). Each links somewhere
-         real: seller onboarding, the existing Buyer Protection FAQ entry
-         point, and a scroll down to the honest "coming soon" AppDownloadBanner
-         right below — never a fake/dead link. ── */}
-      <div className="px-4 sm:px-6 lg:px-10 pt-2 pb-8">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-orange to-brand-deep-orange p-5 flex items-center gap-4 min-h-[136px]">
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-white/10" />
-            <div className="absolute right-3 -top-9 w-20 h-20 rounded-full bg-white/10" />
-            <div className="relative z-[1] min-w-0 flex-1">
-              <p className="text-[15px] font-bold text-white mb-1">Become a Seller</p>
-              <p className="text-[12px] text-white/85 leading-snug mb-4">Start your business in minutes.</p>
-              <Button variant="dark" size="sm" onClick={() => navigate('/sellers')} className="w-fit">
-                Start Selling <ArrowRight size={12} className="inline align-middle ml-1" />
-              </Button>
-            </div>
-            <div className="relative z-[1] shrink-0 w-[64px] h-[64px] rounded-full bg-white/15 border border-white/25 backdrop-blur-sm flex items-center justify-center">
-              <StoreIcon size={28} className="text-white" />
-            </div>
-          </div>
-
-          <div className="relative overflow-hidden rounded-2xl bg-carbon p-5 flex items-center gap-4 min-h-[136px]">
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-success/15" />
-            <div className="absolute right-3 -top-9 w-20 h-20 rounded-full bg-success/10" />
-            <div className="relative z-[1] min-w-0 flex-1">
-              <p className="text-[15px] font-bold text-white mb-1">Safe &amp; Secure Shopping</p>
-              <p className="text-[12px] text-white/60 leading-snug mb-4">Your security is our top priority.</p>
-              <Button variant="primary" size="sm" onClick={() => navigate('/faq')} className="w-fit">
-                Learn More <ArrowRight size={12} className="inline align-middle ml-1" />
-              </Button>
-            </div>
-            <div className="relative z-[1] shrink-0 w-[64px] h-[64px] rounded-full bg-success/20 border border-success/30 flex items-center justify-center">
-              <ShieldCheck size={28} className="text-success" />
-            </div>
-          </div>
-
-          <div className="relative overflow-hidden rounded-2xl bg-brand-pale-orange p-5 flex items-center gap-4 min-h-[136px]">
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-white/40" />
-            <div className="absolute right-3 -top-9 w-20 h-20 rounded-full bg-white/30" />
-            <div className="relative z-[1] min-w-0 flex-1">
-              <p className="text-[15px] font-bold text-carbon mb-1">Download Solvexo App</p>
-              <p className="text-[12px] text-charcoal/70 leading-snug mb-4">Shop anywhere, anytime.</p>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => document.getElementById('app-download')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                className="w-fit"
-              >
-                Download Now <ArrowRight size={12} className="inline align-middle ml-1" />
-              </Button>
-            </div>
-            <div className="relative z-[1] shrink-0 w-[64px] h-[64px] rounded-full bg-white border border-white flex items-center justify-center shadow-md">
-              <Smartphone size={28} className="text-brand-orange" />
-            </div>
-          </div>
-        </div>
+      <div className="px-4 sm:px-6 lg:px-10 pt-2">
+        <TrustServiceStrip variant="card" items={TRUST_ITEMS} />
       </div>
 
-      {/* ── App download + bottom trust strip + footer — the same
-         Free Shipping/Easy Returns/Secure Payments/24/7 Support facts most
-         marketplaces put right above the footer, distinct from the
-         reassurance badges in the page header above. ── */}
-      <div id="app-download" className="px-4 sm:px-6 lg:px-10 pb-8 scroll-mt-[76px]">
-        <AppDownloadBanner />
+      {/* ── App download + footer ── */}
+      <div id="app-download" className="px-4 sm:px-6 lg:px-10 pt-5 pb-8 scroll-mt-[76px]">
+        <AppDownloadBanner variant="compact" />
       </div>
-      <TrustServiceStrip items={BOTTOM_TRUST_ITEMS} />
-      <Footer />
+      <Footer showNewsletter={false} />
 
       {/* ── Filters — a real sidebar, not an inline panel or a bottom sheet.
          A slim vertical ribbon tab stays stuck to the left edge of the
@@ -1137,12 +1136,12 @@ export function Marketplace() {
         aria-expanded={mobileFilters}
         aria-label="Toggle filters"
         className={clsx(
-          'lg:hidden fixed left-0 top-1/2 -translate-y-1/2 z-[58] flex flex-col items-center gap-3 rounded-r-2xl border border-l-0 border-white/10 py-4 px-[9px] text-white bg-gradient-to-b from-charcoal to-brand-orange shadow-[0_8px_24px_-4px_rgba(217,119,87,0.4),0_4px_14px_rgba(20,15,10,0.25)] cursor-pointer transition-all duration-500 ease-out hover:px-3 hover:brightness-110 hover:shadow-[0_10px_28px_-4px_rgba(217,119,87,0.5),0_4px_14px_rgba(20,15,10,0.3)]',
+          'lg:hidden fixed left-0 top-1/2 -translate-y-1/2 z-[58] flex flex-col items-center gap-2 rounded-r-xl border border-l-0 border-white/10 py-[10px] px-[6px] text-white bg-gradient-to-b from-charcoal to-brand-orange shadow-[0_8px_24px_-4px_rgba(217,119,87,0.4),0_4px_14px_rgba(20,15,10,0.25)] cursor-pointer transition-all duration-500 ease-out hover:px-2 hover:brightness-110 hover:shadow-[0_10px_28px_-4px_rgba(217,119,87,0.5),0_4px_14px_rgba(20,15,10,0.3)]',
           showFilterTab ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0',
           (mobileFilters || activeFilterCount > 0) && 'ring-2 ring-brand-orange/50',
         )}
       >
-        <SlidersHorizontal size={14} strokeWidth={2} className="shrink-0" />
+        <SlidersHorizontal size={11} strokeWidth={2} className="shrink-0" />
         {/* `writing-mode:vertical-rl` (not a `rotate-90` transform on
            horizontal text) — a transform is purely visual and doesn't
            affect layout, so the button would still be laid out as wide as
@@ -1150,11 +1149,11 @@ export function Marketplace() {
            vertically, so the box sizes correctly narrow+tall, and Latin
            glyphs rotate clockwise automatically (browser default
            text-orientation: mixed) reading top-to-bottom. */}
-        <span className="[writing-mode:vertical-rl] whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.06em] my-1">
+        <span className="[writing-mode:vertical-rl] whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.05em] my-0.5">
           Filter Products
         </span>
         {activeFilterCount > 0 && (
-          <span className="min-w-[18px] h-[18px] rounded-full bg-white text-brand-deep-orange text-[9px] font-bold flex items-center justify-center px-[4px] leading-none shrink-0">
+          <span className="min-w-[15px] h-[15px] rounded-full bg-white text-brand-deep-orange text-[8px] font-bold flex items-center justify-center px-[3px] leading-none shrink-0">
             {activeFilterCount}
           </span>
         )}

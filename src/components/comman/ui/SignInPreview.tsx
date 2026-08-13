@@ -79,7 +79,7 @@ export function SignInPreview() {
           style={pos}
           className="dropdown-enter fixed z-[9999] w-[320px] max-w-[calc(100vw-2rem)]"
         >
-          <div className="absolute -top-[7px] right-[14px] w-3 h-3 bg-white border-t border-l border-bone rotate-45" />
+          <div className="absolute -top-[7px] w-3 h-3 bg-white border-t border-l border-bone rotate-45" style={{ left: pos.arrowLeft }} />
           <div className="relative bg-white border border-bone rounded-[16px] overflow-hidden flex flex-col">
 
           {/* Header — avatar + welcome */}

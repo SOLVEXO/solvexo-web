@@ -81,14 +81,9 @@ export function MiniCart({ accentColor }: { accentColor?: string }) {
         aria-label={`Cart${cartCount > 0 ? ` (${cartCount} items)` : ''}`}
         aria-haspopup="true"
         aria-expanded={open}
-        style={accentColor ? { background: accentColor } : undefined}
-        className={clsx(
-          'relative w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-transform hover:scale-105',
-          'outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 focus-visible:ring-offset-1',
-          !accentColor && 'bg-brand-orange',
-        )}
+        className="relative w-9 h-9 rounded-full bg-brand-pale-orange/50 flex items-center justify-center cursor-pointer shrink-0 transition-all duration-200 hover:bg-brand-pale-orange hover:scale-105 outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 focus-visible:ring-offset-1"
       >
-        <ShoppingCart size={16} className="text-white" />
+        <ShoppingCart size={16} style={accentColor ? { color: accentColor } : undefined} className={clsx('shrink-0', !accentColor && 'text-brand-orange')} />
         {cartCount > 0 && (
           <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#e11d48] text-white text-[10px] font-bold leading-[18px] text-center px-1 border-2 border-white">
             {cartCount > 99 ? '99+' : cartCount}
@@ -104,7 +99,7 @@ export function MiniCart({ accentColor }: { accentColor?: string }) {
           style={pos}
           className="dropdown-enter fixed z-[9999] w-[320px] max-w-[calc(100vw-2rem)]"
         >
-          <div className="absolute -top-[7px] right-[14px] w-3 h-3 bg-white border-t border-l border-bone rotate-45" />
+          <div className="absolute -top-[7px] w-3 h-3 bg-white border-t border-l border-bone rotate-45" style={{ left: pos.arrowLeft }} />
           <div className="relative bg-white border border-bone rounded-[16px] overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-bone">
             <p className="text-[13px] font-bold text-carbon">Shopping Cart{cartCount > 0 ? ` (${cartCount})` : ''}</p>

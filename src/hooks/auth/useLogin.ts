@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiLogin, TokenStorage, getRoleRedirect, LastRolePreference, type LoginPayload, type AppRole } from '@/api/services/auth';
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
+import { useToast } from '@/contexts/ToastContext';
 
 export function useLogin() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
 
@@ -23,6 +25,7 @@ export function useLogin() {
       TokenStorage.saveUser(user);
       const serverRole = (user.role ?? payload.role) as AppRole;
       LastRolePreference.set(serverRole);
+      toast.success('Logged in successfully');
       if (redirectTo) {
         navigate(redirectTo, { replace: true });
         return;

@@ -71,7 +71,7 @@ function ImageGallery({ images, name }: { images: string[]; name: string }) {
   };
 
   return (
-    <div className="flex gap-3 lg:flex-row-reverse min-w-0">
+    <div className="flex flex-col lg:flex-row-reverse gap-3 min-w-0">
       {/* Main image */}
       <div
         className="relative flex-1 min-w-0 h-[300px] md:h-[400px] lg:h-[460px] rounded-2xl overflow-hidden border border-bone bg-white group cursor-zoom-in"

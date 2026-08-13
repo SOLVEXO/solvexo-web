@@ -522,7 +522,7 @@ export function Homepage() {
                (in addition to native swipe/scroll) for a mouse-driven desktop
                user who won't think to drag the row. */}
             <div className="relative">
-              {!productsLoading && flashDeals.length > 4 && (
+              {!productsLoading && flashDeals.length > 5 && (
                 <button
                   onClick={() => scrollFlashDeals(-1)}
                   aria-label="Previous deals"
@@ -531,10 +531,10 @@ export function Homepage() {
                   <ArrowLeft size={15} />
                 </button>
               )}
-              <div ref={flashTrackRef} className="flex gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0">
+              <div ref={flashTrackRef} className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0">
                 {productsLoading
-                  ? Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="shrink-0 w-[200px] sm:w-[calc((100%-48px)/3)] lg:w-[calc((100%-72px)/4)]">
+                  ? Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="shrink-0 w-[164px] sm:w-[calc((100%-32px)/3)] lg:w-[calc((100%-64px)/5)]">
                         <FlashSaleCardSkeleton />
                       </div>
                     ))
@@ -543,7 +543,7 @@ export function Homepage() {
                       const defVariant = variants.find(v => v.isDefault) ?? variants[0];
                       const vId = defVariant?._id ?? '';
                       return (
-                        <div key={product._id} className="shrink-0 snap-start w-[200px] sm:w-[calc((100%-48px)/3)] lg:w-[calc((100%-72px)/4)]">
+                        <div key={product._id} className="shrink-0 snap-start w-[164px] sm:w-[calc((100%-32px)/3)] lg:w-[calc((100%-64px)/5)]">
                           <FlashSaleCard
                             product={product}
                             onClick={handleCardClick}

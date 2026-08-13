@@ -96,13 +96,13 @@ export function AppOpenFab() {
       aria-label="Open the Solvexo app"
       className={clsx(
         'drawer-enter-right md:hidden fixed right-0 top-[34%] -translate-y-1/2 z-40',
-        'flex items-center gap-[6px] rounded-l-2xl border border-r-0 border-bone py-[10px] px-[10px]',
+        'flex items-center gap-[4px] rounded-l-xl border border-r-0 border-bone py-[7px] px-[8px]',
         'bg-white text-brand-orange cursor-pointer',
-        'transition-all duration-500 ease-out hover:px-3',
+        'transition-all duration-500 ease-out hover:px-[10px]',
       )}
     >
-      <SolvexoIcon size={20} />
-      <span className="text-[12px] font-bold uppercase tracking-[0.04em]">
+      <SolvexoIcon size={15} />
+      <span className="text-[10px] font-bold uppercase tracking-[0.04em]">
         Open
       </span>
     </button>

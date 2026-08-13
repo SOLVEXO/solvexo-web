@@ -97,8 +97,8 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, addToCa
     <div
       onClick={() => onClick(product.slug)}
       className={clsx(
-        'group relative bg-white rounded-2xl border border-bone overflow-hidden cursor-pointer transition-all duration-300 hover:bg-brand-pale-orange/[0.12]',
-        !compact && 'h-full flex flex-col hover:-translate-y-[3px]',
+        'group relative bg-white rounded-2xl border border-bone overflow-hidden cursor-pointer transition-all duration-300 hover:bg-brand-pale-orange/[0.12] hover:border-brand-orange/25',
+        !compact && 'h-full flex flex-col hover:-translate-y-[3px] hover:shadow-card-hover',
       )}
     >
       {/* Accent bar — sweeps in on hover, same signal as ProductCard's grid tiles */}
@@ -139,14 +139,14 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, addToCa
           disabled={isWishlisting}
           className={clsx(
             'absolute rounded-full bg-white border border-bone flex items-center justify-center z-[1]',
-            compact ? 'bottom-[6px] right-[6px] w-7 h-7' : 'bottom-2 right-2 w-9 h-9',
+            compact ? 'bottom-[6px] right-[6px] w-7 h-7' : 'bottom-2 right-2 w-8 h-8',
             'transition-all duration-200 hover:scale-110 hover:bg-brand-pale-orange',
             isWishlisting ? 'cursor-wait' : 'cursor-pointer',
           )}
         >
           <Heart
             key={isWishlisted ? 'on' : 'off'}
-            size={compact ? 10 : 12}
+            size={compact ? 10 : 11}
             className={clsx('heart-pop transition-colors duration-150', isWishlisted ? 'text-[#e11d48] fill-[#e11d48]' : 'text-slate')}
           />
         </button>
@@ -209,44 +209,44 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, addToCa
       {/* Body — unchanged, non-compact only (compact's equivalent content lives
           in the hover overlay above instead). */}
       {!compact && (
-        <div className="flex-1 flex flex-col p-3.5">
+        <div className="flex-1 flex flex-col p-3">
           {/* Rating */}
-          <div className="flex items-center gap-[5px] mb-[7px]">
+          <div className="flex items-center gap-[5px] mb-[6px]">
             <div className="flex items-center gap-[1px]">
               {[1, 2, 3, 4, 5].map(i => (
                 <Star
                   key={i}
-                  size={10}
+                  size={9}
                   className={i <= Math.round(product.averageRating) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone'}
                 />
               ))}
             </div>
-            <span className="text-[10px] font-semibold text-carbon">
+            <span className="text-[9.5px] font-semibold text-carbon">
               {product.averageRating > 0 ? product.averageRating.toFixed(1) : 'New'}
             </span>
             {ratingCount > 0 && (
-              <span className="text-[10px] text-slate">({ratingCount})</span>
+              <span className="text-[9.5px] text-slate">({ratingCount})</span>
             )}
           </div>
 
           {/* Title — 2 lines max */}
-          <p className="text-[12px] font-semibold text-carbon leading-snug line-clamp-2 mb-2">
+          <p className="text-[11.5px] font-semibold text-carbon leading-snug line-clamp-2 mb-2">
             {product.name}
           </p>
 
           {/* Price hierarchy + Add to Cart */}
           <div className="mt-auto flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <div className="flex items-baseline gap-[6px] flex-wrap">
-                <span className={clsx('text-[16px] font-bold tracking-tight', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
+              <div className="flex items-baseline gap-[5px] flex-wrap">
+                <span className={clsx('text-[14.5px] font-bold tracking-tight', subscriberPrice != null ? 'text-brand-orange' : 'text-carbon')}>
                   {displayPrice != null ? `${priceSymbol}${displayPrice.toLocaleString()}` : '—'}
                 </span>
                 {compareAt != null && compareAt > (displayPrice ?? 0) && (
-                  <span className="text-[11px] text-slate line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
+                  <span className="text-[10.5px] text-slate line-through">{priceSymbol}{compareAt.toLocaleString()}</span>
                 )}
               </div>
               {savings != null && savings > 0 && (
-                <p className="text-[9.5px] font-semibold text-success mt-[2px]">Save {priceSymbol}{savings.toLocaleString()}</p>
+                <p className="text-[9px] font-semibold text-success mt-[2px]">Save {priceSymbol}{savings.toLocaleString()}</p>
               )}
             </div>
 
@@ -255,7 +255,7 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, addToCa
               disabled={stock <= 0}
               aria-label={stock <= 0 ? 'Out of stock' : 'Add to cart'}
               className={clsx(
-                'shrink-0 flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200',
+                'shrink-0 flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-200',
                 stock <= 0
                   ? 'bg-bone text-slate border-bone cursor-not-allowed'
                   : addToCartFailed
@@ -265,7 +265,7 @@ export function FlashSaleCard({ product, onClick, onAddToCart, isAdding, addToCa
                       : 'bg-white text-brand-orange border-brand-orange hover:bg-brand-orange hover:text-white active:scale-[0.95] cursor-pointer',
               )}
             >
-              {isAdding ? <Loader2 size={14} className="animate-spin" /> : addToCartFailed ? <AlertCircle size={14} /> : justAdded ? <Check size={14} /> : <ShoppingCart size={14} />}
+              {isAdding ? <Loader2 size={13} className="animate-spin" /> : addToCartFailed ? <AlertCircle size={13} /> : justAdded ? <Check size={13} /> : <ShoppingCart size={13} />}
             </button>
           </div>
         </div>

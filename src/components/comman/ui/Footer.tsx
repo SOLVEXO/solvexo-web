@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { Send, Check, ChevronDown, ChevronRight, ArrowUp, Apple, Play } from 'lucide-react';
+import { Send, Check, ChevronDown, ChevronRight, ArrowUp } from 'lucide-react';
 import { SolvexoLogo, SolvexoIcon } from './SolvexoLogo';
+import { AppleGlyph, GooglePlayGlyph } from './AppPromoParts';
 import { apiSubscribeNewsletter } from '../../../api/services/newsletter';
 import { scrollRootToTop } from '@/utils/scrollRoot';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
@@ -101,8 +102,8 @@ function AppBadge({ platform }: { platform: 'ios' | 'android' }) {
       className="flex items-center gap-2.5 h-11 px-3.5 rounded-[9px] border border-white/[0.12] bg-white/[0.03] select-none"
     >
       {isIos
-        ? <Apple size={18} className="text-white shrink-0" />
-        : <Play size={15} className="text-white shrink-0 fill-white" />}
+        ? <AppleGlyph size={18} />
+        : <GooglePlayGlyph size={16} />}
       <span className="leading-none">
         <span className="block text-[8px] text-[#8b8985] tracking-[0.04em]">{isIos ? 'Download on the' : 'GET IT ON'}</span>
         <span className="block text-[12.5px] font-bold text-white mt-[2px]">{isIos ? 'App Store' : 'Google Play'}</span>
@@ -223,7 +224,7 @@ function FooterColumn({ heading, links, navigate }: { heading: string; links: Fo
   );
 }
 
-export function Footer() {
+export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) {
   const navigate = useNavigate();
   const sellEntry = useSellEntry();
   const scrollToTop = () => scrollRootToTop('smooth');
@@ -238,20 +239,23 @@ export function Footer() {
       {/* Top accent — a soft cut line from the rest of the page, on-brand instead of a flat border */}
       <div className="h-[2px] bg-gradient-to-r from-brand-orange via-brand-orange/40 to-transparent" />
 
-      {/* ── Newsletter ─────────────────────────────────────────────────────────── */}
-      <div className="border-b border-white/10">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div>
-            <p className="text-[18px] sm:text-[20px] font-bold text-white leading-tight">Get deals before anyone else</p>
-            <p className="text-[13px] text-[#8b8985] mt-2">Sign up for exclusive offers, new arrivals and price-drop alerts.</p>
+      {/* ── Newsletter — omitted by pages whose own AppDownloadBanner already
+           has one (Marketplace's compact variant), so it never renders twice ── */}
+      {showNewsletter && (
+        <div className="border-b border-white/10">
+          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div>
+              <p className="text-[18px] sm:text-[20px] font-bold text-white leading-tight">Get deals before anyone else</p>
+              <p className="text-[13px] text-[#8b8985] mt-2">Sign up for exclusive offers, new arrivals and price-drop alerts.</p>
+            </div>
+            <Newsletter />
           </div>
-          <Newsletter />
         </div>
-      </div>
+      )}
 
       {/* ── Link columns ─────────────────────────────────────────────────────── */}
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr] gap-8 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_1fr] gap-8 lg:gap-6">
 
           <div className="sm:col-span-2 lg:col-span-1 pb-2 sm:pb-0">
             <SolvexoLogo size={26} variant="light" />
@@ -275,25 +279,28 @@ export function Footer() {
                 </div>
               ))}
             </div>
-
-            <div className="mt-6">
-              <p className="text-[10px] font-bold text-[#8b8985] uppercase tracking-[0.1em] mb-3">Get the App</p>
-              <div className="flex flex-col sm:flex-row gap-2.5">
-                <AppBadge platform="ios" />
-                <AppBadge platform="android" />
-              </div>
-            </div>
           </div>
 
           {FOOTER_COLUMNS.map(col => (
             <FooterColumn key={col.heading} heading={col.heading} links={col.links} navigate={footerNavigate} />
           ))}
+
+          <div className="pb-2 sm:pb-0">
+            <p className="relative inline-block text-[11px] font-bold text-white uppercase tracking-[0.08em] pb-2 sm:mb-4">
+              Get the App
+              <span className="absolute left-0 bottom-0 w-5 h-[2px] rounded-full bg-brand-orange" />
+            </p>
+            <div className="flex flex-col gap-2.5">
+              <AppBadge platform="ios" />
+              <AppBadge platform="android" />
+            </div>
+          </div>
         </div>
       </div>
 
       {/* ── Bottom bar ───────────────────────────────────────────────────────── */}
       <div className="border-t border-white/10">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <SolvexoIcon size={16} />
             <p className="text-[12px] text-[#8b8985]">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
@@ -301,7 +308,7 @@ export function Footer() {
           <button
             type="button"
             onClick={scrollToTop}
-            className="flex items-center gap-1.5 min-h-11 px-2 -mx-2 text-[12px] text-[#8b8985] hover:text-white transition-colors duration-200 bg-transparent border-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
+            className="flex items-center gap-1.5 py-1 px-2 -mx-2 text-[12px] text-[#8b8985] hover:text-white transition-colors duration-200 bg-transparent border-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
           >
             Back to top <ArrowUp size={13} />
           </button>

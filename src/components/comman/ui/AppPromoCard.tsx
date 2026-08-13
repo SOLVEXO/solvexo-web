@@ -1,6 +1,22 @@
 import { clsx } from 'clsx';
 import { Smartphone, GraduationCap } from 'lucide-react';
-import { QrGlyph, StoreBadgeChip, RatingRow, PhoneMockup, FloatingMiniCard } from './AppPromoParts';
+import { RealAppQr, StoreBadgeChip, RatingRow, PhoneMockup, FloatingMiniCard, GOOGLE_PLAY_URL } from './AppPromoParts';
+
+// Google Play links to the real internal-test build in every card below;
+// App Store stays the decorative/non-clickable chip — no iOS build yet.
+function AndroidBadgeLink({ compact }: { compact?: boolean }) {
+  return (
+    <a
+      href={GOOGLE_PLAY_URL}
+      target="_blank"
+      rel="noreferrer"
+      aria-label="Get it on Google Play"
+      className="rounded-[9px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+    >
+      <StoreBadgeChip platform="android" compact={compact} />
+    </a>
+  );
+}
 
 type Tone = 'dark' | 'light';
 
@@ -32,10 +48,10 @@ export function MarketplaceAppPromo({ tone = 'dark', className }: { tone?: Tone;
         </div>
       </div>
       <div className="flex items-center gap-2.5">
-        <QrGlyph size={52} />
+        <RealAppQr size={52} />
         <div className="flex flex-col gap-[6px] flex-1 min-w-0">
           <StoreBadgeChip platform="ios" compact />
-          <StoreBadgeChip platform="android" compact />
+          <AndroidBadgeLink compact />
         </div>
       </div>
     </div>
@@ -56,10 +72,10 @@ export function HomeAppPromo({ className }: { className?: string }) {
         </div>
       </div>
       <div className="flex items-center gap-2.5">
-        <QrGlyph size={52} />
+        <RealAppQr size={52} />
         <div className="flex flex-col gap-[6px] flex-1 min-w-0">
           <StoreBadgeChip platform="ios" compact />
-          <StoreBadgeChip platform="android" compact />
+          <AndroidBadgeLink compact />
         </div>
       </div>
     </div>
@@ -80,10 +96,10 @@ export function EducationAppPromo({ className }: { className?: string }) {
         </div>
       </div>
       <div className="flex items-center gap-2.5">
-        <QrGlyph size={52} />
+        <RealAppQr size={52} />
         <div className="flex flex-col gap-[6px] flex-1 min-w-0">
           <StoreBadgeChip platform="ios" compact />
-          <StoreBadgeChip platform="android" compact />
+          <AndroidBadgeLink compact />
         </div>
       </div>
     </div>
@@ -115,10 +131,10 @@ export function AuthAppPromo({ className }: { className?: string }) {
 
       {/* QR + store badges */}
       <div className="rounded-2xl p-3.5 bg-white/[0.06] backdrop-blur-md border border-white/15 flex items-center gap-3 w-full max-w-[240px]">
-        <QrGlyph size={48} />
+        <RealAppQr size={48} />
         <div className="flex flex-col gap-[6px] flex-1 min-w-0">
           <StoreBadgeChip platform="ios" compact />
-          <StoreBadgeChip platform="android" compact />
+          <AndroidBadgeLink compact />
         </div>
       </div>
     </div>

@@ -61,23 +61,26 @@ function AvatarTrigger({
   open: boolean; onClick: () => void;
   profileImage?: string | null; name?: string; initials: string; loading: boolean;
 }) {
+  // A gradient ring (brand-orange → deep-orange, 2px, via padding + an inner
+  // white gap) rather than a flat single-color border — gives the avatar its
+  // own distinct, on-brand identity mark instead of reading as just another
+  // bordered circle in the row next to Wishlist/Cart/Bell.
   return (
     <button
       onClick={onClick}
       className={clsx(
-        'size-9 rounded-full shrink-0 bg-brand-pale-orange overflow-hidden',
-        'flex items-center justify-center cursor-pointer border-2 transition-all duration-150',
-        open
-          ? 'border-brand-orange scale-[0.96]'
-          : 'border-bone hover:border-brand-orange/50',
+        'size-9 rounded-full shrink-0 p-[2px] bg-gradient-to-br from-brand-orange to-brand-deep-orange cursor-pointer transition-all duration-150',
+        open ? 'scale-[0.96] shadow-[0_0_0_3px_rgba(217,119,87,0.18)]' : 'hover:scale-105',
       )}
     >
-      {loading
-        ? <div className="w-full h-full bg-bone animate-pulse" />
-        : profileImage
-        ? <img loading="lazy" decoding="async" src={profileImage} alt={name} className="w-full h-full object-cover" />
-        : <span className="text-[11px] font-bold text-brand-deep-orange">{initials}</span>
-      }
+      <span className="flex items-center justify-center w-full h-full rounded-full bg-white overflow-hidden">
+        {loading
+          ? <div className="w-full h-full bg-bone animate-pulse rounded-full" />
+          : profileImage
+          ? <img loading="lazy" decoding="async" src={profileImage} alt={name} className="w-full h-full object-cover" />
+          : <span className="text-[11px] font-bold text-brand-deep-orange">{initials}</span>
+        }
+      </span>
     </button>
   );
 }

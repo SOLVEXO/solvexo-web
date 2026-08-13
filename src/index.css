@@ -462,12 +462,59 @@
 }
 .countdown-tick { animation: countdown-tick 320ms var(--ease-out); }
 
-/* Action-feedback toast — slides up + fades in from the bottom-right stack. */
+/* Action-feedback toast — slides up + fades in from the bottom-right stack,
+   with a slight overshoot on the way in for a springier, less mechanical feel. */
 @keyframes toast-enter {
-  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  from { opacity: 0; transform: translateY(16px) scale(0.94); }
+  60%  { transform: translateY(-3px) scale(1.01); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-.toast-enter { animation: toast-enter 220ms var(--ease-out) both; }
+.toast-enter { animation: toast-enter 340ms var(--ease-out) both; }
+
+/* Guest sign-in bar (BuyerLayout) — rises up from behind the bottom nav
+   pill rather than just fading in in place: starts translated down far
+   enough to sit behind the nav's own footprint (paired with a lower
+   z-index than the nav there so it's actually hidden under it at t=0),
+   then slides up into its resting spot above it. */
+@keyframes guest-bar-rise {
+  from { opacity: 0; transform: translateY(76px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.guest-bar-rise { animation: guest-bar-rise 420ms var(--ease-out) both; }
+
+/* Bottom nav's center notch (BuyerLayout) — a real concave cutout for the
+   elevated Cart FAB to sit inside/above, not just a circle floating flat on
+   top of an unbroken bar. A `mask-image` radial-gradient punches a circular
+   hole centered exactly on the bar's own top edge (`at 50% 0px`); since the
+   element only ever paints y >= 0, only that circle's bottom half ever
+   shows, reading as a smooth semicircular bite curving into the top edge
+   from both sides — not a full round hole floating mid-bar. Percentage
+   horizontal centering means this stays correct at any bar width, unlike a
+   viewBox-stretched SVG would.
+   `white`, not `black`, for the "fully visible" stop — CSS masks default to
+   *luminance* mode, where black (~0 luminance) reads as HIDDEN despite
+   being fully opaque; using it here produced a broken/inverted cut (the
+   "U-shaped hole" bug) instead of a clean one. Radii (27px hard cut / 30px
+   feather) match the 54px FAB's own radius + border so the bar's edge sits
+   right at the button's border with no visible gap. */
+.bottom-nav-notch {
+  mask-image: radial-gradient(circle at 50% 0px, transparent 0px 27px, white 30px 100%);
+  -webkit-mask-image: radial-gradient(circle at 50% 0px, transparent 0px 27px, white 30px 100%);
+}
+
+@keyframes toast-leave {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(6px) scale(0.95); }
+}
+.toast-leave { animation: toast-leave 200ms var(--ease-out) both; }
+
+/* Auto-dismiss countdown bar — shrinks left-to-right over the toast's
+   lifetime; JS toggles animation-play-state to genuinely pause it on hover. */
+@keyframes toast-progress {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+.toast-progress { animation-name: toast-progress; animation-timing-function: linear; animation-fill-mode: forwards; transform-origin: left; }
 
 /* Wishlist heart "pop" — replayed via a `key` swap on the icon (same remount
    trick as countdown-tick) whenever isWishlisted flips, so saving/unsaving a

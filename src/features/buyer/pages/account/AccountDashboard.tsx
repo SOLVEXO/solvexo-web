@@ -5,6 +5,7 @@ import {
   ShieldCheck, Mail, UserCog, Sparkles, ArrowRight, Store,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
+import { TokenStorage } from '@/api/services/auth';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useNotification } from '@/contexts/NotificationContext';
 import { apiGetMyOrders, type OrderSummary, type OrderStatus } from '@/api/services/orders';
@@ -111,10 +112,11 @@ function WelcomeHero({ name, image, memberSince }: { name?: string; image?: stri
 // white sheet pulled up over the gradient) — the native-app "profile tab"
 // pattern, distinct from desktop's left-aligned WelcomeHero further down.
 function MobileProfileHero({
-  name, email, image, totalOrders, wishlistCount, addressCount,
+  name, email, image, totalOrders, wishlistCount, addressCount, isLoggedIn, onSignIn,
 }: {
   name?: string; email?: string; image?: string | null;
   totalOrders: number | null; wishlistCount: number; addressCount: number | null;
+  isLoggedIn: boolean; onSignIn: () => void;
 }) {
   return (
     <div className="lg:hidden -mx-4 -mt-4">
@@ -123,22 +125,43 @@ function MobileProfileHero({
           className="pointer-events-none absolute inset-0 opacity-[0.08]"
           style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '22px 22px' }}
         />
-        {image ? (
-          <img
-            loading="lazy" decoding="async"
-            src={image} alt={name ?? 'You'}
-            className="relative size-24 rounded-full object-cover ring-4 ring-white/40"
-          />
+        {!isLoggedIn ? (
+          <>
+            {/* Guest state — same hero shape/height as the signed-in one (so
+               the stats sheet below still lands in the same place), but the
+               identity block is swapped for a sign-in prompt instead of
+               showing a blank/fake name. */}
+            <div className="relative size-24 rounded-full bg-white/15 ring-4 ring-white/40 flex items-center justify-center">
+              <UserCog size={34} className="text-white" />
+            </div>
+            <p className="relative text-[19px] font-bold text-white mt-3 leading-tight">Welcome to Solvexo</p>
+            <button
+              onClick={onSignIn}
+              className="relative mt-3 px-5 py-[8px] rounded-full bg-white text-brand-deep-orange text-[13px] font-bold cursor-pointer border-none"
+            >
+              Sign in or Register
+            </button>
+          </>
         ) : (
-          <div className="relative size-24 rounded-full bg-white/15 ring-4 ring-white/40 flex items-center justify-center">
-            <Avatar name={name ?? 'You'} size={80} />
-          </div>
+          <>
+            {image ? (
+              <img
+                loading="lazy" decoding="async"
+                src={image} alt={name ?? 'You'}
+                className="relative size-24 rounded-full object-cover ring-4 ring-white/40"
+              />
+            ) : (
+              <div className="relative size-24 rounded-full bg-white/15 ring-4 ring-white/40 flex items-center justify-center">
+                <Avatar name={name ?? 'You'} size={80} />
+              </div>
+            )}
+            <p className="relative text-[19px] font-bold text-white mt-3 leading-tight">{name ?? 'Welcome'}</p>
+            {email && <p className="relative text-[13px] text-white/75 mt-[2px]">{email}</p>}
+            <span className="relative inline-flex mt-3 px-4 py-[6px] rounded-full bg-white/20 text-[11px] font-semibold text-white">
+              Buyer Account
+            </span>
+          </>
         )}
-        <p className="relative text-[19px] font-bold text-white mt-3 leading-tight">{name ?? 'Welcome'}</p>
-        {email && <p className="relative text-[13px] text-white/75 mt-[2px]">{email}</p>}
-        <span className="relative inline-flex mt-3 px-4 py-[6px] rounded-full bg-white/20 text-[11px] font-semibold text-white">
-          Buyer Account
-        </span>
       </div>
 
       <div className="relative -mt-6 mx-4 rounded-t-[24px] bg-white px-2 pt-5 pb-4 flex items-center">
@@ -166,9 +189,19 @@ function MobileProfileHero({
 // home" pattern), reusing AccountLayout's own nav data so there's exactly
 // one source of truth for what's in the account section. Desktop already
 // has this as the persistent sidebar rail, so this renders lg:hidden only.
-function MobileAccountMenu() {
+function MobileAccountMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
   const navigate = useNavigate();
-  const navGroups = useNavGroups().filter(g => g.group !== 'Overview');
+  // "Solvexo Store App" (the public seller sign-up page, same one linked
+  // from "Sell on Solvexo"/"Become a Seller" elsewhere) is appended to the
+  // last group, right after Subscriptions — a real absolute path (`/sellers`,
+  // note the leading slash), not a relative `/account/...` sub-page, so it's
+  // handled separately from the rest of this list below.
+  const navGroups = useNavGroups()
+    .filter(g => g.group !== 'Overview')
+    .map(g => g.group === 'Account'
+      ? { ...g, items: [...g.items, { id: 'sellerApp', label: 'Solvexo Store App', Icon: Store, path: '/sellers' }] }
+      : g,
+    );
 
   return (
     <div className="lg:hidden flex flex-col gap-4">
@@ -181,7 +214,15 @@ function MobileAccountMenu() {
             {section.items.map(item => (
               <button
                 key={item.id}
-                onClick={() => navigate(`/account/${item.path}`)}
+                onClick={() => {
+                  // Absolute path (`/sellers`) — a public page open to
+                  // anyone, so it navigates directly regardless of login;
+                  // every other (relative) item here needs a real account,
+                  // so a guest goes to `/login` instead of a page that
+                  // would just 401 out from under them anyway.
+                  if (item.path.startsWith('/')) { navigate(item.path); return; }
+                  navigate(isLoggedIn ? `/account/${item.path}` : '/login');
+                }}
                 className="w-full flex items-center gap-3 px-5 py-[13px] bg-transparent border-0 cursor-pointer text-left hover:bg-cream transition-colors"
               >
                 <div className="w-8 h-8 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0">
@@ -205,16 +246,21 @@ function MobileAccountMenu() {
 
 export function AccountDashboard() {
   const navigate = useNavigate();
+  const isLoggedIn = TokenStorage.isLoggedIn();
   const { profile } = useGetProfile();
   const { wishlistItems, wishlistCount, loading: wishlistLoading } = useWishlistContext();
   const { unreadCount } = useNotification();
 
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [totalOrders, setTotalOrders] = useState<number | null>(null);
-  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(isLoggedIn);
   const [addressCount, setAddressCount] = useState<number | null>(null);
 
   useEffect(() => {
+    // Guest: skip these entirely — they'd just 401 (and trip the global
+    // logout-on-401 interceptor) for data that only ever existed for a
+    // signed-in account anyway.
+    if (!isLoggedIn) return;
     let cancelled = false;
     apiGetMyOrders({ page: 1, limit: 3 })
       .then(res => {
@@ -228,7 +274,7 @@ export function AccountDashboard() {
       .then(res => { if (!cancelled) setAddressCount((res.data ?? []).length); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, []);
+  }, [isLoggedIn]);
 
   const completionChecks = [
     !!profile?.name,
@@ -252,13 +298,15 @@ export function AccountDashboard() {
         totalOrders={totalOrders}
         wishlistCount={wishlistCount}
         addressCount={addressCount}
+        isLoggedIn={isLoggedIn}
+        onSignIn={() => navigate('/login')}
       />
 
       <div className="hidden lg:block">
         <WelcomeHero name={profile?.name} image={profile?.profileImage} memberSince={memberSince} />
       </div>
 
-      <MobileAccountMenu />
+      <MobileAccountMenu isLoggedIn={isLoggedIn} />
 
       {/* Summary cards — desktop only; the mobile profile hero above already
          shows Orders/Wishlist/Addresses in its own stats strip, so this grid

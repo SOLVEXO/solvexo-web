@@ -4,7 +4,6 @@ import { ShieldCheck, Store, GraduationCap, Tag } from 'lucide-react';
 import { Modal, DealsBanner } from '@/components/comman/ui';
 import { CategoriesMegaContent } from './MegaMenuBar';
 import { BannerCarousel, type BannerCarouselItem } from './BannerCarousel';
-import type { MarketplaceProduct } from '@/api/services/marketplace';
 import type { CategoryNode } from '@/api/services/categories';
 
 // ── "Welcome to Solvexo" discovery strip — Categories for you, the real
@@ -16,20 +15,14 @@ import type { CategoryNode } from '@/api/services/categories';
 // a left category list, its subcategory icon grid, and popular products,
 // switching live as you click a different category on the left. ──
 export function WelcomeStrip({
-  categories, topPicks, banners, onShopCategory, onProductClick, onTrendingTerm, onNavigate,
+  categories, banners, onShopCategory, onNavigate,
 }: {
   categories: CategoryNode[];
-  /** Real spotlight products for the modal's "Popular Products" column —
-   *  same `topPicks` the navbar's "All Categories" dropdown already shows
-   *  there, not a separate/fabricated list. */
-  topPicks: MarketplaceProduct[];
   /** Real marketplace/category hero banners — same data Marketplace's hero
    *  section used before this moved here. Omitted entirely (no empty
    *  placeholder box) when there's no banner configured for this placement. */
   banners: BannerCarouselItem[];
   onShopCategory: (id: string) => void;
-  onProductClick: (id: string) => void;
-  onTrendingTerm: (term: string) => void;
   onNavigate: (path: string) => void;
 }) {
   const hasCategories = categories.length > 0;
@@ -137,13 +130,9 @@ export function WelcomeStrip({
         <Modal title="Categories for you" onClose={() => setModalCategoryId(null)} width={900}>
           <CategoriesMegaContent
             categories={categories}
-            spotlight={topPicks}
-            showSpotlight={false}
             initialActiveId={modalCategoryId}
             fixedHeight={520}
             onShopCategory={id => { onShopCategory(id); setModalCategoryId(null); }}
-            onProductClick={id => { onProductClick(id); setModalCategoryId(null); }}
-            onTrendingTerm={term => { onTrendingTerm(term); setModalCategoryId(null); }}
           />
         </Modal>
       )}

@@ -102,8 +102,8 @@ export function NotificationBell() {
         onClick={handleBellClick}
         aria-label="Notifications"
         className={clsx(
-          'size-[34px] rounded-md bg-brand-pale-orange flex items-center justify-center cursor-pointer shrink-0 border-none hover:opacity-80 transition-opacity relative outline-none',
-          isOpen && 'ring-2 ring-brand-orange/20'
+          'relative w-9 h-9 rounded-full bg-brand-pale-orange/50 flex items-center justify-center cursor-pointer shrink-0 border-none transition-all duration-200 hover:bg-brand-pale-orange hover:scale-105 outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 focus-visible:ring-offset-1',
+          isOpen && 'bg-brand-pale-orange ring-2 ring-brand-orange/30'
         )}
       >
         <Bell size={16} className="text-brand-orange" />

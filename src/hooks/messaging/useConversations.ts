@@ -4,6 +4,7 @@ import {
   type Conversation, type ListConversationsParams, type StartConversationPayload,
 } from '@/api/services/messaging';
 import { acquireMessagingSocket, releaseMessagingSocket } from '@/api/messagingSocket';
+import { TokenStorage } from '@/api/services/auth';
 
 export function useConversations(params?: ListConversationsParams) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -16,6 +17,12 @@ export function useConversations(params?: ListConversationsParams) {
   const isPinned   = params?.isPinned;
 
   const refetch = useCallback(() => {
+    // Guest: skip the call entirely — this fires unconditionally from
+    // `useNavGroups` (AccountLayout, mounted for every `/account/*` route),
+    // so without this a guest visiting e.g. `/account/dashboard` would 401
+    // here and get yanked to `/login` by the global 401 interceptor before
+    // ever seeing the page.
+    if (!TokenStorage.isLoggedIn()) { setLoading(false); return Promise.resolve(); }
     const thisRequest = ++requestId.current;
     setLoading(true);
     return apiListConversations({
@@ -33,6 +40,7 @@ export function useConversations(params?: ListConversationsParams) {
   // Instant inbox updates: new message / read state bumps the conversation to
   // the top with fresh unread + lastMessage, no manual refresh needed.
   useEffect(() => {
+    if (!TokenStorage.isLoggedIn()) return;
     const socket = acquireMessagingSocket();
 
     function handleUpdate(updated: Conversation) {

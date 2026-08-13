@@ -1,18 +1,21 @@
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode, type CSSProperties } from 'react';
 import { clsx } from 'clsx';
 import { TokenStorage } from '@/api/services/auth';
 import { ProductImage } from '@/components/comman/marketplace/ProductCard';
 import {
-  Star, ChevronRight, ShieldCheck, BadgeCheck, ChevronDown, Tag, Store, Sparkles, Apple, Play, Flame,
+  Star, ChevronRight, ShieldCheck, BadgeCheck, ChevronDown, Tag, Store, Sparkles, Flame,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { MarketplaceProduct } from '@/api/services/marketplace';
 import { type CategoryNode } from '@/api/services/categories';
 import { type PublicStoreListItem } from '@/api/services/store';
-import { QrGlyph } from '@/components/comman/ui/AppPromoParts';
-import { StoreFeatureCard, useCompactOnScroll } from '@/components/comman/ui';
+import { RealAppQr, AppleGlyph, GooglePlayGlyph, GOOGLE_PLAY_URL } from '@/components/comman/ui/AppPromoParts';
+import { StoreFeatureCard, useCompactOnScroll, CountdownUnit } from '@/components/comman/ui';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { currencySymbol } from '@/utils/currency';
+import aboutImg1 from '@/assets/about/about-1.jfif';
+import aboutImg2 from '@/assets/about/about-2.jfif';
+import aboutImg3 from '@/assets/about/about-3.jfif';
 
 // ── Compact rail card — dense Flash Sale / Top Picks strip card ────────────────
 export function RailCard({ product, onClick, badge, rank, size = 'md', stockLabel }: {
@@ -93,10 +96,16 @@ export function CategoryBarIcon({ category }: { category: CategoryNode }) {
   );
 }
 
-// A curated starter-search list, not a live trending-terms feed (no search-
-// analytics endpoint exists yet to back one) — labeled "Popular Searches"
-// rather than "Trending" so it doesn't imply a live signal it isn't.
-const CATEGORY_BAR_POPULAR_SEARCHES = ['Wireless Earbuds', 'Digital Planner', 'Desk Organizer', 'Handmade Jewelry', 'Watercolor Prints'];
+// Shared "swipeable rail on mobile, fixed single-row grid at sm+" pattern —
+// every mega-panel section that shows a row of RailCards (Flash Sale, both
+// Top Picks sections) uses this exact className, so they can't drift into
+// slightly different breakpoints/gaps from each other over time. Mobile gets
+// a real horizontal swipe carousel (edge-to-edge via the `-mx-4 px-4` bleed,
+// which exactly cancels the shared panel's own `px-4` mobile gutter) — the
+// native app "deals rail" pattern — instead of forcing 3-4 cramped grid
+// columns into the width. `sm:` and up switches to the wrapped grid, since
+// there's real room there for a fixed single-row layout.
+const RAIL_GRID_CLS = 'flex gap-2.5 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:grid-cols-5 sm:overflow-visible xl:grid-cols-7';
 
 // ── Full-width mega-menu content panes ───────────────────────────────────────
 // Each of the 5 nav items below renders into the SAME shared full-width panel
@@ -114,28 +123,22 @@ export function MegaSectionLabel({ children }: { children: ReactNode }) {
 }
 
 export function CategoriesMegaContent({
-  categories, spotlight, onShopCategory, onProductClick, onTrendingTerm, initialActiveId, showSpotlight = true,
+  categories, onShopCategory, initialActiveId,
   fixedHeight,
 }: {
   categories:     CategoryNode[];
-  spotlight:      MarketplaceProduct[];
   onShopCategory: (id: string) => void;
-  onProductClick: (id: string) => void;
-  onTrendingTerm: (term: string) => void;
   /** Which category starts selected — defaults to the first one. Lets a
    *  caller open this already focused on a specific category (e.g. the one
    *  the shopper just clicked to get here) instead of always resetting to
    *  the top of the list. */
   initialActiveId?: string;
-  /** Hides the "Popular Products" column — for callers that just want the
-   *  categories/subcategories browse experience (e.g. the "Categories for
-   *  you" modal) without a third products column. */
-  showSpotlight?: boolean;
   /** When set, columns 1 & 2 lock to this pixel height with their own
    *  independent scroll beneath a fixed header, so clicking a category with
-   *  fewer/more subcategories never resizes the modal around it (Alibaba's
-   *  category-browser pattern). Omitted by the navbar's hover dropdown,
-   *  which stays content-sized as before. */
+   *  fewer/more subcategories never resizes the modal/dropdown around it
+   *  (Alibaba's category-browser pattern). Used by both the "Categories for
+   *  you" modal (520px) and the navbar's hover dropdown (380px, a shorter
+   *  cap fitting a slim bar rather than a full-screen modal). */
   fixedHeight?: number;
 }) {
   const [activeId, setActiveId] = useState<string | null>(initialActiveId ?? categories[0]?._id ?? null);
@@ -143,14 +146,29 @@ export function CategoriesMegaContent({
 
   if (categories.length === 0) return <p className="text-[13px] text-slate">No categories yet.</p>;
 
-  const colStyle = fixedHeight ? { height: fixedHeight } : undefined;
+  // Fixed height is applied via a CSS custom property + a static `lg:h-[var(...)]`
+  // class — never a plain inline `height`, and never gated below `lg` — so
+  // that below `lg` both columns flow naturally with the page's own single
+  // scroll (the outer mega-panel's `max-h-[70vh] overflow-y-auto`) instead
+  // of being boxed into two independently-scrolling fixed-height panes
+  // stacked on top of each other. That nested-scroll-inside-scroll (plus a
+  // static 3-column subcategory grid that could only grow taller) is
+  // exactly what read as heavy/cramped on a phone; one clean scroll and a
+  // horizontally swipeable subcategory rail (below) is the native app
+  // pattern instead. (Tailwind's scanner can see the literal class
+  // `lg:h-[var(--mega-col-h)]` in source — it just can't see a value baked
+  // into a template-literal class name — which is why the actual pixel
+  // number still has to travel through a real inline style.)
+  const colVars = fixedHeight ? ({ '--mega-col-h': `${fixedHeight}px` } as CSSProperties) : undefined;
+  const colHeightCls = fixedHeight ? 'lg:h-[var(--mega-col-h)]' : undefined;
+  const colInnerCls = fixedHeight ? 'lg:flex-1 lg:min-h-0 lg:overflow-y-auto' : 'max-h-[400px] overflow-y-auto';
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+    <div className="flex flex-col lg:flex-row gap-5 lg:gap-8">
       {/* Column 1 — category links */}
-      <div className="w-full lg:w-[220px] shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-bone pb-5 lg:pb-0 pr-0 lg:pr-6" style={colStyle}>
+      <div className={clsx('w-full lg:w-[220px] shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-bone pb-4 lg:pb-0 pr-0 lg:pr-6', colHeightCls)} style={colVars}>
         <MegaSectionLabel>Categories</MegaSectionLabel>
-        <div className={clsx('flex flex-col gap-[2px] overflow-y-auto pr-1 -mr-1', fixedHeight ? 'flex-1 min-h-0' : 'max-h-[400px]')}>
+        <div className={clsx('flex flex-col gap-[2px] pr-1 -mr-1', colInnerCls)}>
           {categories.map(cat => (
             <button
               key={cat._id}
@@ -170,17 +188,21 @@ export function CategoriesMegaContent({
         </div>
       </div>
 
-      {/* Column 2 — subcategory icon grid + trending searches */}
-      <div className="w-full lg:flex-1 lg:min-w-0 flex flex-col border-b lg:border-b-0 lg:border-r border-bone pb-5 lg:pb-0 pr-0 lg:pr-8" style={colStyle}>
+      {/* Column 2 — subcategory rail/grid + trending searches */}
+      <div className={clsx('w-full lg:flex-1 lg:min-w-0 flex flex-col border-b lg:border-b-0 lg:border-r border-bone pb-4 lg:pb-0 pr-0 lg:pr-8', colHeightCls)} style={colVars}>
         <MegaSectionLabel>Subcategories</MegaSectionLabel>
-        <div className={clsx('overflow-y-auto pr-1 -mr-1', fixedHeight && 'flex-1 min-h-0')}>
+        <div className={clsx('pr-1 -mr-1', colInnerCls)}>
         {active && active.children.length > 0 ? (
-          <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-4 mb-6">
+          // Mobile: one horizontally swipeable icon rail — the same
+          // "browse by subcategory" pattern every shopping app uses —
+          // instead of a static 3-column grid that only ever grew taller
+          // with more items. `lg:` and up switches to that original grid.
+          <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1 mb-5 lg:mx-0 lg:px-0 lg:pb-0 lg:mb-6 lg:grid lg:grid-cols-4 xl:grid-cols-5 lg:gap-x-3 lg:gap-y-4 lg:overflow-visible">
             {active.children.map(sub => (
               <button
                 key={sub._id}
                 onClick={() => onShopCategory(sub._id)}
-                className="flex flex-col items-center gap-[7px] text-center bg-transparent border-none cursor-pointer p-0 group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                className="flex flex-col items-center gap-[7px] text-center bg-transparent border-none cursor-pointer p-0 shrink-0 w-[64px] lg:w-auto group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
               >
                 <span className="w-14 h-14 rounded-full overflow-hidden bg-cream border border-bone flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:-translate-y-[2px] group-hover:border-brand-orange/40">
                   {sub.image
@@ -194,37 +216,10 @@ export function CategoriesMegaContent({
             ))}
           </div>
         ) : (
-          <p className="text-[12px] text-slate mb-6">No subcategories yet — browse everything in {active?.name}.</p>
+          <p className="text-[12px] text-slate mb-5 lg:mb-6">No subcategories yet — browse everything in {active?.name}.</p>
         )}
-
-        <MegaSectionLabel>Popular Searches</MegaSectionLabel>
-        <div className="flex flex-wrap gap-[6px]">
-          {CATEGORY_BAR_POPULAR_SEARCHES.map(term => (
-            <button
-              key={term}
-              onClick={() => onTrendingTerm(term)}
-              className="px-[10px] py-[5px] rounded-full text-[11.5px] font-medium bg-cream text-charcoal border border-bone hover:border-brand-orange hover:text-brand-orange transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-            >
-              {term}
-            </button>
-          ))}
-        </div>
         </div>
       </div>
-
-      {/* Column 3 — popular products (last column; Featured promo banner removed to give this a full row) */}
-      {showSpotlight && (
-        <div className="w-full lg:w-auto lg:shrink-0">
-          <MegaSectionLabel>Popular Products</MegaSectionLabel>
-          {spotlight.length === 0 ? (
-            <p className="text-[12px] text-slate">Nothing trending yet.</p>
-          ) : (
-            <div className="flex flex-wrap gap-3">
-              {spotlight.slice(0, 4).map(p => <RailCard key={p._id} product={p} onClick={onProductClick} />)}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
@@ -235,14 +230,47 @@ export function FlashSaleMegaContent({ flashDeals, countdown, onProductClick }: 
   onProductClick: (id: string) => void;
 }) {
   return (
-    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+    <div className="flex flex-col lg:flex-row gap-3 lg:gap-5">
+      {/* Countdown banner — a slim horizontal strip on mobile (icon + title +
+         timer in one row, description hidden), placed ABOVE the deals rail
+         via `order-first` — the native app pattern (Daraz/Temu: a compact
+         sale banner pinned above a swipeable card row), instead of a tall
+         vertical card squeezed below a cramped grid. At `lg:` it reverts to
+         the original vertical card, sitting to the right of the rail
+         (`order-none` restores normal DOM order — products first). */}
+      <div className="relative order-first lg:order-none w-full lg:w-[190px] shrink-0 overflow-hidden rounded-2xl border border-black/10 flex flex-row lg:flex-col items-center gap-3 lg:gap-0 p-3 lg:p-4 text-white">
+        <div className="gradient-drift absolute inset-0 bg-gradient-to-br from-[#e11d48] via-[#d9375b] to-brand-deep-orange" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.2),transparent_55%)]" />
+        <div className="pointer-events-none absolute -bottom-8 -right-6 size-24 rounded-full bg-white/10 blur-2xl" />
+
+        <span className="relative z-[1] flex size-9 items-center justify-center rounded-full bg-white/15 shrink-0 lg:mb-2">
+          <Flame size={17} className="text-white" />
+        </span>
+
+        <div className="relative z-[1] min-w-0 flex-1 lg:flex-none lg:text-center">
+          <p className="text-[13.5px] font-bold leading-tight lg:mb-[3px]">Flash Sale</p>
+          <p className="hidden lg:block text-[10.5px] text-white/80 mb-3 leading-snug">Deep discounts, while stock lasts.</p>
+        </div>
+
+        <div className="relative z-[1] flex flex-col items-center shrink-0">
+          <span className="text-[7.5px] font-bold uppercase tracking-[0.1em] text-white/70 mb-[3px] lg:mb-[6px]">Ends In</span>
+          <div className="flex items-center gap-[5px]">
+            <CountdownUnit value={Number(countdown.h)} label="Hrs" size="sm" />
+            <span className="pb-[10px] text-[13px] font-bold leading-none text-white/50">:</span>
+            <CountdownUnit value={Number(countdown.m)} label="Min" size="sm" />
+            <span className="pb-[10px] text-[13px] font-bold leading-none text-white/50">:</span>
+            <CountdownUnit value={Number(countdown.s)} label="Sec" size="sm" />
+          </div>
+        </div>
+      </div>
+
       <div className="w-full lg:flex-1 lg:min-w-0">
         <MegaSectionLabel>Today's Flash Deals</MegaSectionLabel>
         {flashDeals.length === 0 ? (
           <p className="text-[12px] text-slate">No flash deals right now.</p>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-6 gap-3">
-            {flashDeals.slice(0, 6).map(({ product, pct }) => {
+          <div className={RAIL_GRID_CLS}>
+            {flashDeals.slice(0, 7).map(({ product, pct }) => {
               const dv = (product.variants ?? []).find(v => v.isDefault) ?? product.variants?.[0];
               const isPhysical = (product.productType ?? product.type ?? 'physical') === 'physical';
               // Real stock only — no fabricated "sold" percentage, since there's
@@ -254,28 +282,14 @@ export function FlashSaleMegaContent({ flashDeals, countdown, onProductClick }: 
                   key={product._id}
                   product={product}
                   onClick={onProductClick}
-                  badge={<span className="px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-[#e11d48] text-white">-{pct}%</span>}
+                  size="sm"
+                  badge={<span className="px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-[#e11d48] text-white shadow-[0_2px_6px_rgba(225,29,72,0.35)]">-{pct}%</span>}
                   stockLabel={stock != null && stock > 0 && stock <= 5 ? `Only ${stock} left` : undefined}
                 />
               );
             })}
           </div>
         )}
-      </div>
-      <div className="w-full lg:w-[220px] shrink-0 rounded-2xl bg-gradient-to-br from-[#e11d48] to-brand-deep-orange p-5 flex flex-col items-center text-center text-white">
-        <Flame size={26} className="mb-2" />
-        <p className="text-[15px] font-bold mb-1">Flash Sale</p>
-        <p className="text-[11px] text-white/85 mb-4">Deep discounts, while stock lasts.</p>
-        {/* Premium timer — matches the Homepage countdown language (equal boxes,
-           thin border) rather than a plain colon-separated number string */}
-        <div className="flex items-center gap-[6px]">
-          {[['Hrs', countdown.h], ['Min', countdown.m], ['Sec', countdown.s]].map(([label, val]) => (
-            <div key={label} className="flex flex-col items-center justify-center w-[42px] py-[6px] rounded-lg border border-white/25 bg-white/10">
-              <span className="text-[15px] font-bold text-white tabular-nums leading-none">{val}</span>
-              <span className="text-[7px] font-medium text-white/70 uppercase tracking-[0.08em] mt-[3px]">{label}</span>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -291,18 +305,19 @@ export function TopPicksMegaContent({ topPicks, bestRated = [], onProductClick }
   onProductClick: (id: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <div>
         <MegaSectionLabel>Trending With Buyers</MegaSectionLabel>
         {topPicks.length === 0 ? (
           <p className="text-[12px] text-slate">No top picks yet.</p>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-6 gap-3">
-            {topPicks.slice(0, 6).map(product => (
+          <div className={RAIL_GRID_CLS}>
+            {topPicks.slice(0, 7).map(product => (
               <RailCard
                 key={product._id}
                 product={product}
                 onClick={onProductClick}
+                size="sm"
                 badge={product.purchaseCount > 0 ? (
                   <span className="px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-carbon/80 text-white backdrop-blur-sm">
                     {product.purchaseCount} sold
@@ -315,14 +330,15 @@ export function TopPicksMegaContent({ topPicks, bestRated = [], onProductClick }
       </div>
 
       {bestRated.length > 0 && (
-        <div className="pt-5 border-t border-bone">
+        <div className="pt-4 border-t border-bone">
           <MegaSectionLabel>Best Rated</MegaSectionLabel>
-          <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-6 gap-3">
-            {bestRated.slice(0, 6).map(product => (
+          <div className={RAIL_GRID_CLS}>
+            {bestRated.slice(0, 7).map(product => (
               <RailCard
                 key={product._id}
                 product={product}
                 onClick={onProductClick}
+                size="sm"
                 badge={product.averageRating > 0 ? (
                   <span className="flex items-center gap-[2px] px-[6px] py-[2px] rounded-[5px] text-[9px] font-bold bg-carbon/80 text-white backdrop-blur-sm">
                     <Star size={8} className="fill-white" /> {product.averageRating.toFixed(1)}
@@ -347,7 +363,12 @@ export function FeaturedSellersMegaContent({ topStores, onStoreClick }: {
       {topStores.length === 0 ? (
         <p className="text-[12px] text-slate">No featured stores yet.</p>
       ) : (
-        <div className="flex flex-wrap gap-4">
+        // `StoreFeatureCard` is a fixed-width rail card (240-264px), not a
+        // grid-friendly square — `flex-wrap` let it stack full-width cards
+        // vertically on a narrow phone (4 stacked ≈ 560px of dead height).
+        // A horizontal swipe rail instead — desktop is unaffected, since 4
+        // cards already fit in one row there with room to spare either way.
+        <div className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1 sm:mx-0 sm:px-0 sm:pb-0">
           {topStores.slice(0, 4).map(s => <StoreFeatureCard key={s.storeId} store={s} onClick={onStoreClick} />)}
         </div>
       )}
@@ -355,88 +376,71 @@ export function FeaturedSellersMegaContent({ topStores, onStoreClick }: {
   );
 }
 
-// ── "About Solvexo.store" mega content — featured cards + quick links +
-// app-download promo panel, in the spirit of Alibaba's "About Alibaba.com" tab. ──
-const ABOUT_CARDS: { Icon: LucideIcon; bg: string; title: string; description: string; path: string }[] = [
-  { Icon: Sparkles,    bg: '#F5F0FB', title: 'Why Solvexo',       description: 'One platform for marketplace, downloads, and POS.', path: '/' },
-  { Icon: ShieldCheck, bg: '#EBF7EF', title: 'Buyer Protection',  description: 'Secure payments and easy returns, every order.',    path: '/faq' },
-  { Icon: Store,       bg: '#FBECE4', title: 'Sell on Solvexo',   description: 'Launch your own branded store — no coding.',        path: '/sellers' },
-];
-const ABOUT_QUICK_LINKS = [
-  { label: 'Marketplace',         path: '/marketplace' },
-  { label: 'Education Marketplace', path: '/education' },
-  { label: 'AI Commerce',         path: '/sellers' },
-  { label: 'POS',                 path: '/sellers' },
-  { label: 'Help Center',         path: '/faq' },
-  { label: 'Contact',             path: '/contact-us' },
+// ── "About Solvexo.store" mega content — plain, borderless image+text
+// columns (no card box/border/shadow around each item) + an app/QR column
+// after a thin divider, matching Alibaba's actual "About Alibaba.com" tab
+// layout exactly (verified against a screenshot of it) rather than the
+// boxed-card look this had before. Real photos, object-cover on a fixed-
+// height crop so any source aspect ratio lands the same, subtle zoom on
+// hover. Single row always (no wrap): `flex-1` lets the 3 photo columns
+// grow evenly when there's room, `shrink-0`+`min-w` stops them shrinking
+// below legible size on a narrow screen instead — the row scrolls sideways
+// there rather than wrapping. ──
+const ABOUT_CARDS: { image: string; title: string; description: string; path: string }[] = [
+  { image: aboutImg1, title: 'Why Solvexo',      description: 'One platform for marketplace, downloads, and POS.', path: '/' },
+  { image: aboutImg2, title: 'Buyer Protection', description: 'Secure payments and easy returns, every order.',    path: '/faq' },
+  { image: aboutImg3, title: 'Sell on Solvexo',  description: 'Launch your own branded store — no coding.',        path: '/sellers' },
 ];
 
 function AboutMegaContent({ onNavigate }: { onNavigate: (path: string) => void }) {
   return (
-    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-      {/* Featured cards */}
-      <div className="flex-1">
-        <MegaSectionLabel>Discover Solvexo</MegaSectionLabel>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {ABOUT_CARDS.map(({ Icon, bg, title, description, path }) => (
-            <button
-              key={title}
-              onClick={() => onNavigate(path)}
-              className="relative flex flex-col items-start text-left bg-white rounded-2xl border border-bone overflow-hidden cursor-pointer group p-4 transition-all duration-300 hover:-translate-y-[3px] hover:border-brand-orange/25 hover:shadow-raised focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+    <div className="flex items-start gap-4 md:gap-6 overflow-x-auto scrollbar-hide pb-1">
+      {ABOUT_CARDS.map(({ image, title, description, path }, i) => (
+        <button
+          key={title}
+          onClick={() => onNavigate(path)}
+          style={{ animationDelay: `${i * 60}ms` }}
+          className="dash-section-enter group flex-1 min-w-[150px] shrink-0 text-left bg-transparent border-none p-0 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+        >
+          <div className="relative h-[92px] overflow-hidden rounded-lg mb-3">
+            <img
+              src={image}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.08]"
+            />
+          </div>
+          <p className="text-[13px] font-bold text-carbon leading-snug mb-1 group-hover:text-brand-orange transition-colors">{title}</p>
+          <p className="text-[11px] text-slate leading-[1.5]">{description}</p>
+        </button>
+      ))}
+
+      {/* Thin divider before the app column — same as Alibaba's reference. */}
+      <div className="w-px self-stretch bg-bone shrink-0" />
+
+      <div style={{ animationDelay: `${3 * 60}ms` }} className="dash-section-enter w-[220px] shrink-0">
+        <p className="text-[13px] font-bold text-brand-orange leading-snug mb-1">Get the Solvexo app</p>
+        <p className="text-[11px] text-slate leading-[1.5] mb-3">Browse products, chat with sellers, and manage and pay for your orders with the Solvexo app — anytime, anywhere.</p>
+        <div className="flex items-center gap-3">
+          <div className="shrink-0 rounded-md bg-white p-1 border border-bone">
+            <RealAppQr size={64} />
+          </div>
+          <div className="flex flex-col gap-[6px]">
+            <a
+              href={GOOGLE_PLAY_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-[6px] rounded-[6px] bg-carbon px-[10px] py-[6px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
             >
-              {/* Sweep-in top accent — same hover language as RailCard/StoreFeatureCard */}
-              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
-
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center mb-3 ring-1 ring-black/[0.04] transition-transform duration-200 group-hover:scale-[1.06]"
-                style={{ background: bg }}
-              >
-                <Icon size={20} className="text-brand-orange" strokeWidth={1.75} />
-              </div>
-
-              <div className="flex items-center gap-[5px] mb-1">
-                <p className="text-[13px] font-bold text-carbon leading-snug group-hover:text-brand-orange transition-colors">{title}</p>
-                <ChevronRight size={13} className="text-brand-orange opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 shrink-0" />
-              </div>
-              <p className="text-[11px] text-slate leading-[1.45]">{description}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Quick links */}
-      <div className="w-full lg:w-[180px] shrink-0 border-t lg:border-t-0 lg:border-l border-bone pt-5 lg:pt-0 pl-0 lg:pl-8">
-        <MegaSectionLabel>Quick Links</MegaSectionLabel>
-        <div className="flex flex-col gap-[2px] -mx-2">
-          {ABOUT_QUICK_LINKS.map(item => (
-            <button
-              key={item.label}
-              onClick={() => onNavigate(item.path)}
-              className="group flex items-center justify-between text-left text-[12.5px] text-charcoal bg-transparent border-none cursor-pointer rounded-lg px-2 py-[7px] hover:bg-cream hover:text-brand-orange transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-            >
-              {item.label}
-              <ChevronRight size={12} className="text-slate/40 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-brand-orange transition-all duration-200" />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* App download panel — orange/white gradient, dark-on-light badges since
-          this panel sits on a light surface (unlike AppDownloadBanner's dark one). */}
-      <div className="w-full lg:w-[210px] shrink-0 rounded-2xl bg-gradient-to-br from-brand-pale-orange to-white border border-bone p-5 flex flex-col items-center text-center">
-        <p className="text-[12.5px] font-bold text-carbon mb-1">Get the Solvexo app</p>
-        <p className="text-[11px] text-charcoal/70 leading-[1.5] mb-4">Shop faster, track orders, and get instant deal alerts.</p>
-        <QrGlyph size={64} />
-        <p className="text-[10px] text-charcoal/60 mt-2 mb-4">Scan to download</p>
-        <div className="flex flex-col gap-[6px] w-full">
-          <span className="flex items-center justify-center gap-[7px] rounded-[9px] bg-carbon px-3.5 py-[9px]">
-            <Apple size={14} className="text-white shrink-0" />
-            <span className="text-[11.5px] font-semibold text-white leading-none">App Store</span>
-          </span>
-          <span className="flex items-center justify-center gap-[7px] rounded-[9px] bg-carbon px-3.5 py-[9px]">
-            <Play size={12} className="text-white shrink-0 fill-white" />
-            <span className="text-[11.5px] font-semibold text-white leading-none">Google Play</span>
-          </span>
+              <GooglePlayGlyph size={11} />
+              <span className="text-[10.5px] font-semibold text-white leading-none">Google Play</span>
+            </a>
+            <span className="flex items-center gap-[6px] rounded-[6px] bg-carbon px-[10px] py-[6px]">
+              <AppleGlyph size={12} />
+              <span className="text-[10.5px] font-semibold text-white leading-none">App Store</span>
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -471,7 +475,7 @@ const DEFAULT_EXTRA_TRIGGERS: MegaMenuExtraTrigger[] = [
 
 export function MegaMenuBar({
   categories = [], topPicks, bestRated = [], flashDeals, topStores, countdown,
-  onShopCategory = () => {}, onProductClick, onStoreClick, onTrendingTerm = () => {}, onNavigate,
+  onShopCategory = () => {}, onProductClick, onStoreClick, onNavigate,
   categoriesLabel = 'All Categories', categoriesContent, extraTriggers = DEFAULT_EXTRA_TRIGGERS, compact = false,
 }: {
   categories?: CategoryNode[];
@@ -507,6 +511,13 @@ export function MegaMenuBar({
 }) {
   const [active, setActive] = useState<MegaMenuKey | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Switching straight from one open panel to another swapped content
+  // instantly mid-transition — the shared panel never actually left the
+  // screen, it just snapped to the new tab's content. Alibaba's own mega
+  // menu instead closes the current panel first, then opens the new one,
+  // so this holds the requested key and fires it only after the close
+  // transition (200ms, matches the panel's own `duration-200`) has played.
+  const switchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Same scroll-direction signal BuyerNavbar uses for its own mobile
   // hide-on-scroll-down/show-on-scroll-up — so when this bar sits directly
   // under that navbar, the two hide and reappear together as one unit
@@ -514,8 +525,31 @@ export function MegaMenuBar({
   const { hidden } = useCompactOnScroll();
 
   const clearCloseTimer = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } };
-  const scheduleClose = () => { clearCloseTimer(); closeTimer.current = setTimeout(() => setActive(null), 150); };
-  const openMenu = (key: MegaMenuKey) => { clearCloseTimer(); setActive(key); };
+  const clearSwitchTimer = () => { if (switchTimer.current) { clearTimeout(switchTimer.current); switchTimer.current = null; } };
+  const scheduleClose = () => {
+    clearCloseTimer();
+    clearSwitchTimer();
+    closeTimer.current = setTimeout(() => setActive(null), 150);
+  };
+  const openMenu = (key: MegaMenuKey) => {
+    clearCloseTimer();
+    // Always cancel any switch already in flight first — otherwise a stale
+    // timer from a *previous* hover target could still fire later and
+    // stomp on whatever this fresh call is about to do.
+    clearSwitchTimer();
+    if (active === key) return;
+    if (active === null) { setActive(key); return; }
+    // Something else is already open — close it first (triggers the panel's
+    // own fade/slide-up), then open the newly-hovered one once that's had
+    // time to play, instead of hard-swapping the content underneath it.
+    setActive(null);
+    switchTimer.current = setTimeout(() => setActive(key), 200);
+  };
+  const selectMenu = (key: MegaMenuKey) => {
+    clearCloseTimer();
+    if (active === key) { clearSwitchTimer(); setActive(null); return; }
+    openMenu(key);
+  };
 
   useEffect(() => {
     if (!active) return;
@@ -524,7 +558,7 @@ export function MegaMenuBar({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [active]);
 
-  useEffect(() => () => clearCloseTimer(), []);
+  useEffect(() => () => { clearCloseTimer(); clearSwitchTimer(); }, []);
 
   const triggerCls = (key: MegaMenuKey, extra?: string) => clsx(
     'group relative flex items-center gap-[6px] py-2 text-[13px] font-semibold border-none cursor-pointer whitespace-nowrap transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
@@ -539,36 +573,42 @@ export function MegaMenuBar({
   return (
     <div className="relative" onMouseLeave={scheduleClose}>
       {/* ── Merged navigation row — "All Categories" + Flash Sale/Top Picks/Featured
-         Stores/About triggers (left), Verified Sellers/Verified Stores/Track
-         Order/Help Center/Contact (right, pushed there via `ml-auto` when
-         everything fits). Previously two separate white rows (a "category
-         line" and a "welcome line") that duplicated the same navigational
-         weight — merged into one to remove that redundancy. Below the width
-         where it all fits, the row scrolls horizontally (single line, swipeable
-         — same `scrollbar-hide` chip-row pattern used elsewhere in this app)
-         instead of wrapping onto extra lines — wrapping grew tall enough on
-         narrow screens to cover other fixed UI (e.g. the mobile Filter tab),
-         and it doesn't grow at all now, same as the navbar above it. ── */}
+         Stores/About triggers (left, in their own nowrap+horizontal-scroll
+         sub-row — same `scrollbar-hide` chip-row pattern used elsewhere in
+         this app, and it never wraps/grows tall, same as the navbar above
+         it, so it can't cover other fixed UI like the mobile Filter tab),
+         Verified Sellers/Verified Stores/Track Order/Help Center/Contact
+         (right, pushed there via `ml-auto`, desktop-only). Previously two
+         separate white rows (a "category line" and a "welcome line") that
+         duplicated the same navigational weight — merged into one to remove
+         that redundancy. On a tablet-width screen where the nav row and the
+         utility links together don't fit side by side, the utility links
+         wrap down to their own full-width second line instead of cramming/
+         overlapping the nav row (the outer row is `flex-wrap`; only the
+         nav sub-row is nowrap). ── */}
       <div className={clsx(
         'bg-white border-b border-bone transition-transform duration-200',
         hidden ? '-translate-y-full md:translate-y-0' : 'translate-y-0',
       )}>
         <div className={clsx(
-          'flex flex-nowrap items-center gap-x-4 overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-10',
+          // Outer row wraps as a whole (`flex-wrap`) — but the nav group
+          // (categories + extraTriggers) is wrapped in its own nested
+          // nowrap+horizontal-scroll container just below, so IT never
+          // breaks apart: it either fits on line 1 in full or scrolls
+          // sideways. That leaves the utility link span (below, its own
+          // flex child with `ml-auto`) as the only thing that can drop
+          // onto its own full-width line 2 when the two groups together
+          // don't fit — instead of the old behavior of both cramming/
+          // overlapping on one line.
+          'flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-6 lg:px-10',
           compact ? 'py-[7px]' : 'py-[11px]',
         )}>
-          {/* Every item below is a direct child of this one flex-wrap row —
-             deliberately flat (no intermediate "left group"/"right group"
-             wrapper divs) so `flex-wrap` actually wraps individual buttons
-             onto new lines on a narrow screen. Nesting a second flex row
-             inside a wrap child does NOT make that child's own contents
-             wrap — it just overflows past the viewport edge, which is
-             exactly the bug this flattened structure fixes. */}
+          <div className="flex flex-nowrap items-center gap-x-4 overflow-x-auto scrollbar-hide min-w-0 shrink">
           <button
             aria-haspopup="true"
             aria-expanded={active === 'categories'}
             onMouseEnter={() => openMenu('categories')}
-            onClick={() => setActive(a => a === 'categories' ? null : 'categories')}
+            onClick={() => selectMenu('categories')}
             className={triggerCls('categories', clsx(
               // Mobile: a real chip (rounded, filled), same native-app feel
               // as the rest of this row on a small screen — regardless of
@@ -602,7 +642,7 @@ export function MegaMenuBar({
               aria-haspopup="true"
               aria-expanded={active === item.key}
               onMouseEnter={() => openMenu(item.key)}
-              onClick={() => setActive(a => a === item.key ? null : item.key)}
+              onClick={() => selectMenu(item.key)}
               className={clsx(
                 'group flex items-center whitespace-nowrap shrink-0 border-none cursor-pointer transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                 'gap-[6px] py-[7px] px-[11px] rounded-full text-[12.5px] font-semibold',
@@ -624,10 +664,14 @@ export function MegaMenuBar({
               {item.chevron && <ChevronDown size={compact ? 11 : 12} className={clsx('transition-transform duration-200', active === item.key && 'rotate-180')} />}
             </button>
           ))}
+          </div>
 
           {/* Utility links — desktop only. On mobile this row is already a
               tight, swipeable chip bar (native-app style); cramming these
-              five extra links into it too was the opposite of that look. */}
+              five extra links into it too was the opposite of that look.
+              `ml-auto` keeps it flush right whether it stays on line 1
+              (room permitting) or drops to its own line 2 below the nav
+              group (outer row is `flex-wrap` — see above). */}
           <span className={clsx(
             'hidden md:flex items-center gap-x-4 gap-y-2 flex-wrap text-slate whitespace-nowrap ml-auto',
             compact ? 'text-[11.5px]' : 'text-[12.5px]',
@@ -666,7 +710,12 @@ export function MegaMenuBar({
         <div className="px-4 sm:px-6 lg:px-10 py-6 max-h-[70vh] overflow-y-auto">
           {active === 'categories' && (
             categoriesContent ?? (
-              <CategoriesMegaContent categories={categories} spotlight={topPicks} onShopCategory={onShopCategory} onProductClick={onProductClick} onTrendingTerm={onTrendingTerm} />
+              // Fixed height (unlike the "Categories for you" modal's 520px —
+              // this is a slim hover dropdown, not a full-screen modal) so
+              // Categories/Subcategories each get their own internal scroll
+              // once the list is long, instead of growing the whole bar
+              // downward — the Alibaba mega-menu pattern.
+              <CategoriesMegaContent categories={categories} onShopCategory={onShopCategory} fixedHeight={380} />
             )
           )}
           {active === 'flash-sale' && (

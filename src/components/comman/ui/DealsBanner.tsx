@@ -212,14 +212,23 @@ export function DealsBanner({ className, storeType, compact = false, label = fal
       <div className={clsx('relative w-full h-full transition-transform duration-200 hover:-translate-y-[2px]', compact && (label ? 'overflow-hidden' : 'overflow-hidden rounded-[20px]'))}>
         {compact ? (
           label ? (
-            /* Compact + label: an orange-to-charcoal gradient surface (not
-               true black — `charcoal`, not `carbon` — reads as warm/modern
-               rather than heavy) — same family as the dark/solid-orange
-               treatment used elsewhere in this file, just its own gradient.
-               No rounding here (unlike every other variant) — this card is
-               meant to sit full-width/edge-to-edge against the page, not
-               read as a floating rounded card. */
-            <div className="absolute inset-0 overflow-hidden border border-black/10 bg-gradient-to-r from-brand-orange via-brand-deep-orange via-65% to-charcoal" />
+            /* Compact + label: the exact same light warm gradient (orange →
+               `#e28b63` → `#f3a27a`) the default/non-compact card below
+               already uses — on-theme, no foreign hue — plus the same
+               depth tricks that card uses to keep it from reading as a flat
+               two-tone streak: a soft top-left highlight, and a warm dark
+               blur (`#7a3520`, also lifted from that same card) sitting
+               behind the countdown/CTA column so the white text there stays
+               legible even though the base gradient itself is light. No
+               rounding on the outer layer here (unlike every other variant)
+               — this card is meant to sit full-width/edge-to-edge against
+               the page, not read as a floating rounded card. */
+            <div className="absolute inset-0 overflow-hidden border border-black/10">
+              <div className="gradient-drift absolute inset-0 bg-gradient-to-r from-brand-orange via-[#e28b63] to-[#f3a27a]" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.22),transparent_55%)]" />
+              <div className="pointer-events-none absolute -bottom-10 right-[6%] size-32 rounded-full bg-[#7a3520]/35 blur-3xl" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/25" />
+            </div>
           ) : (
             <div className="absolute inset-0 overflow-hidden rounded-[20px] border border-bone bg-white" />
           )
