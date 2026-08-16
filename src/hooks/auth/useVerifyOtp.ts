@@ -2,6 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiVerifyOtp, AuthContext, TokenStorage } from '@/api/commerce/auth';
 
+type AppRole = 'user' | 'seller' | 'admin';
+
+function getRoleRedirect(role: AppRole): string {
+  if (role === 'seller') return '/onboarding';
+  if (role === 'admin')  return '/admin/dashboard';
+  return '/';
+}
+
 export function useVerifyOtp() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -18,8 +26,7 @@ export function useVerifyOtp() {
       TokenStorage.save(res.data.token.accessToken, res.data.token.refreshToken);
       TokenStorage.saveUser(res.data.user);
       AuthContext.clear();
-      // navigate(getRoleRedirect(ctx.role as AppRole), { replace: true });
-      navigate('/login', { replace: true });
+      navigate(getRoleRedirect(ctx.role as AppRole), { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid or expired code. Please try again.');
     } finally {
