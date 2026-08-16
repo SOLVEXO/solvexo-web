@@ -22,7 +22,7 @@ const SELLER_TYPES: { id: SellerType; Icon: React.ElementType; title: string; de
   { id: 'retailer',      Icon: Store,     title: 'Retailer',         desc: 'Physical goods, handmade products, branded items' },
   { id: 'brand_business', Icon: Briefcase, title: 'Brand / Business', desc: 'Run a full online store with inventory and POS' },
   { id: 'freelancer',    Icon: Monitor,   title: 'Freelancer / Reseller', desc: 'Source and resell products from suppliers' },
-  { id: 'brand',    Icon: Globe,     title: 'Mix of the above', desc: 'I sell across multiple categories and formats' },
+  { id: 'mix',      Icon: Globe,     title: 'Mix of the above', desc: 'I sell across multiple categories and formats' },
 ];
 
 const PRODUCT_TYPES: { id: ProductType; Icon: React.ElementType; title: string; desc: string }[] = [
@@ -277,7 +277,7 @@ function Step3({ form, setForm, onNext, onBack, loading, error }: {
               {form.productTypes.includes('physical_products') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Inventory Manager</span>}
               {form.productTypes.includes('digital_downloads') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Digital Delivery</span>}
               {form.productTypes.includes('in_person_pos')     && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">POS Register</span>}
-              {form.productTypes.includes('services')          && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Bookings</span>}
+              {form.productTypes.includes('services_bookings') && <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Bookings</span>}
               <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">AI Studio</span>
               <span className="bg-success-bg text-success text-[11px] font-semibold px-[9px] py-[3px] rounded-[20px]">Marketplace</span>
             </div>
