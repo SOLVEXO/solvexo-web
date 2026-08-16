@@ -19,9 +19,9 @@ const STEPS = ['Store Info', 'Seller Type', 'What You Sell', 'Go Live'];
 const SELLER_TYPES: { id: SellerType; Icon: React.ElementType; title: string; desc: string }[] = [
   { id: 'creator',  Icon: Palette,   title: 'Creator',          desc: 'Sell digital art, templates, fonts, music, presets' },
   { id: 'creator',  Icon: BookOpen,  title: 'Educator',         desc: 'Worksheets, lesson plans, curriculum, assessments' },
-  { id: 'retailer', Icon: Store,     title: 'Retailer',         desc: 'Physical goods, handmade products, branded items' },
-  { id: 'brand',    Icon: Briefcase, title: 'Brand / Business', desc: 'Run a full online store with inventory and POS' },
-  { id: 'reseller', Icon: Monitor,   title: 'Reseller',         desc: 'Source and resell products from suppliers' },
+  { id: 'retailer',      Icon: Store,     title: 'Retailer',         desc: 'Physical goods, handmade products, branded items' },
+  { id: 'brand_business', Icon: Briefcase, title: 'Brand / Business', desc: 'Run a full online store with inventory and POS' },
+  { id: 'freelancer',    Icon: Monitor,   title: 'Freelancer / Reseller', desc: 'Source and resell products from suppliers' },
   { id: 'brand',    Icon: Globe,     title: 'Mix of the above', desc: 'I sell across multiple categories and formats' },
 ];
 
@@ -29,8 +29,8 @@ const PRODUCT_TYPES: { id: ProductType; Icon: React.ElementType; title: string; 
   { id: 'physical_products', Icon: Package,           title: 'Physical Products',     desc: 'Ship items to customers' },
   { id: 'digital_downloads', Icon: Download,          title: 'Digital Downloads',     desc: 'PDFs, files, audio, video' },
   { id: 'digital_downloads', Icon: BookOpen,          title: 'Educational Resources', desc: 'Worksheets, lesson plans' },
-  { id: 'services',          Icon: Calendar,          title: 'Services / Bookings',   desc: 'Appointments and packages' },
-  { id: 'services',          Icon: Repeat,            title: 'Subscriptions',         desc: 'Recurring membership access' },
+  { id: 'services_bookings', Icon: Calendar,          title: 'Services / Bookings',   desc: 'Appointments and packages' },
+  { id: 'subscriptions',     Icon: Repeat,            title: 'Subscriptions',         desc: 'Recurring membership access' },
   { id: 'in_person_pos',     Icon: MonitorSmartphone, title: 'In-Person / POS',       desc: 'Sell at a physical location' },
 ];
 
