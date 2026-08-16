@@ -27,7 +27,7 @@ export const ENDPOINTS = {
   PRODUCT: {
     CREATE_PHYSICAL: '/api/products/add-physical-product',
     CREATE_DIGITAL: '/api/products/add-digital-product',
-    EDIT_PHYSICAL: (id: string) => `/api/products/edit-product${id}`,
+    EDIT_PHYSICAL: (id: string) => `/api/products/edit-product/${id}`,
     EDIT_DIGITAL: (id: string) => `/api/products/edit-product/${id}`,
     GET_MY_ALL_PRODUCT: (id: string) => `/api/inventory/getStoreInventory/${id}`,
     GET_MY_PRODUCT_BY_ID: (id: string) => `/api/products/get-my-product/${id}`,
@@ -58,10 +58,10 @@ export const ENDPOINTS = {
 
   // ── ADDRESS ────────────────────────────────────────────────────────────────
   ADDRESS: {
-    ADD: '/address/add-address',
-    GET_ALL: '/address/getMyAddresses',
-    GET_DEFAULT: '/address/getDefaultAddress',
-    UPDATE: '/address/update-address',
+    ADD: '/api/address/add-address',
+    GET_ALL: '/api/address/getMyAddresses',
+    GET_DEFAULT: '/api/address/getDefaultAddress',
+    UPDATE: '/api/address/update-address',
   },
 
   SHIPPING: {
