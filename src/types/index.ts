@@ -20,7 +20,7 @@ export interface AuthState {
 }
 
 // ── Seller ────────────────────────────────────────────────────────────────────
-export type SellerType = 'creator' | 'educator' | 'retailer' | 'brand' | 'freelancer' | 'multiple';
+export type SellerType = 'creator' | 'educator' | 'retailer' | 'brand_business' | 'freelancer' | 'mix';
 export type PlanName = 'Starter' | 'Professional' | 'Business' | 'Enterprise';
 
 export interface Store {
@@ -41,7 +41,7 @@ export interface Store {
 }
 
 // ── Product ───────────────────────────────────────────────────────────────────
-export type ProductType = 'physical' | 'digital' | 'educational' | 'subscription';
+export type ProductType = 'physical_products' | 'digital_downloads' | 'educational_resources' | 'services_bookings' | 'subscriptions' | 'in_person_pos';
 export type ProductStatus = 'Active' | 'Draft' | 'Unpublished' | 'Archived';
 
 export interface Product {
