@@ -5,13 +5,16 @@ import { apiUpdateStore, type ProductType } from '@/api/commerce/store';
 import { ImageUpload } from '@/components/comman/ui';
 
 const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
-  physical_products: 'Physical Products',
-  digital_downloads: 'Digital Downloads',
-  services:          'Services',
-  in_person_pos:     'In-Person / POS',
+  physical_products:    'Physical Products',
+  digital_downloads:    'Digital Downloads',
+  educational_resources:'Educational Resources',
+  services_bookings:    'Services / Bookings',
+  subscriptions:        'Subscriptions',
+  in_person_pos:        'In-Person / POS',
 };
 const ALL_PRODUCT_TYPES: ProductType[] = [
-  'physical_products', 'digital_downloads', 'services', 'in_person_pos',
+  'physical_products', 'digital_downloads', 'educational_resources',
+  'services_bookings', 'subscriptions', 'in_person_pos',
 ];
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
