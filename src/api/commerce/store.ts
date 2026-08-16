@@ -1,8 +1,8 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
 
-export type SellerType  = 'creator' | 'reseller' | 'brand' | 'retailer';
-export type ProductType = 'physical_products' | 'digital_downloads' | 'services' | 'in_person_pos';
+export type SellerType  = 'creator' | 'educator' | 'retailer' | 'brand_business' | 'freelancer' | 'mix';
+export type ProductType = 'physical_products' | 'digital_downloads' | 'educational_resources' | 'services_bookings' | 'subscriptions' | 'in_person_pos';
 
 export interface CreateStorePayload {
   name:         string;
