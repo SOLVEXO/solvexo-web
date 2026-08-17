@@ -1,7 +1,7 @@
 name: Deploy solvexo-web
 on:
   push:
-    branches: [staging]
+    branches: [main, staging]
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,11 +16,11 @@ jobs:
           script: |
             cd /home/deploy/apps/solvexo-web
             git fetch origin
-            git reset --hard origin/main
+            git reset --hard origin/${{ github.ref_name }}
             printf 'VITE_API_URL=https://staging.solvexo.store\n' > .env
             npm ci
             npm run build
             pm2 delete solvexo-web || true
             pm2 start serve --name "solvexo-web" -- -s /home/deploy/apps/solvexo-web/dist -l 3000
             pm2 save
-            echo "solvexo-web deployed at $(date)"
+            echo "solvexo-web deployed (${{ github.ref_name }}) at $(date)"
