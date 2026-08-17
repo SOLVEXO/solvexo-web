@@ -346,8 +346,6 @@ export const ENDPOINTS = {
   PRODUCT: {
     CREATE_PHYSICAL: '/api/products/add-physical-product',
     CREATE_DIGITAL: '/api/products/add-digital-product',
-    EDIT_PHYSICAL: (id: string) => `/api/products/edit-product/${id}`,
-    EDIT_DIGITAL: (id: string) => `/api/products/edit-product/${id}`,
     EDIT_PRODUCT: '/api/products/edit-product',
     DELETE_PRODUCT: (id: string) => `/api/products/delete-product/${id}`,
     GET_MY_ALL_PRODUCT: (id: string) => `/api/inventory/getStoreInventory/${id}`,
@@ -423,13 +421,9 @@ export const ENDPOINTS = {
     GET_ALL: '/api/address/getMyAddresses',
     GET_DEFAULT: '/api/address/getDefaultAddress',
     UPDATE: '/api/address/update-address',
-    ADD: '/address/add-address',
-    GET_ALL: '/address/getMyAddresses',
-    GET_DEFAULT: '/address/getDefaultAddress',
-    UPDATE: '/address/update-address',
-    GET_BY_ID: (addressId: string) => `/address/get-address-by-id/${addressId}`,
-    SET_DEFAULT: (addressId: string) => `/address/setDefaultAddress/${addressId}`,
-    DELETE: (addressId: string) => `/address/delete-address/${addressId}`,
+    GET_BY_ID: (addressId: string) => `/api/address/get-address-by-id/${addressId}`,
+    SET_DEFAULT: (addressId: string) => `/api/address/setDefaultAddress/${addressId}`,
+    DELETE: (addressId: string) => `/api/address/delete-address/${addressId}`,
   },
 
   SHIPPING: {

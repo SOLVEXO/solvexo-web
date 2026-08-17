@@ -1,5 +1,3 @@
-import { type ReactNode, useState, useRef, useEffect, createContext, useContext } from 'react';
-import { TokenStorage } from '@/api/commerce/auth';
 import { type ReactNode, useState, useRef, useEffect } from 'react';
 import { ActiveStoreProvider, useActiveStore } from '@/contexts/ActiveStoreContext';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -517,18 +515,6 @@ export function SellerPageHeader({ title, subtitle, actions }: SellerPageHeaderP
 
 // ── Layout ────────────────────────────────────────────────────────────────────
 export function SellerLayout() {
-  const navigate = useNavigate();
-
-  // ── Auth guard ──────────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!TokenStorage.isLoggedIn()) {
-      navigate('/login?redirect=/seller/dashboard', { replace: true });
-    }
-  }, [navigate]);
-
-  if (!TokenStorage.isLoggedIn()) return null;
-
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const { pathname: currentPath } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const toggle = () => setSidebarOpen(o => !o);

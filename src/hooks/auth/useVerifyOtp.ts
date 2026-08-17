@@ -3,14 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { apiVerifyOtp, AuthContext, TokenStorage, LastRolePreference, getRoleRedirect, type AppRole } from '@/api/services/auth';
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 
-type AppRole = 'user' | 'seller' | 'admin';
-
-function getRoleRedirect(role: AppRole): string {
-  if (role === 'seller') return '/onboarding';
-  if (role === 'admin')  return '/admin/dashboard';
-  return '/';
-}
-
 export function useVerifyOtp() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -37,7 +29,6 @@ export function useVerifyOtp() {
       TokenStorage.saveUser({ ...res.data.user, role });
       LastRolePreference.set(role);
       AuthContext.clear();
-      navigate(getRoleRedirect(ctx.role as AppRole), { replace: true });
       // Inspect the seller's REAL store state instead of assuming — this
       // path runs right after fresh registration (an already-verified
       // account is rejected earlier by the backend), so a seller here

@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { TokenStorage } from '@/api/commerce/auth';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
@@ -482,24 +480,6 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
 }
 
 export function AdminLayout() {
-  const navigate = useNavigate();
-
-  // ── Auth + role guard ───────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!TokenStorage.isLoggedIn()) {
-      navigate('/admin/login', { replace: true });
-      return;
-    }
-    const user = TokenStorage.getUser<{ role: string }>();
-    if (user?.role !== 'admin') {
-      navigate('/login', { replace: true });
-    }
-  }, [navigate]);
-
-  const user = TokenStorage.getUser<{ role: string }>();
-  if (!TokenStorage.isLoggedIn() || user?.role !== 'admin') return null;
-
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const { pathname: currentPath } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const toggle = () => setSidebarOpen(o => !o);

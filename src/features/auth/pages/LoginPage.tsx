@@ -233,28 +233,6 @@ export function LoginPage() {
             className="mb-3 lg:mb-4"
           />
 
-        {/* Social — coming soon */}
-        <div className="flex gap-[10px] mb-6">
-          {SOCIAL.map(({ Icon, label, color }) => (
-            <button key={label} disabled
-              title="Coming soon"
-              className="flex-1 flex items-center justify-center gap-2 px-2 py-[10px] rounded-lg text-[13px] font-medium bg-white border border-bone text-slate opacity-50 cursor-not-allowed">
-              <Icon size={16} style={{ color }} />
-              {label}
-            </button>
-          ))}
-        </div>
-        <p className="text-center text-[11px] text-slate mb-2">Social login coming soon</p>
-
-        <p className="text-center text-[12px] text-slate mt-5">
-          Don't have an account?{' '}
-          <button onClick={() => navigate('/register')}
-            className="text-brand-orange font-semibold text-[12px] bg-transparent border-none cursor-pointer">
-            Register
-          </button>
-        </p>
-      </div>
-    </div>
           {/* Covers the "account doesn't exist" case without a real
              pre-check — a failed sign-in still lands right next to this. */}
           <p className="text-center text-[12px] text-slate">
