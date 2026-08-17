@@ -370,7 +370,7 @@ export function Homepage() {
           <div className="auth-float-slow absolute w-[180px] h-[180px] sm:w-[240px] sm:h-[240px] rounded-full -bottom-16 right-[30%] bg-[radial-gradient(circle,var(--color-accent-violet)_0%,transparent_70%)] opacity-[0.12] blur-3xl" />
         </div>
 
-        <div className="relative z-[1] px-4 sm:px-6 lg:px-12 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-18 lg:pb-24 flex items-center justify-between gap-10">
+        <div className="relative z-[1] px-4 sm:px-6 lg:px-12 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-18 lg:pb-24 flex flex-col lg:flex-row items-center justify-between gap-10">
           <div className="max-w-[560px]">
 
             {/* Badge */}
@@ -439,17 +439,19 @@ export function Homepage() {
           </div>
 
           {/* Hero visual — single pre-composed graphic (devices + real
-             product cutouts), desktop only, fills the hero's right-side
-             negative space. */}
-          <div className="hidden lg:block relative w-[700px] shrink-0">
+             product cutouts). Scales with the viewport: capped/centered
+             on mobile & tablet (stacked below the text), grows with the
+             available row space from lg up so it doesn't stay pinned at
+             a fixed size on large/ultra-wide screens. */}
+          <div className="relative w-full max-w-[420px] sm:max-w-[520px] md:max-w-[600px] lg:max-w-[620px] xl:max-w-[760px] 2xl:max-w-[860px] lg:flex-1 shrink-0 mx-auto lg:mx-0">
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-[340px] h-[340px] rounded-full bg-[radial-gradient(circle,var(--color-brand-orange)_0%,transparent_70%)] opacity-[0.22] blur-2xl" />
+              <div className="w-[200px] h-[200px] sm:w-[260px] sm:h-[260px] lg:w-[340px] lg:h-[340px] rounded-full bg-[radial-gradient(circle,var(--color-brand-orange)_0%,transparent_70%)] opacity-[0.22] blur-2xl" />
             </div>
             <img
               src={homepageHero}
               alt="Solvexo marketplace preview"
-              width={2440}
-              height={1636}
+              width={633}
+              height={394}
               className="relative z-[1] w-full h-auto"
             />
           </div>
