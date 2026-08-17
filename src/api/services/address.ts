@@ -14,6 +14,8 @@ export interface Address {
   state:        string;
   city:         string;
   zipCode:      string;
+  latitude:     number | null;
+  longitude:    number | null;
   isDefault:    boolean;
   status:       string;
   isDelete:     boolean;
@@ -30,6 +32,8 @@ export interface AddressPayload {
   state:        string;
   city:         string;
   zipCode:      string;
+  latitude?:    number | null;
+  longitude?:   number | null;
   isDefault?:   boolean;
 }
 

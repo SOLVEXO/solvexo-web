@@ -10,6 +10,7 @@ import {
 } from '@/api/services/address';
 import {
   Table, type TableColumn, ActionMenu, Badge, Card, EmptyState, SkeletonBox, PageHeader, Modal, Button,
+  LocationPickerMap,
 } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -18,6 +19,7 @@ const LABEL_CLS = 'text-[12px] font-medium text-graphite mb-[6px] block';
 const EMPTY_FORM: AddressPayload = {
   label: 'Home', recipientName: '', phoneNumber: '',
   addressLine1: '', addressLine2: '', state: '', city: '', zipCode: '',
+  latitude: null, longitude: null,
   isDefault: false,
 };
 const LABEL_ICON: Record<string, LucideIcon> = { Home, Work: Briefcase, Other: StarIcon };
@@ -37,7 +39,7 @@ function AddressForm({ initial, onSave, onCancel, saving }: {
   initial: AddressPayload; onSave: (d: AddressPayload) => void; onCancel: () => void; saving: boolean;
 }) {
   const [form, setForm] = useState<AddressPayload>(initial);
-  const set = (k: keyof AddressPayload, v: string | boolean) => setForm(p => ({ ...p, [k]: v }));
+  const set = (k: keyof AddressPayload, v: string | boolean | number | null) => setForm(p => ({ ...p, [k]: v }));
 
   return (
     <div className="border-[1.5px] border-brand-orange rounded-[12px] px-5 py-5 bg-[#fffaf7]">
@@ -65,6 +67,13 @@ function AddressForm({ initial, onSave, onCancel, saving }: {
         <AddrField label="City"                      value={form.city}               onChange={v => set('city', v)}           placeholder="e.g. Karachi"     half />
         <AddrField label="State"                     value={form.state}              onChange={v => set('state', v)}          placeholder="e.g. Sindh"       half />
         <AddrField label="Zip Code"                  value={form.zipCode}            onChange={v => set('zipCode', v)}        placeholder="e.g. 75300"       half />
+        <div className="sm:col-span-2">
+          <LocationPickerMap
+            latitude={form.latitude ?? null}
+            longitude={form.longitude ?? null}
+            onChange={(lat, lng) => setForm(p => ({ ...p, latitude: lat, longitude: lng }))}
+          />
+        </div>
         <div className="sm:col-span-2 flex items-center gap-2">
           <input
             type="checkbox" id="addr-default"
@@ -249,7 +258,7 @@ export function Addresses() {
           <div className="px-5 pb-5 pt-4">
             <AddressForm
               initial={editTarget
-                ? { label: editTarget.label, recipientName: editTarget.recipientName, phoneNumber: editTarget.phoneNumber, addressLine1: editTarget.addressLine1, addressLine2: editTarget.addressLine2, state: editTarget.state, city: editTarget.city, zipCode: editTarget.zipCode, isDefault: editTarget.isDefault }
+                ? { label: editTarget.label, recipientName: editTarget.recipientName, phoneNumber: editTarget.phoneNumber, addressLine1: editTarget.addressLine1, addressLine2: editTarget.addressLine2, state: editTarget.state, city: editTarget.city, zipCode: editTarget.zipCode, latitude: editTarget.latitude, longitude: editTarget.longitude, isDefault: editTarget.isDefault }
                 : EMPTY_FORM}
               onSave={handleSave}
               onCancel={goList}
