@@ -52,6 +52,8 @@ export { InfoRow }                           from './InfoRow';
 
 export { Toggle }                            from './Toggle';
 
+export { LocationPickerMap }                 from './LocationPickerMap';
+
 export { Field }                             from './Field';
 
 export { TagInput }                          from './TagInput';
