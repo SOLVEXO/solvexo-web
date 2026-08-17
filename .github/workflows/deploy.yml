@@ -1,7 +1,7 @@
 name: Deploy solvexo-web
 on:
   push:
-    branches: [main]
+    branches: [staging]
 jobs:
   deploy:
     runs-on: ubuntu-latest
