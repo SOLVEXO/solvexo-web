@@ -1,22 +1,23 @@
-import { useState, useEffect } from 'react';
-import { apiGetMyStores, type MyStoreItem } from '@/api/commerce/store';
+import { apiGetMyStores, type MyStoreItem, type MyStoresSummary } from '@/api/services/store';
+import { createSharedResource } from '@/hooks/createSharedResource';
+
+interface MyStoresData {
+  stores:  MyStoreItem[];
+  summary: MyStoresSummary;
+}
+
+const EMPTY_SUMMARY: MyStoresSummary = { storeCount: 0, totalProducts: 0, totalRevenueUSD: 0 };
+
+// Shared across every component that calls useMyStores() — SellerDashboard,
+// SellerStoreList, and ActiveStoreContext all need "my stores" and previously
+// each fired an independent request for the same data on every mount.
+const myStoresResource = createSharedResource<MyStoresData>(() =>
+  apiGetMyStores().then(res => ({ stores: res.data ?? [], summary: res.summary ?? EMPTY_SUMMARY })),
+);
+
+export const invalidateMyStoresCache = myStoresResource.invalidate;
 
 export function useMyStores() {
-  const [stores,  setStores]  = useState<MyStoreItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
-
-  useEffect(() => {
-    setLoading(true);
-    apiGetMyStores()
-      .then(res  => {
-        // Handle both { success, data } wrapper and direct array
-        const storesArray = (res as { data?: MyStoreItem[] }).data ?? res as unknown as MyStoreItem[];
-        setStores(storesArray);
-      })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load stores.'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { stores, loading, error };
+  const { data, loading, error, refetch } = myStoresResource.useSharedResource();
+  return { stores: data?.stores ?? [], summary: data?.summary ?? EMPTY_SUMMARY, loading, error, refetch };
 }

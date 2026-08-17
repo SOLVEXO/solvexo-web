@@ -1,16 +1,22 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { Outlet, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, Bell, ChevronLeft, Monitor, Store,
-  ClipboardList, Megaphone, Star, Plug, Activity, Search, Wallet,
-  Truck, MessageSquare,
-  PanelLeftClose, PanelLeftOpen,
+  Settings, Sparkles, ChevronLeft, ChevronRight, Monitor, Store,
+  ClipboardList, Megaphone, Star, Plug, Search, Wallet,
+  Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
+  PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, ShieldCheck, Lock,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
-import { apiGetStoreById, type StoreData } from '@/api/commerce/store';
+import { apiGetStoreById, type StoreData } from '@/api/services/store';
+import { apiGetStorePlatformPlan, type StorePlatformSubscription } from '@/api/services/platformPlans';
+import { useCommandPalette } from '@/hooks/useCommandPalette';
+import { useLogout } from '@/hooks/auth/useLogout';
+import { NotificationBell, AnnouncementBanner, Modal, Button } from '@/components/comman/ui';
+import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
 interface StoreWorkspaceValue {
@@ -29,61 +35,249 @@ export function useStoreWorkspace(): StoreWorkspaceValue {
   return ctx;
 }
 
-// ── Sidebar toggle context (for StorePageHeader on mobile) ────────────────────
-const StoreSidebarCtx = createContext<{ toggle: () => void }>({ toggle: () => {} });
-
 // ── Sidebar Nav ───────────────────────────────────────────────────────────────
-interface NavItem { id: string; Icon: LucideIcon; label: string; path: string }
+export interface NavItem { id: string; Icon: LucideIcon; label: string; path: string }
 
-const NAV: { group: string; items: NavItem[] }[] = [
+export const NAV: { group: string; items: NavItem[] }[] = [
   {
-    group: 'Store',
+    group: 'Overview',
     items: [
-      { id: 'dashboard',     Icon: LayoutDashboard, label: 'Dashboard',     path: 'dashboard'    },
-      { id: 'orders',        Icon: Package,         label: 'Orders',        path: 'orders'       },
-      { id: 'products',      Icon: ShoppingBag,     label: 'Products',      path: 'products'     },
-      { id: 'customers',     Icon: Users,           label: 'Customers',     path: 'returns'      },
-      { id: 'pos',           Icon: Monitor,         label: 'POS Register',  path: 'pos'          },
-      { id: 'store-builder', Icon: Store,           label: 'Store Builder', path: 'storebuilder' },
+      { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', path: 'dashboard' },
+      { id: 'analytics', Icon: BarChart2,       label: 'Analytics', path: 'analytics' },
     ],
   },
   {
-    group: 'Analytics',
+    group: 'Sales',
     items: [
-      { id: 'analytics', Icon: BarChart2, label: 'Analytics', path: 'analytics' },
-      { id: 'seo',        Icon: Search,   label: 'SEO',        path: 'seo'       },
-      { id: 'ai',         Icon: Sparkles, label: 'AI Studio',  path: 'ai/studio' },
+      { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders'  },
+      { id: 'returns',  Icon: Undo2,    label: 'Returns',       path: 'returns' },
+      { id: 'pos',      Icon: Monitor,  label: 'POS Register',  path: 'pos'     },
+      { id: 'shipping', Icon: Truck,    label: 'Shipping',      path: 'shipping' },
     ],
   },
   {
-    group: 'Operations',
+    group: 'Catalog',
     items: [
-      { id: 'reviews',      Icon: Star,          label: 'Reviews',      path: 'reviews'      },
-      { id: 'finance',      Icon: Wallet,        label: 'Finance',      path: 'finance'      },
-      { id: 'inventory',    Icon: ClipboardList, label: 'Inventory',    path: 'inventory'    },
-      { id: 'marketing',    Icon: Megaphone,     label: 'Marketing',    path: 'marketing'    },
-      { id: 'loyalty',      Icon: Star,          label: 'Loyalty',      path: 'loyalty'      },
-      { id: 'integrations', Icon: Plug,           label: 'Integrations', path: 'integrations' },
-      { id: 'activity',     Icon: Activity,       label: 'Activity Log', path: 'activity'     },
-      { id: 'shipping',     Icon: Truck,          label: 'Shipping',     path: 'shipping'     },
-      { id: 'messages',     Icon: MessageSquare,  label: 'Messages',     path: 'messages'     },
+      { id: 'products',      Icon: ShoppingBag,   label: 'Products',      path: 'products'     },
+      { id: 'inventory',     Icon: ClipboardList, label: 'Inventory',     path: 'inventory'    },
+      { id: 'categories',    Icon: FolderTree,    label: 'Categories',    path: 'categories'   },
+      { id: 'store-builder', Icon: Store,         label: 'Store Builder', path: 'storebuilder' },
     ],
   },
   {
-    group: 'Manage',
+    group: 'Customers',
     items: [
-      { id: 'settings', Icon: Settings, label: 'Settings', path: 'settings' },
+      { id: 'customers', Icon: Users,          label: 'Customers', path: 'customer/list' },
+      { id: 'reviews',   Icon: Star,           label: 'Reviews',   path: 'reviews'        },
+      { id: 'messages',  Icon: MessageSquare,  label: 'Messages',  path: 'messages'       },
+    ],
+  },
+  {
+    group: 'Growth',
+    items: [
+      { id: 'marketing',     Icon: Megaphone, label: 'Marketing',     path: 'marketing'     },
+      { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty'       },
+      { id: 'subscriptions', Icon: RefreshCw, label: 'Subscriptions', path: 'subscriptions' },
+      { id: 'seo',           Icon: Search,    label: 'SEO',           path: 'seo'           },
+      { id: 'ai',            Icon: Sparkles,  label: 'AI Studio',     path: 'ai/studio'     },
+    ],
+  },
+  {
+    group: 'Finance',
+    items: [
+      { id: 'finance',      Icon: Wallet,     label: 'Finance',        path: 'finance'      },
+      { id: 'plan-billing', Icon: CreditCard, label: 'Plan & Billing', path: 'plan-billing' },
+    ],
+  },
+  {
+    group: 'Settings',
+    items: [
+      { id: 'integrations',  Icon: Plug,        label: 'Integrations',          path: 'integrations'  },
+      { id: 'verification',  Icon: ShieldCheck, label: 'Business Verification', path: 'verification'  },
+      { id: 'settings',      Icon: Settings,    label: 'Settings',              path: 'settings'      },
     ],
   },
 ];
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
-interface StoreSidebarProps { open: boolean; onToggle: () => void; onClose: () => void; }
+// Available before the store's business verification is approved — every
+// other nav item is locked (see spec: seller workspace must stay restricted
+// until `verificationStatus === 'verified'`, not just gated on plan tools).
+export const ALLOWED_PRE_VERIFICATION = new Set(['dashboard', 'verification', 'settings']);
 
-function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
+export function isItemLocked(item: NavItem, verified: boolean, posEnabled: boolean): boolean {
+  if (item.id === 'pos' && !posEnabled) return true;
+  return !verified && !ALLOWED_PRE_VERIFICATION.has(item.id);
+}
+
+// ── Shared grouped nav menu — the mobile "account hub" content for a store
+// workspace, reused wherever the full list of store sections needs to be
+// browsable (currently StoreSettings' mobile menu) — one source of truth
+// instead of a duplicate copy per page, per the project's "never create
+// duplicate logic" rule. `excludeGroups` always drops 'Overview' (Dashboard
+// has its own bottom-nav tab, Analytics is reachable from the dashboard
+// page's own metric cards) plus whatever else the caller already covers
+// some other way (e.g. StoreSettings excludes 'settings' from Settings
+// group since its own General tab already covers that destination).
+export function StoreNavMenu({ storeId, verified, posEnabled, onNavigate, excludeGroups = [], excludeItemIds = [] }: {
+  storeId: string; verified: boolean; posEnabled: boolean; onNavigate?: () => void;
+  excludeGroups?: string[]; excludeItemIds?: string[];
+}) {
+  const navigate = useNavigate();
+  const hiddenGroups = new Set(['Overview', ...excludeGroups]);
+  const hiddenItems = new Set(excludeItemIds);
+  return (
+    <div className="flex flex-col gap-4">
+      {NAV.filter(section => !hiddenGroups.has(section.group))
+        .map(section => ({ ...section, items: section.items.filter(item => !hiddenItems.has(item.id)) }))
+        .filter(section => section.items.length > 0)
+        .map(section => (
+        <div key={section.group} className="bg-white border border-bone rounded-2xl overflow-hidden">
+          <div className="px-5 pt-4 pb-2">
+            <p className="text-[10.5px] font-bold text-slate uppercase tracking-[0.06em]">{section.group}</p>
+          </div>
+          <div className="divide-y divide-[#f3f2ec]">
+            {section.items.map(item => {
+              const locked = isItemLocked(item, verified, posEnabled);
+              const isLockedByVerification = locked && item.id !== 'pos';
+              const go = () => {
+                onNavigate?.();
+                if (isLockedByVerification) { navigate(`/seller/store/${storeId}/verification`); return; }
+                if (locked) return;
+                navigate(`/seller/store/${storeId}/${item.path}`);
+              };
+              return (
+                <button
+                  key={item.id}
+                  onClick={go}
+                  className="w-full flex items-center gap-3 px-5 py-[13px] bg-transparent border-0 cursor-pointer text-left hover:bg-cream transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0">
+                    {isLockedByVerification ? <Lock size={15} className="text-brand-orange" /> : <item.Icon size={15} className="text-brand-orange" />}
+                  </div>
+                  <span className={clsx('flex-1 text-[13px] font-medium', locked ? 'text-slate' : 'text-charcoal')}>{item.label}</span>
+                  {isLockedByVerification ? (
+                    <span className="text-[9px] font-bold uppercase tracking-[0.03em] px-[7px] py-[2px] rounded-full bg-brand-orange text-white shrink-0">Locked</span>
+                  ) : (
+                    <ChevronRight size={15} className="text-slate shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Mobile bottom tab bar — real navigation for the most frequent
+// destinations, same icon-only pattern as SellerBottomNav. The last tab
+// ("Settings") is where every OTHER section lives (Sales/Catalog/Customers/
+// Growth/Finance, plus Integrations/Business Verification) via StoreSettings'
+// own mobile menu — Dashboard itself stays a pure metrics page, it doesn't
+// double as a menu of everything.
+const STORE_TABS: { id: string; Icon: LucideIcon; label: string; path: string }[] = [
+  { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', path: 'dashboard' },
+  { id: 'orders',    Icon: Package,         label: 'Orders',    path: 'orders'    },
+  { id: 'products',  Icon: ShoppingBag,     label: 'Products',  path: 'products'  },
+  { id: 'messages',  Icon: MessageSquare,   label: 'Messages',  path: 'messages'  },
+  { id: 'settings',  Icon: Settings,        label: 'Settings',  path: 'settings'  },
+];
+
+function StoreBottomNav() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { store, storeId } = useStoreWorkspace();
+  const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
+  const verified   = store?.status === 'active';
+
+  const isActive = (path: string) => pathname === `/seller/store/${storeId}/${path}`;
+
+  const goToTab = (tabId: string, path: string) => {
+    const navItem = NAV.flatMap(s => s.items).find(i => i.id === tabId);
+    const locked = navItem ? isItemLocked(navItem, verified, posEnabled) : false;
+    if (locked) { navigate(`/seller/store/${storeId}/verification`); return; }
+    navigate(`/seller/store/${storeId}/${path}`);
+  };
+
+  return (
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-bone">
+      <div className="flex items-stretch">
+        {STORE_TABS.map(tab => {
+          const active = isActive(tab.path);
+          return (
+            <button
+              key={tab.id}
+              onClick={() => goToTab(tab.id, tab.path)}
+              aria-current={active ? 'page' : undefined}
+              aria-label={tab.label}
+              className="flex-1 flex flex-col items-center justify-center py-[11px] gap-[5px] cursor-pointer bg-transparent border-none"
+            >
+              <tab.Icon
+                size={21}
+                strokeWidth={active ? 2.2 : 1.8}
+                className={clsx('transition-colors duration-150', active ? 'text-brand-orange' : 'text-slate')}
+              />
+              <span className={clsx('w-[16px] h-[3px] rounded-full transition-colors duration-150', active ? 'bg-brand-orange' : 'bg-transparent')} />
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+function buildPaletteItems(
+  navigate: (path: string) => void,
+  storeId: string,
+  posEnabled: boolean,
+  verified: boolean,
+): CommandPaletteItem[] {
+  const result: CommandPaletteItem[] = [];
+  NAV.forEach(section => {
+    section.items.forEach(item => {
+      if (isItemLocked(item, verified, posEnabled)) return; // exclude locked items from search
+      result.push({
+        id:       item.id,
+        label:    item.label,
+        group:    section.group,
+        icon:     item.Icon,
+        onSelect: () => navigate(item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`),
+      });
+    });
+  });
+  return result;
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+// Desktop only now — mobile navigation is the "menu" list on StoreDashboard
+// (mirrors the buyer Account section's redesign: a real native-app menu
+// screen + back-arrow drill-in, not a hamburger-triggered copy of this rail).
+interface StoreSidebarProps { open: boolean; onToggle: () => void; }
+
+function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   const navigate     = useNavigate();
   const { pathname } = useLocation();
   const { store, storeId, loading } = useStoreWorkspace();
+  const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
+  // Gate on `store.status === 'active'`, NOT `verificationStatus === 'verified'`
+  // directly — they're set together by every real approval path (see
+  // AdminMarketplaceService.approveLead), but `status` is also the field a
+  // pre-existing, already-approved store from before verification tracking
+  // existed will have as `'active'` even if its `verificationStatus` was
+  // never backfilled. Gating on the newer field alone would retroactively
+  // lock out real, already-working sellers.
+  const verified   = store?.status === 'active';
+  const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
+  const paletteItems = buildPaletteItems(navigate, storeId, posEnabled, verified);
+  const logout = useLogout();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await logout();
+  };
 
   const isActive = (seg: string) =>
     seg.startsWith('/')
@@ -105,26 +299,27 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
     </button>
   );
 
+  const paletteHint = (
+    <button
+      type="button"
+      onClick={() => setPaletteOpen(true)}
+      title="Search (Ctrl+K)"
+      className={clsx(
+        'flex items-center gap-1 rounded-md border border-dark-active text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer shrink-0',
+        open ? 'px-[7px] py-[3px] text-[10px] font-semibold' : 'size-7 justify-center text-[9px] font-semibold',
+      )}
+    >
+      {open ? '⌘K' : 'K'}
+    </button>
+  );
+
   return (
     <>
-      {/* Mobile backdrop */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={onClose}
-        />
-      )}
-
       <aside className={clsx(
-        'bg-carbon flex flex-col',
-        'transition-all duration-300 ease-in-out',
-        // Mobile: fixed overlay, starts below ReferenceNav (44px)
-        'fixed top-[44px] bottom-0 left-0 z-50 w-[220px]',
-        // Desktop: static inline, full viewport height, width toggles
-        'lg:static lg:z-auto lg:shrink-0 lg:h-[calc(100vh-44px)] lg:top-auto lg:bottom-auto',
-        open
-          ? 'translate-x-0 lg:w-[220px]'
-          : '-translate-x-full lg:translate-x-0 lg:w-[60px]',
+        'hidden lg:flex bg-carbon flex-col shrink-0',
+        'transition-[width] duration-300 ease-in-out',
+        import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen',
+        open ? 'w-[220px]' : 'w-[60px]',
       )}>
 
         {/* Back to stores + toggle */}
@@ -140,6 +335,7 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
               >
                 <ChevronLeft size={14} /> All Stores
               </button>
+              {paletteHint}
               {toggleBtn}
             </>
           ) : (
@@ -151,6 +347,7 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
               >
                 <ChevronLeft size={15} />
               </button>
+              {paletteHint}
               {toggleBtn}
             </>
           )}
@@ -166,7 +363,7 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
                 {loading
                   ? <div className="animate-pulse size-9 bg-charcoal rounded-[9px]" />
                   : store?.logo
-                    ? <img src={store.logo} className="w-full h-full object-cover" alt="" />
+                    ? <img loading="lazy" decoding="async" src={store.logo} className="w-full h-full object-cover" alt="" />
                     : initials}
               </div>
               <div className="flex-1 min-w-0">
@@ -189,7 +386,7 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
         ) : (
           <div className="flex justify-center pt-3 pb-2 shrink-0">
             <div className="size-8 rounded-[8px] shrink-0 bg-brand-orange overflow-hidden flex items-center justify-center text-[11px] font-bold text-white">
-              {loading ? '…' : store?.logo ? <img src={store.logo} className="w-full h-full object-cover" alt="" /> : initials}
+              {loading ? '…' : store?.logo ? <img loading="lazy" decoding="async" src={store.logo} className="w-full h-full object-cover" alt="" /> : initials}
             </div>
           </div>
         )}
@@ -206,28 +403,64 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
               }
               {section.items.map(item => {
                 const active = isActive(item.path);
+                const isLockedPos = item.id === 'pos' && !posEnabled;
+                const isLockedByVerification = !verified && !ALLOWED_PRE_VERIFICATION.has(item.id) && item.id !== 'pos';
+                const locked = isLockedPos || isLockedByVerification;
+                const goToItem = () => {
+                  if (isLockedByVerification) { navigate(`/seller/store/${storeId}/verification`); return; }
+                  if (isLockedPos) return;
+                  navigate(item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`);
+                };
                 return (
                   <div
                     key={item.id}
-                    onClick={() => navigate(item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`)}
+                    role="button"
+                    tabIndex={0}
+                    onClick={goToItem}
+                    onKeyDown={e => { if (!isLockedPos && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); goToItem(); } }}
                     title={!open ? item.label : undefined}
+                    aria-label={locked ? `${item.label} — locked` : item.label}
+                    aria-current={active ? 'page' : undefined}
+                    aria-disabled={isLockedPos || undefined}
                     className={clsx(
                       'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5',
-                      'cursor-pointer transition-colors duration-150',
+                      isLockedPos ? 'cursor-default' : 'cursor-pointer',
+                      'transition-colors duration-150',
                       !open && 'lg:justify-center lg:px-0',
-                      active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1A1917]',
+                      active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1a1917]',
                     )}
                   >
-                    <item.Icon
-                      size={15}
-                      className={clsx('shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')}
-                    />
+                    {isLockedByVerification
+                      ? <Lock size={14} className="shrink-0 text-slate opacity-40" />
+                      : <item.Icon
+                          size={15}
+                          className={clsx(
+                            'shrink-0',
+                            isLockedPos ? 'text-slate opacity-35' : active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55',
+                          )}
+                        />}
                     {open && (
                       <>
-                        <span className={clsx('text-[13px] flex-1', active ? 'font-semibold text-white' : 'font-normal text-slate')}>
+                        <span className={clsx(
+                          'text-[13px] flex-1',
+                          locked ? 'font-normal text-slate opacity-40' : active ? 'font-semibold text-white' : 'font-normal text-slate',
+                        )}>
                           {item.label}
                         </span>
-                        {active && <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
+                        {locked ? (
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              navigate(isLockedByVerification ? `/seller/store/${storeId}/verification` : `/seller/store/${storeId}/pos`);
+                            }}
+                            className="text-[9px] font-bold uppercase tracking-[0.03em] px-[7px] py-[2px] rounded-full bg-brand-orange text-white border-none cursor-pointer shrink-0"
+                          >
+                            {isLockedByVerification ? 'Locked' : 'Upgrade'}
+                          </button>
+                        ) : active && (
+                          <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />
+                        )}
                       </>
                     )}
                   </div>
@@ -257,15 +490,44 @@ function StoreSidebar({ open, onToggle, onClose }: StoreSidebarProps) {
             </div>
             <div className="flex items-center gap-2">
               <SolvexoIcon size={20} />
-              <p className="text-[11px] text-dark-label">Solvexo Store</p>
+              <p className="text-[11px] text-dark-label flex-1 min-w-0 truncate">Solvexo Store</p>
+              <button
+                onClick={() => setShowLogoutConfirm(true)}
+                title="Logout"
+                aria-label="Logout"
+                className="size-7 rounded-md flex items-center justify-center shrink-0 text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
+              >
+                <LogOut size={14} />
+              </button>
             </div>
           </div>
         ) : (
-          <div className="py-3 border-t border-dark-active flex justify-center shrink-0">
+          <div className="py-3 border-t border-dark-active flex flex-col items-center gap-2 shrink-0">
             <SolvexoIcon size={20} />
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              title="Logout"
+              aria-label="Logout"
+              className="size-7 rounded-md flex items-center justify-center shrink-0 text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer"
+            >
+              <LogOut size={14} />
+            </button>
           </div>
         )}
       </aside>
+
+      <CommandPalette items={paletteItems} open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      {showLogoutConfirm && (
+        <Modal title="Log out?" onClose={() => setShowLogoutConfirm(false)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowLogoutConfirm(false)} disabled={loggingOut}>Cancel</Button>
+            <Button variant="primary" onClick={handleLogout} loading={loggingOut}>Logout</Button>
+          </>
+        }>
+          <p className="text-[13px] text-slate">You'll need to sign in again to access this store's dashboard.</p>
+        </Modal>
+      )}
     </>
   );
 }
@@ -278,16 +540,27 @@ export interface StorePageHeaderProps {
 }
 
 export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderProps) {
-  const { toggle } = useContext(StoreSidebarCtx);
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { storeId } = useStoreWorkspace();
+  const dashboardPath = `/seller/store/${storeId}/dashboard`;
+  const isDashboard = pathname === dashboardPath;
+
   return (
-    <div className="bg-white border-b border-bone px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
+    <div className="bg-white/90 backdrop-blur-md border-b border-bone px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
       <div className="flex items-center gap-3">
-        <button
-          onClick={toggle}
-          className="lg:hidden size-8 rounded-md border border-bone flex items-center justify-center text-slate hover:bg-cream transition-colors cursor-pointer shrink-0"
-        >
-          <PanelLeftOpen size={16} />
-        </button>
+        {/* Mobile only, and only away from the dashboard "menu" screen —
+           real drill-in navigation (back to the menu) instead of a
+           hamburger that used to open a copy of the desktop sidebar. */}
+        {!isDashboard && (
+          <button
+            onClick={() => navigate(dashboardPath)}
+            aria-label="Back to Store Dashboard"
+            className="lg:hidden size-8 -ml-1 rounded-md flex items-center justify-center text-charcoal hover:bg-cream transition-colors cursor-pointer shrink-0"
+          >
+            <ChevronLeft size={19} />
+          </button>
+        )}
         <div>
           <h1 className="text-[18px] font-bold text-carbon leading-[1.3]">{title}</h1>
           {subtitle && <p className="text-[12px] text-slate mt-0.5">{subtitle}</p>}
@@ -295,9 +568,7 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
       </div>
       <div className="flex items-center gap-[10px]">
         {actions}
-        <div className="size-[34px] rounded-md bg-brand-pale-orange flex items-center justify-center cursor-pointer shrink-0">
-          <Bell size={16} className="text-brand-orange" />
-        </div>
+        <NotificationBell />
       </div>
     </div>
   );
@@ -341,36 +612,231 @@ function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// ── Layout ────────────────────────────────────────────────────────────────────
-export function StoreLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
+// ── Seller business-verification status — workspace-wide so a not-yet-
+// verified store's owner sees it on every page, not just their store list.
+// Reads `verificationStatus` (never `store.status`, which is the separate
+// marketplace-listing lifecycle field — see store.schema.ts). A verified
+// store never renders anything here. ──
+function StoreVerificationBanner() {
+  const navigate = useNavigate();
+  const { store, storeId } = useStoreWorkspace();
+  // A store that's already marketplace-active (including a pre-verification-
+  // tracking legacy approval) never shows a verification nag, even if
+  // `verificationStatus` is stale/missing — `status` is the authoritative
+  // "already approved" signal (see the `verified` comment in StoreSidebar).
+  if (!store || store.status === 'active') return null;
+
+  const goToVerification = () => navigate(`/seller/store/${storeId}/verification`);
+
+  switch (store.verificationStatus) {
+    case 'rejected':
+      return (
+        <button onClick={goToVerification} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer text-center">
+          <XCircle size={14} className="shrink-0" />
+          Your business verification was rejected{store.rejectionReason ? `: ${store.rejectionReason}` : '.'}
+          <span className="underline font-semibold shrink-0">Fix &amp; resubmit</span>
+        </button>
+      );
+    case 'under_review':
+      return (
+        <div className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3]">
+          <Clock size={14} className="shrink-0" />
+          Your store is under review by our team — you'll be notified as soon as a decision is made.
+        </div>
+      );
+    case 'pending':
+      return (
+        <div className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3]">
+          <Clock size={14} className="shrink-0" />
+          Your verification application has been submitted and is waiting to be reviewed.
+        </div>
+      );
+    case 'not_started':
+      return (
+        <button onClick={goToVerification} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#946200] bg-warning-bg border-b border-[#f5dfa6] cursor-pointer text-center">
+          <AlertTriangle size={14} className="shrink-0" />
+          Your store isn't visible on the marketplace yet — complete business verification to submit it for review.
+          <span className="underline font-semibold shrink-0">Complete verification</span>
+        </button>
+      );
+    default:
+      return null;
+  }
+}
+
+// ── Platform-plan billing banner — past-due / scheduled-cancellation / trial-ending,
+// surfaced workspace-wide (not just on the Billing Center page) so a seller can't
+// miss it just by not visiting that one page. Same source of truth as StorePlanBilling. ──
+function PlatformBillingBanner() {
+  const navigate = useNavigate();
+  const { storeId } = useStoreWorkspace();
+  const [sub, setSub] = useState<StorePlatformSubscription | null>(null);
 
   useEffect(() => {
-    let wasMobile = window.innerWidth < 1024;
-    const onResize = () => {
-      const isMobile = window.innerWidth < 1024;
-      if (wasMobile && !isMobile) setSidebarOpen(true);
-      wasMobile = isMobile;
-    };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
+    if (!storeId) return;
+    let cancelled = false;
+    apiGetStorePlatformPlan(storeId)
+      .then(res => { if (!cancelled) setSub(res.data); })
+      .catch(() => {}); // non-critical — workspace still works without this banner
+    return () => { cancelled = true; };
+  }, [storeId]);
 
-  const toggle  = () => setSidebarOpen(o => !o);
-  const onClose = () => setSidebarOpen(false);
+  if (!sub) return null;
+  const goToBilling = () => navigate(`/seller/store/${storeId}/plan-billing`);
+
+  if (sub.status === 'past_due') {
+    return (
+      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer">
+        <AlertTriangle size={14} className="shrink-0" />
+        Your plan payment failed (attempt {sub.failedPaymentAttempts}) — update your payment method to avoid losing access.
+        <span className="underline font-semibold">Fix now</span>
+      </button>
+    );
+  }
+  if (sub.cancelAtPeriodEnd) {
+    return (
+      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#946200] bg-[#fdf2da] border-b border-[#f5dfa6] cursor-pointer">
+        <XCircle size={14} className="shrink-0" />
+        Your plan is set to cancel on {new Date(sub.currentPeriodEnd).toDateString()}.
+        <span className="underline font-semibold">Reactivate</span>
+      </button>
+    );
+  }
+  if (sub.trialEndsAt) {
+    const daysLeft = Math.max(0, Math.ceil((new Date(sub.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
+    if (daysLeft <= 7) {
+      return (
+        <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3] cursor-pointer">
+          <Clock size={14} className="shrink-0" />
+          Your trial ends in {daysLeft} day{daysLeft === 1 ? '' : 's'}.
+          <span className="underline font-semibold">Add a payment method</span>
+        </button>
+      );
+    }
+  }
+  return null;
+}
+
+// ── Restricted-feature explainer — shown instead of the real page when a
+// seller navigates directly (URL bar, bookmark, back button) to a nav item
+// that's locked pre-verification, so the restriction is never just a
+// silently-vanished sidebar entry. Mirrors the sidebar's own lock logic
+// rather than a second source of truth. ──
+const VERIFICATION_NOTICE_COPY: Record<StoreData['verificationStatus'], string> = {
+  not_started: 'Complete business verification to unlock this feature.',
+  pending: 'Your verification application has been submitted and is waiting to be reviewed — this unlocks as soon as it’s approved.',
+  under_review: 'Your verification is under review by our team — this unlocks as soon as a decision is made.',
+  verified: '', // never shown — this notice only renders for unverified stores
+  rejected: 'Your last verification submission was rejected. Fix the issues and resubmit to unlock this feature.',
+};
+
+function SellerActivationNotice({ item, storeId, verificationStatus }: {
+  item: NavItem; storeId: string; verificationStatus: StoreData['verificationStatus'];
+}) {
+  const navigate = useNavigate();
+  const ctaLabel = verificationStatus === 'rejected' ? 'Fix & Resubmit'
+    : verificationStatus === 'not_started' ? 'Start Verification'
+    : 'View Verification Status';
+
+  return (
+    <div className="flex flex-col items-center text-center gap-4 px-6 py-16 max-w-[440px] mx-auto">
+      <div className="size-14 rounded-full bg-brand-pale-orange flex items-center justify-center">
+        <Lock size={22} className="text-brand-orange" />
+      </div>
+      <div>
+        <p className="text-[16px] font-bold text-carbon mb-1.5">{item.label} is locked</p>
+        <p className="text-[13px] text-slate leading-[1.6]">{VERIFICATION_NOTICE_COPY[verificationStatus] || VERIFICATION_NOTICE_COPY.not_started}</p>
+      </div>
+      <Button variant="primary" size="md" onClick={() => navigate(`/seller/store/${storeId}/verification`)}>
+        {ctaLabel}
+      </Button>
+    </div>
+  );
+}
+
+/** Finds the NAV item (if any) whose route matches `pathname`, excluding the
+ *  always-available items — the single source of truth for "is this route
+ *  locked", shared by the sidebar's own lock styling above. */
+function findLockedNavItem(pathname: string, storeId: string): NavItem | null {
+  for (const section of NAV) {
+    for (const item of section.items) {
+      if (ALLOWED_PRE_VERIFICATION.has(item.id) || item.id === 'pos') continue;
+      const full = item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`;
+      if (pathname === full || pathname.startsWith(full + '/')) return item;
+    }
+  }
+  return null;
+}
+
+// Shown instead of the real page when the store fetch itself failed (404,
+// timeout, 500) — so a genuine backend failure is never indistinguishable
+// from "this store just has no data yet" (every nested page would otherwise
+// render its fields as blank/zero once `loading` flips false with `store`
+// still null). Mirrors `MyStoreCard`'s error state on the top-level seller
+// dashboard rather than inventing a second error-state design.
+function StoreWorkspaceError({ error, onRetry }: { error: string; onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center text-center gap-4 px-6 py-16 max-w-[440px] mx-auto">
+      <div className="size-14 rounded-full bg-error-bg flex items-center justify-center">
+        <AlertCircle size={22} className="text-error" />
+      </div>
+      <div>
+        <p className="text-[16px] font-bold text-carbon mb-1.5">Couldn't load your store</p>
+        <p className="text-[13px] text-slate leading-[1.6]">{error}</p>
+      </div>
+      <Button variant="primary" size="md" onClick={onRetry}>Try Again</Button>
+    </div>
+  );
+}
+
+// Swaps in for `<Outlet/>` — renders the real nested route unless it's a
+// verification-locked feature being reached by direct URL/bookmark/back
+// button (nav-click already redirects to /verification before ever getting
+// here, but a locked feature must never be reachable just by typing its URL),
+// or the store fetch itself failed, in which case every nested page is
+// blocked behind one shared retry state instead of each page needing its
+// own error handling.
+function GatedOutlet() {
+  const { store, storeId, loading, error, refetch } = useStoreWorkspace();
+  const { pathname } = useLocation();
+  if (!loading && error) return <StoreWorkspaceError error={error} onRetry={refetch} />;
+  // Same `status === 'active'` boundary as the sidebar — see the comment
+  // on `verified` in StoreSidebar for why this isn't `verificationStatus`.
+  if (!store || store.status === 'active') return <Outlet />;
+  const lockedItem = findLockedNavItem(pathname, storeId);
+  if (!lockedItem) return <Outlet />;
+  return <SellerActivationNotice item={lockedItem} storeId={storeId} verificationStatus={store.verificationStatus} />;
+}
+
+// ── Layout ────────────────────────────────────────────────────────────────────
+export function StoreLayout() {
+  const { pathname: currentPath } = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const toggle = () => setSidebarOpen(o => !o);
+
+  const user = TokenStorage.getUser<{ role?: AppRole }>();
+  if (!TokenStorage.isLoggedIn() || user?.role !== 'seller') {
+    // Same `?redirect=` convention as SellerLayout's guard — a buyer/
+    // logged-out visitor hitting a store-workspace URL directly (e.g. the
+    // verification page) lands back on it after logging in, instead of a
+    // bare /login that drops where they were headed.
+    return <Navigate to={`/login?redirect=${encodeURIComponent(currentPath)}`} replace />;
+  }
 
   return (
     <StoreWorkspaceProvider>
-      <StoreSidebarCtx.Provider value={{ toggle }}>
-        <div className="flex h-[calc(100vh-44px)] bg-cream overflow-hidden">
-          <StoreSidebar open={sidebarOpen} onToggle={toggle} onClose={onClose} />
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-            <div className="flex-1 overflow-y-auto">
-              <Outlet />
-            </div>
+      <div className={clsx('flex bg-cream overflow-hidden', import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen')}>
+        <StoreSidebar open={sidebarOpen} onToggle={toggle} />
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <AnnouncementBanner audience="sellers" />
+          <StoreVerificationBanner />
+          <PlatformBillingBanner />
+          <div className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">
+            <GatedOutlet />
           </div>
         </div>
-      </StoreSidebarCtx.Provider>
+      </div>
+      <StoreBottomNav />
     </StoreWorkspaceProvider>
   );
 }

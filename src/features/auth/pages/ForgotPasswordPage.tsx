@@ -1,9 +1,19 @@
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Mail, KeyRound, ShieldCheck, Clock, AlertTriangle } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useForgotPassword } from '@/hooks/auth/useForgotPassword';
 import { Button } from '@/components/comman/ui/Button';
+import { Input } from '@/components/comman/ui/Input';
 import { useForm } from '@/hooks/useForm';
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/utils/validation/schemas';
+import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
+import { SecurityMockup } from '@/features/auth/components/mockups/AuthMockups';
+
+const HIGHLIGHTS = [
+  { Icon: KeyRound,    text: 'Get a secure reset code by email' },
+  { Icon: Clock,       text: 'Codes expire quickly for your safety' },
+  { Icon: ShieldCheck, text: 'Your account stays protected throughout' },
+];
 
 export function ForgotPasswordPage() {
   const navigate       = useNavigate();
@@ -21,46 +31,55 @@ export function ForgotPasswordPage() {
   );
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-[20px] px-6 py-6 md:px-10 md:py-9 w-full max-w-[440px] border border-bone">
-        <h1 className="text-[22px] font-bold text-carbon text-center mb-2">
-          Forgot your password?
-        </h1>
-        <p className="text-[13px] text-slate text-center mb-7 leading-[1.6]">
-          Enter your email and we'll send you a reset code.
-        </p>
-
-        <div className="mb-5">
-          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Email Address</label>
-          <input
-            type="email" placeholder="Enter your email"
-            value={values.email} onChange={set('email')} onBlur={blur('email')}
-            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-            className={[
-              'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white',
-              errors.email ? 'border-error' : 'border-bone',
-            ].join(' ')}
-          />
-          {errors.email && <p className="text-[11px] text-error mt-[5px]">{errors.email}</p>}
-        </div>
-
-        <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={forgotPassword.loading}>
-          {forgotPassword.loading ? 'Sending...' : 'Send Reset Code'}
-        </Button>
-
-        {forgotPassword.error && (
-          <p className="text-[13px] text-error text-center mt-[10px]">
-            {forgotPassword.error}
-          </p>
-        )}
-
-        <div className="text-center mt-5">
-          <button onClick={() => navigate('/login')}
-            className="text-[12px] text-slate bg-transparent border-none cursor-pointer">
-            ← Back to Sign In
-          </button>
-        </div>
+    <AuthSplitLayout
+      heading="Forgot your way in? No problem."
+      subtext="We'll email you a secure code to get you straight back into your account."
+      highlights={HIGHLIGHTS}
+      visual={<SecurityMockup />}
+    >
+      <div className="size-11 rounded-xl bg-brand-pale-orange flex items-center justify-center mb-4 mx-auto lg:mx-0">
+        <Mail size={19} className="text-brand-orange" />
       </div>
-    </div>
+
+      <h1 className="text-[22px] font-bold text-carbon mb-1.5 text-center lg:text-left">
+        Forgot your password?
+      </h1>
+      <p className="text-[13px] text-slate mb-6 leading-[1.6] text-center lg:text-left">
+        Enter your email and we'll send you a reset code.
+      </p>
+
+      <div className="mb-5">
+        <Input
+          id="forgot-email"
+          label="Email Address"
+          type="email" placeholder="Enter Your Email Address" autoComplete="email"
+          value={values.email} onChange={set('email')} onBlur={blur('email')}
+          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+          error={errors.email}
+        />
+      </div>
+
+      <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} loading={forgotPassword.loading}>
+        Send Reset Code
+      </Button>
+
+      {forgotPassword.error && (
+        <div role="alert" className="flex items-center justify-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
+          <AlertTriangle size={14} className="shrink-0" />
+          <span>{forgotPassword.error}</span>
+        </div>
+      )}
+
+      <Button
+        variant="ghost"
+        size="sm"
+        fullWidth
+        icon={<ArrowLeft size={13} />}
+        onClick={() => navigate('/login')}
+        className="mt-6 text-slate!"
+      >
+        Back to Sign In
+      </Button>
+    </AuthSplitLayout>
   );
 }

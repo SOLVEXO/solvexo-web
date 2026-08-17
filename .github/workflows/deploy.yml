@@ -17,6 +17,8 @@ jobs:
             cd /home/deploy/apps/solvexo-web
             git fetch origin
             git reset --hard origin/staging
+            git pull origin main
+            printf 'VITE_API_URL=https://staging.solvexo.store\n' > .env
             npm ci
             npm run build
             pm2 delete solvexo-web || true

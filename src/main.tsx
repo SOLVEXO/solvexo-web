@@ -4,14 +4,26 @@ import { RouterProvider } from 'react-router-dom';
 import { router } from '@/router';
 import { CartProvider } from '@/contexts/CartContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
+import { CurrencyPreferenceProvider } from '@/contexts/CurrencyPreferenceContext';
+import { AuthGateProvider } from '@/contexts/AuthGateContext';
+import { ToastProvider } from '@/contexts/ToastContext';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <CartProvider>
-      <WishlistProvider>
-        <RouterProvider router={router} />
-      </WishlistProvider>
-    </CartProvider>
+    <ToastProvider>
+      <AuthGateProvider>
+        <CurrencyPreferenceProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <NotificationProvider>
+                <RouterProvider router={router} />
+              </NotificationProvider>
+            </WishlistProvider>
+          </CartProvider>
+        </CurrencyPreferenceProvider>
+      </AuthGateProvider>
+    </ToastProvider>
   </StrictMode>,
 );

@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShoppingBag, Plus, Package, Download,
+  ShoppingBag, Plus, Download,
   AlertCircle, RefreshCw,
-  CheckCircle2, AlertTriangle, XCircle,
+  AlertTriangle,
   Eye, Pencil,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   Table,      type TableColumn,
-  MetricCard,
   Badge,      StatusBadge,
   EmptyState,
   Card,
@@ -19,34 +18,19 @@ import {
 } from '@/components/comman/ui';
 import {
   apiGetStoreInventory,
+  apiGetLowStockSummary,
   type InventoryProduct,
-} from '@/api/commerce/product';
+  type LowStockSummaryData,
+} from '@/api/services/product';
 import { usePageTitle } from '@/hooks/usePageTitle';
-
-// ── Product thumbnail ─────────────────────────────────────────────────────────
-function ProductCell({ p }: { p: InventoryProduct }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="w-9 h-9 rounded-lg shrink-0 bg-brand-pale-orange border border-[#EDEBE2] flex items-center justify-center overflow-hidden">
-        {p.image
-          ? <img src={p.image} alt="" className="w-full h-full object-cover" />
-          : p.type === 'digital'
-            ? <Download size={14} className="text-brand-orange" />
-            : <Package  size={14} className="text-brand-orange" />}
-      </div>
-      <div>
-        <p className="text-[13px] font-medium text-charcoal mb-[1px]">{p.name}</p>
-        <p className="text-[11px] text-slate">SKU: {p.sku}</p>
-      </div>
-    </div>
-  );
-}
+import { currencySymbol } from '@/utils/currency';
+import { ProductCell, ProductStatsGrid } from '../../components/ProductListShared';
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function StoreInventory() {
   usePageTitle('Inventory');
   const navigate    = useNavigate();
-  const { storeId } = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
 
   const [products,      setProducts]      = useState<InventoryProduct[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -61,6 +45,7 @@ export function StoreInventory() {
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [lowStock,   setLowStock]   = useState<LowStockSummaryData | null>(null);
 
   const LIMIT = 10;
 
@@ -71,7 +56,7 @@ export function StoreInventory() {
     apiGetStoreInventory(storeId, page, LIMIT)
       .then(res => {
         if (cancelled) return;
-        setProducts(res.data.products);
+        setProducts(res.data.products ?? []);
         setStats(res.data.stats);
         setTotalProducts(res.data.pagination.totalProducts);
       })
@@ -82,6 +67,16 @@ export function StoreInventory() {
 
     return () => { cancelled = true; };
   }, [storeId, page, refreshKey]);
+
+  // Low-stock detail list — independent of pagination, only re-runs on store/refresh.
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    apiGetLowStockSummary(storeId)
+      .then(res => { if (!cancelled) setLowStock(res.data); })
+      .catch(() => { /* non-critical widget — stats card above already covers the count */ });
+    return () => { cancelled = true; };
+  }, [storeId, refreshKey]);
 
   const goAdd    = ()                     => navigate(`/seller/store/${storeId}/products/add`);
   const goEdit   = (p: InventoryProduct) => navigate(`/seller/store/${storeId}/products/edit/${p.productId}`);
@@ -125,14 +120,14 @@ export function StoreInventory() {
       key: 'type', header: 'Type',
       render: p => (
         <Badge color={p.type === 'digital' ? 'blue' : 'orange'}>
-          {p.type === 'digital' ? 'Digital' : 'Physical'}
+          {p.type === 'digital' ? (p.productType === 'educational' ? 'Educational' : 'Digital') : 'Physical'}
         </Badge>
       ),
     },
     {
       key: 'price', header: 'Price', align: 'right',
       render: p => (
-        <span className="font-semibold text-charcoal">Rs {p.price.toLocaleString()}</span>
+        <span className="font-semibold text-charcoal">{currencySymbol(store?.baseCurrency)}{p.price.toLocaleString()}</span>
       ),
     },
     {
@@ -174,57 +169,65 @@ export function StoreInventory() {
         subtitle={loading ? 'Loading…' : `${totalProducts} product${totalProducts !== 1 ? 's' : ''}`}
         actions={
           <>
-            <button className="flex items-center gap-1.5 bg-white text-[#4A4945] border border-bone rounded-[9px] px-4 py-[9px] text-[13px] font-medium cursor-pointer">
-              Export
+            <button
+              title="Export"
+              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+            >
+              <Download size={14} className="sm:hidden" />
+              <span className="hidden sm:inline">Export</span>
             </button>
             <button
               onClick={goAdd}
-              className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-4 py-[9px] text-[13px] font-semibold cursor-pointer"
+              title="Add Product"
+              className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50"
             >
-              <Plus size={15} /> Add Product
+              <Plus size={15} /> <span className="hidden sm:inline">Add Product</span>
             </button>
           </>
         }
       />
 
-      <div className="px-7 py-5 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 py-5 flex flex-col gap-5">
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-3">
-          <MetricCard
-            label="Total Products"
-            value={stats?.totalProducts ?? 0}
-            icon={<ShoppingBag size={16} />}
-            loading={loading && !stats}
-          />
-          <MetricCard
-            label="In Stock"
-            value={stats?.inStock ?? 0}
-            icon={<CheckCircle2 size={16} />}
-            loading={loading && !stats}
-          />
-          <MetricCard
-            label="Low Stock"
-            value={stats?.lowStock ?? 0}
-            icon={<AlertTriangle size={16} />}
-            loading={loading && !stats}
-          />
-          <MetricCard
-            label="Out of Stock"
-            value={stats?.outOfStock ?? 0}
-            icon={<XCircle size={16} />}
-            loading={loading && !stats}
-          />
-        </div>
+        <ProductStatsGrid stats={stats} loading={loading} />
+
+        {/* Low stock detail */}
+        {!!lowStock?.count && (
+          <Card padding="none">
+            <div className="px-5 pt-4 pb-3 flex items-center gap-2 border-b border-[#f3f2ec]">
+              <AlertTriangle size={14} className="text-warning shrink-0" />
+              <p className="text-[13px] font-bold text-charcoal">
+                {lowStock.count} product{lowStock.count !== 1 ? 's' : ''} running low
+              </p>
+              <span className="text-[11px] text-slate ml-1">(≤ {lowStock.threshold} units left)</span>
+            </div>
+            <div className="px-5 py-3 flex flex-col divide-y divide-[#f3f2ec]">
+              {(lowStock.items ?? []).slice(0, 5).map(item => (
+                <button
+                  key={item.productId}
+                  onClick={() => navigate(`/seller/store/${storeId}/products/edit/${item.productId}`)}
+                  className="flex items-center justify-between gap-3 py-2 bg-transparent border-none text-left cursor-pointer group"
+                >
+                  <span className="text-[13px] text-charcoal group-hover:text-brand-orange transition-colors">{item.name}</span>
+                  <Badge color="orange">{item.stock} left</Badge>
+                </button>
+              ))}
+              {(lowStock.items ?? []).length > 5 && (
+                <p className="text-[11px] text-slate pt-2">+ {(lowStock.items ?? []).length - 5} more</p>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Error */}
         {error && (
-          <div className="bg-[#FFF0F0] border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
+          <div className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-center gap-3">
             <AlertCircle size={16} className="text-error shrink-0" />
             <span className="text-[13px] text-error flex-1">{error}</span>
             <button
               onClick={handleRetry}
-              className="flex items-center gap-1 text-[12px] text-error font-semibold cursor-pointer"
+              className="flex items-center gap-1 text-[12px] text-error font-semibold cursor-pointer transition-opacity duration-150 hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 rounded-sm"
             >
               <RefreshCw size={12} /> Retry
             </button>
@@ -234,18 +237,18 @@ export function StoreInventory() {
         {/* Table */}
         {!error && (
           <Card padding="none">
-            <div className="px-5 pt-4 pb-3 flex items-center justify-between gap-3">
+            <div className="px-5 pt-4 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <p className="text-[14px] font-bold text-charcoal shrink-0">All Products</p>
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="flex items-center gap-2 sm:ml-auto">
                 <SearchInput
                   value={search}
                   onChange={setSearch}
                   placeholder="Search by name or SKU…"
-                  className="w-[220px]"
+                  className="w-full sm:w-[220px]"
                 />
                 <button
                   onClick={handleRetry}
-                  className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[6px] hover:bg-bone shrink-0"
+                  className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[6px] transition-colors duration-150 hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 shrink-0"
                 >
                   <RefreshCw size={11} /> Refresh
                 </button>

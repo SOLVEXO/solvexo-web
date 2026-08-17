@@ -49,7 +49,7 @@ export function ImageUpload({
           {uploading
             ? <Loader2 size={22} className="text-brand-orange animate-spin" />
             : url
-              ? <img src={url} alt="" className="w-full h-full object-cover" />
+              ? <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
               : <Camera size={22} className="text-brand-orange" />}
           <input type="file" accept={accept} className="hidden" onChange={handleFile} disabled={uploading} />
         </label>
@@ -63,7 +63,7 @@ export function ImageUpload({
     <div className={clsx('flex flex-wrap gap-2', className)}>
       {value.map((url, i) => (
         <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-bone group">
-          <img src={url} alt="" className="w-full h-full object-cover" />
+          <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
           <button
             type="button"
             onClick={() => remove(i)}
@@ -86,6 +86,60 @@ export function ImageUpload({
         </label>
       )}
       {error && <p className="text-[11px] text-error w-full">{error}</p>}
+    </div>
+  );
+}
+
+// ── FileDropSelect ────────────────────────────────────────────────────────────
+// Same visual language as FileUpload's dashed drop-zone, but hands back the raw
+// `File` instead of uploading it immediately — for forms whose backend needs
+// the original file (e.g. server-side dimension validation on the raw buffer),
+// not a pre-uploaded URL.
+
+interface FileDropSelectProps {
+  value:      File | null;
+  onChange:   (file: File | null) => void;
+  accept?:    string;
+  label?:     string;
+  className?: string;
+}
+
+export function FileDropSelect({
+  value, onChange, accept = 'image/png,image/jpeg,image/webp', label = 'Click to upload image', className,
+}: FileDropSelectProps) {
+  const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    e.target.value = '';
+    if (file) onChange(file);
+  };
+
+  return (
+    <div className={className}>
+      {value ? (
+        <div className="flex items-center gap-3 px-4 py-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-lg">
+          <img loading="lazy" decoding="async" src={URL.createObjectURL(value)} alt="" className="w-10 h-10 rounded-md object-cover shrink-0 border border-bone" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-medium text-charcoal truncate">{value.name}</p>
+            <p className="text-[11px] text-slate mt-[1px]">{formatSize(value.size)}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="w-6 h-6 rounded-full bg-white border border-bone flex items-center justify-center text-slate hover:text-error hover:border-error transition-colors shrink-0"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      ) : (
+        <label className={clsx(
+          'flex flex-col items-center justify-center gap-2 w-full py-6 rounded-lg border-2 border-dashed border-bone cursor-pointer',
+          'hover:border-brand-orange hover:bg-brand-pale-orange transition-colors',
+        )}>
+          <Upload size={20} className="text-slate" />
+          <span className="text-[13px] text-slate">{label}</span>
+          <input type="file" accept={accept} className="hidden" onChange={handleFile} />
+        </label>
+      )}
     </div>
   );
 }
@@ -123,7 +177,7 @@ export function FileUpload({
   return (
     <div className={className}>
       {value ? (
-        <div className="flex items-center gap-3 px-4 py-3 bg-[#F0FDF4] border border-[#BBF7D0] rounded-lg">
+        <div className="flex items-center gap-3 px-4 py-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-lg">
           <FileIcon size={18} className="text-success shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-[13px] font-medium text-charcoal truncate">{value.fileName}</p>

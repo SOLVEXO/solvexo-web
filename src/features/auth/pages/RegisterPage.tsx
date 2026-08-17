@@ -1,37 +1,54 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRegister } from '@/hooks/auth/useRegister';
+import { useSocialLogin } from '@/hooks/auth/useSocialLogin';
 import { Button }      from '@/components/comman/ui/Button';
-import { RadioButton } from '@/components/comman/ui/RadioButton';
-import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Input }       from '@/components/comman/ui/Input';
+import { RoleChoiceCards } from '@/components/comman/ui/RoleChoiceCards';
+import { SocialLoginRow } from '@/components/comman/ui/SocialIcons';
+import { Eye, EyeOff, ArrowRight, ArrowLeft, ShoppingBag, Store, TrendingUp, AlertTriangle, Info } from 'lucide-react';
 import { useForm }     from '@/hooks/useForm';
 import { registerSchema, type RegisterFormData } from '@/utils/validation/schemas';
+import { TokenStorage, getRoleRedirect, type AppRole } from '@/api/services/auth';
+import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
+import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
+import { MarketplaceMockup, DashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
 
 const ROLE_OPTIONS = [
-  { value: 'user',   label: 'Buyer',  description: 'Browse and purchase from the marketplace' },
-  { value: 'seller', label: 'Seller', description: 'Create a store and sell to thousands of buyers' },
+  { value: 'user',   label: 'Buyer',  description: 'Browse and purchase from the marketplace', Icon: ShoppingBag, accent: 'orange' as const },
+  { value: 'seller', label: 'Seller', description: 'Create a store and sell to thousands of buyers', Icon: Store, accent: 'success' as const },
 ];
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-4">
-      <label className="block text-[12px] font-medium text-charcoal mb-[6px]">{label}</label>
-      {children}
-      {error && <p className="text-[11px] text-error mt-[5px]">{error}</p>}
-    </div>
-  );
-}
+const HIGHLIGHTS = [
+  { Icon: ShoppingBag, text: 'Shop from thousands of independent sellers' },
+  { Icon: Store,       text: 'Launch your own store in minutes' },
+  { Icon: TrendingUp,  text: 'Grow your business with built-in analytics' },
+];
 
+// Register is three screens, not one crowded form: role choice (mirrors
+// Login's own role step, same RoleChoiceCards component so the two pages
+// read as one design language) → a social/email entry step (mirrors
+// Login's "sign in or create account" — stacked pills only, no bare email
+// field yet) → the account-detail form — identical for both roles, just
+// relabelled. Nothing about the backend payload/validation changes here.
 export function RegisterPage() {
   const navigate  = useNavigate();
+  const [searchParams] = useSearchParams();
   usePageTitle('Register');
   const register  = useRegister();
+  const social    = useSocialLogin();
   const [showPass, setShowPass] = useState(false);
+
+  // A "Sell on Solvexo" CTA arrives here as /register?role=seller — that
+  // click already WAS the role decision, so the role screen is skipped
+  // entirely instead of asking the same question twice.
+  const presetRole = searchParams.get('role') === 'seller' ? 'seller' : searchParams.get('role') === 'user' ? 'user' : '';
+  const [screen, setScreen] = useState<'role' | 'entry' | 'details'>(presetRole ? 'entry' : 'role');
 
   const { values, errors, set, setValue, blur, handleSubmit } = useForm(
     registerSchema,
-    { name: '', email: '', password: '', phone: '', address: '', role: 'user' },
+    { name: '', email: '', password: '', phone: '', address: '', role: presetRole },
     {
       onSubmit: async (data: RegisterFormData) => {
         await register.execute({
@@ -46,105 +63,211 @@ export function RegisterPage() {
     },
   );
 
+  // Already signed in — send them to wherever they actually belong instead
+  // of showing a registration form to someone who doesn't need one.
+  useEffect(() => {
+    if (!TokenStorage.isLoggedIn()) return;
+    const user = TokenStorage.getUser<{ role?: AppRole }>();
+    if (user?.role === 'seller') {
+      resolveSellerDestinationRemote().then(dest => navigate(dest, { replace: true }));
+    } else {
+      navigate(getRoleRedirect((user?.role ?? 'user') as AppRole), { replace: true });
+    }
+  }, [navigate]);
+
+  // Avoid a flash of the registration form for the (rare) already-signed-in
+  // visitor while the effect above resolves their real destination.
+  if (TokenStorage.isLoggedIn()) return null;
+
+  const isSeller = values.role === 'seller';
+  const roleChosen = values.role === 'user' || values.role === 'seller';
+  const activeRoleLabel = ROLE_OPTIONS.find(o => o.value === values.role)?.label;
+
   return (
-    <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-[20px] px-6 py-6 md:px-10 md:py-9 w-full max-w-[500px] border border-bone">
-        <h1 className="text-2xl font-bold text-carbon mb-1 text-center">
-          Create your account
-        </h1>
-        <p className="text-[13px] text-slate mb-7 text-center">
-          Join Solvexo — Commerce. Solved.
-        </p>
-
-        {/* Role */}
-        <div className="mb-5">
-          <label className="block text-[13px] font-semibold text-carbon mb-[10px]">
-            I want to
-          </label>
-          <RadioButton
-            name="role" options={ROLE_OPTIONS}
-            value={values.role} onChange={val => setValue('role', val)} layout="row"
-          />
-        </div>
-
-        <div className="h-px bg-bone mb-5" />
-
-        <Field label="Full Name" error={errors.name}>
-          <input type="text" placeholder="Enter Your Name"
-            value={values.name} onChange={set('name')} onBlur={blur('name')}
-            className={[
-              'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white transition-[border-color] duration-150',
-              errors.name ? 'border-error' : 'border-bone',
-            ].join(' ')} />
-        </Field>
-
-        <Field label="Email Address" error={errors.email}>
-          <input type="email" placeholder="Enter Your Email"
-            value={values.email} onChange={set('email')} onBlur={blur('email')}
-            className={[
-              'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white transition-[border-color] duration-150',
-              errors.email ? 'border-error' : 'border-bone',
-            ].join(' ')} />
-        </Field>
-
-        <Field label="Phone Number" error={errors.phone}>
-          <input type="tel" placeholder="Enter Your Phone Number"
-            value={values.phone} onChange={set('phone')} onBlur={blur('phone')}
-            className={[
-              'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white transition-[border-color] duration-150',
-              errors.phone ? 'border-error' : 'border-bone',
-            ].join(' ')} />
-        </Field>
-
-        <Field label="Address" error={errors.address}>
-          <input type="text" placeholder="Enter Your Address"
-            value={values.address} onChange={set('address')} onBlur={blur('address')}
-            className={[
-              'w-full px-3 py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white transition-[border-color] duration-150',
-              errors.address ? 'border-error' : 'border-bone',
-            ].join(' ')} />
-        </Field>
-
-        <Field label="Password" error={errors.password}>
-          <div className="relative">
-            <input
-              type={showPass ? 'text' : 'password'} placeholder="Create Your Password"
-              value={values.password} onChange={set('password')} onBlur={blur('password')}
-              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              className={[
-                'w-full px-3 pr-[42px] py-[10px] rounded-lg border text-[13px] text-charcoal outline-none box-border bg-white transition-[border-color] duration-150',
-                errors.password ? 'border-error' : 'border-bone',
-              ].join(' ')}
-            />
-            <button type="button" onClick={() => setShowPass(s => !s)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate p-0 flex">
-              {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
-        </Field>
-
-        <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={register.loading} className="mt-1">
-          {register.loading
-            ? 'Creating account...'
-            : values.role === 'seller'
-              ? <span>Create Seller Account <ArrowRight size={14} className="inline align-middle ml-1" /></span>
-              : <span>Create Buyer Account <ArrowRight size={14} className="inline align-middle ml-1" /></span>}
-        </Button>
-
-        {register.error && (
-          <p className="text-[13px] text-error text-center mt-[10px]">
-            {register.error}
+    <AuthSplitLayout
+      panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
+      heading={isSeller
+        ? <>Launch your <span className="text-brand-orange">store</span> today</>
+        : <>Start <span className="text-brand-orange">selling</span> or shopping today</>}
+      subtext="Create your free Solvexo account and join a growing community of buyers and creators."
+      highlights={HIGHLIGHTS}
+      maxWidth="max-w-[520px]"
+      visual={isSeller ? <DashboardMockup /> : <MarketplaceMockup />}
+    >
+      {screen === 'role' ? (
+        <>
+          <h1 className="text-[22px] font-bold text-carbon mb-1 text-center lg:text-left">
+            How do you want to use <span className="text-brand-orange">Solvexo</span>?
+          </h1>
+          <p className="text-[13px] text-slate mb-3 lg:mb-5 text-center lg:text-left">
+            Choose what fits you best — you can always add the other side of the marketplace later.
           </p>
-        )}
 
-        <p className="text-center text-[12px] text-slate mt-5">
-          Already have an account?{' '}
-          <button onClick={() => navigate('/login')}
-            className="text-brand-orange font-semibold text-[12px] bg-transparent border-none cursor-pointer">
-            Sign In
+          <RoleChoiceCards
+            options={ROLE_OPTIONS}
+            value={values.role}
+            onChange={val => setValue('role', val)}
+            className="mb-3 lg:mb-5"
+          />
+
+          <Button
+            variant="primary" size="md" fullWidth
+            onClick={() => roleChosen && setScreen('entry')}
+            disabled={!roleChosen}
+            iconRight={<ArrowRight size={14} />}
+          >
+            Continue
+          </Button>
+
+          <p className="text-center text-[12px] text-slate mt-3 lg:mt-4">
+            Already have an account?{' '}
+            <Button variant="link" size="sm" onClick={() => navigate('/login')} className="font-semibold!">
+              Sign In
+            </Button>
+          </p>
+        </>
+      ) : screen === 'entry' ? (
+        <>
+          <button
+            onClick={() => setScreen('role')}
+            className="inline-flex items-center gap-[6px] text-[12px] font-medium text-slate bg-transparent border-none cursor-pointer mb-3 lg:mb-4 hover:text-charcoal transition-colors"
+          >
+            <ArrowLeft size={12} /> Signing up as <strong className="text-charcoal">{activeRoleLabel}</strong> — change
           </button>
-        </p>
-      </div>
-    </div>
+
+          <h1 className="text-[22px] font-bold text-carbon mb-1 text-center lg:text-left">
+            Create your <span className="text-brand-orange">account</span>
+          </h1>
+          <p className="text-[13px] text-slate mb-3 lg:mb-5 text-center lg:text-left">
+            Sign up with email, or continue with a social account
+          </p>
+
+          {/* Stacked pills, Alibaba-style: 3 social + "Continue with email"
+             as a 4th outlined pill — no bare email field on this screen. */}
+          <SocialLoginRow
+            layout="stacked"
+            onSelect={social.notConfigured}
+            onEmailSelect={() => setScreen('details')}
+            disabled={social.loading}
+          />
+
+          {social.error && (
+            <div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info">
+              <Info size={14} className="shrink-0" />
+              <span>{social.error}</span>
+            </div>
+          )}
+
+          <p className="text-center text-[12px] text-slate mt-3 lg:mt-4">
+            Already have an account?{' '}
+            <Button variant="link" size="sm" onClick={() => navigate('/login')} className="font-semibold!">
+              Sign In
+            </Button>
+          </p>
+        </>
+      ) : (
+        <>
+          <button
+            onClick={() => setScreen('entry')}
+            className="inline-flex items-center gap-[6px] text-[12px] font-medium text-slate bg-transparent border-none cursor-pointer mb-3 lg:mb-4 hover:text-charcoal transition-colors"
+          >
+            <ArrowLeft size={12} /> Use a different sign-up method
+          </button>
+
+          <h1 className="text-[22px] font-bold text-carbon mb-1 text-center lg:text-left">
+            {isSeller
+              ? <>Create your <span className="text-brand-orange">seller</span> account</>
+              : <>Create your <span className="text-brand-orange">buyer</span> account</>}
+          </h1>
+          <p className="text-[13px] text-slate mb-3 lg:mb-5 text-center lg:text-left">
+            Join Solvexo — Commerce. Solved.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 lg:gap-3">
+            <Input
+              label="Full Name" placeholder="Enter Your Name" autoComplete="name"
+              value={values.name} onChange={set('name')} onBlur={blur('name')}
+              error={errors.name}
+            />
+            <Input
+              label="Email Address" type="email" placeholder="Enter Your Email Address" autoComplete="email"
+              value={values.email} onChange={set('email')} onBlur={blur('email')}
+              error={errors.email}
+            />
+            <Input
+              label="Phone Number" type="tel" placeholder="Enter Your Phone Number" autoComplete="tel"
+              value={values.phone} onChange={set('phone')} onBlur={blur('phone')}
+              error={errors.phone}
+            />
+            <Input
+              label="Address" placeholder="Enter Your Address" autoComplete="street-address"
+              value={values.address} onChange={set('address')} onBlur={blur('address')}
+              error={errors.address}
+            />
+            <div className="sm:col-span-2">
+              <Input
+                label="Password" type={showPass ? 'text' : 'password'} placeholder="Create a Password" autoComplete="new-password"
+                value={values.password} onChange={set('password')} onBlur={blur('password')}
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                error={errors.password}
+                rightIcon={
+                  <button type="button" onClick={() => setShowPass(s => !s)}
+                    aria-label={showPass ? 'Hide password' : 'Show password'}
+                    className="bg-transparent border-none cursor-pointer text-slate p-0 flex hover:text-charcoal transition-colors">
+                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                }
+              />
+            </div>
+          </div>
+
+          <Button
+            variant="primary" size="md" fullWidth
+            onClick={handleSubmit}
+            loading={register.loading}
+            iconRight={!register.loading && <ArrowRight size={14} />}
+            className="mt-3 lg:mt-4"
+          >
+            {isSeller ? 'Create Seller Account' : 'Create Buyer Account'}
+          </Button>
+
+          {register.error && (
+            <div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
+              <AlertTriangle size={14} className="shrink-0" />
+              <span>{register.error}</span>
+            </div>
+          )}
+          {/* Not a failure — a known, honestly-labeled unavailable feature —
+             so it gets the neutral "info" treatment instead of the red error one. */}
+          {!register.error && social.error && (
+            <div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info">
+              <Info size={14} className="shrink-0" />
+              <span>{social.error}</span>
+            </div>
+          )}
+
+          {/* OR divider */}
+          <div className="flex items-center gap-3 my-2.5 lg:my-4">
+            <div className="flex-1 h-px bg-bone" />
+            <span className="text-[11px] text-slate">or sign up with</span>
+            <div className="flex-1 h-px bg-bone" />
+          </div>
+
+          {/* Social buttons */}
+          <SocialLoginRow
+            onSelect={social.notConfigured}
+            disabled={social.loading || register.loading}
+            className="mb-3 lg:mb-4"
+          />
+
+          <p className="text-center text-[12px] text-slate mt-2">
+            Already have an account?{' '}
+            <Button variant="link" size="sm" onClick={() => navigate('/login')} className="font-semibold!">
+              Sign In
+            </Button>
+          </p>
+        </>
+      )}
+    </AuthSplitLayout>
   );
 }

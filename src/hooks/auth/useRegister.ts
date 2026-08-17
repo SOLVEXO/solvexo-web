@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiRegister, AuthContext, type RegisterPayload } from '@/api/commerce/auth';
+import { apiRegister, AuthContext, LastRolePreference, type RegisterPayload } from '@/api/services/auth';
 
 export function useRegister() {
   const navigate = useNavigate();
@@ -13,6 +13,7 @@ export function useRegister() {
     try {
       const res = await apiRegister(payload);
       AuthContext.set({ email: payload.email, role: payload.role, userId: res.data.userId, flow: 'register' });
+      LastRolePreference.set(payload.role);
       navigate('/verify-otp');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useId, useState, type KeyboardEvent } from 'react';
 import { X, ChevronLeft, ChevronRight, CalendarClock } from 'lucide-react';
+import { DialogShell } from './DialogShell';
 
 const MONTHS    = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const WEEK_DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -23,6 +24,8 @@ type Mode = 'hour' | 'minute';
 type Sel  = { y: number; m: number; d: number };
 
 export function DateTimePickerModal({ value, onChange, onClose }: DateTimePickerModalProps) {
+  const titleId   = useId();
+
   const init = value ? new Date(value) : null;
   const now  = new Date();
 
@@ -88,13 +91,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
     : null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Modal card */}
-      <div className="relative flex flex-col w-full max-w-[360px] max-h-[92vh] bg-white rounded-2xl border border-bone shadow-[0_32px_80px_rgba(0,0,0,0.28)] overflow-hidden">
+    <DialogShell onClose={onClose} ariaLabelledBy={titleId} className="max-w-[360px] max-h-[92vh]">
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="shrink-0 flex items-center justify-between px-5 py-[14px] border-b border-bone">
@@ -103,14 +100,15 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
               <CalendarClock size={15} className="text-brand-orange" />
             </div>
             <div>
-              <p className="text-[14px] font-bold text-charcoal leading-tight">Schedule Go-Live</p>
+              <p id={titleId} className="text-[14px] font-bold text-charcoal leading-tight">Schedule Go-Live</p>
               <p className="text-[11px] text-slate mt-[1px]">Choose date &amp; time</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-bone flex items-center justify-center border-none cursor-pointer text-slate hover:bg-[#E0DED6] hover:text-charcoal transition-colors shrink-0"
+            aria-label="Close dialog"
+            className="w-7 h-7 rounded-full bg-bone flex items-center justify-center border-none cursor-pointer text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors shrink-0"
           >
             <X size={13} />
           </button>
@@ -125,7 +123,8 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
               <button
                 type="button"
                 onClick={prevMonth}
-                className="w-7 h-7 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#E0DED6] hover:text-charcoal transition-colors"
+                aria-label="Previous month"
+                className="w-7 h-7 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors"
               >
                 <ChevronLeft size={14} />
               </button>
@@ -133,7 +132,8 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
               <button
                 type="button"
                 onClick={nextMonth}
-                className="w-7 h-7 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#E0DED6] hover:text-charcoal transition-colors"
+                aria-label="Next month"
+                className="w-7 h-7 rounded-[7px] bg-bone border-none cursor-pointer flex items-center justify-center text-slate hover:bg-[#e0ded6] hover:text-charcoal transition-colors"
               >
                 <ChevronRight size={14} />
               </button>
@@ -165,7 +165,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
                         color:      s ? '#fff' : past ? '#C5C3BB' : '#141413',
                         fontWeight: s || t ? 700 : 400,
                         cursor:     past ? 'default' : 'pointer',
-                        boxShadow:  t && !s ? 'inset 0 0 0 1.5px #D97757' : 'none',
+                        border:     t && !s ? '1.5px solid #D97757' : '1.5px solid transparent',
                       }}
                     >
                       {day}
@@ -192,7 +192,7 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
               >
                 {hh}
               </button>
-              <span className="text-[26px] font-bold text-[#C8C4BB] select-none leading-none">:</span>
+              <span className="text-[26px] font-bold text-[#c8c4bb] select-none leading-none">:</span>
               <button
                 type="button"
                 onClick={() => setMode('minute')}
@@ -241,9 +241,18 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
                   ? HOURS.map(h => {
                       const pos      = polar(h === 12 ? 0 : h, 12, R_ITEM);
                       const isActive = h === hour;
+                      const pick     = () => { setHour(h); setMode('minute'); };
                       return (
-                        <g key={h} style={{ cursor: 'pointer' }}
-                          onClick={() => { setHour(h); setMode('minute'); }}>
+                        <g
+                          key={h}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`${h} o'clock`}
+                          aria-pressed={isActive}
+                          style={{ cursor: 'pointer' }}
+                          onClick={pick}
+                          onKeyDown={(e: KeyboardEvent<SVGGElement>) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } }}
+                        >
                           <circle cx={pos.x} cy={pos.y} r="16" fill="transparent" />
                           <text
                             x={pos.x} y={pos.y}
@@ -259,8 +268,18 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
                   : MINS.map(m => {
                       const pos      = polar(m, 60, R_ITEM);
                       const isActive = m === minute;
+                      const pick     = () => setMinute(m);
                       return (
-                        <g key={m} style={{ cursor: 'pointer' }} onClick={() => setMinute(m)}>
+                        <g
+                          key={m}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`${m} minutes`}
+                          aria-pressed={isActive}
+                          style={{ cursor: 'pointer' }}
+                          onClick={pick}
+                          onKeyDown={(e: KeyboardEvent<SVGGElement>) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } }}
+                        >
                           <circle cx={pos.x} cy={pos.y} r="16" fill="transparent" />
                           <text
                             x={pos.x} y={pos.y}
@@ -321,7 +340,6 @@ export function DateTimePickerModal({ value, onChange, onClose }: DateTimePicker
           </button>
         </div>
 
-      </div>
-    </div>
+    </DialogShell>
   );
 }

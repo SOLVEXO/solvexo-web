@@ -1,66 +1,44 @@
-import { useState, useRef, type KeyboardEvent } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useVerifyOtp } from '@/hooks/auth/useVerifyOtp';
 import { Button } from '@/components/comman/ui/Button';
-import { AlertTriangle, ArrowRight, Check } from 'lucide-react';
+import { OTPInput } from '@/components/comman/ui/OTPInput';
+import { AlertTriangle, ArrowRight } from 'lucide-react';
 import { runSchema, otpSchema } from '@/utils/validation/schemas';
-import { AuthContext } from '@/api/commerce/auth';
+import { AuthContext, apiResendOtp, apiForgotPassword, type AppRole } from '@/api/services/auth';
+import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
+import { Mail, ShieldCheck, KeyRound, Fingerprint } from 'lucide-react';
+import { InboxMockup, IdentityMockup } from '@/features/auth/components/mockups/AuthMockups';
+import { useToast } from '@/contexts/ToastContext';
 
-function OTPInput({ values, onChange }: { values: string[]; onChange: (i: number, v: string) => void }) {
-  const refs = useRef<(HTMLInputElement | null)[]>([]);
+const EMAIL_HIGHLIGHTS = [
+  { Icon: Mail,        text: 'Check your inbox for a 6-digit code' },
+  { Icon: KeyRound,    text: 'Codes expire after a short window' },
+  { Icon: ShieldCheck, text: 'This keeps your account secure' },
+];
 
-  const handleChange = (i: number, val: string) => {
-    if (!/^\d?$/.test(val)) return;
-    onChange(i, val);
-    if (val && i < 5) refs.current[i + 1]?.focus();
-  };
+const IDENTITY_HIGHLIGHTS = [
+  { Icon: Fingerprint, text: "We're just confirming it's really you" },
+  { Icon: KeyRound,    text: 'Codes expire after a short window' },
+  { Icon: ShieldCheck, text: 'Your account stays protected throughout' },
+];
 
-  const handleKeyDown = (i: number, e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !values[i] && i > 0) refs.current[i - 1]?.focus();
-    if (e.key === 'ArrowLeft'  && i > 0) refs.current[i - 1]?.focus();
-    if (e.key === 'ArrowRight' && i < 5) refs.current[i + 1]?.focus();
-  };
+function ResendTimer({ email, role, isIdentity }: { email: string; role: AppRole; isIdentity: boolean }) {
+  const toast = useToast();
+  const [seconds,    setSeconds]    = useState(59);
+  const [canResend,  setCanResend]  = useState(false);
+  const [sending,    setSending]    = useState(false);
+  const [error,      setError]      = useState('');
+  // Bumped on every successful resend so the countdown effect below re-runs
+  // and starts a fresh interval — previously the interval was only ever
+  // created once (inside a useState initializer, whose cleanup was never
+  // actually invoked since only useEffect cleanup functions are), so after
+  // the first countdown finished, resetting `seconds` to 59 froze the
+  // display forever with no running timer to count it back down.
+  const [resendKey,  setResendKey]  = useState(0);
 
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    pasted.split('').forEach((ch, i) => onChange(i, ch));
-    refs.current[Math.min(pasted.length, 5)]?.focus();
-  };
-
-  const filled = values[0] !== '' && values.every(v => v !== '');
-
-  return (
-    <div>
-      <div className="flex gap-[10px] justify-center mb-2">
-        {values.map((val, i) => (
-          <input key={i}
-            ref={el => { refs.current[i] = el; }}
-            type="text" inputMode="numeric" maxLength={1} value={val}
-            onChange={e => handleChange(i, e.target.value)}
-            onKeyDown={e => handleKeyDown(i, e)}
-            onPaste={handlePaste}
-            className={[
-              'w-10 h-12 sm:w-[52px] sm:h-14 text-center text-[18px] sm:text-[22px] font-bold rounded-[10px] border-2 text-carbon outline-none transition-all duration-150 cursor-text',
-              val ? 'border-brand-orange bg-brand-pale-orange' : 'border-bone bg-white',
-            ].join(' ')}
-          />
-        ))}
-      </div>
-      {filled && (
-        <p className="text-center text-[11px] text-success flex items-center justify-center gap-1">
-          <Check size={11} /> Code entered — click Verify to continue
-        </p>
-      )}
-    </div>
-  );
-}
-
-function ResendTimer() {
-  const [seconds,   setSeconds]   = useState(59);
-  const [canResend, setCanResend] = useState(false);
-
-  useState(() => {
+  useEffect(() => {
     const t = setInterval(() => {
       setSeconds(s => {
         if (s <= 1) { clearInterval(t); setCanResend(true); return 0; }
@@ -68,14 +46,40 @@ function ResendTimer() {
       });
     }, 1000);
     return () => clearInterval(t);
-  });
+  }, [resendKey]);
+
+  const handleResend = async () => {
+    setSending(true);
+    setError('');
+    try {
+      // Registration's resend-otp endpoint 400s with "User already verified"
+      // for a forgot-password OTP — that account is, correctly, already
+      // verified. Forgot-password's own endpoint already regenerates and
+      // re-emails a fresh code, so it doubles as the real "resend" here.
+      if (isIdentity) {
+        await apiForgotPassword({ email, role });
+      } else {
+        await apiResendOtp({ email, role });
+      }
+      setSeconds(59);
+      setCanResend(false);
+      setResendKey(k => k + 1);
+      toast.success('Code resent');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to resend code.');
+    } finally {
+      setSending(false);
+    }
+  };
 
   if (canResend) {
     return (
-      <button onClick={() => { setSeconds(59); setCanResend(false); }}
-        className="text-[13px] text-brand-orange font-semibold bg-transparent border-none cursor-pointer">
-        Resend code
-      </button>
+      <div className="flex flex-col items-center gap-1">
+        <Button variant="link" size="sm" onClick={handleResend} loading={sending} disabled={sending}>
+          Resend code
+        </Button>
+        {error && <p className="text-[11px] text-error">{error}</p>}
+      </div>
     );
   }
   return (
@@ -87,12 +91,15 @@ function ResendTimer() {
 
 export function VerifyOTPPage() {
   usePageTitle('Verify OTP');
+  const navigate   = useNavigate();
   const verifyOtp  = useVerifyOtp();
   const [otp, setOtp]     = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
 
-  const ctx       = AuthContext.get();
-  const userEmail = ctx?.email ?? '';
+  const ctx        = AuthContext.get();
+  const userEmail  = ctx?.email ?? '';
+  const userRole   = ctx?.role ?? 'user';
+  const isIdentity = ctx?.flow === 'forgot';
 
   const handleChange = (i: number, val: string) => {
     const next = [...otp]; next[i] = val; setOtp(next); setError('');
@@ -102,43 +109,66 @@ export function VerifyOTPPage() {
     const code = otp.join('');
     const errs = runSchema(otpSchema, { otp: code });
     if (errs.otp) { setError(errs.otp); return; }
+
+    if (isIdentity) {
+      // There's no standalone "verify this reset code" backend endpoint —
+      // reset-password only accepts otp+newPassword together in one call.
+      // Carry the code forward instead of re-verifying it here; if it's
+      // actually wrong/expired, that surfaces on the next step when the
+      // combined request is made, with a way back to re-enter it.
+      AuthContext.set({ email: userEmail, role: userRole, flow: 'forgot', otp: code });
+      navigate('/new-password');
+      return;
+    }
+
     await verifyOtp.execute(code);
     if (verifyOtp.error) setError(verifyOtp.error);
   };
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-[20px] px-6 py-6 md:px-10 md:py-9 w-full max-w-[440px] border border-bone">
-        <h1 className="text-[22px] font-bold text-carbon text-center mb-2">
-          Verify your email
-        </h1>
-        <p className="text-[13px] text-slate text-center mb-1 leading-[1.6]">
-          We sent a 6-digit verification code to
-        </p>
-        <p className="text-[14px] font-semibold text-carbon text-center mb-7">
-          {userEmail || '—'}
-        </p>
+    <AuthSplitLayout
+      heading={isIdentity ? 'Confirm it\'s you.' : 'One last step.'}
+      subtext={isIdentity
+        ? "Enter the code we sent to confirm your identity before resetting your password."
+        : 'Verify your email address to finish setting up your Solvexo account.'}
+      highlights={isIdentity ? IDENTITY_HIGHLIGHTS : EMAIL_HIGHLIGHTS}
+      visual={isIdentity ? <IdentityMockup /> : <InboxMockup />}
+    >
+      <h1 className="text-[22px] font-bold text-carbon text-center mb-2">
+        {isIdentity ? 'Verify your identity' : 'Verify your email'}
+      </h1>
+      <p className="text-[13px] text-slate text-center mb-1 leading-[1.6]">
+        We sent a 6-digit verification code to
+      </p>
+      <p className="text-[14px] font-semibold text-carbon text-center mb-6">
+        {userEmail || '—'}
+      </p>
 
-        <div className="mb-5">
-          <OTPInput values={otp} onChange={handleChange} />
-        </div>
-
-        {(error || verifyOtp.error) && (
-          <div className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 flex items-center gap-2">
-            <AlertTriangle size={14} className="text-error shrink-0" />
-            <span className="text-[13px] text-error">{error || verifyOtp.error}</span>
-          </div>
-        )}
-
-        <Button variant="primary" size="lg" fullWidth onClick={handleVerify} disabled={otp.join('').length < 6 || verifyOtp.loading}>
-          {verifyOtp.loading ? 'Verifying...' : <span>Verify Code <ArrowRight size={14} className="inline align-middle ml-1" /></span>}
-        </Button>
-
-        <div className="flex items-center justify-center gap-[6px] mt-5">
-          <span className="text-[13px] text-slate">Didn't receive it?</span>
-          <ResendTimer />
-        </div>
+      <div className="mb-5">
+        <OTPInput values={otp} onChange={handleChange} />
       </div>
-    </div>
+
+      {(error || verifyOtp.error) && (
+        <div role="alert" className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 flex items-center gap-2">
+          <AlertTriangle size={14} className="text-error shrink-0" />
+          <span className="text-[13px] text-error">{error || verifyOtp.error}</span>
+        </div>
+      )}
+
+      <Button
+        variant="primary" size="lg" fullWidth
+        onClick={handleVerify}
+        disabled={otp.join('').length < 6}
+        loading={verifyOtp.loading}
+        iconRight={!verifyOtp.loading && <ArrowRight size={14} />}
+      >
+        Verify Code
+      </Button>
+
+      <div className="flex items-center justify-center gap-[6px] mt-5">
+        <span className="text-[13px] text-slate">Didn't receive it?</span>
+        <ResendTimer email={userEmail} role={userRole} isIdentity={isIdentity} />
+      </div>
+    </AuthSplitLayout>
   );
 }

@@ -1,27 +1,26 @@
 import { useState, useEffect } from 'react';
 import {
   ShoppingCart, AlertCircle, RefreshCw,
-  DollarSign, Clock, TrendingUp, Eye, CheckCheck, Truck,
+  DollarSign, Clock, TrendingUp, CheckCheck, Truck,
 } from 'lucide-react';
-import { apiMarkOrderPaid, apiUpdateOrderStatus } from '@/api/commerce/orders';
+import { apiMarkOrderPaid, apiUpdateOrderStatus } from '@/api/services/orders';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   Table,      type TableColumn,
   MetricCard,
   Badge,      StatusBadge,
-  EmptyState,
   Card,
   Avatar,
   SearchInput,
-  SkeletonBox,
   ActionMenu,
 } from '@/components/comman/ui';
 import {
   apiGetSellerOrders,
   type SellerOrder,
   type SellerOrderStats,
-} from '@/api/commerce/product';
+} from '@/api/services/product';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { currencySymbol } from '@/utils/currency';
 
 // ── Customer cell ──────────────────────────────────────────────────────────────
 function CustomerCell({ name, email }: { name: string; email: string }) {
@@ -39,13 +38,14 @@ function CustomerCell({ name, email }: { name: string; email: string }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function StoreOrderList() {
   usePageTitle('Orders');
-  const { storeId } = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
 
   const [orders,      setOrders]      = useState<SellerOrder[]>([]);
   const [totalOrders, setTotalOrders] = useState(0);
   const [stats,       setStats]       = useState<SellerOrderStats | null>(null);
   const [page,        setPage]        = useState(1);
   const [search,      setSearch]      = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusF,     setStatusF]     = useState('');
   const [typeF,       setTypeF]       = useState('');
   const [loading,       setLoading]       = useState(true);
@@ -55,15 +55,28 @@ export function StoreOrderList() {
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
   const LIMIT = 10;
+  // No server-side order search endpoint exists — when searching, fetch a
+  // much larger page instead of the normal small one so the search covers
+  // (up to) the whole order list rather than silently only ever matching
+  // whatever 10 rows happened to already be on screen (same pattern as
+  // StoreProductList's SEARCH_LIMIT).
+  const SEARCH_LIMIT = 1000;
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(id);
+  }, [search]);
 
   useEffect(() => {
     if (!storeId) return;
     let cancelled = false;
+    const isSearching = debouncedSearch.trim().length > 0;
+    const [fetchPage, fetchLimit] = isSearching ? [1, SEARCH_LIMIT] : [page, LIMIT];
 
-    apiGetSellerOrders(storeId, page, LIMIT)
+    apiGetSellerOrders(storeId, fetchPage, fetchLimit)
       .then(res => {
         if (cancelled) return;
-        setOrders(res.data.orders);
+        setOrders(res.data.orders ?? []);
         setStats(res.data.stats);
         setTotalOrders(res.data.pagination.totalOrders);
       })
@@ -73,7 +86,7 @@ export function StoreOrderList() {
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [storeId, page, refreshKey]);
+  }, [storeId, page, refreshKey, debouncedSearch]);
 
   const handlePageChange = (p: number) => {
     setLoading(true);
@@ -132,7 +145,7 @@ export function StoreOrderList() {
       key: 'type', header: 'Type',
       render: o => (
         <Badge color={o.type === 'digital' ? 'blue' : 'orange'}>
-          {o.type === 'digital' ? 'Digital' : 'Physical'}
+          {o.type === 'digital' ? (o.productType === 'educational' ? 'Educational' : 'Digital') : 'Physical'}
         </Badge>
       ),
     },
@@ -148,7 +161,7 @@ export function StoreOrderList() {
       key: 'amount', header: 'Amount', align: 'right',
       render: o => (
         <span className="text-[13px] font-bold text-charcoal whitespace-nowrap">
-          Rs {o.amount.toLocaleString()}
+          {currencySymbol(store?.baseCurrency)}{o.amount.toLocaleString()}
         </span>
       ),
     },
@@ -159,7 +172,7 @@ export function StoreOrderList() {
           <span className="text-[12px] text-slate capitalize">{o.paymentType.replace(/_/g, ' ')}</span>
           {o.isPaid
             ? <span className="text-[10px] font-semibold text-success">Paid</span>
-            : <span className="text-[10px] font-semibold text-[#B36200]">Unpaid</span>
+            : <span className="text-[10px] font-semibold text-[#b36200]">Unpaid</span>
           }
         </div>
       ),
@@ -183,7 +196,7 @@ export function StoreOrderList() {
               );
             })
             .catch((err: unknown) => {
-              alert(err instanceof Error ? err.message : 'Failed to update status.');
+              setError(err instanceof Error ? err.message : 'Failed to update status.');
             })
             .finally(() => setUpdatingStatusId(null));
         };
@@ -192,7 +205,6 @@ export function StoreOrderList() {
           <ActionMenu
             align="right"
             items={[
-              { label: 'View Order', onClick: () => {}, icon: <Eye size={13} /> },
               ...(!o.isPaid ? [{
                 label: markingPaidId === o.orderId ? 'Marking…' : 'Mark as Paid',
                 icon: <CheckCheck size={13} />,
@@ -203,7 +215,7 @@ export function StoreOrderList() {
                     .then(() => setOrders(prev =>
                       prev.map(x => x.orderId === o.orderId ? { ...x, isPaid: true } : x)
                     ))
-                    .catch((err: unknown) => alert(err instanceof Error ? err.message : 'Failed to mark as paid.'))
+                    .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to mark as paid.'))
                     .finally(() => setMarkingPaidId(null));
                 },
               }] : []),
@@ -234,16 +246,20 @@ export function StoreOrderList() {
         title="Orders"
         subtitle={loading ? 'Loading…' : `${totalOrders} order${totalOrders !== 1 ? 's' : ''}`}
         actions={
-          <button className="flex items-center gap-1.5 bg-white text-[#4A4945] border border-bone rounded-[9px] px-4 py-[9px] text-[13px] font-medium cursor-pointer">
-            Export CSV
+          <button
+            disabled
+            title="Order export isn't available yet — coming soon"
+            className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-4 py-[9px] text-[13px] font-medium opacity-50 cursor-not-allowed"
+          >
+            Export CSV (Coming Soon)
           </button>
         }
       />
 
-      <div className="px-7 py-5 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 py-5 flex flex-col gap-5">
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard
             label="Total Orders"
             value={stats?.totalOrders ?? 0}
@@ -252,7 +268,7 @@ export function StoreOrderList() {
           />
           <MetricCard
             label="Revenue"
-            value={stats ? `Rs ${stats.revenue.toLocaleString()}` : 0}
+            value={stats ? `${currencySymbol(store?.baseCurrency)}${stats.revenue.toLocaleString()}` : 0}
             icon={<DollarSign size={16} />}
             loading={loading && !stats}
           />
@@ -264,7 +280,7 @@ export function StoreOrderList() {
           />
           <MetricCard
             label="Avg. Order"
-            value={stats ? `Rs ${stats.avgOrder.toLocaleString()}` : 0}
+            value={stats ? `${currencySymbol(store?.baseCurrency)}${stats.avgOrder.toLocaleString()}` : 0}
             icon={<TrendingUp size={16} />}
             loading={loading && !stats}
           />
@@ -272,7 +288,7 @@ export function StoreOrderList() {
 
         {/* Error */}
         {error && (
-          <div className="bg-[#FFF0F0] border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
+          <div className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-center gap-3">
             <AlertCircle size={16} className="text-error shrink-0" />
             <span className="text-[13px] text-error flex-1">{error}</span>
             <button
@@ -287,19 +303,19 @@ export function StoreOrderList() {
         {/* Table */}
         {!error && (
           <Card padding="none">
-            <div className="px-5 pt-4 pb-3 flex items-center gap-3 flex-wrap">
+            <div className="px-4 sm:px-5 pt-4 pb-3 flex flex-col gap-2.5">
               <p className="text-[14px] font-bold text-charcoal shrink-0">All Orders</p>
-              <div className="flex items-center gap-2 ml-auto flex-wrap">
-                <SearchInput
-                  value={search}
-                  onChange={setSearch}
-                  placeholder="Search orders…"
-                  className="w-[200px]"
-                />
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder="Search orders…"
+                className="w-full sm:w-[200px] sm:ml-auto"
+              />
+              <div className="flex items-center gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-end">
                 <select
                   value={statusF || 'All Status'}
                   onChange={e => setStatusF(e.target.value === 'All Status' ? '' : e.target.value)}
-                  className="text-[13px] px-3 py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer"
+                  className="text-[13px] px-3 py-2 sm:py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0"
                 >
                   {['All Status', 'pending', 'completed', 'cancelled', 'processing'].map(o => (
                     <option key={o} value={o}>{o === 'All Status' ? 'All Status' : o.charAt(0).toUpperCase() + o.slice(1)}</option>
@@ -308,7 +324,7 @@ export function StoreOrderList() {
                 <select
                   value={typeF || 'All Types'}
                   onChange={e => setTypeF(e.target.value === 'All Types' ? '' : e.target.value)}
-                  className="text-[13px] px-3 py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer"
+                  className="text-[13px] px-3 py-2 sm:py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0"
                 >
                   {['All Types', 'digital', 'physical'].map(o => (
                     <option key={o} value={o}>{o === 'All Types' ? 'All Types' : o.charAt(0).toUpperCase() + o.slice(1)}</option>
@@ -316,59 +332,40 @@ export function StoreOrderList() {
                 </select>
                 <button
                   onClick={() => { setSearch(''); setStatusF(''); setTypeF(''); }}
-                  className="text-[12px] text-slate border border-bone rounded-[6px] px-3 py-[7px] bg-white cursor-pointer hover:bg-bone shrink-0"
+                  className="text-[12px] text-slate border border-bone rounded-[6px] px-3 py-2 sm:py-[7px] bg-white cursor-pointer hover:bg-bone shrink-0"
                 >
                   Clear
                 </button>
                 <button
                   onClick={handleRetry}
-                  className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[7px] hover:bg-bone shrink-0"
+                  className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-2 sm:py-[7px] hover:bg-bone shrink-0"
                 >
                   <RefreshCw size={11} /> Refresh
                 </button>
               </div>
             </div>
 
-            {loading ? (
-              <div className="px-5 pb-5 flex flex-col gap-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <SkeletonBox width={80}  height={13} rounded="4px" />
-                    <SkeletonBox width={30}  height={30} rounded="999px" />
-                    <SkeletonBox width="20%" height={13} />
-                    <SkeletonBox width="25%" height={13} className="ml-auto" />
-                    <SkeletonBox width="6%"  height={22} rounded="999px" />
-                    <SkeletonBox width="8%"  height={13} />
-                    <SkeletonBox width="8%"  height={13} />
-                    <SkeletonBox width={56}  height={22} rounded="999px" />
-                    <SkeletonBox width={28}  height={28} rounded="7px" />
-                  </div>
-                ))}
-              </div>
-            ) : filtered.length === 0 ? (
-              <EmptyState
-                icon={<ShoppingCart size={30} className="text-brand-orange opacity-55" />}
-                title={search || statusF || typeF ? 'No orders match your filters' : 'No orders yet'}
-                description={
+            <Table
+              columns={columns}
+              data={filtered}
+              keyExtractor={o => o.orderId}
+              loading={loading}
+              emptyState={{
+                icon: <ShoppingCart size={30} className="text-brand-orange opacity-55" />,
+                title: search || statusF || typeF ? 'No orders match your filters' : 'No orders yet',
+                description:
                   search || statusF || typeF
                     ? 'Try adjusting your search or filters.'
-                    : 'Orders from your store will appear here once customers start purchasing.'
-                }
-              />
-            ) : (
-              <Table
-                columns={columns}
-                data={filtered}
-                keyExtractor={o => o.orderId}
-                pagination={{
-                  page,
-                  total:    totalOrders,
-                  perPage:  LIMIT,
-                  onChange: handlePageChange,
-                  label:    'orders',
-                }}
-              />
-            )}
+                    : 'Orders from your store will appear here once customers start purchasing.',
+              }}
+              pagination={{
+                page,
+                total:    totalOrders,
+                perPage:  LIMIT,
+                onChange: handlePageChange,
+                label:    'orders',
+              }}
+            />
           </Card>
         )}
 

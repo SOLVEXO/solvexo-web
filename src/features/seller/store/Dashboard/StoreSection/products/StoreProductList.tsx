@@ -1,50 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShoppingBag, Plus, Package, Download,
+  ShoppingBag, Plus,
   AlertCircle, RefreshCw, TrendingUp,
-  CheckCircle2, AlertTriangle, XCircle,
-  Eye, Pencil,
+  Eye, Pencil, Trash2,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
-  Table,      type TableColumn,
-  MetricCard,
+  Table,      type TableColumn, type TableSort,
   Badge,      StatusBadge,
   EmptyState,
   Card,
   SearchInput,
   SkeletonBox,
   ActionMenu,
+  Modal,
+  Button,
 } from '@/components/comman/ui';
 import {
   apiGetStoreInventory,
+  apiDeleteProduct,
   type InventoryProduct,
-} from '@/api/commerce/product';
-
-// ── Product thumbnail cell ────────────────────────────────────────────────────
-function ProductCell({ p }: { p: InventoryProduct }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="w-9 h-9 rounded-lg shrink-0 bg-brand-pale-orange border border-[#EDEBE2] flex items-center justify-center overflow-hidden">
-        {p.image
-          ? <img src={p.image} alt="" className="w-full h-full object-cover" />
-          : p.type === 'digital'
-            ? <Download size={14} className="text-brand-orange" />
-            : <Package  size={14} className="text-brand-orange" />}
-      </div>
-      <div>
-        <p className="text-[13px] font-medium text-charcoal mb-[1px]">{p.name}</p>
-        <p className="text-[11px] text-slate">SKU: {p.sku}</p>
-      </div>
-    </div>
-  );
-}
+} from '@/api/services/product';
+import { currencySymbol } from '@/utils/currency';
+import { ProductCell, ProductStatsGrid } from '../../components/ProductListShared';
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function StoreProductList() {
   const navigate    = useNavigate();
-  const { storeId } = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
 
   const [products,      setProducts]      = useState<InventoryProduct[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -53,16 +37,39 @@ export default function StoreProductList() {
   const [search,        setSearch]        = useState('');
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState('');
+  const [deleteTarget,  setDeleteTarget]  = useState<InventoryProduct | null>(null);
+  const [deleting,      setDeleting]      = useState(false);
+  const [deleteError,   setDeleteError]   = useState('');
 
   const LIMIT = 10;
+  const SEARCH_LIMIT = 1000;
   const [refreshKey, setRefreshKey] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const isSearching = debouncedSearch.trim().length > 0;
+
+  const [sort, setSort] = useState<TableSort | null>(null);
+
+  const handleSortChange = (key: string) => {
+    setSort(prev => (prev && prev.key === key)
+      ? { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
+      : { key, direction: 'asc' });
+  };
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(id);
+  }, [search]);
 
   useEffect(() => {
     let cancelled = false;
-    apiGetStoreInventory(storeId, page, LIMIT)
+    setLoading(true);
+    // When searching, fetch a much larger page so the search covers the whole
+    // catalog rather than just the currently-visible page (no server-side search endpoint exists).
+    const [fetchPage, fetchLimit] = isSearching ? [1, SEARCH_LIMIT] : [page, LIMIT];
+    apiGetStoreInventory(storeId, fetchPage, fetchLimit)
       .then(res => {
         if (cancelled) return;
-        setProducts(res.data.products);
+        setProducts(res.data.products ?? []);
         setStats(res.data.stats);
         setTotalProducts(res.data.pagination.totalProducts);
       })
@@ -71,7 +78,7 @@ export default function StoreProductList() {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [storeId, page, refreshKey]);
+  }, [storeId, page, refreshKey, isSearching]);
 
   const goAdd    = () => navigate(`/seller/store/${storeId}/products/add`);
   const goEdit   = (p: InventoryProduct) => navigate(`/seller/store/${storeId}/products/edit/${p.productId}`);
@@ -90,12 +97,38 @@ export default function StoreProductList() {
     setRefreshKey(k => k + 1);
   };
 
-  const filtered = search.trim()
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await apiDeleteProduct(deleteTarget.productId);
+      setDeleteTarget(null);
+      setRefreshKey(k => k + 1);
+    } catch (err: unknown) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete product.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const filtered = isSearching
     ? products.filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.sku.toLowerCase().includes(search.toLowerCase())
+        p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        p.sku.toLowerCase().includes(debouncedSearch.toLowerCase())
       )
     : products;
+
+  const sorted = sort
+    ? [...filtered].sort((a, b) => {
+        const av = a[sort.key as keyof InventoryProduct];
+        const bv = b[sort.key as keyof InventoryProduct];
+        const cmp = typeof av === 'number' && typeof bv === 'number'
+          ? av - bv
+          : String(av ?? '').localeCompare(String(bv ?? ''));
+        return sort.direction === 'asc' ? cmp : -cmp;
+      })
+    : filtered;
 
   // ── Table columns ──────────────────────────────────────────────────────────
   const columns: TableColumn<InventoryProduct>[] = [
@@ -108,27 +141,27 @@ export default function StoreProductList() {
       ),
     },
     {
-      key: 'name', header: 'Product',
+      key: 'name', header: 'Product', sortable: true,
       render: p => <ProductCell p={p} />,
     },
     {
       key: 'type', header: 'Type',
       render: p => (
         <Badge color={p.type === 'digital' ? 'blue' : 'orange'}>
-          {p.type === 'digital' ? 'Digital' : 'Physical'}
+          {p.type === 'digital' ? (p.productType === 'educational' ? 'Educational' : 'Digital') : 'Physical'}
         </Badge>
       ),
     },
     {
-      key: 'price', header: 'Price', align: 'right',
+      key: 'price', header: 'Price', align: 'right', sortable: true,
       render: p => (
         <span className="font-semibold text-charcoal">
-          Rs {p.price.toLocaleString()}
+          {currencySymbol(store?.baseCurrency)}{p.price.toLocaleString()}
         </span>
       ),
     },
     {
-      key: 'stock', header: 'Stock', align: 'right',
+      key: 'stock', header: 'Stock', align: 'right', sortable: true,
       render: p => (
         <span className="text-[13px] text-carbon">
           {typeof p.stock === 'number' ? `${p.stock} units` : p.stock}
@@ -136,7 +169,7 @@ export default function StoreProductList() {
       ),
     },
     {
-      key: 'allTimeSales', header: 'Sales', align: 'right',
+      key: 'allTimeSales', header: 'Sales', align: 'right', sortable: true,
       render: p => (
         <div className="flex items-center justify-end gap-1 text-[12px] text-slate">
           <TrendingUp size={12} className="text-success shrink-0" />
@@ -154,8 +187,9 @@ export default function StoreProductList() {
         <ActionMenu
           align="right"
           items={[
-            { label: 'View Detail',  onClick: () => goDetail(p), icon: <Eye    size={13} /> },
-            { label: 'Edit Product', onClick: () => goEdit(p),   icon: <Pencil size={13} /> },
+            { label: 'View Detail',    onClick: () => goDetail(p),                icon: <Eye    size={13} /> },
+            { label: 'Edit Product',   onClick: () => goEdit(p),                  icon: <Pencil size={13} /> },
+            { label: 'Delete Product', onClick: () => { setDeleteError(''); setDeleteTarget(p); }, icon: <Trash2 size={13} />, danger: true },
           ]}
         />
       ),
@@ -170,7 +204,7 @@ export default function StoreProductList() {
         actions={
           <button
             onClick={goAdd}
-            className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-4 py-[9px] text-[13px] font-semibold cursor-pointer"
+            className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-4 py-[9px] text-[13px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-2"
           >
             <Plus size={15} /> Add Product
           </button>
@@ -180,41 +214,16 @@ export default function StoreProductList() {
       <div className="px-7 py-5 flex flex-col gap-5">
 
         {/* ── Stats ──────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-4 gap-3">
-          <MetricCard
-            label="Total Products"
-            value={stats?.totalProducts ?? 0}
-            icon={<ShoppingBag size={16} />}
-            loading={loading && !stats}
-          />
-          <MetricCard
-            label="In Stock"
-            value={stats?.inStock ?? 0}
-            icon={<CheckCircle2 size={16} />}
-            loading={loading && !stats}
-          />
-          <MetricCard
-            label="Low Stock"
-            value={stats?.lowStock ?? 0}
-            icon={<AlertTriangle size={16} />}
-            loading={loading && !stats}
-          />
-          <MetricCard
-            label="Out of Stock"
-            value={stats?.outOfStock ?? 0}
-            icon={<XCircle size={16} />}
-            loading={loading && !stats}
-          />
-        </div>
+        <ProductStatsGrid stats={stats} loading={loading} />
 
         {/* ── Error ──────────────────────────────────────────────────── */}
         {error && (
-          <div className="bg-[#FFF0F0] border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3">
+          <div className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-center gap-3">
             <AlertCircle size={16} className="text-error shrink-0" />
             <span className="text-[13px] text-error flex-1">{error}</span>
             <button
               onClick={() => handleRetry()}
-              className="flex items-center gap-1 text-[12px] text-error font-semibold cursor-pointer"
+              className="flex items-center gap-1 text-[12px] text-error font-semibold cursor-pointer rounded-xs transition-opacity duration-150 hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-1"
             >
               <RefreshCw size={12} /> Retry
             </button>
@@ -236,7 +245,7 @@ export default function StoreProductList() {
                 />
                 <button
                   onClick={() => handleRetry()}
-                  className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[6px] hover:bg-bone shrink-0"
+                  className="flex items-center gap-1 text-[11px] text-slate cursor-pointer border border-bone rounded-[6px] px-2 py-[6px] transition-colors duration-150 hover:bg-bone shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-1"
                 >
                   <RefreshCw size={11} /> Refresh
                 </button>
@@ -245,9 +254,12 @@ export default function StoreProductList() {
 
             {/* Table or skeleton or empty */}
             {loading ? (
-              <div className="px-5 pb-5 flex flex-col gap-3">
+              <div>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4">
+                  <div
+                    key={i}
+                    className={`flex items-center gap-4 px-4 py-[13px]${i < 4 ? ' border-b border-[#f0eee6]' : ''}`}
+                  >
                     <SkeletonBox width={32} height={32} rounded="8px" />
                     <SkeletonBox width="35%" height={13} />
                     <SkeletonBox width="10%" height={13} className="ml-auto" />
@@ -258,7 +270,7 @@ export default function StoreProductList() {
                   </div>
                 ))}
               </div>
-            ) : filtered.length === 0 ? (
+            ) : sorted.length === 0 ? (
               <EmptyState
                 icon={<ShoppingBag size={30} className="text-brand-orange opacity-55" />}
                 title={search ? 'No products match your search' : 'No products yet'}
@@ -268,9 +280,11 @@ export default function StoreProductList() {
             ) : (
               <Table
                 columns={columns}
-                data={filtered}
+                data={sorted}
                 keyExtractor={p => p.productId}
-                pagination={{
+                sort={sort ?? undefined}
+                onSortChange={handleSortChange}
+                pagination={isSearching ? undefined : {
                   page,
                   total:    totalProducts,
                   perPage:  LIMIT,
@@ -283,6 +297,22 @@ export default function StoreProductList() {
         )}
 
       </div>
+
+      {deleteTarget && (
+        <Modal title="Delete this product?" onClose={() => setDeleteTarget(null)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button variant="danger" onClick={handleDeleteConfirm} loading={deleting}>Delete Product</Button>
+          </>
+        }>
+          <p className="text-[13px] text-slate">
+            <span className="font-semibold text-charcoal">{deleteTarget.name}</span> will be removed from your store and the marketplace. This can't be undone.
+          </p>
+          {deleteError && (
+            <p className="text-[12px] text-error mt-3">{deleteError}</p>
+          )}
+        </Modal>
+      )}
     </>
   );
 }

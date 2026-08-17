@@ -12,7 +12,7 @@ interface BadgeProps {
 }
 
 const colorClasses: Record<BadgeColor, string> = {
-  gray:   'bg-[#F1EFE8] text-slate',
+  gray:   'bg-mist text-slate',
   orange: 'bg-brand-pale-orange text-brand-deep-orange',
   green:  'bg-success-bg text-success',
   red:    'bg-error-bg text-error',
@@ -47,6 +47,8 @@ export function Badge({ children, color = 'gray', size = 'md', dot, className }:
 
 export function StatusBadge({ status, size }: { status: string; size?: 'sm' | 'md' }) {
   const color  = STATUS_COLORS[status] ?? STATUS_COLORS[status?.toLowerCase()] ?? 'gray';
-  const label  = status.charAt(0).toUpperCase() + status.slice(1);
+  // Handles snake_case values (e.g. 'under_review' -> 'Under Review') the
+  // same way as any single-word status ('active' -> 'Active').
+  const label = status.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   return <Badge color={color} size={size}>{label}</Badge>;
 }

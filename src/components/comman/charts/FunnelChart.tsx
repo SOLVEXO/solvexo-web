@@ -1,3 +1,5 @@
+import { CHART_COLORS } from './chartTheme';
+
 export interface FunnelStep {
   label: string;
   value: number;
@@ -12,8 +14,6 @@ export interface FunnelChartProps {
   valueSuffix?: string;
 }
 
-const DEFAULT_COLORS = ['#D97757', '#C96847', '#B85A3A', '#A84D2F'];
-
 export function FunnelChart({
   steps,
   title,
@@ -21,13 +21,29 @@ export function FunnelChart({
   valuePrefix = '',
   valueSuffix = '',
 }: FunnelChartProps) {
-  if (!steps.length) return null;
+  const ariaLabel = title ? `${title} chart` : 'Chart';
+
+  if (!steps.length) {
+    return (
+      <div
+        className="bg-white border border-bone rounded-[10px] px-5 py-5 flex items-center justify-center h-[200px]"
+        role="img"
+        aria-label={ariaLabel}
+      >
+        <p className="text-slate text-[13px]">No data yet</p>
+      </div>
+    );
+  }
 
   const top    = steps[0].value;
   const minPct = 40;
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-5">
+    <div
+      className="bg-white border border-bone rounded-[10px] px-5 py-5 transition-colors duration-200 hover:border-slate/30"
+      role="img"
+      aria-label={ariaLabel}
+    >
       {(title || subtitle) && (
         <div className="mb-5">
           {title    && <p className="text-sm font-bold text-charcoal">{title}</p>}
@@ -42,7 +58,7 @@ export function FunnelChart({
           const dropPct  = i > 0 && steps[i - 1].value > 0
             ? (((steps[i - 1].value - step.value) / steps[i - 1].value) * 100).toFixed(0)
             : null;
-          const color    = step.color ?? DEFAULT_COLORS[Math.min(i, DEFAULT_COLORS.length - 1)];
+          const color    = step.color ?? CHART_COLORS[Math.min(i, CHART_COLORS.length - 1)];
 
           return (
             <div key={step.label} className="w-full flex flex-col items-center">

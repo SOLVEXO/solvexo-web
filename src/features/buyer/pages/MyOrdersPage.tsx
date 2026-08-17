@@ -1,97 +1,18 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Package, Download, Truck, CheckCircle2, Clock, XCircle,
   ChevronDown, MapPin, Box, ShoppingBag,
-  BadgeCheck, RotateCcw, Loader2,
+  BadgeCheck, RotateCcw, Loader2, Ban, Undo2,
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { Card, EmptyState } from '@/components/comman/ui';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-type OrderStatus = 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled';
-
-interface OrderAddress {
-  recipientName: string;
-  phoneNumber:   string;
-  addressLine1:  string;
-  addressLine2?: string | null;
-  city:          string;
-  state:         string;
-  zipCode:       string;
-}
-
-interface OrderItem {
-  name:       string;
-  sku:        string;
-  quantity:   number;
-  price:      number;
-  totalPrice: number;
-  type:       'physical' | 'digital';
-  productId?: string;
-}
-
-interface MyOrder {
-  orderId:         string;
-  orderNumber:     string;
-  orderDate:       string;
-  paymentMethod:   string;
-  isPaid:          boolean;
-  orderStatus:     OrderStatus;
-  deliveryAddress: OrderAddress;
-  items:           OrderItem[];
-  summary: { subtotal: number; shipping: number; total: number };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Mock Data  — swap with real API call when ready
-// ─────────────────────────────────────────────────────────────────────────────
-const MOCK_ORDERS: MyOrder[] = [
-  {
-    orderId: 'ord_001', orderNumber: 'ORD-2024-001',
-    orderDate: '2024-06-20T10:30:00Z', paymentMethod: 'cash_on_delivery',
-    isPaid: false, orderStatus: 'shipped',
-    deliveryAddress: { recipientName: 'Ahmed Khan', phoneNumber: '0300-1234567', addressLine1: 'House 12, Street 5, F-7/2', city: 'Islamabad', state: 'ICT', zipCode: '44000' },
-    items: [
-      { name: 'Premium Wireless Headphones', sku: 'SKU-HP-001', quantity: 1, price: 8500, totalPrice: 8500, type: 'physical' },
-      { name: 'Phone Case - Black',          sku: 'SKU-PC-002', quantity: 2, price: 850,  totalPrice: 1700, type: 'physical' },
-    ],
-    summary: { subtotal: 10200, shipping: 250, total: 10450 },
-  },
-  {
-    orderId: 'ord_002', orderNumber: 'ORD-2024-002',
-    orderDate: '2024-06-18T14:00:00Z', paymentMethod: 'online',
-    isPaid: true, orderStatus: 'completed',
-    deliveryAddress: { recipientName: 'Ahmed Khan', phoneNumber: '0300-1234567', addressLine1: 'House 12, Street 5, F-7/2', city: 'Islamabad', state: 'ICT', zipCode: '44000' },
-    items: [
-      { name: 'Graphic Design Course Bundle', sku: 'SKU-DIG-010', quantity: 1, price: 3500, totalPrice: 3500, type: 'digital', productId: 'prod_010' },
-      { name: 'UI/UX Figma Templates Pack',   sku: 'SKU-DIG-011', quantity: 1, price: 1200, totalPrice: 1200, type: 'digital', productId: 'prod_011' },
-    ],
-    summary: { subtotal: 4700, shipping: 0, total: 4700 },
-  },
-  {
-    orderId: 'ord_003', orderNumber: 'ORD-2024-003',
-    orderDate: '2024-06-15T09:15:00Z', paymentMethod: 'cash_on_delivery',
-    isPaid: false, orderStatus: 'pending',
-    deliveryAddress: { recipientName: 'Ahmed Khan', phoneNumber: '0300-1234567', addressLine1: 'House 12, Street 5, F-7/2', city: 'Islamabad', state: 'ICT', zipCode: '44000' },
-    items: [
-      { name: 'Mechanical Keyboard RGB', sku: 'SKU-KB-005', quantity: 1, price: 12000, totalPrice: 12000, type: 'physical' },
-    ],
-    summary: { subtotal: 12000, shipping: 300, total: 12300 },
-  },
-  {
-    orderId: 'ord_004', orderNumber: 'ORD-2024-004',
-    orderDate: '2024-06-10T16:45:00Z', paymentMethod: 'online',
-    isPaid: true, orderStatus: 'cancelled',
-    deliveryAddress: { recipientName: 'Ahmed Khan', phoneNumber: '0300-1234567', addressLine1: 'House 12, Street 5, F-7/2', city: 'Islamabad', state: 'ICT', zipCode: '44000' },
-    items: [
-      { name: 'Running Shoes - Size 42', sku: 'SKU-SH-007', quantity: 1, price: 6500, totalPrice: 6500, type: 'physical' },
-    ],
-    summary: { subtotal: 6500, shipping: 200, total: 6700 },
-  },
-];
+import { Card, EmptyState, Modal, Textarea, Button, SkeletonBox, PageHeader } from '@/components/comman/ui';
+import {
+  apiGetMyOrders, apiCancelOrder, apiRequestReturn, apiGetDownloadLink,
+  type OrderSummary, type OrderStatus, type OrderLineItem,
+} from '@/api/services/orders';
+import { currencySymbol } from '@/utils/currency';
+import { useToast } from '@/contexts/ToastContext';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Status config
@@ -100,6 +21,7 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; icon: typeof Clock; bg
   pending:    { label: 'Pending',    icon: Clock,        bg: '#FFF4DC', text: '#B36200', border: '#FDDFA0' },
   processing: { label: 'Processing', icon: RotateCcw,    bg: '#EEF0FF', text: '#3851D1', border: '#C7CEFF' },
   shipped:    { label: 'Shipped',    icon: Truck,        bg: '#E8F5FF', text: '#1A65A8', border: '#B3D8F7' },
+  delivered:  { label: 'Delivered',  icon: CheckCircle2, bg: '#E3F4EA', text: '#1A6B35', border: '#A3D9B5' },
   completed:  { label: 'Completed',  icon: CheckCircle2, bg: '#E3F4EA', text: '#1A6B35', border: '#A3D9B5' },
   cancelled:  { label: 'Cancelled',  icon: XCircle,      bg: '#FFF0F0', text: '#C0392B', border: '#F5BCBC' },
 };
@@ -109,13 +31,11 @@ const FILTER_TABS: { key: 'all' | OrderStatus; label: string }[] = [
   { key: 'pending',    label: 'Pending'    },
   { key: 'processing', label: 'Processing' },
   { key: 'shipped',    label: 'Shipped'    },
+  { key: 'delivered',  label: 'Delivered'  },
   { key: 'completed',  label: 'Completed'  },
   { key: 'cancelled',  label: 'Cancelled'  },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// StatusBadge
-// ─────────────────────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: OrderStatus }) {
   const cfg  = STATUS_CONFIG[status];
   const Icon = cfg.icon;
@@ -131,32 +51,94 @@ function StatusBadge({ status }: { status: OrderStatus }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DownloadBtn
+// DownloadBtn — real flow: get a short-lived token, then open the direct-download URL
 // ─────────────────────────────────────────────────────────────────────────────
 function DownloadBtn({ orderId, productId }: { orderId: string; productId: string }) {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
   const handle = async () => {
     setBusy(true);
-    // TODO: replace with apiGetDownloadUrl(orderId, productId) when API ready
-    await new Promise(r => setTimeout(r, 800));
-    console.log('download', orderId, productId);
-    setBusy(false);
+    setError('');
+    try {
+      const res = await apiGetDownloadLink(orderId, productId, 0);
+      const base = import.meta.env.VITE_API_URL as string;
+      window.open(`${base}${res.data.endpoint}?token=${res.data.token}`, '_blank');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch download link.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
-    <button
-      onClick={handle}
-      disabled={busy}
-      className={clsx(
-        'flex items-center gap-[5px] px-3 py-[5px] rounded-[7px] text-[11px] font-semibold border-none',
-        busy ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
-        'bg-[#EEF0FF] text-[#3851D1]',
-      )}
+    <div className="flex flex-col items-end gap-1">
+      <button
+        onClick={handle}
+        disabled={busy}
+        className={clsx(
+          'flex items-center gap-[5px] px-3 py-[5px] rounded-[7px] text-[11px] font-semibold border-none',
+          busy ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
+          'bg-[#eef0ff] text-[#3851d1]',
+        )}
+      >
+        {busy ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
+        {busy ? 'Fetching…' : 'Download'}
+      </button>
+      {error && <p className="text-[10px] text-error">{error}</p>}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cancel / Return reason modal
+// ─────────────────────────────────────────────────────────────────────────────
+function ReasonModal({
+  title, confirmLabel, onClose, onSubmit,
+}: {
+  title: string;
+  confirmLabel: string;
+  onClose: () => void;
+  onSubmit: (reason: string) => Promise<void>;
+}) {
+  const [reason, setReason] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState('');
+
+  const submit = async () => {
+    if (!reason.trim()) { setError('Please provide a reason.'); return; }
+    setError('');
+    setSaving(true);
+    try {
+      await onSubmit(reason.trim());
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      title={title}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={submit} loading={saving}>{confirmLabel}</Button>
+        </>
+      }
     >
-      {busy ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
-      {busy ? 'Fetching…' : 'Download'}
-    </button>
+      <Textarea
+        label="Reason"
+        rows={4}
+        placeholder="Tell us why…"
+        value={reason}
+        onChange={e => setReason(e.target.value)}
+      />
+      {error && <p className="text-[12px] text-error mt-2">{error}</p>}
+    </Modal>
   );
 }
 
@@ -172,7 +154,10 @@ const TIMELINE = [
 
 function OrderTimeline({ status }: { status: OrderStatus }) {
   if (status === 'cancelled') return null;
-  const activeIdx = status === 'completed' ? 3 : status === 'shipped' ? 2 : status === 'processing' ? 1 : 0;
+  const activeIdx = status === 'completed' || status === 'delivered' ? 3
+    : status === 'shipped' ? 2
+    : status === 'processing' ? 1
+    : 0;
 
   return (
     <div className="relative flex items-start justify-between pt-1">
@@ -208,29 +193,37 @@ function OrderTimeline({ status }: { status: OrderStatus }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // OrderItemRow
 // ─────────────────────────────────────────────────────────────────────────────
-function OrderItemRow({ item, orderId }: { item: OrderItem; orderId: string }) {
+function OrderItemRow({ item, orderId, currency }: { item: OrderLineItem; orderId: string; currency: string }) {
   const isDigital = item.type === 'digital';
   return (
     <div className="flex items-center justify-between gap-3 py-3 border-b border-bone last:border-0">
       <div className="flex items-center gap-3 min-w-0">
         <div className={clsx(
           'w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0',
-          isDigital ? 'bg-[#EEF0FF]' : 'bg-brand-pale-orange',
+          isDigital ? 'bg-[#eef0ff]' : 'bg-brand-pale-orange',
         )}>
-          {isDigital ? <Download size={13} className="text-[#3851D1]" /> : <Package size={13} className="text-brand-orange" />}
+          {isDigital ? <Download size={13} className="text-[#3851d1]" /> : <Package size={13} className="text-brand-orange" />}
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap mb-[2px]">
             <p className="text-[12px] font-semibold text-charcoal truncate">{item.name}</p>
             {isDigital && (
-              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#EEF0FF] text-[#3851D1]">Digital</span>
+              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#eef0ff] text-[#3851d1]">Digital</span>
+            )}
+            {item.status === 'cancelled' && (
+              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#fff0f0] text-error">Cancelled</span>
+            )}
+            {item.returnStatus && item.returnStatus !== 'none' && (
+              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#fff4dc] text-[#b36200] capitalize">
+                Return {item.returnStatus.replace('_', ' ')}
+              </span>
             )}
           </div>
           <p className="text-[11px] text-slate">SKU: {item.sku} · Qty: {item.quantity}</p>
         </div>
       </div>
       <div className="flex flex-col items-end gap-1.5 shrink-0">
-        <p className="text-[12px] font-bold text-charcoal">Rs {item.totalPrice.toLocaleString()}</p>
+        <p className="text-[12px] font-bold text-charcoal">{currencySymbol(currency)} {item.totalPrice.toLocaleString()}</p>
         {isDigital && item.productId && (
           <DownloadBtn orderId={orderId} productId={item.productId} />
         )}
@@ -284,10 +277,21 @@ function FilterTabs({
 // ─────────────────────────────────────────────────────────────────────────────
 // OrderCard
 // ─────────────────────────────────────────────────────────────────────────────
-function OrderCard({ order }: { order: MyOrder }) {
+function OrderCard({ order, onChanged }: { order: OrderSummary; onChanged: () => void }) {
+  const toast = useToast();
   const [expanded, setExpanded] = useState(false);
-  const allDigital = order.items.every(i => i.type === 'digital');
-  const hasDigital = order.items.some(i => i.type === 'digital');
+  const [modal, setModal] = useState<'cancel' | 'return' | null>(null);
+
+  const items = (order.stores ?? []).flatMap(s => s.items ?? []);
+  const allDigital = items.every(i => i.type === 'digital');
+  const hasDigital = items.some(i => i.type === 'digital');
+
+  const canCancel = ['pending', 'processing'].includes(order.orderStatus)
+    && items.some(i => i.status !== 'cancelled');
+  const canReturn = ['delivered', 'completed'].includes(order.orderStatus)
+    && items.some(i => i.type === 'physical' && i.status !== 'cancelled' && (!i.returnStatus || i.returnStatus === 'none'));
+
+  const addr = order.shippingAddress as Record<string, string> | undefined;
 
   return (
     <div className="border border-bone rounded-[12px] overflow-hidden bg-white">
@@ -302,24 +306,24 @@ function OrderCard({ order }: { order: MyOrder }) {
             <span className="text-[13px] font-bold text-brand-deep-orange font-mono">{order.orderNumber}</span>
             <StatusBadge status={order.orderStatus} />
             {order.isPaid
-              ? <span className="px-2 py-[3px] rounded-full text-[9px] font-bold bg-[#E3F4EA] text-[#1A6B35] border border-[#A3D9B5]">Paid</span>
-              : <span className="px-2 py-[3px] rounded-full text-[9px] font-bold bg-[#FFF0F0] text-error border border-[#F5BCBC]">Unpaid</span>
+              ? <span className="px-2 py-[3px] rounded-full text-[9px] font-bold bg-[#e3f4ea] text-[#1a6b35] border border-[#a3d9b5]">Paid</span>
+              : <span className="px-2 py-[3px] rounded-full text-[9px] font-bold bg-[#fff0f0] text-error border border-[#f5bcbc]">Unpaid</span>
             }
             {hasDigital && (
-              <span className="px-2 py-[3px] rounded-full text-[9px] font-bold bg-[#EEF0FF] text-[#3851D1] border border-[#C7CEFF]">Digital</span>
+              <span className="px-2 py-[3px] rounded-full text-[9px] font-bold bg-[#eef0ff] text-[#3851d1] border border-[#c7ceff]">Digital</span>
             )}
           </div>
           <p className="text-[11px] text-slate">
-            {new Date(order.orderDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })}
-            {' · '}{order.items.length} item{order.items.length !== 1 ? 's' : ''}
-            {' · '}{order.paymentMethod.replace(/_/g, ' ')}
+            {new Date(order.createdAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })}
+            {' · '}{items.length} item{items.length !== 1 ? 's' : ''}
+            {' · '}{order.paymentType.replace(/_/g, ' ')}
           </p>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
           <div className="text-right">
             <p className="text-[10px] text-slate mb-[1px]">Total</p>
-            <p className="text-[14px] font-bold text-carbon">Rs {order.summary.total.toLocaleString()}</p>
+            <p className="text-[14px] font-bold text-carbon">{currencySymbol(order.currency)} {order.totalAmount.toLocaleString()}</p>
           </div>
           <div className={clsx(
             'w-7 h-7 rounded-full flex items-center justify-center bg-cream border border-bone transition-transform',
@@ -338,29 +342,28 @@ function OrderCard({ order }: { order: MyOrder }) {
           <div className="px-4 md:px-5 pt-4 pb-2">
             <div className="flex items-center gap-1.5 mb-1">
               <Box size={11} className="text-slate" />
-              <p className="text-[10px] font-bold text-slate uppercase tracking-[0.07em]">Items ({order.items.length})</p>
+              <p className="text-[10px] font-bold text-slate uppercase tracking-[0.07em]">Items ({items.length})</p>
             </div>
-            {order.items.map((item, i) => (
-              <OrderItemRow key={i} item={item} orderId={order.orderId} />
+            {items.map((item, i) => (
+              <OrderItemRow key={item.itemId ?? i} item={item} orderId={order.orderId} currency={order.currency} />
             ))}
           </div>
 
           {/* Delivery address */}
-          {!allDigital && (
+          {!allDigital && addr && (
             <div className="px-4 md:px-5 pb-4 pt-3 border-t border-bone">
               <div className="flex items-center gap-1.5 mb-3">
                 <MapPin size={11} className="text-slate" />
                 <p className="text-[10px] font-bold text-slate uppercase tracking-[0.07em]">Delivery Address</p>
               </div>
               <div className="bg-cream rounded-[9px] px-3 md:px-4 py-3">
-                <p className="text-[12px] font-semibold text-charcoal">{order.deliveryAddress.recipientName}</p>
-                <p className="text-[11px] text-slate mt-[2px]">{order.deliveryAddress.phoneNumber}</p>
+                <p className="text-[12px] font-semibold text-charcoal">{addr.recipientName}</p>
+                <p className="text-[11px] text-slate mt-[2px]">{addr.phoneNumber}</p>
                 <p className="text-[11px] text-charcoal mt-[2px]">
-                  {order.deliveryAddress.addressLine1}
-                  {order.deliveryAddress.addressLine2 ? `, ${order.deliveryAddress.addressLine2}` : ''}
+                  {addr.addressLine1}{addr.addressLine2 ? `, ${addr.addressLine2}` : ''}
                 </p>
                 <p className="text-[11px] text-charcoal">
-                  {order.deliveryAddress.city}, {order.deliveryAddress.state} {order.deliveryAddress.zipCode}
+                  {addr.city}, {addr.state} {addr.zipCode}
                 </p>
               </div>
             </div>
@@ -378,37 +381,130 @@ function OrderCard({ order }: { order: MyOrder }) {
           <div className="px-4 md:px-5 py-3 bg-cream border-t border-bone flex flex-col gap-[6px]">
             <div className="flex justify-between text-[11px]">
               <span className="text-slate">Subtotal</span>
-              <span className="font-medium text-charcoal">Rs {order.summary.subtotal.toLocaleString()}</span>
+              <span className="font-medium text-charcoal">{currencySymbol(order.currency)} {order.subtotal.toLocaleString()}</span>
             </div>
             {!allDigital && (
               <div className="flex justify-between text-[11px]">
                 <span className="text-slate">Shipping</span>
                 <span className="font-medium text-charcoal">
-                  {order.summary.shipping === 0 ? 'Free' : `Rs ${order.summary.shipping.toLocaleString()}`}
+                  {order.shippingFee === 0 ? 'Free' : `${currencySymbol(order.currency)} ${order.shippingFee.toLocaleString()}`}
                 </span>
               </div>
             )}
             <div className="flex justify-between text-[13px] font-bold pt-2 border-t border-bone">
               <span className="text-charcoal">Total</span>
-              <span className="text-carbon">Rs {order.summary.total.toLocaleString()}</span>
+              <span className="text-carbon">{currencySymbol(order.currency)} {order.totalAmount.toLocaleString()}</span>
             </div>
           </div>
 
+          {/* Actions */}
+          {(canCancel || canReturn) && (
+            <div className="px-4 md:px-5 py-3 border-t border-bone flex items-center gap-2 justify-end">
+              {canReturn && (
+                <button
+                  onClick={() => setModal('return')}
+                  className="flex items-center gap-[6px] px-3 py-[7px] rounded-[8px] text-[12px] font-semibold border border-bone bg-white text-charcoal cursor-pointer"
+                >
+                  <Undo2 size={12} /> Request Return
+                </button>
+              )}
+              {canCancel && (
+                <button
+                  onClick={() => setModal('cancel')}
+                  className="flex items-center gap-[6px] px-3 py-[7px] rounded-[8px] text-[12px] font-semibold border border-[#f5bcbc] bg-[#fff0f0] text-error cursor-pointer"
+                >
+                  <Ban size={12} /> Cancel Order
+                </button>
+              )}
+            </div>
+          )}
         </div>
+      )}
+
+      {modal === 'cancel' && (
+        <ReasonModal
+          title="Cancel Order"
+          confirmLabel="Cancel Order"
+          onClose={() => setModal(null)}
+          onSubmit={async reason => {
+            await apiCancelOrder(order.orderId, { reason });
+            toast.success('Order cancelled');
+            onChanged();
+          }}
+        />
+      )}
+      {modal === 'return' && (
+        <ReasonModal
+          title="Request Return"
+          confirmLabel="Submit Request"
+          onClose={() => setModal(null)}
+          onSubmit={async reason => {
+            await apiRequestReturn(order.orderId, { reason });
+            toast.success('Return request submitted');
+            onChanged();
+          }}
+        />
       )}
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OrdersTab  — embedded inside UserProfile
+// OrdersTab  — routed at /account/orders
 // ─────────────────────────────────────────────────────────────────────────────
+const ORDERS_PAGE_SIZE = 50;
+
 export function OrdersTab() {
   const navigate = useNavigate();
-  const [activeFilter, setActiveFilter] = useState<'all' | OrderStatus>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeFilter, setActiveFilter] = useState<'all' | OrderStatus>(
+    () => (searchParams.get('status') as OrderStatus | null) ?? 'all',
+  );
 
-  // TODO: replace with real API call when ready
-  const orders = MOCK_ORDERS;
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (activeFilter === 'all') next.delete('status');
+    else next.set('status', activeFilter);
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFilter]);
+  const [orders, setOrders]   = useState<OrderSummary[]>([]);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [page, setPage]       = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError]     = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refetch = useCallback(() => { setPage(1); setRefreshKey(k => k + 1); }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    apiGetMyOrders({ page: 1, limit: ORDERS_PAGE_SIZE })
+      .then(res => {
+        if (cancelled) return;
+        setOrders(res.data.orders ?? []);
+        setTotalOrders(res.data.pagination?.total ?? (res.data.orders ?? []).length);
+        setPage(1);
+      })
+      .catch((err: unknown) => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load orders.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [refreshKey]);
+
+  const loadMore = () => {
+    setLoadingMore(true);
+    apiGetMyOrders({ page: page + 1, limit: ORDERS_PAGE_SIZE })
+      .then(res => {
+        setOrders(prev => [...prev, ...(res.data.orders ?? [])]);
+        setPage(p => p + 1);
+      })
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load more orders.'))
+      .finally(() => setLoadingMore(false));
+  };
+
+  const hasMore = orders.length < totalOrders;
 
   const filtered = activeFilter === 'all'
     ? orders
@@ -419,29 +515,39 @@ export function OrdersTab() {
     pending:    orders.filter(o => o.orderStatus === 'pending').length,
     processing: orders.filter(o => o.orderStatus === 'processing').length,
     shipped:    orders.filter(o => o.orderStatus === 'shipped').length,
+    delivered:  orders.filter(o => o.orderStatus === 'delivered').length,
     completed:  orders.filter(o => o.orderStatus === 'completed').length,
     cancelled:  orders.filter(o => o.orderStatus === 'cancelled').length,
   };
 
   return (
+    <div>
     <Card padding="none">
-      {/* Header */}
-      <div className="px-5 pt-5 pb-4 border-b border-bone flex items-end justify-between">
-        <div>
-          <p className="text-[11px] text-slate mb-[3px]">Account / My Orders</p>
-          <h1 className="text-[22px] font-bold text-charcoal leading-none">My Orders</h1>
-        </div>
-        <div className="text-right pb-[2px]">
-          <p className="text-[13px] font-semibold text-charcoal leading-tight">Total Orders</p>
-          <p className="text-[11px] text-slate mt-[2px]">{orders.length} order{orders.length !== 1 ? 's' : ''}</p>
-        </div>
+      {/* Header — desktop only; mobile's AccountLayout top bar already shows "Orders". */}
+      <div className="hidden lg:block px-5 pt-5 pb-4 border-b border-bone">
+        <PageHeader
+          eyebrow="Account"
+          title="Orders"
+          description={`${totalOrders} order${totalOrders !== 1 ? 's' : ''} placed`}
+        />
       </div>
 
       {/* Filter tabs */}
       <FilterTabs active={activeFilter} counts={counts} onChange={setActiveFilter} />
 
       {/* Content */}
-      {orders.length === 0 ? (
+      {loading ? (
+        <div className="p-5 flex flex-col gap-3">
+          {[1, 2, 3].map(i => (
+            <SkeletonBox key={i} height={78} rounded="12px" />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center gap-3 py-10">
+          <p className="text-[13px] text-error text-center">{error}</p>
+          <Button variant="outline" size="sm" onClick={refetch}>Try again</Button>
+        </div>
+      ) : orders.length === 0 ? (
         <EmptyState
           icon={<ShoppingBag size={28} className="text-brand-orange opacity-55" />}
           title="No orders yet"
@@ -459,10 +565,21 @@ export function OrdersTab() {
       ) : (
         <div className="p-5 flex flex-col gap-3">
           {filtered.map(order => (
-            <OrderCard key={order.orderId} order={order} />
+            <OrderCard key={order.orderId} order={order} onChanged={refetch} />
           ))}
+          {activeFilter === 'all' && hasMore && (
+            <Button
+              variant="outline" size="sm"
+              className="self-center mt-2 rounded-full!"
+              onClick={loadMore}
+              loading={loadingMore}
+            >
+              {loadingMore ? 'Loading…' : `Load more orders (${totalOrders - orders.length} remaining)`}
+            </Button>
+          )}
         </div>
       )}
     </Card>
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { Card } from './Card';
 import { SkeletonBox } from './SkeletonBox';
+import { SparkLine } from '@/components/comman/charts';
 
 interface MetricCardProps {
   label:    string;
@@ -11,12 +12,17 @@ interface MetricCardProps {
   sub?:     string;
   icon?:    ReactNode;
   loading?: boolean;
+  /** Overrides the default brand-orange icon background/foreground color. */
+  color?:   string;
+  /** Optional trend series (e.g. the same data already powering the page's main chart) rendered as a small sparkline. Omit if no matching series exists — never fabricate one. */
+  sparkline?: number[];
 }
 
-export function MetricCard({ label, value, trend, trendUp, sub, icon, loading }: MetricCardProps) {
+export function MetricCard({ label, value, trend, trendUp, sub, icon, loading, color, sparkline }: MetricCardProps) {
   if (loading) {
     return (
       <Card className="flex-1 min-w-[140px]">
+        <SkeletonBox height={9} width={36} rounded="4px" className="mb-3" />
         <SkeletonBox height={11} width="60%" rounded="4px" className="mb-3" />
         <SkeletonBox height={26} width="80%" rounded="6px" className="mb-2" />
         <SkeletonBox height={12} width="40%" rounded="4px" />
@@ -24,14 +30,26 @@ export function MetricCard({ label, value, trend, trendUp, sub, icon, loading }:
     );
   }
 
+  const accent = color ?? '#D97757';
+
   return (
-    <Card className="flex-1 min-w-[140px]" padding="none">
-      <div className="px-5 py-5">
-        {icon && (
-          <div className="w-9 h-9 rounded-[10px] bg-brand-pale-orange flex items-center justify-center text-brand-orange mb-3">
-            {icon}
-          </div>
-        )}
+    <Card className="metric-card-enter flex-1 min-w-[140px] group" padding="none" hover>
+      <div className="px-5 py-5 relative overflow-hidden">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          {icon && (
+            <div
+              className={color ? 'w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105' : 'w-9 h-9 rounded-[10px] bg-brand-pale-orange flex items-center justify-center text-brand-orange shrink-0 transition-transform duration-200 group-hover:scale-105'}
+              style={color ? { background: `${color}18`, color } : undefined}
+            >
+              {icon}
+            </div>
+          )}
+          {sparkline && sparkline.length > 1 && (
+            <div className="opacity-70 group-hover:opacity-100 transition-opacity duration-200">
+              <SparkLine data={sparkline} color={accent} width={64} height={28} showTooltip={false} />
+            </div>
+          )}
+        </div>
         <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">
           {label}
         </p>
@@ -39,15 +57,15 @@ export function MetricCard({ label, value, trend, trendUp, sub, icon, loading }:
           {value}
         </p>
         {trend && (
-          <p className={`flex items-center gap-1 text-[12px] mt-1 ${trendUp ? 'text-success' : 'text-error'}`}>
+          <span className={`inline-flex items-center gap-1 text-[11.5px] font-semibold mt-[7px] px-[7px] py-[2px] rounded-full ${trendUp ? 'text-success bg-success-bg' : 'text-error bg-error-bg'}`}>
             {trendUp
-              ? <TrendingUp  size={13} className="shrink-0" />
-              : <TrendingDown size={13} className="shrink-0" />}
+              ? <TrendingUp  size={12} className="shrink-0" />
+              : <TrendingDown size={12} className="shrink-0" />}
             {trend}
-          </p>
+          </span>
         )}
         {sub && (
-          <p className="text-[11px] text-slate mt-1">{sub}</p>
+          <p className="text-[11px] text-slate mt-[7px]">{sub}</p>
         )}
       </div>
     </Card>

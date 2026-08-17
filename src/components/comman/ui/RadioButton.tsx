@@ -36,9 +36,10 @@ function RadioCard({
       className={clsx(
         'flex-1 flex items-center gap-3 py-[14px] px-4 rounded-[10px] border-2 cursor-pointer',
         'transition-all duration-[180ms] select-none outline-none',
+        'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50',
         selected
-          ? 'border-brand-orange bg-brand-pale-orange shadow-[0_0_0_3px_rgba(217,119,87,0.15)]'
-          : 'border-bone bg-white',
+          ? 'border-brand-orange bg-brand-pale-orange'
+          : 'border-bone bg-white hover:border-slate/40',
       )}
     >
       {/* Radio circle */}

@@ -1,13 +1,21 @@
-import { useState } from 'react';
+import { useState, useId, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useResetPassword } from '@/hooks/auth/useResetPassword';
 import { Button } from '@/components/comman/ui/Button';
-import { Eye, EyeOff, ArrowRight, Check, Circle } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Check, Circle, Lock, ShieldCheck, KeyRound, AlertTriangle } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { newPasswordSchema, type NewPasswordFormData } from '@/utils/validation/schemas';
-import { AuthContext } from '@/api/commerce/auth';
+import { AuthContext } from '@/api/services/auth';
+import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
+import { PasswordSecurityMockup } from '@/features/auth/components/mockups/AuthMockups';
+
+const HIGHLIGHTS = [
+  { Icon: KeyRound,    text: 'Verify with the code we emailed you' },
+  { Icon: Lock,        text: 'Choose a strong, unique password' },
+  { Icon: ShieldCheck, text: 'You will stay signed out of other devices' },
+];
 
 function getStrength(password: string) {
   if (!password) return { score: 0, label: '', colorClass: '', bgClass: 'bg-bone' };
@@ -60,19 +68,22 @@ function PasswordInput({ label, placeholder, value, onChange, onBlur, error }: {
   onChange: (v: string) => void; onBlur?: () => void; error?: string;
 }) {
   const [show, setShow] = useState(false);
+  const id = useId();
   return (
     <div>
-      <label className="block text-[12px] font-medium text-charcoal mb-[6px]">{label}</label>
+      <label htmlFor={id} className="block text-[12px] font-medium text-charcoal mb-[6px]">{label}</label>
       <div className="relative">
-        <input type={show ? 'text' : 'password'} placeholder={placeholder} value={value}
+        <input id={id} type={show ? 'text' : 'password'} placeholder={placeholder} value={value} autoComplete="new-password"
           onChange={e => onChange(e.target.value)} onBlur={onBlur}
           className={clsx(
             'w-full px-3 pr-[42px] py-[10px] rounded-lg border text-[13px] text-charcoal outline-none bg-white',
-            error ? 'border-error' : 'border-bone',
+            'transition-[border-color,box-shadow] duration-150 focus:ring-2',
+            error ? 'border-error focus:ring-error/10' : 'border-bone focus:border-brand-orange focus:ring-brand-orange/10',
           )}
         />
         <button type="button" onClick={() => setShow(s => !s)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate p-0 flex">
+          aria-label={show ? 'Hide password' : 'Show password'}
+          className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-slate p-0 flex hover:text-charcoal transition-colors">
           {show ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
@@ -85,19 +96,25 @@ export function NewPasswordPage() {
   const navigate      = useNavigate();
   usePageTitle('New Password');
   const resetPassword = useResetPassword();
-  const [otp, setOtp]           = useState('');
-  const [otpError, setOtpError] = useState('');
 
   const ctx       = AuthContext.get();
   const userEmail = ctx?.email ?? '';
+  const otp       = ctx?.otp ?? '';
+
+  // Landing here without a code means the OTP step was skipped (direct URL,
+  // refresh after AuthContext's sessionStorage was cleared, etc.) — there's
+  // nothing to submit yet, so send them back to get one instead of showing
+  // a form that can only ever fail.
+  useEffect(() => {
+    if (!otp) navigate('/forgot-password', { replace: true });
+  }, [otp, navigate]);
 
   const { values, errors, setValue, blur, handleSubmit } = useForm(
     newPasswordSchema,
     { password: '', confirmPassword: '' },
     {
       onSubmit: async (data: NewPasswordFormData) => {
-        if (!otp || otp.length < 6) { setOtpError('Enter the 6-digit code from your email.'); return; }
-        setOtpError('');
+        if (!otp) return;
         await resetPassword.execute(otp, data.password);
       },
     },
@@ -105,86 +122,79 @@ export function NewPasswordPage() {
 
   const passwordsMatch = values.password === values.confirmPassword && values.confirmPassword !== '';
 
+  if (!otp) return null;
+
   if (resetPassword.success) {
     return (
-      <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
-        <div className="bg-white rounded-[20px] px-6 py-6 md:px-10 md:py-9 w-full max-w-[440px] border border-bone">
-          <h1 className="text-[22px] font-bold text-carbon text-center mb-2">Password updated!</h1>
-          <p className="text-[13px] text-slate text-center leading-[1.6] mb-7">
-            Your password has been changed. You can now sign in.
-          </p>
-          <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/login')}>
-            Sign In Now <ArrowRight size={14} className="inline align-middle ml-1" />
-          </Button>
-        </div>
-      </div>
+      <AuthSplitLayout heading="Password updated." subtext="You're all set — sign back in with your new password." highlights={HIGHLIGHTS} visual={<PasswordSecurityMockup />}>
+        <h1 className="text-[22px] font-bold text-carbon text-center mb-2">Password updated!</h1>
+        <p className="text-[13px] text-slate text-center leading-[1.6] mb-6">
+          Your password has been changed. You can now sign in.
+        </p>
+        <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/login')} iconRight={<ArrowRight size={14} />}>
+          Sign In Now
+        </Button>
+      </AuthSplitLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-[20px] px-6 py-6 md:px-10 md:py-9 w-full max-w-[440px] border border-bone">
-        <h1 className="text-[22px] font-bold text-carbon text-center mb-2">Reset your password</h1>
-        {userEmail && (
-          <p className="text-[13px] text-slate text-center mb-5 leading-[1.6]">
-            Enter the code sent to <strong className="text-carbon">{userEmail}</strong>
+    <AuthSplitLayout heading="Almost there. Set a new password." subtext="Enter the code we emailed you and choose a new password to finish." highlights={HIGHLIGHTS} visual={<PasswordSecurityMockup />}>
+      <h1 className="text-[22px] font-bold text-carbon text-center lg:text-left mb-2">Reset your password</h1>
+      <p className="text-[13px] text-slate text-center lg:text-left mb-5 leading-[1.6]">
+        {userEmail ? <>Almost done, <strong className="text-carbon">{userEmail}</strong> — choose a new password to finish resetting your account.</> : 'Choose a new password to finish resetting your account.'}
+      </p>
+
+      {/* New password */}
+      <div className="mb-3">
+        <PasswordInput label="New Password" placeholder="Enter new password"
+          value={values.password} onChange={v => setValue('password', v)}
+          onBlur={blur('password')} error={errors.password} />
+        <StrengthBar password={values.password} />
+      </div>
+
+      {/* Confirm */}
+      <div className="mb-4">
+        <PasswordInput label="Confirm Password" placeholder="Confirm new password"
+          value={values.confirmPassword} onChange={v => setValue('confirmPassword', v)}
+          onBlur={blur('confirmPassword')} error={errors.confirmPassword} />
+        {values.confirmPassword && (
+          <p className={clsx('text-[11px] mt-[5px]', passwordsMatch ? 'text-success' : 'text-error')}>
+            {passwordsMatch
+              ? <><Check size={11} className="inline align-middle mr-[3px]" />Passwords match</>
+              : <>✗ Passwords do not match</>}
           </p>
         )}
-
-        {/* OTP */}
-        <div className="mb-5">
-          <label className="block text-[12px] font-medium text-charcoal mb-[6px]">Verification Code</label>
-          <input
-            type="text" inputMode="numeric" maxLength={6} placeholder="Enter 6-digit OTP" value={otp}
-            onChange={e => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
-            className={clsx(
-              'w-full px-3 py-[10px] rounded-lg border text-charcoal outline-none bg-white text-center',
-              otpError ? 'border-error' : otp.length === 6 ? 'border-success' : 'border-bone',
-              otp ? 'tracking-[0.3em] font-bold text-[18px]' : 'text-[13px]',
-            )}
-          />
-          {otpError && <p className="text-[11px] text-error mt-[5px]">{otpError}</p>}
-          {otp.length === 6 && !otpError && (
-            <p className="text-[11px] text-success mt-[5px] flex items-center gap-1">
-              <Check size={11} /> Code entered
-            </p>
-          )}
-        </div>
-
-        {/* New password */}
-        <div className="mb-4">
-          <PasswordInput label="New Password" placeholder="Enter new password"
-            value={values.password} onChange={v => setValue('password', v)}
-            onBlur={blur('password')} error={errors.password} />
-          <StrengthBar password={values.password} />
-        </div>
-
-        {/* Confirm */}
-        <div className="mb-5">
-          <PasswordInput label="Confirm Password" placeholder="Confirm new password"
-            value={values.confirmPassword} onChange={v => setValue('confirmPassword', v)}
-            onBlur={blur('confirmPassword')} error={errors.confirmPassword} />
-          {values.confirmPassword && (
-            <p className={clsx('text-[11px] mt-[5px]', passwordsMatch ? 'text-success' : 'text-error')}>
-              {passwordsMatch
-                ? <><Check size={11} className="inline align-middle mr-[3px]" />Passwords match</>
-                : <>✗ Passwords do not match</>}
-            </p>
-          )}
-        </div>
-
-        {resetPassword.error && (
-          <div className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 text-[13px] text-error">
-            {resetPassword.error}
-          </div>
-        )}
-
-        <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} disabled={resetPassword.loading}>
-          {resetPassword.loading
-            ? 'Resetting...'
-            : <span>Reset Password <ArrowRight size={14} className="inline align-middle ml-1" /></span>}
-        </Button>
       </div>
-    </div>
+
+      {resetPassword.error && (
+        <div role="alert" className="flex flex-col gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mb-4 text-[13px] text-error">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={14} className="shrink-0" />
+            <span>{resetPassword.error}</span>
+          </div>
+          {/* The code entered on the previous step is what's actually being
+             checked here (the backend verifies it together with the new
+             password) — if it was wrong or has expired, the only way back
+             is to re-enter it, not retry this same form. */}
+          <button
+            type="button"
+            onClick={() => navigate('/verify-otp')}
+            className="self-start text-[12.5px] font-semibold text-error underline bg-transparent border-none cursor-pointer p-0"
+          >
+            Re-enter code
+          </button>
+        </div>
+      )}
+
+      <Button
+        variant="primary" size="lg" fullWidth
+        onClick={handleSubmit}
+        loading={resetPassword.loading}
+        iconRight={!resetPassword.loading && <ArrowRight size={14} />}
+      >
+        Reset Password
+      </Button>
+    </AuthSplitLayout>
   );
 }

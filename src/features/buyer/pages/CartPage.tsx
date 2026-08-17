@@ -3,22 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
 import { Button } from '@/components/comman/ui/Button';
+import { BuyerNavbar, Breadcrumb, Footer, SkeletonBox, getRecentlyViewed } from '@/components/comman/ui';
 import {
-  Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ImageOff,
-  Loader2, Package, Download, ChevronRight,
+  Minus, Plus, Trash2, ShoppingBag, ImageOff,
+  Loader2, Package, Download, ChevronRight, ShieldCheck, RotateCcw, Lock,
 } from 'lucide-react';
 import { clsx } from 'clsx';
-
-function SolvexoIcon({ size = 28 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="8" fill="#D97757"/>
-      <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-      <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7"/>
-      <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
+import { currencySymbol } from '@/utils/currency';
+import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 
 function CartItemImage({ images, name }: { images?: string[]; name: string }) {
   const [errored, setErrored] = useState(false);
@@ -31,7 +23,7 @@ function CartItemImage({ images, name }: { images?: string[]; name: string }) {
     );
   }
   return (
-    <img
+    <img loading="lazy" decoding="async"
       src={src} alt={name} onError={() => setErrored(true)}
       className="w-[72px] h-[72px] rounded-[10px] object-cover shrink-0 block"
     />
@@ -42,7 +34,11 @@ export function CartPage() {
   const navigate = useNavigate();
   usePageTitle('Cart');
 
-  const { cart, loading, cartCount, updateQty, removeItem, clearCart } = useCartContext();
+  // No login gate here — a guest's cart (localStorage, see CartContext) is
+  // fully viewable/editable. Only "Proceed to Checkout" below requires
+  // login (CheckoutPage's own gate), matching how Amazon/Daraz let a guest
+  // manage their cart freely and only ask for an account at checkout.
+  const { cart, loading, cartCount, updateQty, removeItem, clearCart, error, clearError } = useCartContext();
   const [clearing,   setClearing]   = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -73,33 +69,114 @@ export function CartPage() {
 
   const isEmpty = !loading && !items.length;
 
+  // Real, honest recall — the shopper's own recently-viewed products
+  // (client-tracked from ProductDetail, same source the navbar's search
+  // dropdown already uses), never a fabricated "trending" list.
+  const recentlyViewed = isEmpty ? getRecentlyViewed() : [];
+
+  // Every line is converted from its OWN native (seller) currency into the
+  // buyer's currently-selected display currency — this is what makes the
+  // navbar PKR/USD switch actually update prices here, and it's also what
+  // lets a cart with items from different-currency sellers still show one
+  // real, correctly-summed total instead of an ambiguous "confirmed at
+  // checkout" placeholder. The authoritative amount is still always
+  // recomputed fresh, server-side, at checkout creation regardless.
+  const { currency: displayCurrency, convert } = useCurrencyPreference();
+  const displaySymbol = currencySymbol(displayCurrency);
+  const displayTotal = items.reduce((s, i) => {
+    const unit = i.unitPrice ?? i.price ?? 0;
+    const lineTotal = i.itemTotal ?? unit * i.quantity;
+    return s + convert(lineTotal, i.currency);
+  }, 0);
+
   return (
     <div className="min-h-screen bg-cream">
 
-      {/* ── Nav ── */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-4 md:px-10 gap-4">
-        <div className="flex-1 flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-          <SolvexoIcon size={28} />
-          <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
-          <span className="font-bold text-[15px] text-brand-orange">o</span>
-        </div>
-        <Button variant="ghost" size="sm" onClick={() => navigate('/marketplace')}>
-          <ArrowLeft size={14} className="inline align-middle mr-1" />
-          Continue Shopping
-        </Button>
-      </nav>
+      <BuyerNavbar/>
 
-      <div className="max-w-[960px] mx-auto px-4 md:px-6 py-6 md:py-8">
+      <div className={clsx('max-w-[960px] mx-auto px-4 md:px-6 py-6 md:py-8', !isEmpty && items.length > 0 && 'pb-[88px] lg:pb-8')}>
+        <Breadcrumb className="mb-4" items={[
+          { label: 'Home', path: '/' },
+          { label: 'Marketplace', path: '/marketplace'},
+          { label: 'Cart' },
+        ]} />
 
-        {/* ── Empty ── */}
+        {/* ── Error banner ── */}
+        {error && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-[10px] border border-error-border bg-error-bg px-4 py-3">
+            <span className="text-[13px] text-error">{error}</span>
+            <button
+              onClick={clearError}
+              aria-label="Dismiss error"
+              className="text-[12px] font-semibold text-error cursor-pointer shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* ── Empty — a guided moment, not a dead end: a real re-entry path
+            back into the catalog (via the shopper's own recently-viewed
+            products, when there are any) plus honest trust reassurance,
+            instead of just an icon and one button. ── */}
         {isEmpty && (
-          <div className="bg-white rounded-[12px] border border-bone p-10 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-bone flex items-center justify-center mx-auto mb-4">
-              <ShoppingBag size={30} className="text-slate opacity-60" />
+          <div className="flex flex-col gap-5">
+            <div className="relative overflow-hidden bg-white rounded-2xl border border-bone px-6 py-10 sm:py-12 flex flex-col items-center text-center">
+              <div className="absolute inset-0 bg-gradient-to-b from-brand-pale-orange/40 to-transparent pointer-events-none" />
+              <span className="relative flex size-16 items-center justify-center rounded-full bg-brand-pale-orange mb-4">
+                <ShoppingBag size={26} className="text-brand-orange" />
+              </span>
+              <p className="relative text-[19px] font-bold text-carbon mb-1">Your cart is empty</p>
+              <p className="relative text-[13px] text-slate max-w-[360px] leading-[1.6] mb-5">
+                Nothing here yet — browse the marketplace to find products, digital downloads, and courses from verified sellers.
+              </p>
+              <div className="relative flex items-center gap-2 flex-wrap justify-center">
+                <Button variant="primary" onClick={() => navigate('/marketplace')}>Browse Marketplace</Button>
+                <Button variant="outline" onClick={() => navigate('/education')}>Explore Education</Button>
+              </div>
             </div>
-            <p className="text-[16px] font-semibold text-[#141413] mb-2">Your cart is empty</p>
-            <p className="text-[13px] text-[#8C8A82] mb-6">Browse the marketplace and add products to get started.</p>
-            <Button variant="primary" onClick={() => navigate('/marketplace')}>Browse Marketplace</Button>
+
+            {/* Continue where you left off — the shopper's own recently-viewed
+                products, real client-tracked history, shown only when it exists. */}
+            {recentlyViewed.length > 0 && (
+              <div className="bg-white rounded-xl border border-bone p-5">
+                <p className="text-[13px] font-bold text-carbon mb-3">Continue where you left off</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {recentlyViewed.slice(0, 4).map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => navigate(`/product/${item.id}`)}
+                      className="group flex flex-col text-left bg-transparent border border-transparent rounded-xl p-1.5 cursor-pointer transition-all duration-200 hover:border-bone hover:-translate-y-[2px]"
+                    >
+                      <div className="aspect-square rounded-lg overflow-hidden bg-brand-pale-orange mb-2">
+                        {item.image
+                          ? <img loading="lazy" decoding="async" src={item.image} alt="" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.05]" />
+                          : <div className="w-full h-full flex items-center justify-center"><ImageOff size={16} className="text-brand-orange opacity-50" /></div>}
+                      </div>
+                      <span className="text-[11px] font-medium text-charcoal leading-tight line-clamp-2 group-hover:text-brand-orange transition-colors">{item.name}</span>
+                      {item.price != null && (
+                        <span className="text-[11px] font-bold text-carbon mt-[2px]">{displaySymbol}{convert(item.price, item.currency).toLocaleString()}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Trust reassurance — same real, already-established language as
+                the Marketplace welcome strip's Buyer Protection link, not new
+                claims invented for this page. */}
+            <div className="flex items-center justify-center gap-5 sm:gap-8 flex-wrap text-[11.5px] text-slate">
+              <button onClick={() => navigate('/faq')} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors">
+                <ShieldCheck size={14} className="text-success" /> Buyer Protection
+              </button>
+              <button onClick={() => navigate('/faq')} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors">
+                <Lock size={14} className="text-success" /> Secure Checkout
+              </button>
+              <button onClick={() => navigate('/faq')} className="flex items-center gap-[6px] bg-transparent border-none cursor-pointer p-0 hover:text-brand-orange transition-colors">
+                <RotateCcw size={14} className="text-success" /> Easy Returns
+              </button>
+            </div>
           </div>
         )}
 
@@ -108,13 +185,13 @@ export function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
 
             {/* ── Left: Cart card ── */}
-            <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
+            <div className="bg-white rounded-xl border border-bone overflow-hidden">
 
               {/* Card header */}
               <div className="px-6 pt-5 pb-4 border-b border-bone flex items-center justify-between">
                 <div>
-                  <h1 className="text-[20px] font-bold text-[#141413] leading-tight">Shopping Cart</h1>
-                  <p className="text-[12px] text-[#8C8A82] mt-[2px]">
+                  <h1 className="text-[20px] font-bold text-carbon leading-tight">Shopping Cart</h1>
+                  <p className="text-[12px] text-slate mt-[2px]">
                     {loading ? 'Loading…' : `${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart`}
                   </p>
                 </div>
@@ -130,13 +207,13 @@ export function CartPage() {
                 <div className="divide-y divide-bone">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="flex gap-4 items-center px-5 py-4">
-                      <div className="animate-pulse w-[72px] h-[72px] rounded-[10px] bg-bone shrink-0" />
+                      <SkeletonBox width={72} height={72} rounded="10px" className="shrink-0" />
                       <div className="flex-1 flex flex-col gap-[10px]">
-                        <div className="animate-pulse h-[13px] rounded bg-bone w-[55%]" />
-                        <div className="animate-pulse h-[11px] rounded bg-bone w-[25%]" />
-                        <div className="animate-pulse h-8 rounded-lg bg-bone w-[100px]" />
+                        <SkeletonBox height={13} width="55%" />
+                        <SkeletonBox height={11} width="25%" />
+                        <SkeletonBox height={32} width={100} rounded="8px" />
                       </div>
-                      <div className="animate-pulse w-[55px] h-5 rounded bg-bone" />
+                      <SkeletonBox width={55} height={20} />
                     </div>
                   ))}
                 </div>
@@ -146,8 +223,10 @@ export function CartPage() {
               {!loading && items.map((item, idx) => {
                 const key        = item.productVariantId;
                 const imgs       = item.image ?? item.images;
-                const price      = item.unitPrice ?? item.price ?? 0;
-                const lineTotal  = item.itemTotal ?? price * item.quantity;
+                const nativePrice = item.unitPrice ?? item.price ?? 0;
+                const nativeLineTotal = item.itemTotal ?? nativePrice * item.quantity;
+                const price      = convert(nativePrice, item.currency);
+                const lineTotal  = convert(nativeLineTotal, item.currency);
                 const isRemoving = removingId === key;
                 const isUpdating = updatingId === key;
                 const isLast     = idx === (items.length - 1);
@@ -165,40 +244,41 @@ export function CartPage() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start gap-2 mb-[3px] flex-wrap">
-                        <p className="font-semibold text-[14px] text-[#141413] leading-[1.35]">
+                        <p className="font-semibold text-[14px] text-carbon leading-[1.35]">
                           {item.name}
                         </p>
                         {item.type === 'physical' && (
-                          <span className="shrink-0 px-2 py-[2px] rounded-full text-[10px] font-semibold bg-[#FFF4DC] text-[#B36200]">
+                          <span className="shrink-0 px-2 py-[2px] rounded-full text-[10px] font-semibold bg-[#fff4dc] text-[#b36200]">
                             Physical
                           </span>
                         )}
                         {item.type === 'digital' && (
-                          <span className="shrink-0 flex items-center gap-[3px] px-2 py-[2px] rounded-full text-[10px] font-semibold bg-[#EEF0FF] text-[#3851D1]">
+                          <span className="shrink-0 flex items-center gap-[3px] px-2 py-[2px] rounded-full text-[10px] font-semibold bg-[#eef0ff] text-[#3851d1]">
                             <Download size={9} /> Digital
                           </span>
                         )}
                       </div>
-                      <p className="text-[12px] text-[#8C8A82] mb-3">
-                        Rs {price.toLocaleString()} each
+                      <p className="text-[12px] text-slate mb-3">
+                        {displaySymbol}{price.toLocaleString()} each
                       </p>
 
-                      {/* Qty controls */}
-                      <div className="flex items-center gap-[6px]">
+                      {/* Qty controls — 40x40px min hit area for touch */}
+                      <div className="flex items-center gap-[6px] flex-wrap">
                         <button
                           onClick={() => handleUpdateQty(item.productId, key, 'decrease')}
                           disabled={item.quantity <= 1 || isUpdating}
+                          aria-label={`Decrease quantity of ${item.name}`}
                           className={clsx(
-                            'w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors',
+                            'w-10 h-10 rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                             item.quantity <= 1 || isUpdating
                               ? 'cursor-not-allowed opacity-40'
                               : 'cursor-pointer hover:bg-bone',
                           )}
                         >
-                          <Minus size={12} />
+                          <Minus size={14} />
                         </button>
 
-                        <span className="min-w-[36px] text-center text-[14px] font-bold text-[#141413]">
+                        <span className="min-w-[36px] text-center text-[14px] font-bold text-carbon">
                           {isUpdating
                             ? <Loader2 size={13} className="animate-spin mx-auto block" />
                             : item.quantity}
@@ -207,30 +287,30 @@ export function CartPage() {
                         <button
                           onClick={() => handleUpdateQty(item.productId, key, 'increase')}
                           disabled={isUpdating}
+                          aria-label={`Increase quantity of ${item.name}`}
                           className={clsx(
-                            'w-[30px] h-[30px] rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors',
+                            'w-10 h-10 rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                             isUpdating ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-bone',
                           )}
                         >
-                          <Plus size={12} />
+                          <Plus size={14} />
                         </button>
 
-                        <button
+                        <Button
+                          variant="danger" size="xs"
+                          className="ml-2! py-[11px]! min-h-10"
                           onClick={() => handleRemove(item.productId, key)}
-                          disabled={isRemoving}
-                          className="ml-2 px-[10px] py-[5px] rounded-[6px] border border-[#FECACA] bg-[#FFF0F0] cursor-pointer flex items-center gap-1 text-[11px] text-[#C13030] font-medium"
+                          loading={isRemoving}
+                          icon={!isRemoving && <Trash2 size={11} />}
                         >
-                          {isRemoving
-                            ? <Loader2 size={11} className="animate-spin" />
-                            : <Trash2 size={11} />}
                           Remove
-                        </button>
+                        </Button>
                       </div>
                     </div>
 
                     {/* Line total */}
-                    <p className="font-bold text-[15px] text-[#141413] shrink-0">
-                      Rs {lineTotal.toLocaleString()}
+                    <p className="font-bold text-[15px] text-carbon shrink-0">
+                      {displaySymbol}{lineTotal.toLocaleString()}
                     </p>
                   </div>
                 );
@@ -239,38 +319,36 @@ export function CartPage() {
               {/* Footer: clear cart */}
               {!loading && items.length > 0 && (
                 <div className="px-5 py-3 border-t border-bone flex justify-end">
-                  <button
+                  <Button
+                    variant="outline" size="xs"
                     onClick={handleClear}
-                    disabled={clearing}
-                    className={clsx(
-                      'flex items-center gap-[6px] px-[14px] py-[6px] rounded-lg text-[12px] border border-bone bg-cream text-slate transition-colors',
-                      clearing ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-[#c5c4bc]',
-                    )}
+                    loading={clearing}
+                    icon={!clearing && <Trash2 size={12} />}
                   >
-                    {clearing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                     Clear Cart
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
 
             {/* ── Right: Order Summary ── */}
-            <div className="bg-white rounded-[12px] border border-bone p-6 lg:sticky top-20 flex flex-col gap-5">
-              <p className="text-[15px] font-bold text-[#141413]">Order Summary</p>
+            <div className="bg-white rounded-xl border border-bone p-6 lg:sticky top-20 flex flex-col gap-5">
+              <p className="text-[15px] font-bold text-carbon">Order Summary</p>
 
               {/* Item list */}
               {!loading && (
                 <div className="flex flex-col gap-2">
                   {items.map(item => {
-                    const price = item.unitPrice ?? item.price ?? 0;
-                    const ttl   = item.itemTotal ?? price * item.quantity;
+                    const nativePrice = item.unitPrice ?? item.price ?? 0;
+                    const nativeTtl   = item.itemTotal ?? nativePrice * item.quantity;
+                    const ttl = convert(nativeTtl, item.currency);
                     return (
                       <div key={item.productVariantId} className="flex justify-between text-[12px] gap-2">
-                        <span className="text-[#141413] truncate">
+                        <span className="text-carbon truncate">
                           {item.name}
-                          <span className="text-[#8C8A82] ml-1">×{item.quantity}</span>
+                          <span className="text-slate ml-1">×{item.quantity}</span>
                         </span>
-                        <span className="font-medium text-[#141413] shrink-0">Rs {ttl.toLocaleString()}</span>
+                        <span className="font-medium text-carbon shrink-0">{displaySymbol}{ttl.toLocaleString()}</span>
                       </div>
                     );
                   })}
@@ -281,75 +359,47 @@ export function CartPage() {
 
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-[13px]">
-                  <span className="text-[#8C8A82]">Subtotal ({cartCount} items)</span>
-                  <span className="font-semibold text-[#141413]">Rs {(cart?.totalPrice ?? 0).toLocaleString()}</span>
+                  <span className="text-slate">Subtotal ({cartCount} items)</span>
+                  <span className="font-semibold text-carbon">{displaySymbol}{displayTotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-[13px]">
-                  <span className="text-[#8C8A82]">Shipping</span>
-                  <span className="text-success font-medium text-[12px]">Calculated at checkout</span>
+                  <span className="text-slate">{hasPhysical ? 'Shipping' : 'Delivery'}</span>
+                  <span className="text-charcoal font-medium text-[12px]">
+                    {hasPhysical ? 'Calculated at checkout' : 'Instant'}
+                  </span>
                 </div>
               </div>
 
               <div className="h-px bg-bone" />
 
               <div className="flex justify-between text-[16px] font-bold">
-                <span className="text-[#141413]">Total</span>
-                <span className="text-[#141413]">Rs {(cart?.totalPrice ?? 0).toLocaleString()}</span>
+                <span className="text-carbon">Total</span>
+                <span className="text-carbon">{displaySymbol}{displayTotal.toLocaleString()}</span>
               </div>
 
-              {/* ── Checkout Buttons ── */}
+              {/* ── Checkout ── One order for the whole cart, mixed physical +
+                  digital included — matches Amazon/Alibaba/Shopify/Daraz, and
+                  avoids the old two-button flow's double-checkout/billing bug. */}
               <div className="flex flex-col gap-2">
-
-                {/* Case 1: type not known from API → single general button */}
-                {!typeKnown && (
-                  <button
-                    onClick={() => navigate('/checkout', { state: { cartType: 'physical' } })}
-                    className="w-full flex items-center justify-center gap-2 bg-brand-orange text-white rounded-[10px] px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer"
-                  >
-                    <Package size={15} /> Proceed to Checkout
-                    <ChevronRight size={14} className="ml-auto" />
-                  </button>
+                {typeKnown && hasPhysical && hasDigital && (
+                  <p className="text-[11px] text-slate text-center -mt-1 mb-1">
+                    {physicalCount} physical · {digitalCount} digital — delivered together
+                  </p>
                 )}
-
-                {/* Physical button */}
-                {hasPhysical && (
-                  <button
-                    onClick={() => navigate('/checkout', { state: { cartType: 'physical' } })}
-                    className="w-full flex items-center justify-between gap-2 bg-brand-orange text-white rounded-[10px] px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Package size={15} />
-                      Checkout Physical
-                    </span>
-                    <span className="flex items-center gap-1 opacity-80 text-[12px]">
-                      {physicalCount} item{physicalCount !== 1 ? 's' : ''}
-                      <ChevronRight size={13} />
-                    </span>
-                  </button>
-                )}
-
-                {/* Digital button */}
-                {hasDigital && (
-                  <button
-                    onClick={() => navigate('/checkout', { state: { cartType: 'digital' } })}
-                    className={clsx(
-                      'w-full flex items-center justify-between gap-2 rounded-[10px] px-5 py-[11px] text-[13px] font-semibold border-none cursor-pointer',
-                      hasPhysical
-                        ? 'bg-[#3851D1] text-white'
-                        : 'bg-brand-orange text-white',
-                    )}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Download size={15} />
-                      Get Digital Products
-                    </span>
-                    <span className="flex items-center gap-1 opacity-80 text-[12px]">
-                      {digitalCount} item{digitalCount !== 1 ? 's' : ''}
-                      <ChevronRight size={13} />
-                    </span>
-                  </button>
-                )}
-
+                <Button
+                  variant="primary" fullWidth
+                  className="justify-between! px-5! py-[11px]! rounded-xl!"
+                  onClick={() => navigate('/checkout')}
+                >
+                  <span className="flex items-center gap-2">
+                    <Package size={15} />
+                    Proceed to Checkout
+                  </span>
+                  <span className="flex items-center gap-1 opacity-80 text-[12px]">
+                    {cartCount} item{cartCount !== 1 ? 's' : ''}
+                    <ChevronRight size={13} />
+                  </span>
+                </Button>
               </div>
 
               <Button
@@ -363,6 +413,26 @@ export function CartPage() {
           </div>
         )}
       </div>
+
+      {/* Mobile sticky checkout bar — mirrors ProductDetail's sticky Add to
+          Cart bar, sits just above the bottom nav (CartPage is login-gated,
+          so BottomNav is always the plain logged-in height here). */}
+      {!isEmpty && items.length > 0 && (
+        <div className="fixed bottom-[64px] inset-x-0 z-40 lg:hidden bg-white border-t border-bone px-4 py-3 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] text-slate leading-none mb-[3px]">Total</p>
+            <p className="text-[17px] font-extrabold text-carbon leading-none truncate">{displaySymbol}{displayTotal.toLocaleString()}</p>
+          </div>
+          <Button
+            variant="primary" size="md" className="justify-center flex-1 max-w-[220px]"
+            onClick={() => navigate('/checkout')}
+          >
+            Checkout <ChevronRight size={14} />
+          </Button>
+        </div>
+      )}
+
+      <Footer />
     </div>
   );
 }

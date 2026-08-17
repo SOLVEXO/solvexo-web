@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiGetStoreById, type StoreData } from '@/api/commerce/store';
+import { apiGetStoreById, type StoreData } from '@/api/services/store';
 
 export function useGetStore(id: string) {
   const [store,   setStore]   = useState<StoreData | null>(null);

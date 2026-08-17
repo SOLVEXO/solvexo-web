@@ -1,164 +1,189 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Star } from 'lucide-react';
+import { useMarketplaceStats, useMarketplaceListings, useMarketplaceListingActions } from '@/hooks/admin/useAdminMarketplace';
+import type { MarketplaceListingRow, ListingStatus } from '@/api/services/marketplace/adminMarketplace';
+import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
+import { Table, StatusBadge, Button, Modal, SkeletonBox, SearchInput, FilterDropdown, MetricCard, AdminPageHeader, ActionMenu } from '@/components/comman/ui';
+import type { TableColumn } from '@/components/comman/ui';
+import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
+import { formatCurrency, formatNumber } from '@/components/comman/analytics/format';
+import { Star, StoreIcon, RefreshCw, GraduationCap, Trash2 } from 'lucide-react';
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-interface Product {
-  id: string; title: string; seller: string; category: string;
-  price: string; sales: number; status: 'Active' | 'Flagged' | 'Removed';
-  featured: boolean; listed: string;
-}
-
-const PRODUCTS: Product[] = [
-  { id: 'P-8821', title: 'Grade 5 Math Mastery Bundle',   seller: 'Alex Chen',        category: 'Educational', price: '$49.00', sales: 284, status: 'Active',  featured: true,  listed: 'Jan 2024' },
-  { id: 'P-8820', title: 'Premium UI Kit Bundle',         seller: 'DesignHub Studio', category: 'Digital',     price: '$79.00', sales: 142, status: 'Flagged', featured: false, listed: 'Feb 2024' },
-  { id: 'P-8819', title: 'Lo-Fi Music Sample Pack Vol.3', seller: 'BeatFactory',      category: 'Digital',     price: '$19.00', sales: 98,  status: 'Active',  featured: false, listed: 'Mar 2024' },
-  { id: 'P-8818', title: 'Science Lab Worksheets',        seller: 'Priya Sharma',     category: 'Educational', price: '$15.00', sales: 64,  status: 'Active',  featured: true,  listed: 'Apr 2024' },
-  { id: 'P-8817', title: 'Grade 12 Exam Papers 2024',     seller: 'ExamLeaks99',      category: 'Educational', price: '$12.00', sales: 34,  status: 'Flagged', featured: false, listed: 'May 2025' },
-  { id: 'P-8816', title: 'Ceramic Mug Set — Handmade',    seller: 'CeramicsBy Anna',  category: 'Handmade',    price: '$58.00', sales: 22,  status: 'Active',  featured: false, listed: 'Jun 2024' },
+const STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'flagged', label: 'Flagged' },
 ];
 
-const statusStyle: Record<string, { bg: string; color: string }> = {
-  Active:  { bg: '#E3F4EA', color: '#1E7A3C' },
-  Flagged: { bg: '#FFF4DC', color: '#B36200' },
-  Removed: { bg: '#FDECEA', color: '#C0392B' },
-};
+function flattenCategories(nodes: CategoryNode[]): { value: string; label: string }[] {
+  const out: { value: string; label: string }[] = [];
+  for (const n of nodes) {
+    out.push({ value: n._id, label: n.name });
+    if (n.children?.length) out.push(...flattenCategories(n.children));
+  }
+  return out;
+}
 
-const metrics = [
-  { label: 'Total Listings', value: '28,492', trend: '+314 this week', sub: null,                  trendUp: true  },
-  { label: 'Active',         value: '27,840', trend: null,             sub: 'Live on marketplace', trendUp: false },
-  { label: 'Flagged',        value: '127',    trend: null,             sub: 'Pending review',      trendUp: false },
-  { label: 'GMV This Month', value: '$8.4M',  trend: '+18.2%',         sub: null,                  trendUp: true  },
-] as const;
-
-// ── Component ─────────────────────────────────────────────────────────────────
 export function AdminMarketplace() {
   usePageTitle('Marketplace');
-  const [search,     setSearch] = useState('');
-  const [catFilter,  setCat]    = useState('');
-  const [statFilter, setStat]   = useState('');
+  const { data: stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useMarketplaceStats();
 
-  const filtered = PRODUCTS.filter(p => {
-    const q = search.toLowerCase();
-    if (q && !p.title.toLowerCase().includes(q) && !p.seller.toLowerCase().includes(q)) return false;
-    if (catFilter  && catFilter  !== 'All Categories' && p.category !== catFilter)  return false;
-    if (statFilter && statFilter !== 'All Statuses'   && p.status   !== statFilter) return false;
-    return true;
-  });
+  const [search, setSearch] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    apiGetCategoryTree().then((res) => setCategories(flattenCategories(res.data))).catch(() => {});
+  }, []);
+
+  const query = useMemo(
+    () => ({
+      search: search || undefined,
+      categoryId: categoryId || undefined,
+      status: (statusFilter || undefined) as ListingStatus | undefined,
+      page,
+      limit: 10,
+    }),
+    [search, categoryId, statusFilter, page],
+  );
+
+  const { data, loading, error, refetch } = useMarketplaceListings(query);
+  const { setFeatured, removeListing, setStoreBadge, processingId, error: actionError } = useMarketplaceListingActions();
+  const [removing, setRemoving] = useState<MarketplaceListingRow | null>(null);
+
+  function refreshAll() { refetchStats(); refetch(); }
+
+  async function toggleFeatured(row: MarketplaceListingRow) {
+    const ok = await setFeatured(row.id, !row.isFeatured);
+    if (ok) refetch();
+  }
+
+  async function toggleEducatorBadge(row: MarketplaceListingRow) {
+    const hasBadge = (row.storeBadges ?? []).includes('verified_educator');
+    const ok = await setStoreBadge(row.storeId, 'verified_educator', !hasBadge);
+    if (ok) refetch();
+  }
+
+  async function handleRemove() {
+    if (!removing) return;
+    const ok = await removeListing(removing.id);
+    if (ok) { setRemoving(null); refreshAll(); }
+  }
+
+  const columns: TableColumn<MarketplaceListingRow>[] = [
+    { key: 'id', header: 'ID', render: (r) => <span className="text-[12px] font-mono text-slate whitespace-nowrap">{r.id.slice(-8)}</span> },
+    { key: 'title', header: 'Title', render: (r) => <p className="text-[13px] font-medium text-graphite max-w-[220px] truncate">{r.title}</p> },
+    { key: 'sellerName', header: 'Seller', render: (r) => <span className="text-[13px] text-graphite whitespace-nowrap">{r.sellerName}</span> },
+    { key: 'price', header: 'Price', align: 'right', render: (r) => <span className="text-[13px] font-semibold text-charcoal">{formatCurrency(r.price)}</span> },
+    { key: 'purchaseCount', header: 'Sales', align: 'right', render: (r) => <span className="text-[13px] text-charcoal">{formatNumber(r.purchaseCount)}</span> },
+    { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} size="sm" /> },
+    {
+      key: 'isFeatured',
+      header: 'Featured',
+      align: 'center',
+      render: (r) => (r.isFeatured ? <Star size={14} className="text-brand-orange fill-brand-orange inline-block" /> : <span className="text-slate/40">—</span>),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (r) => {
+        const hasEducatorBadge = (r.storeBadges ?? []).includes('verified_educator');
+        return (
+          <div className="flex items-center gap-[6px]">
+            <Button
+              size="xs"
+              variant={r.isFeatured ? 'outline' : 'secondary'}
+              icon={<Star size={11} />}
+              disabled={processingId === r.id}
+              onClick={() => toggleFeatured(r)}
+            >
+              {r.isFeatured ? 'Unfeature' : 'Feature'}
+            </Button>
+            <ActionMenu
+              align="right"
+              items={[
+                {
+                  label: hasEducatorBadge ? 'Unbadge Educator' : 'Verify Educator',
+                  icon: <GraduationCap size={13} />,
+                  disabled: processingId === r.storeId,
+                  onClick: () => toggleEducatorBadge(r),
+                },
+                { label: 'Remove Listing', icon: <Trash2 size={13} />, danger: true, onClick: () => setRemoving(r) },
+              ]}
+            />
+          </div>
+        );
+      },
+    },
+  ];
 
   return (
-    <div className="px-7 pt-6 pb-8 flex flex-col gap-5">
+    <>
+      <AdminPageHeader
+        title="Marketplace Management"
+        subtitle="Review, feature and manage all marketplace listings."
+        actions={<Button variant="outline" size="sm" icon={<RefreshCw size={13} />} onClick={refreshAll}>Refresh</Button>}
+      />
+      <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
+      {actionError && <div className="bg-error-bg border border-error-border rounded-lg px-4 py-2.5 text-[12.5px] text-error">{actionError}</div>}
 
-      {/* ── Header ── */}
-      <div>
-        <h1 className="text-[18px] font-bold text-charcoal mb-[3px]">Marketplace Management</h1>
-        <p className="text-[12px] text-slate">Review, feature and manage all marketplace listings.</p>
-      </div>
+      {statsError ? (
+        <AnalyticsErrorState message={statsError} onRetry={refetchStats} />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {statsLoading && !stats ? (
+            Array.from({ length: 4 }).map((_, i) => <SkeletonBox key={i} height={92} rounded="10px" />)
+          ) : stats ? (
+            <>
+              <MetricCard label="Total Listings" value={formatNumber(stats.totalListings)} />
+              <MetricCard label="Active" value={formatNumber(stats.active)} sub="Live on marketplace" />
+              <MetricCard label="Flagged" value={formatNumber(stats.flagged)} sub="Pending review" />
+              <MetricCard label="GMV This Month" value={formatCurrency(stats.gmvThisMonth)} />
+            </>
+          ) : null}
+        </div>
+      )}
 
-      {/* ── Metrics ── */}
-      <div className="grid grid-cols-4 gap-3">
-        {metrics.map(m => (
-          <div key={m.label} className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
-            <p className="text-[11px] font-medium text-slate uppercase tracking-[0.06em] mb-1">{m.label}</p>
-            <p className="text-[28px] font-bold text-charcoal leading-[1.15]">{m.value}</p>
-            {m.trend && <p className="text-[12px] text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
-            {m.sub   && <p className="text-[12px] text-slate mt-1">{m.sub}</p>}
-          </div>
-        ))}
-      </div>
-
-      {/* ── Table card ── */}
-      <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
-
-        {/* Filters */}
+      <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
         <div className="flex items-center gap-[10px] px-5 py-[14px] border-b border-bone flex-wrap">
-          <div className="flex items-center gap-[6px] border border-bone rounded-lg px-3 bg-white flex-1 max-w-[300px]">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-            </svg>
-            <input placeholder="Search listings or sellers…" value={search} onChange={e => setSearch(e.target.value)}
-              className="border-none outline-none text-[13px] py-2 w-full text-[#2C2A28] bg-transparent" />
-          </div>
-          <select value={catFilter} onChange={e => setCat(e.target.value)}
-            className="px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer">
-            {['All Categories','Educational','Digital','Handmade','Business Tools'].map(o => <option key={o}>{o}</option>)}
-          </select>
-          <select value={statFilter} onChange={e => setStat(e.target.value)}
-            className="px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer">
-            {['All Statuses','Active','Flagged','Removed'].map(o => <option key={o}>{o}</option>)}
-          </select>
+          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search listings or sellers…" className="flex-1 max-w-[300px]" />
+          <FilterDropdown placeholder="All Categories" options={categories} value={categoryId} onChange={(v) => { setCategoryId(v); setPage(1); }} />
+          <FilterDropdown placeholder="All Statuses" options={STATUS_OPTIONS} value={statusFilter} onChange={(v) => { setStatusFilter(v); setPage(1); }} />
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                {['ID','Title','Seller','Category','Price','Sales','Status','Featured','Actions'].map(h => (
-                  <th key={h} className="text-left px-4 py-[10px] text-[11px] font-semibold text-slate uppercase tracking-[0.05em] border-b border-bone bg-[#FAF9F5] whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p, i) => {
-                const ss = statusStyle[p.status] ?? { bg: '#F0EEE6', color: '#5A5852' };
-                return (
-                  <tr key={p.id}
-                    className="transition-colors duration-[120ms]"
-                    style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none', background: p.status === 'Flagged' ? '#FFFAF9' : 'transparent' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
-                    onMouseLeave={e => (e.currentTarget.style.background = p.status === 'Flagged' ? '#FFFAF9' : 'transparent')}
-                  >
-                    {/* ID */}
-                    <td className="px-4 py-3 text-[13px] font-semibold text-charcoal whitespace-nowrap">{p.id}</td>
-                    {/* Title */}
-                    <td className="px-4 py-3 max-w-[200px]">
-                      <p className="text-[13px] font-medium text-[#4A4945] overflow-hidden text-ellipsis whitespace-nowrap m-0">{p.title}</p>
-                    </td>
-                    {/* Seller */}
-                    <td className="px-4 py-3 text-[13px] text-[#4A4945] whitespace-nowrap">{p.seller}</td>
-                    {/* Category */}
-                    <td className="px-4 py-3">
-                      <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#F0EEE6] text-[#5A5852]">{p.category}</span>
-                    </td>
-                    {/* Price */}
-                    <td className="px-4 py-3 text-[13px] font-semibold text-charcoal">{p.price}</td>
-                    {/* Sales */}
-                    <td className="px-4 py-3 text-[13px] text-charcoal">{p.sales.toLocaleString()}</td>
-                    {/* Status */}
-                    <td className="px-4 py-3">
-                      <span className="px-[10px] py-[3px] rounded-[5px] text-[11px] font-semibold"
-                        style={{ background: ss.bg, color: ss.color }}>{p.status}</span>
-                    </td>
-                    {/* Featured */}
-                    <td className="px-4 py-3">
-                      {p.featured
-                        ? <Star size={14} style={{ color: '#D97757', fill: '#D97757' }} />
-                        : <span className="text-[13px] text-[#C0BDB5]">—</span>
-                      }
-                    </td>
-                    {/* Actions */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button className="text-[11px] font-medium bg-transparent border-none cursor-pointer"
-                          style={{ color: p.featured ? '#8C8A82' : '#D97757' }}>
-                          {p.featured ? 'Unfeature' : 'Feature'}
-                        </button>
-                        <span className="text-[#E8E6DC] text-[13px]">|</span>
-                        <button className="text-[11px] font-medium text-[#C13030] bg-transparent border-none cursor-pointer">
-                          Remove
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        {error ? (
+          <div className="p-5"><AnalyticsErrorState message={error} onRetry={refetch} /></div>
+        ) : (
+          <Table
+            columns={columns}
+            data={data?.items ?? []}
+            keyExtractor={(r) => r.id}
+            loading={loading}
+            emptyState={{ icon: <StoreIcon size={28} className="text-slate/50" />, title: 'No listings match your filters', description: 'Try adjusting your search or clearing filters.' }}
+            pagination={{ page, total: data?.total ?? 0, perPage: 10, onChange: setPage, label: 'listings' }}
+          />
+        )}
       </div>
-    </div>
+
+      {removing && (
+        <Modal mobileSheet
+          title="Remove Listing"
+          onClose={() => setRemoving(null)}
+          footer={<>
+            <Button variant="ghost" onClick={() => setRemoving(null)}>Cancel</Button>
+            <Button variant="danger" onClick={handleRemove} loading={processingId === removing.id}>Remove Listing</Button>
+          </>}
+        >
+          <p className="text-[13px] text-charcoal leading-[1.6]">
+            Remove "<strong>{removing.title}</strong>" from the marketplace? It will be delisted and hidden from buyers immediately.
+          </p>
+        </Modal>
+      )}
+      </div>
+    </>
   );
 }

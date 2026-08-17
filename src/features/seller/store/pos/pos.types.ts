@@ -1,76 +1,104 @@
-import type { LucideIcon } from 'lucide-react';
-import type { PaymentMethod, DiscountType, AppliedDiscount } from '@/types';
+import type { PosProductVariant } from '@/api/services/pos/posProducts';
+import type { PosPaymentMethod, Sale } from '@/api/services/pos/posSales';
 
-export type { PaymentMethod, DiscountType, AppliedDiscount };
+export type { PosPaymentMethod, PosProductVariant };
 
-export interface PosProduct {
-  name:     string;
-  price:    number;
-  icon:     LucideIcon;
-  sku:      string;
-  category: string;
-  stock:    number;
+export type PosView   = 'charge' | 'customer' | 'discount' | 'receipt';
+export type ActiveTab = 'sale' | 'orders' | 'products' | 'summary' | 'manage';
+
+export type PosDiscountType = 'pct' | 'fixed';
+
+export interface AppliedDiscount {
+  type:  PosDiscountType;
+  value: number;
+  label: string;
 }
 
-export interface CartItem extends PosProduct {
+// A cart line — always a single product+variant pair (real catalog items, not mock SKUs)
+export interface CartItem {
+  productId:   string;
+  variantId:   string;
+  name:        string;
+  sku:         string;
+  image:       string | null;
+  price:       number;
+  stock:       number;
   qty:         number;
   customPrice: number | null;
 }
 
-export interface PosCustomer {
-  name:    string;
-  email:   string;
-  points:  number;
-  segment: string;
-}
-
-export type PosView   = 'charge' | 'customer' | 'discount' | 'receipt';
-export type ActiveTab = 'sale' | 'orders' | 'products' | 'summary';
-
 export interface POSSaleState {
-  // Filter
-  searchQuery:       string;
-  setSearchQuery:    (q: string) => void;
-  activeCategory:    string;
-  setActiveCategory: (c: string) => void;
-  categories:        string[];
-  filtered:          PosProduct[];
+  // Products (paginated browse + search)
+  products:        Array<{ productId: string; name: string; image: string | null; variants: PosProductVariant[] }>;
+  productsLoading: boolean;
+  productsError:   string;
+  searchQuery:     string;
+  setSearchQuery:  (q: string) => void;
+  page:            number;
+  totalPages:      number;
+  setPage:         (p: number) => void;
+  reloadProducts:  () => void;
+  lookupBarcode:   (barcode: string) => Promise<void>;
+  barcodeError:    string;
+
   // Cart
   cart:           CartItem[];
-  addItem:        (p: PosProduct) => void;
-  removeItem:     (name: string) => void;
-  updateQty:      (name: string, delta: number) => void;
-  setCustomPrice: (name: string, price: string) => void;
+  addItem:        (item: { productId: string; variantId: string; name: string; sku: string; image: string | null; price: number; stock: number }) => void;
+  removeItem:     (variantId: string) => void;
+  updateQty:      (variantId: string, delta: number) => void;
+  setCustomPrice: (variantId: string, price: string) => void;
+
   // View
   posView:    PosView;
   setPosView: (v: PosView) => void;
-  // Customer
-  customer:    PosCustomer | null;
-  setCustomer: (c: PosCustomer | null) => void;
+
+  // Customer (no backend customer directory for POS — free-text name only)
+  customerName:    string;
+  setCustomerName: (v: string) => void;
+
   // Discount
-  discountType:       DiscountType;
-  setDiscountType:    (t: DiscountType) => void;
+  discountType:       PosDiscountType;
+  setDiscountType:    (t: PosDiscountType) => void;
   discountVal:        string;
   setDiscountVal:     (v: string) => void;
-  couponCode:         string;
-  setCouponCode:      (v: string) => void;
   appliedDiscount:    AppliedDiscount | null;
-  setAppliedDiscount: (d: AppliedDiscount | null) => void;
   applyDiscount:      () => void;
+  removeDiscount:     () => void;
+
   // Payment
-  paymentMethod:    PaymentMethod;
-  setPaymentMethod: (m: PaymentMethod) => void;
+  paymentMethod:    PosPaymentMethod;
+  setPaymentMethod: (m: PosPaymentMethod) => void;
   cashGiven:        string;
   setCashGiven:     (v: string) => void;
+
   // Note
   note:    string;
   setNote: (v: string) => void;
+
   // Computed totals
   subtotal:    number;
   discountAmt: number;
+  taxRate:     number;
   tax:         number;
   total:       number;
   cashChange:  number;
-  // Actions
-  resetSale: () => void;
+
+  // Held sales
+  heldSales:        Sale[];
+  heldSalesLoading: boolean;
+  resumingSaleId:   string | null;
+  resumeHeldSale:   (sale: Sale) => void;
+  discardHeldSale:  (saleId: string) => Promise<void>;
+  reloadHeldSales:  () => void;
+
+  // Checkout
+  charging:    boolean;
+  chargeError: string;
+  lastSale:    Sale | null;
+  charge:      (status: 'completed' | 'held') => Promise<void>;
+  resetSale:   () => void;
+
+  // Offline sync — sales created while offline queue here and sync on reconnect
+  pendingSyncCount: number;
+  syncNow:          () => Promise<void>;
 }

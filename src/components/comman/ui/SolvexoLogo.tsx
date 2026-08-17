@@ -4,6 +4,7 @@ interface LogoProps {
   size?:          number;
   showWordmark?:  boolean;
   className?:     string;
+  variant?:       'dark' | 'light';
 }
 
 export function SolvexoIcon({ size = 32 }: { size?: number }) {
@@ -24,14 +25,14 @@ export function SolvexoIcon({ size = 32 }: { size?: number }) {
   );
 }
 
-export function SolvexoLogo({ size = 32, showWordmark = true, className }: LogoProps) {
+export function SolvexoLogo({ size = 32, showWordmark = true, className, variant = 'dark' }: LogoProps) {
   const textSize = Math.round(size * 0.53);
   return (
     <div className={clsx('flex items-center gap-2', className)}>
       <SolvexoIcon size={size} />
       {showWordmark && (
         <div className="flex items-center" style={{ fontSize: textSize }}>
-          <span className="font-bold text-carbon tracking-tight">Solvex</span>
+          <span className={clsx('font-bold tracking-tight', variant === 'light' ? 'text-white' : 'text-carbon')}>Solvex</span>
           <span className="font-bold text-brand-orange tracking-tight">o</span>
         </div>
       )}

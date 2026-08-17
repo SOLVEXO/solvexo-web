@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiVerifyOtp, AuthContext, TokenStorage } from '@/api/commerce/auth';
+import { apiVerifyOtp, AuthContext, TokenStorage, LastRolePreference, getRoleRedirect, type AppRole } from '@/api/services/auth';
+import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 
 type AppRole = 'user' | 'seller' | 'admin';
 
@@ -24,9 +25,28 @@ export function useVerifyOtp() {
     try {
       const res = await apiVerifyOtp({ email: ctx.email, role: ctx.role, otp });
       TokenStorage.save(res.data.token.accessToken, res.data.token.refreshToken);
-      TokenStorage.saveUser(res.data.user);
+      const role = ctx.role as AppRole;
+      // The verify-otp response's `user` has no `role` field at all (backend
+      // only returns id/name/email/phone/address here) — saving it as-is
+      // would leave every downstream role guard (SellerLayout, StoreLayout,
+      // this page's own /onboard guard) reading `role: undefined`, which
+      // reads as "not a seller" and bounces them straight back to /login
+      // right after they just verified. Stamping the role we already know
+      // client-side (the one they registered with) onto the saved user
+      // object is what makes the rest of the app's guards work at all.
+      TokenStorage.saveUser({ ...res.data.user, role });
+      LastRolePreference.set(role);
       AuthContext.clear();
       navigate(getRoleRedirect(ctx.role as AppRole), { replace: true });
+      // Inspect the seller's REAL store state instead of assuming — this
+      // path runs right after fresh registration (an already-verified
+      // account is rejected earlier by the backend), so a seller here
+      // almost always has zero stores yet and lands on /onboard, but the
+      // resolver is still the source of truth rather than a hardcoded
+      // guess. The token is already saved above, so there's no reason to
+      // ever bounce through /login.
+      const destination = role === 'seller' ? await resolveSellerDestinationRemote() : getRoleRedirect(role);
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid or expired code. Please try again.');
     } finally {

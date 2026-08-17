@@ -1,30 +1,28 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { useCartContext } from '@/contexts/CartContext';
+import { TokenStorage } from '@/api/services/auth';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
-import { apiGetMyAddresses, type Address } from '@/api/commerce/address';
-import { apiCreateCheckout, type Checkout, type CheckoutSummary } from '@/api/commerce/checkout';
-import { apiPlaceCodOrder, apiPlaceOrder } from '@/api/commerce/payment';
-import { Button } from '@/components/comman/ui/Button';
+import { apiGetMyAddresses, type Address } from '@/api/services/address';
+import { apiCreateCheckout, apiApplyCoupon, apiRemoveCoupon, type Checkout, type CheckoutSummary, type SubscriptionSavingsHint } from '@/api/services/checkout';
+import { apiPlaceCodOrder, apiInitiatePayment, apiGetPaymentStatus } from '@/api/services/payment';
 import {
-  ArrowLeft, MapPin, Truck, CreditCard, CheckCircle2,
-  ChevronRight, Loader2, AlertCircle, PackageCheck,
-  Banknote, ShieldCheck, ArrowDownCircle, Download,
+  apiGetManualPaymentBankDetails, apiSubmitManualPayment,
+  type ManualPaymentBankDetails, type ManualPaymentOrderSummary,
+} from '@/api/services/manualPayment';
+import { Button } from '@/components/comman/ui/Button';
+import { SkeletonBox, BuyerNavbar, Breadcrumb, Input } from '@/components/comman/ui';
+import { StripeCardPayment, isStripeConfigured } from '@/features/buyer/components/StripeCardPayment';
+import {
+  MapPin, Truck, CreditCard, CheckCircle2,
+  ChevronRight, AlertCircle, PackageCheck,
+  Banknote, ShieldCheck, ArrowDownCircle, Download, Clock, Loader2,
+  SplitSquareHorizontal, Landmark, UploadCloud,
 } from 'lucide-react';
 import { clsx } from 'clsx';
-
-// ── Logo ──────────────────────────────────────────────────────────────────────
-function SolvexoIcon({ size = 28 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="8" fill="#D97757" />
-      <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-      <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7" />
-      <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
+import { currencySymbol } from '@/utils/currency';
 
 // ── Step badge ────────────────────────────────────────────────────────────────
 function StepBadge({ n, active, done }: { n: number; active: boolean; done: boolean }) {
@@ -33,9 +31,202 @@ function StepBadge({ n, active, done }: { n: number; active: boolean; done: bool
       'w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold flex-shrink-0 transition-colors',
       done ? 'bg-success text-white' :
         active ? 'bg-brand-orange text-white' :
-          'bg-bone text-[#8C8A82]',
+          'bg-bone text-slate',
     )}>
       {done ? <CheckCircle2 size={14} /> : n}
+    </div>
+  );
+}
+
+// ── Card payment slot — shows the real Stripe form once configured, a clear
+// "coming soon" notice otherwise. Never a dead-end silent button. ─────────────
+function CardPaymentSlot({
+  checkoutReady, clientSecret, initiating, initiateError, polling, amount, currency, onConfirmed,
+}: {
+  checkoutReady:  boolean;
+  clientSecret:   string | null;
+  initiating:     boolean;
+  initiateError:  string;
+  polling:        boolean;
+  amount:         number;
+  currency:       string;
+  onConfirmed:    () => void;
+}) {
+  if (!isStripeConfigured()) {
+    return (
+      <div className="flex items-start gap-2 text-[12px] text-charcoal bg-cream border border-bone rounded-[8px] px-3 py-3">
+        <Clock size={14} className="mt-[1px] flex-shrink-0 text-slate" />
+        <div>
+          <p className="font-semibold text-carbon mb-[2px]">Card payments are coming soon</p>
+          <p className="text-slate">We're finishing setup for online card payments — please check back shortly to complete this order.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (polling) {
+    return (
+      <div className="flex flex-col items-center gap-2 py-6 text-center">
+        <Loader2 size={22} className="animate-spin text-brand-orange" />
+        <p className="text-[13px] font-medium text-carbon">Confirming your payment…</p>
+        <p className="text-[11px] text-slate">This only takes a moment.</p>
+      </div>
+    );
+  }
+
+  if (!checkoutReady || initiating) {
+    return (
+      <div className="flex flex-col gap-3">
+        <SkeletonBox height={44} rounded="8px" />
+        <SkeletonBox height={48} rounded="12px" />
+      </div>
+    );
+  }
+
+  if (initiateError) {
+    return (
+      <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2">
+        <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
+        {initiateError}
+      </div>
+    );
+  }
+
+  if (!clientSecret) return null;
+
+  return <StripeCardPayment clientSecret={clientSecret} amount={amount} currency={currency} onConfirmed={onConfirmed} />;
+}
+
+// ── Manual Bank Transfer slot — Pakistan track. Fetches the admin-configured
+// bank details, shows the PKR amount to transfer, and submits the buyer's
+// proof (order is created + proof recorded in one call, `paymentStatus:
+// 'pending_verification'` until an admin reviews it). ───────────────────────
+function ManualBankTransferSlot({
+  checkoutId, amountUSD, onSubmitted,
+}: {
+  checkoutId:  string;
+  amountUSD:   number;
+  onSubmitted: (orders: ManualPaymentOrderSummary[], amountPKR: number) => void;
+}) {
+  const [bankDetails, setBankDetails]   = useState<ManualPaymentBankDetails | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(true);
+  const [detailsError, setDetailsError] = useState('');
+  const [file, setFile]                 = useState<File | null>(null);
+  const [transactionReference, setTransactionReference] = useState('');
+  const [senderName, setSenderName]     = useState('');
+  const [submitting, setSubmitting]     = useState(false);
+  const [error, setError]               = useState('');
+  // Unique per mount, not per checkout — a fixed key would let one
+  // interrupted submit permanently block every retry via the backend's
+  // IdempotencyInterceptor ("already being processed" forever).
+  const [idempotencyKey] = useState(() => `manual-pay-${checkoutId}-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetManualPaymentBankDetails()
+      .then(res => { if (!cancelled) setBankDetails(res.data); })
+      .catch(err => { if (!cancelled) setDetailsError(err instanceof Error ? err.message : 'Bank transfer is not available right now.'); })
+      .finally(() => { if (!cancelled) setLoadingDetails(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  async function handleSubmit() {
+    if (!file) { setError('Please upload a screenshot or photo of your transfer receipt.'); return; }
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await apiSubmitManualPayment(
+        checkoutId, file,
+        { transactionReference: transactionReference || undefined, senderName: senderName || undefined },
+        idempotencyKey,
+      );
+      onSubmitted(res.data.orders, res.data.proof.amountPKR);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit payment proof. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (loadingDetails) {
+    return (
+      <div className="flex flex-col gap-3">
+        <SkeletonBox height={140} rounded="10px" />
+        <SkeletonBox height={44} rounded="8px" />
+      </div>
+    );
+  }
+
+  if (detailsError || !bankDetails) {
+    return (
+      <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2">
+        <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
+        {detailsError || 'Bank transfer is not available right now.'}
+      </div>
+    );
+  }
+
+  const amountPKR = amountUSD * bankDetails.usdToPkrRate;
+  const rows: [string, string | null][] = [
+    ['Bank', bankDetails.bankName],
+    ['Account Title', bankDetails.accountTitle],
+    ['Account Number', bankDetails.accountNumber],
+    ['IBAN', bankDetails.iban],
+    ['JazzCash', bankDetails.jazzcashNumber],
+    ['Easypaisa', bankDetails.easypaisaNumber],
+  ];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="rounded-[10px] border border-bone bg-cream px-4 py-3 flex flex-col gap-2">
+        <div className="flex justify-between items-baseline">
+          <span className="text-[12px] text-slate">Amount to transfer</span>
+          <span className="text-[18px] font-bold text-brand-deep-orange">
+            PKR {amountPKR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </span>
+        </div>
+        <p className="text-[10.5px] text-slate">
+          ≈ {currencySymbol('USD')}{amountUSD.toFixed(2)} at PKR {bankDetails.usdToPkrRate}/USD
+        </p>
+        <div className="h-px bg-bone my-1" />
+        {rows.filter(([, v]) => v).map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-3 text-[12px]">
+            <span className="text-slate flex-shrink-0">{label}</span>
+            <span className="font-medium text-carbon text-right font-mono">{value}</span>
+          </div>
+        ))}
+        {bankDetails.instructions && <p className="text-[11px] text-slate mt-1">{bankDetails.instructions}</p>}
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div>
+          <label className="block text-[12px] font-medium text-charcoal mb-1.5">Payment proof (screenshot or receipt photo)</label>
+          <label className="flex items-center gap-2 border border-dashed border-bone rounded-[8px] px-3 py-3 cursor-pointer hover:border-brand-orange/50 transition-colors">
+            <UploadCloud size={16} className="text-slate flex-shrink-0" />
+            <span className="text-[12px] text-slate truncate">{file ? file.name : 'Choose an image…'}</span>
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          </label>
+        </div>
+        <Input label="Transaction reference (optional)" value={transactionReference} onChange={(e) => setTransactionReference(e.target.value)} placeholder="TXN123456789" />
+        <Input label="Sender name (optional, if different from your account)" value={senderName} onChange={(e) => setSenderName(e.target.value)} />
+      </div>
+
+      {error && (
+        <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2">
+          <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
+          {error}
+        </div>
+      )}
+
+      <Button
+        variant="primary" size="lg" fullWidth
+        loading={submitting}
+        icon={!submitting && <PackageCheck size={16} />}
+        onClick={handleSubmit}
+        className="gap-2 justify-center"
+      >
+        {submitting ? 'Submitting…' : "I've Made the Transfer"}
+      </Button>
     </div>
   );
 }
@@ -44,23 +235,110 @@ function StepBadge({ n, active, done }: { n: number; active: boolean; done: bool
 const PAYMENT_LABELS: Record<string, { label: string; desc: string; Icon: React.ElementType }> = {
   stripe:           { label: 'Credit / Debit Card',  desc: 'Secure payment via Stripe',       Icon: CreditCard },
   cash_on_delivery: { label: 'Cash on Delivery',     desc: 'Pay when your order arrives',     Icon: Banknote   },
+  // Mixed carts only — desc is overridden with the real digital/physical
+  // amounts wherever this is rendered (see the payment-method list below).
+  split:            { label: 'Card + Cash on Delivery', desc: 'Pay for digital items now, physical items on delivery', Icon: SplitSquareHorizontal },
+  manual_bank_transfer: { label: 'Bank Transfer', desc: 'Transfer to our account and upload your receipt', Icon: Landmark },
 };
+
+// ── Shared payment-method radio list — used by both the digital single-step
+// flow and the physical flow's step 3 (their surrounding layout differs, but
+// the list of options and how a method is selected is identical). ──────────
+function PaymentMethodOptions({
+  methods, selectedMethod, onSelect, summary, currency,
+}: {
+  methods:        string[];
+  selectedMethod: string | null;
+  onSelect:       (m: string) => void;
+  summary:        CheckoutSummary | null;
+  currency:       string | undefined;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {methods.map(method => {
+        const meta = PAYMENT_LABELS[method] ?? { label: method, desc: '', Icon: CreditCard };
+        const { label, Icon } = meta;
+        const desc = method === 'split' && summary?.digitalSubtotal != null && summary?.physicalSubtotal != null
+          ? `Pay ${currencySymbol(currency)} ${summary.digitalSubtotal.toFixed(2)} now, ${currencySymbol(currency)} ${summary.physicalSubtotal.toFixed(2)} on delivery`
+          : meta.desc;
+        const unavailable = (method === 'stripe' || method === 'split') && !isStripeConfigured();
+        return (
+          <label
+            key={method}
+            className={clsx(
+              'flex gap-3 p-4 rounded-[10px] border transition-colors',
+              unavailable
+                ? 'cursor-not-allowed opacity-60 border-bone bg-cream'
+                : selectedMethod === method
+                  ? 'cursor-pointer border-brand-orange bg-brand-pale-orange'
+                  : 'cursor-pointer border-bone bg-cream hover:border-[#c5c4bc]',
+            )}
+          >
+            <input
+              type="radio" name="payment"
+              className="mt-[3px] accent-brand-orange flex-shrink-0 disabled:cursor-not-allowed"
+              checked={selectedMethod === method}
+              disabled={unavailable}
+              onChange={() => onSelect(method)}
+            />
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-9 h-9 rounded-[8px] bg-bone flex items-center justify-center flex-shrink-0">
+                <Icon size={17} className="text-graphite" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-[13px] font-semibold text-carbon">{label}</p>
+                  {unavailable && (
+                    <span className="text-[10px] font-semibold px-2 py-[1px] rounded-full bg-bone text-slate">
+                      Coming soon
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate">{desc}</p>
+              </div>
+            </div>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export function CheckoutPage() {
   usePageTitle('Checkout');
   const navigate  = useNavigate();
-  const location  = useLocation();
-  const cartType  = (location.state as { cartType?: 'physical' | 'digital' } | null)?.cartType ?? 'physical';
-  const isDigital = cartType === 'digital';
+
+  // The one point in the buyer flow that actually requires login — browsing
+  // and Add to Cart both work as a guest (see CartContext's guest cart).
+  // `redirect` lands them straight back here post-login, with their cart
+  // already merged onto their real account (CartContext's
+  // 'solvexo:auth-login' listener), same pattern CartPage used to use.
+  if (!TokenStorage.isLoggedIn()) {
+    return <Navigate to={`/login?redirect=${encodeURIComponent('/checkout')}`} replace />;
+  }
 
   const { cart, loading: cartLoading, cartCount, clearCart } = useCartContext();
 
-  // Step: 1 = address, 2 = shipping, 3 = payment
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  // One unified checkout for the whole cart, mixed physical+digital included
+  // (Amazon/Alibaba/Shopify/Daraz all check out a mixed cart as one order —
+  // splitting it into two separate checkouts was the old behavior here and
+  // it under-charged the displayed total while still billing the full cart
+  // server-side, since the backend was never told to filter by type).
+  const cartItems  = cart?.items ?? [];
+  const hasDigital = cartItems.some(i => i.type === 'digital');
+  // Fully-digital carts skip address/shipping entirely; a mixed cart still
+  // needs both, for its physical items — so this only means "skip the
+  // shipping steps", not "no digital items in this order".
+  const isDigital  = cartItems.length > 0 && cartItems.every(i => i.type === 'digital');
+
+  // Step: 1 = address, 2 = shipping, 3 = payment method (selection only), 4 = review & confirm
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Address dropdown open state
   const [addrDropOpen, setAddrDropOpen] = useState(false);
+  const addrDropRef = useRef<HTMLDivElement>(null);
+  const shippingDropRef = useRef<HTMLDivElement>(null);
 
   // Address
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -72,22 +350,87 @@ export function CheckoutPage() {
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [shippingDropOpen, setShippingDropOpen] = useState(false);
 
+  // Close either dropdown on an outside click or Escape — matches the
+  // click-outside/Escape convention every other dropdown in this app follows.
+  useEffect(() => {
+    if (!addrDropOpen && !shippingDropOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setAddrDropOpen(false); setShippingDropOpen(false); }
+    };
+    const onClickOutside = (e: MouseEvent) => {
+      if (addrDropOpen && addrDropRef.current && !addrDropRef.current.contains(e.target as Node)) setAddrDropOpen(false);
+      if (shippingDropOpen && shippingDropRef.current && !shippingDropRef.current.contains(e.target as Node)) setShippingDropOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('mousedown', onClickOutside);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('mousedown', onClickOutside);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addrDropOpen, shippingDropOpen]);
+
   // Checkout creation (step 2 → 3)
   const [creatingCheckout, setCreatingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [summary, setSummary] = useState<CheckoutSummary | null>(null);
   const [allowedMethods, setAllowedMethods] = useState<string[]>([]);
+  const [savingsHints, setSavingsHints] = useState<SubscriptionSavingsHint[]>([]);
 
   // Payment
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [placing,     setPlacing]     = useState(false);
   const [placeError,  setPlaceError]  = useState('');
 
-  // For digital carts: strip COD from allowed methods
-  const effectiveMethods = isDigital
+  // Manual bank transfer — set once the buyer submits their proof; short-
+  // circuits the whole page to a confirmation screen instead of reusing
+  // /order-success, since that page expects a richer PlacedOrder shape than
+  // this flow's response provides (order created + proof recorded in one
+  // call, no per-item/address breakdown returned).
+  const [manualPaymentResult, setManualPaymentResult] = useState<{ orders: ManualPaymentOrderSummary[]; amountPKR: number } | null>(null);
+
+  // Card payment (Stripe) — clientSecret drives the embedded PaymentElement form;
+  // pollingStatus drives the "confirming your payment…" state after the buyer submits.
+  const [clientSecret,        setClientSecret]        = useState<string | null>(null);
+  // Which mode the current clientSecret's PaymentIntent was created for — lets
+  // the initiate-payment effect below tell "buyer switched stripe↔split" apart
+  // from "nothing changed", since 'full' and 'split' charge different amounts.
+  const [clientSecretMode,    setClientSecretMode]    = useState<'full' | 'split' | null>(null);
+  // The amount actually being charged right now (from the initiate-payment
+  // response) — not the same as `total` once 'split' only charges the
+  // digital portion, so the "Pay $X" button must reflect this, not `total`.
+  const [chargeAmount,        setChargeAmount]        = useState<number | null>(null);
+  const [initiatingPayment,   setInitiatingPayment]   = useState(false);
+  const [initiatePaymentErr,  setInitiatePaymentErr]  = useState('');
+  const [pollingStatus,       setPollingStatus]       = useState(false);
+  const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Coupon
+  const [couponInput,   setCouponInput]   = useState('');
+  const [couponBusy,    setCouponBusy]    = useState(false);
+  const [couponError,   setCouponError]   = useState('');
+  // Explicit "it worked, here's how much" confirmation — shown once right
+  // after a successful apply, matching how Amazon/Shopify confirm a promo
+  // code rather than just letting a summary line quietly appear.
+  const [couponSuccessMsg, setCouponSuccessMsg] = useState('');
+
+  // Cash on Delivery can't cover a digital item — it's delivered instantly, long
+  // before any cash changes hands, so a buyer could take the download and then
+  // refuse the COD payment at the door. Any digital item in the order (mixed
+  // or pure-digital) forces card payment for the whole order instead.
+  const effectiveMethods = hasDigital
     ? allowedMethods.filter(m => m !== 'cash_on_delivery')
     : allowedMethods;
+
+  // With only one real choice (a pure-digital cart only ever gets 'stripe'),
+  // select it automatically instead of making the buyer pick a "radio group"
+  // with one item in it. A mixed cart gets both 'stripe' and 'split' — that's
+  // a real choice, so it's left for the buyer to pick via the radio list.
+  useEffect(() => {
+    if (effectiveMethods.length === 1) setSelectedMethod(effectiveMethods[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveMethods.length]);
 
   // Fetch addresses (physical only)
   useEffect(() => {
@@ -116,7 +459,10 @@ export function CheckoutPage() {
         if (cancelled) return;
         setCheckout(res.data.checkout);
         setSummary(res.data.summary);
-        setAllowedMethods(res.data.allowedPaymentMethods.filter(m => m !== 'cash_on_delivery'));
+        setSavingsHints(res.data.subscriptionSavingsHints ?? []);
+        // Temporary: Stripe is the only payment method enabled at checkout for now
+        // (other methods left disabled server-side too, just kept out of this list).
+        setAllowedMethods((res.data.allowedPaymentMethods ?? []).filter(m => m === 'stripe'));
         setStep(3);
       })
       .catch(err => {
@@ -127,6 +473,82 @@ export function CheckoutPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDigital]);
 
+  // Card ('stripe') or split ('split') selected → get a Stripe clientSecret
+  // for this checkout so the PaymentElement can mount. Re-fetches if the
+  // buyer switches between 'stripe' and 'split' after one was already
+  // initiated, since those charge different amounts (full vs. digital-only).
+  // For the physical/mixed flow this only fires once the buyer reaches the
+  // Review step (step 4) — picking a method in step 3 no longer immediately
+  // starts payment. The digital-only flow has no step 4 at all (single-step
+  // checkout), so it keeps firing as soon as 'stripe' is selected there.
+  useEffect(() => {
+    const mode: 'full' | 'split' | null =
+      selectedMethod === 'split' ? 'split' : selectedMethod === 'stripe' ? 'full' : null;
+    if (!mode || !checkout || !isStripeConfigured()) return;
+    if (!isDigital && step !== 4) return;
+    if (clientSecret && clientSecretMode === mode) return;
+    let cancelled = false;
+    setInitiatingPayment(true);
+    setInitiatePaymentErr('');
+    apiInitiatePayment({ checkoutId: checkout._id, paymentMode: mode })
+      .then(res => {
+        if (cancelled) return;
+        setClientSecret(res.data.clientSecret);
+        setChargeAmount(res.data.amount);
+        setClientSecretMode(mode);
+      })
+      .catch(err => {
+        if (!cancelled) setInitiatePaymentErr(err instanceof Error ? err.message : 'Failed to start card payment.');
+      })
+      .finally(() => { if (!cancelled) setInitiatingPayment(false); });
+    return () => { cancelled = true; };
+  }, [selectedMethod, checkout, clientSecret, clientSecretMode, isDigital, step]);
+
+  // Stop any in-flight poll on unmount (e.g. buyer navigates away mid-confirmation).
+  useEffect(() => () => { if (pollTimer.current) clearTimeout(pollTimer.current); }, []);
+
+  // Stripe confirmed the PaymentIntent client-side — the order itself is created
+  // server-side (webhook, or this poll acting as a fallback for local dev / slow
+  // webhook delivery). Poll until the order shows up, then hand off to Order Success.
+  const handleStripeConfirmed = () => {
+    if (!checkout) return;
+    setPollingStatus(true);
+    setPlaceError('');
+    let stopped = false;
+    const poll = async () => {
+      if (stopped) return;
+      try {
+        const res = await apiGetPaymentStatus(checkout._id);
+        if (stopped) return;
+        if (res.data.status === 'completed') {
+          setPollingStatus(false);
+          await clearCart();
+          navigate('/order-success', { state: { orders: res.data.orders } });
+          return;
+        }
+        if (res.data.status === 'failed') {
+          setPollingStatus(false);
+          setPlaceError('Payment could not be confirmed. Please try again.');
+          return;
+        }
+      } catch {
+        // transient — keep polling, a real failure will surface via the timeout below
+      }
+      if (!stopped) pollTimer.current = setTimeout(poll, 1500);
+    };
+    poll();
+    // Stop waiting after ~30s so the buyer isn't stuck on a spinner forever —
+    // the payment likely succeeded (Stripe already confirmed it), it just means
+    // order finalization is taking unusually long; direct them to their orders.
+    setTimeout(() => {
+      if (!stopped) {
+        stopped = true;
+        if (pollTimer.current) clearTimeout(pollTimer.current);
+        setPollingStatus(false);
+        setPlaceError('Your payment was received and is being confirmed — check My Orders in a moment.');
+      }
+    }, 30_000);
+  };
 
   const matchingZones = selectedAddr
     ? zones.filter(z =>
@@ -137,24 +559,49 @@ export function CheckoutPage() {
 
   const selectedZone = zones.find(z => z._id === selectedZoneId) ?? null;
 
-  // Filter items to only what's being checked out (physical OR digital)
-  const filteredCheckoutItems = (checkout?.items ?? []).filter(i =>
-    cartType === 'digital' ? i.type === 'digital' : i.type === 'physical',
-  );
-  const filteredCartItems = (cart?.items ?? []).filter(i =>
-    cartType === 'digital' ? i.type === 'digital' : (i.type === 'physical' || !i.type),
-  );
-
-  // Subtotal from filtered items only
-  const filteredSubtotal = checkout
-    ? filteredCheckoutItems.reduce((s, i) => s + i.totalPrice, 0)
-    : filteredCartItems.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
+  // The whole cart checks out together — one order, no more splitting by type.
+  const orderSubtotal = checkout
+    ? checkout.items.reduce((s, i) => s + i.totalPrice, 0)
+    : cartItems.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
 
   const shipping = summary?.shippingFee ?? selectedZone?.shippingPrice ?? 0;
   const tax      = summary?.taxAmount ?? 0;
-  const total    = filteredSubtotal + (isDigital ? 0 : shipping) + tax;
+  const couponDiscount = checkout?.couponDiscountUSD ?? 0;
+  const total    = Math.max(0, orderSubtotal + (isDigital ? 0 : shipping) + tax - couponDiscount);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
+  async function handleApplyCoupon() {
+    if (!checkout || !couponInput.trim()) return;
+    setCouponBusy(true);
+    setCouponError('');
+    setCouponSuccessMsg('');
+    try {
+      const res = await apiApplyCoupon({ checkoutId: checkout._id, code: couponInput.trim() });
+      setCheckout(c => c && { ...c, couponCode: res.data.couponCode, couponDiscountUSD: res.data.couponDiscountUSD, totalAmount: res.data.totalAmount });
+      setCouponSuccessMsg(`Coupon applied — you saved ${currencySymbol(checkout.currency)}${res.data.couponDiscountUSD.toFixed(2)}.`);
+      setCouponInput('');
+    } catch (err) {
+      setCouponError(err instanceof Error ? err.message : 'Failed to apply coupon.');
+    } finally {
+      setCouponBusy(false);
+    }
+  }
+
+  async function handleRemoveCoupon() {
+    if (!checkout) return;
+    setCouponBusy(true);
+    setCouponError('');
+    setCouponSuccessMsg('');
+    try {
+      const res = await apiRemoveCoupon(checkout._id);
+      setCheckout(c => c && { ...c, couponCode: null, couponDiscountUSD: 0, totalAmount: res.data.totalAmount });
+    } catch (err) {
+      setCouponError(err instanceof Error ? err.message : 'Failed to remove coupon.');
+    } finally {
+      setCouponBusy(false);
+    }
+  }
+
   const selectAddress = (addr: Address) => {
     setSelectedAddr(addr);
     setSelectedZoneId(null);
@@ -176,7 +623,13 @@ export function CheckoutPage() {
       });
       setCheckout(res.data.checkout);
       setSummary(res.data.summary);
-      setAllowedMethods(res.data.allowedPaymentMethods);
+      setSavingsHints(res.data.subscriptionSavingsHints ?? []);
+      // Temporary: for physical/mixed checkout, Stripe only works on a USD
+      // checkout (see PaymentService.confirmCardPayment) — a PKR checkout
+      // has no working card rail yet, so Cash on Delivery is kept as the
+      // fallback that actually completes an order right now. Split (card +
+      // COD) and manual bank transfer stay hidden for the demo.
+      setAllowedMethods((res.data.allowedPaymentMethods ?? []).filter(m => m === 'stripe' || m === 'cash_on_delivery'));
       setStep(3);
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : 'Failed to create checkout. Please try again.');
@@ -185,22 +638,16 @@ export function CheckoutPage() {
     }
   };
 
+  // Cash on Delivery only — card payment is handled by StripeCardPayment +
+  // handleStripeConfirmed instead, since it has its own form/submit button.
   const handlePlaceOrder = async () => {
-    if (!checkout) return;
-    if (!isDigital && !selectedMethod) return;
+    if (!checkout || selectedMethod !== 'cash_on_delivery') return;
     setPlacing(true);
     setPlaceError('');
     try {
-      if (isDigital) {
-        const res = await apiPlaceOrder({ checkoutId: checkout._id });
-        await clearCart();
-        navigate('/order-success', { state: { orders: res.data.orders } });
-      } else if (selectedMethod === 'cash_on_delivery') {
-        const res = await apiPlaceCodOrder({ checkoutId: checkout._id });
-        await clearCart();
-        navigate('/order-success', { state: { orders: res.data.orders } });
-      }
-      // stripe: handle separately when Stripe integration is added
+      const res = await apiPlaceCodOrder({ checkoutId: checkout._id });
+      await clearCart();
+      navigate('/order-success', { state: { orders: res.data.orders } });
     } catch (err) {
       setPlaceError(err instanceof Error ? err.message : 'Failed to place order. Please try again.');
     } finally {
@@ -208,44 +655,72 @@ export function CheckoutPage() {
     }
   };
 
+  const handleManualPaymentSubmitted = async (orders: ManualPaymentOrderSummary[], amountPKR: number) => {
+    await clearCart();
+    setManualPaymentResult({ orders, amountPKR });
+  };
+
+  if (manualPaymentResult) {
+    return (
+      <div className="min-h-screen bg-cream">
+        <BuyerNavbar/>
+        <div className="max-w-[560px] mx-auto px-4 py-14 text-center">
+          <div className="w-14 h-14 rounded-full bg-[#fff4dc] flex items-center justify-center mx-auto mb-5">
+            <Clock size={26} className="text-[#b36200]" />
+          </div>
+          <h1 className="text-[20px] font-bold text-carbon mb-2">We're verifying your payment</h1>
+          <p className="text-[13px] text-slate mb-6">
+            Your order has been placed and your transfer proof of <span className="font-semibold text-carbon">PKR {manualPaymentResult.amountPKR.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> was received.
+            We'll notify you as soon as it's confirmed — usually within a few hours.
+          </p>
+          <div className="bg-white border border-bone rounded-[10px] divide-y divide-bone text-left mb-8">
+            {manualPaymentResult.orders.map(o => (
+              <div key={o.orderId} className="flex justify-between items-center px-4 py-3 text-[13px]">
+                <span className="font-mono font-semibold text-brand-deep-orange">{o.orderNumber}</span>
+                <span className="text-slate">{currencySymbol(o.currency)}{o.totalAmount.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+          <Button variant="primary" size="lg" onClick={() => navigate('/account/orders')} className="gap-2">
+            View My Orders <ChevronRight size={14} />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-cream">
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-4 md:px-10 gap-4">
-        <div className="flex-1 flex items-center gap-2">
-          <SolvexoIcon size={28} />
-          <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
-          <span className="font-bold text-[15px] text-brand-orange">o</span>
-        </div>
-        <Button variant="ghost" size="sm" onClick={() => navigate('/cart')}>
-          <ArrowLeft size={14} className="inline align-middle mr-1" />
-          Back to Cart
-        </Button>
-      </nav>
+      <BuyerNavbar/>
 
       <div className="max-w-[960px] mx-auto px-4 md:px-6 py-6 md:py-8">
+        <Breadcrumb className="mb-4" items={[
+          { label: 'Home', path: '/' },
+          { label: 'Cart', path: '/cart' },
+          { label: 'Checkout' },
+        ]} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
 
           {/* ── Left panel ─────────────────────────────────────────────── */}
           {isDigital ? (
             /* ── Digital: single-step payment ──────────────────────────── */
-            <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
+            <div className="bg-white rounded-xl border border-bone overflow-hidden">
 
               {/* Header */}
               <div className="px-6 pt-5 pb-4 border-b border-bone flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-[2px]">
-                    <h1 className="text-[20px] font-bold text-[#141413] leading-tight">Checkout</h1>
-                    <span className="flex items-center gap-1 px-2 py-[3px] rounded-full text-[10px] font-semibold bg-[#EEF0FF] text-[#3851D1]">
+                    <h1 className="text-[20px] font-bold text-carbon leading-tight">Checkout</h1>
+                    <span className="flex items-center gap-1 px-2 py-[3px] rounded-full text-[10px] font-semibold bg-[#eef0ff] text-[#3851d1]">
                       <Download size={9} /> Digital Delivery
                     </span>
                   </div>
-                  <p className="text-[12px] text-[#8C8A82] mt-[2px]">
+                  <p className="text-[12px] text-slate mt-[2px]">
                     {cartLoading ? 'Loading…' : `${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart`}
                   </p>
                 </div>
-                <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-[#EEF0FF] text-[#3851D1]">
+                <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-[#eef0ff] text-[#3851d1]">
                   Instant Delivery
                 </span>
               </div>
@@ -253,69 +728,94 @@ export function CheckoutPage() {
               {/* Body */}
               <div className="p-5">
                 {creatingCheckout ? (
-                  <div className="flex flex-col items-center gap-3 py-8">
-                    <Loader2 size={24} className="animate-spin text-brand-orange" />
-                    <p className="text-[13px] text-[#8C8A82]">Preparing your order…</p>
+                  <div className="flex flex-col gap-4">
+                    <SkeletonBox height={40} rounded="8px" />
+                    <SkeletonBox height={14} width="70%" rounded="4px" />
+                    <SkeletonBox height={48} rounded="12px" />
                   </div>
                 ) : checkoutError ? (
-                  <div className="flex items-start gap-2 text-[12px] text-[#C13030] bg-[#FFF0F0] border border-[#FECACA] rounded-[8px] px-3 py-2">
+                  <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2">
                     <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
                     {checkoutError}
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-center gap-2 bg-[#EEF0FF] border border-[#C7CEFF] rounded-[8px] px-3 py-2 mb-5">
-                      <Download size={13} className="text-[#3851D1] shrink-0" />
-                      <p className="text-[12px] text-[#3851D1] font-medium">
+                    <div className="flex items-center gap-2 bg-[#eef0ff] border border-[#c7ceff] rounded-[8px] px-3 py-2 mb-5">
+                      <Download size={13} className="text-[#3851d1] shrink-0" />
+                      <p className="text-[12px] text-[#3851d1] font-medium">
                         Digital products are delivered instantly after payment — no shipping required.
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-1 text-[11px] text-[#8C8A82] mb-5">
+                    <div className="flex items-center gap-1 text-[11px] text-slate mb-5">
                       <ShieldCheck size={12} className="text-success" />
                       Your payment info is secure and encrypted
                     </div>
 
                     {placeError && (
-                      <div className="flex items-start gap-2 text-[12px] text-[#C13030] bg-[#FFF0F0] border border-[#FECACA] rounded-[8px] px-3 py-2 mb-4">
+                      <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2 mb-4">
                         <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
                         {placeError}
                       </div>
                     )}
 
-                    <Button
-                      variant="primary" size="lg"
-                      disabled={!checkout || placing}
-                      onClick={handlePlaceOrder}
-                      className="gap-2 w-full justify-center"
-                    >
-                      {placing
-                        ? <><Loader2 size={15} className="animate-spin" /> Placing Order…</>
-                        : <><PackageCheck size={16} /> Place Order</>
-                      }
-                    </Button>
+                    {/* A pure-digital cart usually only ever gets 'stripe' (auto-selected,
+                        see the effect above) — but if an admin has enabled manual bank
+                        transfer, there's a real choice to make here. */}
+                    {effectiveMethods.length > 1 && (
+                      <div className="mb-4">
+                        <PaymentMethodOptions
+                          methods={effectiveMethods}
+                          selectedMethod={selectedMethod}
+                          onSelect={setSelectedMethod}
+                          summary={summary}
+                          currency={checkout?.currency}
+                        />
+                      </div>
+                    )}
+
+                    {selectedMethod === 'manual_bank_transfer' ? (
+                      checkout && (
+                        <ManualBankTransferSlot
+                          checkoutId={checkout._id}
+                          amountUSD={chargeAmount ?? total}
+                          onSubmitted={handleManualPaymentSubmitted}
+                        />
+                      )
+                    ) : (
+                      <CardPaymentSlot
+                        checkoutReady={!!checkout}
+                        clientSecret={clientSecret}
+                        initiating={initiatingPayment}
+                        initiateError={initiatePaymentErr}
+                        polling={pollingStatus}
+                        amount={chargeAmount ?? total}
+                        currency={checkout?.currency ?? 'USD'}
+                        onConfirmed={handleStripeConfirmed}
+                      />
+                    )}
                   </>
                 )}
               </div>
             </div>
           ) : (
             /* ── Physical: 3-step flow ──────────────────────────────────── */
-            <div className="bg-white rounded-[12px] border border-bone overflow-hidden">
+            <div className="bg-white rounded-xl border border-bone overflow-hidden">
 
             {/* ── Card Header ───────────────────────────────────────────── */}
             <div className="px-6 pt-5 pb-4 border-b border-bone">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h1 className="text-[20px] font-bold text-[#141413] leading-tight">Checkout</h1>
-                  <p className="text-[12px] text-[#8C8A82] mt-[2px]">
+                  <h1 className="text-[20px] font-bold text-carbon leading-tight">Checkout</h1>
+                  <p className="text-[12px] text-slate mt-[2px]">
                     {cartLoading ? 'Loading…' : `${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart`}
                   </p>
                 </div>
                 <span className={clsx(
                   'text-[11px] font-semibold px-3 py-1 rounded-full',
-                  step === 3 ? 'bg-[#E3F4EA] text-[#1E7A3C]' : 'bg-brand-pale-orange text-brand-orange',
+                  step === 4 ? 'bg-[#e3f4ea] text-[#1e7a3c]' : 'bg-brand-pale-orange text-brand-orange',
                 )}>
-                  Step {step} of 3
+                  Step {step} of 4
                 </span>
               </div>
 
@@ -326,25 +826,26 @@ export function CheckoutPage() {
                 {/* filled line */}
                 <div
                   className="absolute top-3 left-0 h-[2px] bg-success rounded-full transition-all duration-300"
-                  style={{ width: step === 1 ? '0%' : step === 2 ? '50%' : '100%' }}
+                  style={{ width: step === 1 ? '0%' : step === 2 ? '33%' : step === 3 ? '66%' : '100%' }}
                 />
                 {([
                   { n: 1, label: 'Address' },
                   { n: 2, label: 'Shipping' },
                   { n: 3, label: 'Payment' },
+                  { n: 4, label: 'Review' },
                 ] as const).map(({ n, label }) => (
                   <div key={n} className="relative z-10 flex flex-col items-center gap-[6px]">
                     <div className={clsx(
                       'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-200',
                       step > n ? 'bg-success text-white' :
                         step === n ? 'bg-brand-orange text-white ring-4 ring-brand-pale-orange' :
-                          'bg-bone text-[#8C8A82]',
+                          'bg-bone text-slate',
                     )}>
                       {step > n ? <CheckCircle2 size={12} /> : n}
                     </div>
                     <span className={clsx(
                       'text-[10px] font-semibold whitespace-nowrap',
-                      step === n ? 'text-brand-orange' : step > n ? 'text-[#1E7A3C]' : 'text-[#8C8A82]',
+                      step === n ? 'text-brand-orange' : step > n ? 'text-[#1e7a3c]' : 'text-slate',
                     )}>{label}</span>
                   </div>
                 ))}
@@ -356,7 +857,7 @@ export function CheckoutPage() {
               <div className="flex items-center gap-3 px-5 py-4 border-b border-bone">
                 <StepBadge n={1} active={step === 1} done={step > 1} />
                 <MapPin size={16} className="text-brand-orange" />
-                <span className="font-semibold text-[14px] text-[#141413]">Delivery Address</span>
+                <span className="font-semibold text-[14px] text-carbon">Delivery Address</span>
                 {step > 1 && (
                   <Button
                     variant="ghost" size="sm"
@@ -372,60 +873,61 @@ export function CheckoutPage() {
               {step === 1 && (
                 <div className="p-5">
                   {addrLoading ? (
-                    <div className="flex items-center gap-2 text-[13px] text-[#8C8A82]">
-                      <Loader2 size={14} className="animate-spin" /> Loading addresses…
+                    <div className="flex flex-col gap-4">
+                      <SkeletonBox height={54} rounded="10px" />
+                      <SkeletonBox height={32} width={180} rounded="8px" />
                     </div>
                   ) : addresses.length === 0 ? (
                     <div className="flex flex-col gap-3">
-                      <div className="flex items-start gap-2 text-[13px] text-[#8C8A82]">
+                      <div className="flex items-start gap-2 text-[13px] text-slate">
                         <AlertCircle size={14} className="mt-[2px] flex-shrink-0" />
-                        No saved addresses. Please add one from your profile.
+                        No saved addresses. Please add one first.
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => navigate('/account/profile')}>
-                        Go to Profile
+                      <Button variant="ghost" size="sm" onClick={() => navigate('/account/addresses')}>
+                        Go to Addresses
                       </Button>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-4">
                       {/* Dropdown trigger */}
-                      <div className="relative">
+                      <div className="relative" ref={addrDropRef}>
                         <button
                           type="button"
                           onClick={() => setAddrDropOpen(o => !o)}
                           className={clsx(
-                            'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-[10px] border bg-cream text-left transition-colors',
+                            'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-[10px] border bg-cream text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                             addrDropOpen ? 'border-brand-orange ring-2 ring-brand-pale-orange' : 'border-bone hover:border-[#c5c4bc]',
                           )}
                         >
                           {selectedAddr ? (
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-[2px]">
-                                <span className="text-[13px] font-semibold text-[#141413]">{selectedAddr.recipientName}</span>
-                                <span className="text-[11px] text-[#8C8A82] bg-bone rounded-full px-2 py-[1px]">{selectedAddr.label}</span>
+                                <span className="text-[13px] font-semibold text-carbon">{selectedAddr.recipientName}</span>
+                                <span className="text-[11px] text-slate bg-bone rounded-full px-2 py-[1px]">{selectedAddr.label}</span>
                                 {selectedAddr.isDefault && (
                                   <span className="text-[11px] text-brand-orange bg-brand-pale-orange rounded-full px-2 py-[1px] font-medium">Default</span>
                                 )}
                               </div>
-                              <p className="text-[12px] text-[#8C8A82] truncate">
+                              <p className="text-[12px] text-slate truncate">
                                 {selectedAddr.addressLine1}, {selectedAddr.city}, {selectedAddr.state} {selectedAddr.zipCode}
                               </p>
                             </div>
                           ) : (
-                            <span className="text-[13px] text-[#8C8A82]">Select a delivery address…</span>
+                            <span className="text-[13px] text-slate">Select a delivery address…</span>
                           )}
-                          <ChevronRight size={15} className={clsx('flex-shrink-0 text-[#8C8A82] transition-transform', addrDropOpen && 'rotate-90')} />
+                          <ChevronRight size={15} className={clsx('flex-shrink-0 text-slate transition-transform', addrDropOpen && 'rotate-90')} />
                         </button>
 
                         {/* Dropdown list */}
                         {addrDropOpen && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-bone rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.10)] z-20 overflow-hidden">
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-bone rounded-[10px] z-20 overflow-hidden">
                             {addresses.map((addr, i) => (
                               <button
                                 key={addr._id}
                                 type="button"
                                 onClick={() => selectAddress(addr)}
                                 className={clsx(
-                                  'w-full flex items-start gap-3 px-4 py-3 text-left transition-colors',
+                                  'w-full flex items-start gap-3 px-4 py-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                                   i > 0 && 'border-t border-bone',
                                   selectedAddr?._id === addr._id
                                     ? 'bg-brand-pale-orange'
@@ -434,7 +936,7 @@ export function CheckoutPage() {
                               >
                                 <div className={clsx(
                                   'mt-[2px] w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors',
-                                  selectedAddr?._id === addr._id ? 'border-brand-orange' : 'border-[#C5C4BC]',
+                                  selectedAddr?._id === addr._id ? 'border-brand-orange' : 'border-[#c5c4bc]',
                                 )}>
                                   {selectedAddr?._id === addr._id && (
                                     <div className="w-2 h-2 rounded-full bg-brand-orange" />
@@ -442,14 +944,14 @@ export function CheckoutPage() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap mb-[2px]">
-                                    <span className="text-[13px] font-semibold text-[#141413]">{addr.recipientName}</span>
-                                    <span className="text-[11px] text-[#8C8A82] bg-bone rounded-full px-2 py-[1px]">{addr.label}</span>
+                                    <span className="text-[13px] font-semibold text-carbon">{addr.recipientName}</span>
+                                    <span className="text-[11px] text-slate bg-bone rounded-full px-2 py-[1px]">{addr.label}</span>
                                     {addr.isDefault && (
                                       <span className="text-[11px] text-brand-orange bg-brand-pale-orange rounded-full px-2 py-[1px] font-medium">Default</span>
                                     )}
                                   </div>
-                                  <p className="text-[12px] text-[#8C8A82]">{addr.phoneNumber}</p>
-                                  <p className="text-[12px] text-[#141413] mt-[1px]">
+                                  <p className="text-[12px] text-slate">{addr.phoneNumber}</p>
+                                  <p className="text-[12px] text-carbon mt-[1px]">
                                     {addr.addressLine1}{addr.addressLine2 ? `, ${addr.addressLine2}` : ''}, {addr.city}, {addr.state} {addr.zipCode}
                                   </p>
                                 </div>
@@ -458,8 +960,8 @@ export function CheckoutPage() {
                             <div className="border-t border-bone px-4 py-2">
                               <button
                                 type="button"
-                                onClick={() => navigate('/account/profile')}
-                                className="text-[12px] text-brand-orange font-medium cursor-pointer"
+                                onClick={() => navigate('/account/addresses')}
+                                className="text-[12px] text-brand-orange font-medium cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
                               >
                                 + Add new address
                               </button>
@@ -484,7 +986,7 @@ export function CheckoutPage() {
               )}
 
               {step > 1 && selectedAddr && (
-                <div className="px-5 py-3 text-[13px] text-[#141413]">
+                <div className="px-5 py-3 text-[13px] text-carbon">
                   <span className="font-medium">{selectedAddr.recipientName}</span>
                   {' — '}
                   {selectedAddr.addressLine1}, {selectedAddr.city}, {selectedAddr.state}
@@ -499,7 +1001,7 @@ export function CheckoutPage() {
               <div className="flex items-center gap-3 px-5 py-4 border-b border-bone">
                 <StepBadge n={2} active={step === 2} done={step > 2} />
                 <Truck size={16} className="text-brand-orange" />
-                <span className="font-semibold text-[14px] text-[#141413]">Shipping Method</span>
+                <span className="font-semibold text-[14px] text-carbon">Shipping Method</span>
                 {step > 2 && (
                   <Button
                     variant="ghost" size="sm"
@@ -515,73 +1017,78 @@ export function CheckoutPage() {
               {step === 2 && (
                 <div className="p-5">
                   {zonesLoading ? (
-                    <div className="flex items-center gap-2 text-[13px] text-[#8C8A82]">
-                      <Loader2 size={14} className="animate-spin" /> Loading shipping options…
+                    <div className="flex flex-col gap-4">
+                      <SkeletonBox height={54} rounded="10px" />
+                      <SkeletonBox height={32} width={180} rounded="8px" />
                     </div>
                   ) : (
                     <div className="flex flex-col gap-4">
                       {/* Dropdown trigger */}
-                      <div className="relative">
+                      <div className="relative" ref={shippingDropRef}>
                         <button
                           type="button"
                           onClick={() => setShippingDropOpen(o => !o)}
                           className={clsx(
-                            'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-[10px] border bg-cream text-left transition-colors',
+                            'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-[10px] border bg-cream text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                             shippingDropOpen ? 'border-brand-orange ring-2 ring-brand-pale-orange' : 'border-bone hover:border-[#c5c4bc]',
                           )}
                         >
                           {selectedZone ? (
                             <div className="flex-1 min-w-0 flex items-center justify-between">
                               <div>
-                                <p className="text-[13px] font-semibold text-[#141413]">
+                                <p className="text-[13px] font-semibold text-carbon">
                                   {selectedZone.city}, {selectedZone.province}
                                 </p>
-                                <p className="text-[12px] text-[#8C8A82] mt-[1px]">
+                                <p className="text-[12px] text-slate mt-[1px]">
                                   Estimated delivery: {selectedZone.estimatedDeliveryTime}
                                 </p>
                               </div>
-                              <span className="text-[13px] font-bold text-[#141413] ml-4 flex-shrink-0">
-                                Rs. {selectedZone.shippingPrice.toLocaleString()}
+                              <span className="text-[13px] font-bold text-carbon ml-4 flex-shrink-0">
+                                {currencySymbol(checkout?.currency)} {selectedZone.shippingPrice.toLocaleString()}
                               </span>
                             </div>
                           ) : (
-                            <span className="text-[13px] text-[#8C8A82]">Select a shipping method…</span>
+                            <span className="text-[13px] text-slate">Select a shipping method…</span>
                           )}
-                          <ChevronRight size={15} className={clsx('flex-shrink-0 text-[#8C8A82] transition-transform ml-2', shippingDropOpen && 'rotate-90')} />
+                          <ChevronRight size={15} className={clsx('flex-shrink-0 text-slate transition-transform ml-2', shippingDropOpen && 'rotate-90')} />
                         </button>
 
                         {/* Dropdown list */}
                         {shippingDropOpen && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-bone rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.10)] z-20 overflow-hidden">
-                            {(matchingZones.length > 0 ? matchingZones : zones).map((zone, i) => (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-bone rounded-[10px] z-20 overflow-hidden">
+                            {(matchingZones.length > 0 ? matchingZones : zones).length === 0 ? (
+                              <div className="px-4 py-4 text-[13px] text-slate text-center">
+                                No shipping methods available for this address yet.
+                              </div>
+                            ) : (matchingZones.length > 0 ? matchingZones : zones).map((zone, i) => (
                               <button
                                 key={zone._id}
                                 type="button"
                                 onClick={() => { setSelectedZoneId(zone._id); setShippingDropOpen(false); }}
                                 className={clsx(
-                                  'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors',
+                                  'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
                                   i > 0 && 'border-t border-bone',
                                   selectedZoneId === zone._id ? 'bg-brand-pale-orange' : 'hover:bg-cream',
                                 )}
                               >
                                 <div className={clsx(
                                   'mt-[1px] w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors',
-                                  selectedZoneId === zone._id ? 'border-brand-orange' : 'border-[#C5C4BC]',
+                                  selectedZoneId === zone._id ? 'border-brand-orange' : 'border-[#c5c4bc]',
                                 )}>
                                   {selectedZoneId === zone._id && (
                                     <div className="w-2 h-2 rounded-full bg-brand-orange" />
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-[13px] font-semibold text-[#141413]">
+                                  <p className="text-[13px] font-semibold text-carbon">
                                     {zone.city}, {zone.province}
                                   </p>
-                                  <p className="text-[12px] text-[#8C8A82] mt-[1px]">
+                                  <p className="text-[12px] text-slate mt-[1px]">
                                     Estimated delivery: {zone.estimatedDeliveryTime}
                                   </p>
                                 </div>
-                                <span className="text-[13px] font-bold text-[#141413] flex-shrink-0">
-                                  Rs. {zone.shippingPrice.toLocaleString()}
+                                <span className="text-[13px] font-bold text-carbon flex-shrink-0">
+                                  {currencySymbol(checkout?.currency)} {zone.shippingPrice.toLocaleString()}
                                 </span>
                               </button>
                             ))}
@@ -590,7 +1097,7 @@ export function CheckoutPage() {
                       </div>
 
                       {checkoutError && (
-                        <div className="flex items-start gap-2 text-[12px] text-[#C13030] bg-[#FFF0F0] border border-[#FECACA] rounded-[8px] px-3 py-2">
+                        <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2">
                           <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
                           {checkoutError}
                         </div>
@@ -599,14 +1106,13 @@ export function CheckoutPage() {
                       <div>
                         <Button
                           variant="primary" size="sm"
-                          disabled={!selectedZoneId || creatingCheckout}
+                          disabled={!selectedZoneId}
+                          loading={creatingCheckout}
+                          iconRight={!creatingCheckout && <ChevronRight size={14} />}
                           onClick={handleContinueToPayment}
                           className="gap-1"
                         >
-                          {creatingCheckout
-                            ? <><Loader2 size={13} className="animate-spin" /> Creating checkout…</>
-                            : <>Continue to Payment <ChevronRight size={14} /></>
-                          }
+                          {creatingCheckout ? 'Creating checkout…' : 'Continue to Payment Method'}
                         </Button>
                       </div>
                     </div>
@@ -615,83 +1121,155 @@ export function CheckoutPage() {
               )}
 
               {step > 2 && selectedZone && (
-                <div className="px-5 py-3 text-[13px] text-[#141413]">
+                <div className="px-5 py-3 text-[13px] text-carbon">
                   <span className="font-medium">{selectedZone.city}, {selectedZone.province}</span>
                   {' — '}
-                  Rs. {selectedZone.shippingPrice.toLocaleString()} · {selectedZone.estimatedDeliveryTime}
+                  {currencySymbol(checkout?.currency)} {selectedZone.shippingPrice.toLocaleString()} · {selectedZone.estimatedDeliveryTime}
                 </div>
               )}
             </div>
 
             <div className="h-px bg-bone" />
 
-            {/* Step 3: Payment */}
+            {/* Step 3: Payment Method (selection only — payment itself happens after Review) */}
             <div className={clsx('transition-opacity', step < 3 && 'opacity-50 pointer-events-none')}>
               <div className="flex items-center gap-3 px-5 py-4 border-b border-bone">
-                <StepBadge n={3} active={step === 3} done={false} />
+                <StepBadge n={3} active={step === 3} done={step > 3} />
                 <CreditCard size={16} className="text-brand-orange" />
-                <span className="font-semibold text-[14px] text-[#141413]">Payment Method</span>
+                <span className="font-semibold text-[14px] text-carbon">Payment Method</span>
+                {step > 3 && (
+                  <Button
+                    variant="ghost" size="sm"
+                    onClick={() => setStep(3)}
+                    className="ml-auto text-[12px] text-brand-orange font-medium cursor-pointer"
+                  >
+                    <ArrowDownCircle size={14} className="inline align-middle mr-1" />Change Payment Method
+                  </Button>
+                )}
               </div>
 
               {step === 3 && (
                 <div className="p-5">
-                  <div className="flex flex-col gap-3 mb-4">
-                    {effectiveMethods.map(method => {
-                      const meta = PAYMENT_LABELS[method] ?? { label: method, desc: '', Icon: CreditCard };
-                      const { label, desc, Icon } = meta;
-                      return (
-                        <label
-                          key={method}
-                          className={clsx(
-                            'flex gap-3 p-4 rounded-[10px] border cursor-pointer transition-colors',
-                            selectedMethod === method
-                              ? 'border-brand-orange bg-brand-pale-orange'
-                              : 'border-bone bg-cream hover:border-[#c5c4bc]',
-                          )}
-                        >
-                          <input
-                            type="radio" name="payment"
-                            className="mt-[3px] accent-brand-orange flex-shrink-0"
-                            checked={selectedMethod === method}
-                            onChange={() => setSelectedMethod(method)}
-                          />
-                          <div className="flex items-center gap-3 flex-1">
-                            <div className="w-9 h-9 rounded-[8px] bg-bone flex items-center justify-center flex-shrink-0">
-                              <Icon size={17} className="text-[#4A4945]" />
-                            </div>
-                            <div>
-                              <p className="text-[13px] font-semibold text-[#141413]">{label}</p>
-                              <p className="text-[11px] text-[#8C8A82]">{desc}</p>
-                            </div>
-                          </div>
-                        </label>
-                      );
-                    })}
+                  {effectiveMethods.length === 0 && (
+                    <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-3 mb-4">
+                      <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
+                      No payment method is available for this order right now. Please try again shortly or contact support.
+                    </div>
+                  )}
+                  <div className="mb-4">
+                    <PaymentMethodOptions
+                      methods={effectiveMethods}
+                      selectedMethod={selectedMethod}
+                      onSelect={setSelectedMethod}
+                      summary={summary}
+                      currency={checkout?.currency}
+                    />
                   </div>
 
-                  <div className="flex items-center gap-1 text-[11px] text-[#8C8A82] mb-4">
+                  <div>
+                    <Button
+                      variant="primary" size="sm"
+                      disabled={!selectedMethod}
+                      onClick={() => setStep(4)}
+                      className="gap-1"
+                    >
+                      Continue to Review <ChevronRight size={14} />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {step > 3 && selectedMethod && (
+                <div className="px-5 py-3 text-[13px] text-carbon">
+                  <span className="font-medium">{PAYMENT_LABELS[selectedMethod]?.label ?? selectedMethod}</span>
+                  {selectedMethod === 'split' && summary?.digitalSubtotal != null && summary?.physicalSubtotal != null ? (
+                    <> {' — '}{currencySymbol(checkout?.currency)} {summary.digitalSubtotal.toFixed(2)} now, {currencySymbol(checkout?.currency)} {summary.physicalSubtotal.toFixed(2)} on delivery</>
+                  ) : (
+                    <> {' — '}{currencySymbol(checkout?.currency)} {(chargeAmount ?? total).toFixed(2)}</>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="h-px bg-bone" />
+
+            {/* Step 4: Review & Confirm */}
+            <div className={clsx('transition-opacity', step < 4 && 'opacity-50 pointer-events-none')}>
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-bone">
+                <StepBadge n={4} active={step === 4} done={false} />
+                <PackageCheck size={16} className="text-brand-orange" />
+                <span className="font-semibold text-[14px] text-carbon">Review &amp; Confirm</span>
+              </div>
+
+              {step === 4 && (
+                <div className="p-5">
+                  {/* Recap — everything the buyer picked in steps 1-3, one place */}
+                  <div className="rounded-[10px] border border-bone bg-cream px-4 py-3 mb-4 flex flex-col gap-2.5">
+                    <div className="flex justify-between gap-3 text-[12.5px]">
+                      <span className="text-slate flex-shrink-0">Deliver to</span>
+                      <span className="font-medium text-carbon text-right">
+                        {selectedAddr?.recipientName} — {selectedAddr?.addressLine1}, {selectedAddr?.city}, {selectedAddr?.state}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-3 text-[12.5px]">
+                      <span className="text-slate flex-shrink-0">Shipping</span>
+                      <span className="font-medium text-carbon text-right">
+                        {selectedZone ? `${selectedZone.city}, ${selectedZone.province} · ${currencySymbol(checkout?.currency)} ${selectedZone.shippingPrice.toLocaleString()}` : '—'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-3 text-[12.5px]">
+                      <span className="text-slate flex-shrink-0">Payment</span>
+                      <span className="font-medium text-carbon text-right">
+                        {!selectedMethod ? '—' : selectedMethod === 'split' && summary?.digitalSubtotal != null && summary?.physicalSubtotal != null
+                          ? `${PAYMENT_LABELS.split.label} · ${currencySymbol(checkout?.currency)} ${summary.digitalSubtotal.toFixed(2)} now, ${currencySymbol(checkout?.currency)} ${summary.physicalSubtotal.toFixed(2)} on delivery`
+                          : `${PAYMENT_LABELS[selectedMethod]?.label ?? selectedMethod} · ${currencySymbol(checkout?.currency)} ${(chargeAmount ?? total).toFixed(2)}`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 text-[11px] text-slate mb-4">
                     <ShieldCheck size={12} className="text-success" />
                     Your payment info is secure and encrypted
                   </div>
 
                   {placeError && (
-                    <div className="flex items-start gap-2 text-[12px] text-[#C13030] bg-[#FFF0F0] border border-[#FECACA] rounded-[8px] px-3 py-2 mb-4">
+                    <div className="flex items-start gap-2 text-[12px] text-error bg-error-bg border border-error-border rounded-[8px] px-3 py-2 mb-4">
                       <AlertCircle size={13} className="mt-[1px] flex-shrink-0" />
                       {placeError}
                     </div>
                   )}
 
-                  <Button
-                    variant="primary" size="lg"
-                    disabled={!selectedMethod || placing}
-                    onClick={handlePlaceOrder}
-                    className="gap-2 w-full justify-center"
-                  >
-                    {placing
-                      ? <><Loader2 size={15} className="animate-spin" /> Placing Order…</>
-                      : <><PackageCheck size={16} /> Place Order</>
-                    }
-                  </Button>
+                  {selectedMethod === 'stripe' || selectedMethod === 'split' ? (
+                    <CardPaymentSlot
+                      checkoutReady={!!checkout}
+                      clientSecret={clientSecret}
+                      initiating={initiatingPayment}
+                      initiateError={initiatePaymentErr}
+                      polling={pollingStatus}
+                      amount={chargeAmount ?? total}
+                      currency={checkout?.currency ?? 'USD'}
+                      onConfirmed={handleStripeConfirmed}
+                    />
+                  ) : selectedMethod === 'manual_bank_transfer' ? (
+                    checkout && (
+                      <ManualBankTransferSlot
+                        checkoutId={checkout._id}
+                        amountUSD={chargeAmount ?? total}
+                        onSubmitted={handleManualPaymentSubmitted}
+                      />
+                    )
+                  ) : (
+                    <Button
+                      variant="primary" size="lg"
+                      disabled={!selectedMethod}
+                      loading={placing}
+                      icon={!placing && <PackageCheck size={16} />}
+                      onClick={handlePlaceOrder}
+                      className="gap-2 w-full justify-center"
+                    >
+                      {placing ? 'Placing Order…' : 'Confirm & Pay'}
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -700,76 +1278,164 @@ export function CheckoutPage() {
           )} {/* end isDigital ? ... : ... */}
 
           {/* ── Right: Order Summary ──────────────────────────────────── */}
-          <div className="bg-white rounded-[12px] border border-bone p-6 lg:sticky top-20">
-            <p className="text-[15px] font-bold text-[#141413] mb-[18px]">Order Summary</p>
+          <div className="bg-white rounded-xl border border-bone p-6 lg:sticky top-20">
+            <p className="text-[15px] font-bold text-carbon mb-[18px]">Order Summary</p>
 
-            {/* Items — filtered to current cartType only */}
+            {/* Items — the whole cart, one order */}
             <div className="flex flex-col gap-2 mb-5">
-              {checkout
-                ? filteredCheckoutItems.map(item => (
+              {(() => { const cur = currencySymbol(checkout?.currency); return checkout
+                ? checkout.items.map(item => (
                   <div key={item.variantId} className="flex justify-between text-[12px]">
-                    <span className="text-[#141413] truncate max-w-[150px]">
+                    <span className="text-carbon truncate max-w-[150px]">
                       {item.name}
-                      <span className="text-[#8C8A82] ml-1">×{item.quantity}</span>
+                      <span className="text-slate ml-1">×{item.quantity}</span>
                     </span>
-                    <span className="font-medium text-[#141413] flex-shrink-0">
-                      Rs. {item.totalPrice.toLocaleString()}
+                    <span className="font-medium text-carbon flex-shrink-0">
+                      {cur} {item.totalPrice.toLocaleString()}
                     </span>
                   </div>
                 ))
-                : !cartLoading && filteredCartItems.map(item => {
+                : !cartLoading && cartItems.map(item => {
                   const price = item.unitPrice ?? item.price ?? 0;
                   const ttl   = item.itemTotal ?? price * item.quantity;
                   return (
                     <div key={item.productVariantId} className="flex justify-between text-[12px]">
-                      <span className="text-[#141413] truncate max-w-[150px]">
+                      <span className="text-carbon truncate max-w-[150px]">
                         {item.name}
-                        <span className="text-[#8C8A82] ml-1">×{item.quantity}</span>
+                        <span className="text-slate ml-1">×{item.quantity}</span>
                       </span>
-                      <span className="font-medium text-[#141413] flex-shrink-0">
-                        Rs. {ttl.toLocaleString()}
+                      <span className="font-medium text-carbon flex-shrink-0">
+                        {cur} {ttl.toLocaleString()}
                       </span>
                     </div>
                   );
                 })
-              }
+              })()}
             </div>
 
             <div className="h-px bg-bone mb-4" />
 
             <div className="flex flex-col gap-3 mb-5">
               <div className="flex justify-between text-[13px]">
-                <span className="text-[#8C8A82]">Subtotal</span>
-                <span className="font-semibold text-[#141413]">Rs. {filteredSubtotal.toLocaleString()}</span>
+                <span className="text-slate">Subtotal</span>
+                <span className="font-semibold text-carbon">{currencySymbol(checkout?.currency)} {orderSubtotal.toLocaleString()}</span>
               </div>
               {!isDigital && (
                 <div className="flex justify-between text-[13px]">
-                  <span className="text-[#8C8A82]">Shipping</span>
+                  <span className="text-slate">Shipping</span>
                   {selectedZone || summary
-                    ? <span className="font-semibold text-[#141413]">Rs. {shipping.toLocaleString()}</span>
-                    : <span className="text-success font-medium">Select method</span>
+                    ? <span className="font-semibold text-carbon">{currencySymbol(checkout?.currency)} {shipping.toLocaleString()}</span>
+                    : <span className="text-slate font-medium">Select method</span>
                   }
                 </div>
               )}
               {tax > 0 && (
                 <div className="flex justify-between text-[13px]">
-                  <span className="text-[#8C8A82]">Tax</span>
-                  <span className="font-semibold text-[#141413]">Rs. {tax.toLocaleString()}</span>
+                  <span className="text-slate">Tax</span>
+                  <span className="font-semibold text-carbon">{currencySymbol(checkout?.currency)} {tax.toLocaleString()}</span>
+                </div>
+              )}
+              {!!summary?.subscriberSavingsUSD && summary.subscriberSavingsUSD > 0 && (
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-success">Member savings</span>
+                  <span className="font-semibold text-success">-{currencySymbol(checkout?.currency)}{summary.subscriberSavingsUSD.toFixed(2)}</span>
+                </div>
+              )}
+              {/* Already baked into each item's totalPrice at checkout-creation
+                  time (same as member savings above) — shown here purely as a
+                  breakdown line, not subtracted again in the total below.
+                  Despite the "USD" field-name suffix (a naming holdover from
+                  before PKR support), this is already denominated in the
+                  checkout's own currency — see CheckoutService.applyCoupon's
+                  "checkout's own display currency" comment for the coupon
+                  case, and the parallel per-item-native-currency math for
+                  the campaign case below. */}
+              {!!summary?.campaignDiscountUSD && summary.campaignDiscountUSD > 0 && (
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-success">Sale discount</span>
+                  <span className="font-semibold text-success">-{currencySymbol(checkout?.currency)}{summary.campaignDiscountUSD.toFixed(2)}</span>
+                </div>
+              )}
+              {/* The backend rejects a coupon outright (see CheckoutService.applyCoupon)
+                  if it would compute to zero real savings — e.g. every eligible
+                  item is already on an active sale — so `checkout.couponCode`
+                  being set here always means a genuine, nonzero discount. */}
+              {!!checkout?.couponCode && (
+                <div className="flex justify-between text-[13px]">
+                  <span className="flex items-center gap-1 text-success">
+                    <CheckCircle2 size={12} /> Coupon ({checkout.couponCode})
+                  </span>
+                  <span className="font-semibold text-success">-{currencySymbol(checkout?.currency)}{couponDiscount.toFixed(2)}</span>
                 </div>
               )}
             </div>
 
+            {checkout && (
+              <div className="mb-4">
+                {checkout.couponCode ? (
+                  <button
+                    onClick={handleRemoveCoupon}
+                    disabled={couponBusy}
+                    className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer p-2 -m-2 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error"
+                  >
+                    Remove coupon
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      value={couponInput}
+                      onChange={e => setCouponInput(e.target.value.toUpperCase())}
+                      placeholder="Coupon code"
+                      className="flex-1 min-w-0 px-3 min-h-11 text-[12.5px] border border-bone rounded-lg outline-none text-charcoal bg-white focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
+                    />
+                    <button
+                      onClick={handleApplyCoupon}
+                      disabled={couponBusy || !couponInput.trim()}
+                      className="px-4 min-h-11 bg-white border border-bone rounded-lg text-[12.5px] font-semibold text-graphite cursor-pointer hover:bg-cream disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                    >
+                      {couponBusy ? 'Applying…' : 'Apply'}
+                    </button>
+                  </div>
+                )}
+                {couponError && <p className="text-[11px] text-error mt-1.5">{couponError}</p>}
+                {couponSuccessMsg && (
+                  <p className="flex items-center gap-1 text-[11px] font-medium text-success mt-1.5">
+                    <CheckCircle2 size={12} /> {couponSuccessMsg}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="h-px bg-bone mb-4" />
 
             <div className="flex justify-between text-[16px] font-bold">
-              <span className="text-[#141413]">Total</span>
-              <span className="text-[#141413]">Rs. {total.toLocaleString()}</span>
+              <span className="text-carbon">Total</span>
+              <span className="text-carbon">{currencySymbol(checkout?.currency)} {total.toLocaleString()}</span>
             </div>
 
             {checkout && (
-              <p className="text-[11px] text-[#8C8A82] mt-2 text-right">
+              <p className="text-[11px] text-slate mt-2 text-right">
                 Checkout ID: {checkout._id.slice(-8).toUpperCase()}
               </p>
+            )}
+
+            {savingsHints.length > 0 && (
+              <div className="mt-4 flex flex-col gap-2">
+                {savingsHints.map(hint => (
+                  <button
+                    key={hint.storeId}
+                    onClick={() => hint.storeSlug && (window.location.href = getStorefrontUrl(hint.storeSlug))}
+                    className="w-full text-left px-3.5 py-3 rounded-lg bg-brand-pale-orange border border-brand-orange/20 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                  >
+                    <p className="text-[12.5px] font-semibold text-brand-deep-orange">
+                      You could save ${hint.potentialSavingsUSD.toFixed(2)} on this order
+                    </p>
+                    <p className="text-[11px] text-brand-orange/80 mt-0.5">
+                      Join {hint.storeName}'s {hint.planName} membership before checking out →
+                    </p>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 

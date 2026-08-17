@@ -1,268 +1,410 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
-import { usePageTitle } from '@/hooks/usePageTitle';
-import { Button } from '@/components/comman/ui/Button';
-import { Badge } from '@/components/comman/ui/Badge';
-import { Card } from '@/components/comman/ui/Card';
-import { TabBar, FilterDropdown } from '@/components/comman/ui';
-import type { Tab } from '@/components/comman/ui';
+import { CoverImage } from '@/components/comman/ui';
+import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
+import { useStoreBanners } from '@/hooks/useStoreBanners';
+import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 import {
-  ShoppingCart, Star, Heart,
-  Check, ArrowLeft, BookOpen, Divide, BookMarked,
-  Microscope, Map, Pencil, FileText, Ruler,
+  Star, Users, Loader2, MessageCircle, BadgeCheck, Award, Gift, RefreshCw, Check, Store,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { apiFollowStore, apiGetFollowStatus } from '@/api/services/store';
+import { useToast } from '@/contexts/ToastContext';
+import { apiStartConversation } from '@/api/services/messaging';
+import { apiGetPublicHomePage, type StorePageData } from '@/api/services/storePages';
+import { apiGetMyBalance, apiGetRewards, apiRedeemReward, type LoyaltyBalance, type Reward } from '@/api/services/loyalty';
+import { apiBrowseStorePlans, apiSubscribeToPlan, type BuyerPlan, type BillingInterval, type PlanBenefit } from '@/api/services/subscriptions';
+import { apiGetPublicStoreProducts } from '@/api/services/store';
+import { Modal } from '@/components/comman/ui/Modal';
+import { TokenStorage } from '@/api/services/auth';
+import { currencySymbol } from '@/utils/currency';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { getMainAppUrl } from '@/utils/storefrontUrl';
+import { SectionRenderer } from '@/features/storefront/SectionRenderer';
 
-function SolvexoIcon({ size = 32 }: { size?: number }) {
+// ── Badge config ──────────────────────────────────────────────────────────────
+const SELLER_TYPE_LABEL: Record<string, string> = {
+  educator:       'Education Specialist',
+  creator:        'Content Creator',
+  retailer:       'Retail Seller',
+  brand_business: 'Brand / Business',
+  freelancer:     'Freelancer',
+};
+
+function StoreBadges({ badges, sellerType }: { badges: string[]; sellerType: string | null }) {
+  const items: { label: string; icon: React.ReactNode; cls: string }[] = [];
+  const safeBadges = badges ?? [];
+
+  if (safeBadges.includes('top_seller'))
+    items.push({ label: 'Top Seller', icon: <Award size={10} />, cls: 'bg-amber-100 text-amber-700 border-amber-200' });
+  if (safeBadges.includes('verified'))
+    items.push({ label: 'Verified', icon: <BadgeCheck size={10} />, cls: 'bg-blue-50 text-blue-600 border-blue-200' });
+  if (safeBadges.includes('featured'))
+    items.push({ label: 'Featured', icon: <Star size={10} />, cls: 'bg-purple-50 text-purple-600 border-purple-200' });
+
+  const specialistLabel = sellerType ? SELLER_TYPE_LABEL[sellerType] : null;
+  if (specialistLabel)
+    items.push({ label: specialistLabel, icon: <BadgeCheck size={10} />, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' });
+
+  if (!items.length) return null;
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="8" fill="#D97757"/>
-      <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-      <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7"/>
-      <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
-
-const STORE_TABS: Tab[] = ['All Products', 'Math', 'Reading', 'Science', 'Social Studies', 'Bundles']
-  .map(t => ({ id: t, label: t }));
-
-const SORT_OPTIONS = [
-  { value: 'best-selling', label: 'Best Selling'   },
-  { value: 'newest',       label: 'Newest'          },
-  { value: 'price-asc',    label: 'Price: Low–High' },
-  { value: 'best-rated',   label: 'Best Rated'      },
-];
-
-const PRODUCTS: {
-  name: string; price: string; Img: LucideIcon; rating: string;
-  ratingCount: number; sold: string; type: 'digital' | 'physical';
-}[] = [
-  { name: 'Grade 5 Math Bundle',        price: '$49', Img: BookOpen,   rating: '5.0', ratingCount: 847, sold: '847 sold', type: 'digital'  },
-  { name: 'Fractions Mastery Kit',      price: '$18', Img: Divide,     rating: '4.9', ratingCount: 623, sold: '623 sold', type: 'digital'  },
-  { name: 'Reading Comprehension Pack', price: '$22', Img: BookMarked, rating: '4.9', ratingCount: 501, sold: '501 sold', type: 'digital'  },
-  { name: 'Science Lab Worksheets',     price: '$15', Img: Microscope, rating: '4.8', ratingCount: 389, sold: '389 sold', type: 'digital'  },
-  { name: 'State Capitals Flash Cards', price: '$9',  Img: Map,        rating: '4.7', ratingCount: 302, sold: '302 sold', type: 'physical' },
-  { name: 'Creative Writing Prompts',   price: '$12', Img: Pencil,     rating: '4.8', ratingCount: 278, sold: '278 sold', type: 'digital'  },
-  { name: 'Year-End Test Prep Bundle',  price: '$35', Img: FileText,   rating: '5.0', ratingCount: 244, sold: '244 sold', type: 'digital'  },
-  { name: 'Geometry Exploration Kit',   price: '$21', Img: Ruler,      rating: '4.9', ratingCount: 198, sold: '198 sold', type: 'digital'  },
-];
-
-// ── Star Rating ───────────────────────────────────────────────────────────────
-function StarRating({ rating, count }: { rating: string; count?: number }) {
-  const r = parseFloat(rating);
-  return (
-    <div className="flex items-center gap-[3px]">
-      {[1, 2, 3, 4, 5].map(i => (
-        <Star
-          key={i}
-          size={10}
-          className={i <= Math.round(r) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone'}
-        />
+    <div className="flex flex-wrap gap-[5px] mt-[8px]">
+      {items.map(b => (
+        <span key={b.label} className={clsx('inline-flex items-center gap-[3px] px-[7px] py-[3px] rounded-full text-[10px] font-semibold border', b.cls)}>
+          {b.icon}{b.label}
+        </span>
       ))}
-      {count !== undefined && (
-        <span className="text-[10px] text-slate ml-[2px] hidden sm:inline">({count})</span>
-      )}
     </div>
   );
 }
 
-
+// ── Home page ──────────────────────────────────────────────────────────────────
+// The seller's storefront home — the fixed transactional chrome below (store
+// identity banner, follow/message, loyalty rewards, membership plans) is not
+// seller-composable content, so it stays fixed rather than being modeled as a
+// section (see the storefront builder plan). The seller-authored content
+// (hero slides, rich text, featured products, the product catalog, etc.)
+// renders via `SectionRenderer` from the store's home `StorePage`.
 export function SellerStorefront() {
-  const navigate  = useNavigate();
-  usePageTitle('Storefront');
-  const [activeTab,  setActiveTab]  = useState('All Products');
-  const [sortBy,     setSortBy]     = useState('best-selling');
-  const [wishlisted, setWishlisted] = useState<Set<string>>(new Set());
+  const { store, cfg, theme } = useStorefront();
+  const identityBanner = theme?.identityBanner;
+  const showFollow     = identityBanner?.showFollowButton     !== false;
+  const showMessage    = identityBanner?.showMessageButton    !== false;
+  const showLoyaltyBtn = identityBanner?.showLoyaltyButton    !== false;
+  const showMembership = identityBanner?.showMembershipButton !== false;
+  const { currency: displayCurrency, convert } = useCurrencyPreference();
+  const displaySymbol = currencySymbol(displayCurrency);
+  const isLoggedIn = TokenStorage.isLoggedIn();
+  const { requireAuth } = useAuthGate();
+  const toast = useToast();
 
-  const toggleWishlist = (e: React.MouseEvent, name: string) => {
-    e.stopPropagation();
-    setWishlisted(prev => {
-      const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
-      return next;
-    });
+  const [homePage, setHomePage] = useState<StorePageData | null>(null);
+  const [total, setTotal] = useState(0);
+  const [following, setFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [followStatusLoaded, setFollowStatusLoaded] = useState(false);
+  const [followError, setFollowError] = useState('');
+  const [msgLoading, setMsgLoading] = useState(false);
+  const [msgError, setMsgError] = useState('');
+  const [loyalty, setLoyalty] = useState<LoyaltyBalance | null>(null);
+  const [showRewards, setShowRewards] = useState(false);
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [rewardsLoading, setRewardsLoading] = useState(false);
+  const [redeemingId, setRedeemingId] = useState<string | null>(null);
+  const [plans, setPlans] = useState<BuyerPlan[]>([]);
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>('monthly');
+  const [subscribingId, setSubscribingId] = useState<string | null>(null);
+  const [subscribeError, setSubscribeError] = useState('');
+  const [subscribedMsg, setSubscribedMsg] = useState('');
+
+  const { banners: storeBanners } = useStoreBanners(store.storeId);
+
+  useEffect(() => {
+    document.title = homePage?.seo.metaTitle || store.name;
+    return () => { document.title = 'Solvexo'; };
+  }, [homePage?.seo.metaTitle, store.name]);
+
+  useEffect(() => {
+    apiGetPublicHomePage(store.storeId).then(res => setHomePage(res.data)).catch(() => setHomePage(null));
+  }, [store.storeId]);
+
+  // Total product count for the identity banner — cheap first-page fetch, the
+  // real catalog listing/pagination lives inside `ProductCatalogSection`.
+  useEffect(() => {
+    apiGetPublicStoreProducts(store.storeId, { page: 1, limit: 1 }).then(res => setTotal(res.data?.pagination?.total ?? 0)).catch(() => {});
+  }, [store.storeId]);
+
+  useEffect(() => {
+    if (!isLoggedIn) { setFollowStatusLoaded(true); return; }
+    apiGetFollowStatus(store.storeId).then(res => setFollowing(res.data.following)).catch(() => {}).finally(() => setFollowStatusLoaded(true));
+  }, [store.storeId, isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    apiGetMyBalance(store.storeId).then(res => setLoyalty(res.data)).catch(() => {});
+  }, [store.storeId, isLoggedIn]);
+
+  useEffect(() => {
+    apiBrowseStorePlans(store.storeId).then(res => setPlans(res.data ?? [])).catch(() => {});
+  }, [store.storeId]);
+
+  const handleSubscribe = async (plan: BuyerPlan, interval: BillingInterval) => {
+    if (!isLoggedIn) { window.location.href = getMainAppUrl('/login'); return; }
+    setSubscribingId(plan._id);
+    setSubscribeError('');
+    setSubscribedMsg('');
+    try {
+      await apiSubscribeToPlan(plan._id, interval);
+      setSubscribedMsg(`You're in! Welcome to ${plan.name} — member pricing is already live across the store.`);
+    } catch (err) {
+      setSubscribeError(err instanceof Error ? err.message : 'Failed to subscribe.');
+    } finally {
+      setSubscribingId(null);
+    }
+  };
+
+  const benefitLabel = (b: PlanBenefit): string | null => {
+    switch (b.type) {
+      case 'discount': {
+        const scope = b.scope === 'store' ? 'storewide' : b.scope === 'category' ? 'on select categories' : 'on select products';
+        return `${b.discountPercent}% off ${scope}`;
+      }
+      case 'shipping':
+        return b.shippingType === 'free' ? 'Free shipping' : `${b.shippingDiscountPercent}% off shipping`;
+      case 'early_access':
+        return `Early access to new arrivals (${b.earlyAccessHours}h head start)`;
+      case 'loyalty_multiplier':
+        return `${b.multiplier}x loyalty points`;
+      case 'credits':
+        return `${b.creditsPerCycle} ${b.creditType === 'service' ? 'service' : 'download'} credits every cycle`;
+      case 'priority_support':
+        return 'Priority customer support';
+      case 'priority_booking':
+        return 'Priority booking slots';
+      default:
+        return b.label ?? null;
+    }
+  };
+
+  const openRewards = () => {
+    setShowRewards(true);
+    if (rewards.length === 0) {
+      setRewardsLoading(true);
+      apiGetRewards(store.storeId).then(res => setRewards(res.data ?? [])).finally(() => setRewardsLoading(false));
+    }
+  };
+
+  const handleRedeem = async (reward: Reward) => {
+    setRedeemingId(reward._id);
+    try {
+      const res = await apiRedeemReward(store.storeId, reward._id);
+      setLoyalty(prev => prev ? { ...prev, pointsBalance: res.data.remainingBalance } : prev);
+      toast.success('Reward redeemed');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to redeem reward.');
+    } finally {
+      setRedeemingId(null);
+    }
+  };
+
+  const handleFollow = async () => {
+    requireAuth(async () => {
+      setFollowLoading(true);
+      setFollowError('');
+      try {
+        const res = await apiFollowStore(store.storeId);
+        setFollowing(res.data.following);
+      } catch (err) {
+        setFollowError(err instanceof Error ? err.message : 'Could not follow this store. Please try again.');
+      } finally {
+        setFollowLoading(false);
+      }
+    }, 'Sign in to follow this store.');
+  };
+
+  const handleMessage = async () => {
+    requireAuth(async () => {
+      setMsgLoading(true);
+      setMsgError('');
+      try {
+        const conv = await apiStartConversation({ storeId: store.storeId });
+        window.location.href = getMainAppUrl(`/account/messages?conversation=${conv._id}`);
+      } catch (err) {
+        setMsgError(err instanceof Error ? err.message : 'Could not start a conversation.');
+      } finally {
+        setMsgLoading(false);
+      }
+    }, 'Sign in to message this seller.');
   };
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div>
+      {/* ── Store identity banner ──────────────────────────────────────────── */}
+      <CoverImage
+        className="min-h-[300px] sm:min-h-[360px] lg:min-h-[420px] flex items-end"
+        src={store.coverImage}
+        loading="eager"
+        overlay
+        overlayClassName="bg-black/40"
+        fallbackClassName=""
+        fallbackStyle={{ background: `linear-gradient(135deg, ${cfg.primaryColor}CC, ${cfg.accentColor}CC)` }}
+        backgroundOverride={storeBanners.length > 0
+          ? <BannerCarousel entityType="store_banner" banners={storeBanners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.imageUrl, linkUrl: b.linkTarget, mobileImageUrl: b.mobileImageUrl }))} />
+          : undefined}
+      >
+        <div className="px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
+            <div className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-[18px] bg-white flex items-center justify-center shrink-0 outline outline-2 outline-white/40">
+              {store.logo
+                ? <img loading="lazy" decoding="async" src={store.logo} alt={store.name} className="w-full h-full rounded-[18px] object-cover" />
+                : <Store size={36} style={{ color: cfg.primaryColor }} />}
+            </div>
 
-      {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone">
-        <div className="h-[60px] flex items-center gap-3 px-4 sm:px-6 lg:px-10">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-[22px] sm:text-[26px] font-bold text-white mb-[4px] leading-tight">{store.name}</h1>
+              <StoreBadges badges={store.badges} sellerType={store.sellerType} />
+              {store.description && (
+                <p className="text-[12px] sm:text-[13px] text-[rgba(255,255,255,0.75)] mt-[8px] mb-[10px] line-clamp-2">{store.description}</p>
+              )}
+              <div className="flex items-center gap-[5px] text-[12px] text-[rgba(255,255,255,0.7)] mt-[6px]">
+                {(store.reviewCount ?? 0) > 0 && (
+                  <>
+                    <Star size={13} className="fill-current" style={{ color: cfg.primaryColor }} />
+                    <span>{store.averageRating.toFixed(1)} ({store.reviewCount.toLocaleString()} reviews)</span>
+                    <span className="mx-1">·</span>
+                  </>
+                )}
+                <Users size={13} />
+                <span>{store.followersCount.toLocaleString()} followers</span>
+                <span className="mx-1">·</span>
+                <span>{total} products</span>
+              </div>
+            </div>
 
-          {/* Logo */}
-          <div className="flex items-center gap-[6px] shrink-0">
-            <SolvexoIcon size={28} />
-            <span className="font-bold text-[15px] text-[#141413]">Solvex</span>
-            <span className="font-bold text-[15px] text-brand-orange">o</span>
-            <span className="text-bone mx-1 hidden md:inline">|</span>
-            <span className="text-[13px] text-slate hidden md:inline">Marketplace</span>
-          </div>
+            <div className="flex flex-wrap sm:flex-col gap-2 items-center justify-center sm:items-end shrink-0">
+              {showMembership && plans.length > 0 && (
+                <button onClick={() => document.getElementById('store-membership')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
+                  <RefreshCw size={13} style={{ color: cfg.primaryColor }} /> Membership
+                </button>
+              )}
+              {showLoyaltyBtn && isLoggedIn && loyalty && (
+                <button onClick={openRewards}
+                  className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
+                  <Gift size={13} style={{ color: cfg.primaryColor }} /> {loyalty.pointsBalance.toLocaleString()} points
+                </button>
+              )}
+              {showFollow && (
+                <>
+                  <button onClick={handleFollow} disabled={followLoading || !followStatusLoaded}
+                    className={clsx('px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors whitespace-nowrap border',
+                      following ? 'bg-white text-charcoal border-white' : 'bg-transparent text-white border-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]')}>
+                    {(followLoading || !followStatusLoaded) ? <Loader2 size={13} className="animate-spin inline" /> : following ? 'Following ✓' : 'Follow Store'}
+                  </button>
+                  {followError && <p className="text-[11px] text-white bg-black/30 rounded-md px-2 py-1 max-w-[220px] text-center sm:text-right">{followError}</p>}
+                </>
+              )}
 
-          {/* Search */}
-          <div className="flex-1 flex justify-center px-2 sm:px-4">
-            <input
-              placeholder="Search store..."
-              className="w-full max-w-[240px] sm:max-w-[360px] lg:max-w-[480px] px-[14px] py-[9px] rounded-lg border border-bone bg-cream text-[13px] text-charcoal outline-none focus:border-brand-orange transition-colors"
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/marketplace')}
-              className="hidden md:inline-flex"
-            >
-              <ArrowLeft size={13} className="mr-1" /> Marketplace
-            </Button>
-
-            {/* Wishlist */}
-            <div
-              onClick={() => navigate('/account/profile?tab=wishlist')}
-              className="relative w-9 h-9 rounded-full bg-[#FFF0F5] border border-[#FECDD3] flex items-center justify-center cursor-pointer shrink-0"
-            >
-              <Heart size={16} className={wishlisted.size > 0 ? 'text-[#E11D48] fill-[#E11D48]' : 'text-[#E11D48] fill-none'} />
-              {wishlisted.size > 0 && (
-                <span className="absolute top-[-4px] right-[-4px] min-w-[18px] h-[18px] rounded-[9px] bg-[#E11D48] text-white text-[10px] font-bold leading-[18px] text-center px-1 shadow-[0_0_0_2px_#fff]">
-                  {wishlisted.size > 99 ? '99+' : wishlisted.size}
-                </span>
+              {showMessage && (
+                <>
+                  <button onClick={handleMessage} disabled={msgLoading}
+                    className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
+                    {msgLoading ? <Loader2 size={13} className="animate-spin" /> : <MessageCircle size={13} />} Message
+                  </button>
+                  {msgError && <p className="text-[11px] text-white bg-black/30 rounded-md px-2 py-1 max-w-[220px] text-center sm:text-right">{msgError}</p>}
+                </>
               )}
             </div>
-
-            {/* Cart */}
-            <div
-              onClick={() => navigate('/cart')}
-              className="w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center cursor-pointer shrink-0"
-            >
-              <ShoppingCart size={16} className="text-white" />
-            </div>
           </div>
         </div>
-      </nav>
+      </CoverImage>
 
-      {/* ── Store Banner ─────────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-[#1A4A2C] to-[#2D7A4E]">
-        <div className="px-4 sm:px-6 lg:px-10 py-7 sm:py-9 lg:py-10">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
+      {/* ── Seller-composed sections ───────────────────────────────────────── */}
+      {homePage && <SectionRenderer sections={homePage.sections} />}
 
-            {/* Store logo */}
-            <div className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-[18px] sm:rounded-[20px] bg-white flex items-center justify-center shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
-              <BookOpen size={36} className="text-brand-orange" />
-            </div>
+      {/* ── Store Membership ───────────────────────────────────────────────── */}
+      {showMembership && plans.length > 0 && (
+        <div id="store-membership" className="border-t border-bone py-10 px-4 sm:px-6 lg:px-10" style={{ background: cfg.bgColor }}>
+          <div className="max-w-[900px] mx-auto text-center mb-8">
+            <span className="inline-block text-[10px] font-bold uppercase tracking-[0.12em] rounded-full px-3 py-1 mb-3" style={{ color: cfg.primaryColor, background: `${cfg.primaryColor}18` }}>
+              Store Membership
+            </span>
+            <h2 className="text-[22px] sm:text-[26px] font-bold mb-2" style={{ color: cfg.textColor }}>Shop {store.name} for less, every time</h2>
+            <p className="text-[13px] text-slate max-w-[520px] mx-auto">Join once and member pricing applies automatically on every visit — no codes to remember. Cancel anytime.</p>
 
-            {/* Store info */}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-[22px] sm:text-[26px] font-bold text-white mb-[6px] leading-tight">
-                TeachersPro
-              </h1>
-              <div className="text-[12px] sm:text-[13px] text-[rgba(255,255,255,0.75)] mb-[10px]">
-                Veteran educator &nbsp;·&nbsp; 2,140 sales &nbsp;·&nbsp;
-                <Star size={12} className="inline align-middle text-brand-orange fill-brand-orange mx-[3px]" />
-                5.0 &nbsp;·&nbsp; Member since 2021
+            {plans.some(p => p.yearlyPriceUSD != null) && (
+              <div className="inline-flex items-center gap-1 mt-5 bg-white rounded-full p-1 border border-bone">
+                {(['monthly', 'yearly'] as const).map(iv => (
+                  <button key={iv} onClick={() => setBillingInterval(iv)}
+                    className="px-4 py-[7px] rounded-full text-[12px] font-semibold cursor-pointer border-none capitalize transition-colors"
+                    style={{ background: billingInterval === iv ? cfg.primaryColor : 'transparent', color: billingInterval === iv ? '#fff' : cfg.textColor }}>
+                    {iv}{iv === 'yearly' && ' · save more'}
+                  </button>
+                ))}
               </div>
-              <div className="flex gap-2 flex-wrap">
-                <Badge color="green">
-                  <Check size={10} className="inline align-middle mr-[3px]" />Top Seller
-                </Badge>
-                <Badge color="blue">Education Specialist</Badge>
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex flex-row sm:flex-col gap-2 items-center sm:items-end shrink-0">
-              <button className="px-[14px] py-[7px] rounded-lg text-[12px] sm:text-[13px] font-medium bg-transparent text-white border border-[rgba(255,255,255,0.5)] cursor-pointer hover:bg-[rgba(255,255,255,0.1)] transition-colors whitespace-nowrap">
-                Follow Store
-              </button>
-              <Button variant="primary" size="sm">Message Seller</Button>
-            </div>
+            )}
           </div>
-        </div>
-      </div>
 
-      {/* ── Store Tabs ───────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-bone overflow-x-auto scrollbar-hide">
-        <TabBar tabs={STORE_TABS} active={activeTab} onChange={setActiveTab} className="px-4 sm:px-6 lg:px-10" />
-      </div>
+          {subscribedMsg && <div className="max-w-[520px] mx-auto mb-6 px-4 py-3 rounded-lg bg-success-bg text-success text-[13px] font-medium text-center">{subscribedMsg}</div>}
+          {subscribeError && <div className="max-w-[520px] mx-auto mb-6 px-4 py-3 rounded-lg bg-error-bg text-error text-[13px] font-medium text-center">{subscribeError}</div>}
 
-      {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <div className="px-4 sm:px-6 lg:px-10 py-4 sm:py-5 lg:py-6">
-
-        {/* Count + sort row */}
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-[13px] text-slate">47 Products</span>
-          <FilterDropdown options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
-        </div>
-
-        <div className="flex gap-5 lg:gap-6 items-start">
-
-          {/* ── Products area ────────────────────────────────────────────────── */}
-          <div className="flex-1 min-w-0">
-
-            {/* Grid: 2-col mobile → 3-col md → 4-col xl */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-[10px] sm:gap-3 lg:gap-[14px]">
-              {PRODUCTS.map(p => (
-                <Card key={p.name} padding="none" hover onClick={() => navigate('/marketplace/1')} className="overflow-hidden">
-
-                  {/* Image */}
-                  <div className="relative w-full h-[110px] sm:h-[150px] lg:h-[170px] bg-success-bg flex items-center justify-center">
-                    <p.Img size={28} className="text-success" style={{ display: 'block', flexShrink: 0 }} />
-
-                    {/* Wishlist button */}
-                    <button
-                      onClick={e => toggleWishlist(e, p.name)}
-                      className="absolute top-[6px] right-[6px] w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[rgba(255,255,255,0.92)] flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.12)] cursor-pointer border-none"
-                    >
-                      <Heart
-                        size={11}
-                        className={clsx(
-                          'transition-[color,fill] duration-150',
-                          wishlisted.has(p.name) ? 'text-[#E11D48] fill-[#E11D48]' : 'text-slate fill-none',
-                        )}
-                      />
-                    </button>
-
-                    {/* Type badge */}
-                    <span className={clsx(
-                      'absolute top-[6px] left-[6px] px-[5px] py-[2px] rounded-[4px] text-[9px] font-semibold border leading-none',
-                      p.type === 'digital'
-                        ? 'bg-[#EDE9FE] text-[#7C3AED] border-[#DDD6FE]'
-                        : 'bg-brand-pale-orange text-brand-deep-orange border-[#F5D0BC]',
-                    )}>
-                      {p.type === 'digital' ? 'Digital' : 'Physical'}
+          <div className={clsx('grid gap-5 max-w-[960px] mx-auto', plans.length === 1 ? 'grid-cols-1 max-w-[380px]' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3')}>
+            {plans.map((plan, idx) => {
+              const price = billingInterval === 'yearly' && plan.displayYearlyPrice != null ? plan.displayYearlyPrice : plan.displayMonthlyPrice;
+              const bullets = (plan.benefits ?? []).map(benefitLabel).filter(Boolean) as string[];
+              const isPopular = idx === Math.min(1, plans.length - 1) && plans.length > 1;
+              return (
+                <div key={plan._id} className="relative bg-white rounded-2xl p-6 flex flex-col" style={{ border: isPopular ? `2px solid ${cfg.primaryColor}` : '1px solid #E8E6DC' }}>
+                  {isPopular && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide text-white" style={{ background: cfg.primaryColor }}>
+                      Most Popular
                     </span>
+                  )}
+                  <p className="text-[16px] font-bold text-carbon mb-1">{plan.name}</p>
+                  {plan.description && <p className="text-[12px] text-slate mb-4">{plan.description}</p>}
+                  <div className="mb-4">
+                    <span className="text-[32px] font-bold" style={{ color: cfg.textColor }}>{displaySymbol}{convert(price, plan.displayCurrency).toLocaleString()}</span>
+                    <span className="text-[12px] text-slate">/{billingInterval === 'yearly' ? 'yr' : 'mo'}</span>
                   </div>
-
-                  {/* Body */}
-                  <div className="px-2 pt-2 pb-2 sm:px-3 sm:pt-[10px] sm:pb-3">
-                    <p className="font-bold text-[11px] sm:text-[13px] text-carbon mb-[3px] leading-[1.4] line-clamp-2">
-                      {p.name}
-                    </p>
-                    <StarRating rating={p.rating} count={p.ratingCount} />
-                    <div className="flex items-center justify-between gap-1 mt-[6px] sm:mt-[10px]">
-                      <span className="font-bold text-[12px] sm:text-[15px] text-carbon shrink-0">{p.price}</span>
-                      {/* icon only on sm/md, full text on lg+ */}
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={e => e.stopPropagation()}
-                        className="inline-flex"
-                      >
-                        <ShoppingCart size={11} />
-                        <span className="hidden lg:inline">Add to Cart</span>
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
+                  <ul className="flex flex-col gap-2 mb-6 p-0 list-none flex-1">
+                    {(bullets.length > 0 ? bullets : plan.features ?? []).map(b => (
+                      <li key={b} className="flex items-start gap-2 text-[12.5px] text-graphite">
+                        <Check size={13} className="mt-[2px] shrink-0" style={{ color: cfg.primaryColor }} />{b}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    onClick={() => handleSubscribe(plan, billingInterval === 'yearly' && plan.yearlyPriceUSD != null ? 'yearly' : 'monthly')}
+                    disabled={subscribingId === plan._id}
+                    className="w-full py-[11px] rounded-xl text-[13px] font-bold text-white border-none cursor-pointer disabled:opacity-50 transition-opacity"
+                    style={{ background: cfg.primaryColor }}>
+                    {subscribingId === plan._id ? 'Subscribing…' : 'Become a Member'}
+                  </button>
+                  <p className="text-[10.5px] text-slate text-center mt-2">Cancel anytime — no long-term commitment</p>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </div>
+      )}
 
+      {showRewards && (
+        <Modal title="Rewards Catalog" onClose={() => setShowRewards(false)}>
+          <p className="text-[13px] text-slate mb-4">
+            You have <strong style={{ color: cfg.primaryColor }}>{loyalty?.pointsBalance.toLocaleString() ?? 0} points</strong> at {store.name}.
+            {loyalty?.nextTier && ` ${loyalty.nextTier.pointsNeeded} more points to reach ${loyalty.nextTier.name}.`}
+          </p>
+          {rewardsLoading ? (
+            <p className="text-xs text-slate">Loading…</p>
+          ) : rewards.length === 0 ? (
+            <p className="text-xs text-slate italic">No rewards available yet.</p>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {rewards.map(r => {
+                const canAfford = (loyalty?.pointsBalance ?? 0) >= r.pointsCost;
+                const outOfStock = r.stockLimit != null && r.redeemedCount >= r.stockLimit;
+                return (
+                  <div key={r._id} className="flex items-center justify-between gap-3 bg-cream rounded-lg px-3.5 py-3">
+                    <div>
+                      <p className="text-[13px] font-semibold text-carbon">{r.name}</p>
+                      <p className="text-[11px] text-slate">
+                        {r.pointsCost.toLocaleString()} points — {r.type === 'fixed_discount' ? `${displaySymbol}${convert(r.discountValue ?? 0, store.baseCurrency).toLocaleString()} off` : 'Free product'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleRedeem(r)}
+                      disabled={!canAfford || outOfStock || redeemingId === r._id}
+                      className="px-3.5 py-[7px] rounded-lg text-xs font-semibold text-white border-none cursor-pointer whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{ background: cfg.primaryColor }}>
+                      {redeemingId === r._id ? 'Redeeming…' : outOfStock ? 'Out of stock' : canAfford ? 'Redeem' : 'Not enough points'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }

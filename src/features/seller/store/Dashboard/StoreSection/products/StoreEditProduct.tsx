@@ -1,22 +1,27 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Package, Download, Loader2, CalendarClock } from 'lucide-react';
+import { Package, Download, GraduationCap, Loader2, CalendarClock, Plus, X } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import {
-  apiGetMyProductById, apiEditPhysicalProduct, apiEditDigitalProduct,
-  type StoreProduct, type ProductVariant,
-} from '@/api/commerce/product';
+  apiGetMyProductById, apiEditPhysicalProduct, apiEditDigitalProduct, apiUpdateVariant,
+  EDUCATION_LEVELS, type EducationLevel, type StoreProduct, type ProductVariant, type VariantOption,
+} from '@/api/services/product';
 import { getCachedProducts, updateCachedProduct, type ProductEntry } from './_cache';
-import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal } from '@/components/comman/ui';
+import { SubcategoryField } from './SubcategoryField';
+import { CustomLevelInput } from './CustomLevelInput';
+import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
+import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal, SkeletonBox } from '@/components/comman/ui';
+import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 
 type ProductStatus = 'draft' | 'active' | 'scheduled';
+type LicenseType   = 'personal' | 'single_classroom' | 'school' | 'commercial';
 
-const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#B5B3AC] outline-none';
+const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white placeholder:text-[#b5b3ac] outline-none';
 const ta  = `${inp} resize-y min-h-[100px]`;
 
 function L({ children, req }: { children: ReactNode; req?: boolean }) {
   return (
-    <label className="text-[12px] font-semibold text-[#4A4945] block mb-1.5">
+    <label className="text-[12px] font-semibold text-graphite block mb-1.5">
       {children}{req && <span className="text-red-500 ml-0.5">*</span>}
     </label>
   );
@@ -26,7 +31,7 @@ function F({ label, req, children }: { label: string; req?: boolean; children: R
 }
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
+    <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
       <div className="px-5 py-3.5 border-b border-bone">
         <p className="text-[13px] font-bold text-charcoal">{title}</p>
       </div>
@@ -39,7 +44,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     <button type="button" onClick={() => onChange(!checked)}
       className="w-10 h-[22px] rounded-[11px] border-none cursor-pointer p-0 relative shrink-0 transition-colors duration-[180ms]"
       style={{ background: checked ? '#D97757' : '#D1D5DB' }}>
-      <span className="absolute top-[3px] w-4 h-4 rounded-full bg-white shadow-sm transition-[left] duration-[180ms]"
+      <span className="absolute top-[3px] w-4 h-4 rounded-full bg-white border border-charcoal/10 transition-[left] duration-[180ms]"
         style={{ left: checked ? 21 : 3 }} />
     </button>
   );
@@ -59,25 +64,85 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
       <input value={input} onChange={e => onInput(e.target.value)}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); onAdd(); } }}
         placeholder={tags.length === 0 ? 'Type a tag and press Enter…' : ''}
-        className="border-none outline-none text-[12px] flex-[1_1_80px] min-w-[80px] bg-transparent text-charcoal placeholder:text-[#B5B3AC]" />
+        className="border-none outline-none text-[12px] flex-[1_1_80px] min-w-[80px] bg-transparent text-charcoal placeholder:text-[#b5b3ac]" />
+    </div>
+  );
+}
+
+const MAX_VARIANT_OPTIONS = 3;
+
+// ── Variant attributes builder — replaces the old fixed Size/Color inputs with
+// any combination of seller-defined attributes (Color, Size, Material…), up to
+// 3, matching what the variant-CRUD backend now accepts. ─────────────────────
+function VariantOptionsField({ options, onChange }: { options: VariantOption[]; onChange: (next: VariantOption[]) => void }) {
+  const [name, setName] = useState('');
+  const [value, setValue] = useState('');
+
+  function add() {
+    if (!name.trim() || !value.trim() || options.length >= MAX_VARIANT_OPTIONS) return;
+    onChange([...options, { name: name.trim(), value: value.trim() }]);
+    setName(''); setValue('');
+  }
+
+  const canAdd = !!name.trim() && !!value.trim();
+
+  return (
+    <div className="flex flex-col gap-2">
+      {options.length > 0 && (
+        <div className="flex flex-col gap-[6px]">
+          {options.map((o, i) => (
+            <div key={i} className="flex items-center gap-2 bg-brand-pale-orange border border-brand-orange/20 rounded-lg pl-3 pr-2 py-[7px]">
+              <span className="flex-1 min-w-0 text-[12px] text-charcoal truncate">
+                <span className="font-semibold text-brand-deep-orange">{o.name}</span>
+                <span className="text-brand-orange/40 mx-[6px]">/</span>
+                {o.value}
+              </span>
+              <button type="button" onClick={() => onChange(options.filter((_, idx) => idx !== i))}
+                aria-label={`Remove ${o.name} ${o.value}`}
+                className="bg-transparent border-none cursor-pointer p-1 rounded-md text-brand-orange/50 shrink-0 flex items-center hover:text-brand-orange hover:bg-white/70 transition-colors">
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {options.length < MAX_VARIANT_OPTIONS && (
+        <div className="flex flex-col gap-[7px] p-2.5 rounded-lg border border-dashed border-[#d9d6cc] bg-cream/50">
+          <div className="grid grid-cols-2 gap-[7px]">
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="Attribute"
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+              className={`${inp} px-2.5 py-[7px] text-[12px] bg-white`} />
+            <input value={value} onChange={e => setValue(e.target.value)} placeholder="Value"
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+              className={`${inp} px-2.5 py-[7px] text-[12px] bg-white`} />
+          </div>
+          <button type="button" onClick={add} disabled={!canAdd}
+            className="flex items-center justify-center gap-1.5 py-[7px] rounded-md border-none text-[12px] font-semibold transition-colors"
+            style={{ background: canAdd ? '#D97757' : '#E8E6DC', color: canAdd ? '#fff' : '#A8A6A0', cursor: canAdd ? 'pointer' : 'not-allowed' }}>
+            <Plus size={13} /> Add Attribute
+          </button>
+        </div>
+      )}
+      <p className="text-[11px] text-slate">Optional — leave empty for a single plain variant, or add up to 3 like Color, Size, Material.</p>
     </div>
   );
 }
 
 const blankPhys = {
   name: '', description: '', price: '', compareAtPrice: '',
-  stock: '', size: '', color: '', shippingWeight: '',
+  stock: '', options: [] as VariantOption[], shippingWeight: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
 };
 const blankDig = {
-  name: '', description: '', price: '', compareAtPrice: '',
+  name: '', description: '', price: '', compareAtPrice: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   fileData: null as PrivateUploadData | null,
   downloadLimit: 'unlimited', linkExpiryDays: '',
-  pdfStampingEnabled: false, licenseType: 'personal' as 'personal' | 'commercial',
-  buyerDeliveryMessage: '',
+  pdfStampingEnabled: false, licenseType: 'personal' as LicenseType,
+  buyerDeliveryMessage: '', educationLevel: '' as EducationLevel | '', customLevel: '',
+  previewEnabled: false,
 };
 type PhysForm = typeof blankPhys;
 type DigForm  = typeof blankDig;
@@ -86,24 +151,29 @@ function physFromEntry(p: StoreProduct, v: ProductVariant): PhysForm {
   return {
     name: p.name, description: p.description,
     price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
-    stock: String(v.stock), size: v.size ?? '', color: v.color ?? '', shippingWeight: v.shippingWeight ?? '',
+    stock: String(v.stock), options: [...(v.options ?? [])], shippingWeight: v.shippingWeight ?? '',
+    subCategoryId: p.subCategoryId ?? '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
-    scheduledAt: '', tags: [...p.tags], tagInput: '', images: [...p.images],
+    scheduledAt: '', tags: [...(p.tags ?? [])], tagInput: '', images: [...(p.images ?? [])],
   };
 }
 function digFromEntry(p: StoreProduct, v: ProductVariant): DigForm {
-  const d = p.digital, f0 = d?.files[0];
+  const d = p.digital, f0 = d?.files?.[0];
   return {
     name: p.name, description: p.description,
     price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
+    subCategoryId: p.subCategoryId ?? '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
-    scheduledAt: '', tags: [...p.tags], tagInput: '', images: [...p.images],
+    scheduledAt: '', tags: [...(p.tags ?? [])], tagInput: '', images: [...(p.images ?? [])],
     fileData: f0 ? { publicId: f0.url, resourceType: 'raw', fileName: f0.name, fileSize: f0.size, mimeType: f0.mimeType } : null,
     downloadLimit: d?.downloadLimit ?? 'unlimited',
     linkExpiryDays: d?.linkExpiryDays != null ? String(d.linkExpiryDays) : '',
     pdfStampingEnabled: d?.pdfStampingEnabled ?? false,
-    licenseType: (d?.licenseType as 'personal' | 'commercial') ?? 'personal',
+    licenseType: (d?.licenseType as LicenseType) ?? 'personal',
     buyerDeliveryMessage: d?.buyerDeliveryMessage ?? '',
+    educationLevel: (p.educationLevel as EducationLevel) ?? '',
+    customLevel: p.customLevel ?? '',
+    previewEnabled: d?.preview?.enabled ?? false,
   };
 }
 
@@ -111,12 +181,18 @@ export default function StoreEditProduct() {
   const navigate           = useNavigate();
   const { state }          = useLocation() as { state: { entry?: ProductEntry } | null };
   const { productId = '' } = useParams<{ productId: string }>();
-  const { storeId }        = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
+  // Every price on this form is in the STORE's own currency (locked at
+  // onboarding) — never assume PKR. Uses the shared currencySymbol() util
+  // (supports every SupportedCurrency, not just a PKR/USD ternary that
+  // mislabeled any other currency as "Rs").
+  const currencySymbol = symbolForCurrency(store?.baseCurrency);
+  const { mainCategory, subcategories, loading: catLoading, refetch: refetchCats } = useStoreSubcategories(store?.categoryId);
 
   const [fetching,          setFetching]          = useState(true);
   const [saving,            setSaving]            = useState(false);
   const [error,             setError]             = useState('');
-  const [pType,             setPType]             = useState<'physical' | 'digital'>('physical');
+  const [pType,             setPType]             = useState<'physical' | 'digital' | 'educational'>('physical');
   const [variantId,         setVariantId]         = useState<string | null>(null);
   const [phys,              setPhys]              = useState<PhysForm>(blankPhys);
   const [dig,               setDig]               = useState<DigForm>(blankDig);
@@ -139,8 +215,9 @@ export default function StoreEditProduct() {
     if (cached) { init(cached.product, cached.variant); setFetching(false); return; }
     apiGetMyProductById(productId)
       .then(res => {
-        const stub: ProductVariant = { _id: '', productId, sku: '', price: 0, compareAtPrice: null, size: null, color: null, stock: 0, shippingWeight: null, images: [], isDefault: true, status: 'active', isDelete: false, createdAt: '', updatedAt: '' };
-        init(res.data.product, stub);
+        const fallback: ProductVariant = { _id: '', productId, sku: '', price: 0, compareAtPrice: null, options: [], stock: 0, unlimitedStock: false, shippingWeight: null, images: [], isDefault: true, status: 'active', isDelete: false, createdAt: '', updatedAt: '' };
+        const variant = res.data.defaultVariant ?? res.data.variants?.[0] ?? fallback;
+        init(res.data.product, variant);
       })
       .catch(() => navigate(`/seller/store/${storeId}/products`, { replace: true }))
       .finally(() => setFetching(false));
@@ -161,26 +238,40 @@ export default function StoreEditProduct() {
 
   const handleSubmit = async (statusOverride?: ProductStatus) => {
     setError('');
+    if (pType === 'educational' && !dig.educationLevel) { setError('Education level is required for educational resources.'); return; }
+    if (pType === 'educational' && dig.educationLevel === 'other' && !dig.customLevel.trim()) { setError('Please describe the custom education level.'); return; }
     setSaving(true);
     try {
       const finalStatus = statusOverride ?? (pType === 'physical' ? phys.status : dig.status);
       if (pType === 'physical') {
         const res = await apiEditPhysicalProduct(productId, {
           productId, name: phys.name, description: phys.description,
-          subCategoryId: null, images: phys.images, tags: phys.tags,
+          subCategoryId: phys.subCategoryId || null, images: phys.images, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
-          price: Number(phys.price), compareAtPrice: phys.compareAtPrice ? Number(phys.compareAtPrice) : null,
-          size: phys.size, color: phys.color, stock: Number(phys.stock), shippingWeight: phys.shippingWeight,
+          scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
         });
-        updateCachedProduct(storeId, productId, { product: res.data.product, variant: res.data.variant });
+        let variant = res.data.variant;
+        if (variantId) {
+          const vRes = await apiUpdateVariant(productId, variantId, {
+            price: Number(phys.price), compareAtPrice: phys.compareAtPrice ? Number(phys.compareAtPrice) : null,
+            options: phys.options, stock: Number(phys.stock), shippingWeight: phys.shippingWeight,
+          });
+          variant = vRes.data;
+        }
+        updateCachedProduct(storeId, productId, { product: res.data.product, variant });
       } else {
         const files = dig.fileData ? [{ url: dig.fileData.publicId, name: dig.fileData.fileName, size: dig.fileData.fileSize, mimeType: dig.fileData.mimeType }] : [];
         const res = await apiEditDigitalProduct(productId, {
           productId, variantId,
           name: dig.name, description: dig.description,
-          status: finalStatus, price: Number(dig.price),
+          subCategoryId: dig.subCategoryId || null,
+          educationLevel: pType === 'educational' ? (dig.educationLevel || null) : undefined,
+          customLevel: pType === 'educational' && dig.educationLevel === 'other' ? dig.customLevel : undefined,
+          status: finalStatus,
+          scheduledAt: finalStatus === 'scheduled' ? dig.scheduledAt || null : null,
+          price: Number(dig.price),
           compareAtPrice: dig.compareAtPrice ? Number(dig.compareAtPrice) : null,
-          digital: { files, downloadLimit: dig.downloadLimit, linkExpiryDays: dig.linkExpiryDays ? Number(dig.linkExpiryDays) : null, pdfStampingEnabled: dig.pdfStampingEnabled, licenseType: dig.licenseType, buyerDeliveryMessage: dig.buyerDeliveryMessage },
+          digital: { files, downloadLimit: dig.downloadLimit, linkExpiryDays: dig.linkExpiryDays ? Number(dig.linkExpiryDays) : null, pdfStampingEnabled: dig.pdfStampingEnabled, licenseType: dig.licenseType, buyerDeliveryMessage: dig.buyerDeliveryMessage, preview: { enabled: dig.previewEnabled, sourceFileIndex: 0 } },
         });
         updateCachedProduct(storeId, productId, { product: res.data.product, variant: res.data.variant });
       }
@@ -194,8 +285,50 @@ export default function StoreEditProduct() {
 
   if (fetching) {
     return (
-      <div className="flex items-center justify-center h-screen bg-cream">
-        <Loader2 size={24} className="text-brand-orange animate-spin" />
+      <div className="bg-cream min-h-screen">
+        {/* ── Header skeleton ── */}
+        <div className="px-7 py-5 bg-white border-b border-bone flex items-center justify-between">
+          <div className="flex flex-col gap-2">
+            <SkeletonBox width={160} height={18} rounded="6px" />
+            <SkeletonBox width={120} height={12} rounded="4px" />
+          </div>
+          <div className="flex items-center gap-3">
+            <SkeletonBox width={80} height={36} rounded="9px" />
+            <SkeletonBox width={110} height={36} rounded="9px" />
+          </div>
+        </div>
+
+        {/* ── 2-column body skeleton ── */}
+        <div className="px-4 sm:px-7 py-6 grid grid-cols-1 lg:grid-cols-[1fr_296px] gap-5 items-start">
+          {/* Left column */}
+          <div className="flex flex-col gap-5">
+            <div className="bg-white border border-bone rounded-[10px] p-5 flex flex-col gap-4">
+              <SkeletonBox width="30%" height={14} rounded="4px" />
+              <SkeletonBox height={38} rounded="8px" />
+              <SkeletonBox height={100} rounded="8px" />
+            </div>
+            <div className="bg-white border border-bone rounded-[10px] p-5 flex flex-col gap-4">
+              <SkeletonBox width="20%" height={14} rounded="4px" />
+              <SkeletonBox height={38} rounded="8px" />
+            </div>
+            <div className="bg-white border border-bone rounded-[10px] p-5">
+              <SkeletonBox height={120} rounded="8px" />
+            </div>
+          </div>
+
+          {/* Right sidebar */}
+          <div className="flex flex-col gap-4">
+            <div className="bg-white border border-bone rounded-[10px] p-5 flex flex-col gap-3">
+              <SkeletonBox width="40%" height={14} rounded="4px" />
+              <SkeletonBox height={38} rounded="8px" />
+              <SkeletonBox height={38} rounded="8px" />
+            </div>
+            <div className="bg-white border border-bone rounded-[10px] p-5 flex flex-col gap-3">
+              <SkeletonBox width="50%" height={14} rounded="4px" />
+              <SkeletonBox height={38} rounded="8px" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -210,6 +343,8 @@ export default function StoreEditProduct() {
           <div className="flex items-center gap-1.5 mt-0.5">
             {pType === 'digital'
               ? <><Download size={11} className="text-slate" /><span className="text-[12px] text-slate">Digital Download</span></>
+              : pType === 'educational'
+              ? <><GraduationCap size={11} className="text-slate" /><span className="text-[12px] text-slate">Educational Resource</span></>
               : <><Package  size={11} className="text-slate" /><span className="text-[12px] text-slate">Physical Product</span></>}
           </div>
         </div>
@@ -228,7 +363,7 @@ export default function StoreEditProduct() {
       </div>
 
       {/* ── 2-column body ── */}
-      <div className="px-7 py-6 grid grid-cols-[1fr_296px] gap-5 items-start">
+      <div className="px-4 sm:px-7 py-6 grid grid-cols-1 lg:grid-cols-[1fr_296px] gap-5 items-start">
 
         {/* Left column */}
         <div className="flex flex-col gap-5">
@@ -249,6 +384,20 @@ export default function StoreEditProduct() {
             </div>
           </Card>
 
+          {/* Category */}
+          <Card title="Category">
+            <SubcategoryField
+              mainCategoryName={mainCategory?.name ?? ''}
+              mainCategoryId={store?.categoryId ?? ''}
+              subcategories={subcategories}
+              loading={catLoading}
+              value={cur.subCategoryId}
+              onChange={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
+              onCreated={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
+              refetch={refetchCats}
+            />
+          </Card>
+
           {/* Product Images */}
           <Card title="Product Images">
             <p className="text-[12px] text-slate mb-3">Upload up to 5 images. First image is the cover shown to buyers.</p>
@@ -259,19 +408,46 @@ export default function StoreEditProduct() {
             />
           </Card>
 
-          {/* Digital: File Upload */}
-          {pType === 'digital' && (
-            <Card title="Digital File">
+          {/* Digital/Educational: File Upload */}
+          {(pType === 'digital' || pType === 'educational') && (
+            <Card title={pType === 'educational' ? 'Resource File' : 'Digital File'}>
               <p className="text-[12px] text-slate mb-3">Upload the file buyers will receive instantly after purchase.</p>
               <FileUpload value={dig.fileData} onChange={v => sd('fileData', v)} label="Click to upload your digital file" />
             </Card>
           )}
 
-          {/* Digital: Delivery Settings */}
-          {pType === 'digital' && (
+          {/* Educational: Education Level (controlled Tier-1 + optional Tier-2 custom label) */}
+          {pType === 'educational' && (
+            <Card title="Education Level">
+              <div className="flex flex-col gap-4">
+                <F label="Education Level" req>
+                  <div className="flex gap-2 flex-wrap">
+                    {EDUCATION_LEVELS.map(l => {
+                      const sel = dig.educationLevel === l.value;
+                      return (
+                        <button key={l.value} type="button" onClick={() => sd('educationLevel', l.value)}
+                          className="px-3 py-[7px] rounded-full cursor-pointer text-[12px] font-medium transition-all duration-150"
+                          style={{ border: `1.5px solid ${sel ? '#D97757' : '#E8E6DC'}`, background: sel ? '#FBECE4' : '#fff', color: sel ? '#D97757' : '#8C8A82' }}>
+                          {l.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </F>
+                {dig.educationLevel === 'other' && (
+                  <F label="Custom Education Level" req>
+                    <CustomLevelInput value={dig.customLevel} onChange={v => sd('customLevel', v)} />
+                  </F>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {/* Digital/Educational: Delivery Settings */}
+          {(pType === 'digital' || pType === 'educational') && (
             <Card title="Delivery Settings">
               <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <F label="Download Limit">
                     <input value={dig.downloadLimit} onChange={e => sd('downloadLimit', e.target.value)} placeholder="unlimited" className={inp} />
                   </F>
@@ -280,14 +456,17 @@ export default function StoreEditProduct() {
                   </F>
                 </div>
                 <F label="License Type">
-                  <div className="flex gap-2 mt-0.5">
-                    {(['personal', 'commercial'] as const).map(l => {
+                  <div className="flex gap-2 mt-0.5 flex-wrap">
+                    {(pType === 'educational'
+                      ? (['personal', 'single_classroom', 'school', 'commercial'] as const)
+                      : (['personal', 'commercial'] as const)
+                    ).map(l => {
                       const sel = dig.licenseType === l;
                       return (
                         <button key={l} type="button" onClick={() => sd('licenseType', l)}
                           className="flex-1 py-2 rounded-lg cursor-pointer text-[12px] font-semibold capitalize transition-all duration-150"
                           style={{ border: `1.5px solid ${sel ? '#D97757' : '#E8E6DC'}`, background: sel ? '#FBECE4' : '#fff', color: sel ? '#D97757' : '#8C8A82' }}>
-                          {l}
+                          {l.replace('_', ' ')}
                         </button>
                       );
                     })}
@@ -303,6 +482,13 @@ export default function StoreEditProduct() {
                     <p className="text-[11px] text-slate mt-0.5">Watermark PDFs with the buyer's name</p>
                   </div>
                   <Toggle checked={dig.pdfStampingEnabled} onChange={v => sd('pdfStampingEnabled', v)} />
+                </div>
+                <div className="flex items-center justify-between py-0.5">
+                  <div>
+                    <p className="text-[13px] font-semibold text-charcoal">Buyer Preview</p>
+                    <p className="text-[11px] text-slate mt-0.5">Let buyers see a watermarked/trimmed preview before purchase</p>
+                  </div>
+                  <Toggle checked={dig.previewEnabled} onChange={v => sd('previewEnabled', v)} />
                 </div>
               </div>
             </Card>
@@ -329,20 +515,20 @@ export default function StoreEditProduct() {
           {/* Pricing */}
           <Card title="Pricing">
             <div className="flex flex-col gap-3">
-              <F label="Price (Rs)" req>
+              <F label={`Price (${currencySymbol})`} req>
                 <input type="number" min="0" value={cur.price}
                   onChange={e => pType === 'physical' ? sp('price', e.target.value) : sd('price', e.target.value)}
                   placeholder="0.00" className={inp} />
               </F>
-              <F label="Compare-at Price (Rs)">
+              <F label={`Compare-at Price (${currencySymbol})`}>
                 <input type="number" min="0" value={cur.compareAtPrice}
                   onChange={e => pType === 'physical' ? sp('compareAtPrice', e.target.value) : sd('compareAtPrice', e.target.value)}
                   placeholder="0.00" className={inp} />
               </F>
               {discountPct !== null && (
-                <div className="flex items-center gap-1.5 px-3 py-2 bg-[#E3F4EA] border border-[#B7E2C7] rounded-[7px]">
-                  <span className="text-[12px] font-bold text-[#1E7A3C]">{discountPct}% OFF</span>
-                  <span className="text-[11px] text-[#2D8A4E]">shown to buyers</span>
+                <div className="flex items-center gap-1.5 px-3 py-2 bg-[#e3f4ea] border border-[#b7e2c7] rounded-[7px]">
+                  <span className="text-[12px] font-bold text-[#1e7a3c]">{discountPct}% OFF</span>
+                  <span className="text-[11px] text-success">shown to buyers</span>
                 </div>
               )}
             </div>
@@ -355,14 +541,9 @@ export default function StoreEditProduct() {
                 <F label="Stock Quantity" req>
                   <input type="number" min="0" value={phys.stock} onChange={e => sp('stock', e.target.value)} placeholder="0" className={inp} />
                 </F>
-                <div className="grid grid-cols-2 gap-3">
-                  <F label="Size">
-                    <input value={phys.size} onChange={e => sp('size', e.target.value)} placeholder="L, XL…" className={inp} />
-                  </F>
-                  <F label="Color">
-                    <input value={phys.color} onChange={e => sp('color', e.target.value)} placeholder="Red…" className={inp} />
-                  </F>
-                </div>
+                <F label="Variant Attributes">
+                  <VariantOptionsField options={phys.options} onChange={v => sp('options', v)} />
+                </F>
                 <F label="Shipping Weight">
                   <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg" className={inp} />
                 </F>
@@ -377,8 +558,8 @@ export default function StoreEditProduct() {
                 <L>Status</L>
                 <div className="flex flex-col gap-1.5">
                   {([
-                    { val: 'draft'     as const, label: 'Draft',     dotCls: 'bg-[#B5B3AC]',   selCls: 'bg-[#F5F4EF] border-[#B5B3AC]',   chkCls: 'bg-[#B5B3AC]'    },
-                    { val: 'active'    as const, label: 'Active',    dotCls: 'bg-[#22C55E]',   selCls: 'bg-[#EDFBF3] border-[#22C55E]',   chkCls: 'bg-[#22C55E]'    },
+                    { val: 'draft'     as const, label: 'Draft',     dotCls: 'bg-[#b5b3ac]',   selCls: 'bg-[#f5f4ef] border-[#b5b3ac]',   chkCls: 'bg-[#b5b3ac]'    },
+                    { val: 'active'    as const, label: 'Active',    dotCls: 'bg-[#22c55e]',   selCls: 'bg-[#edfbf3] border-[#22c55e]',   chkCls: 'bg-[#22c55e]'    },
                     { val: 'scheduled' as const, label: 'Scheduled', dotCls: 'bg-brand-orange', selCls: 'bg-brand-pale-orange border-brand-orange', chkCls: 'bg-brand-orange' },
                   ]).map(({ val, label, dotCls, selCls, chkCls }) => {
                     const sel = cur.status === val;
@@ -388,10 +569,10 @@ export default function StoreEditProduct() {
                           if (pType === 'physical') sp('status', val); else sd('status', val);
                           if (val === 'scheduled') setShowScheduleModal(true);
                         }}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-[9px] border-[1.5px] cursor-pointer text-left transition-all duration-150 w-full ${sel ? selCls : 'bg-cream border-bone hover:border-[#C5C3BB]'}`}>
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-[9px] border-[1.5px] cursor-pointer text-left transition-all duration-150 w-full ${sel ? selCls : 'bg-cream border-bone hover:border-[#c5c3bb]'}`}>
                         <span className={`w-[7px] h-[7px] rounded-full shrink-0 ${dotCls}`} />
                         <span className={`flex-1 text-[12px] font-semibold ${sel ? 'text-charcoal' : 'text-slate'}`}>{label}</span>
-                        <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${sel ? `${chkCls} border-transparent` : 'border-[#D1D5DB] bg-white'}`}>
+                        <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${sel ? `${chkCls} border-transparent` : 'border-[#d1d5db] bg-white'}`}>
                           {sel && <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                         </span>
                       </button>

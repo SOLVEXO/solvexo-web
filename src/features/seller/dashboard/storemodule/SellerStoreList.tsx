@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Store, Plus, Eye, Pencil, AlertCircle } from 'lucide-react';
+import { Store, Plus, Eye, Pencil, AlertCircle, Package, DollarSign } from 'lucide-react';
 import { Button } from '@/components/comman/ui/Button';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { useMyStores } from '@/hooks/store/useMyStores';
@@ -13,16 +13,17 @@ import {
   EmptyState,
   Card,
   SkeletonBox,
+  MetricCard,
 } from '@/components/comman/ui';
-import type { MyStoreItem } from '@/api/commerce/store';
+import type { MyStoreItem } from '@/api/services/store';
 
 // ── Store cell: logo + name ───────────────────────────────────────────────────
 function StoreCell({ store }: { store: MyStoreItem }) {
   return (
     <div className="flex items-center gap-[10px]">
-      <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0 overflow-hidden border border-[#EDEBE2]">
+      <div className="w-8 h-8 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0 overflow-hidden border border-[#edebe2]">
         {store.logo
-          ? <img src={store.logo} alt={store.name} className="w-full h-full object-cover" />
+          ? <img loading="lazy" decoding="async" src={store.logo} alt={store.name} className="w-full h-full object-cover" />
           : <Store size={15} className="text-brand-orange" />}
       </div>
       <span className="font-semibold text-charcoal">{store.name}</span>
@@ -33,7 +34,7 @@ function StoreCell({ store }: { store: MyStoreItem }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function SellerStoreList() {
   const navigate = useNavigate();
-  const { stores, loading, error } = useMyStores();
+  const { stores, summary, loading, error, refetch } = useMyStores();
   usePageTitle('My Stores');
 
   const PER_PAGE = 10;
@@ -64,6 +65,14 @@ export function SellerStoreList() {
     {
       key: 'plan', header: 'Plan',
       render: s => <span className="text-slate">{s.plan ?? 'Starter'}</span>,
+    },
+    {
+      key: 'productCount', header: 'Products', align: 'right',
+      render: s => <span className="font-semibold text-charcoal">{s.productCount.toLocaleString()}</span>,
+    },
+    {
+      key: 'totalSalesUSD', header: 'Revenue', align: 'right',
+      render: s => <span className="font-semibold text-charcoal">${s.totalSalesUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
     },
     {
       key: 'aiCredits', header: 'AI Credits', align: 'right',
@@ -99,20 +108,35 @@ export function SellerStoreList() {
         title="My Stores"
         subtitle="Manage all your stores from one place."
         actions={
-          <Button variant="primary" size="sm" onClick={() => navigate('/onboarding')}>
+          <Button variant="primary" size="sm" onClick={() => navigate('/onboard')}>
             <Plus size={14} className="mr-1 inline align-middle" />
             New Store
           </Button>
         }
       />
 
-      <div className="px-7 py-6">
+      <div className="px-4 lg:px-7 py-6 flex flex-col gap-5">
+
+        {/* Summary */}
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+          <MetricCard label="Total Stores" value={summary.storeCount} icon={<Store size={16} />} loading={loading} />
+          <MetricCard label="Total Products" value={summary.totalProducts.toLocaleString()} icon={<Package size={16} />} loading={loading} />
+          <MetricCard
+            label="Total Revenue"
+            value={`$${summary.totalRevenueUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            icon={<DollarSign size={16} />}
+            loading={loading}
+          />
+        </div>
 
         {/* Error */}
         {error && (
-          <div className="bg-[#FFF0F0] border border-[#FECACA] rounded-[10px] px-4 py-3 flex items-center gap-3 mb-4">
-            <AlertCircle size={16} className="text-error shrink-0" />
-            <span className="text-[13px] text-error">{error}</span>
+          <div className="bg-error-bg border border-error-border rounded-[10px] px-4 py-3 flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle size={16} className="text-error shrink-0" />
+              <span className="text-[13px] text-error">{error}</span>
+            </div>
+            <Button variant="outline" size="xs" onClick={refetch}>Try again</Button>
           </div>
         )}
 
@@ -122,7 +146,7 @@ export function SellerStoreList() {
             icon={<Store size={30} className="text-brand-orange opacity-55" />}
             title="No stores yet"
             description="Create your first store and start selling digital products, courses, and more."
-            action={{ label: 'Create Your First Store', onClick: () => navigate('/onboarding'), icon: <Plus size={14} /> }}
+            action={{ label: 'Create Your First Store', onClick: () => navigate('/onboard'), icon: <Plus size={14} /> }}
           />
         )}
 

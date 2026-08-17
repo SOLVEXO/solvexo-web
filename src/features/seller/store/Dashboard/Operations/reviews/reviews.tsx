@@ -1,206 +1,385 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
+import {
+  StarRating, EmptyState, SkeletonBox, Card, Badge,
+  Table, type TableColumn, ActionMenu, type ActionMenuItem,
+  Modal, Button,
+} from '@/components/comman/ui';
+import { Star, Flag, MessageSquare, Trash2, ImageIcon } from 'lucide-react';
+import {
+  apiGetStoreReviews, apiReplyToReview, apiEditReply, apiFlagReview, apiUnflagReview, apiModerateDeleteReview,
+  type StoreReviewEntry, type StoreReviewStats,
+} from '@/api/services/rating';
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-interface Review {
-  id: number; name: string; initials: string; stars: number;
-  product: string; date: string; text: string; reply: string | null; flaggable?: boolean;
+const AVATAR_PALETTE = ['#FDECEA:#C0392B', '#EAF3FB:#2156A8', '#EAF7EF:#1E7A3C', '#FFF4E5:#B36200', '#E5F4FB:#1A6A8A'];
+function avatarStyle(name: string) {
+  const idx = name.charCodeAt(0) % AVATAR_PALETTE.length;
+  const [bg, color] = AVATAR_PALETTE[idx].split(':');
+  return { bg, color };
 }
 
-const REVIEWS: Review[] = [
-  { id: 1, name: 'Sarah M.',  initials: 'SM', stars: 5, product: 'Grade 5 Math Bundle',      date: 'May 18', text: 'Absolutely incredible resource. My students improved so much this year using this curriculum. Worth every penny!', reply: null },
-  { id: 2, name: 'David R.',  initials: 'DR', stars: 5, product: 'Fractions Mastery Kit',    date: 'May 14', text: 'Excellent kit with clear instructions and engaging materials. My class loved it!', reply: "Thank you David! So glad it's working well for your class. See you next year!" },
-  { id: 3, name: 'Lena K.',   initials: 'LK', stars: 2, product: 'Handmade Ceramic Mug',     date: 'May 12', text: 'Nice quality but arrived with a small chip. Seller resolved it quickly with a replacement.', reply: 'So sorry about that Lena! A replacement is on its way. Thank you for your patience.' },
-  { id: 4, name: 'Tom B.',    initials: 'TB', stars: 5, product: 'Brand Identity Figma Kit', date: 'May 10', text: 'Professional, well-organized, and saved me hours of work. Highly recommend!', reply: null },
-  { id: 5, name: 'Mike S.',   initials: 'MS', stars: 2, product: 'Lo-Fi Music Pack',         date: 'May 6',  text: 'Some tracks were not as described. Expected longer loops but many are under 30 seconds.', reply: null, flaggable: true },
-];
+const PER_PAGE = 10;
 
-const STAR_BREAKDOWN = [
-  { stars: 5, pct: 78, count: '661' },
-  { stars: 4, pct: 14, count: '118' },
-  { stars: 3, pct: 5,  count: '42'  },
-  { stars: 2, pct: 2,  count: '17'  },
-  { stars: 1, pct: 1,  count: '9'   },
-];
-
-const avatarColors: Record<string, { bg: string; color: string }> = {
-  SM: { bg: '#FDECEA', color: '#C0392B' }, DR: { bg: '#EAF3FB', color: '#2156A8' },
-  LK: { bg: '#EAF7EF', color: '#1E7A3C' }, TB: { bg: '#FFF4E5', color: '#B36200' },
-  MS: { bg: '#E5F4FB', color: '#1A6A8A' },
-};
-
-// ── Stars ─────────────────────────────────────────────────────────────────────
-function Stars({ count, large }: { count: number; large?: boolean }) {
-  const size = large ? 20 : 13;
-  return (
-    <span style={{ fontSize: size, lineHeight: 1 }}>
-      {[1,2,3,4,5].map(i => (
-        <span key={i} style={{ color: i <= count ? '#D97757' : '#E8E6DC' }}>★</span>
-      ))}
-    </span>
-  );
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
 export function StoreReviews() {
   usePageTitle('Reviews');
-  const [ratingFilter, setRatingFilter] = useState('');
-  const [sortFilter,   setSortFilter]   = useState('');
+  const { storeId } = useStoreWorkspace();
 
-  const filtered = REVIEWS.filter(r => {
-    if (ratingFilter && String(r.stars) !== ratingFilter) return false;
-    if (sortFilter === 'replied'   && !r.reply)     return false;
-    if (sortFilter === 'unreplied' && r.reply)       return false;
-    if (sortFilter === 'flagged'   && !r.flaggable)  return false;
+  const [reviews, setReviews] = useState<StoreReviewEntry[]>([]);
+  const [stats, setStats]     = useState<StoreReviewStats | null>(null);
+  const [page, setPage]       = useState(1);
+  const [total, setTotal]     = useState(0);
+  const [ratingFilter, setRatingFilter] = useState('');
+  const [sortFilter, setSortFilter]     = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const [replyingTo, setReplyingTo] = useState<StoreReviewEntry | null>(null);
+  const [editingReplyOf, setEditingReplyOf] = useState<StoreReviewEntry | null>(null);
+  const [actionError, setActionError] = useState('');
+  const [deletingReview, setDeletingReview] = useState<StoreReviewEntry | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    apiGetStoreReviews(storeId, { page, rating: ratingFilter ? parseInt(ratingFilter) : undefined })
+      .then(res => {
+        if (cancelled) return;
+        setReviews(res.data.reviews ?? []);
+        setStats(res.data.stats);
+        setTotal(res.data.pagination.total);
+      })
+      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load reviews.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [storeId, page, ratingFilter, refreshKey]);
+
+  function reload() { setRefreshKey(k => k + 1); }
+
+  const filtered = reviews.filter(r => {
+    if (sortFilter === 'replied'   && !r.sellerReply) return false;
+    if (sortFilter === 'unreplied' && r.sellerReply)   return false;
+    if (sortFilter === 'flagged'   && !r.isFlagged)    return false;
     return true;
   });
 
+  async function handleFlag(r: StoreReviewEntry) {
+    setActionError('');
+    try { await apiFlagReview(r.reviewId); reload(); }
+    catch (err) { setActionError(err instanceof Error ? err.message : 'Failed to flag review.'); }
+  }
+
+  async function handleUnflag(r: StoreReviewEntry) {
+    setActionError('');
+    try { await apiUnflagReview(r.reviewId); reload(); }
+    catch (err) { setActionError(err instanceof Error ? err.message : 'Failed to unflag review.'); }
+  }
+
+  async function confirmModerateDelete() {
+    if (!deletingReview) return;
+    setDeleteBusy(true);
+    setActionError('');
+    try {
+      await apiModerateDeleteReview(deletingReview.reviewId);
+      setDeletingReview(null);
+      reload();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to remove review.');
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
+
+  const columns: TableColumn<StoreReviewEntry>[] = [
+    {
+      key: 'sno', header: 'S.No', width: '56px',
+      render: (_r, i) => <span className="text-[12px] text-slate">{(page - 1) * PER_PAGE + i + 1}</span>,
+    },
+    {
+      key: 'customer', header: 'Customer', width: '220px',
+      render: r => {
+        const av = avatarStyle(r.customer.name);
+        const initials = r.customer.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        return (
+          <div className="flex items-center gap-[10px]">
+            <div className="w-8 h-8 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0" style={{ background: av.bg, color: av.color }}>
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-charcoal truncate">{r.customer.name}</p>
+              {r.isVerifiedPurchase && <p className="text-[10px] text-success font-medium">Verified Purchase</p>}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'rating', header: 'Rating', width: '110px',
+      render: r => r.rating != null ? <StarRating value={r.rating} size={12} /> : <span className="text-slate text-[12px]">—</span>,
+    },
+    {
+      key: 'review', header: 'Review',
+      render: r => (
+        <div className="max-w-[360px]">
+          {(r.comments ?? []).length > 0 ? (
+            <p className="text-[13px] text-charcoal leading-[1.5] line-clamp-2">{r.comments[0].text}</p>
+          ) : (
+            <span className="text-[12px] text-slate italic">No comment</span>
+          )}
+          {(r.media ?? []).length > 0 && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-slate mt-1">
+              <ImageIcon size={11} /> {r.media.length} photo{r.media.length > 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'status', header: 'Status', width: '150px',
+      render: r => (
+        <div className="flex flex-wrap gap-1">
+          {r.isFlagged && <Badge color="red">Flagged</Badge>}
+          {r.sellerReply ? <Badge color="green">Replied</Badge> : <Badge color="gray">Awaiting reply</Badge>}
+        </div>
+      ),
+    },
+    {
+      key: 'createdAt', header: 'Date', width: '110px',
+      render: r => <span className="text-[12px] text-slate">{new Date(r.createdAt).toLocaleDateString()}</span>,
+    },
+    {
+      key: 'actions', header: '', align: 'right', width: '60px',
+      render: r => {
+        const items: ActionMenuItem[] = r.sellerReply
+          ? [
+              { label: 'Edit Reply', icon: <MessageSquare size={13} />, onClick: () => setEditingReplyOf(r) },
+              r.isFlagged
+                ? { label: 'Unflag', onClick: () => handleUnflag(r) }
+                : { label: 'Flag Review', icon: <Flag size={13} />, onClick: () => handleFlag(r) },
+              { label: 'Remove', icon: <Trash2 size={13} />, danger: true, onClick: () => { setDeletingReview(r); setActionError(''); } },
+            ]
+          : [
+              { label: 'Reply', icon: <MessageSquare size={13} />, onClick: () => setReplyingTo(r) },
+              r.isFlagged
+                ? { label: 'Unflag', onClick: () => handleUnflag(r) }
+                : { label: 'Flag Review', icon: <Flag size={13} />, onClick: () => handleFlag(r) },
+              { label: 'Remove', icon: <Trash2 size={13} />, danger: true, onClick: () => { setDeletingReview(r); setActionError(''); } },
+            ];
+        return <ActionMenu items={items} />;
+      },
+    },
+  ];
+
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="Reviews & Reputation"
         subtitle="Monitor, respond to, and learn from customer feedback."
-        actions={
-          <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
-            Export Reviews
-          </button>
-        }
       />
 
-      <div className="px-7 pb-8 pt-5 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 pb-8 pt-5 flex flex-col gap-5">
+
+        {actionError && (
+          <div className="flex items-center justify-between gap-3 text-[13px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">
+            <span>{actionError}</span>
+            <button onClick={() => setActionError('')} className="text-[11px] font-semibold text-error bg-transparent border-none cursor-pointer shrink-0">Dismiss</button>
+          </div>
+        )}
 
         {/* ── Top 2-col ── */}
-        <div className="grid gap-4" style={{ gridTemplateColumns: '300px 1fr' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4">
 
           {/* Rating Summary */}
-          <div className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-            <div className="text-center mb-5">
-              <p className="text-[48px] font-bold text-[#141413] leading-none mb-1.5">4.8</p>
-              <div className="mb-1.5"><Stars count={5} large /></div>
-              <p className="text-xs text-[#8C8A82]">Based on 847 reviews</p>
-            </div>
-            <div className="flex flex-col gap-2">
-              {STAR_BREAKDOWN.map(row => (
-                <div key={row.stars} className="flex items-center gap-2">
-                  <span className="text-xs text-[#4A4945] w-7 shrink-0">{row.stars} ★</span>
-                  <div className="flex-1 h-1.5 rounded-[3px] bg-[#E8E6DC] overflow-hidden">
-                    <div className="h-full rounded-[3px] bg-brand-orange" style={{ width: `${row.pct}%` }} />
-                  </div>
-                  <span className="text-[11px] text-[#8C8A82] w-7 text-right shrink-0">{row.pct}%</span>
+          <Card>
+            {loading && !stats ? (
+              <div className="flex flex-col gap-3">
+                <SkeletonBox height={70} width="100%" rounded="8px" />
+                <SkeletonBox height={90} width="100%" rounded="8px" />
+              </div>
+            ) : (
+              <>
+                <div className="text-center mb-5">
+                  <p className="text-[48px] font-bold text-charcoal leading-none mb-1.5">{stats?.averageRating.toFixed(1) ?? '0.0'}</p>
+                  <div className="mb-1.5 flex justify-center"><StarRating value={stats?.averageRating ?? 0} size={20} /></div>
+                  <p className="text-xs text-slate">Based on {stats?.totalReviews ?? 0} reviews</p>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="flex flex-col gap-2">
+                  {(['5', '4', '3', '2', '1'] as const).map(star => (
+                    <div key={star} className="flex items-center gap-2">
+                      <span className="text-xs text-graphite w-7 shrink-0">{star} ★</span>
+                      <div className="flex-1 h-1.5 rounded-[3px] bg-bone overflow-hidden">
+                        <div className="h-full rounded-[3px] bg-brand-orange" style={{ width: stats?.ratingBreakdown[star] ?? '0%' }} />
+                      </div>
+                      <span className="text-[11px] text-slate w-7 text-right shrink-0">{stats?.ratingBreakdown[star] ?? '0%'}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </Card>
 
           {/* Reputation Insights */}
-          <div className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-            <p className="text-[13px] font-semibold text-[#141413] mb-4">Reputation Insights</p>
-            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-              {[
-                { value: '72%',     label: 'Response Rate',      sub: 'Reply to all reviews',  color: '#2D8A4E' },
-                { value: '4.2 hrs', label: 'Avg Response Time',  sub: 'Within 24hrs is great', color: '#1A72C2' },
-                { value: '78%',     label: '5-Star Rate',         sub: 'Industry avg: 65%',     color: '#2D8A4E' },
-                { value: '38',      label: 'Reviews This Month',  sub: '+12 vs last month',     color: '#141413' },
-                { value: '1',       label: 'Flagged Reviews',     sub: '1 under moderation',    color: '#C08B1E' },
-                { value: '82',      label: 'Net Promoter',        sub: 'Excellent',             color: '#2D8A4E' },
-              ].map(item => (
-                <div key={item.label} className="bg-[#FAF9F5] rounded-[10px] px-4 py-[14px]">
-                  <p className="text-[22px] font-bold leading-[1.15]" style={{ color: item.color }}>{item.value}</p>
-                  <p className="text-xs font-medium text-[#4A4945] mt-1">{item.label}</p>
-                  <p className="text-[11px] text-[#8C8A82] mt-0.5">{item.sub}</p>
-                </div>
-              ))}
+          <Card>
+            <p className="text-[13px] font-semibold text-charcoal mb-4">Reputation Insights</p>
+            {loading && !stats ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {Array.from({ length: 6 }).map((_, i) => <SkeletonBox key={i} height={74} rounded="10px" />)}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                  { value: stats?.responseRate ?? '0%',    label: 'Response Rate',     sub: 'Reply to all reviews', color: '#2D8A4E' },
+                  { value: stats?.avgResponseTime ?? '—',  label: 'Avg Response Time', sub: 'Within 24hrs is great', color: '#1A72C2' },
+                  { value: stats?.fiveStarRate ?? '0%',    label: '5-Star Rate',       sub: '',                      color: '#2D8A4E' },
+                  { value: String(stats?.reviewsThisMonth ?? 0), label: 'Reviews This Month', sub: '', color: '#141413' },
+                  { value: String(stats?.flaggedReviews ?? 0),   label: 'Flagged Reviews',    sub: 'Under moderation', color: '#C08B1E' },
+                  { value: String(stats?.totalReviews ?? 0),     label: 'Total Reviews',      sub: '',                 color: '#141413' },
+                ].map(item => (
+                  <div key={item.label} className="bg-cream rounded-[10px] px-4 py-[14px]">
+                    <p className="text-[22px] font-bold leading-[1.15]" style={{ color: item.color }}>{item.value}</p>
+                    <p className="text-xs font-medium text-graphite mt-1">{item.label}</p>
+                    {item.sub && <p className="text-[11px] text-slate mt-0.5">{item.sub}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* ── Reviews table ── */}
+        <Card padding="none">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-[10px] px-5 py-4 border-b border-bone">
+            <select
+              value={ratingFilter}
+              onChange={e => { setRatingFilter(e.target.value); setPage(1); }}
+              className="w-full sm:w-[150px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
+            >
+              <option value="">All Ratings</option>
+              <option value="5">5 Stars</option>
+              <option value="4">4 Stars</option>
+              <option value="3">3 Stars</option>
+              <option value="2">2 Stars</option>
+              <option value="1">1 Star</option>
+            </select>
+            <select
+              value={sortFilter}
+              onChange={e => setSortFilter(e.target.value)}
+              className="w-full sm:w-[140px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
+            >
+              <option value="">All</option>
+              <option value="replied">Replied</option>
+              <option value="unreplied">Unreplied</option>
+              <option value="flagged">Flagged</option>
+            </select>
+          </div>
+
+          {loading ? (
+            <div className="flex flex-col gap-2 p-5">
+              {[1, 2, 3, 4].map(i => <SkeletonBox key={i} height={56} rounded="8px" />)}
             </div>
+          ) : error ? (
+            <p className="text-[13px] text-error p-5">{error}</p>
+          ) : filtered.length === 0 ? (
+            <EmptyState icon={<Star size={28} className="text-brand-orange" />} title="No reviews found" description="Reviews matching your filters will show up here." />
+          ) : (
+            <Table
+              columns={columns}
+              data={filtered}
+              keyExtractor={r => r.reviewId}
+              pagination={{ page, total, perPage: PER_PAGE, onChange: setPage, label: 'reviews' }}
+            />
+          )}
+        </Card>
+      </div>
+
+      {replyingTo && (
+        <ReplyModal
+          title="Reply to Review"
+          initialText=""
+          onClose={() => setReplyingTo(null)}
+          onSubmit={async text => { await apiReplyToReview(replyingTo.reviewId, text); setReplyingTo(null); reload(); }}
+        />
+      )}
+
+      {editingReplyOf?.sellerReply && (
+        <ReplyModal
+          title="Edit Reply"
+          initialText={editingReplyOf.sellerReply.text}
+          onClose={() => setEditingReplyOf(null)}
+          onSubmit={async text => { await apiEditReply(editingReplyOf.reviewId, text); setEditingReplyOf(null); reload(); }}
+        />
+      )}
+
+      {deletingReview && (
+        <Modal title="Remove Review" onClose={() => setDeletingReview(null)} mobileSheet footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeletingReview(null)} disabled={deleteBusy}>Cancel</Button>
+            <Button variant="danger" onClick={confirmModerateDelete} loading={deleteBusy}>Remove Review</Button>
+          </>
+        }>
+          <p className="text-[13px] text-charcoal leading-[1.6]">
+            Remove this review from <strong>{deletingReview.customer.name}</strong> permanently? This cannot be undone.
+          </p>
+          {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
+        </Modal>
+      )}
+    </>
+  );
+}
+
+function ReplyModal({
+  title, initialText, onClose, onSubmit,
+}: {
+  title: string;
+  initialText: string;
+  onClose: () => void;
+  onSubmit: (text: string) => Promise<void>;
+}) {
+  const [text, setText] = useState(initialText);
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState('');
+
+  async function submit() {
+    if (!text.trim()) { setError('Reply cannot be empty.'); return; }
+    setError('');
+    setSaving(true);
+    try {
+      await onSubmit(text.trim());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save reply.');
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-[420px] bg-white rounded-2xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-bone">
+          <p className="text-[15px] font-bold text-charcoal">{title}</p>
+        </div>
+        <div className="px-5 py-4">
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value)}
+            rows={4}
+            placeholder="Write your reply…"
+            className="w-full border border-bone rounded-lg px-3 py-2 text-[13px] text-charcoal outline-none box-border resize-vertical mb-3"
+          />
+          {error && <p className="text-[12px] text-error mb-3">{error}</p>}
+          <div className="flex gap-2">
+            <button onClick={onClose} className="flex-1 py-[9px] bg-white border border-bone rounded-lg text-[13px] text-graphite cursor-pointer">
+              Cancel
+            </button>
+            <button onClick={submit} disabled={saving} className="flex-1 py-[9px] bg-brand-orange border-0 rounded-lg text-[13px] font-semibold text-white cursor-pointer disabled:opacity-50">
+              {saving ? 'Saving…' : 'Submit'}
+            </button>
           </div>
         </div>
-
-        {/* ── Filters ── */}
-        <div className="flex items-center gap-[10px]">
-          <select
-            value={ratingFilter}
-            onChange={e => setRatingFilter(e.target.value)}
-            className="w-[150px] px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer"
-          >
-            <option value="">All Ratings</option>
-            <option value="5">5 Stars</option>
-            <option value="4">4 Stars</option>
-            <option value="3">3 Stars</option>
-            <option value="2">2 Stars</option>
-            <option value="1">1 Star</option>
-          </select>
-          <select
-            value={sortFilter}
-            onChange={e => setSortFilter(e.target.value)}
-            className="w-[140px] px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer"
-          >
-            <option value="">All</option>
-            <option value="replied">Replied</option>
-            <option value="unreplied">Unreplied</option>
-            <option value="flagged">Flagged</option>
-          </select>
-        </div>
-
-        {/* ── Reviews list ── */}
-        <div className="flex flex-col gap-[14px]">
-          {filtered.map(review => {
-            const av = avatarColors[review.initials] ?? { bg: '#F0EEE6', color: '#5A5852' };
-            return (
-              <div key={review.id} className="bg-white border border-[#E8E6DC] rounded-[10px] px-[22px] py-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-[34px] h-[34px] rounded-full text-[10px] font-bold flex items-center justify-center shrink-0"
-                      style={{ background: av.bg, color: av.color }}
-                    >
-                      {review.initials}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[13px] font-bold text-[#141413]">{review.name}</span>
-                        <Stars count={review.stars} />
-                        <span className="px-2 py-[2px] rounded-[5px] text-[11px] font-medium bg-[#F0EEE6] text-[#5A5852]">{review.product}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-xs text-[#8C8A82] shrink-0">{review.date}</span>
-                </div>
-
-                {/* Review text */}
-                <p className="text-[13px] text-[#4A4945] leading-[1.6] mb-3">{review.text}</p>
-
-                {/* Existing reply */}
-                {review.reply && (
-                  <div className="bg-[#FBECE4] rounded-[10px] px-[14px] py-3 mb-3">
-                    <p className="text-[11px] font-semibold text-[#B95A3A] mb-1.5">Your reply:</p>
-                    <p className="text-[13px] text-[#4A4945] leading-[1.6]">{review.reply}</p>
-                    <div className="mt-2.5">
-                      <button className="px-3 py-1 bg-white border border-[#E8E6DC] rounded-[6px] text-xs text-[#4A4945] cursor-pointer">
-                        Edit Reply
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Actions */}
-                {!review.reply && (
-                  <div className="flex items-center gap-2">
-                    <button className="px-[14px] py-[5px] bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">
-                      Reply
-                    </button>
-                    {review.flaggable && (
-                      <button className="px-[14px] py-[5px] bg-[#FDECEA] border border-[#F5C6C2] rounded-[7px] text-xs font-medium text-[#C0392B] cursor-pointer">
-                        Flag Review
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -1,217 +1,729 @@
+import { useCallback, useEffect, useState } from 'react';
+import { clsx } from 'clsx';
+import { ArrowRight, Download, Plus, X, Star, AlertTriangle } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
-import { ArrowRight } from 'lucide-react';
+import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
+import { Button } from '@/components/comman/ui/Button';
+import { Modal } from '@/components/comman/ui/Modal';
+import { Badge } from '@/components/comman/ui/Badge';
+import type { BadgeColor } from '@/types';
+import { MetricCard } from '@/components/comman/ui/MetricCard';
+import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
+import { currencySymbol } from '@/utils/currency';
+import {
+  apiGetFinanceDashboard, apiGetFinanceTransactions, apiExportFinanceTransactions,
+  apiRequestPayout, apiGetPayouts, apiGetPayoutById,
+  apiGetPayoutMethods, apiAddPayoutMethod, apiUpdatePayoutMethod, apiSetDefaultPayoutMethod,
+  apiDeletePayoutMethod, apiGetPayoutSchedule, apiUpdatePayoutSchedule,
+  apiGetTaxReports, apiGenerateTaxReport,
+  type FinanceDashboard, type Transaction, type TransactionType, type PayoutMethod,
+  type PayoutMethodType, type PayoutSchedule, type TaxReport, type Payout, type PayoutStatus,
+} from '@/api/services/finance';
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-const TRANSACTIONS = [
-  { date: 'May 20', description: 'Payout — Bank Transfer',       type: 'Payout', amount: '-$2,840.00', positive: false, balance: '$320.40'   },
-  { date: 'May 18', description: 'Sale — Grade 5 Math Bundle × 6',type: 'Sale',   amount: '+$294.00',   positive: true,  balance: '$3,160.40' },
-  { date: 'May 17', description: 'Sale — Fractions Kit × 3',      type: 'Sale',   amount: '+$54.00',    positive: true,  balance: '$2,866.40' },
-  { date: 'May 17', description: 'Platform Fee (8%)',              type: 'Fee',    amount: '-$27.84',    positive: false, balance: '$2,812.40' },
-  { date: 'May 16', description: 'Refund — Order #8815',           type: 'Refund', amount: '-$12.00',    positive: false, balance: '$2,840.24' },
-  { date: 'May 15', description: 'Sale — Ceramic Mug Set',         type: 'Sale',   amount: '+$58.00',    positive: true,  balance: '$2,852.24' },
-];
-
-const typeStyle: Record<string, { bg: string; color: string }> = {
-  Sale:   { bg: '#E3F4EA', color: '#1E7A3C' },
-  Payout: { bg: '#F0EEE6', color: '#5A5852' },
-  Fee:    { bg: '#FFF4DC', color: '#B36200' },
-  Refund: { bg: '#FDECEA', color: '#C0392B' },
+const TYPE_STYLE: Record<TransactionType, { color: BadgeColor; label: string }> = {
+  sale:       { color: 'green',  label: 'Sale' },
+  payout:     { color: 'gray',   label: 'Payout' },
+  fee:        { color: 'yellow', label: 'Fee' },
+  refund:     { color: 'red',    label: 'Refund' },
+  adjustment: { color: 'blue',   label: 'Adjustment' },
 };
 
-const TAX_REPORTS = [
-  { name: 'Q1 2025 Summary', period: 'Jan–Mar',  date: 'Generated Apr 1, 2025'  },
-  { name: 'Q4 2024 Summary', period: 'Oct–Dec',  date: 'Generated Jan 2, 2025'  },
-  { name: 'Annual 2024',     period: 'Full Year', date: 'Generated Feb 5, 2025' },
-];
+const METHOD_LABEL: Record<PayoutMethodType, string> = {
+  bank_transfer: 'Bank Transfer', paypal: 'PayPal', stripe: 'Stripe',
+};
 
-const metrics = [
-  { label: 'This Month Revenue', value: '$9,100',  trend: '+23% vs last month', sub: null,              trendUp: true  },
-  { label: 'Platform Fees',      value: '$728',    trend: null,                 sub: '8% of revenue',   trendUp: false },
-  { label: 'Total Paid Out',     value: '$24,800', trend: null,                 sub: 'All time',         trendUp: false },
-  { label: 'Pending Tax',        value: '$1,240',  trend: null,                 sub: 'Est. for Q2 2025', trendUp: false },
-] as const;
+const PAYOUT_STATUS_COLOR: Record<PayoutStatus, BadgeColor> = {
+  pending:    'yellow',
+  processing: 'blue',
+  completed:  'green',
+  failed:     'red',
+};
+
+// Every wallet/balance/transaction figure must be shown in ITS OWN currency
+// — never summed across a seller's separate PKR/USD wallets into one
+// misleading number (see FinanceDashboard.wallets, StoreFinance's wallet
+// selector).
+function fmt(n: number, currency?: string | null) { return `${currencySymbol(currency)}${n.toFixed(2)}`; }
+
+// ── Payout method modal (add or edit) ────────────────────────────────────────
+function PayoutMethodModal({
+  onClose, onSaved, storeId, editing, defaultCurrency,
+}: { onClose: () => void; onSaved: () => void; storeId: string; editing?: PayoutMethod | null; defaultCurrency?: string }) {
+  const [type, setType] = useState<PayoutMethodType>(editing?.type ?? 'bank_transfer');
+  const [currency, setCurrency] = useState(editing?.currency ?? defaultCurrency ?? 'PKR');
+  const [bankName, setBankName] = useState(editing?.bankName ?? '');
+  const [accountHolder, setAccountHolder] = useState(editing?.accountHolder ?? '');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [routingNumber, setRoutingNumber] = useState(editing?.routingNumber ?? '');
+  const [externalAccountId, setExternalAccountId] = useState(editing?.externalAccountId ?? '');
+  const [setAsDefault, setSetAsDefault] = useState(editing?.isDefault ?? true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSave() {
+    setSaving(true); setError('');
+    const payload = {
+      type, currency, setAsDefault,
+      ...(type === 'bank_transfer'
+        ? { bankName, accountHolder, ...(accountNumber ? { accountNumber } : {}), routingNumber }
+        : { externalAccountId }),
+    };
+    try {
+      if (editing) await apiUpdatePayoutMethod(storeId, editing._id, payload);
+      else await apiAddPayoutMethod(storeId, payload);
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save payout method.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title={editing ? 'Edit Payout Method' : 'Add Payout Method'} width={420} onClose={onClose}>
+      <div className="flex flex-col gap-3">
+        {error && <p className="text-[12px] text-error">{error}</p>}
+        <div className="flex gap-2">
+          {(['bank_transfer', 'paypal', 'stripe'] as const).map(t => (
+            <button key={t} onClick={() => setType(t)}
+              className={clsx(
+                'flex-1 px-2.5 py-2 rounded-lg text-[12px] font-semibold border cursor-pointer',
+                type === t ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-graphite',
+              )}>
+              {METHOD_LABEL[t]}
+            </button>
+          ))}
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium text-charcoal mb-1">
+            Wallet / Currency{editing && ' (locked — this method already belongs to a wallet)'}
+          </label>
+          <div className="flex gap-2">
+            {(['PKR', 'USD'] as const).map(c => (
+              <button key={c} disabled={!!editing} onClick={() => setCurrency(c)}
+                className={clsx(
+                  'flex-1 px-2.5 py-2 rounded-lg text-[12px] font-semibold border disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer',
+                  currency === c ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-graphite',
+                )}>
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+        {type === 'bank_transfer' ? (
+          <>
+            <input value={bankName} onChange={e => setBankName(e.target.value)} placeholder="Bank name"
+              className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none" />
+            <input value={accountHolder} onChange={e => setAccountHolder(e.target.value)} placeholder="Account holder name"
+              className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none" />
+            <input value={accountNumber} onChange={e => setAccountNumber(e.target.value)}
+              placeholder={editing ? `Account number (leave blank to keep ••${editing.accountLast4 ?? '----'})` : 'Account number'}
+              className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none" />
+            <input value={routingNumber} onChange={e => setRoutingNumber(e.target.value)} placeholder="Routing number"
+              className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none" />
+          </>
+        ) : (
+          <input value={externalAccountId} onChange={e => setExternalAccountId(e.target.value)}
+            placeholder={type === 'paypal' ? 'PayPal email' : 'Stripe account ID'}
+            className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none" />
+        )}
+        <label className="flex items-center gap-2 text-[12.5px] text-graphite cursor-pointer">
+          <input type="checkbox" checked={setAsDefault} onChange={e => setSetAsDefault(e.target.checked)} />
+          Set as default payout method
+        </label>
+        <Button size="sm" loading={saving} onClick={handleSave}>Save Method</Button>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Request payout modal ─────────────────────────────────────────────────────
+function RequestPayoutModal({
+  onClose, onRequested, storeId, availableBalance, currency, methods,
+}: { onClose: () => void; onRequested: () => void; storeId: string; availableBalance: number; currency: string; methods: PayoutMethod[] }) {
+  // Only methods for THIS wallet's currency are ever offered — a payout
+  // must always match the wallet it's drawn from (see backend
+  // FinanceService.requestPayout, which derives currency from the chosen
+  // method itself).
+  const eligibleMethods = methods.filter(m => m.currency === currency);
+  const defaultMethod = eligibleMethods.find(m => m.isDefault) ?? eligibleMethods[0] ?? null;
+  const [methodId, setMethodId] = useState(defaultMethod?._id ?? '');
+  const [amount, setAmount] = useState(String(availableBalance));
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit() {
+    const amt = parseFloat(amount);
+    if (!methodId) { setError('Select a payout method.'); return; }
+    if (!amt || amt < 1) { setError('Enter a valid amount.'); return; }
+    if (amt > availableBalance) { setError(`Amount exceeds available balance (${fmt(availableBalance, currency)}).`); return; }
+    setSaving(true); setError('');
+    try {
+      await apiRequestPayout(storeId, amt, methodId, notes || undefined);
+      onRequested();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to request payout.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title="Request Payout" width={420} onClose={onClose}>
+      <div className="flex flex-col gap-3">
+        {error && <p className="text-[12px] text-error">{error}</p>}
+        <p className="text-[12px] text-slate">Available balance: <span className="font-semibold text-carbon">{fmt(availableBalance, currency)}</span></p>
+        {eligibleMethods.length === 0 && methods.length > 0 && (
+          <p className="text-[11px] text-warning bg-warning-bg rounded-md px-2 py-1">
+            None of your saved payout methods are set up for {currency} — add one to withdraw this wallet.
+          </p>
+        )}
+        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Amount"
+          className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none" />
+        <select value={methodId} onChange={e => setMethodId(e.target.value)}
+          className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none bg-white">
+          <option value="">Select payout method…</option>
+          {eligibleMethods.map(m => (
+            <option key={m._id} value={m._id}>
+              {METHOD_LABEL[m.type]}{m.bankName ? ` — ${m.bankName}` : ''}{m.accountLast4 ? ` ••${m.accountLast4}` : ''}{m.isDefault ? ' (default)' : ''}
+            </option>
+          ))}
+        </select>
+        <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes (optional)"
+          className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none" />
+        <Button size="sm" loading={saving} disabled={!eligibleMethods.length} onClick={handleSubmit}>
+          {eligibleMethods.length ? 'Request Payout' : 'Add a payout method first'}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Payout schedule modal ────────────────────────────────────────────────────
+function ScheduleModal({ onClose, onSaved, storeId, schedule }: { onClose: () => void; onSaved: () => void; storeId: string; schedule: PayoutSchedule }) {
+  const [frequency, setFrequency] = useState(schedule.frequency);
+  const [minimumAmount, setMinimumAmount] = useState(String(schedule.minimumAmount));
+  const [isEnabled, setIsEnabled] = useState(schedule.isEnabled);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSave() {
+    setSaving(true); setError('');
+    try {
+      // currency must always be sent — it's what tells the backend WHICH
+      // wallet's schedule this update applies to (a store can have one
+      // schedule per currency it holds a balance in).
+      await apiUpdatePayoutSchedule(storeId, { currency: schedule.currency, frequency, minimumAmount: parseFloat(minimumAmount) || 1, isEnabled });
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update schedule.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title={`Payout Schedule — ${schedule.currency}`} width={380} onClose={onClose}>
+      <div className="flex flex-col gap-3">
+        {error && <p className="text-[12px] text-error">{error}</p>}
+        <select value={frequency} onChange={e => setFrequency(e.target.value as typeof frequency)}
+          className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none bg-white">
+          {(['daily', 'weekly', 'biweekly', 'monthly', 'manual'] as const).map(f => (
+            <option key={f} value={f}>{f[0].toUpperCase() + f.slice(1)}</option>
+          ))}
+        </select>
+        <input type="number" value={minimumAmount} onChange={e => setMinimumAmount(e.target.value)} placeholder="Minimum payout amount"
+          className="px-3 py-2 border border-bone rounded-lg text-[13px] outline-none" />
+        <label className="flex items-center gap-2 text-[12.5px] text-graphite cursor-pointer">
+          <input type="checkbox" checked={isEnabled} onChange={e => setIsEnabled(e.target.checked)} />
+          Enable automatic payouts
+        </label>
+        <Button size="sm" loading={saving} onClick={handleSave}>Save Schedule</Button>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Payout detail modal ───────────────────────────────────────────────────────
+function PayoutDetailModal({ onClose, storeId, payoutId }: { onClose: () => void; storeId: string; payoutId: string }) {
+  const [payout, setPayout] = useState<Payout | null>(null);
+  useEffect(() => { apiGetPayoutById(storeId, payoutId).then(setPayout).catch(() => {}); }, [storeId, payoutId]);
+
+  return (
+    <Modal title="Payout Details" width={380} onClose={onClose}>
+      {!payout ? (
+        <SkeletonBox height={120} rounded="8px" />
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          {[
+            ['Amount', fmt(payout.amount, payout.currency)],
+            ['Status', payout.status ? payout.status[0].toUpperCase() + payout.status.slice(1) : '—'],
+            ['Method', payout.payoutMethodSnapshot ? `${METHOD_LABEL[payout.payoutMethodSnapshot.type as PayoutMethodType] ?? payout.payoutMethodSnapshot.type}${payout.payoutMethodSnapshot.accountLast4 ? ` ••${payout.payoutMethodSnapshot.accountLast4}` : ''}` : '—'],
+            ['Requested', new Date(payout.createdAt).toLocaleString()],
+            ['Processed', payout.processedAt ? new Date(payout.processedAt).toLocaleString() : '—'],
+            ['Notes', payout.notes ?? '—'],
+            ...(payout.failureReason ? [['Failure reason', payout.failureReason]] : []),
+          ].map(([label, val]) => (
+            <div key={label} className="flex justify-between items-start gap-3">
+              <span className="text-xs text-slate shrink-0">{label}</span>
+              <span className="text-xs font-medium text-graphite text-right">{val}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Modal>
+  );
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function StoreFinance() {
   usePageTitle('Finance');
+  const { storeId } = useStoreWorkspace();
+
+  const [dashboard, setDashboard] = useState<FinanceDashboard | null>(null);
+  // Which wallet/currency is currently shown — a seller can hold more than
+  // one (see FinanceDashboard.wallets); never summed into a single number.
+  const [activeCurrency, setActiveCurrency] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [txPage, setTxPage] = useState(1);
+  const [txTotal, setTxTotal] = useState(0);
+  const [txType, setTxType] = useState<TransactionType | ''>('');
+  const [methods, setMethods] = useState<PayoutMethod[]>([]);
+  const [schedule, setSchedule] = useState<PayoutSchedule | null>(null);
+  const [taxReports, setTaxReports] = useState<TaxReport[]>([]);
+  const [recentPayouts, setRecentPayouts] = useState<Payout[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [generatingTax, setGeneratingTax] = useState(false);
+
+  const transactionColumns: TableColumn<Transaction>[] = [
+    { key: 'createdAt', header: 'Date', render: t => <span className="text-slate whitespace-nowrap">{new Date(t.createdAt).toLocaleDateString()}</span> },
+    { key: 'description', header: 'Description', render: t => <span className="text-graphite">{t.description}</span> },
+    {
+      key: 'type', header: 'Type',
+      render: t => <Badge color={TYPE_STYLE[t.type].color}>{TYPE_STYLE[t.type].label}</Badge>,
+    },
+    {
+      key: 'amount', header: 'Amount',
+      render: t => <span className={clsx('font-semibold whitespace-nowrap', t.amount >= 0 ? 'text-success' : 'text-error')}>{t.amount >= 0 ? '+' : ''}{fmt(t.amount, t.currency)}</span>,
+    },
+    { key: 'balanceAfter', header: 'Balance', render: t => <span className="font-medium text-carbon whitespace-nowrap">{fmt(t.balanceAfter, t.currency)}</span> },
+  ];
+
+  const [methodModal, setMethodModal] = useState(false);
+  const [editingMethod, setEditingMethod] = useState<PayoutMethod | null>(null);
+  const [payoutModal, setPayoutModal] = useState(false);
+  const [scheduleModal, setScheduleModal] = useState(false);
+  const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
+  const [deletingMethodId, setDeletingMethodId] = useState<string | null>(null);
+  const [deleteMethodBusy, setDeleteMethodBusy] = useState(false);
+  const [deleteMethodError, setDeleteMethodError] = useState('');
+
+  // Dashboard/methods/tax-reports are currency-agnostic reads (the dashboard
+  // itself returns every wallet; tax reports already list all currencies).
+  // Schedule and recent-payouts are PER-WALLET, though, so they're fetched
+  // separately below, once the active wallet is actually known — a
+  // wallet-scoped fetch fired before we know which currency is selected
+  // would silently always return the USD one (the backend's own default).
+  const loadCore = useCallback(() => {
+    if (!storeId) return;
+    setLoading(true); setError('');
+    Promise.all([
+      apiGetFinanceDashboard(storeId),
+      apiGetPayoutMethods(storeId),
+      apiGetTaxReports(storeId),
+    ])
+      .then(([d, m, t]) => {
+        setDashboard(d);
+        setActiveCurrency(prev => prev && d.wallets.some(w => w.currency === prev) ? prev : (d.wallets[0]?.currency ?? null));
+        setMethods(m ?? []); setTaxReports(t ?? []);
+      })
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load finance data.'))
+      .finally(() => setLoading(false));
+  }, [storeId]);
+
+  const loadWalletScoped = useCallback(() => {
+    if (!storeId || !activeCurrency) return;
+    Promise.all([
+      apiGetPayoutSchedule(storeId, activeCurrency),
+      apiGetPayouts(storeId, { limit: 5, currency: activeCurrency }),
+    ])
+      .then(([s, p]) => { setSchedule(s); setRecentPayouts(p.payouts ?? []); })
+      .catch(() => {});
+  }, [storeId, activeCurrency]);
+
+  const loadTransactions = useCallback(() => {
+    if (!storeId) return;
+    apiGetFinanceTransactions(storeId, { page: txPage, limit: 10, type: txType || undefined, currency: activeCurrency || undefined })
+      .then(res => { setTransactions(res.transactions ?? []); setTxTotal(res.total); })
+      .catch(() => {});
+  }, [storeId, txPage, txType, activeCurrency]);
+
+  useEffect(loadCore, [loadCore]);
+  useEffect(loadWalletScoped, [loadWalletScoped]);
+  useEffect(loadTransactions, [loadTransactions]);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const csv = await apiExportFinanceTransactions(storeId, { type: txType || undefined });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `transactions-${storeId}.csv`; a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleGenerateTaxReport() {
+    setGeneratingTax(true);
+    try {
+      const now = new Date();
+      const q = Math.floor(now.getMonth() / 3) + 1;
+      await apiGenerateTaxReport(storeId, now.getFullYear(), `q${q}` as 'q1' | 'q2' | 'q3' | 'q4', activeCurrency || undefined);
+      const reports = await apiGetTaxReports(storeId);
+      setTaxReports(reports ?? []);
+    } finally {
+      setGeneratingTax(false);
+    }
+  }
+
+  async function handleSetDefaultMethod(methodId: string) {
+    await apiSetDefaultPayoutMethod(storeId, methodId);
+    const m = await apiGetPayoutMethods(storeId);
+    setMethods(m ?? []);
+  }
+
+  async function confirmDeleteMethod() {
+    if (!deletingMethodId) return;
+    setDeleteMethodBusy(true);
+    setDeleteMethodError('');
+    try {
+      await apiDeletePayoutMethod(storeId, deletingMethodId);
+      const m = await apiGetPayoutMethods(storeId);
+      setMethods(m ?? []);
+      setDeletingMethodId(null);
+    } catch (err) {
+      setDeleteMethodError(err instanceof Error ? err.message : 'Failed to delete payout method.');
+    } finally {
+      setDeleteMethodBusy(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
+        <SkeletonBox height={110} rounded="12px" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => <SkeletonBox key={i} height={90} rounded="10px" />)}
+        </div>
+        <div className="flex gap-4">
+          <SkeletonBox height={320} rounded="10px" className="flex-1" />
+          <SkeletonBox height={320} rounded="10px" width={280} />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !dashboard) {
+    return (
+      <div className="px-4 lg:px-7 pt-5 pb-8">
+        <div className="flex flex-col items-center gap-3 text-center bg-white border border-bone rounded-[10px] px-6 py-12">
+          <div className="w-11 h-11 rounded-full bg-error-bg flex items-center justify-center">
+            <AlertTriangle size={20} className="text-error" />
+          </div>
+          <p className="text-[13px] text-charcoal max-w-sm">{error || 'Failed to load finance data.'}</p>
+          <Button size="sm" variant="outline" onClick={loadCore}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const activeWallet = dashboard.wallets.find(w => w.currency === activeCurrency) ?? dashboard.wallets[0] ?? null;
+
+  if (!activeWallet) {
+    return (
+      <div className="px-4 lg:px-7 pt-5 pb-8">
+        <p className="text-[13px] text-slate">No sales yet — your wallet will appear here once you make your first sale.</p>
+      </div>
+    );
+  }
 
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="Finance & Payouts"
         subtitle="Track earnings, payouts, fees, and tax reports."
         actions={
           <>
-            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
-              Download Tax Report
-            </button>
-            <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
+            <Button size="sm" variant="outline" icon={<Plus size={13} />} onClick={() => setMethodModal(true)}>
+              Add Payout Method
+            </Button>
+            <Button size="sm" onClick={() => setPayoutModal(true)} disabled={activeWallet.availableBalance <= 0}>
               Request Payout
-            </button>
+            </Button>
           </>
         }
       />
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
 
-        {/* ── Balance Card ── */}
-        <div className="bg-[#141413] rounded-xl px-7 py-6 flex justify-between items-center">
+        {/* Wallet selector — a seller can hold more than one currency
+            (e.g. a PKR wallet from bank-transfer/COD sales and a USD wallet
+            from Stripe sales); these are NEVER summed into one number. */}
+        {dashboard.wallets.length > 1 && (
+          <div className="flex gap-2">
+            {dashboard.wallets.map(w => (
+              <button
+                key={w.currency}
+                onClick={() => setActiveCurrency(w.currency)}
+                className={
+                  w.currency === activeWallet.currency
+                    ? 'px-3 py-[6px] rounded-lg text-[12px] font-semibold bg-carbon text-white cursor-pointer'
+                    : 'px-3 py-[6px] rounded-lg text-[12px] font-semibold bg-white border border-bone text-charcoal cursor-pointer hover:bg-cream'
+                }
+              >
+                {w.currency} Wallet
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Balance Card */}
+        <div className="bg-carbon rounded-xl px-5 sm:px-7 py-6 flex flex-wrap justify-between items-center gap-4">
           <div>
-            <p className="text-[10px] font-semibold text-[#8C8A82] uppercase tracking-[0.1em] mb-2">
-              Available Balance
-            </p>
-            <p className="text-[32px] font-bold text-white leading-[1.1] mb-3">$3,160.40</p>
-            <div className="flex items-center gap-6">
-              <span className="text-[11px] text-[#8C8A82]">Pending: <span className="text-white font-medium">$840.00</span></span>
-              <span className="text-[11px] text-brand-orange font-medium">Next Payout: May 25</span>
-              <span className="text-[11px] text-[#8C8A82]">Method: Bank ••4821</span>
+            <p className="text-[10px] font-semibold text-slate uppercase tracking-[0.1em] mb-2">Available Balance ({activeWallet.currency})</p>
+            <p className="text-[32px] font-bold text-white leading-[1.1] mb-3">{fmt(activeWallet.availableBalance, activeWallet.currency)}</p>
+            <div className="flex items-center gap-6 flex-wrap">
+              <span className="text-[11px] text-slate">Pending: <span className="text-white font-medium">{fmt(activeWallet.pendingBalance, activeWallet.currency)}</span></span>
+              {activeWallet.nextPayout.scheduledAt && (
+                <span className="text-[11px] text-brand-orange font-medium">
+                  Next Payout: {new Date(activeWallet.nextPayout.scheduledAt).toLocaleDateString()}
+                </span>
+              )}
+              {activeWallet.nextPayout.method && (
+                <span className="text-[11px] text-slate">
+                  Method: {METHOD_LABEL[activeWallet.nextPayout.method.type as PayoutMethodType] ?? activeWallet.nextPayout.method.type}
+                  {activeWallet.nextPayout.method.last4 ? ` ••${activeWallet.nextPayout.method.last4}` : ''}
+                </span>
+              )}
             </div>
           </div>
-          <button className="px-5 py-2.5 bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white cursor-pointer flex items-center gap-1.5">
-            Request Payout <ArrowRight size={14} />
-          </button>
+          <Button size="md" onClick={() => setPayoutModal(true)} disabled={activeWallet.availableBalance <= 0} iconRight={<ArrowRight size={14} />}>
+            Request Payout
+          </Button>
         </div>
 
-        {/* ── Metrics ── */}
-        <div className="grid grid-cols-4 gap-3">
-          {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
-              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
-              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
-              {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
-              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
-            </div>
-          ))}
+        {/* Metrics */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <MetricCard
+            label="This Month Revenue"
+            value={fmt(activeWallet.summary.thisMonthRevenue, activeWallet.currency)}
+            trend={`${activeWallet.summary.revenueGrowthPercent >= 0 ? '+' : ''}${activeWallet.summary.revenueGrowthPercent}% vs last month`}
+            trendUp={activeWallet.summary.revenueGrowthPercent >= 0}
+          />
+          <MetricCard label="Platform Fees" value={fmt(activeWallet.summary.platformFees, activeWallet.currency)} sub="This month" />
+          <MetricCard label="Total Paid Out" value={fmt(activeWallet.summary.totalPaidOut, activeWallet.currency)} sub="All time" />
+          <MetricCard label="Pending Tax" value={fmt(activeWallet.summary.pendingTax, activeWallet.currency)} sub="Estimated" />
         </div>
 
-        {/* ── 2-col layout ── */}
-        <div className="flex gap-4 items-start">
+        {/* 2-col layout */}
+        <div className="flex gap-4 items-start flex-wrap lg:flex-nowrap">
 
           {/* LEFT — Transaction History */}
-          <div className="flex-1 min-w-0 bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#E8E6DC] flex-wrap gap-2.5">
-              <p className="text-sm font-semibold text-[#141413]">Transaction History</p>
+          <div className="flex-1 min-w-0 w-full bg-white border border-bone rounded-[10px] overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-bone flex-wrap gap-2.5">
+              <p className="text-sm font-semibold text-carbon">Transaction History</p>
               <div className="flex items-center gap-2">
-                <select className="px-3 py-[7px] text-[13px] border border-[#E8E6DC] rounded-lg bg-white text-[#2C2A28] outline-none cursor-pointer">
-                  <option>All Types</option>
-                  <option>Sale</option>
-                  <option>Payout</option>
-                  <option>Fee</option>
-                  <option>Refund</option>
+                <select value={txType} onChange={e => { setTxType(e.target.value as TransactionType | ''); setTxPage(1); }}
+                  className="px-3 py-[7px] text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none">
+                  <option value="">All Types</option>
+                  {Object.entries(TYPE_STYLE).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
-                <button className="px-3.5 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs text-[#4A4945] cursor-pointer">
+                <Button size="sm" variant="outline" icon={<Download size={12} />} loading={exporting} onClick={handleExport}>
                   Export CSV
-                </button>
+                </Button>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    {['Date','Description','Type','Amount','Balance'].map(h => (
-                      <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold text-[#8C8A82] uppercase tracking-[0.05em] border-b border-[#E8E6DC] bg-[#FAF9F5] whitespace-nowrap">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {TRANSACTIONS.map((t, i) => {
-                    const ts = typeStyle[t.type] ?? { bg: '#F0EEE6', color: '#5A5852' };
-                    return (
-                      <tr key={i}
-                        className="transition-colors duration-[120ms]"
-                        style={{ borderBottom: i < TRANSACTIONS.length - 1 ? '1px solid #F0EEE6' : 'none' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#FAF9F5')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        <td className="px-4 py-3 text-[13px] text-[#8C8A82] whitespace-nowrap">{t.date}</td>
-                        <td className="px-4 py-3 text-[13px] text-[#4A4945]">{t.description}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold"
-                            style={{ background: ts.bg, color: ts.color }}
-                          >
-                            {t.type}
-                          </span>
-                        </td>
-                        <td
-                          className="px-4 py-3 text-[13px] font-semibold whitespace-nowrap"
-                          style={{ color: t.positive ? '#2D8A4E' : '#C13030' }}
-                        >
-                          {t.amount}
-                        </td>
-                        <td className="px-4 py-3 text-[13px] font-medium text-[#141413] whitespace-nowrap">
-                          {t.balance}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <Table
+              columns={transactionColumns}
+              data={transactions}
+              keyExtractor={t => t._id}
+              emptyState={{ title: 'No transactions yet.' }}
+              pagination={{ page: txPage, total: txTotal, perPage: 10, onChange: setTxPage, label: 'transactions' }}
+            />
           </div>
 
           {/* RIGHT — 3 stacked cards */}
-          <div className="w-[280px] shrink-0 flex flex-col gap-3.5">
+          <div className="w-full lg:w-[280px] shrink-0 flex flex-col gap-3.5">
 
-            {/* Payout Schedule */}
-            <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
-              <p className="text-[13px] font-semibold text-[#141413] mb-3">Payout Schedule</p>
-              <div className="flex flex-col gap-2.5">
-                {[['Frequency','Weekly (Every Monday)'],['Method','Bank Transfer ••4821'],['Currency','USD'],['Minimum','$50.00']].map(([label, val]) => (
-                  <div key={label} className="flex justify-between items-center">
-                    <span className="text-xs text-[#8C8A82]">{label}</span>
-                    <span className="text-xs font-medium text-[#4A4945]">{val}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 pt-3 border-t border-[#F0EEE6]">
-                <button className="px-3.5 py-1.5 bg-white border border-[#E8E6DC] rounded-[7px] text-xs text-[#4A4945] cursor-pointer">
-                  Update Payout Method
+            {/* Payout Methods */}
+            <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[13px] font-semibold text-carbon">Payout Methods</p>
+                <button onClick={() => setMethodModal(true)} className="text-slate hover:text-brand-orange cursor-pointer bg-transparent border-none">
+                  <Plus size={14} />
                 </button>
               </div>
+              {methods.length === 0 ? (
+                <p className="text-xs text-slate">No payout methods yet.</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {methods.map(m => (
+                    <div key={m._id} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {m.isDefault && <Star size={11} className="text-brand-orange shrink-0" fill="var(--color-brand-orange)" />}
+                        <span className="text-xs text-graphite truncate">
+                          {METHOD_LABEL[m.type]}{m.accountLast4 ? ` ••${m.accountLast4}` : ''}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {!m.isDefault && (
+                          <button onClick={() => handleSetDefaultMethod(m._id)} className="text-[10px] text-slate hover:text-brand-orange cursor-pointer bg-transparent border-none">
+                            Set default
+                          </button>
+                        )}
+                        <button onClick={() => setEditingMethod(m)} className="text-[10px] text-slate hover:text-brand-orange cursor-pointer bg-transparent border-none">
+                          Edit
+                        </button>
+                        <button onClick={() => { setDeletingMethodId(m._id); setDeleteMethodError(''); }} className="text-slate hover:text-error cursor-pointer bg-transparent border-none">
+                          <X size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
+            {/* Payout Schedule */}
+            {schedule && (
+              <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
+                <p className="text-[13px] font-semibold text-carbon mb-3">Payout Schedule</p>
+                <div className="flex flex-col gap-2.5">
+                  {[
+                    ['Frequency', schedule.frequency ? schedule.frequency[0].toUpperCase() + schedule.frequency.slice(1) : '—'],
+                    ['Status', schedule.isEnabled ? 'Enabled' : 'Disabled'],
+                    ['Minimum', fmt(schedule.minimumAmount, schedule.currency)],
+                    ['Next Payout', schedule.nextPayoutAt ? new Date(schedule.nextPayoutAt).toLocaleDateString() : '—'],
+                  ].map(([label, val]) => (
+                    <div key={label} className="flex justify-between items-center">
+                      <span className="text-xs text-slate">{label}</span>
+                      <span className="text-xs font-medium text-graphite">{val}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 pt-3 border-t border-bone">
+                  <button onClick={() => setScheduleModal(true)}
+                    className="px-3.5 py-1.5 bg-white border border-bone rounded-[7px] text-xs text-graphite cursor-pointer hover:border-brand-orange/40">
+                    Update Schedule
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Fee Breakdown */}
-            <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
-              <p className="text-[13px] font-semibold text-[#141413] mb-3">Fee Breakdown</p>
+            <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
+              <p className="text-[13px] font-semibold text-carbon mb-3">Fee Breakdown</p>
               <div className="flex flex-col gap-2.5">
-                {[['Marketplace Listing Fee','Free'],['Transaction Fee','8% per sale'],['Payment Processing','2.9% + $0.30'],['Digital Delivery','Included'],['AI Credits','750 / month']].map(([label, val]) => (
+                {[
+                  ['Marketplace Listing Fee', dashboard.feeBreakdown.marketplaceListingFee],
+                  ['Transaction Fee', dashboard.feeBreakdown.transactionFee],
+                  ['Payment Processing', dashboard.feeBreakdown.paymentProcessing],
+                  ['Digital Delivery', dashboard.feeBreakdown.digitalDelivery],
+                  ['AI Credits', dashboard.feeBreakdown.aiCredits],
+                ].map(([label, val]) => (
                   <div key={label} className="flex justify-between items-center">
-                    <span className="text-xs text-[#8C8A82]">{label}</span>
-                    <span className="text-xs font-medium text-[#4A4945]">{val}</span>
+                    <span className="text-xs text-slate">{label}</span>
+                    <span className="text-xs font-medium text-graphite">{val}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Tax Reports */}
-            <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-4">
-              <p className="text-[13px] font-semibold text-[#141413] mb-3">Tax Reports</p>
-              <div className="flex flex-col gap-3">
-                {TAX_REPORTS.map(r => (
-                  <div key={r.name} className="flex items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium text-[#4A4945] leading-[1.3]">{r.name}</p>
-                      <p className="text-[11px] text-[#8C8A82] mt-0.5">{r.period} · {r.date}</p>
-                    </div>
-                    <button className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-white border border-[#E8E6DC] rounded-[6px] text-[11px] font-medium text-[#8C8A82] cursor-pointer">
-                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                        <path d="M6 1v7M3 5l3 3 3-3M1 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      PDF
-                    </button>
-                  </div>
-                ))}
+            <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[13px] font-semibold text-carbon">Tax Reports</p>
+                <button onClick={handleGenerateTaxReport} disabled={generatingTax}
+                  className="text-[11px] text-brand-orange hover:underline cursor-pointer bg-transparent border-none disabled:opacity-50">
+                  {generatingTax ? 'Generating…' : 'Generate'}
+                </button>
               </div>
+              {taxReports.length === 0 ? (
+                <p className="text-xs text-slate">No tax reports yet.</p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {taxReports.map(r => (
+                    <div key={r._id} className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-graphite leading-[1.3] capitalize">{r.period} {r.year}</p>
+                        <p className="text-[11px] text-slate mt-0.5">Net {fmt(r.netRevenue, r.currency)} · Est. tax {fmt(r.estimatedTax, r.currency)}</p>
+                      </div>
+                      {r.pdfUrl && (
+                        <a href={r.pdfUrl} target="_blank" rel="noreferrer"
+                          className="shrink-0 flex items-center gap-1 px-2.5 py-1 bg-white border border-bone rounded-[6px] text-[11px] font-medium text-slate hover:border-brand-orange/40">
+                          PDF
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* Recent Payouts */}
+            {recentPayouts.length > 0 && (
+              <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
+                <p className="text-[13px] font-semibold text-carbon mb-3">Recent Payouts</p>
+                <div className="flex flex-col gap-2.5">
+                  {recentPayouts.map(p => (
+                    <button key={p._id} onClick={() => setSelectedPayoutId(p._id)}
+                      className="flex items-center justify-between gap-2 bg-transparent border-none p-0 cursor-pointer text-left">
+                      <span className="text-xs text-graphite">{fmt(p.amount, p.currency)}</span>
+                      <Badge color={PAYOUT_STATUS_COLOR[p.status]} size="sm">{p.status.charAt(0).toUpperCase() + p.status.slice(1)}</Badge>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
           </div>
         </div>
       </div>
+
+      {methodModal && (
+        <PayoutMethodModal storeId={storeId} defaultCurrency={activeWallet.currency} onClose={() => setMethodModal(false)} onSaved={() => { setMethodModal(false); loadCore(); loadWalletScoped(); }} />
+      )}
+      {editingMethod && (
+        <PayoutMethodModal storeId={storeId} editing={editingMethod} defaultCurrency={activeWallet.currency} onClose={() => setEditingMethod(null)} onSaved={() => { setEditingMethod(null); loadCore(); loadWalletScoped(); }} />
+      )}
+      {payoutModal && (
+        <RequestPayoutModal storeId={storeId} availableBalance={activeWallet.availableBalance} currency={activeWallet.currency} methods={methods}
+          onClose={() => setPayoutModal(false)} onRequested={() => { setPayoutModal(false); loadCore(); loadWalletScoped(); loadTransactions(); }} />
+      )}
+      {scheduleModal && schedule && (
+        <ScheduleModal storeId={storeId} schedule={schedule} onClose={() => setScheduleModal(false)} onSaved={() => { setScheduleModal(false); loadWalletScoped(); }} />
+      )}
+      {selectedPayoutId && (
+        <PayoutDetailModal storeId={storeId} payoutId={selectedPayoutId} onClose={() => setSelectedPayoutId(null)} />
+      )}
+      {deletingMethodId && (
+        <Modal title="Delete Payout Method" onClose={() => setDeletingMethodId(null)} footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeletingMethodId(null)} disabled={deleteMethodBusy}>Cancel</Button>
+            <Button variant="danger" onClick={confirmDeleteMethod} loading={deleteMethodBusy}>Delete</Button>
+          </>
+        }>
+          <p className="text-[13px] text-charcoal">Delete this payout method? This cannot be undone.</p>
+          {deleteMethodError && <p className="text-[12px] text-error mt-2">{deleteMethodError}</p>}
+        </Modal>
+      )}
     </>
   );
 }

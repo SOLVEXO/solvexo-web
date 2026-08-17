@@ -1,4 +1,4 @@
-import type { StoreProduct, ProductVariant } from '@/api/commerce/product';
+import type { StoreProduct, ProductVariant } from '@/api/services/product';
 
 export interface ProductEntry {
   product: StoreProduct;

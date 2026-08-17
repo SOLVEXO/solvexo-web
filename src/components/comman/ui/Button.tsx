@@ -30,8 +30,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const BASE =
   'inline-flex items-center justify-center gap-[6px] font-medium cursor-pointer ' +
-  'transition-all duration-[180ms] whitespace-nowrap outline-none select-none shrink-0 ' +
-  'no-underline leading-[1.4]';
+  'transition-[background-color,border-color,color,opacity,box-shadow,transform] duration-[160ms] ease-out whitespace-nowrap outline-none select-none shrink-0 ' +
+  'no-underline leading-[1.4] active:scale-[0.98] enabled:hover:-translate-y-px active:translate-y-0 ' +
+  'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50';
 
 const SIZES: Record<ButtonSize, string> = {
   xs: 'text-[11px] py-[5px]  px-3        rounded-md',
@@ -43,25 +44,25 @@ const SIZES: Record<ButtonSize, string> = {
 const VARIANTS: Record<ButtonVariant, string> = {
   // Orange filled — primary CTA
   primary:
-    'bg-brand-orange text-white border-0 hover:opacity-[0.88]',
+    'bg-brand-orange text-white border-0 hover:bg-brand-deep-orange',
   // Soft orange fill — secondary CTA on light bg
   secondary:
     'bg-brand-pale-orange text-brand-deep-orange border-0 hover:opacity-[0.88]',
   // White with border — common "ghost" action button (Export, Edit, Clear…)
   outline:
-    'bg-white text-carbon border border-bone hover:bg-cream',
+    'bg-white text-carbon border border-bone hover:bg-cream hover:border-slate/40',
   // No bg, no border — subtle inline action
   ghost:
     'bg-transparent text-slate border-0 hover:bg-cream',
   // Inline link style — no padding, orange text (Forgot password, View All…)
   link:
-    'bg-transparent text-brand-orange border-0 !p-0 hover:opacity-80',
+    'bg-transparent text-brand-orange border-0 p-0! hover:opacity-80 active:scale-100',
   // Dark fill — dark-theme CTAs
   dark:
-    'bg-charcoal text-white border-0 hover:opacity-[0.88]',
+    'bg-charcoal text-white border-0 hover:bg-carbon',
   // Soft red — destructive actions (Flag, Delete, Cancel…)
   danger:
-    'bg-error-bg text-error border border-[#FECACA] hover:opacity-[0.88]',
+    'bg-error-bg text-error border border-error-border hover:bg-error hover:text-white hover:border-error',
 };
 
 const ICON_SIZE: Record<ButtonSize, number> = {
@@ -96,7 +97,7 @@ export function Button({
         SIZES[size],
         VARIANTS[variant],
         fullWidth  && 'w-full',
-        pill       && '!rounded-full',
+        pill       && 'rounded-full!',
         isDisabled && 'opacity-50 cursor-not-allowed pointer-events-none',
         className,
       )}

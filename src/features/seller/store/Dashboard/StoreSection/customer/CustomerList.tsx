@@ -1,297 +1,215 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Users, ShoppingBag, DollarSign } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Mail, Gift } from 'lucide-react';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
+import { apiGetStoreCustomers, apiUpdateStoreCustomer, type StoreCustomer } from '@/api/services/store';
+import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
+import { MetricCard } from '@/components/comman/ui/MetricCard';
+import { Table, type TableColumn } from '@/components/comman/ui/Table';
+import { Badge } from '@/components/comman/ui/Badge';
+import { SearchInput } from '@/components/comman/ui/SearchInput';
+import { formatMoneyCompact } from '@/utils/currency';
+import { FollowersTab } from './tabs/FollowersTab';
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-type Segment = 'VIP' | 'Loyal' | 'Returning' | 'New' | 'At Risk';
+const TABS: Tab[] = [
+  { id: 'customers', label: 'Customers' },
+  { id: 'followers', label: 'Followers' },
+];
 
-interface Customer {
-  id: string; name: string; initials: string; email: string;
-  orders: number; ltv: string; lastOrder: string; segment: Segment; joined: string;
+const PER_PAGE = 20;
+
+function initialsOf(name: string) {
+  return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('');
 }
 
-const CUSTOMERS: Customer[] = [
-  { id: 'C-1001', name: 'Sarah Mitchell', initials: 'SM', email: 'sarah@email.com',  orders: 14, ltv: '$612',   lastOrder: 'Today',     segment: 'VIP',       joined: 'Jan 2024' },
-  { id: 'C-1002', name: 'David Reynolds', initials: 'DR', email: 'david@email.com',  orders: 9,  ltv: '$387',   lastOrder: 'Yesterday', segment: 'Loyal',     joined: 'Mar 2024' },
-  { id: 'C-1003', name: 'Lena Kowalski',  initials: 'LK', email: 'lena@email.com',   orders: 3,  ltv: '$134',   lastOrder: 'May 10',    segment: 'New',       joined: 'Apr 2025' },
-  { id: 'C-1004', name: 'Tom Barnes',     initials: 'TB', email: 'tom@email.com',    orders: 21, ltv: '$1,042', lastOrder: 'May 14',    segment: 'VIP',       joined: 'Nov 2023' },
-  { id: 'C-1005', name: 'Amy Liu',        initials: 'AL', email: 'amy@email.com',    orders: 6,  ltv: '$228',   lastOrder: 'May 8',     segment: 'Returning', joined: 'Feb 2024' },
-  { id: 'C-1006', name: 'Mike Svensson',  initials: 'MS', email: 'mike@email.com',   orders: 1,  ltv: '$49',    lastOrder: 'May 16',    segment: 'New',       joined: 'May 2025' },
-  { id: 'C-1007', name: 'Jane Park',      initials: 'JP', email: 'jane@email.com',   orders: 0,  ltv: '$0',     lastOrder: '—',         segment: 'At Risk',   joined: 'Dec 2023' },
-  { id: 'C-1008', name: 'Carlos Mendez',  initials: 'CM', email: 'carlos@email.com', orders: 11, ltv: '$504',   lastOrder: 'Apr 30',    segment: 'Loyal',     joined: 'Jun 2024' },
-];
+function fmtDate(d: string | null) {
+  return d ? new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+}
 
-const avatarColors: Record<string, { bg: string; color: string }> = {
-  SM: { bg: '#FDECEA', color: '#C0392B' }, DR: { bg: '#EAF3FB', color: '#2156A8' },
-  LK: { bg: '#EAF7EF', color: '#1E7A3C' }, TB: { bg: '#FFF4E5', color: '#B36200' },
-  AL: { bg: '#F3EAFB', color: '#7A1EA8' }, MS: { bg: '#E5F4FB', color: '#1A6A8A' },
-  JP: { bg: '#FDECEA', color: '#C0392B' }, CM: { bg: '#EAF7EF', color: '#1E7A3C' },
-};
-
-const segmentStyle: Record<Segment, { bg: string; color: string }> = {
-  VIP:       { bg: '#FBECE4', color: '#C96847' },
-  Loyal:     { bg: '#E3F4EA', color: '#1E7A3C' },
-  Returning: { bg: '#EAF0FB', color: '#2156A8' },
-  New:       { bg: '#F0EEE6', color: '#5A5852' },
-  'At Risk': { bg: '#FDECEA', color: '#C0392B' },
-};
-
-const SEGMENT_PILLS = [
-  { label: 'All',       count: 1284 },
-  { label: 'VIP',       count: 94   },
-  { label: 'Loyal',     count: 312  },
-  { label: 'Returning', count: 478  },
-  { label: 'New',       count: 362  },
-  { label: 'At Risk',   count: 38   },
-];
-
-const metrics = [
-  { label: 'Total Customers',    value: '1,284', trend: '+48 this month',       sub: null,                    trendUp: true  },
-  { label: 'Avg Lifetime Value', value: '$247',  trend: '+$18 vs last month',   sub: null,                    trendUp: true  },
-  { label: 'Repeat Rate',        value: '62%',   trend: 'Healthy',              sub: null,                    trendUp: true  },
-  { label: 'At Risk',            value: '38',    trend: null,                   sub: 'No purchase in 90 days',trendUp: false },
-] as const;
-
-// ── Component ─────────────────────────────────────────────────────────────────
 export default function StoreCustomerList() {
   usePageTitle('Customers');
-  const [search,     setSearch]     = useState('');
-  const [seg,        setSeg]        = useState('');
-  const [sort,       setSort]       = useState('');
-  const [filterPill, setFilterPill] = useState('All');
-  const [sel,        setSel]        = useState<Customer | null>(null);
+  const { storeId, store } = useStoreWorkspace();
 
-  const filtered = CUSTOMERS.filter(c => {
+  const [activeTab, setActiveTab] = useState('customers');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+
+  const [customers, setCustomers] = useState<StoreCustomer[]>([]);
+  const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState({ totalOrders: 0, totalRevenue: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [sel, setSel] = useState<StoreCustomer | null>(null);
+  const [form, setForm] = useState({ name: '', phone: '', email: '' });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!storeId || activeTab !== 'customers') return;
+    setLoading(true);
+    apiGetStoreCustomers(storeId, page, PER_PAGE)
+      .then(res => {
+        setCustomers(res.data.customers ?? []);
+        setTotal(res.data.pagination.total);
+        setSummary(res.data.summary);
+      })
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load customers.'))
+      .finally(() => setLoading(false));
+  }, [storeId, page, activeTab]);
+
+  function select(c: StoreCustomer) {
+    setSel(c);
+    setForm({ name: c.name, phone: c.phone ?? '', email: c.email });
+  }
+
+  async function saveEdit() {
+    if (!sel) return;
+    setSaving(true);
+    try {
+      const res = await apiUpdateStoreCustomer(storeId, sel._id, form);
+      setCustomers(prev => prev.map(c => c._id === sel._id ? { ...c, ...res.data } : c));
+      setSel(prev => prev ? { ...prev, ...res.data } : prev);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const filtered = customers.filter(c => {
     const q = search.toLowerCase();
-    if (q && !c.name.toLowerCase().includes(q) && !c.email.toLowerCase().includes(q) && !c.id.toLowerCase().includes(q)) return false;
-    if (seg && seg !== 'All Segments' && c.segment !== seg) return false;
-    if (filterPill !== 'All' && c.segment !== filterPill) return false;
-    return true;
+    return !q || c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
   });
+
+  const columns: TableColumn<StoreCustomer>[] = [
+    {
+      key: 'name', header: 'Customer',
+      render: c => (
+        <div className="flex items-center gap-2.5">
+          <div className="w-[30px] h-[30px] rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 bg-[#f0eee6] text-[#5a5852]">{initialsOf(c.name)}</div>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-charcoal leading-[1.3] truncate">{c.name}</p>
+            <p className="text-[11px] text-slate truncate">{c.email}</p>
+          </div>
+        </div>
+      ),
+    },
+    { key: 'phone', header: 'Phone', render: c => <span className="text-slate">{c.phone || '—'}</span> },
+    {
+      key: 'orderCount', header: 'Orders', align: 'center',
+      render: c => <Badge color={c.orderCount > 1 ? 'green' : 'orange'}>{c.orderCount}</Badge>,
+    },
+    {
+      key: 'totalSpent', header: 'Total Spent', align: 'right',
+      render: c => <span className="font-semibold text-charcoal">{formatMoneyCompact(c.totalSpent, store?.baseCurrency)}</span>,
+    },
+    { key: 'lastOrderAt', header: 'Last Order', render: c => <span className="text-slate">{fmtDate(c.lastOrderAt)}</span> },
+    { key: 'createdAt', header: 'Member Since', render: c => <span className="text-slate">{fmtDate(c.createdAt)}</span> },
+    {
+      key: 'actions', header: '', align: 'right',
+      render: c => (
+        <button onClick={e => { e.stopPropagation(); select(c); }} className="text-xs font-medium text-brand-orange bg-transparent border-none cursor-pointer">Edit</button>
+      ),
+    },
+  ];
 
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="Customers"
-        subtitle="Manage buyer relationships, segments and loyalty."
-        actions={
-          <>
-            <button className="px-4 py-[7px] bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer">
-              Export CSV
-            </button>
-            <button className="px-4 py-[7px] bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer">
-              + Add Customer
-            </button>
-          </>
-        }
+        subtitle="Manage buyer relationships and followers for this store."
       />
 
-      <div className="px-7 pt-5 pb-8 flex flex-col gap-5">
+      <div className="px-4 md:px-7 pt-3">
+        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
+      </div>
 
-        {/* ── Metrics ── */}
-        <div className="grid grid-cols-4 gap-3">
-          {metrics.map(m => (
-            <div key={m.label} className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-5 py-4">
-              <p className="text-[11px] font-medium text-[#8C8A82] uppercase tracking-[0.06em] mb-1">{m.label}</p>
-              <p className="text-[28px] font-bold text-[#141413] leading-[1.15]">{m.value}</p>
-              {m.trend && <p className="text-xs text-[#2D8A4E] mt-1">▲ {m.trend}</p>}
-              {m.sub   && <p className="text-xs text-[#8C8A82] mt-1">{m.sub}</p>}
-            </div>
-          ))}
+      {activeTab === 'followers' ? (
+        <div className="px-4 md:px-7 pt-5 pb-8">
+          <FollowersTab />
+        </div>
+      ) : (
+      <div className="px-4 md:px-7 pt-5 pb-8 flex flex-col gap-5">
+
+        <div className="flex flex-wrap gap-3">
+          <MetricCard label="Total Customers" value={total.toLocaleString()} icon={<Users size={16} />} loading={loading && page === 1 && customers.length === 0} />
+          <MetricCard label="Total Orders"     value={summary.totalOrders.toLocaleString()} icon={<ShoppingBag size={16} />} loading={loading && page === 1 && customers.length === 0} />
+          <MetricCard label="Total Revenue"    value={formatMoneyCompact(summary.totalRevenue, store?.baseCurrency)} icon={<DollarSign size={16} />} loading={loading && page === 1 && customers.length === 0} />
         </div>
 
-        {/* ── Segment pills ── */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {SEGMENT_PILLS.map(pill => {
-            const active = filterPill === pill.label;
-            const st = pill.label === 'All' ? { bg: '#F0EEE6', color: '#5A5852' } : segmentStyle[pill.label as Segment] ?? { bg: '#F0EEE6', color: '#5A5852' };
-            return (
-              <button
-                key={pill.label}
-                onClick={() => setFilterPill(pill.label)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-[20px] cursor-pointer text-xs font-medium transition-all duration-[120ms]"
-                style={{
-                  border: `1px solid ${active ? '#D97757' : '#E8E6DC'}`,
-                  background: active ? '#FBECE4' : '#fff',
-                  color: active ? '#B95A3A' : '#2C2A28',
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4 items-start">
+          <div className="bg-white border border-bone rounded-[10px] min-w-0 overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-bone">
+              <SearchInput value={search} onChange={setSearch} placeholder="Search customers…" className="max-w-[260px]" />
+            </div>
+
+            {error ? (
+              <p className="p-4 text-xs text-error">{error}</p>
+            ) : (
+              <Table
+                columns={columns}
+                data={filtered}
+                keyExtractor={c => c._id}
+                onRowClick={select}
+                loading={loading}
+                pagination={{ page, total, perPage: PER_PAGE, onChange: setPage, label: 'customers' }}
+                emptyState={{
+                  icon: <Users size={28} className="text-brand-orange opacity-55" />,
+                  title: 'No customers found for this store yet',
+                  description: 'Customers who place an order from this store will show up here.',
                 }}
-              >
-                {pill.label}
-                <span
-                  className="px-[7px] py-[1px] rounded text-[11px] font-semibold"
-                  style={{
-                    background: active ? '#fff' : st.bg,
-                    color: active ? '#B95A3A' : st.color,
-                  }}
-                >
-                  {pill.count.toLocaleString()}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ── Table + Detail ── */}
-        <div className="flex gap-4 items-start">
-
-          {/* Table */}
-          <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex-1 min-w-0 overflow-hidden">
-            {/* Filters */}
-            <div className="flex gap-2.5 px-5 py-3.5 border-b border-[#E8E6DC] flex-wrap items-center">
-              <div className="flex items-center gap-1.5 border border-[#E8E6DC] rounded-lg px-3 bg-white flex-1 max-w-[260px]">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C8A82" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                <input placeholder="Search customers…" value={search} onChange={e => setSearch(e.target.value)}
-                  className="border-none outline-none text-[13px] py-2 w-full text-[#2C2A28] bg-transparent" />
-              </div>
-              <select value={seg} onChange={e => setSeg(e.target.value)}
-                className="w-[150px] px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white cursor-pointer box-border">
-                {['All Segments','VIP','Loyal','Returning','New','At Risk'].map(o => <option key={o}>{o}</option>)}
-              </select>
-              <select value={sort} onChange={e => setSort(e.target.value)}
-                className="w-[160px] px-3 py-2 text-[13px] border border-[#E8E6DC] rounded-lg outline-none text-[#2C2A28] bg-white cursor-pointer box-border">
-                {['Sort: Default','Highest LTV','Most Orders','Recently Active','Newest'].map(o => <option key={o}>{o}</option>)}
-              </select>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    {['Customer','Orders','Lifetime Value','Last Order','Segment','Joined',''].map(h => (
-                      <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold text-[#8C8A82] uppercase tracking-[0.05em] border-b border-[#E8E6DC] bg-[#FAF9F5] whitespace-nowrap">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((c, i) => {
-                    const av = avatarColors[c.initials] ?? { bg: '#F0EEE6', color: '#5A5852' };
-                    const sg = segmentStyle[c.segment];
-                    return (
-                      <tr key={c.id} onClick={() => setSel(sel?.id === c.id ? null : c)}
-                        className="cursor-pointer transition-colors duration-[120ms]"
-                        style={{
-                          borderBottom: i < filtered.length - 1 ? '1px solid #F0EEE6' : 'none',
-                          background: sel?.id === c.id ? '#FBECE4' : 'transparent',
-                        }}
-                        onMouseEnter={e => { if (sel?.id !== c.id) e.currentTarget.style.background = '#FAF9F5'; }}
-                        onMouseLeave={e => { if (sel?.id !== c.id) e.currentTarget.style.background = 'transparent'; }}
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <div
-                              className="w-[30px] h-[30px] rounded-full text-[10px] font-bold flex items-center justify-center shrink-0"
-                              style={{ background: av.bg, color: av.color }}
-                            >{c.initials}</div>
-                            <div>
-                              <p className="text-[13px] font-semibold text-[#2C2A28] leading-[1.3]">{c.name}</p>
-                              <p className="text-[11px] text-[#8C8A82]">{c.email}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-[13px] font-semibold text-[#2C2A28]">{c.orders}</td>
-                        <td className="px-4 py-3 text-[13px] font-semibold text-[#2C2A28]">{c.ltv}</td>
-                        <td className="px-4 py-3 text-[13px] text-[#8C8A82]">{c.lastOrder}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold"
-                            style={{ background: sg.bg, color: sg.color }}
-                          >{c.segment}</span>
-                        </td>
-                        <td className="px-4 py-3 text-[13px] text-[#8C8A82]">{c.joined}</td>
-                        <td className="px-4 py-3">
-                          <button onClick={e => { e.stopPropagation(); setSel(sel?.id === c.id ? null : c); }}
-                            className="text-xs font-medium text-brand-orange bg-transparent border-none cursor-pointer">
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+              />
+            )}
           </div>
 
-          {/* Detail panel */}
+          {/* Edit panel */}
           {sel && (
-            <div className="w-[300px] shrink-0">
-              <div className="bg-white border border-[#E8E6DC] rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)] px-[18px] py-5 sticky top-[70px]">
-                {/* Avatar + name */}
-                <div className="flex flex-col items-center text-center pb-4 border-b border-[#F0EEE6] mb-3.5">
-                  <div
-                    className="w-[52px] h-[52px] rounded-full text-base font-bold flex items-center justify-center mb-2.5"
-                    style={{ background: avatarColors[sel.initials]?.bg ?? '#F0EEE6', color: avatarColors[sel.initials]?.color ?? '#5A5852' }}
-                  >
-                    {sel.initials}
+            <div className="w-full lg:w-[300px] shrink-0">
+              <div className="bg-white border border-bone rounded-[10px] px-[18px] py-5 lg:sticky lg:top-[70px]">
+                <div className="flex flex-col items-center text-center pb-4 border-b border-[#f0eee6] mb-3.5">
+                  <div className="w-[52px] h-[52px] rounded-full text-base font-bold flex items-center justify-center mb-2.5 bg-[#f0eee6] text-[#5a5852]">
+                    {initialsOf(sel.name)}
                   </div>
-                  <p className="text-[15px] font-bold text-[#141413] mb-[3px]">{sel.name}</p>
-                  <p className="text-xs text-[#8C8A82] mb-2">{sel.email}</p>
-                  <span
-                    className="px-3 py-[3px] rounded-[20px] text-[11px] font-semibold"
-                    style={{ background: segmentStyle[sel.segment].bg, color: segmentStyle[sel.segment].color }}
-                  >
-                    {sel.segment}
-                  </span>
+                  <p className="text-[15px] font-bold text-carbon mb-[3px]">{sel.name}</p>
+                  <p className="text-xs text-slate">Customer since {fmtDate(sel.createdAt)}</p>
+                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#f0eee6] w-full justify-center">
+                    <div className="text-center">
+                      <p className="text-[15px] font-bold text-carbon">{sel.orderCount}</p>
+                      <p className="text-[10px] text-slate uppercase tracking-[0.05em]">Orders</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[15px] font-bold text-carbon">{formatMoneyCompact(sel.totalSpent, store?.baseCurrency)}</p>
+                      <p className="text-[10px] text-slate uppercase tracking-[0.05em]">Spent</p>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Stats table */}
-                <table className="w-full border-collapse text-xs mb-3.5">
-                  <tbody>
-                    {[['Customer ID', sel.id],['Member Since', sel.joined],['Total Orders', String(sel.orders)],['Lifetime Value', sel.ltv],['Last Purchase', sel.lastOrder]].map(([label, value]) => (
-                      <tr key={label} className="border-b border-[#F0EEE6]">
-                        <td className="py-[7px] text-[#8C8A82]">{label}</td>
-                        <td className="py-[7px] font-semibold text-[#141413] text-right">{value}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {/* Recent orders */}
-                <p className="text-[11px] font-semibold text-[#8C8A82] uppercase tracking-[0.07em] mb-2">Recent Orders</p>
-                <div className="flex flex-col gap-1.5 mb-4">
-                  {sel.orders > 0 ? (
-                    [{ id: '#8821', product: 'Grade 5 Math Bundle', amount: '$49.00', status: 'Paid' },
-                     { id: '#8820', product: 'Fractions Kit', amount: '$18.00', status: 'Fulfilled' }]
-                    .slice(0, Math.min(sel.orders, 2)).map(o => (
-                      <div key={o.id} className="flex justify-between items-center bg-[#FAF9F5] rounded-lg px-3 py-[9px]">
-                        <div>
-                          <p className="text-[11px] font-semibold text-[#141413]">{o.id}</p>
-                          <p className="text-[11px] text-[#8C8A82]">{o.product}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs font-bold text-[#141413] mb-[3px]">{o.amount}</p>
-                          <span
-                            className="text-[10px] font-semibold px-[7px] py-[2px] rounded"
-                            style={{ background: o.status === 'Paid' ? '#E3F4EA' : '#EAF0FB', color: o.status === 'Paid' ? '#1E7A3C' : '#2156A8' }}
-                          >
-                            {o.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs text-[#8C8A82] italic">No orders yet</p>
-                  )}
+                <div className="flex flex-col gap-3 mb-4">
+                  <div>
+                    <label className="text-xs font-medium text-graphite mb-[5px] block">Name</label>
+                    <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                      className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-graphite mb-[5px] block">Phone</label>
+                    <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                      className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-graphite mb-[5px] block">Email</label>
+                    <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                      className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border" />
+                    <p className="text-[11px] text-slate mt-1">Changing email un-verifies the account until they confirm the new one.</p>
+                  </div>
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex gap-2">
-                  <button className="flex-1 py-2 bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer flex items-center justify-center gap-[5px]">
-                    <Mail size={13} /> Email
-                  </button>
-                  <button className="flex-1 py-2 bg-white border border-[#E8E6DC] rounded-lg text-xs font-medium text-[#4A4945] cursor-pointer flex items-center justify-center gap-[5px]">
-                    <Gift size={13} /> Loyalty Gift
-                  </button>
-                </div>
+                <button onClick={saveEdit} disabled={saving} className="w-full py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer disabled:opacity-50">
+                  {saving ? 'Saving…' : 'Save Changes'}
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
+      )}
     </>
   );
 }

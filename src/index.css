@@ -10,9 +10,25 @@
   /* ── Neutrals ── */
   --color-carbon:   #141413;
   --color-charcoal: #2C2A28;
+  --color-graphite: #4A4945;
   --color-slate:    #8C8A82;
   --color-bone:     #E8E6DC;
   --color-cream:    #FAF9F5;
+
+  /* Previously scattered as raw hex in Card/Badge/Modal/BuyerNavbar (same
+     values, repeated across files) — named here so they're one shared
+     decision instead of copy-pasted magic numbers. No visual change. */
+  --color-border-hover: #DEDBD0;  /* one step past bone — hover border on cards/tiles */
+  --color-mist:          #F1EFE8; /* neutral chip/badge fill, between bone and cream */
+  --color-fog:           #F5F3EE; /* subtle hover surface for icon buttons on white */
+
+  /* ── Accent — a single deliberate exception to the brand palette, reused
+     consistently for "AI / premium / insights" contexts (Homepage hero glow,
+     floating feature-mockup "INSIGHTS" card, TopStoreCard's "Platinum" tier
+     badge) across 4+ places as raw hex before this. Named here so it's one
+     tracked decision instead of scattered magic numbers — not a new color. ── */
+  --color-accent-violet:    #7C3AED;
+  --color-accent-violet-bg: #F5F0FB;
 
   /* ── Semantic ── */
   --color-success:    #2D8A4E;
@@ -21,19 +37,31 @@
   --color-warning-bg: #FEF7E5;
   --color-error:      #C13030;
   --color-error-bg:   #FDEAEA;
+  --color-error-border: #FECACA;
   --color-info:       #1A72C2;
   --color-info-bg:    #E6F1FB;
 
-  /* ── POS Dark Theme ── */
-  --color-pos-bg:      #0F0E0D;
-  --color-pos-surface: #1A1918;
-  --color-pos-border:  #2C2A28;
-  --color-pos-muted:   #5C5A58;
-  --color-pos-faint:   #6A6866;
+  /* ── POS Dark Theme — 4-level elevation scale (0 = page → 3 = floating) ── */
+  --color-pos-bg:            #0F0E0D;  /* level 0 — page background */
+  --color-pos-surface:       #1A1918;  /* level 1 — resting cards (product tiles) */
+  --color-pos-surface-2:     #211F1C;  /* level 2 — raised panels (top bar, cart, footers) */
+  --color-pos-surface-3:     #2A2723;  /* level 3 — floating (modals, overlays, receipts) */
+  --color-pos-border:        #2C2A28;
+  --color-pos-border-strong: #3B3733;
+  --color-pos-muted:         #5C5A58;
+  --color-pos-faint:         #6A6866;
 
-  /* ── Admin Theme ── */
-  --color-admin-bg:     #0F0E0D;
-  --color-admin-surface:#1A1918;
+  /* ── Admin Theme — mirrors the POS elevation scale (same dark-dashboard
+     shape: page → resting → raised → floating) so admin dark surfaces stop
+     having to either borrow POS tokens out of context or hardcode hex. ── */
+  --color-admin-bg:            #0F0E0D;  /* level 0 — page background */
+  --color-admin-surface:       #1A1918;  /* level 1 — resting cards */
+  --color-admin-surface-2:     #211F1C;  /* level 2 — raised panels (toolbars, headers) */
+  --color-admin-surface-3:     #2A2723;  /* level 3 — floating (modals, overlays) */
+  --color-admin-border:        #2C2A28;
+  --color-admin-border-strong: #3B3733;
+  --color-admin-muted:         #5C5A58;
+  --color-admin-faint:         #6A6866;
 
   /* ── Dark Nav (Seller / Admin Sidebar) ── */
   --color-dark-active:  #1E1C1A;
@@ -45,6 +73,36 @@
   --font-sans:  'Poppins', system-ui, sans-serif;
   --font-serif: 'Lora', Georgia, serif;
 
+  /* ── Typography scale — every screen previously picked its own arbitrary
+     text-[Npx] value ad hoc; these give the same set of decisions a name so
+     new/updated screens converge on one scale instead of adding more one-off
+     sizes. Existing text-[…] usages are untouched (Tailwind utilities, so
+     purely additive) — components migrate to these as they're touched. ── */
+  --text-display:     2.5rem;    /* 40px — hero headlines */
+  --text-display--line-height: 1.15;
+  --text-heading-1:   1.75rem;   /* 28px — page titles */
+  --text-heading-1--line-height: 1.25;
+  --text-heading-2:   1.375rem;  /* 22px — section headings */
+  --text-heading-2--line-height: 1.3;
+  --text-heading-3:   1.125rem;  /* 18px — card/subsection headings */
+  --text-heading-3--line-height: 1.4;
+  --text-subheading:  0.9375rem; /* 15px — supporting sub-copy under a heading */
+  --text-subheading--line-height: 1.5;
+  --text-body:        0.8125rem; /* 13px — matches the existing body base size */
+  --text-body--line-height: 1.6;
+  --text-body-sm:     0.75rem;   /* 12px */
+  --text-body-sm--line-height: 1.5;
+  --text-caption:     0.6875rem; /* 11px — metadata, timestamps, helper text */
+  --text-caption--line-height: 1.4;
+  --text-label:       0.6875rem; /* 11px — form labels / eyebrow text, usually paired with uppercase + tracking-wide */
+  --text-label--line-height: 1.3;
+  --text-price-sm:    0.9375rem; /* 15px — price inside a compact card */
+  --text-price-sm--line-height: 1.2;
+  --text-price-md:    1.125rem;  /* 18px — price on a standard product card */
+  --text-price-md--line-height: 1.2;
+  --text-price-lg:    1.5rem;    /* 24px — price on product detail / checkout summary */
+  --text-price-lg--line-height: 1.15;
+
   /* ── Radius ── */
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -52,9 +110,64 @@
   --radius-xl: 16px;
   --radius-2xl: 20px;
 
-  /* ── Shadows ── */
-  --shadow-card: 0 2px 12px rgba(0,0,0,0.06);
-  --shadow-lg:   0 8px 40px rgba(0,0,0,0.12);
+  /* ── Elevation — the same handful of raw shadow-[...] values were being
+     copy-pasted across WelcomeStrip/EducationMarketplace/BuyerNavbar/
+     MegaMenuBar; named here as the two levels actually in repeated use
+     (resting card, hovered/raised panel). Bespoke brand-tinted hero/CTA
+     glows stay as one-off arbitrary values — those are genuinely specific
+     to their surface, not a repeated pattern worth forcing into a token. ── */
+  --shadow-card: 0 1px 3px rgba(20,15,10,0.06);
+  --shadow-card-hover: 0 6px 20px -4px rgba(20,15,10,0.08);
+  --shadow-raised: 0 10px 28px rgba(20,15,10,0.07);
+
+  /* ── Motion ── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Education Marketplace theme — scoped brand-color override.
+   Every shared component (Button, ProductCard, filter chips, nav) reads the
+   --color-brand-* variables via Tailwind utility classes, so wrapping just
+   this page's root in this class recolors it green without touching any
+   shared component file or any other page. ── */
+.theme-education {
+  --color-brand-orange:      #2F8F5B;
+  --color-brand-deep-orange: #1F6B42;
+  --color-brand-pale-orange: #E7F4EC;
+}
+
+/* ── Escape hatch for cross-page global chrome (Navbar, Footer,
+   AppDownloadBanner) rendered inside a page that uses
+   .theme-education above — these are site-wide chrome, not page-specific
+   content, so they must stay the true brand orange even on that page.
+   Wrap just that piece in this class to reset the variables back down. ── */
+.theme-brand-default {
+  --color-brand-orange:      #D97757;
+  --color-brand-deep-orange: #B95A3A;
+  --color-brand-pale-orange: #FBECE4;
+}
+
+/* ── Premium mesh background — layered radial glows in brand + neutral tones
+   (no new hues) plus a fine grain texture on top, so a dark hero surface
+   reads as deliberately crafted depth rather than a flat gradient. Used on
+   the Homepage hero and other full-bleed premium/promo sections. ── */
+.mesh-brand {
+  background-image:
+    radial-gradient(ellipse 900px 500px at 12% -10%, rgba(217,119,87,0.35), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 10%, rgba(124,58,237,0.16), transparent 55%),
+    radial-gradient(ellipse 800px 600px at 50% 120%, rgba(217,119,87,0.14), transparent 60%),
+    linear-gradient(180deg, #141413 0%, #1c1a18 55%, #141413 100%);
+}
+.grain-overlay {
+  position: relative;
+}
+.grain-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
 }
 
 /* ── Base Reset — inside @layer base so Tailwind utilities can override ── */
@@ -82,6 +195,44 @@
   #root {
     min-height: 100vh;
   }
+
+  /* Safety-net keyboard focus ring for anything that doesn't define its own
+     focus-visible style (custom clickable divs, raw buttons/links outside
+     the shared Button, etc). Deliberately low-specificity — any component's
+     own `focus-visible:ring-*` utility (e.g. Button) still wins over this,
+     so existing intentional focus styles are unaffected. This exists so
+     "never rely on hover alone" holds true app-wide, not just on the
+     handful of components that remembered to add it themselves. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-orange);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* ── Reduced motion — one centralized rule instead of hunting down every
+   keyframe name individually. Neutralizes all CSS animation/transition
+   duration+iteration app-wide (POS ambient pulses, skeleton shimmers, hero
+   Ken Burns, auth float/glow, dropdown/drawer/modal entrances, button
+   hover, everything) so elements still reach their correct final state —
+   just without visible motion — for anyone with the OS-level reduce-motion
+   preference set. JS-driven autoplay (e.g. BannerCarousel's slide rotation
+   timer) is a separate concern already handled in that component via its
+   own matchMedia check — this rule only covers CSS-driven motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Top navigation progress bar (RootLayout) — indeterminate sweep ── */
+@keyframes top-progress {
+  0%   { transform: translateX(-100%); }
+  50%  { transform: translateX(150%); }
+  100% { transform: translateX(400%); }
 }
 
 /* ── Scrollbar ── */
@@ -96,3 +247,332 @@
 /* ── Hidden scrollbar utility ── */
 .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* ── Fire button variant — solid dotted fill at rest, breaks apart into dashed dots on hover ──
+   Declared outside any @layer so it wins over Button's BASE transition utilities
+   (same layering trick already used by the utilities above) without editing BASE. */
+.btn-fire {
+  background-image: radial-gradient(var(--color-brand-orange) 40%, transparent 40%);
+  background-size: 0.1em 0.1em;
+  background-position: 0 0;
+  transition:
+    background-color 160ms ease-out, border-color 160ms ease-out, color 160ms ease-out,
+    opacity 160ms ease-out, box-shadow 160ms ease-out, transform 160ms ease-out,
+    background-size 500ms ease-out;
+}
+.btn-fire:hover {
+  background-size: 1.2em 1.2em;
+}
+
+/* ── POS Motion Utilities (structure only — no color) ── */
+@keyframes pos-overlay-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pos-panel-enter {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes pos-item-enter {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pos-overlay-enter { animation: pos-overlay-fade-in 180ms var(--ease-out); }
+.pos-panel-enter { animation: pos-panel-enter 220ms var(--ease-out); }
+.pos-item-enter { animation: pos-item-enter 180ms var(--ease-out); }
+
+/* Animated "Live" status ring — a soft pulsing halo behind a solid status dot.
+   Uses an animated outline (not box-shadow) so the ring never reads as elevation. */
+@keyframes pos-live-pulse {
+  0%   { outline: 2px solid rgba(45,138,78,0.45); outline-offset: 0; }
+  70%  { outline: 2px solid rgba(45,138,78,0); outline-offset: 6px; }
+  100% { outline: 2px solid rgba(45,138,78,0); outline-offset: 6px; }
+}
+.pos-live-pulse { animation: pos-live-pulse 2.2s ease-out infinite; }
+
+/* Shimmering skeleton — replaces flat animate-pulse for POS loading states */
+@keyframes pos-skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.pos-skeleton {
+  background: linear-gradient(100deg, var(--color-pos-surface) 30%, #262420 50%, var(--color-pos-surface) 70%);
+  background-size: 250% 100%;
+  animation: pos-skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+/* Shared hover-lift for POS surfaces (product tiles, cards) — one definition
+   instead of repeating the same transform/border utility combo everywhere.
+   Depth comes from the translate + border intensification, never a shadow. */
+.pos-surface-hover {
+  transition: transform 200ms var(--ease-out), border-color 200ms var(--ease-out);
+}
+.pos-surface-hover:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-pos-border-strong);
+}
+
+/* ── Shared dropdown / panel / drawer motion (Navbar previews, mini cart, popups) ── */
+@keyframes dropdown-enter {
+  from { opacity: 0; transform: scale(0.97) translateY(-6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes drawer-enter-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+.dropdown-enter { animation: dropdown-enter 180ms var(--ease-out); transform-origin: top right; }
+.drawer-enter-right { animation: drawer-enter-right 240ms var(--ease-out); }
+
+/* Centered dialog shell (Modal/CommandPalette/DateTimePickerModal's shared
+   DialogShell) — backdrop fade + panel fade/scale/rise, same motion language
+   as the POS panel-enter above, so every modal in the app finally animates
+   in instead of popping instantly. */
+@keyframes dialog-overlay-enter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes dialog-panel-enter {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.dialog-overlay-enter { animation: dialog-overlay-enter 180ms var(--ease-out); }
+.dialog-panel-enter { animation: dialog-panel-enter 220ms var(--ease-out); }
+
+/* Bottom-sheet variant of the same DialogShell (align="bottom") — panel
+   rises up from the bottom edge instead of fading/scaling in place, the
+   native-app action-sheet motion instead of a website popup. */
+@keyframes sheet-panel-enter {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.sheet-panel-enter { animation: sheet-panel-enter 280ms var(--ease-out); }
+
+/* ── Top ribbon banners (deals/announcement bars) ── */
+@keyframes banner-slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.banner-slide-down { animation: banner-slide-down 260ms var(--ease-out); }
+
+/* Buyer-side page-to-page transition — BuyerLayout fully remounts on every
+   navigation (RootLayout keys its ErrorBoundary by pathname), so this plays
+   fresh on every page change automatically, no per-page wiring needed. */
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-fade-in { animation: page-fade-in 220ms var(--ease-out); }
+
+/* Slow ambient zoom on the active Hero/storefront carousel slide — subtle
+   "Ken Burns" drift so a static photo doesn't feel inert while it's on screen. */
+@keyframes hero-kenburns {
+  from { transform: scale(1.06); }
+  to   { transform: scale(1); }
+}
+.hero-kenburns { animation: hero-kenburns 7s var(--ease-out) forwards; }
+
+/* Very subtle ambient "alive" pulse for the campaign countdown group — not
+   tied to the per-second tick (that would look twitchy), just a slow, gentle
+   breathing scale so it doesn't read as inert. */
+@keyframes countdown-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.03); }
+}
+.countdown-pulse { animation: countdown-pulse 2.4s ease-in-out infinite; }
+
+/* Slow ambient gradient drift on the campaign banner's background — the
+   gradient layer is sized larger than its box and its position animates
+   gently back and forth, so the color field feels alive without any motion
+   on the actual content sitting on top of it. */
+@keyframes gradient-drift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.gradient-drift { background-size: 160% 160%; animation: gradient-drift 10s ease-in-out infinite; }
+
+/* Periodic light sweep across the deals ribbon — reads as "live sale", not distracting */
+@keyframes banner-shimmer {
+  0%   { transform: translateX(-120%); }
+  60%, 100% { transform: translateX(220%); }
+}
+.banner-shimmer { animation: banner-shimmer 3.2s ease-in-out infinite; }
+
+/* Content crossfade when the deals ribbon rotates to the next active campaign */
+@keyframes campaign-fade {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.985); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.campaign-fade { animation: campaign-fade 420ms var(--ease-out); }
+
+/* Stories-style progress segment — fills left-to-right over the deals
+   ribbon's rotation interval, driven by an inline animation-duration so it
+   always matches ROTATE_MS in DealsBanner.tsx. */
+@keyframes campaign-progress-fill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+.campaign-progress-fill { animation: campaign-progress-fill linear forwards; }
+
+/* ── Auth branding-panel ambient motion (floating mockup cards, glow orbs) ── */
+@keyframes auth-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+@keyframes auth-glow-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 0.85; }
+}
+.auth-float { animation: auth-float 6s var(--ease-out) infinite; }
+.auth-float-slow { animation: auth-float 8s var(--ease-out) infinite; animation-delay: -2s; }
+.auth-glow-pulse { animation: auth-glow-pulse 4s ease-in-out infinite; }
+
+/* ── Dashboard KPI card entrance + light-surface shimmer skeleton ── */
+@keyframes metric-card-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.metric-card-enter { animation: metric-card-enter 320ms var(--ease-out); }
+
+@keyframes skeleton-shimmer-light {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(100deg, var(--color-bone) 30%, #F0EEE4 50%, var(--color-bone) 70%);
+  background-size: 250% 100%;
+  animation: skeleton-shimmer-light 1.8s ease-in-out infinite;
+}
+
+/* ── Dashboard section fade/slide-in (stat rows, charts, panels) ── */
+@keyframes dash-section-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.dash-section-enter { animation: dash-section-enter 360ms var(--ease-out) both; }
+
+/* Countdown-timer "tick" — replayed each second by remounting the segment via
+   a `key` prop (React drops/recreates the node, which restarts the CSS
+   animation), so the seconds box visibly pulses on every real tick. */
+@keyframes countdown-tick {
+  from { opacity: 0.6; transform: scale(1.05); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.countdown-tick { animation: countdown-tick 320ms var(--ease-out); }
+
+/* Action-feedback toast — slides up + fades in from the bottom-right stack,
+   with a slight overshoot on the way in for a springier, less mechanical feel. */
+@keyframes toast-enter {
+  from { opacity: 0; transform: translateY(16px) scale(0.94); }
+  60%  { transform: translateY(-3px) scale(1.01); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.toast-enter { animation: toast-enter 340ms var(--ease-out) both; }
+
+/* Guest sign-in bar (BuyerLayout) — rises up from behind the bottom nav
+   pill rather than just fading in in place: starts translated down far
+   enough to sit behind the nav's own footprint (paired with a lower
+   z-index than the nav there so it's actually hidden under it at t=0),
+   then slides up into its resting spot above it. */
+@keyframes guest-bar-rise {
+  from { opacity: 0; transform: translateY(76px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.guest-bar-rise { animation: guest-bar-rise 420ms var(--ease-out) both; }
+
+/* Bottom nav's center notch (BuyerLayout) — a real concave cutout for the
+   elevated Cart FAB to sit inside/above, not just a circle floating flat on
+   top of an unbroken bar. A `mask-image` radial-gradient punches a circular
+   hole centered exactly on the bar's own top edge (`at 50% 0px`); since the
+   element only ever paints y >= 0, only that circle's bottom half ever
+   shows, reading as a smooth semicircular bite curving into the top edge
+   from both sides — not a full round hole floating mid-bar. Percentage
+   horizontal centering means this stays correct at any bar width, unlike a
+   viewBox-stretched SVG would.
+   `white`, not `black`, for the "fully visible" stop — CSS masks default to
+   *luminance* mode, where black (~0 luminance) reads as HIDDEN despite
+   being fully opaque; using it here produced a broken/inverted cut (the
+   "U-shaped hole" bug) instead of a clean one. Radii (27px hard cut / 30px
+   feather) match the 54px FAB's own radius + border so the bar's edge sits
+   right at the button's border with no visible gap. */
+.bottom-nav-notch {
+  mask-image: radial-gradient(circle at 50% 0px, transparent 0px 27px, white 30px 100%);
+  -webkit-mask-image: radial-gradient(circle at 50% 0px, transparent 0px 27px, white 30px 100%);
+}
+
+@keyframes toast-leave {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(6px) scale(0.95); }
+}
+.toast-leave { animation: toast-leave 200ms var(--ease-out) both; }
+
+/* Auto-dismiss countdown bar — shrinks left-to-right over the toast's
+   lifetime; JS toggles animation-play-state to genuinely pause it on hover. */
+@keyframes toast-progress {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+.toast-progress { animation-name: toast-progress; animation-timing-function: linear; animation-fill-mode: forwards; transform-origin: left; }
+
+/* Wishlist heart "pop" — replayed via a `key` swap on the icon (same remount
+   trick as countdown-tick) whenever isWishlisted flips, so saving/unsaving a
+   product gets a quick tactile confirmation instead of a flat color swap. */
+@keyframes heart-pop {
+  0%   { transform: scale(0.7); }
+  50%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.heart-pop { animation: heart-pop 320ms var(--ease-out); }
+
+/* Dual-handle price range slider — two native <input type="range"> stacked on
+   the same track (a common, accessible way to build a two-thumb slider
+   without a drag library). The input's own track is made invisible; only the
+   thumb is visible/interactive, so each handle can be grabbed independently
+   even though both inputs occupy the same box. The filled portion between the
+   two thumbs is drawn separately as a plain div, not by this input at all. */
+.range-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  pointer-events: none;
+}
+.range-thumb::-webkit-slider-runnable-track { -webkit-appearance: none; background: transparent; }
+.range-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--color-brand-orange);
+  border: 2px solid white;
+  outline: 1px solid var(--color-bone);
+  cursor: pointer;
+  transition: transform 150ms var(--ease-out);
+}
+.range-thumb::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.range-thumb::-webkit-slider-thumb:active { transform: scale(0.95); }
+.range-thumb::-moz-range-track { background: transparent; border: none; }
+.range-thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--color-brand-orange);
+  border: 2px solid white;
+  outline: 1px solid var(--color-bone);
+  cursor: pointer;
+  transition: transform 150ms var(--ease-out);
+}
+.range-thumb::-moz-range-thumb:hover { transform: scale(1.15); }
+.range-thumb::-moz-range-thumb:active { transform: scale(0.95); }
+
+/* Filter checkbox "pop" — the custom check mark animates in instead of just
+   appearing, echoing heart-pop's tactile feel for the filter sidebar. */
+@keyframes filter-check-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.filter-check-pop { animation: filter-check-pop 200ms var(--ease-out); }

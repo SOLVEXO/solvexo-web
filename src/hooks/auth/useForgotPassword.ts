@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiForgotPassword, AuthContext, type AppRole } from '@/api/commerce/auth';
+import { apiForgotPassword, AuthContext, type AppRole } from '@/api/services/auth';
 
 export function useForgotPassword() {
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ export function useForgotPassword() {
     try {
       await apiForgotPassword({ email, role });
       AuthContext.set({ email, role, flow: 'forgot' });
-      navigate('/new-password');
+      navigate('/verify-otp');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {

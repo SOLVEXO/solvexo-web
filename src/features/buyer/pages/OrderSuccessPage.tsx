@@ -1,30 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   CheckCircle2, MapPin, Package, ShoppingBag, Download,
   Loader2, ArrowRight, Home, Truck, Box, BadgeCheck,
 } from 'lucide-react';
-import type { PlacedOrder, OrderItem, OrderDeliveryAddress } from '@/api/commerce/payment';
-import { apiGetDownloadUrl } from '@/api/commerce/orders';
+import type { PlacedOrder, OrderItem, OrderDeliveryAddress } from '@/api/services/payment';
+import { apiGetDownloadUrl } from '@/api/services/orders';
 import { clsx } from 'clsx';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Logo
-// ─────────────────────────────────────────────────────────────────────────────
-function SolvexoLogo({ onClick }: { onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex items-center gap-2 bg-transparent border-none cursor-pointer p-0">
-      <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-        <rect width="32" height="32" rx="8" fill="#D97757" />
-        <text x="4" y="26" fontFamily="'Poppins',sans-serif" fontWeight="800" fontSize="26" fill="white">s</text>
-        <rect x="16.5" y="2" width="13" height="13" rx="3.5" fill="#C8694E" fillOpacity="0.7" />
-        <path d="M23 11.5V5.5M23 5.5L20 8.5M23 5.5L26 8.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <span className="font-bold text-[15px] text-[#141413]">Solvex<span className="text-brand-orange">o</span></span>
-    </button>
-  );
-}
+import { Button } from '@/components/comman/ui/Button';
+import { BuyerNavbar, Footer } from '@/components/comman/ui';
+import { currencySymbol } from '@/utils/currency';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DownloadBtn
@@ -51,9 +37,9 @@ function DownloadBtn({ orderId, productId }: { orderId: string; productId: strin
         onClick={fetch}
         disabled={busy}
         className={clsx(
-          'flex items-center gap-[5px] px-3 py-[5px] rounded-[7px] text-[11px] font-semibold border-none transition-opacity',
+          'flex items-center gap-[5px] px-3 min-h-9 rounded-[7px] text-[11px] font-semibold border-none transition-opacity',
           busy ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
-          'bg-[#EEF0FF] text-[#3851D1]',
+          'bg-[#eef0ff] text-[#3851d1]',
         )}
       >
         {busy ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
@@ -67,17 +53,17 @@ function DownloadBtn({ orderId, productId }: { orderId: string; productId: strin
 // ─────────────────────────────────────────────────────────────────────────────
 // OrderItemRow
 // ─────────────────────────────────────────────────────────────────────────────
-function OrderItemRow({ item, orderId }: { item: OrderItem; orderId: string }) {
+function OrderItemRow({ item, orderId, currency }: { item: OrderItem; orderId: string; currency: string }) {
   const isDigital = item.type === 'digital';
   return (
     <div className="flex items-center justify-between gap-3 py-3 border-b border-bone last:border-0">
       <div className="flex items-center gap-3 min-w-0">
         <div className={clsx(
           'w-9 h-9 rounded-[8px] flex items-center justify-center shrink-0',
-          isDigital ? 'bg-[#EEF0FF]' : 'bg-brand-pale-orange',
+          isDigital ? 'bg-[#eef0ff]' : 'bg-brand-pale-orange',
         )}>
           {isDigital
-            ? <Download size={14} className="text-[#3851D1]" />
+            ? <Download size={14} className="text-[#3851d1]" />
             : <Package  size={14} className="text-brand-orange" />
           }
         </div>
@@ -85,7 +71,7 @@ function OrderItemRow({ item, orderId }: { item: OrderItem; orderId: string }) {
           <div className="flex items-center gap-1.5 flex-wrap mb-[2px]">
             <p className="text-[13px] font-semibold text-charcoal leading-tight truncate">{item.name}</p>
             {isDigital && (
-              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#EEF0FF] text-[#3851D1] uppercase tracking-wide">
+              <span className="shrink-0 text-[9px] font-bold px-1.5 py-[1px] rounded-full bg-[#eef0ff] text-[#3851d1] uppercase tracking-wide">
                 Digital
               </span>
             )}
@@ -96,7 +82,7 @@ function OrderItemRow({ item, orderId }: { item: OrderItem; orderId: string }) {
         </div>
       </div>
       <div className="flex flex-col items-end gap-1.5 shrink-0">
-        <p className="text-[13px] font-bold text-charcoal">Rs {item.totalPrice.toLocaleString()}</p>
+        <p className="text-[13px] font-bold text-charcoal">{currencySymbol(currency)}{item.totalPrice.toLocaleString()}</p>
         {isDigital && item.productId && (
           <DownloadBtn orderId={orderId} productId={item.productId} />
         )}
@@ -108,7 +94,7 @@ function OrderItemRow({ item, orderId }: { item: OrderItem; orderId: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // OrderItemsSection
 // ─────────────────────────────────────────────────────────────────────────────
-function OrderItemsSection({ items, orderId }: { items: OrderItem[]; orderId: string }) {
+function OrderItemsSection({ items, orderId, currency }: { items: OrderItem[]; orderId: string; currency: string }) {
   return (
     <section>
       <div className="flex items-center gap-2 mb-1">
@@ -119,7 +105,7 @@ function OrderItemsSection({ items, orderId }: { items: OrderItem[]; orderId: st
       </div>
       <div>
         {items.map((item, i) => (
-          <OrderItemRow key={i} item={item} orderId={orderId} />
+          <OrderItemRow key={i} item={item} orderId={orderId} currency={currency} />
         ))}
       </div>
     </section>
@@ -219,9 +205,9 @@ function OrderCard({ order }: { order: PlacedOrder }) {
         <div className="flex items-center gap-2 flex-wrap">
           <span className={clsx(
             'px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide',
-            order.orderStatus === 'completed' ? 'bg-[#E3F4EA] text-[#1A6B35]'
-            : order.orderStatus === 'cancelled' ? 'bg-[#FFF0F0] text-error'
-            : 'bg-[#FFF4DC] text-[#B36200]',
+            order.orderStatus === 'completed' ? 'bg-[#e3f4ea] text-[#1a6b35]'
+            : order.orderStatus === 'cancelled' ? 'bg-error-bg text-error'
+            : 'bg-[#fff4dc] text-[#b36200]',
           )}>
             {order.orderStatus}
           </span>
@@ -229,7 +215,7 @@ function OrderCard({ order }: { order: PlacedOrder }) {
             {order.paymentMethod.replace(/_/g, ' ')}
           </span>
           {order.isPaid && (
-            <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-[#E3F4EA] text-[#1A6B35]">
+            <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-[#e3f4ea] text-[#1a6b35]">
               Paid
             </span>
           )}
@@ -238,29 +224,31 @@ function OrderCard({ order }: { order: PlacedOrder }) {
 
       {/* Card body */}
       <div className="px-5 py-4 flex flex-col gap-0">
-        <OrderItemsSection items={order.items} orderId={order.orderId} />
-        {!allDigital && <AddressSection addr={order.deliveryAddress} />}
+        <OrderItemsSection items={order.items} orderId={order.orderId} currency={order.currency} />
+        {!allDigital && order.deliveryAddress && <AddressSection addr={order.deliveryAddress} />}
         {!allDigital && <OrderTimeline currentStatus={order.orderStatus} />}
       </div>
 
-      {/* Price footer */}
+      {/* Price footer — always the order's own real charged currency
+          (never the buyer's current display preference, which may have
+          changed since this order was placed). */}
       <footer className="px-5 py-4 bg-cream border-t border-bone">
         <div className="flex flex-col gap-2">
           <div className="flex justify-between text-[12px]">
             <span className="text-slate">Subtotal</span>
-            <span className="font-medium text-charcoal">Rs {order.summary.subtotal.toLocaleString()}</span>
+            <span className="font-medium text-charcoal">{currencySymbol(order.currency)}{order.summary.subtotal.toLocaleString()}</span>
           </div>
           {!allDigital && (
             <div className="flex justify-between text-[12px]">
               <span className="text-slate">Shipping</span>
               <span className="font-medium text-charcoal">
-                {order.summary.shipping === 0 ? 'Free' : `Rs ${order.summary.shipping.toLocaleString()}`}
+                {order.summary.shipping === 0 ? 'Free' : `${currencySymbol(order.currency)}${order.summary.shipping.toLocaleString()}`}
               </span>
             </div>
           )}
           <div className="flex justify-between text-[14px] font-bold pt-2 border-t border-bone">
             <span className="text-charcoal">Total</span>
-            <span className="text-charcoal">Rs {order.summary.total.toLocaleString()}</span>
+            <span className="text-charcoal">{currencySymbol(order.currency)}{order.summary.total.toLocaleString()}</span>
           </div>
         </div>
       </footer>
@@ -283,7 +271,7 @@ function SuccessHero({ orders }: { orders: PlacedOrder[] }) {
 
       {/* Icon */}
       <div className="relative mb-5">
-        <div className="w-[72px] h-[72px] rounded-full bg-[#EBF7EF] flex items-center justify-center">
+        <div className="w-[72px] h-[72px] rounded-full bg-success-bg flex items-center justify-center">
           <CheckCircle2 size={38} className="text-success" />
         </div>
         <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-brand-orange flex items-center justify-center">
@@ -323,9 +311,9 @@ function SuccessHero({ orders }: { orders: PlacedOrder[] }) {
           </span>
         </div>
         {hasDigital && (
-          <div className="flex items-center gap-1.5 px-4 py-[7px] bg-[#EEF0FF] rounded-[8px] border border-[#C7CEFF]">
-            <Download size={11} className="text-[#3851D1]" />
-            <span className="text-[11px] font-semibold text-[#3851D1]">Ready to download</span>
+          <div className="flex items-center gap-1.5 px-4 py-[7px] bg-[#eef0ff] rounded-[8px] border border-[#c7ceff]">
+            <Download size={11} className="text-[#3851d1]" />
+            <span className="text-[11px] font-semibold text-[#3851d1]">Ready to download</span>
           </div>
         )}
       </div>
@@ -355,29 +343,33 @@ function SummaryPanel({ orders, navigate }: { orders: PlacedOrder[]; navigate: (
               <p className="text-[11px] font-bold text-brand-deep-orange font-mono leading-tight">{order.orderNumber}</p>
               <p className="text-[10px] text-slate mt-[1px]">{order.items.length} item{order.items.length !== 1 ? 's' : ''}</p>
             </div>
-            <p className="text-[12px] font-semibold text-charcoal shrink-0">Rs {order.summary.total.toLocaleString()}</p>
+            <p className="text-[12px] font-semibold text-charcoal shrink-0">{currencySymbol(order.currency)}{order.summary.total.toLocaleString()}</p>
           </div>
         ))}
       </div>
 
       <div className="px-5 py-4 flex justify-between items-center border-b border-bone">
         <span className="text-[13px] font-bold text-charcoal">Grand Total</span>
-        <span className="text-[15px] font-bold text-carbon">Rs {grandTotal.toLocaleString()}</span>
+        <span className="text-[15px] font-bold text-carbon">{currencySymbol(orders[0]?.currency)}{grandTotal.toLocaleString()}</span>
       </div>
 
       <div className="px-5 py-4 flex flex-col gap-2">
-        <button
+        <Button
+          variant="primary" fullWidth
+          className="justify-center! px-4! py-[11px]! rounded-[10px]!"
+          icon={<ShoppingBag size={14} />}
           onClick={() => navigate('/marketplace')}
-          className="w-full flex items-center justify-center gap-2 bg-brand-orange text-white rounded-[10px] px-4 py-[11px] text-[13px] font-semibold border-none cursor-pointer"
         >
-          <ShoppingBag size={14} /> Continue Shopping
-        </button>
-        <button
+          Continue Shopping
+        </Button>
+        <Button
+          variant="outline" fullWidth
+          className="justify-center! px-4! py-[11px]! rounded-[10px]!"
+          iconRight={<ArrowRight size={13} />}
           onClick={() => navigate('/')}
-          className="w-full flex items-center justify-center gap-2 bg-cream text-charcoal border border-bone rounded-[10px] px-4 py-[11px] text-[13px] font-medium cursor-pointer"
         >
-          Back to Home <ArrowRight size={13} />
-        </button>
+          Back to Home
+        </Button>
       </div>
 
     </aside>
@@ -393,18 +385,18 @@ export function OrderSuccessPage() {
   const location = useLocation();
   const orders   = (location.state as { orders: PlacedOrder[] } | null)?.orders ?? [];
 
+  useEffect(() => {
+    if (orders.length === 0) navigate('/marketplace', { replace: true });
+  }, [orders.length, navigate]);
+
   if (orders.length === 0) {
-    navigate('/marketplace', { replace: true });
     return null;
   }
 
   return (
     <div className="min-h-screen bg-cream">
 
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-bone h-[60px] flex items-center px-4 md:px-10">
-        <SolvexoLogo onClick={() => navigate('/')} />
-      </nav>
+      <BuyerNavbar variant="minimal" />
 
       {/* Content */}
       <div className="max-w-[1040px] mx-auto px-4 md:px-6 py-6 md:py-10">
@@ -424,6 +416,7 @@ export function OrderSuccessPage() {
         </div>
       </div>
 
+      <Footer />
     </div>
   );
 }

@@ -1,9 +1,15 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { Button } from '@/components/comman/ui/Button';
-import { Avatar } from '@/components/comman/ui/Avatar';
+import { SkeletonBox } from '@/components/comman/ui';
 import { ArrowRight, GraduationCap, Palette, Store, Gem, Briefcase, Building2, ShoppingBag, Hammer, Download, Sparkles, BarChart2, Monitor, CreditCard, Lock } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { apiGetPlatformStats, type PlatformStats } from '@/api/services/store';
+
+const compactNumber   = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+const compactCurrency = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1, style: 'currency', currency: 'USD' });
 
 const SERIF = "'Lora', Georgia, serif";
 
@@ -27,22 +33,29 @@ const FEATURES: { Icon: LucideIcon; title: string; desc: string }[] = [
   { Icon: Lock,        title: 'Seller Protection',    desc: 'Fraud protection and dispute resolution support.'  },
 ];
 
-const STATS = [
-  { value: '50,000+', label: 'Active Sellers' },
-  { value: '$180M+',  label: 'GMV Processed'  },
-  { value: '4.9 ★',  label: 'Average Rating'  },
-  { value: '135+',    label: 'Countries'       },
-];
-
-const TESTIMONIALS = [
-  { name: 'Maria Santos',   role: 'Educator & Seller',     text: 'Solvexo made it so easy to launch my teaching resource shop. Within 3 months I was earning enough to quit my second job.' },
-  { name: 'James Kowalski', role: 'Physical Goods Seller', text: 'The AI tools alone are worth the price. My product descriptions convert so much better now and I spend half the time on admin.' },
-  { name: 'Priya Nair',     role: 'Digital Creator',       text: "I've tried every platform out there. Solvexo is the only one that actually understands what digital creators need." },
-];
-
 export function ForSellersPage() {
   const navigate = useNavigate();
+  const sellEntry = useSellEntry();
   usePageTitle('For Sellers');
+
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetPlatformStats()
+      .then(res => { if (!cancelled) setStats(res.data); })
+      .catch(() => { /* non-critical — stat strip just stays hidden */ })
+      .finally(() => { if (!cancelled) setStatsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const statItems = stats ? [
+    { value: `${compactNumber.format(stats.sellersCount)}+`, label: 'Active Sellers' },
+    { value: `${compactCurrency.format(stats.gmv)}+`,        label: 'GMV Processed'  },
+    { value: `${compactNumber.format(stats.buyersCount)}+`,  label: 'Registered Buyers' },
+    { value: stats.ratingCount > 0 ? `${stats.avgRating.toFixed(1)} ★` : '—', label: 'Average Rating' },
+  ] : [];
 
   return (
     <div className="bg-white min-h-full">
@@ -53,11 +66,13 @@ export function ForSellersPage() {
         style={{ background: 'linear-gradient(135deg, #141413 0%, #2C2A28 100%)' }}
       >
         <div className="absolute rounded-full w-[400px] h-[400px] bg-brand-orange opacity-[0.08] -top-[80px] -right-[80px]" />
-        <div className="absolute rounded-full w-[300px] h-[300px] bg-[#B95A3A] opacity-[0.06] -bottom-[60px] left-[40%]" />
+        <div className="absolute rounded-full w-[300px] h-[300px] bg-brand-deep-orange opacity-[0.06] -bottom-[60px] left-[40%]" />
 
         <div className="max-w-[760px] mx-auto text-center relative z-[1]">
           <div className="inline-flex items-center gap-2 bg-[rgba(217,119,87,0.15)] border border-[rgba(217,119,87,0.3)] rounded-[20px] px-[14px] py-[5px] mb-6">
-            <span className="text-[12px] text-brand-orange font-medium">Trusted by 50,000+ sellers worldwide</span>
+            <span className="text-[12px] text-brand-orange font-medium">
+              Trusted by {stats ? `${compactNumber.format(stats.sellersCount)}+` : '50,000+'} sellers worldwide
+            </span>
           </div>
 
           <h1 className="block text-3xl md:text-5xl lg:text-[48px] font-bold text-white leading-[1.15] mb-5" style={{ fontFamily: SERIF }}>
@@ -65,13 +80,13 @@ export function ForSellersPage() {
             With Solvex<span className="text-brand-orange">o</span>.
           </h1>
 
-          <p className="text-sm md:text-[17px] text-[#B0AEA8] leading-[1.7] max-w-[580px] mx-auto mb-9">
+          <p className="text-sm md:text-[17px] text-[#b0aea8] leading-[1.7] max-w-[580px] mx-auto mb-9">
             The all-in-one commerce platform for educators, creators, and independent sellers.
             Get your store live in minutes. Start selling today.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" onClick={() => navigate('/onboarding')}>
+            <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
               Start for Free <ArrowRight size={14} className="inline align-middle ml-1" />
             </Button>
             <button
@@ -97,7 +112,12 @@ export function ForSellersPage() {
                 <s.Icon size={36} className="block mb-4 text-brand-orange" />
                 <p className="text-[17px] font-bold text-carbon mb-2">{s.title}</p>
                 <p className="text-[13px] text-slate leading-[1.7] mb-5">{s.desc}</p>
-                <Button variant="secondary" size="sm" onClick={() => navigate('/onboarding')}>
+                <Button
+                  variant="secondary" size="sm"
+                  onClick={() => s.cta === 'Contact Us'
+                    ? (window.location.href = 'mailto:support@solvexo.com?subject=Institutional%20Account%20Inquiry')
+                    : sellEntry.go()}
+                >
                   {s.cta} <ArrowRight size={14} className="inline align-middle ml-1" />
                 </Button>
               </div>
@@ -128,30 +148,23 @@ export function ForSellersPage() {
       {/* ── Social Proof ─────────────────────────────────────────────────── */}
       <div className="px-4 md:px-8 lg:px-12 py-12 md:py-[72px] bg-cream border-t border-bone">
         <div className="max-w-[1100px] mx-auto">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 justify-items-center mb-12">
-            {STATS.map(s => (
-              <div key={s.label} className="text-center">
-                <p className="block text-[32px] font-bold text-brand-orange">{s.value}</p>
-                <p className="text-[13px] text-slate">{s.label}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {TESTIMONIALS.map(t => (
-              <div key={t.name} className="bg-white rounded-2xl p-7 border border-bone">
-                <p className="block text-[22px] text-brand-orange mb-3">★★★★★</p>
-                <p className="text-[13px] text-charcoal leading-[1.8] mb-5 italic">"{t.text}"</p>
-                <div className="flex items-center gap-[10px]">
-                  <Avatar name={t.name} size={36} />
-                  <div>
-                    <p className="block text-[13px] font-semibold text-carbon">{t.name}</p>
-                    <p className="text-[11px] text-slate">{t.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {(statsLoading || statItems.length > 0) && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 justify-items-center mb-12">
+              {statsLoading
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="text-center">
+                      <SkeletonBox width={70} height={32} className="mb-2 mx-auto" />
+                      <SkeletonBox width={90} height={13} className="mx-auto" />
+                    </div>
+                  ))
+                : statItems.map(s => (
+                    <div key={s.label} className="text-center">
+                      <p className="block text-[32px] font-bold text-brand-orange">{s.value}</p>
+                      <p className="text-[13px] text-slate">{s.label}</p>
+                    </div>
+                  ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -164,7 +177,7 @@ export function ForSellersPage() {
           No credit card required. Get your store live in minutes. Upgrade when you're ready.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button size="lg" onClick={() => navigate('/onboarding')}>
+          <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
             Create Free Account <ArrowRight size={14} className="inline align-middle ml-1" />
           </Button>
           <button

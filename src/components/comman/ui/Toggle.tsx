@@ -19,7 +19,7 @@ export function Toggle({ checked, onChange, disabled = false, size = 'md' }: Tog
         size === 'md' ? 'w-10 h-[22px]' : 'w-8 h-5',
         'relative rounded-full border-none cursor-pointer p-0 shrink-0',
         'transition-colors duration-[180ms]',
-        checked ? 'bg-brand-orange' : 'bg-[#D1D5DB]',
+        checked ? 'bg-brand-orange' : 'bg-[#d1d5db]',
         disabled && 'opacity-50 cursor-not-allowed',
       )}
     >

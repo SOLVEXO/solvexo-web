@@ -1,52 +1,44 @@
-import { clsx } from 'clsx';
-import { Star } from 'lucide-react';
-import { Avatar } from '@/components/comman/ui/Avatar';
-import { POS_CUSTOMERS } from '../../pos.data';
-import type { PosCustomer, PosView } from '../../pos.types';
+import { User } from 'lucide-react';
+import type { POSSaleState } from '../../pos.types';
 
 interface CustomerPanelProps {
-  customer:    PosCustomer | null;
-  setCustomer: (c: PosCustomer | null) => void;
-  setPosView:  (v: PosView) => void;
+  sale: POSSaleState;
 }
 
-export function CustomerPanel({ customer, setCustomer, setPosView }: CustomerPanelProps) {
+export function CustomerPanel({ sale }: CustomerPanelProps) {
+  const { customerName, setCustomerName, setPosView } = sale;
+
   return (
-    <div className="px-[18px] py-[14px] border-b border-carbon bg-[#141312] shrink-0">
-      <p className="text-[12px] font-semibold text-white mb-[10px]">Attach Customer</p>
+    <div className="px-5 py-[18px] border-b border-pos-border bg-pos-surface-3">
+      <div className="flex items-center gap-[10px] mb-[14px]">
+        <div className="w-9 h-9 rounded-xl bg-info/15 border border-info/30 flex items-center justify-center shrink-0">
+          <User size={16} className="text-info" />
+        </div>
+        <p className="text-[13.5px] font-bold text-white">Customer Name</p>
+      </div>
 
       <input
-        placeholder="Search by name or email..."
-        className="w-full bg-carbon border-0 rounded-lg px-3 py-[7px] text-[12px] text-white outline-none mb-[10px] box-border"
+        value={customerName === 'Walk-in' ? '' : customerName}
+        onChange={e => setCustomerName(e.target.value || 'Walk-in')}
+        placeholder="Walk-in"
+        autoFocus
+        className="w-full h-12 bg-pos-surface border border-pos-border rounded-xl px-[14px] text-[13.5px] text-white outline-none mb-3 box-border transition-colors duration-150 focus:border-info/50"
       />
 
-      {POS_CUSTOMERS.map(c => (
+      <div className="flex gap-[8px]">
         <button
-          key={c.email}
-          onClick={() => { setCustomer(c); setPosView('charge'); }}
-          className={clsx(
-            'w-full flex items-center gap-[10px] px-[10px] py-[7px] rounded-lg mb-1 border-0 cursor-pointer text-left',
-            customer?.email === c.email ? 'bg-charcoal' : 'bg-transparent',
-          )}
+          onClick={() => setPosView('charge')}
+          className="flex-1 h-11 bg-info border-0 rounded-xl text-[13px] font-semibold text-white cursor-pointer transition-all duration-150 active:scale-[0.97]"
         >
-          <Avatar name={c.name} size={28} variant="pos" />
-          <div className="flex-1">
-            <p className="text-[12px] font-medium text-white">{c.name}</p>
-            <p className="text-[10px] text-pos-muted">{c.email}</p>
-          </div>
-          <span className="bg-brand-pale-orange text-brand-deep-orange text-[10px] font-semibold px-[7px] py-[2px] rounded-[20px] flex items-center gap-[3px]">
-            <Star size={9} className="fill-brand-deep-orange text-brand-deep-orange" />
-            {c.points} pts
-          </span>
+          Done
         </button>
-      ))}
-
-      <button
-        onClick={() => { setCustomer(null); setPosView('charge'); }}
-        className="w-full text-center px-0 py-[6px] text-[11px] bg-transparent border-0 cursor-pointer text-pos-muted"
-      >
-        × Clear customer
-      </button>
+        <button
+          onClick={() => { setCustomerName('Walk-in'); setPosView('charge'); }}
+          className="px-4 h-11 bg-pos-surface border border-pos-border rounded-xl text-[13px] text-pos-muted cursor-pointer transition-all duration-150 hover:border-pos-border-strong active:scale-95"
+        >
+          Clear
+        </button>
+      </div>
     </div>
   );
 }

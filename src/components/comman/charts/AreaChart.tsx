@@ -3,10 +3,7 @@ import {
   AreaChart as RechartsArea, Area,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
-
-const FONT  = "'Poppins', sans-serif";
-const TICK  = { fontSize: 11, fill: '#8C8A82', fontFamily: FONT };
-const GRID  = { stroke: '#E8E6DC', strokeDasharray: '4 4' };
+import { CHART_TICK, CHART_GRID, CHART_DEFAULT_COLOR } from './chartTheme';
 
 interface TooltipPayload { value: number }
 interface CustomTooltipProps {
@@ -20,7 +17,7 @@ interface CustomTooltipProps {
 function ChartTooltip({ active, payload, label, valuePrefix = '', valueSuffix = '' }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-bone rounded-lg px-3 py-[6px] shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-xs">
+    <div className="bg-white border border-bone rounded-lg px-3 py-[6px] text-xs">
       <p className="text-slate mb-0.5">{label}</p>
       <p className="font-bold text-charcoal">{valuePrefix}{payload[0].value.toLocaleString()}{valueSuffix}</p>
     </div>
@@ -49,7 +46,7 @@ export function AreaChart({
   subtitle,
   action,
   height = 220,
-  color = '#D97757',
+  color = CHART_DEFAULT_COLOR,
   valuePrefix = '',
   valueSuffix = '',
   yTickFormatter,
@@ -58,9 +55,28 @@ export function AreaChart({
   const defaultYFmt = (v: number) =>
     v >= 1000 ? `${valuePrefix}${(v / 1000).toFixed(0)}k` : `${valuePrefix}${v}`;
   const yFmt = yTickFormatter ?? defaultYFmt;
+  const ariaLabel = title ? `${title} chart` : 'Chart';
+  const hasValue = data.some(d => Number(d[dataKey]) !== 0);
+
+  if (!data.length) {
+    return (
+      <div
+        className="bg-white border border-bone rounded-[10px] flex items-center justify-center"
+        style={{ height: height + (title || subtitle || action ? 56 : 0) }}
+        role="img"
+        aria-label={ariaLabel}
+      >
+        <p className="text-slate text-[13px]">No data yet</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white border border-bone rounded-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+    <div
+      className="bg-white border border-bone rounded-[10px] transition-colors duration-200 hover:border-slate/30"
+      role="img"
+      aria-label={ariaLabel}
+    >
       {(title || subtitle || action) && (
         <div className="px-5 pt-4 pb-2 flex items-center justify-between">
           <div>
@@ -79,18 +95,18 @@ export function AreaChart({
               <stop offset="95%" stopColor={color} stopOpacity={0.01} />
             </linearGradient>
           </defs>
-          <CartesianGrid {...GRID} vertical={false} />
-          <XAxis dataKey={xKey}  tick={TICK} axisLine={false} tickLine={false} />
-          <YAxis tick={TICK} axisLine={false} tickLine={false} tickFormatter={yFmt} width={46} />
+          <CartesianGrid {...CHART_GRID} vertical={false} />
+          <XAxis dataKey={xKey}  tick={CHART_TICK} axisLine={false} tickLine={false} />
+          <YAxis tick={CHART_TICK} axisLine={false} tickLine={false} tickFormatter={yFmt} width={46} />
           <Tooltip content={<ChartTooltip valuePrefix={valuePrefix} valueSuffix={valueSuffix} />} />
           <Area
             type="monotone"
             dataKey={dataKey}
-            stroke={color}
+            stroke={hasValue ? color : 'transparent'}
             strokeWidth={2.5}
-            fill={`url(#${gradId})`}
+            fill={hasValue ? `url(#${gradId})` : 'transparent'}
             dot={false}
-            activeDot={{ r: 4, fill: color, strokeWidth: 0 }}
+            activeDot={hasValue ? { r: 4, fill: color, strokeWidth: 0 } : false}
           />
         </RechartsArea>
       </ResponsiveContainer>
