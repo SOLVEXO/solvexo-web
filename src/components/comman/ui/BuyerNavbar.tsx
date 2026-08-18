@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { ArrowLeft, ArrowRight, Search, Clock, LayoutGrid, X, TrendingUp, Tag, Star, Sparkles, ChevronDown, Check, Store as StoreIcon, Lightbulb, Trash2, Eye } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Search, Clock, LayoutGrid, X, TrendingUp, Tag, Star, Sparkles, ChevronDown, Check, Store as StoreIcon, Lightbulb, Trash2, Eye, Loader2 } from 'lucide-react';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetRecentSearches, apiSearchStores } from '@/api/services/search';
 import { apiGetAllProducts, type MarketplaceProduct } from '@/api/services/marketplace';
@@ -21,6 +21,7 @@ import { SignInPreview } from './SignInPreview';
 import { MiniCart } from './MiniCart';
 import { MiniWishlist } from './MiniWishlist';
 import { scrollRootRef } from '@/utils/scrollRoot';
+import { useSellEntry } from '@/hooks/auth/useSellEntry';
 
 export interface BuyerNavbarSearchConfig {
   value: string;
@@ -75,7 +76,19 @@ export interface BuyerNavbarProps {
    *  Education, Pricing, FAQ, Sell on Solvexo) so that navigation lives in
    *  the one real navbar instead of a separate strip underneath it. Omitted
    *  everywhere else (Marketplace, ProductDetail, etc.) — unaffected. */
-  centerLinks?: { label: string; path: string; highlight?: boolean; children?: { label: string; path: string }[] }[];
+  centerLinks?: {
+    label: string; path: string; highlight?: boolean;
+    /** Runs instead of navigating to `path` when present — e.g. "Become a
+     *  Seller" routing through useSellEntry() (checks login/store state)
+     *  rather than a plain link to the static /sellers info page. */
+    onClick?: () => void;
+    children?: { label: string; path: string }[];
+  }[];
+  /** Drops wishlist/cart/currency entirely and swaps the logged-out account
+   *  actions for a plain "Sign In" + "Start Selling" pair — for marketing
+   *  pages (PublicLayout: Homepage, Pricing, etc.) that aren't a shopping
+   *  context and shouldn't offer shopping actions. */
+  hideCommerce?: boolean;
 }
 
 const RECENT_KEY = 'solvexo_recent_searches';
@@ -877,17 +890,47 @@ export function CurrencySelector() {
   );
 }
 
-function AccountActions() {
+// `simple` mode (PublicLayout's marketing pages — Homepage/Pricing/etc.) drops
+// wishlist/cart/currency entirely and, when logged out, shows a plain
+// "Sign In" + "Start Selling" pair instead of the hover-preview quick-login
+// widget (whose Orders/Wishlist/Messages shortcuts are buyer-shopping
+// features that don't belong on a page whose one job is converting a visitor
+// into a seller).
+function AccountActions({ simple = false }: { simple?: boolean }) {
   const navigate = useNavigate();
+  const sellEntry = useSellEntry();
+
   if (TokenStorage.isLoggedIn()) {
     return (
       <div className="flex items-center gap-2.5">
         <NotificationBell />
         <ProfileAvatar />
-        <CurrencySelector />
+        {!simple && <CurrencySelector />}
       </div>
     );
   }
+
+  if (simple) {
+    return (
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={() => navigate('/login')}
+          className="text-[13px] font-medium text-white border border-white/25 rounded-md px-[14px] py-[7px] bg-transparent cursor-pointer hover:bg-white/10 transition-colors"
+        >
+          Sign In
+        </button>
+        <button
+          onClick={sellEntry.go}
+          disabled={sellEntry.loading}
+          className="inline-flex items-center gap-[6px] text-[13px] font-semibold text-white border-none rounded-md px-[14px] py-[7px] bg-brand-orange cursor-pointer hover:bg-brand-deep-orange transition-colors disabled:opacity-60"
+        >
+          {sellEntry.loading && <Loader2 size={13} className="animate-spin" />}
+          Start Selling
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-1.5 md:gap-2.5 shrink-0">
       <SignInPreview />
@@ -995,7 +1038,7 @@ export function useCompactOnScroll() {
   return { scrolled, hidden };
 }
 
-export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColor, backTo, hideSearch = false, centerLinks }: BuyerNavbarProps) {
+export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColor, backTo, hideSearch = false, centerLinks, hideCommerce = false }: BuyerNavbarProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const uncontrolled = useUncontrolledSearch();
@@ -1074,7 +1117,7 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
               return (
                 <button
                   key={item.label}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => (item.onClick ? item.onClick() : navigate(item.path))}
                   className={clsx(
                     'text-[13px] font-medium bg-transparent border-none cursor-pointer transition-colors duration-150',
                     isActive || item.highlight ? 'text-brand-orange' : 'text-charcoal hover:text-brand-orange',
@@ -1164,9 +1207,13 @@ export function BuyerNavbar({ variant = 'full', contextLabel, search, accentColo
                   </Button>
                 </div>
               )}
-              <MiniWishlist />
-              <MiniCart accentColor={accentColor} />
-              <AccountActions />
+              {!hideCommerce && (
+                <>
+                  <MiniWishlist />
+                  <MiniCart accentColor={accentColor} />
+                </>
+              )}
+              <AccountActions simple={hideCommerce} />
             </div>
           </>
         )}

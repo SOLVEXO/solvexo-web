@@ -24,8 +24,6 @@ export { CopyIconButton }                    from './CopyIconButton';
 export { RadioButton }                       from './RadioButton';
 export type { RadioOption }                  from './RadioButton';
 
-export { RoleChoiceCards }                    from './RoleChoiceCards';
-export type { RoleChoiceOption }             from './RoleChoiceCards';
 export { RoleSegmentedControl }              from './RoleSegmentedControl';
 export type { RoleSegmentOption }            from './RoleSegmentedControl';
 
@@ -51,6 +49,8 @@ export { ProgressBar }                       from './ProgressBar';
 export { InfoRow }                           from './InfoRow';
 
 export { Toggle }                            from './Toggle';
+
+export { LocationPickerMap }                 from './LocationPickerMap';
 
 export { Field }                             from './Field';
 

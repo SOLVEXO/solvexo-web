@@ -49,7 +49,11 @@ export type AppRole = 'user' | 'seller' | 'admin';
 export function getRoleRedirect(role: AppRole): string {
   switch (role) {
     case 'admin':  return '/admin';
-    case 'seller': return '/seller/dashboard';
+    // Every real seller call site branches to resolveSellerDestinationRemote()
+    // instead of this (there's no single fixed seller landing page any more —
+    // it depends on which store, if any, the seller owns) — this is just the
+    // last-resort fallback if one ever doesn't.
+    case 'seller': return '/seller/stores';
     default:       return '/marketplace';       // "user" / buyer
   }
 }
@@ -70,6 +74,40 @@ export const LastRolePreference = {
   },
   set(role: AppRole) {
     try { localStorage.setItem(LAST_ROLE_KEY, role); } catch { /* storage unavailable */ }
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REMEMBERED ACCOUNT — Shopify/Google-style "Continue as X" chooser data.
+// Deliberately localStorage, NOT the cookie-backed TokenStorage above: this
+// must survive `TokenStorage.clear()` on logout (useLogout never touches
+// localStorage), since the whole point is recognizing "you've used this
+// account on this device before" even after signing out — it is never read
+// as proof of identity, only as a UX shortcut that pre-fills LoginPage /
+// offers a one-click "that's me" card on RegisterPage before falling back to
+// a normal fresh sign-up.
+// ─────────────────────────────────────────────────────────────────────────────
+const REMEMBERED_ACCOUNT_KEY = 'solvexo_remembered_account';
+export interface RememberedAccountData {
+  name:  string;
+  email: string;
+  role:  AppRole;
+  image: string | null;
+}
+export const RememberedAccount = {
+  get(): RememberedAccountData | null {
+    try {
+      const raw = localStorage.getItem(REMEMBERED_ACCOUNT_KEY);
+      return raw ? (JSON.parse(raw) as RememberedAccountData) : null;
+    } catch {
+      return null;
+    }
+  },
+  set(account: RememberedAccountData) {
+    try { localStorage.setItem(REMEMBERED_ACCOUNT_KEY, JSON.stringify(account)); } catch { /* storage unavailable */ }
+  },
+  clear() {
+    try { localStorage.removeItem(REMEMBERED_ACCOUNT_KEY); } catch { /* storage unavailable */ }
   },
 };
 

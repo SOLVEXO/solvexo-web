@@ -596,7 +596,11 @@ export const ENDPOINTS = {
 
   // ── BANNERS ───────────────────────────────────────────────────────────────
   BANNER: {
-    LIST:   '/api/banners',
+    // `/api/spotlight` — additive alias of `/api/banners` (same handler, see
+    // banner.controller.ts) used for this public unauthenticated GET because
+    // some browser ad-blockers pattern-match and silently drop any request
+    // whose URL contains "banners".
+    LIST:   '/api/spotlight',
     COUNT:  '/api/banners/count',
     CREATE: '/api/banners',
     UPLOAD: '/api/banners/upload',

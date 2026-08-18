@@ -190,7 +190,7 @@ export function SellerMessages() {
           subtitleOverride={active ? (active.isArchived ? 'Archived' : active.isMuted ? 'Muted' : undefined) : undefined}
           menuItems={menuItems}
           onBack={() => setActiveId(null)}
-          shortcuts={storeId ? [{ icon: <Package size={17} />, label: 'View Orders', onClick: () => navigate(`/seller/store/${storeId}/orders`) }] : []}
+          shortcuts={storeId ? [{ icon: <Package size={17} />, label: 'View Orders', onClick: () => navigate(`/store/${storeId}/orders`) }] : []}
           messages={messages}
           msgLoading={msgLoading}
           loadingMore={loadingMore}

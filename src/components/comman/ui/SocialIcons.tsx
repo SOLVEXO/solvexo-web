@@ -1,6 +1,5 @@
 import type { ReactElement } from 'react';
 import { clsx } from 'clsx';
-import { Mail } from 'lucide-react';
 
 /* ── Brand SVG icons — single source of truth (was copy-pasted 3× across
    LoginPage, RegisterPage and SignInPreview). ─────────────────────────── */
@@ -42,21 +41,19 @@ export const SOCIAL_PROVIDERS: { Icon: (props: { size?: number }) => ReactElemen
   { Icon: FacebookIcon, label: 'Facebook', provider: 'facebook' },
 ];
 
-/** Premium social-login button row — shared by LoginPage, RegisterPage.
- *  `layout="row"` (default) is the compact 3-across icon chip row used on
- *  the password/signin screen; `layout="stacked"` is one full-width pill
- *  ("Continue with X") per line, used on the entry screen — pass
- *  `onEmailSelect` there to append a 4th "Continue with email" pill
- *  (outlined, matches the reference exactly instead of a bare input). */
+/** Premium social-login button row — shared by LoginPage, RegisterPage,
+ *  SignInPreview, AuthGateModal. `layout="row"` (default) is the compact
+ *  3-across icon chip row; `layout="stacked"` is one full-width pill per
+ *  line. Both render alongside an email/password form directly on the page
+ *  now — there's no separate "choose a sign-in method" step any more, so
+ *  this never renders its own email entry point. */
 export function SocialLoginRow({
   onSelect,
-  onEmailSelect,
   disabled = false,
   className,
   layout = 'row',
 }: {
   onSelect:  (provider: SocialProvider) => void;
-  onEmailSelect?: () => void;
   disabled?: boolean;
   className?: string;
   layout?: 'row' | 'stacked';
@@ -85,33 +82,6 @@ export function SocialLoginRow({
           <span className={layout === 'row' ? 'hidden sm:inline' : 'inline'}>{label}</span>
         </button>
       ))}
-
-      {layout === 'stacked' && onEmailSelect && (
-        <>
-          <div className="flex items-center gap-3 py-0.5">
-            <div className="flex-1 h-px bg-bone" />
-            <span className="text-[11px] text-slate">OR</span>
-            <div className="flex-1 h-px bg-bone" />
-          </div>
-          <button
-            type="button"
-            onClick={onEmailSelect}
-            disabled={disabled}
-            className={[
-              'w-full flex items-center justify-center gap-[7px] px-3 py-[11px] bg-white border border-brand-orange rounded-full',
-              'text-[12.5px] font-semibold text-brand-orange cursor-pointer',
-              'transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out',
-              'hover:bg-brand-pale-orange/40 hover:-translate-y-px',
-              'active:translate-y-0 active:scale-[0.98]',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50',
-              'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0',
-            ].join(' ')}
-          >
-            <Mail size={17} className="shrink-0" />
-            Continue with email
-          </button>
-        </>
-      )}
     </div>
   );
 }

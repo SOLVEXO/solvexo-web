@@ -71,7 +71,7 @@ export default function StoreProductDetail() {
         product: res.data.product,
         variant: { _id: '', productId, sku: '—', price: 0, compareAtPrice: null, options: [], stock: 0, unlimitedStock: false, shippingWeight: null, images: [], isDefault: true, status: 'active', isDelete: false, createdAt: '', updatedAt: '' },
       }))
-      .catch(() => navigate(`/seller/store/${storeId}/products`, { replace: true }))
+      .catch(() => navigate(`/store/${storeId}/products`, { replace: true }))
       .finally(() => setFetching(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -162,7 +162,7 @@ export default function StoreProductDetail() {
           </div>
         </div>
         <button
-          onClick={() => navigate(`/seller/store/${storeId}/products/edit/${p._id}`, { state: { entry } })}
+          onClick={() => navigate(`/store/${storeId}/products/edit/${p._id}`, { state: { entry } })}
           className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-5 py-[10px] text-[13px] font-semibold cursor-pointer hover:opacity-90 transition-opacity"
         >
           <Edit2 size={14} /> Edit Product

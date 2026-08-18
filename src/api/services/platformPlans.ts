@@ -95,6 +95,15 @@ export function apiGetSellerPlatformOverview() {
   }>>(`${BASE}/seller/overview`);
 }
 
+// ── Onboarding wizard's Payment step (no store exists yet) ─────────────────
+export function apiCreateOnboardingSetupIntent() {
+  return client.post<never, ApiResponse<{ clientSecret: string; customerId: string }>>(`${BASE}/onboarding/setup-intent`, {});
+}
+
+export function apiConfirmOnboardingPaymentMethod(setupIntentId: string) {
+  return client.post<never, ApiResponse<never>>(`${BASE}/onboarding/confirm-payment-method`, { setupIntentId });
+}
+
 export function apiGetStorePlatformPlan(storeId: string) {
   return client.get<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/${storeId}`);
 }

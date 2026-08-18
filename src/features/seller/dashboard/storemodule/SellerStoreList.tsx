@@ -94,8 +94,8 @@ export function SellerStoreList() {
         <ActionMenu
           align="right"
           items={[
-            { label: 'View Store', onClick: () => navigate(`/seller/store/${s._id}/dashboard`), icon: <Eye    size={13} /> },
-            { label: 'Edit Store', onClick: () => navigate(`/seller/store/${s._id}/settings`),  icon: <Pencil size={13} /> },
+            { label: 'View Store', onClick: () => navigate(`/store/${s._id}/dashboard`), icon: <Eye    size={13} /> },
+            { label: 'Edit Store', onClick: () => navigate(`/store/${s._id}/settings`),  icon: <Pencil size={13} /> },
           ]}
         />
       ),
@@ -174,7 +174,7 @@ export function SellerStoreList() {
                 columns={columns}
                 data={paged}
                 keyExtractor={s => s._id}
-                onRowClick={s => navigate(`/seller/store/${s._id}/dashboard`)}
+                onRowClick={s => navigate(`/store/${s._id}/dashboard`)}
                 pagination={{
                   page,
                   total:    stores.length,

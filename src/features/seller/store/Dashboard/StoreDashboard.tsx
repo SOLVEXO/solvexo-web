@@ -129,7 +129,7 @@ function StoreHero({ store }: { store: ReturnType<typeof useStoreWorkspace>['sto
         <Button
           variant="outline" size="sm"
           className="!bg-white/10 !border-white/20 !text-white hover:!bg-white/20"
-          onClick={() => navigate(`/seller/store/${store?._id ?? ''}/settings`)}
+          onClick={() => navigate(`/store/${store?._id ?? ''}/settings`)}
         >
           Settings
         </Button>
@@ -251,7 +251,7 @@ function StoreInfoCard() {
       {/* Action links */}
       <div className="px-3 py-3 mt-auto flex flex-col gap-0.5">
         <button
-          onClick={() => navigate(`/seller/store/${storeId}/settings`)}
+          onClick={() => navigate(`/store/${storeId}/settings`)}
           className="flex items-center gap-2.5 px-[10px] py-[9px] rounded-lg text-[12px] font-medium text-charcoal bg-transparent border-0 cursor-pointer text-left transition-colors duration-150 hover:bg-[#f7f6f1] w-full"
         >
           <Settings size={13} className="text-slate shrink-0" />
@@ -299,7 +299,7 @@ function QuickActionsRow({ storeId }: { storeId: string }) {
         {actions.map(({ Icon, label, path, gradient, iconColor }) => (
           <button
             key={label}
-            onClick={() => navigate(`/seller/store/${storeId}/${path}`)}
+            onClick={() => navigate(`/store/${storeId}/${path}`)}
             className={`group flex flex-col items-center gap-2 py-4 px-2 rounded-[14px] border border-bone bg-gradient-to-br ${gradient} cursor-pointer transition-all duration-200 hover:-translate-y-[3px] hover:border-brand-orange/25 w-full`}
           >
             <div
