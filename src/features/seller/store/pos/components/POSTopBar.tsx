@@ -101,7 +101,7 @@ export function POSTopBar({ activeTab, setActiveTab }: POSTopBarProps) {
 
       {mode === 'owner' ? (
         <button
-          onClick={() => navigate(`/seller/store/${storeId}/pos`)}
+          onClick={() => navigate(`/store/${storeId}/pos`)}
           className="flex items-center gap-[6px] h-11 px-[14px] rounded-xl text-[12.5px] font-medium cursor-pointer border border-pos-border bg-transparent text-white/50 transition-all duration-150 hover:text-white hover:border-pos-border-strong"
         >
           <ArrowLeft size={14} /> <span className="hidden sm:inline">Dashboard</span>

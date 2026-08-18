@@ -183,7 +183,7 @@ function DropdownMenu({
             icon={isAdmin ? Shield : LayoutDashboard}
             label={isAdmin ? 'Admin Panel' : 'Seller Dashboard'}
             sublabel={isAdmin ? 'Manage the platform' : 'Manage your store'}
-            onClick={() => onNavigate(isAdmin ? '/admin' : '/seller/dashboard')}
+            onClick={() => onNavigate(isAdmin ? '/admin' : '/seller/stores')}
           />
         )}
       </div>

@@ -141,9 +141,9 @@ export function StoreNavMenu({ storeId, verified, posEnabled, onNavigate, exclud
               const isLockedByVerification = locked && item.id !== 'pos';
               const go = () => {
                 onNavigate?.();
-                if (isLockedByVerification) { navigate(`/seller/store/${storeId}/verification`); return; }
+                if (isLockedByVerification) { navigate(`/store/${storeId}/verification`); return; }
                 if (locked) return;
-                navigate(`/seller/store/${storeId}/${item.path}`);
+                navigate(`/store/${storeId}/${item.path}`);
               };
               return (
                 <button
@@ -191,13 +191,13 @@ function StoreBottomNav() {
   const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
   const verified   = store?.status === 'active';
 
-  const isActive = (path: string) => pathname === `/seller/store/${storeId}/${path}`;
+  const isActive = (path: string) => pathname === `/store/${storeId}/${path}`;
 
   const goToTab = (tabId: string, path: string) => {
     const navItem = NAV.flatMap(s => s.items).find(i => i.id === tabId);
     const locked = navItem ? isItemLocked(navItem, verified, posEnabled) : false;
-    if (locked) { navigate(`/seller/store/${storeId}/verification`); return; }
-    navigate(`/seller/store/${storeId}/${path}`);
+    if (locked) { navigate(`/store/${storeId}/verification`); return; }
+    navigate(`/store/${storeId}/${path}`);
   };
 
   return (
@@ -242,7 +242,7 @@ function buildPaletteItems(
         label:    item.label,
         group:    section.group,
         icon:     item.Icon,
-        onSelect: () => navigate(item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`),
+        onSelect: () => navigate(item.path.startsWith('/') ? item.path : `/store/${storeId}/${item.path}`),
       });
     });
   });
@@ -282,7 +282,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   const isActive = (seg: string) =>
     seg.startsWith('/')
       ? pathname === seg || pathname.startsWith(seg + '/')
-      : pathname === `/seller/store/${storeId}/${seg}`;
+      : pathname === `/store/${storeId}/${seg}`;
 
   const initials   = store?.name?.slice(0, 2).toUpperCase() ?? '..';
   const credits    = store?.aiCredits ?? 0;
@@ -299,20 +299,6 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
     </button>
   );
 
-  const paletteHint = (
-    <button
-      type="button"
-      onClick={() => setPaletteOpen(true)}
-      title="Search (Ctrl+K)"
-      className={clsx(
-        'flex items-center gap-1 rounded-md border border-dark-active text-slate hover:text-white hover:bg-dark-active transition-colors cursor-pointer shrink-0',
-        open ? 'px-[7px] py-[3px] text-[10px] font-semibold' : 'size-7 justify-center text-[9px] font-semibold',
-      )}
-    >
-      {open ? '⌘K' : 'K'}
-    </button>
-  );
-
   return (
     <>
       <aside className={clsx(
@@ -322,35 +308,12 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
         open ? 'w-[220px]' : 'w-[60px]',
       )}>
 
-        {/* Back to stores + toggle */}
+        {/* Sidebar collapse toggle */}
         <div className={clsx(
-          'flex items-center pt-[14px] pb-[10px] shrink-0',
-          open ? 'px-4 gap-2' : 'flex-col gap-[6px] px-[10px]',
+          'flex items-center justify-end pt-[14px] pb-[10px] shrink-0',
+          open ? 'px-4' : 'flex-col px-[10px]',
         )}>
-          {open ? (
-            <>
-              <button
-                onClick={() => navigate('/seller/dashboard')}
-                className="flex items-center gap-[7px] flex-1 bg-transparent border-0 cursor-pointer text-slate text-[12px] font-medium transition-colors duration-150 text-left hover:text-brand-orange"
-              >
-                <ChevronLeft size={14} /> All Stores
-              </button>
-              {paletteHint}
-              {toggleBtn}
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => navigate('/seller/dashboard')}
-                title="All Stores"
-                className="size-7 rounded-md flex items-center justify-center text-slate hover:text-brand-orange hover:bg-dark-active transition-colors cursor-pointer"
-              >
-                <ChevronLeft size={15} />
-              </button>
-              {paletteHint}
-              {toggleBtn}
-            </>
-          )}
+          {toggleBtn}
         </div>
 
         <div className="h-px bg-dark-active mx-3" />
@@ -404,12 +367,16 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
               {section.items.map(item => {
                 const active = isActive(item.path);
                 const isLockedPos = item.id === 'pos' && !posEnabled;
-                const isLockedByVerification = !verified && !ALLOWED_PRE_VERIFICATION.has(item.id) && item.id !== 'pos';
+                // While the store record is still loading, `verified` defaults
+                // to false — without the `!loading` guard every nav item would
+                // flash as "Locked" for that first render before flipping to
+                // its real state once the store fetch resolves.
+                const isLockedByVerification = !loading && !verified && !ALLOWED_PRE_VERIFICATION.has(item.id) && item.id !== 'pos';
                 const locked = isLockedPos || isLockedByVerification;
                 const goToItem = () => {
-                  if (isLockedByVerification) { navigate(`/seller/store/${storeId}/verification`); return; }
+                  if (isLockedByVerification) { navigate(`/store/${storeId}/verification`); return; }
                   if (isLockedPos) return;
-                  navigate(item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`);
+                  navigate(item.path.startsWith('/') ? item.path : `/store/${storeId}/${item.path}`);
                 };
                 return (
                   <div
@@ -452,7 +419,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                             type="button"
                             onClick={e => {
                               e.stopPropagation();
-                              navigate(isLockedByVerification ? `/seller/store/${storeId}/verification` : `/seller/store/${storeId}/pos`);
+                              navigate(isLockedByVerification ? `/store/${storeId}/verification` : `/store/${storeId}/pos`);
                             }}
                             className="text-[9px] font-bold uppercase tracking-[0.03em] px-[7px] py-[2px] rounded-full bg-brand-orange text-white border-none cursor-pointer shrink-0"
                           >
@@ -543,7 +510,7 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { storeId } = useStoreWorkspace();
-  const dashboardPath = `/seller/store/${storeId}/dashboard`;
+  const dashboardPath = `/store/${storeId}/dashboard`;
   const isDashboard = pathname === dashboardPath;
 
   return (
@@ -626,7 +593,7 @@ function StoreVerificationBanner() {
   // "already approved" signal (see the `verified` comment in StoreSidebar).
   if (!store || store.status === 'active') return null;
 
-  const goToVerification = () => navigate(`/seller/store/${storeId}/verification`);
+  const goToVerification = () => navigate(`/store/${storeId}/verification`);
 
   switch (store.verificationStatus) {
     case 'rejected':
@@ -682,7 +649,7 @@ function PlatformBillingBanner() {
   }, [storeId]);
 
   if (!sub) return null;
-  const goToBilling = () => navigate(`/seller/store/${storeId}/plan-billing`);
+  const goToBilling = () => navigate(`/store/${storeId}/plan-billing`);
 
   if (sub.status === 'past_due') {
     return (
@@ -747,7 +714,7 @@ function SellerActivationNotice({ item, storeId, verificationStatus }: {
         <p className="text-[16px] font-bold text-carbon mb-1.5">{item.label} is locked</p>
         <p className="text-[13px] text-slate leading-[1.6]">{VERIFICATION_NOTICE_COPY[verificationStatus] || VERIFICATION_NOTICE_COPY.not_started}</p>
       </div>
-      <Button variant="primary" size="md" onClick={() => navigate(`/seller/store/${storeId}/verification`)}>
+      <Button variant="primary" size="md" onClick={() => navigate(`/store/${storeId}/verification`)}>
         {ctaLabel}
       </Button>
     </div>
@@ -761,7 +728,7 @@ function findLockedNavItem(pathname: string, storeId: string): NavItem | null {
   for (const section of NAV) {
     for (const item of section.items) {
       if (ALLOWED_PRE_VERIFICATION.has(item.id) || item.id === 'pos') continue;
-      const full = item.path.startsWith('/') ? item.path : `/seller/store/${storeId}/${item.path}`;
+      const full = item.path.startsWith('/') ? item.path : `/store/${storeId}/${item.path}`;
       if (pathname === full || pathname.startsWith(full + '/')) return item;
     }
   }

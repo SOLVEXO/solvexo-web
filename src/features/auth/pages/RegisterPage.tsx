@@ -1,24 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRegister } from '@/hooks/auth/useRegister';
 import { useSocialLogin } from '@/hooks/auth/useSocialLogin';
 import { Button }      from '@/components/comman/ui/Button';
 import { Input }       from '@/components/comman/ui/Input';
-import { RoleChoiceCards } from '@/components/comman/ui/RoleChoiceCards';
+import { Avatar }      from '@/components/comman/ui/Avatar';
 import { SocialLoginRow } from '@/components/comman/ui/SocialIcons';
-import { Eye, EyeOff, ArrowRight, ArrowLeft, ShoppingBag, Store, TrendingUp, AlertTriangle, Info } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, ShoppingBag, Store, TrendingUp, AlertTriangle, Info } from 'lucide-react';
 import { useForm }     from '@/hooks/useForm';
 import { registerSchema, type RegisterFormData } from '@/utils/validation/schemas';
-import { TokenStorage, getRoleRedirect, type AppRole } from '@/api/services/auth';
+import { TokenStorage, getRoleRedirect, RememberedAccount, type AppRole } from '@/api/services/auth';
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MarketplaceMockup, DashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
-
-const ROLE_OPTIONS = [
-  { value: 'user',   label: 'Buyer',  description: 'Browse and purchase from the marketplace', Icon: ShoppingBag, accent: 'orange' as const },
-  { value: 'seller', label: 'Seller', description: 'Create a store and sell to thousands of buyers', Icon: Store, accent: 'success' as const },
-];
 
 const HIGHLIGHTS = [
   { Icon: ShoppingBag, text: 'Shop from thousands of independent sellers' },
@@ -26,29 +21,48 @@ const HIGHLIGHTS = [
   { Icon: TrendingUp,  text: 'Grow your business with built-in analytics' },
 ];
 
-// Register is three screens, not one crowded form: role choice (mirrors
-// Login's own role step, same RoleChoiceCards component so the two pages
-// read as one design language) → a social/email entry step (mirrors
-// Login's "sign in or create account" — stacked pills only, no bare email
-// field yet) → the account-detail form — identical for both roles, just
-// relabelled. Nothing about the backend payload/validation changes here.
+// One screen, not three — the account type is decided by HOW someone got
+// here, never asked twice: a "Sell on Solvexo" CTA arrives as
+// /register?role=seller (that click already WAS the role decision), any
+// other visit is a plain buyer sign-up. Socials + the full detail form live
+// together on the same screen, Amazon/Shopify-style, instead of a
+// role-picker step followed by a "choose how to continue" step.
+//
+// Same progressive-disclosure pattern as LoginPage: only the email field
+// shows up front, with stacked social pills above it; the rest of the
+// details (name/phone/address/password) only reveal once an email has
+// actually been typed, at which point the socials collapse into a single
+// compact row below the form instead.
+//
+// Shopify/Google-style account recognition: if this device has a
+// `RememberedAccount` (see api/services/auth.ts — survives logout, it's a
+// pure UX shortcut, never an identity check) matching the role this page is
+// for, an account-picker row replaces the whole form up front instead —
+// "Add new account" falls through to the normal sign-up flow above.
+//
+// Like LoginPage, the current phase lives in the URL (`?step=details`,
+// `?new=1`) rather than only in component state, so it's a real navigation
+// (back button, bookmarks/shared links) instead of state that resets the
+// instant the page reloads.
 export function RegisterPage() {
   const navigate  = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   usePageTitle('Register');
   const register  = useRegister();
   const social    = useSocialLogin();
   const [showPass, setShowPass] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
 
-  // A "Sell on Solvexo" CTA arrives here as /register?role=seller — that
-  // click already WAS the role decision, so the role screen is skipped
-  // entirely instead of asking the same question twice.
-  const presetRole = searchParams.get('role') === 'seller' ? 'seller' : searchParams.get('role') === 'user' ? 'user' : '';
-  const [screen, setScreen] = useState<'role' | 'entry' | 'details'>(presetRole ? 'entry' : 'role');
+  const role: AppRole = searchParams.get('role') === 'seller' ? 'seller' : 'user';
+  const isSeller = role === 'seller';
+  const remembered = RememberedAccount.get();
+  const explicitNewAccount = searchParams.get('new') === '1';
+  const showChooser = !!remembered && remembered.role === role && !explicitNewAccount;
+  const onDetailsStep = searchParams.get('step') === 'details';
 
-  const { values, errors, set, setValue, blur, handleSubmit } = useForm(
+  const { values, errors, set, blur, handleSubmit } = useForm(
     registerSchema,
-    { name: '', email: '', password: '', phone: '', address: '', role: presetRole },
+    { name: '', email: '', password: '', phone: '', address: '', role },
     {
       onSubmit: async (data: RegisterFormData) => {
         await register.execute({
@@ -75,13 +89,33 @@ export function RegisterPage() {
     }
   }, [navigate]);
 
+  const emailEntered = values.email.trim().length > 0;
+
+  // The URL follows the reactive email-typed reveal as a `replace` (not a
+  // new history entry, since it fires on every keystroke transition) —
+  // "Add new account" below still gets its own real navigation entry.
+  useEffect(() => {
+    if (showChooser) return;
+    if (emailEntered === onDetailsStep) return;
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (emailEntered) next.set('step', 'details'); else next.delete('step');
+      return next;
+    }, { replace: true });
+  }, [showChooser, emailEntered, onDetailsStep, setSearchParams]);
+
+  const addNewAccount = useCallback(() => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('new', '1');
+      next.delete('step');
+      return next;
+    });
+  }, [setSearchParams]);
+
   // Avoid a flash of the registration form for the (rare) already-signed-in
   // visitor while the effect above resolves their real destination.
   if (TokenStorage.isLoggedIn()) return null;
-
-  const isSeller = values.role === 'seller';
-  const roleChosen = values.role === 'user' || values.role === 'seller';
-  const activeRoleLabel = ROLE_OPTIONS.find(o => o.value === values.role)?.label;
 
   return (
     <AuthSplitLayout
@@ -94,105 +128,87 @@ export function RegisterPage() {
       maxWidth="max-w-[520px]"
       visual={isSeller ? <DashboardMockup /> : <MarketplaceMockup />}
     >
-      {screen === 'role' ? (
+      <h1 className="text-[22px] font-bold text-carbon mb-1 text-center lg:text-left">
+        {showChooser
+          ? <>Welcome <span className="text-brand-orange">back</span></>
+          : isSeller
+            ? <>Create your <span className="text-brand-orange">seller</span> account</>
+            : <>Create your <span className="text-brand-orange">account</span></>}
+      </h1>
+      <p className="text-[13px] text-slate mb-3 lg:mb-5 text-center lg:text-left">
+        {showChooser ? 'Looks like you\'ve used Solvexo on this device before' : 'Sign up with email, or continue with a social account'}
+      </p>
+
+      {showChooser && remembered ? (
         <>
-          <h1 className="text-[22px] font-bold text-carbon mb-1 text-center lg:text-left">
-            How do you want to use <span className="text-brand-orange">Solvexo</span>?
-          </h1>
-          <p className="text-[13px] text-slate mb-3 lg:mb-5 text-center lg:text-left">
-            Choose what fits you best — you can always add the other side of the marketplace later.
-          </p>
-
-          <RoleChoiceCards
-            options={ROLE_OPTIONS}
-            value={values.role}
-            onChange={val => setValue('role', val)}
-            className="mb-3 lg:mb-5"
-          />
-
-          <Button
-            variant="primary" size="md" fullWidth
-            onClick={() => roleChosen && setScreen('entry')}
-            disabled={!roleChosen}
-            iconRight={<ArrowRight size={14} />}
-          >
-            Continue
-          </Button>
-
-          <p className="text-center text-[12px] text-slate mt-3 lg:mt-4">
-            Already have an account?{' '}
-            <Button variant="link" size="sm" onClick={() => navigate('/login')} className="font-semibold!">
-              Sign In
-            </Button>
-          </p>
-        </>
-      ) : screen === 'entry' ? (
-        <>
+          {/* The whole row is the "continue" action, Google-account-picker
+             style — clicking it goes straight to LoginPage's password step
+             for this account, not a separate confirm click. */}
           <button
-            onClick={() => setScreen('role')}
-            className="inline-flex items-center gap-[6px] text-[12px] font-medium text-slate bg-transparent border-none cursor-pointer mb-3 lg:mb-4 hover:text-charcoal transition-colors"
+            type="button"
+            onClick={() => navigate(isSeller ? '/login?role=seller' : '/login')}
+            className="w-full flex items-center gap-3 p-3 rounded-xl border border-bone bg-white cursor-pointer text-left hover:border-brand-orange hover:bg-brand-pale-orange/20 transition-colors mb-3"
           >
-            <ArrowLeft size={12} /> Signing up as <strong className="text-charcoal">{activeRoleLabel}</strong> — change
+            <Avatar name={remembered.name} size={40} />
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold text-carbon truncate">{remembered.name}</p>
+              <p className="text-[12px] text-slate truncate">{remembered.email}</p>
+            </div>
+            <ArrowRight size={16} className="text-slate shrink-0" />
           </button>
 
-          <h1 className="text-[22px] font-bold text-carbon mb-1 text-center lg:text-left">
-            Create your <span className="text-brand-orange">account</span>
-          </h1>
-          <p className="text-[13px] text-slate mb-3 lg:mb-5 text-center lg:text-left">
-            Sign up with email, or continue with a social account
-          </p>
-
-          {/* Stacked pills, Alibaba-style: 3 social + "Continue with email"
-             as a 4th outlined pill — no bare email field on this screen. */}
+          <Button
+            variant="outline" size="md" fullWidth
+            onClick={addNewAccount}
+            className="mb-3 lg:mb-4"
+          >
+            Add new account
+          </Button>
+        </>
+      ) : (
+      <>
+      {!emailEntered && (
+        <>
           <SocialLoginRow
             layout="stacked"
             onSelect={social.notConfigured}
-            onEmailSelect={() => setScreen('details')}
             disabled={social.loading}
+            className="mb-3 lg:mb-4"
           />
 
           {social.error && (
-            <div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info">
+            <div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mb-3 text-[13px] text-info">
               <Info size={14} className="shrink-0" />
               <span>{social.error}</span>
             </div>
           )}
 
-          <p className="text-center text-[12px] text-slate mt-3 lg:mt-4">
-            Already have an account?{' '}
-            <Button variant="link" size="sm" onClick={() => navigate('/login')} className="font-semibold!">
-              Sign In
-            </Button>
-          </p>
+          <div className="flex items-center gap-3 mb-3 lg:mb-4">
+            <div className="flex-1 h-px bg-bone" />
+            <span className="text-[11px] text-slate">or continue with email</span>
+            <div className="flex-1 h-px bg-bone" />
+          </div>
         </>
-      ) : (
+      )}
+
+      <Input
+        label="Email Address" type="email" placeholder="Enter Your Email Address" autoComplete="email"
+        value={values.email} onChange={set('email')} onBlur={blur('email')}
+        onKeyDown={e => e.key === 'Enter' && nameRef.current?.focus()}
+        error={errors.email}
+        autoFocus
+      />
+
+      {/* The rest of the details only show up once an email has actually
+         been typed — same reveal LoginPage uses for its password field. */}
+      {emailEntered && (
         <>
-          <button
-            onClick={() => setScreen('entry')}
-            className="inline-flex items-center gap-[6px] text-[12px] font-medium text-slate bg-transparent border-none cursor-pointer mb-3 lg:mb-4 hover:text-charcoal transition-colors"
-          >
-            <ArrowLeft size={12} /> Use a different sign-up method
-          </button>
-
-          <h1 className="text-[22px] font-bold text-carbon mb-1 text-center lg:text-left">
-            {isSeller
-              ? <>Create your <span className="text-brand-orange">seller</span> account</>
-              : <>Create your <span className="text-brand-orange">buyer</span> account</>}
-          </h1>
-          <p className="text-[13px] text-slate mb-3 lg:mb-5 text-center lg:text-left">
-            Join Solvexo — Commerce. Solved.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 lg:gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 lg:gap-3 mt-3">
             <Input
+              ref={nameRef}
               label="Full Name" placeholder="Enter Your Name" autoComplete="name"
               value={values.name} onChange={set('name')} onBlur={blur('name')}
               error={errors.name}
-            />
-            <Input
-              label="Email Address" type="email" placeholder="Enter Your Email Address" autoComplete="email"
-              value={values.email} onChange={set('email')} onBlur={blur('email')}
-              error={errors.email}
             />
             <Input
               label="Phone Number" type="tel" placeholder="Enter Your Phone Number" autoComplete="tel"
@@ -204,21 +220,19 @@ export function RegisterPage() {
               value={values.address} onChange={set('address')} onBlur={blur('address')}
               error={errors.address}
             />
-            <div className="sm:col-span-2">
-              <Input
-                label="Password" type={showPass ? 'text' : 'password'} placeholder="Create a Password" autoComplete="new-password"
-                value={values.password} onChange={set('password')} onBlur={blur('password')}
-                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                error={errors.password}
-                rightIcon={
-                  <button type="button" onClick={() => setShowPass(s => !s)}
-                    aria-label={showPass ? 'Hide password' : 'Show password'}
-                    className="bg-transparent border-none cursor-pointer text-slate p-0 flex hover:text-charcoal transition-colors">
-                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                }
-              />
-            </div>
+            <Input
+              label="Password" type={showPass ? 'text' : 'password'} placeholder="Create a Password" autoComplete="new-password"
+              value={values.password} onChange={set('password')} onBlur={blur('password')}
+              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+              error={errors.password}
+              rightIcon={
+                <button type="button" onClick={() => setShowPass(s => !s)}
+                  aria-label={showPass ? 'Hide password' : 'Show password'}
+                  className="bg-transparent border-none cursor-pointer text-slate p-0 flex hover:text-charcoal transition-colors">
+                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              }
+            />
           </div>
 
           <Button
@@ -230,44 +244,46 @@ export function RegisterPage() {
           >
             {isSeller ? 'Create Seller Account' : 'Create Buyer Account'}
           </Button>
+        </>
+      )}
 
-          {register.error && (
-            <div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
-              <AlertTriangle size={14} className="shrink-0" />
-              <span>{register.error}</span>
-            </div>
-          )}
-          {/* Not a failure — a known, honestly-labeled unavailable feature —
-             so it gets the neutral "info" treatment instead of the red error one. */}
-          {!register.error && social.error && (
-            <div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info">
-              <Info size={14} className="shrink-0" />
-              <span>{social.error}</span>
-            </div>
-          )}
+      {register.error && (
+        <div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
+          <AlertTriangle size={14} className="shrink-0" />
+          <span>{register.error}</span>
+        </div>
+      )}
+      {!register.error && social.error && emailEntered && (
+        <div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info">
+          <Info size={14} className="shrink-0" />
+          <span>{social.error}</span>
+        </div>
+      )}
 
-          {/* OR divider */}
+      {emailEntered && (
+        <>
           <div className="flex items-center gap-3 my-2.5 lg:my-4">
             <div className="flex-1 h-px bg-bone" />
-            <span className="text-[11px] text-slate">or sign up with</span>
+            <span className="text-[11px] text-slate">or continue with</span>
             <div className="flex-1 h-px bg-bone" />
           </div>
 
-          {/* Social buttons */}
           <SocialLoginRow
             onSelect={social.notConfigured}
             disabled={social.loading || register.loading}
             className="mb-3 lg:mb-4"
           />
-
-          <p className="text-center text-[12px] text-slate mt-2">
-            Already have an account?{' '}
-            <Button variant="link" size="sm" onClick={() => navigate('/login')} className="font-semibold!">
-              Sign In
-            </Button>
-          </p>
         </>
       )}
+      </>
+      )}
+
+      <p className="text-center text-[12px] text-slate mt-3">
+        Already have an account?{' '}
+        <Button variant="link" size="sm" onClick={() => navigate('/login')} className="font-semibold!">
+          Sign In
+        </Button>
+      </p>
     </AuthSplitLayout>
   );
 }

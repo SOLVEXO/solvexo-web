@@ -220,7 +220,7 @@ export default function StoreAddProduct() {
         });
         addCachedProduct(storeId, { product: res.data.product, variant: res.data.defaultVariant });
       }
-      navigate(`/seller/store/${storeId}/products`);
+      navigate(`/store/${storeId}/products`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {

@@ -44,7 +44,7 @@ interface SellerAnalyticsViewProps {
 
 /**
  * The full analytics dashboard for one store, or for every store the seller owns
- * — shared by `StoreAnalytics` (routed at `/seller/store/:storeId/analytics`,
+ * — shared by `StoreAnalytics` (routed at `/store/:storeId/analytics`,
  * always one store from the URL) and `SellerAnalytics` (routed at
  * `/seller/analytics`, storeId from a store picker that also offers "All Stores").
  * Mirrors the `AdminAnalytics` page structure 1:1 (filter bar + TabBar + tab panels)

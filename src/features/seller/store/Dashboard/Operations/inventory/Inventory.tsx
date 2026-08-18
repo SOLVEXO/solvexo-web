@@ -78,9 +78,9 @@ export function StoreInventory() {
     return () => { cancelled = true; };
   }, [storeId, refreshKey]);
 
-  const goAdd    = ()                     => navigate(`/seller/store/${storeId}/products/add`);
-  const goEdit   = (p: InventoryProduct) => navigate(`/seller/store/${storeId}/products/edit/${p.productId}`);
-  const goDetail = (p: InventoryProduct) => navigate(`/seller/store/${storeId}/products/detail/${p.productId}`);
+  const goAdd    = ()                     => navigate(`/store/${storeId}/products/add`);
+  const goEdit   = (p: InventoryProduct) => navigate(`/store/${storeId}/products/edit/${p.productId}`);
+  const goDetail = (p: InventoryProduct) => navigate(`/store/${storeId}/products/detail/${p.productId}`);
 
   const handlePageChange = (p: number) => {
     setLoading(true);
@@ -206,7 +206,7 @@ export function StoreInventory() {
               {(lowStock.items ?? []).slice(0, 5).map(item => (
                 <button
                   key={item.productId}
-                  onClick={() => navigate(`/seller/store/${storeId}/products/edit/${item.productId}`)}
+                  onClick={() => navigate(`/store/${storeId}/products/edit/${item.productId}`)}
                   className="flex items-center justify-between gap-3 py-2 bg-transparent border-none text-left cursor-pointer group"
                 >
                   <span className="text-[13px] text-charcoal group-hover:text-brand-orange transition-colors">{item.name}</span>

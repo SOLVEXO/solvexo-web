@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiVerifyOtp, AuthContext, TokenStorage, LastRolePreference, getRoleRedirect, type AppRole } from '@/api/services/auth';
+import { apiVerifyOtp, AuthContext, TokenStorage, LastRolePreference, RememberedAccount, getRoleRedirect, type AppRole } from '@/api/services/auth';
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 
 export function useVerifyOtp() {
@@ -28,6 +28,7 @@ export function useVerifyOtp() {
       // object is what makes the rest of the app's guards work at all.
       TokenStorage.saveUser({ ...res.data.user, role });
       LastRolePreference.set(role);
+      RememberedAccount.set({ name: res.data.user.name, email: res.data.user.email, role, image: null });
       AuthContext.clear();
       // Inspect the seller's REAL store state instead of assuming — this
       // path runs right after fresh registration (an already-verified

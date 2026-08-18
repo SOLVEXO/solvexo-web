@@ -4,7 +4,6 @@ import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import {
   Home, ShoppingCart, Store, DollarSign, Users, BookOpen,
   LogIn,
-  LayoutDashboard,
   Settings,
   Shield,
   HelpCircle, Mail, FileText, Cookie,
@@ -40,7 +39,6 @@ const AUTH_PAGES: NavPage[] = [
 ];
 
 const SELLER_PAGES: NavPage[] = [
-  { label: 'Dashboard',      path: '/seller/dashboard',        Icon: LayoutDashboard, prefetch: () => { void import('@/features/seller/dashboard/SellerDashboard'); } },
   // { label: 'Products',       path: '/seller/products',         Icon: ShoppingBag     },
   // { label: 'Add Product',  path: '/seller/products/add',     Icon: Plus            },
   // { label: 'Digital Upload', path: '/seller/products/digital', Icon: Upload          },

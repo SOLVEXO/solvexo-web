@@ -72,7 +72,7 @@ export function ProductsTab() {
           />
         </div>
         <button
-          onClick={() => navigate(`/seller/store/${storeId}/products/add`)}
+          onClick={() => navigate(`/store/${storeId}/products/add`)}
           className="flex items-center justify-center gap-[6px] px-4 py-2 bg-brand-orange border-0 rounded-lg text-[12px] font-semibold text-white cursor-pointer transition-colors hover:bg-brand-deep-orange"
         >
           <Plus size={13} /> Add Product
@@ -122,7 +122,7 @@ export function ProductsTab() {
                   icon={<PackageSearch size={22} className="text-pos-muted" />}
                   title={search ? 'No products match your search' : 'No products yet'}
                   description={search ? 'Try a different SKU or name.' : 'Add your first product to start selling in-store.'}
-                  action={search ? undefined : { label: 'Add Product', onClick: () => navigate(`/seller/store/${storeId}/products/add`) }}
+                  action={search ? undefined : { label: 'Add Product', onClick: () => navigate(`/store/${storeId}/products/add`) }}
                 />
               </td></tr>
             ) : rows.map(row => (
@@ -157,7 +157,7 @@ export function ProductsTab() {
                 </td>
                 <td className="px-4 py-[10px]">
                   <button
-                    onClick={() => navigate(`/seller/store/${storeId}/products/edit/${row.productId}`)}
+                    onClick={() => navigate(`/store/${storeId}/products/edit/${row.productId}`)}
                     className="px-[10px] py-1 bg-carbon border-0 rounded-[6px] text-[11px] cursor-pointer text-pos-faint transition-colors hover:text-white hover:bg-charcoal"
                   >
                     Edit
