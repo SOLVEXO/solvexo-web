@@ -71,7 +71,6 @@ const VerifyOTPPage        = lazy(() => named(import('@/features/auth/pages/Veri
 const NewPasswordPage      = lazy(() => named(import('@/features/auth/pages/NewPasswordPage'),                  'NewPasswordPage'));
 
 // ── Seller ────────────────────────────────────────────────────────────────────
-const SellerDashboard      = lazy(() => named(import('@/features/seller/dashboard/SellerDashboard'),            'SellerDashboard'));
 const SellerAnalytics      = lazy(() => named(import('@/features/seller/dashboard/SellerAnalytics'),             'SellerAnalytics'));
 const StoreBuilder         = lazy(() => named(import('@/features/seller/dashboard/storemodule/StoreBuilder'),   'StoreBuilder'));
 const StoreBuilderRedirect = lazy(() => named(import('@/features/seller/dashboard/storemodule/StoreBuilderRedirect'), 'StoreBuilderRedirect'));
@@ -238,16 +237,15 @@ const mainRouter = createBrowserRouter([
       { path: '/new-password',    element: <NewPasswordPage /> },
 
       // ── POS terminal — standalone (no seller sidebar) ──────────────────
-      { path: '/seller/store/:storeId/pos/register', element: <POSRegister /> },
-      { path: '/seller/store/:storeId/pos/login',    element: <POSEmployeeLogin /> },
+      { path: '/store/:storeId/pos/register', element: <POSRegister /> },
+      { path: '/store/:storeId/pos/login',    element: <POSEmployeeLogin /> },
 
       // ── Seller pages with dark sidebar ────────────────────────────────
       {
         path: '/seller',
         element: <SellerLayout />,
         children: [
-          { index: true,           element: <Navigate to="/seller/dashboard" replace /> },
-          { path: 'dashboard',     element: <SellerDashboard /> },
+          { index: true,           element: <Navigate to="/seller/stores" replace /> },
           { path: 'analytics',     element: <SellerAnalytics /> },
           { path: 'stores',        element: <SellerStoreList /> },
           { path: 'store',         element: <StoreBuilderRedirect /> },
@@ -257,7 +255,7 @@ const mainRouter = createBrowserRouter([
 
       // ── Store Workspace (each store's own mini-admin panel) ──────────
       {
-        path: '/seller/store/:storeId',
+        path: '/store/:storeId',
         element: <StoreLayout />,
         children: [
           { index: true,                              element: <Navigate to="dashboard" replace /> },

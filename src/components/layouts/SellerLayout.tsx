@@ -10,7 +10,7 @@ import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
-  LayoutDashboard, Store,
+  Store,
   Settings, BarChart2,
   ChevronDown, Plus, PanelLeftClose, PanelLeftOpen, LogOut,
 } from 'lucide-react';
@@ -40,7 +40,6 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Workspace',
     items: [
-      { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', path: '/seller/dashboard' },
       { id: 'store-list',    Icon: Store,  label: 'My Stores',    path: '/seller/stores' },
 
       // {
@@ -149,7 +148,7 @@ function SidebarStoreSwitcher() {
                 label={store.name}
                 sub={`/${store.slug} · ${store.plan}`}
                 logo={store.logo}
-                onClick={() => { navigate(`/seller/store/${store._id}/dashboard`); setOpen(false); }}
+                onClick={() => { navigate(`/store/${store._id}/dashboard`); setOpen(false); }}
               />
             ))}
             {stores.length === 0 && !loading && (
@@ -452,7 +451,6 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
 // icon-only + a small underline for the active tab, same pattern as the
 // buyer side's BottomNav. Desktop keeps the sidebar exactly as it was. ────
 const SELLER_TABS: { id: string; Icon: LucideIcon; label: string; path: string }[] = [
-  { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard',  path: '/seller/dashboard' },
   { id: 'stores',    Icon: Store,           label: 'My Stores',  path: '/seller/stores'    },
   { id: 'analytics', Icon: BarChart2,       label: 'Analytics',  path: '/seller/analytics' },
   { id: 'settings',  Icon: Settings,        label: 'Settings',   path: '/seller/settings'  },

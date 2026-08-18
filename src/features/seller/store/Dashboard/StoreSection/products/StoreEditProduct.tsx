@@ -219,7 +219,7 @@ export default function StoreEditProduct() {
         const variant = res.data.defaultVariant ?? res.data.variants?.[0] ?? fallback;
         init(res.data.product, variant);
       })
-      .catch(() => navigate(`/seller/store/${storeId}/products`, { replace: true }))
+      .catch(() => navigate(`/store/${storeId}/products`, { replace: true }))
       .finally(() => setFetching(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -275,7 +275,7 @@ export default function StoreEditProduct() {
         });
         updateCachedProduct(storeId, productId, { product: res.data.product, variant: res.data.variant });
       }
-      navigate(`/seller/store/${storeId}/products`);
+      navigate(`/store/${storeId}/products`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {

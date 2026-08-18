@@ -3,7 +3,7 @@ import { useActiveStore } from '@/contexts/ActiveStoreContext';
 import { SkeletonBox } from '@/components/comman/ui';
 
 // The seller-level `/seller/store` route has no specific store in context
-// (unlike `/seller/store/:storeId/storebuilder`, nested under `StoreLayout`,
+// (unlike `/store/:storeId/storebuilder`, nested under `StoreLayout`,
 // which the real `StoreBuilder` needs). Each store's storefront content
 // (pages, theme, header/footer) is now genuinely per-store, so there's no
 // meaningful "edit all stores at once" mode to fall back to — this just
@@ -22,5 +22,5 @@ export function StoreBuilderRedirect() {
     );
   }
 
-  return <Navigate to={`/seller/store/${targetId}/storebuilder`} replace />;
+  return <Navigate to={`/store/${targetId}/storebuilder`} replace />;
 }

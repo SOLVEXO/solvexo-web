@@ -25,7 +25,7 @@ function POSRegisterInner() {
 
   function handleShiftClosed() {
     logout();
-    navigate(`/seller/store/${storeId}/pos`, { replace: true });
+    navigate(`/store/${storeId}/pos`, { replace: true });
   }
 
   if (error) {

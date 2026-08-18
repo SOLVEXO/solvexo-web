@@ -52,13 +52,13 @@ export function PosLanding() {
                   Subscribe Now
                 </Button>
               )}
-              <Button size="lg" icon={<Monitor size={16} />} onClick={() => navigate(`/seller/store/${storeId}/pos/register`)}>
+              <Button size="lg" icon={<Monitor size={16} />} onClick={() => navigate(`/store/${storeId}/pos/register`)}>
                 Open POS
               </Button>
             </div>
 
             <button
-              onClick={() => navigate(`/seller/store/${storeId}/pos/login`)}
+              onClick={() => navigate(`/store/${storeId}/pos/login`)}
               className="flex items-center gap-[6px] mt-5 text-[12px] text-slate bg-transparent border-0 cursor-pointer hover:text-brand-orange"
             >
               <KeyRound size={13} />

@@ -80,9 +80,9 @@ export default function StoreProductList() {
     return () => { cancelled = true; };
   }, [storeId, page, refreshKey, isSearching]);
 
-  const goAdd    = () => navigate(`/seller/store/${storeId}/products/add`);
-  const goEdit   = (p: InventoryProduct) => navigate(`/seller/store/${storeId}/products/edit/${p.productId}`);
-  const goDetail = (p: InventoryProduct) => navigate(`/seller/store/${storeId}/products/detail/${p.productId}`);
+  const goAdd    = () => navigate(`/store/${storeId}/products/add`);
+  const goEdit   = (p: InventoryProduct) => navigate(`/store/${storeId}/products/edit/${p.productId}`);
+  const goDetail = (p: InventoryProduct) => navigate(`/store/${storeId}/products/detail/${p.productId}`);
 
   const handlePageChange = (p: number) => {
     setLoading(true);

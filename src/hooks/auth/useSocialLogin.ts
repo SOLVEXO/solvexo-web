@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiSocialLogin, TokenStorage, getRoleRedirect, type SocialLoginPayload } from '@/api/services/auth';
+import { apiSocialLogin, TokenStorage, getRoleRedirect, RememberedAccount, type SocialLoginPayload } from '@/api/services/auth';
 
 // No real provider SDK is wired into the frontend yet (no Google Identity Services,
 // Facebook JS SDK, or Sign in with Apple JS) — clicking a social button used to open a
@@ -32,6 +32,7 @@ export function useSocialLogin() {
       const { token, user } = res.data;
       TokenStorage.save(token.accessToken, token.refreshToken);
       TokenStorage.saveUser(user);
+      RememberedAccount.set({ name: user.name, email: user.email, role: 'user', image: user.image ?? null });
       navigate(getRoleRedirect('user'), { replace: true });
       window.location.reload(); // reload to reinitialize sockets/contexts
     } catch (err) {
