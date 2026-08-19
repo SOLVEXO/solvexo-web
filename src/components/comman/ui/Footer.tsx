@@ -13,16 +13,12 @@ interface FooterLink {
   path?: string; // omit for links to pages that don't exist yet (rendered inert)
 }
 
+// The buyer-facing "Shop" column (Marketplace/Education/My Orders/Wishlist)
+// was removed — Solvexo is no longer a central marketplace a buyer browses;
+// the apex app has no buyer-facing entry point at all any more (a buyer
+// only ever shops a seller's own storefront subdomain). The routes/pages
+// themselves are untouched, just unlinked from here.
 const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
-  {
-    heading: 'Shop',
-    links: [
-      { label: 'Marketplace', path: '/marketplace' },
-      { label: 'Education',   path: '/education' },
-      { label: 'My Orders',   path: '/account/orders' },
-      { label: 'Wishlist',    path: '/account/wishlist' },
-    ],
-  },
   {
     heading: 'Sell',
     links: [

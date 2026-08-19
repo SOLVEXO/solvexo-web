@@ -14,7 +14,7 @@ import {
   MonitorSmartphone, PackageCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { apiGetTestimonials, type Testimonial } from '@/api/services/store';
+import { apiGetTestimonials, type Testimonial } from '@/api/services/testimonials';
 import homepageHero from '@/assets/homepage-hero.webp';
 
 // Compact platform-capability strip directly under the hero — what a seller
@@ -384,9 +384,9 @@ export function Homepage() {
                           <div>
                             <div className="flex items-center gap-[6px]">
                               <p className="text-[13px] font-semibold text-carbon">{t.name}</p>
-                              {t.isVerifiedPurchase && <BadgeCheck size={13} className="text-info fill-info/15 shrink-0" />}
+                              {t.isVerifiedSeller && <BadgeCheck size={13} className="text-info fill-info/15 shrink-0" />}
                             </div>
-                            <p className="text-[11px] text-slate">{t.storeName ? `Bought from ${t.storeName}` : 'Verified buyer'}</p>
+                            <p className="text-[11px] text-slate">{t.storeName ? `Owner, ${t.storeName}` : 'Verified Seller'}</p>
                           </div>
                         </div>
                       </div>

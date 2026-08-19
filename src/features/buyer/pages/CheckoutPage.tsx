@@ -454,7 +454,7 @@ export function CheckoutPage() {
     let cancelled = false;
     setCreatingCheckout(true);
     setCheckoutError('');
-    apiCreateCheckout({})
+    apiCreateCheckout({ storeId: cart?.storeId })
       .then(res => {
         if (cancelled) return;
         setCheckout(res.data.checkout);
@@ -620,6 +620,7 @@ export function CheckoutPage() {
       const res = await apiCreateCheckout({
         addressId: selectedAddr._id,
         shippingZoneId: selectedZoneId,
+        storeId: cart?.storeId,
       });
       setCheckout(res.data.checkout);
       setSummary(res.data.summary);

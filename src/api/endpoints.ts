@@ -161,7 +161,6 @@ export const ENDPOINTS = {
     PUBLIC_LIST: '/api/store/public',
     PUBLIC_TOP:  '/api/store/public/top',
     PUBLIC_PLATFORM_STATS: '/api/store/public/platform-stats',
-    PUBLIC_TESTIMONIALS:   '/api/store/public/testimonials',
 
     // Follow
     FOLLOW: (storeId: string) => `/api/store/${storeId}/follow`,
@@ -668,6 +667,15 @@ export const ENDPOINTS = {
     ADMIN_ALL:    '/api/contact/admin/all',
     UPDATE_STATUS:(id: string) => `/api/contact/admin/${id}/status`,
     DELETE:       (id: string) => `/api/contact/admin/${id}`,
+  },
+
+  TESTIMONIALS: {
+    LIST:      '/api/testimonials',
+    ADMIN_ALL: '/api/testimonials/admin/all',
+    CREATE:    '/api/testimonials',
+    UPDATE:    (id: string) => `/api/testimonials/${id}`,
+    TOGGLE:    (id: string) => `/api/testimonials/${id}/toggle`,
+    DELETE:    (id: string) => `/api/testimonials/${id}`,
   },
 
   // ── RATING / REVIEWS ──────────────────────────────────────────────────────

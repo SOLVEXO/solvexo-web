@@ -10,6 +10,7 @@ import {
 import type { Block } from '@/api/services/storefrontTypes';
 import { BlockFields } from './BlockFields';
 import { SortableList } from './Sortable';
+import { ConfirmDialog } from './ConfirmDialog';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const ta  = `${inp} resize-y min-h-[70px]`;
@@ -61,11 +62,23 @@ export function BlogTab({ storeId }: { storeId: string }) {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this post? This cannot be undone.')) return;
-    await apiDeleteBlogPost(storeId, id);
-    setPosts(prev => prev.filter(p => p._id !== id));
-    if (selectedId === id) setSelectedId(null);
+  // `handleDelete` only opens the confirm dialog — the actual API call
+  // happens in `confirmDeletePost` once the seller explicitly confirms.
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deletingPost, setDeletingPost] = useState(false);
+  const [pendingRemoveBlockIndex, setPendingRemoveBlockIndex] = useState<number | null>(null);
+
+  const confirmDeletePost = async () => {
+    if (!pendingDeleteId) return;
+    setDeletingPost(true);
+    try {
+      await apiDeleteBlogPost(storeId, pendingDeleteId);
+      setPosts(prev => prev.filter(p => p._id !== pendingDeleteId));
+      if (selectedId === pendingDeleteId) setSelectedId(null);
+      setPendingDeleteId(null);
+    } finally {
+      setDeletingPost(false);
+    }
   };
 
   const handleSaveMeta = async (patch: Partial<{ title: string; excerpt: string; coverImage: string }>) => {
@@ -109,7 +122,7 @@ export function BlogTab({ storeId }: { storeId: string }) {
               <FileText size={14} className="shrink-0" /> <span className="truncate">{post.title}</span>
             </button>
             <span className={clsx('text-[10px] px-[6px] py-[1px] rounded-full shrink-0', post.status === 'published' ? 'bg-success-bg text-success' : 'bg-bone text-slate')}>{post.status}</span>
-            <button onClick={() => handleDelete(post._id)} aria-label={`Delete ${post.title}`} className="shrink-0 opacity-0 group-hover:opacity-100 text-error bg-transparent border-none cursor-pointer p-1"><Trash2 size={13} /></button>
+            <button onClick={() => setPendingDeleteId(post._id)} aria-label={`Delete ${post.title}`} className="shrink-0 opacity-0 group-hover:opacity-100 text-error bg-transparent border-none cursor-pointer p-1"><Trash2 size={13} /></button>
           </div>
         ))}
         <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer hover:bg-brand-pale-orange/40">
@@ -146,7 +159,7 @@ export function BlogTab({ storeId }: { storeId: string }) {
                     <select className="text-[12px] border border-bone rounded-md px-2 py-1" value={block.type} onChange={e => setContent(content.map((b, j) => j === i ? { type: e.target.value, settings: {} } : b))}>
                       {CONTENT_BLOCK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
-                    <button onClick={() => setContent(content.filter((_, j) => j !== i))} className="text-error text-[11px] font-semibold bg-transparent border-none cursor-pointer">Remove</button>
+                    <button onClick={() => setPendingRemoveBlockIndex(i)} className="text-error text-[11px] font-semibold bg-transparent border-none cursor-pointer">Remove</button>
                   </div>
                   <BlockFields type={block.type} settings={block.settings} onChange={settings => setContent(content.map((b, j) => j === i ? { ...b, settings } : b))} pageOptions={[]} />
                 </div>
@@ -176,6 +189,30 @@ export function BlogTab({ storeId }: { storeId: string }) {
           </Field>
           {createError && <p className="text-[12px] text-error mt-1">{createError}</p>}
         </Modal>
+      )}
+
+      {pendingDeleteId && (
+        <ConfirmDialog
+          title="Delete post"
+          message="This post will be permanently deleted. This cannot be undone."
+          confirmLabel="Delete Post"
+          loading={deletingPost}
+          onCancel={() => setPendingDeleteId(null)}
+          onConfirm={confirmDeletePost}
+        />
+      )}
+
+      {pendingRemoveBlockIndex !== null && (
+        <ConfirmDialog
+          title="Remove block"
+          message="This content block will be removed from the post. This cannot be undone."
+          confirmLabel="Remove"
+          onCancel={() => setPendingRemoveBlockIndex(null)}
+          onConfirm={() => {
+            setContent(content.filter((_, j) => j !== pendingRemoveBlockIndex));
+            setPendingRemoveBlockIndex(null);
+          }}
+        />
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { CoverImage } from '@/components/comman/ui';
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
@@ -66,6 +67,7 @@ function StoreBadges({ badges, sellerType }: { badges: string[]; sellerType: str
 // (hero slides, rich text, featured products, the product catalog, etc.)
 // renders via `SectionRenderer` from the store's home `StorePage`.
 export function SellerStorefront() {
+  const navigate = useNavigate();
   const { store, cfg, theme } = useStorefront();
   const identityBanner = theme?.identityBanner;
   const showFollow     = identityBanner?.showFollowButton     !== false;
@@ -129,7 +131,7 @@ export function SellerStorefront() {
   }, [store.storeId]);
 
   const handleSubscribe = async (plan: BuyerPlan, interval: BillingInterval) => {
-    if (!isLoggedIn) { window.location.href = getMainAppUrl('/login'); return; }
+    if (!isLoggedIn) { navigate('/login'); return; }
     setSubscribingId(plan._id);
     setSubscribeError('');
     setSubscribedMsg('');
@@ -264,20 +266,23 @@ export function SellerStorefront() {
             <div className="flex flex-wrap sm:flex-col gap-2 items-center justify-center sm:items-end shrink-0">
               {showMembership && plans.length > 0 && (
                 <button onClick={() => document.getElementById('store-membership')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
+                  style={{ borderRadius: cfg.buttonRadiusPx }}
+                  className="flex items-center gap-[6px] px-[14px] py-[7px] text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
                   <RefreshCw size={13} style={{ color: cfg.primaryColor }} /> Membership
                 </button>
               )}
               {showLoyaltyBtn && isLoggedIn && loyalty && (
                 <button onClick={openRewards}
-                  className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
+                  style={{ borderRadius: cfg.buttonRadiusPx }}
+                  className="flex items-center gap-[6px] px-[14px] py-[7px] text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
                   <Gift size={13} style={{ color: cfg.primaryColor }} /> {loyalty.pointsBalance.toLocaleString()} points
                 </button>
               )}
               {showFollow && (
                 <>
                   <button onClick={handleFollow} disabled={followLoading || !followStatusLoaded}
-                    className={clsx('px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors whitespace-nowrap border',
+                    style={{ borderRadius: cfg.buttonRadiusPx }}
+                    className={clsx('px-[14px] py-[7px] text-[13px] font-medium cursor-pointer transition-colors whitespace-nowrap border',
                       following ? 'bg-white text-charcoal border-white' : 'bg-transparent text-white border-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]')}>
                     {(followLoading || !followStatusLoaded) ? <Loader2 size={13} className="animate-spin inline" /> : following ? 'Following ✓' : 'Follow Store'}
                   </button>
@@ -288,7 +293,8 @@ export function SellerStorefront() {
               {showMessage && (
                 <>
                   <button onClick={handleMessage} disabled={msgLoading}
-                    className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
+                    style={{ borderRadius: cfg.buttonRadiusPx }}
+                    className="flex items-center gap-[6px] px-[14px] py-[7px] text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
                     {msgLoading ? <Loader2 size={13} className="animate-spin" /> : <MessageCircle size={13} />} Message
                   </button>
                   {msgError && <p className="text-[11px] text-white bg-black/30 rounded-md px-2 py-1 max-w-[220px] text-center sm:text-right">{msgError}</p>}

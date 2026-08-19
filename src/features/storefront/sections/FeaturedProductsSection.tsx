@@ -7,6 +7,7 @@ import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { currencySymbol } from '@/utils/currency';
 import { getMainAppUrl } from '@/utils/storefrontUrl';
 import { useStorefront } from '../StorefrontContext';
+import { ProductCardShell, ProductCardImage } from '../ProductCard';
 
 export interface FeaturedProductsSectionSettings {
   heading?:    string;
@@ -65,21 +66,20 @@ export function FeaturedProductsSection({ settings }: { settings: FeaturedProduc
   if (!loading && products.length === 0) return null;
 
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-6">
-      {settings.heading && <h2 className="text-[20px] font-bold mb-4" style={{ color: cfg.textColor }}>{settings.heading}</h2>}
-      <div className="flex gap-3 overflow-x-auto scrollbar-none pb-1">
+    <div className="px-4 sm:px-6 lg:px-10" style={{ paddingTop: 24 * cfg.sectionSpacingScale, paddingBottom: 24 * cfg.sectionSpacingScale }}>
+      {settings.heading && <h2 className="font-bold mb-4" style={{ color: cfg.textColor, fontSize: Math.round(20 * cfg.typeScaleFactor) }}>{settings.heading}</h2>}
+      <div className="flex overflow-x-auto scrollbar-none pb-1" style={{ gap: cfg.productGridDensity === 'relaxed' ? 16 : 12 }}>
         {products.map(p => {
           const pType = p.productType ?? p.type ?? 'physical';
           const isDigital = pType !== 'physical';
           return (
-            <button key={p._id} onClick={() => { window.location.href = getMainAppUrl(`/product/${p.slug}`); }}
-              className="group shrink-0 w-[160px] text-left bg-white border border-bone rounded-xl overflow-hidden cursor-pointer transition-colors duration-200 hover:bg-brand-pale-orange/[0.12]">
+            <ProductCardShell key={p._id} onClick={() => { window.location.href = getMainAppUrl(`/product/${p.slug}`); }} className="shrink-0 w-[160px] text-left">
               <div className="relative p-2">
-                <div className="relative overflow-hidden aspect-square rounded-lg bg-bone">
+                <ProductCardImage>
                   {p.images?.[0]
-                    ? <ProductImage images={p.images} name={p.name} className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]" />
-                    : <div className="w-full h-full flex items-center justify-center"><Package size={24} className="text-brand-orange" /></div>}
-                </div>
+                    ? <ProductImage images={p.images} name={p.name} className="w-full h-full object-cover" />
+                    : <Package size={24} className="text-brand-orange" />}
+                </ProductCardImage>
                 <span className={`absolute top-3 left-3 px-[6px] py-[1px] rounded-[4px] text-[9px] font-semibold border ${isDigital ? 'bg-accent-violet-bg text-accent-violet border-accent-violet/25' : 'bg-brand-pale-orange text-brand-deep-orange border-[#f5d0bc]'}`}>
                   {isDigital ? (pType === 'educational' ? 'Educational' : 'Digital') : 'Physical'}
                 </span>
@@ -91,7 +91,7 @@ export function FeaturedProductsSection({ settings }: { settings: FeaturedProduc
                   <p className="text-[14px] font-bold text-carbon mt-[6px]">{displaySymbol}{convert(p.defaultVariantPrice, store.baseCurrency).toLocaleString()}</p>
                 )}
               </div>
-            </button>
+            </ProductCardShell>
           );
         })}
       </div>

@@ -63,11 +63,17 @@ interface CartContextValue {
 
 const CartCtx = createContext<CartContextValue | null>(null);
 
-function syncCart(setCart: (c: Cart) => void) {
-  apiGetCart().then(res => setCart(mergeTypes(res.data))).catch(() => {});
+function syncCart(storeId: string, setCart: (c: Cart) => void) {
+  apiGetCart(storeId).then(res => setCart(mergeTypes(res.data))).catch(() => {});
 }
 
-export function CartProvider({ children }: { children: ReactNode }) {
+// `storeId` scopes the server-side cart to one store — pass the current
+// storefront's `store.storeId` (via `useStorefront()`) when mounting this
+// provider inside a store's subdomain. Nesting a second `<CartProvider
+// storeId={...}>` inside `StorefrontLayout` (below where the store is
+// resolved) shadows the app-wide instance mounted in `main.tsx` for every
+// consumer under it — see `StorefrontLayout.tsx`.
+export function CartProvider({ storeId, children }: { storeId?: string; children: ReactNode }) {
   const toast = useToast();
   const [cart,    setCart]    = useState<Cart | null>(null);
   const [loading, setLoading] = useState(false);
@@ -129,12 +135,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const fetchCart = useCallback(() => {
     if (!TokenStorage.isLoggedIn()) { refreshGuestCartDisplay(); return; }
+    // No `storeId` means this provider isn't mounted on a store's subdomain
+    // (the legacy, now-disconnected apex marketplace cart/checkout pages) —
+    // there's no server-side cart to scope to, so just show nothing rather
+    // than firing a request the backend will reject.
+    if (!storeId) { setCart(null); return; }
     setLoading(true);
-    apiGetCart()
+    apiGetCart(storeId)
       .then(res => setCart(mergeTypes(res.data)))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [refreshGuestCartDisplay]);
+  }, [refreshGuestCartDisplay, storeId]);
 
   useEffect(() => { fetchCart(); }, [fetchCart]);
 
@@ -145,14 +156,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // so concurrent add/increase calls never race on the same server cart doc.
   useEffect(() => {
     const onLogin = async () => {
+      if (!storeId) { fetchCart(); return; }
       const guestItems = getGuestCartItems();
       if (guestItems.length > 0) {
         setLoading(true);
         for (const item of guestItems) {
           try {
-            await apiAddToCart(item.productId, item.productVariantId);
+            await apiAddToCart(item.productId, item.productVariantId, storeId);
             for (let i = 1; i < item.quantity; i++) {
-              await apiUpdateCartQuantity(item.productId, item.productVariantId, 'increase');
+              await apiUpdateCartQuantity(item.productId, item.productVariantId, 'increase', storeId);
             }
           } catch {
             // Product may no longer be available — skip it rather than
@@ -165,7 +177,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
     window.addEventListener('solvexo:auth-login', onLogin);
     return () => window.removeEventListener('solvexo:auth-login', onLogin);
-  }, [fetchCart]);
+  }, [fetchCart, storeId]);
 
   const cartCount = cart?.items?.reduce((s, i) => s + i.quantity, 0) ?? 0;
 
@@ -186,8 +198,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    if (!storeId) { setAdding(null); return; }
+
     try {
-      const res = await apiAddToCart(productId, productVariantId);
+      const res = await apiAddToCart(productId, productVariantId, storeId);
       setCart(mergeTypes(res.data));
       toast.success('Added to cart');
     } catch (err) {
@@ -197,7 +211,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } finally {
       setAdding(null);
     }
-  }, [refreshGuestCartDisplay, toast]);
+  }, [refreshGuestCartDisplay, toast, storeId]);
 
   const updateQty = useCallback(async (
     productId: string, productVariantId: string, action: 'increase' | 'decrease',
@@ -207,6 +221,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       await refreshGuestCartDisplay();
       return;
     }
+
+    if (!storeId) return;
 
     setCart(prev => {
       if (!prev) return prev;
@@ -223,15 +239,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     setError(null);
     try {
-      await apiUpdateCartQuantity(productId, productVariantId, action);
+      await apiUpdateCartQuantity(productId, productVariantId, action, storeId);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update quantity.';
       setError(message);
       toast.error(message);
     } finally {
-      syncCart(c => setCart(c));
+      syncCart(storeId, c => setCart(c));
     }
-  }, [refreshGuestCartDisplay, toast]);
+  }, [refreshGuestCartDisplay, toast, storeId]);
 
   const removeItem = useCallback(async (productId: string, productVariantId: string) => {
     removeType(productVariantId);
@@ -243,6 +259,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    if (!storeId) return;
+
     setCart(prev => {
       if (!prev) return prev;
       const items      = (prev.items ?? []).filter(i => i.productVariantId !== productVariantId);
@@ -253,16 +271,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     setError(null);
     try {
-      await apiRemoveCartItem(productId, productVariantId);
+      await apiRemoveCartItem(productId, productVariantId, storeId);
       toast.success('Removed from cart');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to remove item.';
       setError(message);
       toast.error(message);
     } finally {
-      syncCart(c => setCart(c));
+      syncCart(storeId, c => setCart(c));
     }
-  }, [refreshGuestCartDisplay, toast]);
+  }, [refreshGuestCartDisplay, toast, storeId]);
 
   const clearCart = useCallback(async () => {
     if (!TokenStorage.isLoggedIn()) {
@@ -272,20 +290,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
       toast.success('Cart cleared');
       return;
     }
-    if (!cart?._id) return;
+    if (!cart?._id || !storeId) return;
     clearTypes();
     setCart(null);
     setError(null);
     try {
-      await apiClearCart(cart._id);
+      await apiClearCart(cart._id, storeId);
       toast.success('Cart cleared');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to clear cart.';
       setError(message);
       toast.error(message);
-      syncCart(c => setCart(c));
+      syncCart(storeId, c => setCart(c));
     }
-  }, [cart, toast]);
+  }, [cart, toast, storeId]);
 
   const value = useMemo<CartContextValue>(() => ({
     cart, cartCount, loading, adding, error, clearError, addToCart, updateQty, removeItem, clearCart, refetch: fetchCart,

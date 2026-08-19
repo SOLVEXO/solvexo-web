@@ -303,7 +303,6 @@ export default function StoreSettings() {
   // For the full store-section list rendered below the local General/
   // Activity Log menu (same lock rules as everywhere else in the workspace).
   const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
-  const verified   = store?.status === 'active';
 
   const isDirty =
     !!store &&
@@ -363,7 +362,7 @@ export default function StoreSettings() {
              General tab above already covers it). This is the one place
              the full store workspace list lives on mobile — not the
              Dashboard, which stays a pure metrics page. */}
-          <StoreNavMenu storeId={storeId} verified={verified} posEnabled={posEnabled} excludeItemIds={['settings']} />
+          <StoreNavMenu storeId={storeId} posEnabled={posEnabled} excludeItemIds={['settings']} />
         </div>
       )}
 

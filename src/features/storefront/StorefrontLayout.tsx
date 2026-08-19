@@ -6,7 +6,8 @@ import { Store, ArrowLeft } from 'lucide-react';
 import { apiGetPublicStore, type PublicStoreData } from '@/api/services/store';
 import { apiGetPublicStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
 import { getStoreSlugFromHost, getMainAppUrl } from '@/utils/storefrontUrl';
-import { StorefrontProvider, STOREFRONT_CFG_DEFAULT, type StorefrontContextValue } from './StorefrontContext';
+import { CartProvider } from '@/contexts/CartContext';
+import { StorefrontProvider, resolveStorefrontCfg, type StorefrontContextValue } from './StorefrontContext';
 import { StorefrontNavbar } from './StorefrontNavbar';
 import { StorefrontFooter } from './StorefrontFooter';
 
@@ -55,13 +56,7 @@ export function StorefrontLayout() {
 
   useStorefrontFavicon(store?.logo);
 
-  const cfg = useMemo(() => ({
-    primaryColor: theme?.theme.primaryColor ?? STOREFRONT_CFG_DEFAULT.primaryColor,
-    bgColor:      theme?.theme.bgColor      ?? STOREFRONT_CFG_DEFAULT.bgColor,
-    textColor:    theme?.theme.textColor    ?? STOREFRONT_CFG_DEFAULT.textColor,
-    accentColor:  theme?.theme.accentColor  ?? STOREFRONT_CFG_DEFAULT.accentColor,
-    font:         theme?.theme.font         ?? STOREFRONT_CFG_DEFAULT.font,
-  }), [theme]);
+  const cfg = useMemo(() => resolveStorefrontCfg(theme), [theme]);
 
   const contextValue: StorefrontContextValue | null = useMemo(() => {
     if (!store || !slug) return null;
@@ -103,20 +98,25 @@ export function StorefrontLayout() {
 
   return (
     <StorefrontProvider value={contextValue}>
-      <div className="min-h-screen" style={{ background: cfg.bgColor, color: cfg.textColor }}>
-        <StorefrontNavbar />
-        {store.announcementBar?.message && (
-          <StoreAnnouncementBar
-            storeId={store.storeId}
-            message={store.announcementBar.message}
-            type={store.announcementBar.type}
-            ctaLabel={store.announcementBar.ctaLabel}
-            ctaLink={store.announcementBar.ctaLink}
-          />
-        )}
-        <Outlet />
-        <StorefrontFooter />
-      </div>
+      {/* Scopes the buyer's cart to THIS store — shadows the app-wide
+          CartProvider from main.tsx for everything rendered below, since
+          the store's storeId is only known here, after it's resolved. */}
+      <CartProvider storeId={store.storeId}>
+        <div className="min-h-screen" style={{ background: cfg.bgColor, color: cfg.textColor, fontFamily: `${cfg.font}, sans-serif` }}>
+          <StorefrontNavbar />
+          {store.announcementBar?.message && (
+            <StoreAnnouncementBar
+              storeId={store.storeId}
+              message={store.announcementBar.message}
+              type={store.announcementBar.type}
+              ctaLabel={store.announcementBar.ctaLabel}
+              ctaLink={store.announcementBar.ctaLink}
+            />
+          )}
+          <Outlet />
+          <StorefrontFooter />
+        </div>
+      </CartProvider>
     </StorefrontProvider>
   );
 }

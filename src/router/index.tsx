@@ -40,6 +40,8 @@ const StorefrontLayout     = lazy(() => named(import('@/features/storefront/Stor
 const StorefrontCustomPage = lazy(() => named(import('@/features/buyer/pages/StorefrontCustomPage'),             'StorefrontCustomPage'));
 const StorefrontBlogIndex  = lazy(() => named(import('@/features/buyer/pages/StorefrontBlogIndex'),              'StorefrontBlogIndex'));
 const StorefrontBlogPost   = lazy(() => named(import('@/features/buyer/pages/StorefrontBlogPost'),               'StorefrontBlogPost'));
+const StorefrontCartPage   = lazy(() => named(import('@/features/storefront/StorefrontCartPage'),                'StorefrontCartPage'));
+const StorefrontLoginPage  = lazy(() => named(import('@/features/storefront/StorefrontLoginPage'),               'StorefrontLoginPage'));
 const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/EducationMarketplace'),            'EducationMarketplace'));
 const PricingPage          = lazy(() => named(import('@/features/buyer/pages/PricingPage'),                     'PricingPage'));
 const ForSellersPage       = lazy(() => named(import('@/features/buyer/pages/ForSellersPage'),                  'ForSellersPage'));
@@ -80,6 +82,7 @@ const SellerMessages       = lazy(() => named(import('@/features/seller/dashboar
 const SellerStoreList      = lazy(() => named(import('@/features/seller/dashboard/storemodule/SellerStoreList'),'SellerStoreList'));
 const POSRegister          = lazy(() => named(import('@/features/seller/store/pos/POSRegister'),                'POSRegister'));
 const POSEmployeeLogin     = lazy(() => named(import('@/features/seller/store/pos/POSEmployeeLogin'),           'POSEmployeeLogin'));
+const ThemePreviewPage     = lazy(() => named(import('@/features/seller/dashboard/storemodule/ThemePreviewPage'), 'ThemePreviewPage'));
 const PosLanding           = lazy(() => named(import('@/features/seller/store/pos/PosLanding'),                 'PosLanding'));
 
 // ── Store Workspace ───────────────────────────────────────────────────────────
@@ -123,6 +126,7 @@ const AdminAnnouncements = lazy(() => named(import('@/features/admin/pages/Admin
 const AdminBanners       = lazy(() => named(import('@/features/admin/pages/AdminBanners'),                       'AdminBanners'));
 const AdminFaqs          = lazy(() => named(import('@/features/admin/pages/AdminFaqs'),                          'AdminFaqs'));
 const AdminContactMessages = lazy(() => named(import('@/features/admin/pages/AdminContactMessages'),             'AdminContactMessages'));
+const AdminTestimonials  = lazy(() => named(import('@/features/admin/pages/AdminTestimonials'),                  'AdminTestimonials'));
 const AdminManualPayments = lazy(() => named(import('@/features/admin/pages/AdminManualPayments'),               'AdminManualPayments'));
 const AdminCommissionRules = lazy(() => named(import('@/features/admin/pages/AdminCommissionRules'),             'AdminCommissionRules'));
 const AdminConfig        = lazy(() => named(import('@/features/admin/pages/AdminConfig'),                       'AdminConfig'));
@@ -151,6 +155,8 @@ const storefrontRouter = createBrowserRouter([
           { index: true, element: <SellerStorefront /> },
           { path: 'blog', element: <StorefrontBlogIndex /> },
           { path: 'blog/:postSlug', element: <StorefrontBlogPost /> },
+          { path: 'cart', element: <StorefrontCartPage /> },
+          { path: 'login', element: <StorefrontLoginPage /> },
           { path: ':pageSlug', element: <StorefrontCustomPage /> },
         ],
       },
@@ -240,6 +246,11 @@ const mainRouter = createBrowserRouter([
       { path: '/store/:storeId/pos/register', element: <POSRegister /> },
       { path: '/store/:storeId/pos/login',    element: <POSEmployeeLogin /> },
 
+      // ── Theme Preview — standalone, opened in its own tab from the Theme
+      // Library ("Preview"); resolves the theme purely from :themeId, never
+      // from any Store Builder in-memory state (see ThemePreviewPage.tsx). ──
+      { path: '/store/:storeId/theme-preview/:themeId', element: <ThemePreviewPage /> },
+
       // ── Seller pages with dark sidebar ────────────────────────────────
       {
         path: '/seller',
@@ -315,6 +326,7 @@ const mainRouter = createBrowserRouter([
           { path: 'banners',      element: <AdminBanners /> },
           { path: 'faqs',         element: <AdminFaqs /> },
           { path: 'contact',      element: <AdminContactMessages /> },
+          { path: 'testimonials', element: <AdminTestimonials /> },
           { path: 'config',       element: <RequireRole role="admin"><AdminConfig /></RequireRole> },
           { path: 'marketing',    element: <RequireRole role="admin"><AdminMarketing /></RequireRole> },
           { path: 'settings',     element: <AdminSettings /> },
