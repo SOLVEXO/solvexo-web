@@ -344,6 +344,30 @@ export const ENDPOINTS = {
     REDEEM:     (storeId: string) => `/api/loyalty/${storeId}/redeem`,
   },
 
+  // ── GIFT CARDS ────────────────────────────────────────────────────────────
+  GIFT_CARDS: {
+    SETTINGS:        (storeId: string) => `/api/gift-cards/${storeId}/settings`,
+    ISSUE:           (storeId: string) => `/api/gift-cards/${storeId}/issue`,
+    LIST:            (storeId: string) => `/api/gift-cards/${storeId}`,
+    DISABLE:         (storeId: string, giftCardId: string) => `/api/gift-cards/${storeId}/${giftCardId}/disable`,
+    PUBLIC_SETTINGS: (storeId: string) => `/api/gift-cards/${storeId}/public-settings`,
+    PURCHASE_INTENT: (storeId: string) => `/api/gift-cards/${storeId}/purchase-intent`,
+  },
+
+  // ── AUTOMATIC DISCOUNTS ───────────────────────────────────────────────────
+  DISCOUNTS: {
+    LIST:   (storeId: string) => `/api/discounts/${storeId}`,
+    UPDATE: (storeId: string, discountId: string) => `/api/discounts/${storeId}/${discountId}`,
+    DELETE: (storeId: string, discountId: string) => `/api/discounts/${storeId}/${discountId}`,
+  },
+
+  // ── STRIPE CONNECT (seller's own payment gateway) ────────────────────────
+  STRIPE_CONNECT: {
+    STATUS:          '/api/stripe-connect/status',
+    ONBOARDING_LINK: '/api/stripe-connect/onboarding-link',
+    SYNC:            '/api/stripe-connect/sync',
+  },
+
   PRODUCT: {
     CREATE_PHYSICAL: '/api/products/add-physical-product',
     CREATE_DIGITAL: '/api/products/add-digital-product',
@@ -437,6 +461,8 @@ export const ENDPOINTS = {
     DELETE_CHECKOUT: '/api/checkout/delete-checkout',
     APPLY_COUPON: '/api/checkout/apply-coupon',
     REMOVE_COUPON: (checkoutId: string) => `/api/checkout/remove-coupon/${checkoutId}`,
+    APPLY_GIFT_CARD: '/api/checkout/apply-gift-card',
+    REMOVE_GIFT_CARD: (checkoutId: string) => `/api/checkout/remove-gift-card/${checkoutId}`,
   },
 
   UPLOAD: {

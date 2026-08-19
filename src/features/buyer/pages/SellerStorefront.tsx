@@ -7,13 +7,15 @@ import { useStoreBanners } from '@/hooks/useStoreBanners';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useAuthGate } from '@/contexts/AuthGateContext';
 import {
-  Star, Users, Loader2, MessageCircle, BadgeCheck, Award, Gift, RefreshCw, Check, Store,
+  Star, Users, Loader2, MessageCircle, BadgeCheck, Award, Gift, RefreshCw, Check, Store, CreditCard,
 } from 'lucide-react';
 import { apiFollowStore, apiGetFollowStatus } from '@/api/services/store';
 import { useToast } from '@/contexts/ToastContext';
 import { apiStartConversation } from '@/api/services/messaging';
 import { apiGetPublicHomePage, type StorePageData } from '@/api/services/storePages';
 import { apiGetMyBalance, apiGetRewards, apiRedeemReward, type LoyaltyBalance, type Reward } from '@/api/services/loyalty';
+import { apiGetGiftCardPublicSettings, apiCreateGiftCardPurchaseIntent, type GiftCardPublicSettings } from '@/api/services/giftCards';
+import { StripeCardPayment, isStripeConfigured } from '@/features/buyer/components/StripeCardPayment';
 import { apiBrowseStorePlans, apiSubscribeToPlan, type BuyerPlan, type BillingInterval, type PlanBenefit } from '@/api/services/subscriptions';
 import { apiGetPublicStoreProducts } from '@/api/services/store';
 import { Modal } from '@/components/comman/ui/Modal';
@@ -94,6 +96,14 @@ export function SellerStorefront() {
   const [rewardsLoading, setRewardsLoading] = useState(false);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const [redeemedVoucher, setRedeemedVoucher] = useState<{ code: string; expiresAt: string } | null>(null);
+  const [giftCardSettings, setGiftCardSettings] = useState<GiftCardPublicSettings | null>(null);
+  const [showGiftCardModal, setShowGiftCardModal] = useState(false);
+  const [giftCardAmount, setGiftCardAmount] = useState<number | null>(null);
+  const [giftCardForm, setGiftCardForm] = useState({ recipientEmail: '', recipientName: '', message: '' });
+  const [giftCardClientSecret, setGiftCardClientSecret] = useState<string | null>(null);
+  const [giftCardBusy, setGiftCardBusy] = useState(false);
+  const [giftCardError, setGiftCardError] = useState('');
+  const [giftCardPaid, setGiftCardPaid] = useState(false);
   const [plans, setPlans] = useState<BuyerPlan[]>([]);
   const [billingInterval, setBillingInterval] = useState<BillingInterval>('monthly');
   const [subscribingId, setSubscribingId] = useState<string | null>(null);
@@ -130,6 +140,39 @@ export function SellerStorefront() {
   useEffect(() => {
     apiBrowseStorePlans(store.storeId).then(res => setPlans(res.data ?? [])).catch(() => {});
   }, [store.storeId]);
+
+  useEffect(() => {
+    apiGetGiftCardPublicSettings(store.storeId).then(res => setGiftCardSettings(res.data)).catch(() => {});
+  }, [store.storeId]);
+
+  const handleCreateGiftCardIntent = async () => {
+    if (!isLoggedIn) { window.location.href = getMainAppUrl('/login'); return; }
+    if (!giftCardAmount) return;
+    setGiftCardBusy(true);
+    setGiftCardError('');
+    try {
+      const res = await apiCreateGiftCardPurchaseIntent(store.storeId, {
+        amount: giftCardAmount,
+        recipientEmail: giftCardForm.recipientEmail || undefined,
+        recipientName: giftCardForm.recipientName || undefined,
+        message: giftCardForm.message || undefined,
+      });
+      setGiftCardClientSecret(res.data.clientSecret);
+    } catch (err) {
+      setGiftCardError(err instanceof Error ? err.message : 'Failed to start gift card purchase.');
+    } finally {
+      setGiftCardBusy(false);
+    }
+  };
+
+  const closeGiftCardModal = () => {
+    setShowGiftCardModal(false);
+    setGiftCardAmount(null);
+    setGiftCardForm({ recipientEmail: '', recipientName: '', message: '' });
+    setGiftCardClientSecret(null);
+    setGiftCardError('');
+    setGiftCardPaid(false);
+  };
 
   const handleSubscribe = async (plan: BuyerPlan, interval: BillingInterval) => {
     if (!isLoggedIn) { navigate('/login'); return; }
@@ -280,6 +323,13 @@ export function SellerStorefront() {
                   <Gift size={13} style={{ color: cfg.primaryColor }} /> {loyalty.pointsBalance.toLocaleString()} points
                 </button>
               )}
+              {giftCardSettings?.purchaseEnabled && (
+                <button onClick={() => setShowGiftCardModal(true)}
+                  style={{ borderRadius: cfg.buttonRadiusPx }}
+                  className="flex items-center gap-[6px] px-[14px] py-[7px] text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
+                  <CreditCard size={13} style={{ color: cfg.primaryColor }} /> Gift Cards
+                </button>
+              )}
               {showFollow && (
                 <>
                   <button onClick={handleFollow} disabled={followLoading || !followStatusLoaded}
@@ -423,6 +473,86 @@ export function SellerStorefront() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </Modal>
+      )}
+
+      {showGiftCardModal && giftCardSettings && (
+        <Modal title="Buy a Gift Card" onClose={closeGiftCardModal}>
+          {giftCardPaid ? (
+            <div className="flex flex-col items-center text-center gap-2 py-4">
+              <Check size={32} className="text-success" />
+              <p className="text-[14px] font-semibold text-carbon">Payment successful!</p>
+              <p className="text-[12.5px] text-slate">
+                The gift card code will be emailed to {giftCardForm.recipientEmail || 'you'} shortly.
+              </p>
+            </div>
+          ) : giftCardClientSecret ? (
+            isStripeConfigured() ? (
+              <StripeCardPayment
+                clientSecret={giftCardClientSecret}
+                amount={giftCardAmount ?? 0}
+                currency={giftCardSettings.currency}
+                onConfirmed={() => setGiftCardPaid(true)}
+              />
+            ) : (
+              <p className="text-xs text-error">Online payments aren't configured yet.</p>
+            )
+          ) : (
+            <div className="flex flex-col gap-3.5">
+              <div>
+                <p className="text-xs font-medium text-graphite mb-2">Choose an amount</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {giftCardSettings.denominations.map(d => (
+                    <button
+                      key={d}
+                      onClick={() => setGiftCardAmount(d)}
+                      className={clsx(
+                        'py-2.5 rounded-lg text-[13px] font-semibold cursor-pointer border transition-colors',
+                        giftCardAmount === d ? 'text-white border-transparent' : 'bg-white text-graphite border-bone hover:bg-cream',
+                      )}
+                      style={giftCardAmount === d ? { background: cfg.primaryColor } : undefined}
+                    >
+                      {currencySymbol(giftCardSettings.currency)}{d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-graphite mb-[5px] block">Recipient email (optional)</label>
+                <input
+                  value={giftCardForm.recipientEmail}
+                  onChange={e => setGiftCardForm(f => ({ ...f, recipientEmail: e.target.value }))}
+                  placeholder="Send the code to this email"
+                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-graphite mb-[5px] block">Recipient name (optional)</label>
+                <input
+                  value={giftCardForm.recipientName}
+                  onChange={e => setGiftCardForm(f => ({ ...f, recipientName: e.target.value }))}
+                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-graphite mb-[5px] block">Message (optional)</label>
+                <input
+                  value={giftCardForm.message}
+                  onChange={e => setGiftCardForm(f => ({ ...f, message: e.target.value }))}
+                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white"
+                />
+              </div>
+              {giftCardError && <p className="text-xs text-error">{giftCardError}</p>}
+              <button
+                onClick={handleCreateGiftCardIntent}
+                disabled={!giftCardAmount || giftCardBusy}
+                style={{ background: cfg.primaryColor }}
+                className="w-full py-[11px] rounded-xl text-[13px] font-bold text-white border-none cursor-pointer disabled:opacity-50"
+              >
+                {giftCardBusy ? 'Starting…' : `Continue to Payment`}
+              </button>
             </div>
           )}
         </Modal>

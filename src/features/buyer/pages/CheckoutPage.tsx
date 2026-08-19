@@ -6,7 +6,7 @@ import { useCartContext } from '@/contexts/CartContext';
 import { TokenStorage } from '@/api/services/auth';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
 import { apiGetMyAddresses, type Address } from '@/api/services/address';
-import { apiCreateCheckout, apiApplyCoupon, apiRemoveCoupon, type Checkout, type CheckoutSummary, type SubscriptionSavingsHint } from '@/api/services/checkout';
+import { apiCreateCheckout, apiApplyCoupon, apiRemoveCoupon, apiApplyGiftCard, apiRemoveGiftCard, type Checkout, type CheckoutSummary, type SubscriptionSavingsHint } from '@/api/services/checkout';
 import { apiPlaceCodOrder, apiInitiatePayment, apiGetPaymentStatus } from '@/api/services/payment';
 import {
   apiGetManualPaymentBankDetails, apiSubmitManualPayment,
@@ -415,6 +415,13 @@ export function CheckoutPage() {
   // code rather than just letting a summary line quietly appear.
   const [couponSuccessMsg, setCouponSuccessMsg] = useState('');
 
+  // Gift card — kept in its own checkout slot alongside a coupon (see
+  // Checkout.giftCardCode), so this is a fully separate apply/remove flow.
+  const [giftCardInput,   setGiftCardInput]   = useState('');
+  const [giftCardBusy,    setGiftCardBusy]    = useState(false);
+  const [giftCardError,   setGiftCardError]   = useState('');
+  const [giftCardSuccessMsg, setGiftCardSuccessMsg] = useState('');
+
   // Cash on Delivery can't cover a digital item — it's delivered instantly, long
   // before any cash changes hands, so a buyer could take the download and then
   // refuse the COD payment at the door. Any digital item in the order (mixed
@@ -567,7 +574,8 @@ export function CheckoutPage() {
   const shipping = summary?.shippingFee ?? selectedZone?.shippingPrice ?? 0;
   const tax      = summary?.taxAmount ?? 0;
   const couponDiscount = checkout?.couponDiscountUSD ?? 0;
-  const total    = Math.max(0, orderSubtotal + (isDigital ? 0 : shipping) + tax - couponDiscount);
+  const giftCardDiscount = checkout?.giftCardDiscountUSD ?? 0;
+  const total    = Math.max(0, orderSubtotal + (isDigital ? 0 : shipping) + tax - couponDiscount - giftCardDiscount);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   async function handleApplyCoupon() {
@@ -594,11 +602,46 @@ export function CheckoutPage() {
     setCouponSuccessMsg('');
     try {
       const res = await apiRemoveCoupon(checkout._id);
-      setCheckout(c => c && { ...c, couponCode: null, couponDiscountUSD: 0, totalAmount: res.data.totalAmount });
+      // Removing a coupon also reverts an independently-applied gift card
+      // server-side if one is layered on top (see CheckoutService.removeCoupon)
+      // — reflect that here too rather than leaving a stale discount showing.
+      setCheckout(c => c && { ...c, couponCode: null, couponDiscountUSD: 0, giftCardCode: null, giftCardDiscountUSD: 0, totalAmount: res.data.totalAmount });
     } catch (err) {
       setCouponError(err instanceof Error ? err.message : 'Failed to remove coupon.');
     } finally {
       setCouponBusy(false);
+    }
+  }
+
+  async function handleApplyGiftCard() {
+    if (!checkout || !giftCardInput.trim()) return;
+    setGiftCardBusy(true);
+    setGiftCardError('');
+    setGiftCardSuccessMsg('');
+    try {
+      const res = await apiApplyGiftCard({ checkoutId: checkout._id, code: giftCardInput.trim() });
+      setCheckout(c => c && { ...c, giftCardCode: res.data.giftCardCode, giftCardDiscountUSD: res.data.giftCardDiscountUSD, totalAmount: res.data.totalAmount });
+      setGiftCardSuccessMsg(`Gift card applied — ${currencySymbol(checkout.currency)}${res.data.giftCardDiscountUSD.toFixed(2)} used. ${currencySymbol(checkout.currency)}${res.data.remainingBalance.toFixed(2)} remains on the card.`);
+      setGiftCardInput('');
+    } catch (err) {
+      setGiftCardError(err instanceof Error ? err.message : 'Failed to apply gift card.');
+    } finally {
+      setGiftCardBusy(false);
+    }
+  }
+
+  async function handleRemoveGiftCard() {
+    if (!checkout) return;
+    setGiftCardBusy(true);
+    setGiftCardError('');
+    setGiftCardSuccessMsg('');
+    try {
+      const res = await apiRemoveGiftCard(checkout._id);
+      setCheckout(c => c && { ...c, giftCardCode: null, giftCardDiscountUSD: 0, couponCode: null, couponDiscountUSD: 0, totalAmount: res.data.totalAmount });
+    } catch (err) {
+      setGiftCardError(err instanceof Error ? err.message : 'Failed to remove gift card.');
+    } finally {
+      setGiftCardBusy(false);
     }
   }
 
@@ -1357,6 +1400,15 @@ export function CheckoutPage() {
                   <span className="font-semibold text-success">-{currencySymbol(checkout?.currency)}{summary.campaignDiscountUSD.toFixed(2)}</span>
                 </div>
               )}
+              {/* Same "already baked in" convention as the sale discount above —
+                  a seller's own automatic (no-code) discount, applied server-side
+                  at checkout creation, not subtracted again in the total below. */}
+              {!!summary?.autoDiscountUSD && summary.autoDiscountUSD > 0 && (
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-success">Discount</span>
+                  <span className="font-semibold text-success">-{currencySymbol(checkout?.currency)}{summary.autoDiscountUSD.toFixed(2)}</span>
+                </div>
+              )}
               {/* The backend rejects a coupon outright (see CheckoutService.applyCoupon)
                   if it would compute to zero real savings — e.g. every eligible
                   item is already on an active sale — so `checkout.couponCode`
@@ -1367,6 +1419,14 @@ export function CheckoutPage() {
                     <CheckCircle2 size={12} /> Coupon ({checkout.couponCode})
                   </span>
                   <span className="font-semibold text-success">-{currencySymbol(checkout?.currency)}{couponDiscount.toFixed(2)}</span>
+                </div>
+              )}
+              {!!checkout?.giftCardCode && (
+                <div className="flex justify-between text-[13px]">
+                  <span className="flex items-center gap-1 text-success">
+                    <CheckCircle2 size={12} /> Gift card ({checkout.giftCardCode})
+                  </span>
+                  <span className="font-semibold text-success">-{currencySymbol(checkout?.currency)}{giftCardDiscount.toFixed(2)}</span>
                 </div>
               )}
             </div>
@@ -1402,6 +1462,42 @@ export function CheckoutPage() {
                 {couponSuccessMsg && (
                   <p className="flex items-center gap-1 text-[11px] font-medium text-success mt-1.5">
                     <CheckCircle2 size={12} /> {couponSuccessMsg}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {checkout && (
+              <div className="mb-4">
+                {checkout.giftCardCode ? (
+                  <button
+                    onClick={handleRemoveGiftCard}
+                    disabled={giftCardBusy}
+                    className="text-[12px] font-medium text-error bg-transparent border-none cursor-pointer p-2 -m-2 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error"
+                  >
+                    Remove gift card
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      value={giftCardInput}
+                      onChange={e => setGiftCardInput(e.target.value.toUpperCase())}
+                      placeholder="Gift card code"
+                      className="flex-1 min-w-0 px-3 min-h-11 text-[12.5px] border border-bone rounded-lg outline-none text-charcoal bg-white focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
+                    />
+                    <button
+                      onClick={handleApplyGiftCard}
+                      disabled={giftCardBusy || !giftCardInput.trim()}
+                      className="px-4 min-h-11 bg-white border border-bone rounded-lg text-[12.5px] font-semibold text-graphite cursor-pointer hover:bg-cream disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+                    >
+                      {giftCardBusy ? 'Applying…' : 'Apply'}
+                    </button>
+                  </div>
+                )}
+                {giftCardError && <p className="text-[11px] text-error mt-1.5">{giftCardError}</p>}
+                {giftCardSuccessMsg && (
+                  <p className="flex items-center gap-1 text-[11px] font-medium text-success mt-1.5">
+                    <CheckCircle2 size={12} /> {giftCardSuccessMsg}
                   </p>
                 )}
               </div>
