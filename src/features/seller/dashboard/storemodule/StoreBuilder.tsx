@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Eye, EyeOff, Check, LayoutGrid, Palette, PanelTop, PanelBottom, Newspaper, UserCog, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Check, ExternalLink, LayoutGrid, Palette, PanelTop, PanelBottom, Newspaper, UserCog } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { SkeletonBox } from '@/components/comman/ui';
+import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import {
   apiListStorePages, apiCreateStorePage, apiUpdateStorePageSections,
   apiPublishStorePage, apiUnpublishStorePage, apiDeleteStorePage,
@@ -15,10 +16,11 @@ import type { Section } from '@/api/services/storefrontTypes';
 import { PagesList } from './builder/PagesList';
 import { PageSectionsEditor } from './builder/PageSectionsEditor';
 import { ThemeTab } from './builder/ThemeTab';
+import { ConfirmDialog } from './builder/ConfirmDialog';
 import { HeaderTab, FooterTab } from './builder/HeaderFooterTabs';
 import { StoreInfoTab } from './builder/StoreInfoTab';
-import { BuilderPreview } from './builder/BuilderPreview';
 import { BlogTab } from './builder/BlogTab';
+import type { ThemeDefinition } from './builder/themes';
 
 type Tab = 'pages' | 'theme' | 'header' | 'footer' | 'storeInfo' | 'blog';
 const TABS: { id: Tab; label: string; Icon: typeof LayoutGrid }[] = [
@@ -54,13 +56,6 @@ function SaveButton({ onClick, saving, label }: { onClick: () => void; saving: b
 export function StoreBuilder() {
   const { storeId, store, loading: storeLoading } = useStoreWorkspace();
   const [tab, setTab] = useState<Tab>('pages');
-  // The 3-column Pages layout (sidebar + editor + live preview) is the most
-  // cramped view in the builder — a seller mid-edit on a laptop-width screen
-  // gets squeezed into what's left after two fixed-width columns. Letting
-  // them collapse the preview gives the editor its width back on demand,
-  // instead of it being permanently fixed at 400px whether they're using it
-  // this moment or not.
-  const [previewOpen, setPreviewOpen] = useState(true);
 
   const [pages, setPages] = useState<StorePageData[]>([]);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
@@ -68,7 +63,9 @@ export function StoreBuilder() {
   const [pagesLoading, setPagesLoading] = useState(true);
   const [creatingPage, setCreatingPage] = useState(false);
 
-  const [theme, setTheme] = useState<StoreThemeData | null>(null);
+  // The full saved theme doc is only ever written here (`setTheme`), never
+  // read directly — every consumer works off the per-field drafts below.
+  const [, setTheme] = useState<StoreThemeData | null>(null);
   const [themeLoading, setThemeLoading] = useState(true);
   // Local drafts — Theme/Header/Footer/Store Info tabs call `onChange` on
   // every keystroke/toggle for a responsive UI, so they edit these drafts,
@@ -78,6 +75,18 @@ export function StoreBuilder() {
   const [headerDraft, setHeaderDraft] = useState<StoreThemeData['header'] | null>(null);
   const [footerDraft, setFooterDraft] = useState<StoreThemeData['footer'] | null>(null);
   const [identityDraft, setIdentityDraft] = useState<StoreThemeData['identityBanner'] | null>(null);
+  // Which curated `themes.ts` theme the fields above were last bulk-applied
+  // from — tracked alongside the drafts so "Save Theme" can persist it
+  // together with everything else in one action (see `handleApplyTheme`).
+  const [baseThemeIdDraft, setBaseThemeIdDraft] = useState<string | null>(null);
+  // Controlled here (not local to `ThemeTab`) so the page grid can give the
+  // Theme Gallery the FULL page width instead of squeezing it into the
+  // narrow control rail that only Customize mode actually benefits from
+  // (that rail exists so the live preview can dominate while fine-tuning
+  // individual fields — the gallery's own "Preview" opens a real, fully
+  // independent storefront preview in a new browser tab instead, see
+  // `ThemePreviewPage.tsx`, so it never needs a side-by-side column here).
+  const [themeMode, setThemeMode] = useState<'themes' | 'customize'>('themes');
 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
@@ -104,6 +113,7 @@ export function StoreBuilder() {
         setHeaderDraft(res.data.header);
         setFooterDraft(res.data.footer);
         setIdentityDraft(res.data.identityBanner);
+        setBaseThemeIdDraft(res.data.baseThemeId);
       })
       .finally(() => setThemeLoading(false));
   }, [storeId]);
@@ -154,19 +164,83 @@ export function StoreBuilder() {
     }
   };
 
-  const handleDeletePage = async (pageId: string) => {
-    if (!confirm('Delete this page? This cannot be undone.')) return;
-    await apiDeleteStorePage(storeId, pageId);
-    setPages(prev => prev.filter(p => p._id !== pageId));
-    if (selectedPageId === pageId) setSelectedPageId(null);
+  // Nothing deletes straight from the row click — `onDelete` only opens the
+  // confirm dialog below; the actual API call happens in `confirmDeletePage`.
+  const [pendingDeletePageId, setPendingDeletePageId] = useState<string | null>(null);
+  const [deletingPage, setDeletingPage] = useState(false);
+
+  const confirmDeletePage = async () => {
+    if (!pendingDeletePageId) return;
+    setDeletingPage(true);
+    try {
+      await apiDeleteStorePage(storeId, pendingDeletePageId);
+      setPages(prev => prev.filter(p => p._id !== pendingDeletePageId));
+      if (selectedPageId === pendingDeletePageId) setSelectedPageId(null);
+      setPendingDeletePageId(null);
+    } finally {
+      setDeletingPage(false);
+    }
   };
 
+  // Removing a section/block (or a nav link/footer block, below) is
+  // confirmed via a dialog, so — unlike an ordinary field edit — it should
+  // behave like the real deletion it is: saved immediately, not left
+  // sitting in the unsaved draft only to silently come back on next load if
+  // the seller never gets around to clicking "Save Changes."
+  const persistSections = async (next: Section[]) => {
+    setSections(next);
+    if (!selectedPage) return;
+    try {
+      const res = await apiUpdateStorePageSections(storeId, selectedPage._id, next);
+      setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to remove — try again.');
+    }
+  };
+
+  const persistHeader = async (next: StoreThemeData['header']) => {
+    setHeaderDraft(next);
+    try {
+      const res = await apiUpdateStoreHeader(storeId, next);
+      setTheme(res.data);
+      setHeaderDraft(res.data.header);
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to remove — try again.');
+    }
+  };
+
+  const persistFooter = async (next: StoreThemeData['footer']) => {
+    setFooterDraft(next);
+    try {
+      const res = await apiUpdateStoreFooter(storeId, next.blocks, next.footerStyle);
+      setTheme(res.data);
+      setFooterDraft(res.data.footer);
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to remove — try again.');
+    }
+  };
+
+  // The Theme tab represents colors/typography/layout/hero/product/
+  // testimonial/faq (all on `theme`) PLUS `headerStyle`/`footerStyle` (which
+  // live on `header`/`footer`) as one conceptual "look" — so its one Save
+  // button persists all three together, not just the `theme.*` fields,
+  // otherwise applying a gallery theme could silently leave its header/
+  // footer layout unsaved if the seller never separately visits those tabs.
   const handleSaveTheme = async () => {
     if (!themeDraft) return;
     setSaving(true);
     try {
-      const res = await apiUpdateStoreThemeColors(storeId, themeDraft);
-      setTheme(res.data);
+      const [themeRes, headerRes, footerRes] = await Promise.all([
+        apiUpdateStoreThemeColors(storeId, { ...themeDraft, baseThemeId: baseThemeIdDraft }),
+        headerDraft ? apiUpdateStoreHeader(storeId, { headerStyle: headerDraft.headerStyle }) : null,
+        footerDraft ? apiUpdateStoreFooter(storeId, footerDraft.blocks, footerDraft.footerStyle) : null,
+      ]);
+      const latest = footerRes?.data ?? headerRes?.data ?? themeRes.data;
+      setTheme(latest);
+      setThemeDraft(latest.theme);
+      setHeaderDraft(latest.header);
+      setFooterDraft(latest.footer);
+      setBaseThemeIdDraft(latest.baseThemeId);
       flash(true, 'Theme saved');
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to save theme.');
@@ -174,6 +248,26 @@ export function StoreBuilder() {
       setSaving(false);
     }
   };
+
+  // Applying a gallery theme updates every affected draft at once (colors +
+  // baseThemeId + headerStyle + footerStyle) — still just a local, unsaved
+  // change until "Save Theme" is clicked, same as any other Theme-tab edit.
+  // Never fires directly from a card/button click — see `pendingApplyTheme`
+  // below, which gates this behind an explicit confirm dialog first.
+  const applyThemeNow = (t: ThemeDefinition) => {
+    setThemeDraft(t.colors);
+    setBaseThemeIdDraft(t.id);
+    setHeaderDraft(prev => prev ? { ...prev, headerStyle: t.headerStyle } : prev);
+    setFooterDraft(prev => prev ? { ...prev, footerStyle: t.footerStyle } : prev);
+    setPendingApplyTheme(null);
+    setThemeMode('customize');
+    flash(true, `${t.name} applied — customize it below, then Save Theme to publish.`);
+  };
+
+  // Clicking a gallery card or "Use Theme" just requests a confirmation
+  // first — nothing is ever replaced silently, since this does overwrite
+  // whatever the seller had customized.
+  const [pendingApplyTheme, setPendingApplyTheme] = useState<ThemeDefinition | null>(null);
 
   const handleSaveHeader = async () => {
     if (!headerDraft) return;
@@ -237,7 +331,21 @@ export function StoreBuilder() {
       <StorePageHeader
         title="Storefront Builder"
         subtitle="Design your storefront — navbar, hero, pages, footer. Zero platform branding, entirely yours."
-        actions={<SaveStatus message={message} />}
+        actions={
+          <div className="flex items-center gap-2.5">
+            <SaveStatus message={message} />
+            {/* One button, not an embedded side-by-side preview panel — opens
+                the real, currently-live storefront in a new tab. */}
+            <a
+              href={getStorefrontUrl(store.slug)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline transition-colors whitespace-nowrap"
+            >
+              <ExternalLink size={13} /> View Live Store
+            </a>
+          </div>
+        }
       />
 
       <div className="px-4 lg:px-7 pt-4 sticky top-0 z-10 bg-[#FAF9F5]/95 backdrop-blur-sm">
@@ -257,41 +365,41 @@ export function StoreBuilder() {
         </div>
       </div>
 
-      <div className={`px-4 lg:px-7 py-5 grid grid-cols-1 gap-5 items-start ${tab === 'pages' && previewOpen ? 'lg:grid-cols-[280px_1fr_400px]' : 'lg:grid-cols-[280px_1fr]'}`}>
+      {/* No embedded live-preview column anywhere in this page any more —
+          "View Live Store" above opens the real thing in its own tab
+          instead, and the Theme Gallery's "Preview" opens a specific theme
+          the same way (`ThemePreviewPage`). Every tab is a single, full-width
+          editor column now. */}
+      <div className={`px-4 lg:px-7 py-5 grid grid-cols-1 gap-5 items-start ${tab === 'pages' ? 'lg:grid-cols-[280px_1fr]' : 'lg:grid-cols-1'}`}>
         {tab === 'pages' ? (
           <>
             <div className="bg-white border border-bone rounded-2xl p-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
               {pagesLoading ? <SkeletonBox height={160} rounded="8px" /> : (
-                <PagesList pages={pages} selectedId={selectedPageId} onSelect={setSelectedPageId} onCreate={handleCreatePage} onDelete={handleDeletePage} creating={creatingPage} />
+                <PagesList pages={pages} selectedId={selectedPageId} onSelect={setSelectedPageId} onCreate={handleCreatePage} onDelete={setPendingDeletePageId} creating={creatingPage} />
               )}
             </div>
 
             <div className="flex flex-col gap-3 min-w-0">
               {selectedPage ? (
                 <>
-                  <div className="flex items-center justify-between bg-white border border-bone rounded-2xl px-4 py-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-                    <div>
-                      <h2 className="text-[15px] font-bold text-charcoal">{selectedPage.title}</h2>
-                      <p className="text-[11.5px] text-slate mt-[1px]">
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-bone rounded-2xl px-4 py-3 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+                    <div className="min-w-0">
+                      <h2 className="text-[15px] font-bold text-charcoal truncate">{selectedPage.title}</h2>
+                      <p className="text-[11.5px] text-slate mt-[1px] whitespace-nowrap">
                         {selectedPage.status === 'published'
                           ? <span className="text-success font-semibold">● Live on your storefront</span>
                           : <span className="text-slate">○ Draft — not visible to buyers yet</span>}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => setPreviewOpen(o => !o)}
-                        title={previewOpen ? 'Hide live preview' : 'Show live preview'}
-                        className="hidden lg:flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream cursor-pointer transition-colors">
-                        {previewOpen ? <PanelRightClose size={13} /> : <PanelRightOpen size={13} />} {previewOpen ? 'Hide Preview' : 'Show Preview'}
-                      </button>
+                    <div className="flex items-center gap-2 flex-wrap shrink-0">
                       <button onClick={handleTogglePublish} disabled={saving}
-                        className="flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream cursor-pointer transition-colors disabled:opacity-60">
-                        {selectedPage.status === 'published' ? <><EyeOff size={13} /> Unpublish</> : <><Eye size={13} /> Publish</>}
+                        className="flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream cursor-pointer transition-colors disabled:opacity-60 whitespace-nowrap">
+                        {selectedPage.status === 'published' ? <><EyeOff size={13} className="shrink-0" /> Unpublish</> : <><Eye size={13} className="shrink-0" /> Publish</>}
                       </button>
                       <SaveButton onClick={handleSaveSections} saving={saving} label="Save Changes" />
                     </div>
                   </div>
-                  <PageSectionsEditor sections={sections} onChange={setSections} pageOptions={pageOptions} />
+                  <PageSectionsEditor sections={sections} onChange={setSections} onPersist={persistSections} pageOptions={pageOptions} />
                 </>
               ) : (
                 <div className="bg-white border border-bone rounded-2xl p-10 text-center">
@@ -299,24 +407,29 @@ export function StoreBuilder() {
                 </div>
               )}
             </div>
-
-            {previewOpen && (
-              <div className="hidden lg:block sticky top-[130px]">
-                <BuilderPreview store={store} theme={theme} sections={sections} />
-              </div>
-            )}
           </>
         ) : tab === 'blog' ? (
-          <div className="lg:col-span-3">
-            <BlogTab storeId={storeId} />
-          </div>
+          <BlogTab storeId={storeId} />
         ) : (
-          <div className="lg:col-span-2 bg-white border border-bone rounded-2xl p-5 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+          <div className="bg-white border border-bone rounded-2xl p-5 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
             {themeLoading || !themeDraft || !headerDraft || !footerDraft || !identityDraft ? <SkeletonBox height={200} rounded="8px" /> : (
               <div className="flex flex-col gap-5">
-                {tab === 'theme'     && <ThemeTab     value={themeDraft}    onChange={setThemeDraft} />}
-                {tab === 'header'    && <HeaderTab    value={headerDraft}   onChange={setHeaderDraft} pageOptions={pageOptions} />}
-                {tab === 'footer'    && <FooterTab    value={footerDraft}   onChange={setFooterDraft} pageOptions={pageOptions} />}
+                {tab === 'theme'     && (
+                  <ThemeTab
+                    storeId={storeId}
+                    value={themeDraft}
+                    onChange={setThemeDraft}
+                    baseThemeId={baseThemeIdDraft}
+                    onApplyTheme={setPendingApplyTheme}
+                    headerStyle={headerDraft?.headerStyle ?? 'standard'}
+                    footerStyle={footerDraft?.footerStyle ?? 'columns'}
+                    storeHint={{ sellerType: store.sellerType, productTypes: store.productTypes }}
+                    mode={themeMode}
+                    onModeChange={setThemeMode}
+                  />
+                )}
+                {tab === 'header'    && <HeaderTab    value={headerDraft}   onChange={setHeaderDraft} onPersist={persistHeader} pageOptions={pageOptions} />}
+                {tab === 'footer'    && <FooterTab    value={footerDraft}   onChange={setFooterDraft} onPersist={persistFooter} pageOptions={pageOptions} />}
                 {tab === 'storeInfo' && <StoreInfoTab value={identityDraft} onChange={setIdentityDraft} />}
                 <SaveButton
                   onClick={tab === 'theme' ? handleSaveTheme : tab === 'header' ? handleSaveHeader : tab === 'footer' ? handleSaveFooter : handleSaveIdentity}
@@ -328,6 +441,27 @@ export function StoreBuilder() {
           </div>
         )}
       </div>
+
+      {pendingApplyTheme && (
+        <ConfirmDialog
+          title={`Apply ${pendingApplyTheme.name}?`}
+          message="Your current theme customization will be replaced by this theme. You can customize it again afterward."
+          confirmLabel="Apply Theme"
+          onCancel={() => setPendingApplyTheme(null)}
+          onConfirm={() => applyThemeNow(pendingApplyTheme)}
+        />
+      )}
+
+      {pendingDeletePageId && (
+        <ConfirmDialog
+          title="Delete page"
+          message="This page and all of its sections will be permanently deleted. This cannot be undone."
+          confirmLabel="Delete Page"
+          loading={deletingPage}
+          onCancel={() => setPendingDeletePageId(null)}
+          onConfirm={confirmDeletePage}
+        />
+      )}
     </div>
   );
 }

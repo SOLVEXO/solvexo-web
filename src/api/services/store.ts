@@ -51,6 +51,7 @@ export interface StoreData {
   plan:         string;
   aiCredits:    number;
   customDomain: string | null;
+  customDomainStatus: 'unverified' | 'verified';
   whiteLabelEnabled: boolean;
   /** Marketplace listing lifecycle — independent of `verificationStatus`
    *  below (see store.schema.ts). Only `'active'` unlocks product creation
@@ -108,9 +109,31 @@ export function apiGetStoreById(id: string) {
   return client.get<never, ApiResponse<StoreData>>(ENDPOINTS.STORE.GET_BY_ID(id));
 }
 
+export type CustomDomainStatus = 'unverified' | 'verified';
+
 /** PATCH /api/store/:storeId/custom-domain */
 export function apiSetCustomDomain(storeId: string, domain: string | null) {
-  return client.patch<never, ApiResponse<{ customDomain: string | null }>>(ENDPOINTS.STORE.CUSTOM_DOMAIN(storeId), { domain });
+  return client.patch<never, ApiResponse<{ customDomain: string | null; customDomainStatus: CustomDomainStatus; cnameTarget: string }>>(
+    ENDPOINTS.STORE.CUSTOM_DOMAIN(storeId), { domain },
+  );
+}
+
+/** POST /api/store/:storeId/custom-domain/verify — checks the domain's real
+ *  DNS against our CNAME target; only a 'verified' result can ever serve as
+ *  a live storefront (see `getPublicStoreByDomain` on the backend). */
+export function apiVerifyCustomDomain(storeId: string) {
+  return client.post<never, ApiResponse<{ customDomainStatus: CustomDomainStatus; verified: boolean; reason: string | null; cnameTarget: string }>>(
+    ENDPOINTS.STORE.CUSTOM_DOMAIN_VERIFY(storeId), {},
+  );
+}
+
+/** GET /api/store/public/resolve-domain?host=... — resolves a VERIFIED
+ *  custom domain straight to the same shape `apiGetPublicStore` returns, so
+ *  a request arriving on an arbitrary hostname can still load the right
+ *  storefront (see `StorefrontLayout.tsx`). 404s for an unverified/unknown
+ *  domain. */
+export function apiResolveStoreByDomain(host: string) {
+  return client.get<never, ApiResponse<PublicStoreData>>(ENDPOINTS.STORE.RESOLVE_DOMAIN, { params: { host } });
 }
 
 /** PATCH /api/store/:storeId/white-label */
@@ -322,22 +345,6 @@ export interface PlatformStats {
 /** GET /api/store/public/platform-stats — real, cached homepage stat strip. */
 export function apiGetPlatformStats() {
   return client.get<never, ApiResponse<PlatformStats>>(ENDPOINTS.STORE.PUBLIC_PLATFORM_STATS);
-}
-
-export interface Testimonial {
-  id:                 string;
-  name:               string;
-  storeName:          string | null;
-  rating:             number;
-  text:               string;
-  isVerifiedPurchase: boolean;
-}
-
-/** GET /api/store/public/testimonials — real, cached homepage reviews (min length + rating filtered). */
-export function apiGetTestimonials(limit = 6) {
-  return client.get<never, ApiResponse<Testimonial[]>>(
-    `${ENDPOINTS.STORE.PUBLIC_TESTIMONIALS}?limit=${limit}`,
-  );
 }
 
 // ── Follow ────────────────────────────────────────────────────────────────────

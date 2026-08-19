@@ -1,6 +1,10 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import type { PublicStoreData } from '@/api/services/store';
-import type { StoreThemeData } from '@/api/services/storeTheme';
+import type {
+  StoreThemeData, ThemeBorderRadius, ThemeButtonStyle, ThemeButtonWidth, ThemeScale, ThemeCardStyle, ThemeButtonSize,
+  ThemeHeroStyle, ThemeHeroAlignment, ThemeProductImageRatio, ThemeProductImageHover, ThemeProductGridDensity,
+  ThemeTestimonialStyle, ThemeFaqStyle, ThemeHeaderStyle, ThemeFooterStyle,
+} from '@/api/services/storeTheme';
 
 export interface StorefrontCfg {
   primaryColor: string;
@@ -8,7 +12,63 @@ export interface StorefrontCfg {
   textColor:    string;
   accentColor:  string;
   font:         string;
+  buttonStyle:  ThemeButtonStyle;
+  buttonSize:   ThemeButtonSize;
+  /** `theme.buttonRadius` resolved to a real CSS value — `ThemedButton` only. */
+  buttonRadiusPx: string;
+  /** `theme.buttonWidth` — `ThemedButton` only (never applied to forced-size
+   *  inline nav/footer "highlight" links, only real section CTAs). */
+  buttonWidth:    ThemeButtonWidth;
+  /** `theme.imageRadius` resolved to a real CSS value — standalone content
+   *  images only (`ImageWithTextSection`), never buttons/cards. */
+  imageRadiusPx:  string;
+
+  // Each section keeps its own base container-width/vertical-spacing/heading
+  // font-size literal (they're genuinely different values across sections —
+  // Faq is narrower than Video is narrower than Testimonials, by design) —
+  // these are the shared multipliers a section applies to ITS OWN base value,
+  // so `typeScale`/`containerWidth`/`sectionSpacing` move every section
+  // together while preserving their existing relative proportions. All three
+  // resolve to exactly 1 at the default setting, so a pre-existing store
+  // (or any section not yet touched by this pass) renders pixel-identical.
+  typeScaleFactor:      number;
+  containerWidthScale:  number;
+  sectionSpacingScale:  number;
+
+  /** Product Cards scope — `ProductCardShell` only. Independent from
+   *  testimonial cards even though both use the same 3 style names. */
+  productCardStyle:     ThemeCardStyle;
+  productCardRadiusPx:  string;
+  /** Testimonials scope — the `cards` variant only. Independent from
+   *  product cards. */
+  testimonialCardStyle:    ThemeCardStyle;
+  testimonialCardRadiusPx: string;
+
+  heroStyle:          ThemeHeroStyle;
+  heroAlignment:      ThemeHeroAlignment;
+  productImageRatio:  ThemeProductImageRatio;
+  productImageHover:  ThemeProductImageHover;
+  productGridDensity: ThemeProductGridDensity;
+  testimonialStyle:   ThemeTestimonialStyle;
+  faqStyle:           ThemeFaqStyle;
+  headerStyle:        ThemeHeaderStyle;
+  footerStyle:        ThemeFooterStyle;
+  /** Derived from `bgColor`'s luminance — lets the few chrome pieces that
+   *  aren't already colored via `cfg` (the navbar's background/text, which
+   *  are otherwise hardcoded light) flip to a dark treatment for a
+   *  deliberately dark theme (e.g. "Luxury Noir") without needing a new
+   *  stored field. A light theme's `bgColor` (every pre-existing store)
+   *  always resolves this to `false`, so nothing changes for them. */
+  isDarkTheme:        boolean;
 }
+
+export const RADIUS_PX_MAP: Record<ThemeBorderRadius, string> = {
+  none:   '0px',
+  small:  '6px',
+  medium: '12px',
+  large:  '20px',
+  full:   '9999px',
+};
 
 export const STOREFRONT_CFG_DEFAULT: StorefrontCfg = {
   primaryColor: '#D97757',
@@ -16,7 +76,86 @@ export const STOREFRONT_CFG_DEFAULT: StorefrontCfg = {
   textColor:    '#2C2A28',
   accentColor:  '#B95A3A',
   font:         'Poppins',
+  buttonStyle:    'solid',
+  buttonSize:     'md',
+  buttonRadiusPx: RADIUS_PX_MAP.medium,
+  buttonWidth:    'auto',
+  imageRadiusPx:  RADIUS_PX_MAP.medium,
+  typeScaleFactor:     1,
+  containerWidthScale: 1,
+  sectionSpacingScale: 1,
+  productCardStyle:        'outlined',
+  productCardRadiusPx:     RADIUS_PX_MAP.medium,
+  testimonialCardStyle:    'outlined',
+  testimonialCardRadiusPx: RADIUS_PX_MAP.medium,
+  heroStyle:          'overlay',
+  heroAlignment:      'left',
+  productImageRatio:  'square',
+  productImageHover:  'none',
+  productGridDensity: 'cozy',
+  testimonialStyle:   'cards',
+  faqStyle:           'accordion',
+  headerStyle:        'standard',
+  footerStyle:        'columns',
+  isDarkTheme:        false,
 };
+
+/** Simple relative-luminance check — good enough to distinguish "a light
+ *  cream/white storefront" (every existing default) from "a deliberately
+ *  dark one," not a color-accessibility engine. */
+function isDarkHex(hex: string): boolean {
+  const h = hex.replace('#', '');
+  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  const r = parseInt(full.substring(0, 2), 16);
+  const g = parseInt(full.substring(2, 4), 16);
+  const b = parseInt(full.substring(4, 6), 16);
+  if ([r, g, b].some(Number.isNaN)) return false;
+  return (0.299 * r + 0.587 * g + 0.114 * b) < 100;
+}
+
+// 'comfortable'/'standard' always map to 1 — the neutral, exactly-today's-look
+// setting — so a field simply missing on an old store (defaulted upstream to
+// 'comfortable'/'standard' anyway) can never visually drift.
+const SCALE_FACTOR_MAP: Record<ThemeScale, number> = { compact: 0.9, comfortable: 1, spacious: 1.15 };
+const CONTAINER_SCALE_MAP: Record<'narrow' | 'standard' | 'wide', number> = { narrow: 0.85, standard: 1, wide: 1.15 };
+const SPACING_SCALE_MAP: Record<ThemeScale, number> = { compact: 0.65, comfortable: 1, spacious: 1.4 };
+
+/** Single source of truth for turning a saved `StoreTheme` doc into the
+ *  resolved `StorefrontCfg` the storefront actually renders with — used by
+ *  both the real storefront (`StorefrontLayout`) and the seller's live
+ *  builder preview (`BuilderPreview`), so the two can never drift apart. */
+export function resolveStorefrontCfg(theme: StoreThemeData | null): StorefrontCfg {
+  const t = theme?.theme;
+  return {
+    primaryColor: t?.primaryColor ?? STOREFRONT_CFG_DEFAULT.primaryColor,
+    bgColor:      t?.bgColor      ?? STOREFRONT_CFG_DEFAULT.bgColor,
+    textColor:    t?.textColor    ?? STOREFRONT_CFG_DEFAULT.textColor,
+    accentColor:  t?.accentColor  ?? STOREFRONT_CFG_DEFAULT.accentColor,
+    font:         t?.font         ?? STOREFRONT_CFG_DEFAULT.font,
+    buttonStyle:    t?.buttonStyle  ?? STOREFRONT_CFG_DEFAULT.buttonStyle,
+    buttonSize:     t?.buttonSize   ?? STOREFRONT_CFG_DEFAULT.buttonSize,
+    buttonRadiusPx: RADIUS_PX_MAP[t?.buttonRadius ?? 'medium'],
+    buttonWidth:    t?.buttonWidth  ?? STOREFRONT_CFG_DEFAULT.buttonWidth,
+    imageRadiusPx:  RADIUS_PX_MAP[t?.imageRadius ?? 'medium'],
+    typeScaleFactor:     SCALE_FACTOR_MAP[t?.typeScale ?? 'comfortable'],
+    containerWidthScale: CONTAINER_SCALE_MAP[t?.containerWidth ?? 'standard'],
+    sectionSpacingScale: SPACING_SCALE_MAP[t?.sectionSpacing ?? 'comfortable'],
+    productCardStyle:        t?.productCardStyle        ?? STOREFRONT_CFG_DEFAULT.productCardStyle,
+    productCardRadiusPx:     RADIUS_PX_MAP[t?.productCardRadius ?? 'medium'],
+    testimonialCardStyle:    t?.testimonialCardStyle    ?? STOREFRONT_CFG_DEFAULT.testimonialCardStyle,
+    testimonialCardRadiusPx: RADIUS_PX_MAP[t?.testimonialCardRadius ?? 'medium'],
+    heroStyle:          t?.heroStyle          ?? STOREFRONT_CFG_DEFAULT.heroStyle,
+    heroAlignment:      t?.heroAlignment      ?? STOREFRONT_CFG_DEFAULT.heroAlignment,
+    productImageRatio:  t?.productImageRatio  ?? STOREFRONT_CFG_DEFAULT.productImageRatio,
+    productImageHover:  t?.productImageHover  ?? STOREFRONT_CFG_DEFAULT.productImageHover,
+    productGridDensity: t?.productGridDensity ?? STOREFRONT_CFG_DEFAULT.productGridDensity,
+    testimonialStyle:   t?.testimonialStyle   ?? STOREFRONT_CFG_DEFAULT.testimonialStyle,
+    faqStyle:           t?.faqStyle           ?? STOREFRONT_CFG_DEFAULT.faqStyle,
+    headerStyle:        theme?.header.headerStyle ?? STOREFRONT_CFG_DEFAULT.headerStyle,
+    footerStyle:        theme?.footer.footerStyle  ?? STOREFRONT_CFG_DEFAULT.footerStyle,
+    isDarkTheme:        isDarkHex(t?.bgColor ?? STOREFRONT_CFG_DEFAULT.bgColor),
+  };
+}
 
 export interface StorefrontContextValue {
   store:  PublicStoreData;

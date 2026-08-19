@@ -1,6 +1,7 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MessageCircle, Music2 } from 'lucide-react';
 import { useStorefront } from './StorefrontContext';
+import { ThemedButton } from './ThemedButton';
 import type { Block } from '@/api/services/storefrontTypes';
 
 // `lucide-react` dropped brand/social icons in this version, so every
@@ -58,8 +59,17 @@ const SOCIAL_ICON: Record<string, (size: number) => React.ReactNode> = {
   whatsapp:  s => <MessageCircle size={s} />,
 };
 
-function FooterLinkItem({ link, resolveLink }: { link: { label: string; linkType: string; pageSlug?: string; url?: string }; resolveLink: ReturnType<typeof useStorefront>['resolveLink'] }) {
+function FooterLinkItem({ link, resolveLink }: { link: { label: string; linkType: string; pageSlug?: string; url?: string; highlight?: boolean }; resolveLink: ReturnType<typeof useStorefront>['resolveLink'] }) {
+  const navigate = useNavigate();
   const { to, href } = resolveLink(link);
+
+  if (link.highlight) {
+    return (
+      <ThemedButton size="sm" onClick={() => { if (to) navigate(to); else if (href) window.open(href, '_blank', 'noopener,noreferrer'); }}>
+        {link.label}
+      </ThemedButton>
+    );
+  }
   const cls = 'text-[12.5px] text-[#b0aea8] hover:text-white no-underline transition-colors';
   return to
     ? <Link to={to} className={cls}>{link.label}</Link>
@@ -70,6 +80,26 @@ function FooterLinkItem({ link, resolveLink }: { link: { label: string; linkType
 // `StoreTheme.footer.blocks` (footer_column / social_link / copyright_text).
 // A store with no footer configured yet renders a minimal fallback (store
 // name + a neutral copyright line) rather than any Solvexo content.
+function SocialIcons({ socials }: { socials: Block[] }) {
+  if (socials.length === 0) return null;
+  return (
+    <div className="flex items-center gap-3">
+      {socials.map(b => (
+        <a
+          key={b._id ?? b.settings.platform}
+          href={b.settings.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={b.settings.platform}
+          className="w-8 h-8 rounded-full flex items-center justify-center border border-white/15 text-[#b0aea8] hover:text-white hover:border-white/30 transition-colors"
+        >
+          {(SOCIAL_ICON[b.settings.platform] ?? (() => null))(14)}
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export function StorefrontFooter() {
   const { store, theme, cfg, resolveLink } = useStorefront();
   const blocks = theme?.footer.blocks ?? [];
@@ -77,6 +107,22 @@ export function StorefrontFooter() {
   const columns = blocks.filter(b => b.type === 'footer_column');
   const socials = blocks.filter(b => b.type === 'social_link');
   const copyright = blocks.find(b => b.type === 'copyright_text') as Block | undefined;
+  const copyrightText = copyright?.settings.text ?? `© ${new Date().getFullYear()} ${store.name}. All rights reserved.`;
+
+  // 'minimal' — one centered row (name + socials + copyright), no columns —
+  // deliberately a different layout, not just the columns view with empty
+  // columns.
+  if (cfg.footerStyle === 'minimal') {
+    return (
+      <footer className="bg-carbon text-[#b0aea8]" style={{ fontFamily: `${cfg.font}, sans-serif` }}>
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col items-center text-center gap-3">
+          <p className="text-white font-bold text-[16px]">{store.name}</p>
+          <SocialIcons socials={socials} />
+          <p className="text-[11.5px] text-[#8c8a86]">{copyrightText}</p>
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer className="bg-carbon text-[#b0aea8]" style={{ fontFamily: `${cfg.font}, sans-serif` }}>
@@ -84,22 +130,7 @@ export function StorefrontFooter() {
         <div>
           <p className="text-white font-bold text-[16px] mb-2">{store.name}</p>
           {store.description && <p className="text-[12.5px] leading-relaxed max-w-[320px] mb-4">{store.description}</p>}
-          {socials.length > 0 && (
-            <div className="flex items-center gap-3">
-              {socials.map(b => (
-                <a
-                  key={b._id ?? b.settings.platform}
-                  href={b.settings.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={b.settings.platform}
-                  className="w-8 h-8 rounded-full flex items-center justify-center border border-white/15 text-[#b0aea8] hover:text-white hover:border-white/30 transition-colors"
-                >
-                  {(SOCIAL_ICON[b.settings.platform] ?? (() => null))(14)}
-                </a>
-              ))}
-            </div>
-          )}
+          <SocialIcons socials={socials} />
         </div>
 
         {columns.map(col => (
@@ -116,7 +147,7 @@ export function StorefrontFooter() {
 
       <div className="border-t border-white/10">
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-4 text-[11.5px] text-[#8c8a86]">
-          {copyright?.settings.text ?? `© ${new Date().getFullYear()} ${store.name}. All rights reserved.`}
+          {copyrightText}
         </div>
       </div>
     </footer>

@@ -8,10 +8,8 @@ import { PhoneShell, StatusBar, HomeScreenMockup } from './AppDownloadBanner';
 import { ProductImage } from '@/components/comman/marketplace/ProductCard';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { formatMoney } from '@/utils/currency';
-import {
-  apiGetPlatformStats, apiGetTestimonials,
-  type PlatformStats, type Testimonial,
-} from '@/api/services/store';
+import { apiGetPlatformStats, type PlatformStats } from '@/api/services/store';
+import { apiGetTestimonials, type Testimonial } from '@/api/services/testimonials';
 import { apiGetAllProducts, type MarketplaceProduct } from '@/api/services/marketplace';
 
 // Mirrors AppDownloadBanner's own bottom tab bar (kept local/smaller here

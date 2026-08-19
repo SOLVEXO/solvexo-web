@@ -6,8 +6,9 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useFaqs, useFaqCategories } from '@/hooks/useFaqs';
 import { Button, SkeletonBox } from '@/components/comman/ui';
 import type { Faq } from '@/api/services/faq';
-
-const SERIF = "'Lora', Georgia, serif";
+import { Reveal } from '@/components/comman/motion/Reveal';
+import { SectionHeading } from '@/components/comman/motion/SectionHeading';
+import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 
 function FaqAccordionItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -79,25 +80,30 @@ export function FaqPage() {
     <div className="bg-cream min-h-full">
       {/* ── Hero ── */}
       <div className="text-center px-4 md:px-8 lg:px-12 pt-14 md:pt-20 pb-10 max-w-[720px] mx-auto">
-        <div className="w-12 h-12 rounded-xl bg-brand-pale-orange flex items-center justify-center mx-auto mb-5">
-          <HelpCircle size={22} className="text-brand-orange" />
-        </div>
-        <h1 className="text-2xl md:text-4xl lg:text-[42px] font-bold text-carbon leading-[1.2] mb-[14px] tracking-[-0.01em]" style={{ fontFamily: SERIF }}>
-          Frequently asked questions
-        </h1>
-        <p className="text-sm md:text-[16px] text-slate leading-[1.6] mb-8">
-          Find answers about your account, orders, payments and more.
-        </p>
+        <Reveal delay={0}>
+          <div className="w-12 h-12 rounded-xl bg-brand-pale-orange flex items-center justify-center mx-auto mb-5">
+            <HelpCircle size={22} className="text-brand-orange" />
+          </div>
+        </Reveal>
+        <SectionHeading
+          title="Frequently asked questions"
+          subtitle="Find answers about your account, orders, payments and more."
+          align="center"
+          size="lg"
+          className="mb-8"
+        />
 
-        <div className="flex items-center gap-[6px] border border-bone rounded-lg px-4 bg-white max-w-[440px] mx-auto transition-colors focus-within:border-brand-orange/50 focus-within:ring-2 focus-within:ring-brand-orange/10">
-          <Search size={15} className="text-slate shrink-0" />
-          <input
-            placeholder="Search for a question…"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            className="border-none outline-none text-[13px] py-[10px] w-full text-charcoal bg-transparent"
-          />
-        </div>
+        <Reveal delay={0.2}>
+          <div className="flex items-center gap-[6px] border border-bone rounded-lg px-4 bg-white max-w-[440px] mx-auto transition-colors focus-within:border-brand-orange/50 focus-within:ring-2 focus-within:ring-brand-orange/10">
+            <Search size={15} className="text-slate shrink-0" />
+            <input
+              placeholder="Search for a question…"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              className="border-none outline-none text-[13px] py-[10px] w-full text-charcoal bg-transparent"
+            />
+          </div>
+        </Reveal>
       </div>
 
       {/* ── Category filter ── */}
@@ -167,20 +173,22 @@ export function FaqPage() {
 
       {/* ── Still need help? ── */}
       <div className="px-4 md:px-8 lg:px-12 py-12 max-w-[720px] mx-auto">
-        <div className="rounded-xl border border-bone p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
-              <LifeBuoy size={16} className="text-brand-orange" />
+        <Reveal>
+          <PremiumCard className="p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
+                <LifeBuoy size={16} className="text-brand-orange" />
+              </div>
+              <div>
+                <p className="text-[14px] font-bold text-carbon">Still need help?</p>
+                <p className="text-[12.5px] text-slate mt-0.5">Can't find what you're looking for? Our support team is here for you.</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[14px] font-bold text-carbon">Still need help?</p>
-              <p className="text-[12.5px] text-slate mt-0.5">Can't find what you're looking for? Our support team is here for you.</p>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" icon={<MessageCircle size={13} />} className="shrink-0" onClick={() => navigate('/contact-us')}>
-            Contact Us
-          </Button>
-        </div>
+            <Button variant="outline" size="sm" icon={<MessageCircle size={13} />} className="shrink-0" onClick={() => navigate('/contact-us')}>
+              Contact Us
+            </Button>
+          </PremiumCard>
+        </Reveal>
       </div>
     </div>
   );

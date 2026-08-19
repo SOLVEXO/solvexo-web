@@ -19,9 +19,9 @@ function toEmbedUrl(url: string): string {
 export function VideoSection({ settings }: { settings: VideoSectionSettings }) {
   const { cfg } = useStorefront();
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-8">
-      <div className="max-w-[860px] mx-auto">
-        {settings.heading && <h2 className="text-[20px] font-bold mb-4 text-center" style={{ color: cfg.textColor }}>{settings.heading}</h2>}
+    <div className="px-4 sm:px-6 lg:px-10" style={{ paddingTop: 32 * cfg.sectionSpacingScale, paddingBottom: 32 * cfg.sectionSpacingScale }}>
+      <div className="mx-auto" style={{ maxWidth: Math.round(860 * cfg.containerWidthScale) }}>
+        {settings.heading && <h2 className="font-bold mb-4 text-center" style={{ color: cfg.textColor, fontSize: Math.round(20 * cfg.typeScaleFactor) }}>{settings.heading}</h2>}
         <div className={`w-full rounded-xl overflow-hidden bg-black ${ASPECT_CLASS[settings.aspectRatio ?? '16:9']}`}>
           <iframe
             src={toEmbedUrl(settings.videoUrl)}

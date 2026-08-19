@@ -8,6 +8,10 @@ import { useForm } from '@/hooks/useForm';
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/utils/validation/schemas';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { SecurityMockup } from '@/features/auth/components/mockups/AuthMockups';
+import { MagneticButton } from '@/components/comman/motion/MagneticButton';
+import { motion } from 'motion/react';
+
+const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } };
 
 const HIGHLIGHTS = [
   { Icon: KeyRound,    text: 'Get a secure reset code by email' },
@@ -59,15 +63,17 @@ export function ForgotPasswordPage() {
         />
       </div>
 
-      <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} loading={forgotPassword.loading}>
-        Send Reset Code
-      </Button>
+      <MagneticButton className="block">
+        <Button variant="primary" size="lg" fullWidth onClick={handleSubmit} loading={forgotPassword.loading}>
+          Send Reset Code
+        </Button>
+      </MagneticButton>
 
       {forgotPassword.error && (
-        <div role="alert" className="flex items-center justify-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
+        <motion.div role="alert" className="flex items-center justify-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error" {...fadeSlide}>
           <AlertTriangle size={14} className="shrink-0" />
           <span>{forgotPassword.error}</span>
-        </div>
+        </motion.div>
       )}
 
       <Button

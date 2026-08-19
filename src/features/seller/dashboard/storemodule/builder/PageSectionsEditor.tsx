@@ -7,6 +7,7 @@ import { SectionFields } from './SectionFields';
 import { BlockFields, type PageOption } from './BlockFields';
 import { SortableList } from './Sortable';
 import { AddSectionModal } from './AddSectionModal';
+import { ConfirmDialog } from './ConfirmDialog';
 
 function BlockRow({ block, sectionType, onChange, onRemove, pageOptions }: {
   block: Block;
@@ -16,6 +17,7 @@ function BlockRow({ block, sectionType, onChange, onRemove, pageOptions }: {
   pageOptions: PageOption[];
 }) {
   const [open, setOpen] = useState(false);
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
   const label = block.settings.label || block.settings.heading || block.settings.question || block.settings.text || block.settings.authorName || SECTION_META_BY_TYPE[sectionType as keyof typeof SECTION_META_BY_TYPE]?.blockLabel || block.type;
 
   return (
@@ -26,24 +28,38 @@ function BlockRow({ block, sectionType, onChange, onRemove, pageOptions }: {
           {open ? <ChevronUp size={13} className="text-slate shrink-0" /> : <ChevronDown size={13} className="text-slate shrink-0" />}
           <span className="text-[12.5px] font-medium text-charcoal truncate">{label || '(untitled)'}</span>
         </button>
-        <button type="button" onClick={onRemove} className="text-error/70 text-[11px] font-semibold px-2 py-1 hover:bg-error-bg hover:text-error rounded-md bg-transparent border-none cursor-pointer shrink-0 transition-colors">Remove</button>
+        <button type="button" onClick={() => setConfirmingRemove(true)} className="text-error/70 text-[11px] font-semibold px-2 py-1 hover:bg-error-bg hover:text-error rounded-md bg-transparent border-none cursor-pointer shrink-0 transition-colors">Remove</button>
       </div>
       {open && (
         <div className="px-3 pb-3 pt-1 border-t border-bone/70">
           <BlockFields type={block.type} settings={block.settings} onChange={settings => onChange({ ...block, settings })} pageOptions={pageOptions} />
         </div>
       )}
+      {confirmingRemove && (
+        <ConfirmDialog
+          title="Remove item"
+          message={`Remove "${label || '(untitled)'}"? This cannot be undone.`}
+          confirmLabel="Remove"
+          onCancel={() => setConfirmingRemove(false)}
+          onConfirm={() => { setConfirmingRemove(false); onRemove(); }}
+        />
+      )}
     </div>
   );
 }
 
-function SectionCard({ section, onChange, onRemove, pageOptions }: {
+function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOptions }: {
   section: Section;
   onChange: (next: Section) => void;
   onRemove: () => void;
+  /** Called (with the section's new `blocks` already applied) specifically
+   *  when a block inside this section is removed — saved immediately, same
+   *  as removing the whole section, unlike an ordinary field edit. */
+  onPersistBlockRemove: (next: Section) => void;
   pageOptions: PageOption[];
 }) {
   const [open, setOpen] = useState(true);
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
   const meta = SECTION_META_BY_TYPE[section.type];
 
   return (
@@ -60,9 +76,18 @@ function SectionCard({ section, onChange, onRemove, pageOptions }: {
           className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
           {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
         </button>
-        <button type="button" onClick={onRemove} aria-label="Remove section"
+        <button type="button" onClick={() => setConfirmingRemove(true)} aria-label="Remove section"
           className="w-7 h-7 flex items-center justify-center text-error/70 rounded-md hover:bg-error-bg hover:text-error bg-transparent border-none cursor-pointer shrink-0 transition-colors"><Trash2 size={14} /></button>
       </div>
+      {confirmingRemove && (
+        <ConfirmDialog
+          title="Remove section"
+          message={`Remove the "${meta?.label ?? section.type}" section and everything in it? This cannot be undone.`}
+          confirmLabel="Remove Section"
+          onCancel={() => setConfirmingRemove(false)}
+          onConfirm={() => { setConfirmingRemove(false); onRemove(); }}
+        />
+      )}
       {open && (
         <div className="px-4 pb-4 flex flex-col gap-3 border-t border-bone pt-3.5">
           <SectionFields type={section.type} settings={section.settings} onChange={settings => onChange({ ...section, settings })} />
@@ -80,7 +105,11 @@ function SectionCard({ section, onChange, onRemove, pageOptions }: {
                     block={block}
                     sectionType={section.type}
                     onChange={next => onChange({ ...section, blocks: section.blocks.map((b, j) => j === i ? next : b) })}
-                    onRemove={() => onChange({ ...section, blocks: section.blocks.filter((_, j) => j !== i) })}
+                    onRemove={() => {
+                      const next = { ...section, blocks: section.blocks.filter((_, j) => j !== i) };
+                      onChange(next);
+                      onPersistBlockRemove(next);
+                    }}
                     pageOptions={pageOptions}
                   />
                 )}
@@ -109,9 +138,15 @@ function SectionCard({ section, onChange, onRemove, pageOptions }: {
   );
 }
 
-export function PageSectionsEditor({ sections, onChange, pageOptions }: {
+export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions }: {
   sections: Section[];
   onChange: (next: Section[]) => void;
+  /** Called (with the full next `Section[]`) whenever a section or a block
+   *  inside one is removed — saves immediately, so a confirmed removal can
+   *  never silently revert if the seller navigates away before clicking
+   *  "Save Changes." Ordinary edits (reorder, field changes, add) still go
+   *  through `onChange` only, unchanged. */
+  onPersist: (next: Section[]) => void;
   pageOptions: PageOption[];
 }) {
   const [showAdd, setShowAdd] = useState(false);
@@ -142,7 +177,12 @@ export function PageSectionsEditor({ sections, onChange, pageOptions }: {
               <SectionCard
                 section={section}
                 onChange={next => onChange(sections.map((s, j) => j === i ? next : s))}
-                onRemove={() => onChange(sections.filter((_, j) => j !== i))}
+                onRemove={() => {
+                  const next = sections.filter((_, j) => j !== i);
+                  onChange(next);
+                  onPersist(next);
+                }}
+                onPersistBlockRemove={nextSection => onPersist(sections.map((s, j) => j === i ? nextSection : s))}
                 pageOptions={pageOptions}
               />
             )}

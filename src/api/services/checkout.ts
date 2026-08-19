@@ -99,6 +99,9 @@ export interface SubscriptionSavingsHint {
 export interface CreateCheckoutPayload {
   addressId?:      string;
   shippingZoneId?: string;
+  // Cart is now store-scoped — required so the backend knows which of the
+  // buyer's (possibly several, one-per-store) carts to check out from.
+  storeId?:        string;
 }
 
 // Same key CurrencyPreferenceContext writes to — read directly here rather

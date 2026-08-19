@@ -15,9 +15,9 @@ export function RichTextSection({ settings, blocks }: { settings: RichTextSectio
   const alignCls = { left: 'text-left items-start', center: 'text-center items-center', right: 'text-right items-end' }[settings.alignment ?? 'left'];
 
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-8">
-      <div className={`max-w-[720px] mx-auto flex flex-col gap-4 ${alignCls}`}>
-        {settings.heading && <h2 className="text-[22px] font-bold" style={{ color: cfg.textColor }}>{settings.heading}</h2>}
+    <div className="px-4 sm:px-6 lg:px-10" style={{ paddingTop: 32 * cfg.sectionSpacingScale, paddingBottom: 32 * cfg.sectionSpacingScale }}>
+      <div className={`mx-auto flex flex-col gap-4 ${alignCls}`} style={{ maxWidth: Math.round(720 * cfg.containerWidthScale) }}>
+        {settings.heading && <h2 className="font-bold" style={{ color: cfg.textColor, fontSize: Math.round(22 * cfg.typeScaleFactor) }}>{settings.heading}</h2>}
         <ContentBlocks blocks={blocks} />
       </div>
     </div>

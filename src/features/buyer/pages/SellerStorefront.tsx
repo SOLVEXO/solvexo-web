@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { CoverImage } from '@/components/comman/ui';
 import { BannerCarousel } from '@/components/comman/marketplace/BannerCarousel';
@@ -66,6 +67,7 @@ function StoreBadges({ badges, sellerType }: { badges: string[]; sellerType: str
 // (hero slides, rich text, featured products, the product catalog, etc.)
 // renders via `SectionRenderer` from the store's home `StorePage`.
 export function SellerStorefront() {
+  const navigate = useNavigate();
   const { store, cfg, theme } = useStorefront();
   const identityBanner = theme?.identityBanner;
   const showFollow     = identityBanner?.showFollowButton     !== false;
@@ -91,6 +93,7 @@ export function SellerStorefront() {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [rewardsLoading, setRewardsLoading] = useState(false);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
+  const [redeemedVoucher, setRedeemedVoucher] = useState<{ code: string; expiresAt: string } | null>(null);
   const [plans, setPlans] = useState<BuyerPlan[]>([]);
   const [billingInterval, setBillingInterval] = useState<BillingInterval>('monthly');
   const [subscribingId, setSubscribingId] = useState<string | null>(null);
@@ -129,7 +132,7 @@ export function SellerStorefront() {
   }, [store.storeId]);
 
   const handleSubscribe = async (plan: BuyerPlan, interval: BillingInterval) => {
-    if (!isLoggedIn) { window.location.href = getMainAppUrl('/login'); return; }
+    if (!isLoggedIn) { navigate('/login'); return; }
     setSubscribingId(plan._id);
     setSubscribeError('');
     setSubscribedMsg('');
@@ -179,7 +182,8 @@ export function SellerStorefront() {
     try {
       const res = await apiRedeemReward(store.storeId, reward._id);
       setLoyalty(prev => prev ? { ...prev, pointsBalance: res.data.remainingBalance } : prev);
-      toast.success('Reward redeemed');
+      setRedeemedVoucher({ code: res.data.voucherCode, expiresAt: res.data.voucherExpiresAt });
+      toast.success('Reward redeemed — apply your code at checkout');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to redeem reward.');
     } finally {
@@ -264,20 +268,23 @@ export function SellerStorefront() {
             <div className="flex flex-wrap sm:flex-col gap-2 items-center justify-center sm:items-end shrink-0">
               {showMembership && plans.length > 0 && (
                 <button onClick={() => document.getElementById('store-membership')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
+                  style={{ borderRadius: cfg.buttonRadiusPx }}
+                  className="flex items-center gap-[6px] px-[14px] py-[7px] text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
                   <RefreshCw size={13} style={{ color: cfg.primaryColor }} /> Membership
                 </button>
               )}
               {showLoyaltyBtn && isLoggedIn && loyalty && (
                 <button onClick={openRewards}
-                  className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
+                  style={{ borderRadius: cfg.buttonRadiusPx }}
+                  className="flex items-center gap-[6px] px-[14px] py-[7px] text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
                   <Gift size={13} style={{ color: cfg.primaryColor }} /> {loyalty.pointsBalance.toLocaleString()} points
                 </button>
               )}
               {showFollow && (
                 <>
                   <button onClick={handleFollow} disabled={followLoading || !followStatusLoaded}
-                    className={clsx('px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors whitespace-nowrap border',
+                    style={{ borderRadius: cfg.buttonRadiusPx }}
+                    className={clsx('px-[14px] py-[7px] text-[13px] font-medium cursor-pointer transition-colors whitespace-nowrap border',
                       following ? 'bg-white text-charcoal border-white' : 'bg-transparent text-white border-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]')}>
                     {(followLoading || !followStatusLoaded) ? <Loader2 size={13} className="animate-spin inline" /> : following ? 'Following ✓' : 'Follow Store'}
                   </button>
@@ -288,7 +295,8 @@ export function SellerStorefront() {
               {showMessage && (
                 <>
                   <button onClick={handleMessage} disabled={msgLoading}
-                    className="flex items-center gap-[6px] px-[14px] py-[7px] rounded-lg text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
+                    style={{ borderRadius: cfg.buttonRadiusPx }}
+                    className="flex items-center gap-[6px] px-[14px] py-[7px] text-[13px] font-medium cursor-pointer transition-colors bg-white text-charcoal border border-white hover:bg-[rgba(255,255,255,0.9)] whitespace-nowrap">
                     {msgLoading ? <Loader2 size={13} className="animate-spin" /> : <MessageCircle size={13} />} Message
                   </button>
                   {msgError && <p className="text-[11px] text-white bg-black/30 rounded-md px-2 py-1 max-w-[220px] text-center sm:text-right">{msgError}</p>}
@@ -369,7 +377,21 @@ export function SellerStorefront() {
       )}
 
       {showRewards && (
-        <Modal title="Rewards Catalog" onClose={() => setShowRewards(false)}>
+        <Modal title="Rewards Catalog" onClose={() => { setShowRewards(false); setRedeemedVoucher(null); }}>
+          {redeemedVoucher && (
+            <div className="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-3.5 py-3 mb-4">
+              <div>
+                <p className="text-[12.5px] font-semibold text-emerald-800">Reward redeemed! Apply this code at checkout:</p>
+                <p className="text-[15px] font-mono font-bold text-emerald-900 tracking-wide">{redeemedVoucher.code}</p>
+                <p className="text-[10.5px] text-emerald-700">Valid until {new Date(redeemedVoucher.expiresAt).toLocaleDateString()}</p>
+              </div>
+              <button
+                onClick={() => { navigator.clipboard?.writeText(redeemedVoucher.code); toast.success('Code copied'); }}
+                className="px-3 py-[6px] rounded-lg text-xs font-semibold text-emerald-800 bg-white border border-emerald-300 cursor-pointer whitespace-nowrap">
+                Copy
+              </button>
+            </div>
+          )}
           <p className="text-[13px] text-slate mb-4">
             You have <strong style={{ color: cfg.primaryColor }}>{loyalty?.pointsBalance.toLocaleString() ?? 0} points</strong> at {store.name}.
             {loyalty?.nextTier && ` ${loyalty.nextTier.pointsNeeded} more points to reach ${loyalty.nextTier.name}.`}

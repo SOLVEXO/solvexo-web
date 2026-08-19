@@ -11,6 +11,10 @@ import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { Mail, ShieldCheck, KeyRound, Fingerprint } from 'lucide-react';
 import { InboxMockup, IdentityMockup } from '@/features/auth/components/mockups/AuthMockups';
 import { useToast } from '@/contexts/ToastContext';
+import { MagneticButton } from '@/components/comman/motion/MagneticButton';
+import { motion } from 'motion/react';
+
+const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } };
 
 const EMAIL_HIGHLIGHTS = [
   { Icon: Mail,        text: 'Check your inbox for a 6-digit code' },
@@ -149,21 +153,23 @@ export function VerifyOTPPage() {
       </div>
 
       {(error || verifyOtp.error) && (
-        <div role="alert" className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 flex items-center gap-2">
+        <motion.div role="alert" className="bg-error-bg rounded-lg px-[14px] py-[10px] mb-4 flex items-center gap-2" {...fadeSlide}>
           <AlertTriangle size={14} className="text-error shrink-0" />
           <span className="text-[13px] text-error">{error || verifyOtp.error}</span>
-        </div>
+        </motion.div>
       )}
 
-      <Button
-        variant="primary" size="lg" fullWidth
-        onClick={handleVerify}
-        disabled={otp.join('').length < 6}
-        loading={verifyOtp.loading}
-        iconRight={!verifyOtp.loading && <ArrowRight size={14} />}
-      >
-        Verify Code
-      </Button>
+      <MagneticButton className="block">
+        <Button
+          variant="primary" size="lg" fullWidth
+          onClick={handleVerify}
+          disabled={otp.join('').length < 6}
+          loading={verifyOtp.loading}
+          iconRight={!verifyOtp.loading && <ArrowRight size={14} />}
+        >
+          Verify Code
+        </Button>
+      </MagneticButton>
 
       <div className="flex items-center justify-center gap-[6px] mt-5">
         <span className="text-[13px] text-slate">Didn't receive it?</span>

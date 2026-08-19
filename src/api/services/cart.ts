@@ -22,6 +22,7 @@ export interface CartItem {
 export interface Cart {
   _id?:       string;
   userId:     string;
+  storeId?:   string;
   items:      CartItem[];
   totalItems: number;
   totalPrice: number;
@@ -34,30 +35,35 @@ interface ClearResponse  { message: string; data: [] }
 
 // ── API ───────────────────────────────────────────────────────────────────────
 
-export function apiAddToCart(productId: string, productVariantId: string) {
-  return client.post<never, CartResponse>(ENDPOINTS.CART.ADD, { productId, productVariantId });
+// A logged-in buyer's cart is scoped per store (each store's subdomain is
+// its own isolated shopping session) — every call now carries the storeId
+// of the store currently being shopped on.
+
+export function apiAddToCart(productId: string, productVariantId: string, storeId: string) {
+  return client.post<never, CartResponse>(ENDPOINTS.CART.ADD, { productId, productVariantId, storeId });
 }
 
-export function apiGetCart() {
-  return client.get<never, CartResponse>(ENDPOINTS.CART.GET);
+export function apiGetCart(storeId: string) {
+  return client.get<never, CartResponse>(ENDPOINTS.CART.GET, { params: { storeId } });
 }
 
 export function apiUpdateCartQuantity(
   productId: string,
   productVariantId: string,
   action: 'increase' | 'decrease',
+  storeId: string,
 ) {
   return client.post<never, ItemResponse>(ENDPOINTS.CART.UPDATE_QUANTITY, {
-    productId, productVariantId, action,
+    productId, productVariantId, action, storeId,
   });
 }
 
-export function apiRemoveCartItem(productId: string, productVariantId: string) {
+export function apiRemoveCartItem(productId: string, productVariantId: string, storeId: string) {
   return client.post<never, ItemResponse>(ENDPOINTS.CART.REMOVE_ITEM, {
-    productId, productVariantId,
+    productId, productVariantId, storeId,
   });
 }
 
-export function apiClearCart(cartId: string) {
-  return client.post<never, ClearResponse>(ENDPOINTS.CART.CLEAR, { cartId });
+export function apiClearCart(cartId: string, storeId: string) {
+  return client.post<never, ClearResponse>(ENDPOINTS.CART.CLEAR, { cartId, storeId });
 }

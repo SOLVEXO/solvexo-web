@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { clsx } from 'clsx';
 import { Package, Heart, ShoppingCart, Loader2, Zap } from 'lucide-react';
-import { Card } from '@/components/comman/ui/Card';
 import { Button } from '@/components/comman/ui/Button';
 import { FilterDropdown, SkeletonBox } from '@/components/comman/ui';
 import {
@@ -14,6 +13,7 @@ import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { currencySymbol } from '@/utils/currency';
 import { getMainAppUrl } from '@/utils/storefrontUrl';
 import { useStorefront } from '../StorefrontContext';
+import { ProductCardShell, ProductCardImage } from '../ProductCard';
 
 const SORT_OPTIONS = [
   { value: 'newest',     label: 'Newest'          },
@@ -89,10 +89,11 @@ export function ProductCatalogSection({ settings }: { settings: ProductCatalogSe
   useEffect(() => { load(); }, [load]);
 
   const colClass = { 2: 'grid-cols-2', 3: 'grid-cols-2 md:grid-cols-3', 4: 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4' }[settings.columns ?? 3];
+  const gapClass = cfg.productGridDensity === 'relaxed' ? 'gap-4 sm:gap-5 lg:gap-6' : 'gap-[10px] sm:gap-3 lg:gap-[14px]';
 
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-6">
-      {settings.heading && <h2 className="text-[20px] font-bold mb-4" style={{ color: cfg.textColor }}>{settings.heading}</h2>}
+    <div className="px-4 sm:px-6 lg:px-10" style={{ paddingTop: 24 * cfg.sectionSpacingScale, paddingBottom: 24 * cfg.sectionSpacingScale }}>
+      {settings.heading && <h2 className="font-bold mb-4" style={{ color: cfg.textColor, fontSize: Math.round(20 * cfg.typeScaleFactor) }}>{settings.heading}</h2>}
 
       {settings.showFilters !== false && tags.length > 0 && (
         <div className="flex items-center gap-5 overflow-x-auto scrollbar-none mb-3 border-b border-bone">
@@ -117,7 +118,7 @@ export function ProductCatalogSection({ settings }: { settings: ProductCatalogSe
       </div>
 
       {loading ? (
-        <div className={clsx('grid gap-[10px] sm:gap-3 lg:gap-[14px]', colClass)}>
+        <div className={clsx('grid', gapClass, colClass)}>
           {[1, 2, 3, 4, 5, 6, 7, 8].map(i => <SkeletonBox key={i} height={170} rounded="10px" />)}
         </div>
       ) : products.length === 0 ? (
@@ -134,9 +135,9 @@ export function ProductCatalogSection({ settings }: { settings: ProductCatalogSe
               const typeLabel = isPhysical ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
               const vId = p.variantId ?? '';
               return (
-                <Card key={p._id} padding="none" hover onClick={() => { window.location.href = getMainAppUrl(`/product/${p.slug}`); }} className="group overflow-hidden bg-white relative">
+                <ProductCardShell key={p._id} onClick={() => { window.location.href = getMainAppUrl(`/product/${p.slug}`); }}>
                   <div className="absolute top-0 left-0 w-full h-[3px] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 z-[1]" style={{ background: cfg.primaryColor }} />
-                  <div className="relative w-full h-[110px] sm:h-[150px] lg:h-[170px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">
+                  <ProductCardImage>
                     {p.images?.[0] ? <ProductImage src={p.images[0]} alt={p.name} /> : <Package size={28} className="text-brand-orange" />}
                     <button
                       onClick={e => { e.stopPropagation(); if (vId) toggleWishlist(p._id, vId); }}
@@ -161,7 +162,7 @@ export function ProductCatalogSection({ settings }: { settings: ProductCatalogSe
                         </span>
                       </div>
                     )}
-                  </div>
+                  </ProductCardImage>
                   <div className="px-2 pt-2 pb-2 sm:px-3 sm:pt-[10px] sm:pb-3">
                     <p className="font-bold text-[11px] sm:text-[13px] mb-[3px] leading-[1.4] line-clamp-2" style={{ color: cfg.textColor }}>{p.name}</p>
                     {(p.averageRating ?? 0) > 0 && <StarRating rating={p.averageRating!} color={cfg.primaryColor} />}
@@ -189,7 +190,7 @@ export function ProductCatalogSection({ settings }: { settings: ProductCatalogSe
                       </Button>
                     </div>
                   </div>
-                </Card>
+                </ProductCardShell>
               );
             })}
           </div>

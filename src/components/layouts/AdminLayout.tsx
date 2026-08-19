@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, FolderTree, RefreshCw,
   BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle, Landmark, Percent, Coins, UserPlus, Activity,
-  ChevronDown, TrendingUp, ChevronRight,
+  ChevronDown, TrendingUp, ChevronRight, Quote,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -44,6 +44,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'banners',       Icon: ImageIcon,       label: 'Banners',         path: '/admin/banners'       },
   { id: 'faqs',          Icon: HelpCircle,      label: 'FAQs',            path: '/admin/faqs'          },
   { id: 'contact',       Icon: MessageCircle,   label: 'Contact Messages',path: '/admin/contact'       },
+  { id: 'testimonials',  Icon: Quote,           label: 'Testimonials',   path: '/admin/testimonials'  },
   { id: 'announcements', Icon: Bell,            label: 'Announcements',   path: '/admin/announcements' },
   { id: 'config',        Icon: Settings,        label: 'Platform Config', path: '/admin/config'        },
   { id: 'settings',      Icon: UserCog,         label: 'My Settings',     path: '/admin/settings'      },
@@ -70,7 +71,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation', 'messages', 'contact'] },
   { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['marketing', 'seo', 'ai-studio'] },
   { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance', 'manual-payments', 'commission-rules', 'fx-settings'] },
-  { id: 'content',   label: 'Content',               Icon: ImageIcon,      ids: ['banners', 'faqs', 'announcements'] },
+  { id: 'content',   label: 'Content',               Icon: ImageIcon,      ids: ['banners', 'faqs', 'testimonials', 'announcements'] },
   { id: 'analytics', label: 'Analytics',             Icon: BarChart3,       ids: ['analytics'] },
   { id: 'system',    label: 'System',                Icon: Settings,       ids: ['activity-log', 'config'] },
 ];

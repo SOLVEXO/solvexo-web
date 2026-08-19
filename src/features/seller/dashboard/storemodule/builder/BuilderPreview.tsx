@@ -1,82 +1,18 @@
-import { useMemo, useRef, useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { useMemo, useState, useEffect } from 'react';
 import { Monitor, Tablet, Smartphone } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { StoreData } from '@/api/services/store';
 import type { StoreThemeData } from '@/api/services/storeTheme';
 import type { Section } from '@/api/services/storefrontTypes';
-import { StorefrontProvider, STOREFRONT_CFG_DEFAULT, type StorefrontContextValue } from '@/features/storefront/StorefrontContext';
+import { StorefrontProvider, resolveStorefrontCfg, type StorefrontContextValue } from '@/features/storefront/StorefrontContext';
 import { SectionRenderer } from '@/features/storefront/SectionRenderer';
+import { StorefrontNavbar } from '@/features/storefront/StorefrontNavbar';
+import { StorefrontFooter } from '@/features/storefront/StorefrontFooter';
+import { DeviceFrame } from './DeviceFrame';
 
 type Device = 'desktop' | 'tablet' | 'mobile';
 const DEVICE_WIDTH: Record<Device, number> = { desktop: 1280, tablet: 768, mobile: 390 };
 const DEVICE_ICON: Record<Device, typeof Monitor> = { desktop: Monitor, tablet: Tablet, mobile: Smartphone };
-
-/**
- * Renders `children` inside a real `<iframe>` (not just a width-constrained
- * div) so the Tablet/Mobile preview actually triggers the storefront's own
- * responsive breakpoints — Tailwind's `sm:`/`md:`/`lg:` classes respond to
- * the *viewport* width, which a shrunk container alone can't fake; an iframe
- * gets its own real, independent viewport. Every stylesheet/style tag from
- * the builder page is cloned into the iframe's document once it loads, and
- * content is portaled into its body — React context (cart/wishlist/currency/
- * auth-gate, all provided above the router) still flows through normally,
- * since a portal only changes *where in the DOM* something renders, not its
- * position in the React tree.
- */
-function DeviceFrame({ width, children }: { width: number; children: React.ReactNode }) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    // Vite's dev server injects/replaces <style>/<link> tags into the main
-    // document lazily as more components/routes are touched — a one-time
-    // clone at iframe-load only captured whatever existed at that instant,
-    // so the preview would silently drift out of sync with real styling
-    // (utility classes used for the first time later never made it in).
-    // A MutationObserver on the main document's <head> keeps re-cloning
-    // anything new into the iframe for as long as it's mounted.
-    const cloneNode = (node: Element) => {
-      const doc = iframe.contentDocument;
-      if (doc) doc.head.appendChild(node.cloneNode(true));
-    };
-    const copyStylesAndMount = () => {
-      const doc = iframe.contentDocument;
-      if (!doc) return;
-      doc.head.innerHTML = '';
-      document.querySelectorAll('style, link[rel="stylesheet"]').forEach(cloneNode);
-      doc.body.style.margin = '0';
-      setMountNode(doc.body);
-    };
-    iframe.addEventListener('load', copyStylesAndMount);
-    if (iframe.contentDocument?.readyState === 'complete') copyStylesAndMount();
-
-    const observer = new MutationObserver(mutations => {
-      for (const mutation of mutations) {
-        for (const node of mutation.addedNodes) {
-          if (node instanceof Element && (node.tagName === 'STYLE' || (node.tagName === 'LINK' && node.getAttribute('rel') === 'stylesheet'))) {
-            cloneNode(node);
-          }
-        }
-      }
-    });
-    observer.observe(document.head, { childList: true });
-
-    return () => {
-      iframe.removeEventListener('load', copyStylesAndMount);
-      observer.disconnect();
-    };
-  }, []);
-
-  return (
-    <>
-      <iframe ref={iframeRef} title="Storefront preview" style={{ width, height: '100%', border: 'none', display: 'block' }} />
-      {mountNode && createPortal(children, mountNode)}
-    </>
-  );
-}
 
 /**
  * Live preview inside the builder — reuses the EXACT same `SectionRenderer`
@@ -88,10 +24,13 @@ function DeviceFrame({ width, children }: { width: number; children: React.React
  * (`StorePreview`, which rendered hardcoded sample products and features —
  * a custom footer, hero text — the real page never displayed).
  */
-export function BuilderPreview({ store, theme, sections }: {
+export function BuilderPreview({ store, theme, sections, heightClass = 'h-[70vh]' }: {
   store: StoreData;
   theme: StoreThemeData | null;
   sections: Section[];
+  /** Taller on the Theme tab, where visual judgment is the whole point —
+   *  see `StoreBuilder`'s theme-tab-specific grid. */
+  heightClass?: string;
 }) {
   const [device, setDevice] = useState<Device>('desktop');
 
@@ -111,13 +50,7 @@ export function BuilderPreview({ store, theme, sections }: {
     return () => clearTimeout(t);
   }, [sections]);
 
-  const cfg = useMemo(() => ({
-    primaryColor: theme?.theme.primaryColor ?? STOREFRONT_CFG_DEFAULT.primaryColor,
-    bgColor:      theme?.theme.bgColor      ?? STOREFRONT_CFG_DEFAULT.bgColor,
-    textColor:    theme?.theme.textColor    ?? STOREFRONT_CFG_DEFAULT.textColor,
-    accentColor:  theme?.theme.accentColor  ?? STOREFRONT_CFG_DEFAULT.accentColor,
-    font:         theme?.theme.font         ?? STOREFRONT_CFG_DEFAULT.font,
-  }), [theme]);
+  const cfg = useMemo(() => resolveStorefrontCfg(theme), [theme]);
 
   const contextValue: StorefrontContextValue = useMemo(() => ({
     store: {
@@ -156,14 +89,16 @@ export function BuilderPreview({ store, theme, sections }: {
           })}
         </div>
       </div>
-      <div className="h-[70vh] overflow-x-auto overflow-y-hidden flex justify-center bg-[#EDEBE3] pointer-events-none">
+      <div className={clsx(heightClass, 'overflow-x-auto overflow-y-hidden flex justify-center bg-[#EDEBE3] pointer-events-none')}>
         <div className={clsx('h-full bg-white shrink-0', device !== 'desktop' && 'my-3 rounded-2xl overflow-hidden border border-bone shadow-md')} style={{ width: DEVICE_WIDTH[device] }}>
           <DeviceFrame width={DEVICE_WIDTH[device]}>
             <div style={{ background: cfg.bgColor }}>
               <StorefrontProvider value={contextValue}>
+                <StorefrontNavbar />
                 {debouncedSections.length === 0
                   ? <p style={{ fontSize: 13, color: '#8C8A82', textAlign: 'center', padding: '64px 16px' }}>Add a section to see it here.</p>
                   : <SectionRenderer sections={debouncedSections} />}
+                <StorefrontFooter />
               </StorefrontProvider>
             </div>
           </DeviceFrame>
