@@ -1,0 +1,308 @@
+import { clsx } from 'clsx';
+import {
+  Search, ShoppingCart, CreditCard, Wallet, Banknote, Check,
+  TrendingUp, TrendingDown, Users, Package, DollarSign, Sparkles,
+  ArrowRight, Bell,
+} from 'lucide-react';
+import { PhoneShell, StatusBar } from '@/components/comman/ui/AppDownloadBanner';
+import { unsplashUrl } from '@/assets/stockPhotos';
+
+// ── Shared "browser chrome" strip reused by every desktop-shaped mockup ──────
+function BrowserChrome({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 bg-cream border-b border-bone">
+      <span className="size-[7px] rounded-full bg-[#e5675b]" />
+      <span className="size-[7px] rounded-full bg-[#e8b74e]" />
+      <span className="size-[7px] rounded-full bg-[#59c26a]" />
+      <span className="ml-2 text-[10px] text-slate truncate">{label}</span>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// StorefrontPreview — a real-looking storefront: nav, hero banner, product
+// grid with real product photography. Illustrative UI only (fixed demo
+// copy/prices), same convention already used by Homepage's showcase mockups.
+// ────────────────────────────────────────────────────────────────────────────
+const STORE_PRODUCTS = [
+  { name: 'Everyday Tote',   price: '$48', img: 'fashionRack' as const },
+  { name: 'Cloud Sneaker',   price: '$72', img: 'sneakers' as const },
+  { name: 'Studio Headphones', price: '$129', img: 'headphones' as const },
+  { name: 'Classic Watch',   price: '$96', img: 'watch' as const },
+];
+
+export function StorefrontPreview({ className }: { className?: string }) {
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-2xl border border-bone', className)}>
+      <BrowserChrome label="yourstore.solvexo.store" />
+      <div className="flex items-center justify-between px-4 py-3 border-b border-bone">
+        <span className="text-[13px] font-bold text-carbon">Aurora Goods</span>
+        <div className="hidden sm:flex items-center gap-4 text-[10.5px] text-slate">
+          <span>New</span><span>Shop</span><span>About</span>
+        </div>
+        <ShoppingCart size={14} className="text-carbon" />
+      </div>
+      <div className="h-[80px] sm:h-[100px] bg-gradient-to-br from-brand-orange to-brand-deep-orange relative flex items-center px-5">
+        <div>
+          <p className="text-white font-bold text-[13px] sm:text-[15px] leading-tight">Autumn Collection</p>
+          <p className="text-white/80 text-[9.5px] sm:text-[10.5px] mt-0.5">Up to 30% off new arrivals</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-[10px] p-4">
+        {STORE_PRODUCTS.map(p => (
+          <div key={p.name} className="rounded-lg overflow-hidden bg-cream group">
+            <div className="aspect-square overflow-hidden">
+              <img src={unsplashUrl(p.img, 240)} alt="" className="w-full h-full object-cover" loading="lazy" />
+            </div>
+            <div className="p-[7px]">
+              <p className="text-[9.5px] font-semibold text-carbon truncate">{p.name}</p>
+              <p className="text-[10px] font-bold text-brand-orange">{p.price}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// POSPreview — search + product tiles + cart/payment panel.
+// ────────────────────────────────────────────────────────────────────────────
+const POS_ITEMS = [
+  { name: 'Wireless Earbuds', price: 'Rs 4,200', qty: 1 },
+  { name: 'Phone Case',       price: 'Rs 900',   qty: 2 },
+  { name: 'Screen Protector', price: 'Rs 350',   qty: 1 },
+];
+
+export function POSPreview({ className }: { className?: string }) {
+  const subtotal = 4200 + 900 * 2 + 350;
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-2xl border border-bone flex flex-col sm:flex-row', className)}>
+      <div className="flex-1 min-w-0 border-b sm:border-b-0 sm:border-r border-bone">
+        <div className="flex items-center gap-2 px-3 py-2.5 border-b border-bone">
+          <Search size={13} className="text-slate" />
+          <span className="text-[10.5px] text-slate">Search products…</span>
+        </div>
+        <div className="grid grid-cols-3 gap-[8px] p-3">
+          {(['headphones', 'watch', 'sneakers', 'skincare', 'cosmetics', 'fashionRack'] as const).map((key, i) => (
+            <div key={i} className="rounded-md overflow-hidden bg-cream aspect-square relative">
+              <img src={unsplashUrl(key, 140)} alt="" className="w-full h-full object-cover" loading="lazy" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="w-full sm:w-[190px] shrink-0 p-3 flex flex-col">
+        <p className="text-[10.5px] font-bold text-carbon mb-2">Current Sale</p>
+        <div className="flex flex-col gap-[6px] flex-1">
+          {POS_ITEMS.map(item => (
+            <div key={item.name} className="flex items-center justify-between text-[9.5px]">
+              <span className="text-charcoal truncate">{item.qty}× {item.name}</span>
+              <span className="font-semibold text-carbon shrink-0">{item.price}</span>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-between pt-2 border-t border-bone mt-2">
+          <span className="text-[10px] font-bold text-carbon">Total</span>
+          <span className="text-[13px] font-bold text-brand-orange">Rs {subtotal.toLocaleString()}</span>
+        </div>
+        <div className="flex items-center gap-[6px] mt-2">
+          <CreditCard size={13} className="text-slate" />
+          <Wallet size={13} className="text-slate" />
+          <Banknote size={13} className="text-slate" />
+        </div>
+        <div className="mt-2 rounded-lg bg-gradient-to-r from-brand-orange to-brand-deep-orange text-white text-[10.5px] font-bold text-center py-[9px] flex items-center justify-center gap-1.5">
+          <Check size={12} /> Payment received
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// SellerDashboardPreview — metrics row + chart + recent orders + top products.
+// ────────────────────────────────────────────────────────────────────────────
+const CHART_BARS = [30, 45, 38, 60, 52, 70, 64, 80, 74, 90, 82, 96];
+const RECENT_ORDERS = [
+  { id: '#3921', customer: 'M. Ahmed', amount: 'Rs 4,200', status: 'Paid' },
+  { id: '#3920', customer: 'S. Khan',  amount: 'Rs 1,850', status: 'Packed' },
+  { id: '#3919', customer: 'A. Raza',  amount: 'Rs 6,400', status: 'Paid' },
+];
+const TOP_PRODUCTS = [
+  { name: 'Wireless Earbuds', units: 84,  img: 'headphones' as const },
+  { name: 'Classic Watch',    units: 61,  img: 'watch' as const },
+  { name: 'Cloud Sneaker',    units: 52,  img: 'sneakers' as const },
+];
+
+export function SellerDashboardPreview({ className }: { className?: string }) {
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-2xl border border-bone', className)}>
+      <BrowserChrome label="yourstore — dashboard" />
+      <div className="p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[13px] font-bold text-carbon">Overview</p>
+          <span className="text-[9.5px] text-slate border border-bone rounded-md px-2 py-1">Last 30 days</span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-[8px] mb-4">
+          {[
+            { label: 'Revenue',   value: '$18.4k', trend: '+12%', up: true,  Icon: DollarSign },
+            { label: 'Orders',    value: '412',    trend: '+8%',  up: true,  Icon: Package },
+            { label: 'Customers', value: '1,204',  trend: '+5%',  up: true,  Icon: Users },
+            { label: 'Refunds',   value: '1.2%',    trend: '-0.4%', up: false, Icon: TrendingDown },
+          ].map(({ label, value, trend, up, Icon }) => (
+            <div key={label} className="rounded-lg bg-cream p-2.5">
+              <div className="flex items-center justify-between mb-1">
+                <Icon size={12} className="text-slate" />
+                <span className={clsx('flex items-center gap-[2px] text-[8.5px] font-semibold', up ? 'text-success' : 'text-error')}>
+                  {up ? <TrendingUp size={9} /> : <TrendingDown size={9} />}{trend}
+                </span>
+              </div>
+              <p className="text-[13px] font-bold text-carbon leading-tight">{value}</p>
+              <p className="text-[8.5px] text-slate leading-tight">{label}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-end gap-[3px] h-[52px] mb-5 px-1">
+          {CHART_BARS.map((h, i) => (
+            <div key={i} className="flex-1 rounded-t-[2px] bg-gradient-to-t from-brand-orange to-brand-deep-orange/60" style={{ height: `${h}%` }} />
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <p className="text-[10.5px] font-bold text-carbon mb-2">Recent Orders</p>
+            <div className="flex flex-col gap-[6px]">
+              {RECENT_ORDERS.map(o => (
+                <div key={o.id} className="flex items-center justify-between text-[9.5px]">
+                  <span className="text-slate">{o.id} · {o.customer}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="font-semibold text-carbon">{o.amount}</span>
+                    <span className={clsx('text-[8px] font-bold px-[6px] py-[1px] rounded-full', o.status === 'Paid' ? 'bg-success-bg text-success' : 'bg-warning-bg text-warning')}>{o.status}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-[10.5px] font-bold text-carbon mb-2">Top Products</p>
+            <div className="flex flex-col gap-[6px]">
+              {TOP_PRODUCTS.map(p => (
+                <div key={p.name} className="flex items-center gap-2">
+                  <img src={unsplashUrl(p.img, 60)} alt="" className="w-5 h-5 rounded-md object-cover shrink-0" loading="lazy" />
+                  <span className="text-[9.5px] text-charcoal truncate flex-1">{p.name}</span>
+                  <span className="text-[9.5px] font-semibold text-slate shrink-0">{p.units} sold</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// AICommercePreview — AI insight feed with per-insight actions.
+// ────────────────────────────────────────────────────────────────────────────
+const AI_INSIGHTS = [
+  { text: "Demand for “Wireless Earbuds” is trending up — consider raising the price by 8%.", action: 'Apply' },
+  { text: "“Leather Wallet” has a thin description — generate a stronger one from its photos.", action: 'Generate' },
+  { text: '23 customers viewed “Yoga Mat” but didn’t buy — send them a limited discount?', action: 'Send' },
+];
+
+export function AICommercePreview({ className }: { className?: string }) {
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-2xl border border-bone', className)}>
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-bone bg-gradient-to-r from-accent-violet-bg to-transparent">
+        <span className="w-6 h-6 rounded-md bg-accent-violet flex items-center justify-center shrink-0">
+          <Sparkles size={13} className="text-white" />
+        </span>
+        <p className="text-[12px] font-bold text-carbon">AI Commerce Assistant</p>
+      </div>
+      <div className="p-4 flex flex-col gap-2.5">
+        {AI_INSIGHTS.map((insight, i) => (
+          <div key={i} className="rounded-xl bg-cream p-3 flex items-start gap-2.5">
+            <span className="w-6 h-6 rounded-md bg-white flex items-center justify-center shrink-0 mt-[1px]">
+              <Sparkles size={12} className="text-accent-violet" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] text-charcoal leading-[1.5]">{insight.text}</p>
+              <button className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-accent-violet bg-accent-violet-bg rounded-full px-2.5 py-1">
+                {insight.action} <ArrowRight size={9} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// AnalyticsPreview — a focused single sales chart + KPI strip (distinct from
+// the fuller SellerDashboardPreview, for contexts that just need "analytics").
+// ────────────────────────────────────────────────────────────────────────────
+export function AnalyticsPreview({ className }: { className?: string }) {
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-2xl border border-bone p-5', className)}>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[12.5px] font-bold text-carbon">Store Revenue</p>
+        <span className="flex items-center gap-1 text-[10px] font-semibold text-success"><TrendingUp size={11} /> 24% vs last month</span>
+      </div>
+      <div className="flex items-end gap-[4px] h-[70px] mb-4">
+        {[35, 55, 42, 70, 50, 85, 62, 78, 90, 66, 74, 96].map((h, i) => (
+          <div key={i} className="flex-1 rounded-t-[3px] bg-gradient-to-t from-brand-orange to-brand-deep-orange/70" style={{ height: `${h}%` }} />
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: 'Revenue', value: '$18.4k' },
+          { label: 'Orders', value: '412' },
+          { label: 'Avg. Order', value: '$44.60' },
+        ].map(s => (
+          <div key={s.label} className="rounded-lg bg-cream px-2.5 py-2 text-center">
+            <p className="text-[13px] font-bold text-carbon">{s.value}</p>
+            <p className="text-[9px] text-slate">{s.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// MobileStorePreview — a mobile storefront screen inside the shared PhoneShell.
+// ────────────────────────────────────────────────────────────────────────────
+export function MobileStorePreview({ className }: { className?: string }) {
+  return (
+    <PhoneShell className={className}>
+      <StatusBar />
+      <div className="px-[10px] pt-[6px]">
+        <div className="flex items-center justify-between mb-[10px]">
+          <span className="text-[10px] font-bold text-carbon">Aurora Goods</span>
+          <div className="flex items-center gap-[6px]">
+            <Bell size={11} className="text-charcoal" />
+            <ShoppingCart size={11} className="text-charcoal" />
+          </div>
+        </div>
+        <div className="h-[46px] rounded-[8px] bg-gradient-to-br from-brand-orange to-brand-deep-orange mb-[8px] flex items-center px-[10px]">
+          <p className="text-white text-[9px] font-bold leading-tight">30% off<br />New Arrivals</p>
+        </div>
+        <div className="grid grid-cols-2 gap-[6px]">
+          {(['sneakers', 'headphones', 'watch', 'skincare'] as const).map(key => (
+            <div key={key} className="rounded-[6px] overflow-hidden bg-cream">
+              <div className="aspect-square overflow-hidden">
+                <img src={unsplashUrl(key, 140)} alt="" className="w-full h-full object-cover" loading="lazy" />
+              </div>
+              <div className="p-[5px]">
+                <div className="h-[4px] w-[70%] rounded-full bg-bone mb-[3px]" />
+                <div className="h-[4px] w-[40%] rounded-full bg-brand-pale-orange" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </PhoneShell>
+  );
+}

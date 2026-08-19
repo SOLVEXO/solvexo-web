@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { getStoreSlugFromHost } from '@/utils/storefrontUrl';
+import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
 
 // Root wrapper (reference nav + outlet + global Suspense)
 import { RootLayout }   from '@/components/layouts/RootLayout';
@@ -51,6 +51,11 @@ const TermsOfServicePage   = lazy(() => named(import('@/features/buyer/pages/Ter
 const CookiePolicyPage     = lazy(() => named(import('@/features/buyer/pages/CookiePolicyPage'),                'CookiePolicyPage'));
 const ContactUsPage        = lazy(() => named(import('@/features/buyer/pages/ContactUsPage'),                   'ContactUsPage'));
 const MaintenancePage      = lazy(() => named(import('@/features/buyer/pages/MaintenancePage'),                 'MaintenancePage'));
+const AboutPage            = lazy(() => named(import('@/features/buyer/pages/AboutPage'),                       'AboutPage'));
+const ProductsOverviewPage = lazy(() => named(import('@/features/buyer/pages/products/ProductsOverviewPage'),   'ProductsOverviewPage'));
+const PlatformProductPage  = lazy(() => named(import('@/features/buyer/pages/products/PlatformProductPage'),    'PlatformProductPage'));
+const SolutionsOverviewPage = lazy(() => named(import('@/features/buyer/pages/solutions/SolutionsOverviewPage'), 'SolutionsOverviewPage'));
+const SolutionPage         = lazy(() => named(import('@/features/buyer/pages/solutions/SolutionPage'),          'SolutionPage'));
 
 // ── Account (buyer) ───────────────────────────────────────────────────────────
 const AccountDashboard     = lazy(() => named(import('@/features/buyer/pages/account/AccountDashboard'),        'AccountDashboard'));
@@ -184,10 +189,17 @@ const mainRouter = createBrowserRouter([
               { path: 'pricing',         element: <PricingPage /> },
               { path: 'sellers',         element: <ForSellersPage /> },
               { path: 'faq',             element: <FaqPage /> },
+              { path: 'help',            element: <Navigate to="/faq" replace /> },
               { path: 'privacy-policy',  element: <PrivacyPolicyPage /> },
               { path: 'terms-of-service', element: <TermsOfServicePage /> },
               { path: 'cookie-policy',   element: <CookiePolicyPage /> },
               { path: 'contact-us',      element: <ContactUsPage /> },
+              { path: 'contact',         element: <Navigate to="/contact-us" replace /> },
+              { path: 'about',           element: <AboutPage /> },
+              { path: 'products',        element: <ProductsOverviewPage /> },
+              { path: 'products/:slug',  element: <PlatformProductPage /> },
+              { path: 'solutions',       element: <SolutionsOverviewPage /> },
+              { path: 'solutions/:slug', element: <SolutionPage /> },
             ],
           },
           // Account — nested routes, each section is its own deep-linkable page
@@ -342,5 +354,10 @@ const mainRouter = createBrowserRouter([
 ]);
 
 // Decided once at module load — the hostname doesn't change without a full
-// page reload, so this never needs to be reactive.
-export const router = getStoreSlugFromHost() ? storefrontRouter : mainRouter;
+// page reload, so this never needs to be reactive. A `*.solvexo.store`
+// subdomain resolves its slug synchronously here; an arbitrary connected
+// Custom Domain (`isCustomDomainCandidate`) can't be resolved synchronously
+// (it needs a real DNS-backed lookup), so it's routed into the SAME
+// storefront tree and resolved asynchronously once mounted — see
+// `StorefrontLayout.tsx`.
+export const router = (getStoreSlugFromHost() || isCustomDomainCandidate()) ? storefrontRouter : mainRouter;

@@ -36,6 +36,28 @@ export function getStoreSlugFromHost(): string | null {
   return RESERVED_HOST_PREFIXES.includes(prefix) ? null : prefix;
 }
 
+// The platform's own apex domain(s) — a hostname that is neither one of
+// these, nor a `*.solvexo.store` subdomain (handled by `getStoreSlugFromHost`
+// above), nor localhost, is treated as a possible seller-connected CUSTOM
+// domain (see `isCustomDomainCandidate`). Kept as a small array (not a single
+// string) in case a staging apex is ever added.
+const PLATFORM_APEX_DOMAINS = ['solvexo.store'];
+
+/**
+ * True for any hostname that isn't the platform's own apex/subdomain and
+ * isn't localhost — i.e. a domain a seller may have connected via Custom
+ * Domain (`DomainWhiteLabelCard`). Deliberately synchronous (no network
+ * call) so `router/index.tsx` can decide the route tree at module-load time,
+ * same as `getStoreSlugFromHost()` — the actual "which store, if any, is
+ * this domain verified for" lookup happens later, inside `StorefrontLayout`,
+ * via `apiResolveStoreByDomain`.
+ */
+export function isCustomDomainCandidate(): boolean {
+  const { hostname } = window.location;
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost')) return false;
+  return !PLATFORM_APEX_DOMAINS.some(apex => hostname === apex || hostname.endsWith(`.${apex}`));
+}
+
 function baseDomain(): string {
   const { hostname } = window.location;
   return hostname === 'localhost' || hostname.endsWith('.localhost')

@@ -1386,7 +1386,7 @@ export function CheckoutPage() {
                     <input
                       value={couponInput}
                       onChange={e => setCouponInput(e.target.value.toUpperCase())}
-                      placeholder="Coupon code"
+                      placeholder="Coupon or reward code"
                       className="flex-1 min-w-0 px-3 min-h-11 text-[12.5px] border border-bone rounded-lg outline-none text-charcoal bg-white focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10"
                     />
                     <button

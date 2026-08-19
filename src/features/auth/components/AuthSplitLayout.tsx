@@ -2,6 +2,9 @@ import { type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import { SolvexoLogo, SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
+import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
+import { BrandSplash } from '@/components/comman/motion/BrandSplash';
+import { motion, useReducedMotion } from 'motion/react';
 
 interface AuthHighlight {
   Icon: LucideIcon;
@@ -50,8 +53,10 @@ export function AuthSplitLayout({
   bare = false,
   children,
 }: AuthSplitLayoutProps) {
+  const reduceMotion = useReducedMotion();
   return (
     <div className={clsx('fixed inset-x-0 bottom-0 w-full overflow-hidden bg-cream flex flex-col lg:flex-row', import.meta.env.DEV ? 'top-[44px]' : 'top-0')}>
+      <BrandSplash />
 
       {/* ── Mobile branding strip (below lg only) — centered icon, headline,
          subtext, on the same gradient/dot-grid/glow language as the desktop
@@ -102,14 +107,18 @@ export function AuthSplitLayout({
           {brandingHeader ?? <SolvexoLogo size={38} variant="light" />}
 
           <div className="min-h-0 overflow-hidden">
-            <h2 className="font-serif text-[clamp(20px,3vh,34px)] font-bold text-white leading-[1.15] mb-[clamp(10px,1.4vh,14px)]">
-              {heading}
-            </h2>
-            <p className="text-[clamp(11px,1.4vh,13px)] text-white/70 leading-[1.6] max-w-[360px] mb-[clamp(14px,2.2vh,24px)]">
-              {subtext}
-            </p>
+            <Reveal delay={0}>
+              <h2 className="font-serif text-[clamp(20px,3vh,34px)] font-bold text-white leading-[1.15] mb-[clamp(10px,1.4vh,14px)]">
+                {heading}
+              </h2>
+            </Reveal>
+            <Reveal delay={0.08}>
+              <p className="text-[clamp(11px,1.4vh,13px)] text-white/70 leading-[1.6] max-w-[360px] mb-[clamp(14px,2.2vh,24px)]">
+                {subtext}
+              </p>
+            </Reveal>
             {highlights.length > 0 && (
-              <div className="flex flex-col gap-[clamp(8px,1.4vh,14px)] mb-2">
+              <RevealStagger className="flex flex-col gap-[clamp(8px,1.4vh,14px)] mb-2" step={0.06} y={8}>
                 {highlights.map(({ Icon, text }) => (
                   <div key={text} className="group flex items-center gap-3 transition-transform duration-200 ease-out hover:translate-x-0.5">
                     <div className="size-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 transition-colors duration-200 group-hover:bg-brand-orange/20">
@@ -118,13 +127,18 @@ export function AuthSplitLayout({
                     <span className="text-[12.5px] text-white/85 leading-[1.4]">{text}</span>
                   </div>
                 ))}
-              </div>
+              </RevealStagger>
             )}
 
             {visual && (
-              <div className="mt-[clamp(8px,2vh,24px)]">
+              <motion.div
+                className="mt-[clamp(8px,2vh,24px)]"
+                initial={reduceMotion ? undefined : { opacity: 0, y: 14, scale: 0.97 }}
+                animate={reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              >
                 {visual}
-              </div>
+              </motion.div>
             )}
           </div>
 
@@ -150,9 +164,14 @@ export function AuthSplitLayout({
           'rounded-t-[28px] -mt-6 relative z-10 bg-cream shadow-[0_-6px_20px_rgba(0,0,0,0.06)]',
           'lg:rounded-none lg:mt-0 lg:shadow-none',
         )}>
-          <div className={clsx('w-full my-auto', maxWidth)}>
+          <motion.div
+            className={clsx('w-full my-auto', maxWidth)}
+            initial={reduceMotion ? undefined : { opacity: 0, y: 10 }}
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          >
             {children}
-          </div>
+          </motion.div>
         </div>
       )}
     </div>

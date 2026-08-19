@@ -138,6 +138,8 @@ export const ENDPOINTS = {
     GET_BY_ID: (id: string) => `/api/store/getStoreById/${id}`,
     MY_STORES: '/api/store/my-stores',
     CUSTOM_DOMAIN: (storeId: string) => `/api/store/${storeId}/custom-domain`,
+    CUSTOM_DOMAIN_VERIFY: (storeId: string) => `/api/store/${storeId}/custom-domain/verify`,
+    RESOLVE_DOMAIN: '/api/store/public/resolve-domain',
     WHITE_LABEL:   (storeId: string) => `/api/store/${storeId}/white-label`,
     PINNED_PRODUCTS: (storeId: string) => `/api/store/${storeId}/pinned-products`,
     ANNOUNCEMENT:    (storeId: string) => `/api/store/${storeId}/announcement`,

@@ -15,6 +15,10 @@ import { TokenStorage, LastRolePreference, RememberedAccount, getRoleRedirect, t
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MarketplaceMockup } from '@/features/auth/components/mockups/AuthMockups';
+import { MagneticButton } from '@/components/comman/motion/MagneticButton';
+import { motion } from 'motion/react';
+
+const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } };
 
 const HIGHLIGHTS = [
   { Icon: Sparkles,    text: 'Curated marketplace of independent creators' },
@@ -226,10 +230,10 @@ export function LoginPage() {
                  feature — so it gets the neutral "info" treatment instead of
                  the red error one. */}
               {social.error && (
-                <div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mb-3 text-[13px] text-info">
+                <motion.div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mb-3 text-[13px] text-info" {...fadeSlide}>
                   <Info size={14} className="shrink-0" />
                   <span>{social.error}</span>
-                </div>
+                </motion.div>
               )}
 
               <div className="flex items-center gap-3 mb-3 lg:mb-4">
@@ -255,7 +259,7 @@ export function LoginPage() {
       {/* Password — shown once an identity is locked in, whichever path got
          us there. */}
       {showPasswordStep && (
-        <div className="mt-3">
+        <motion.div className="mt-3" {...fadeSlide}>
           <Input
             ref={passwordRef}
             id="login-password"
@@ -285,21 +289,23 @@ export function LoginPage() {
             </Button>
           </div>
 
-          <Button variant="primary" size="md" fullWidth onClick={handleSubmit} loading={login.loading} className="mt-3 lg:mt-4">
-            Sign In
-          </Button>
+          <MagneticButton className="block mt-3 lg:mt-4">
+            <Button variant="primary" size="md" fullWidth onClick={handleSubmit} loading={login.loading}>
+              Sign In
+            </Button>
+          </MagneticButton>
 
           {login.error && (
-            <div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
+            <motion.div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error" {...fadeSlide}>
               <AlertTriangle size={14} className="shrink-0" />
               <span>{login.error}</span>
-            </div>
+            </motion.div>
           )}
           {!login.error && social.error && (
-            <div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info">
+            <motion.div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info" {...fadeSlide}>
               <Info size={14} className="shrink-0" />
               <span>{social.error}</span>
-            </div>
+            </motion.div>
           )}
 
           <div className="flex items-center gap-3 my-2.5 lg:my-4">
@@ -313,7 +319,7 @@ export function LoginPage() {
             disabled={social.loading || login.loading}
             className="mb-3 lg:mb-4"
           />
-        </div>
+        </motion.div>
       )}
 
       {/* Covers the "account doesn't exist" case without a real

@@ -5,7 +5,7 @@ import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, ChevronLeft, ChevronRight, Monitor, Store,
+  Settings, Sparkles, ChevronLeft, ChevronRight, Store,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut,
@@ -51,7 +51,6 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders'  },
       { id: 'returns',  Icon: Undo2,    label: 'Returns',       path: 'returns' },
-      { id: 'pos',      Icon: Monitor,  label: 'POS Register',  path: 'pos'     },
       { id: 'shipping', Icon: Truck,    label: 'Shipping',      path: 'shipping' },
     ],
   },
@@ -98,10 +97,6 @@ export const NAV: { group: string; items: NavItem[] }[] = [
   },
 ];
 
-export function isItemLocked(item: NavItem, posEnabled: boolean): boolean {
-  return item.id === 'pos' && !posEnabled;
-}
-
 // ── Shared grouped nav menu — the mobile "account hub" content for a store
 // workspace, reused wherever the full list of store sections needs to be
 // browsable (currently StoreSettings' mobile menu) — one source of truth
@@ -111,8 +106,8 @@ export function isItemLocked(item: NavItem, posEnabled: boolean): boolean {
 // page's own metric cards) plus whatever else the caller already covers
 // some other way (e.g. StoreSettings excludes 'settings' from Settings
 // group since its own General tab already covers that destination).
-export function StoreNavMenu({ storeId, posEnabled, onNavigate, excludeGroups = [], excludeItemIds = [] }: {
-  storeId: string; posEnabled: boolean; onNavigate?: () => void;
+export function StoreNavMenu({ storeId, onNavigate, excludeGroups = [], excludeItemIds = [] }: {
+  storeId: string; onNavigate?: () => void;
   excludeGroups?: string[]; excludeItemIds?: string[];
 }) {
   const navigate = useNavigate();
@@ -130,10 +125,8 @@ export function StoreNavMenu({ storeId, posEnabled, onNavigate, excludeGroups = 
           </div>
           <div className="divide-y divide-[#f3f2ec]">
             {section.items.map(item => {
-              const locked = isItemLocked(item, posEnabled);
               const go = () => {
                 onNavigate?.();
-                if (locked) return;
                 navigate(`/store/${storeId}/${item.path}`);
               };
               return (
@@ -145,12 +138,8 @@ export function StoreNavMenu({ storeId, posEnabled, onNavigate, excludeGroups = 
                   <div className="w-8 h-8 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0">
                     <item.Icon size={15} className="text-brand-orange" />
                   </div>
-                  <span className={clsx('flex-1 text-[13px] font-medium', locked ? 'text-slate' : 'text-charcoal')}>{item.label}</span>
-                  {locked ? (
-                    <span className="text-[9px] font-bold uppercase tracking-[0.03em] px-[7px] py-[2px] rounded-full bg-brand-orange text-white shrink-0">Locked</span>
-                  ) : (
-                    <ChevronRight size={15} className="text-slate shrink-0" />
-                  )}
+                  <span className="flex-1 text-[13px] font-medium text-charcoal">{item.label}</span>
+                  <ChevronRight size={15} className="text-slate shrink-0" />
                 </button>
               );
             })}
@@ -178,17 +167,11 @@ const STORE_TABS: { id: string; Icon: LucideIcon; label: string; path: string }[
 function StoreBottomNav() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { store, storeId } = useStoreWorkspace();
-  const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
+  const { storeId } = useStoreWorkspace();
 
   const isActive = (path: string) => pathname === `/store/${storeId}/${path}`;
 
-  const goToTab = (tabId: string, path: string) => {
-    const navItem = NAV.flatMap(s => s.items).find(i => i.id === tabId);
-    const locked = navItem ? isItemLocked(navItem, posEnabled) : false;
-    if (locked) return;
-    navigate(`/store/${storeId}/${path}`);
-  };
+  const goToTab = (path: string) => navigate(`/store/${storeId}/${path}`);
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-bone">
@@ -198,7 +181,7 @@ function StoreBottomNav() {
           return (
             <button
               key={tab.id}
-              onClick={() => goToTab(tab.id, tab.path)}
+              onClick={() => goToTab(tab.path)}
               aria-current={active ? 'page' : undefined}
               aria-label={tab.label}
               className="flex-1 flex flex-col items-center justify-center py-[11px] gap-[5px] cursor-pointer bg-transparent border-none"
@@ -220,12 +203,10 @@ function StoreBottomNav() {
 function buildPaletteItems(
   navigate: (path: string) => void,
   storeId: string,
-  posEnabled: boolean,
 ): CommandPaletteItem[] {
   const result: CommandPaletteItem[] = [];
   NAV.forEach(section => {
     section.items.forEach(item => {
-      if (isItemLocked(item, posEnabled)) return; // exclude locked items from search
       result.push({
         id:       item.id,
         label:    item.label,
@@ -248,9 +229,8 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   const navigate     = useNavigate();
   const { pathname } = useLocation();
   const { store, storeId, loading } = useStoreWorkspace();
-  const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
-  const paletteItems = buildPaletteItems(navigate, storeId, posEnabled);
+  const paletteItems = buildPaletteItems(navigate, storeId);
   const logout = useLogout();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -347,26 +327,19 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
               }
               {section.items.map(item => {
                 const active = isActive(item.path);
-                const isLockedPos = item.id === 'pos' && !posEnabled;
-                const locked = isLockedPos;
-                const goToItem = () => {
-                  if (isLockedPos) return;
-                  navigate(item.path.startsWith('/') ? item.path : `/store/${storeId}/${item.path}`);
-                };
+                const goToItem = () => navigate(item.path.startsWith('/') ? item.path : `/store/${storeId}/${item.path}`);
                 return (
                   <div
                     key={item.id}
                     role="button"
                     tabIndex={0}
                     onClick={goToItem}
-                    onKeyDown={e => { if (!isLockedPos && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); goToItem(); } }}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToItem(); } }}
                     title={!open ? item.label : undefined}
-                    aria-label={locked ? `${item.label} — locked` : item.label}
+                    aria-label={item.label}
                     aria-current={active ? 'page' : undefined}
-                    aria-disabled={isLockedPos || undefined}
                     className={clsx(
-                      'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5',
-                      isLockedPos ? 'cursor-default' : 'cursor-pointer',
+                      'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer',
                       'transition-colors duration-150',
                       !open && 'lg:justify-center lg:px-0',
                       active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1a1917]',
@@ -374,31 +347,14 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                   >
                     <item.Icon
                       size={15}
-                      className={clsx(
-                        'shrink-0',
-                        isLockedPos ? 'text-slate opacity-35' : active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55',
-                      )}
+                      className={clsx('shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')}
                     />
                     {open && (
                       <>
-                        <span className={clsx(
-                          'text-[13px] flex-1',
-                          locked ? 'font-normal text-slate opacity-40' : active ? 'font-semibold text-white' : 'font-normal text-slate',
-                        )}>
+                        <span className={clsx('text-[13px] flex-1 font-normal text-slate', active && 'font-semibold text-white')}>
                           {item.label}
                         </span>
-                        {locked ? (
-                          <button
-                            type="button"
-                            onClick={e => {
-                              e.stopPropagation();
-                              navigate(`/store/${storeId}/pos`);
-                            }}
-                            className="text-[9px] font-bold uppercase tracking-[0.03em] px-[7px] py-[2px] rounded-full bg-brand-orange text-white border-none cursor-pointer shrink-0"
-                          >
-                            Upgrade
-                          </button>
-                        ) : active && (
+                        {active && (
                           <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />
                         )}
                       </>

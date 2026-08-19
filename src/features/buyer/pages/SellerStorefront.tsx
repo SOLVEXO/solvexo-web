@@ -93,6 +93,7 @@ export function SellerStorefront() {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [rewardsLoading, setRewardsLoading] = useState(false);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
+  const [redeemedVoucher, setRedeemedVoucher] = useState<{ code: string; expiresAt: string } | null>(null);
   const [plans, setPlans] = useState<BuyerPlan[]>([]);
   const [billingInterval, setBillingInterval] = useState<BillingInterval>('monthly');
   const [subscribingId, setSubscribingId] = useState<string | null>(null);
@@ -181,7 +182,8 @@ export function SellerStorefront() {
     try {
       const res = await apiRedeemReward(store.storeId, reward._id);
       setLoyalty(prev => prev ? { ...prev, pointsBalance: res.data.remainingBalance } : prev);
-      toast.success('Reward redeemed');
+      setRedeemedVoucher({ code: res.data.voucherCode, expiresAt: res.data.voucherExpiresAt });
+      toast.success('Reward redeemed — apply your code at checkout');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to redeem reward.');
     } finally {
@@ -375,7 +377,21 @@ export function SellerStorefront() {
       )}
 
       {showRewards && (
-        <Modal title="Rewards Catalog" onClose={() => setShowRewards(false)}>
+        <Modal title="Rewards Catalog" onClose={() => { setShowRewards(false); setRedeemedVoucher(null); }}>
+          {redeemedVoucher && (
+            <div className="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-3.5 py-3 mb-4">
+              <div>
+                <p className="text-[12.5px] font-semibold text-emerald-800">Reward redeemed! Apply this code at checkout:</p>
+                <p className="text-[15px] font-mono font-bold text-emerald-900 tracking-wide">{redeemedVoucher.code}</p>
+                <p className="text-[10.5px] text-emerald-700">Valid until {new Date(redeemedVoucher.expiresAt).toLocaleDateString()}</p>
+              </div>
+              <button
+                onClick={() => { navigator.clipboard?.writeText(redeemedVoucher.code); toast.success('Code copied'); }}
+                className="px-3 py-[6px] rounded-lg text-xs font-semibold text-emerald-800 bg-white border border-emerald-300 cursor-pointer whitespace-nowrap">
+                Copy
+              </button>
+            </div>
+          )}
           <p className="text-[13px] text-slate mb-4">
             You have <strong style={{ color: cfg.primaryColor }}>{loyalty?.pointsBalance.toLocaleString() ?? 0} points</strong> at {store.name}.
             {loyalty?.nextTier && ` ${loyalty.nextTier.pointsNeeded} more points to reach ${loyalty.nextTier.name}.`}

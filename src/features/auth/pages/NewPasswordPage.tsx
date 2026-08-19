@@ -10,6 +10,10 @@ import { newPasswordSchema, type NewPasswordFormData } from '@/utils/validation/
 import { AuthContext } from '@/api/services/auth';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { PasswordSecurityMockup } from '@/features/auth/components/mockups/AuthMockups';
+import { MagneticButton } from '@/components/comman/motion/MagneticButton';
+import { motion } from 'motion/react';
+
+const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } };
 
 const HIGHLIGHTS = [
   { Icon: KeyRound,    text: 'Verify with the code we emailed you' },
@@ -131,9 +135,11 @@ export function NewPasswordPage() {
         <p className="text-[13px] text-slate text-center leading-[1.6] mb-6">
           Your password has been changed. You can now sign in.
         </p>
-        <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/login')} iconRight={<ArrowRight size={14} />}>
-          Sign In Now
-        </Button>
+        <MagneticButton className="block">
+          <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/login')} iconRight={<ArrowRight size={14} />}>
+            Sign In Now
+          </Button>
+        </MagneticButton>
       </AuthSplitLayout>
     );
   }
@@ -159,16 +165,16 @@ export function NewPasswordPage() {
           value={values.confirmPassword} onChange={v => setValue('confirmPassword', v)}
           onBlur={blur('confirmPassword')} error={errors.confirmPassword} />
         {values.confirmPassword && (
-          <p className={clsx('text-[11px] mt-[5px]', passwordsMatch ? 'text-success' : 'text-error')}>
+          <motion.p className={clsx('text-[11px] mt-[5px]', passwordsMatch ? 'text-success' : 'text-error')} {...fadeSlide}>
             {passwordsMatch
               ? <><Check size={11} className="inline align-middle mr-[3px]" />Passwords match</>
               : <>✗ Passwords do not match</>}
-          </p>
+          </motion.p>
         )}
       </div>
 
       {resetPassword.error && (
-        <div role="alert" className="flex flex-col gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mb-4 text-[13px] text-error">
+        <motion.div role="alert" className="flex flex-col gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mb-4 text-[13px] text-error" {...fadeSlide}>
           <div className="flex items-center gap-2">
             <AlertTriangle size={14} className="shrink-0" />
             <span>{resetPassword.error}</span>
@@ -184,17 +190,19 @@ export function NewPasswordPage() {
           >
             Re-enter code
           </button>
-        </div>
+        </motion.div>
       )}
 
-      <Button
-        variant="primary" size="lg" fullWidth
-        onClick={handleSubmit}
-        loading={resetPassword.loading}
-        iconRight={!resetPassword.loading && <ArrowRight size={14} />}
-      >
-        Reset Password
-      </Button>
+      <MagneticButton className="block">
+        <Button
+          variant="primary" size="lg" fullWidth
+          onClick={handleSubmit}
+          loading={resetPassword.loading}
+          iconRight={!resetPassword.loading && <ArrowRight size={14} />}
+        >
+          Reset Password
+        </Button>
+      </MagneticButton>
     </AuthSplitLayout>
   );
 }

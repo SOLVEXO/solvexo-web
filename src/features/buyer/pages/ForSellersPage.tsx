@@ -4,9 +4,14 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { Button } from '@/components/comman/ui/Button';
 import { SkeletonBox } from '@/components/comman/ui';
-import { ArrowRight, GraduationCap, Palette, Store, Gem, Briefcase, Building2, ShoppingBag, Hammer, Download, Sparkles, BarChart2, Monitor, CreditCard, Lock } from 'lucide-react';
+import { ArrowRight, GraduationCap, Palette, Store, Gem, Briefcase, Building2, Gift, Hammer, Download, Sparkles, BarChart2, Monitor, CreditCard, Lock } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { apiGetPlatformStats, type PlatformStats } from '@/api/services/store';
+import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
+import { MagneticButton } from '@/components/comman/motion/MagneticButton';
+import { SectionHeading } from '@/components/comman/motion/SectionHeading';
+import { PremiumCard } from '@/components/comman/motion/PremiumCard';
+import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
 
 const compactNumber   = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const compactCurrency = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1, style: 'currency', currency: 'USD' });
@@ -17,13 +22,13 @@ const SELLER_TYPES: { Icon: LucideIcon; title: string; desc: string; cta: string
   { Icon: GraduationCap, title: 'Educators',            desc: 'Sell lesson plans, worksheets, bundles, and courses to teachers and students worldwide.',    cta: 'Sell as Educator'   },
   { Icon: Palette,       title: 'Creators & Designers', desc: 'Digital downloads, templates, fonts, and design assets with instant delivery.',               cta: 'Start Creating'     },
   { Icon: Store,         title: 'Retailers',             desc: 'Launch your online store and sell physical products to customers everywhere.',                 cta: 'Open Your Store'    },
-  { Icon: Gem,           title: 'Handmade Sellers',      desc: 'Showcase your handcrafted goods on the Solvexo marketplace and your own store.',              cta: 'List Your Craft'    },
+  { Icon: Gem,           title: 'Handmade Sellers',      desc: 'Showcase your handcrafted goods with your own beautiful, branded storefront.',              cta: 'List Your Craft'    },
   { Icon: Briefcase,     title: 'Brands & Agencies',     desc: 'White-label storefronts, multi-seat management, and advanced analytics.',                     cta: 'Go Enterprise'      },
   { Icon: Building2,     title: 'Schools & Districts',   desc: 'Institutional accounts with volume pricing and centralized resource management.',              cta: 'Contact Us'         },
 ];
 
 const FEATURES: { Icon: LucideIcon; title: string; desc: string }[] = [
-  { Icon: ShoppingBag, title: 'Marketplace Listings', desc: 'Reach buyers already shopping on Solvexo.'        },
+  { Icon: Gift,        title: 'Loyalty & Rewards',    desc: 'Give buyers points, tiers and perks that keep them coming back.' },
   { Icon: Hammer,      title: 'Custom Storefront',    desc: 'Your brand, your domain, your store.'              },
   { Icon: Download,    title: 'Digital Delivery',     desc: 'Instant file delivery for digital products.'       },
   { Icon: Sparkles,    title: 'AI Tools',             desc: 'AI-powered listing optimization and pricing.'      },
@@ -51,10 +56,10 @@ export function ForSellersPage() {
   }, []);
 
   const statItems = stats ? [
-    { value: `${compactNumber.format(stats.sellersCount)}+`, label: 'Active Sellers' },
-    { value: `${compactCurrency.format(stats.gmv)}+`,        label: 'GMV Processed'  },
-    { value: `${compactNumber.format(stats.buyersCount)}+`,  label: 'Registered Buyers' },
-    { value: stats.ratingCount > 0 ? `${stats.avgRating.toFixed(1)} ★` : '—', label: 'Average Rating' },
+    { value: stats.sellersCount, format: (n: number) => `${compactNumber.format(n)}+`, label: 'Active Sellers' },
+    { value: stats.gmv,          format: (n: number) => `${compactCurrency.format(n)}+`, label: 'GMV Processed' },
+    { value: stats.buyersCount,  format: (n: number) => `${compactNumber.format(n)}+`,  label: 'Registered Buyers' },
+    { value: stats.ratingCount > 0 ? stats.avgRating : null, format: (n: number) => `${n.toFixed(1)} ★`, label: 'Average Rating' },
   ] : [];
 
   return (
@@ -69,46 +74,53 @@ export function ForSellersPage() {
         <div className="absolute rounded-full w-[300px] h-[300px] bg-brand-deep-orange opacity-[0.06] -bottom-[60px] left-[40%]" />
 
         <div className="max-w-[760px] mx-auto text-center relative z-[1]">
-          <div className="inline-flex items-center gap-2 bg-[rgba(217,119,87,0.15)] border border-[rgba(217,119,87,0.3)] rounded-[20px] px-[14px] py-[5px] mb-6">
-            <span className="text-[12px] text-brand-orange font-medium">
-              Trusted by {stats ? `${compactNumber.format(stats.sellersCount)}+` : '50,000+'} sellers worldwide
-            </span>
-          </div>
+          <Reveal delay={0}>
+            <div className="inline-flex items-center gap-2 bg-[rgba(217,119,87,0.15)] border border-[rgba(217,119,87,0.3)] rounded-[20px] px-[14px] py-[5px] mb-6">
+              <span className="text-[12px] text-brand-orange font-medium">
+                Trusted by {stats ? `${compactNumber.format(stats.sellersCount)}+` : '50,000+'} sellers worldwide
+              </span>
+            </div>
+          </Reveal>
 
-          <h1 className="block text-3xl md:text-5xl lg:text-[48px] font-bold text-white leading-[1.15] mb-5" style={{ fontFamily: SERIF }}>
-            Sell more. Do less.<br />
-            With Solvex<span className="text-brand-orange">o</span>.
-          </h1>
+          <Reveal delay={0.08}>
+            <h1 className="block text-3xl md:text-5xl lg:text-[48px] font-bold text-white leading-[1.15] mb-5" style={{ fontFamily: SERIF }}>
+              Sell more. Do less.<br />
+              With Solvex<span className="text-brand-orange">o</span>.
+            </h1>
+          </Reveal>
 
-          <p className="text-sm md:text-[17px] text-[#b0aea8] leading-[1.7] max-w-[580px] mx-auto mb-9">
-            The all-in-one commerce platform for educators, creators, and independent sellers.
-            Get your store live in minutes. Start selling today.
-          </p>
+          <Reveal delay={0.16}>
+            <p className="text-sm md:text-[17px] text-[#b0aea8] leading-[1.7] max-w-[580px] mx-auto mb-9">
+              The all-in-one commerce platform for educators, creators, and independent sellers.
+              Get your store live in minutes. Start selling today.
+            </p>
+          </Reveal>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
-              Start for Free <ArrowRight size={14} className="inline align-middle ml-1" />
-            </Button>
-            <button
-              onClick={() => navigate('/pricing')}
-              className="inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] transition-colors cursor-pointer"
-            >
-              See Pricing
-            </button>
-          </div>
+          <Reveal delay={0.24}>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <MagneticButton>
+                <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
+                  Start for Free <ArrowRight size={14} className="inline align-middle ml-1" />
+                </Button>
+              </MagneticButton>
+              <button
+                onClick={() => navigate('/pricing')}
+                className="inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] transition-colors cursor-pointer"
+              >
+                See Pricing
+              </button>
+            </div>
+          </Reveal>
         </div>
       </div>
 
       {/* ── Seller Types ─────────────────────────────────────────────────── */}
       <div className="px-4 md:px-8 lg:px-12 py-12 md:py-[72px] bg-cream">
         <div className="max-w-[1100px] mx-auto">
-          <p className="text-[13px] font-semibold text-brand-orange text-center uppercase tracking-[0.1em] mb-3">Built for you</p>
-          <h2 className="text-2xl md:text-[32px] font-bold text-carbon text-center mb-12" style={{ fontFamily: SERIF }}>
-            Whatever you sell, we've got you covered
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <SectionHeading kicker="Built for you" title="Whatever you sell, we've got you covered" align="center" className="mb-12" size="lg" />
+          <RevealStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" step={0.08} y={20}>
             {SELLER_TYPES.map(s => (
-              <div key={s.title} className="bg-white rounded-2xl p-7 border border-bone">
+              <PremiumCard key={s.title} className="p-7">
                 <s.Icon size={36} className="block mb-4 text-brand-orange" />
                 <p className="text-[17px] font-bold text-carbon mb-2">{s.title}</p>
                 <p className="text-[13px] text-slate leading-[1.7] mb-5">{s.desc}</p>
@@ -120,28 +132,25 @@ export function ForSellersPage() {
                 >
                   {s.cta} <ArrowRight size={14} className="inline align-middle ml-1" />
                 </Button>
-              </div>
+              </PremiumCard>
             ))}
-          </div>
+          </RevealStagger>
         </div>
       </div>
 
       {/* ── Feature Highlights ───────────────────────────────────────────── */}
       <div className="px-4 md:px-8 lg:px-12 py-12 md:py-[72px] bg-white">
         <div className="max-w-[1100px] mx-auto">
-          <h2 className="text-2xl md:text-[32px] font-bold text-carbon text-center mb-[10px]" style={{ fontFamily: SERIF }}>
-            Everything you need to run your business
-          </h2>
-          <p className="text-[15px] text-slate text-center mb-12">One subscription. Every tool. Zero technical headaches.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <SectionHeading title="Everything you need to run your business" subtitle="One subscription. Every tool. Zero technical headaches." align="center" className="mb-12" size="lg" />
+          <RevealStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" step={0.05} y={16}>
             {FEATURES.map(f => (
-              <div key={f.title} className="bg-cream rounded-[12px] px-[18px] py-5">
+              <PremiumCard key={f.title} className="px-[18px] py-5">
                 <f.Icon size={28} className="block mb-3 text-brand-orange" />
                 <p className="text-[13px] font-bold text-carbon mb-[6px]">{f.title}</p>
                 <p className="text-[12px] text-slate leading-[1.6]">{f.desc}</p>
-              </div>
+              </PremiumCard>
             ))}
-          </div>
+          </RevealStagger>
         </div>
       </div>
 
@@ -149,7 +158,7 @@ export function ForSellersPage() {
       <div className="px-4 md:px-8 lg:px-12 py-12 md:py-[72px] bg-cream border-t border-bone">
         <div className="max-w-[1100px] mx-auto">
           {(statsLoading || statItems.length > 0) && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 justify-items-center mb-12">
+            <RevealStagger className="grid grid-cols-2 sm:grid-cols-4 gap-6 justify-items-center mb-12" step={0.08} y={14}>
               {statsLoading
                 ? Array.from({ length: 4 }).map((_, i) => (
                     <div key={i} className="text-center">
@@ -159,34 +168,35 @@ export function ForSellersPage() {
                   ))
                 : statItems.map(s => (
                     <div key={s.label} className="text-center">
-                      <p className="block text-[32px] font-bold text-brand-orange">{s.value}</p>
+                      {s.value === null
+                        ? <p className="block text-[32px] font-bold text-brand-orange">—</p>
+                        : <AnimatedCounter value={s.value} format={s.format} className="block text-[32px] font-bold text-brand-orange" />}
                       <p className="text-[13px] text-slate">{s.label}</p>
                     </div>
                   ))}
-            </div>
+            </RevealStagger>
           )}
         </div>
       </div>
 
       {/* ── CTA ──────────────────────────────────────────────────────────── */}
       <div className="bg-carbon px-4 md:px-8 lg:px-12 py-12 md:py-[72px] text-center">
-        <h2 className="block text-2xl md:text-[36px] font-bold text-white mb-[14px]" style={{ fontFamily: SERIF }}>
-          Start selling for free today
-        </h2>
-        <p className="block text-[15px] text-slate mb-9">
-          No credit card required. Get your store live in minutes. Upgrade when you're ready.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
-            Create Free Account <ArrowRight size={14} className="inline align-middle ml-1" />
-          </Button>
-          <button
-            onClick={() => navigate('/pricing')}
-            className="inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] transition-colors cursor-pointer"
-          >
-            See All Plans
-          </button>
-        </div>
+        <SectionHeading title="Start selling for free today" subtitle="No credit card required. Get your store live in minutes. Upgrade when you're ready." tone="dark" align="center" size="lg" className="mb-9" />
+        <Reveal>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <MagneticButton>
+              <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
+                Create Free Account <ArrowRight size={14} className="inline align-middle ml-1" />
+              </Button>
+            </MagneticButton>
+            <button
+              onClick={() => navigate('/pricing')}
+              className="inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] transition-colors cursor-pointer"
+            >
+              See All Plans
+            </button>
+          </div>
+        </Reveal>
       </div>
     </div>
   );

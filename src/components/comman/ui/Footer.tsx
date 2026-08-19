@@ -7,6 +7,7 @@ import { AppleGlyph, GooglePlayGlyph } from './AppPromoParts';
 import { apiSubscribeNewsletter } from '../../../api/services/newsletter';
 import { scrollRootToTop } from '@/utils/scrollRoot';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
+import { Reveal } from '@/components/comman/motion/Reveal';
 
 interface FooterLink {
   label: string;
@@ -20,20 +21,37 @@ interface FooterLink {
 // themselves are untouched, just unlinked from here.
 const FOOTER_COLUMNS: { heading: string; links: FooterLink[] }[] = [
   {
-    heading: 'Sell',
+    heading: 'Products',
     links: [
-      { label: 'Start Selling', path: '/onboard' },
-      { label: 'Pricing',       path: '/pricing' },
-      { label: 'For Sellers',   path: '/sellers' },
+      { label: 'Store Builder', path: '/products/store-builder' },
+      { label: 'Point of Sale', path: '/products/pos' },
+      { label: 'AI Commerce',   path: '/products/ai-commerce' },
+      { label: 'Analytics',     path: '/products/analytics' },
     ],
   },
   {
-    heading: 'Support',
+    heading: 'Solutions',
     links: [
-      { label: 'FAQ',              path: '/faq' },
-      { label: 'Contact Us',       path: '/contact-us' },
-      { label: 'Shipping Info',    path: '/faq' },
-      { label: 'Returns & Refunds', path: '/faq' },
+      { label: 'Retail',      path: '/solutions/retail' },
+      { label: 'Fashion',     path: '/solutions/fashion' },
+      { label: 'Restaurants', path: '/solutions/restaurants' },
+      { label: 'Beauty',      path: '/solutions/beauty' },
+    ],
+  },
+  {
+    heading: 'Resources',
+    links: [
+      { label: 'FAQ',          path: '/faq' },
+      { label: 'Help Center',  path: '/help' },
+      { label: 'Contact Us',   path: '/contact-us' },
+    ],
+  },
+  {
+    heading: 'Company',
+    links: [
+      { label: 'About',       path: '/about' },
+      { label: 'For Sellers', path: '/sellers' },
+      { label: 'Pricing',     path: '/pricing' },
     ],
   },
   {
@@ -250,13 +268,13 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
       )}
 
       {/* ── Link columns ─────────────────────────────────────────────────────── */}
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_1fr] gap-8 lg:gap-6">
+      <Reveal className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-8 lg:gap-6">
 
           <div className="sm:col-span-2 lg:col-span-1 pb-2 sm:pb-0">
             <SolvexoLogo size={26} variant="light" />
             <p className="text-[12.5px] mt-4 leading-relaxed max-w-[260px] text-[#9a9894]">
-              The commerce OS for sellers, creators and educators — one marketplace for physical goods, digital downloads and learning resources.
+              The commerce OS for sellers, creators and educators — your own storefront, POS, and AI-powered tools in one platform.
             </p>
 
             {/* Decorative only — no real social accounts to link to yet, same
@@ -292,7 +310,7 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
             </div>
           </div>
         </div>
-      </div>
+      </Reveal>
 
       {/* ── Bottom bar ───────────────────────────────────────────────────────── */}
       <div className="border-t border-white/10">
@@ -304,9 +322,9 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
           <button
             type="button"
             onClick={scrollToTop}
-            className="flex items-center gap-1.5 py-1 px-2 -mx-2 text-[12px] text-[#8b8985] hover:text-white transition-colors duration-200 bg-transparent border-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
+            className="group flex items-center gap-1.5 py-1 px-2 -mx-2 text-[12px] text-[#8b8985] hover:text-white transition-colors duration-200 bg-transparent border-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/40 rounded-sm"
           >
-            Back to top <ArrowUp size={13} />
+            Back to top <ArrowUp size={13} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
           </button>
         </div>
       </div>
