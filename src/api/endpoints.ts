@@ -138,6 +138,8 @@ export const ENDPOINTS = {
     GET_BY_ID: (id: string) => `/api/store/getStoreById/${id}`,
     MY_STORES: '/api/store/my-stores',
     CUSTOM_DOMAIN: (storeId: string) => `/api/store/${storeId}/custom-domain`,
+    CUSTOM_DOMAIN_VERIFY: (storeId: string) => `/api/store/${storeId}/custom-domain/verify`,
+    RESOLVE_DOMAIN: '/api/store/public/resolve-domain',
     WHITE_LABEL:   (storeId: string) => `/api/store/${storeId}/white-label`,
     PINNED_PRODUCTS: (storeId: string) => `/api/store/${storeId}/pinned-products`,
     ANNOUNCEMENT:    (storeId: string) => `/api/store/${storeId}/announcement`,
@@ -161,7 +163,6 @@ export const ENDPOINTS = {
     PUBLIC_LIST: '/api/store/public',
     PUBLIC_TOP:  '/api/store/public/top',
     PUBLIC_PLATFORM_STATS: '/api/store/public/platform-stats',
-    PUBLIC_TESTIMONIALS:   '/api/store/public/testimonials',
 
     // Follow
     FOLLOW: (storeId: string) => `/api/store/${storeId}/follow`,
@@ -668,6 +669,15 @@ export const ENDPOINTS = {
     ADMIN_ALL:    '/api/contact/admin/all',
     UPDATE_STATUS:(id: string) => `/api/contact/admin/${id}/status`,
     DELETE:       (id: string) => `/api/contact/admin/${id}`,
+  },
+
+  TESTIMONIALS: {
+    LIST:      '/api/testimonials',
+    ADMIN_ALL: '/api/testimonials/admin/all',
+    CREATE:    '/api/testimonials',
+    UPDATE:    (id: string) => `/api/testimonials/${id}`,
+    TOGGLE:    (id: string) => `/api/testimonials/${id}/toggle`,
+    DELETE:    (id: string) => `/api/testimonials/${id}`,
   },
 
   // ── RATING / REVIEWS ──────────────────────────────────────────────────────

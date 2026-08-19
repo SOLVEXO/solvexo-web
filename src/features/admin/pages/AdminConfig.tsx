@@ -2,30 +2,15 @@ import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   useAdminConfig,
-  useUpdateFeatureFlags,
   useUpdateAiConfig,
   useUpdateEmailConfig,
   useUpdateManualPaymentConfig,
   useUpdateMaintenanceMode,
 } from '@/hooks/admin/useAdminConfig';
-import type { PlatformConfig, FeatureFlags, AiConfig, EmailConfig, ManualPaymentConfig } from '@/api/services/config/adminConfig';
+import type { PlatformConfig, AiConfig, EmailConfig, ManualPaymentConfig } from '@/api/services/config/adminConfig';
 import { Toggle, Input, Textarea, Select, Button, Modal, SkeletonBox, AdminPageHeader } from '@/components/comman/ui';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { AlertCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
-
-// ── Feature flag metadata (labels/descriptions the backend doesn't store) ────
-const FLAG_META: { key: keyof FeatureFlags; label: string; desc: string }[] = [
-  { key: 'aiStudio',           label: 'AI Studio',            desc: 'Enable AI-powered tools for sellers' },
-  { key: 'marketplace',        label: 'Marketplace',          desc: 'Allow products to be listed in the marketplace' },
-  { key: 'digitalUploads',     label: 'Digital Uploads',      desc: 'Sellers can upload digital products' },
-  { key: 'affiliateProgram',   label: 'Affiliate Program',    desc: 'Enable seller affiliate / referral program' },
-  { key: 'giftCards',          label: 'Gift Cards',           desc: 'Enable gift card creation and redemption' },
-  { key: 'posMode',            label: 'POS Mode',             desc: 'Enable point-of-sale register for sellers' },
-  { key: 'storeBuilder',       label: 'Store Builder',        desc: 'Let sellers customize their storefront' },
-  { key: 'bulkProductImport',  label: 'Bulk Product Import',  desc: 'Allow CSV import for product listings' },
-  { key: 'promotions',         label: 'Promotions',           desc: 'Store banners, promotion requests, and paid placements' },
-  { key: 'storefrontBlog',     label: 'Storefront Blog',      desc: 'Let sellers publish a blog on their storefront' },
-];
 
 const AI_MODELS = ['claude-sonnet-5', 'claude-haiku-4-5', 'claude-opus-4-8'];
 const EMAIL_PROVIDERS = ['SendGrid', 'Mailgun', 'AWS SES', 'Postmark'];
@@ -104,45 +89,6 @@ function MaintenanceCard({ config, onSaved }: { config: PlatformConfig; onSaved:
         </Modal>
       )}
     </>
-  );
-}
-
-// ── Feature Flags card ────────────────────────────────────────────────────────
-function FeatureFlagsCard({ config, onSaved }: { config: PlatformConfig; onSaved: (c: PlatformConfig) => void }) {
-  const { update, submitting, error } = useUpdateFeatureFlags();
-  const [pendingKey, setPendingKey] = useState<keyof FeatureFlags | null>(null);
-
-  async function toggleFlag(key: keyof FeatureFlags) {
-    setPendingKey(key);
-    const next = !config.featureFlags[key];
-    const ok = await update({ [key]: next } as Partial<FeatureFlags>);
-    if (ok) onSaved({ ...config, featureFlags: { ...config.featureFlags, [key]: next } });
-    setPendingKey(null);
-  }
-
-  return (
-    <div className="bg-white border border-bone rounded-[10px] px-[22px] py-5">
-      <p className="text-[14px] font-bold text-charcoal mb-[18px]">Feature Flags</p>
-      {error && <p className="text-[12px] text-error mb-3">{error}</p>}
-      <div className="flex flex-col gap-0">
-        {FLAG_META.map((flag, i) => (
-          <div key={flag.key}>
-            {i > 0 && <div className="h-px bg-[#f0eee6] my-[10px]" />}
-            <div className="flex items-center justify-between gap-3 -mx-2 px-2 py-[3px] rounded-md transition-colors duration-150 hover:bg-cream/60">
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium text-charcoal">{flag.label}</p>
-                <p className="text-[11px] text-slate">{flag.desc}</p>
-              </div>
-              <Toggle
-                checked={config.featureFlags[flag.key]}
-                disabled={submitting && pendingKey === flag.key}
-                onChange={() => toggleFlag(flag.key)}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -364,7 +310,7 @@ export function AdminConfig() {
 
   return (
     <>
-      <AdminPageHeader title="Platform Config" subtitle="Feature flags, AI settings, email config and system controls." />
+      <AdminPageHeader title="Platform Config" subtitle="AI settings, email config and system controls." />
       <div className="px-4 sm:px-7 pt-6 pb-8 flex flex-col gap-5">
       {loading && !config ? (
         <ConfigSkeleton />
@@ -374,11 +320,8 @@ export function AdminConfig() {
         <>
           <MaintenanceCard config={config} onSaved={setConfig} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FeatureFlagsCard config={config} onSaved={setConfig} />
-            <div className="flex flex-col gap-4">
-              <AiConfigCard config={config} onSaved={setConfig} />
-              <EmailConfigCard config={config} onSaved={setConfig} />
-            </div>
+            <AiConfigCard config={config} onSaved={setConfig} />
+            <EmailConfigCard config={config} onSaved={setConfig} />
           </div>
           <ManualPaymentConfigCard config={config} onSaved={setConfig} />
         </>

@@ -18,6 +18,8 @@ import { apiCreateOnboardingSetupIntent, apiConfirmOnboardingPaymentMethod } fro
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { SellerDashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
 import { StripeCardSetup, isStripeConfigured } from './StripeCardSetup';
+import { MagneticButton } from '@/components/comman/motion/MagneticButton';
+import { motion } from 'motion/react';
 
 const ONBOARDING_HIGHLIGHTS = [
   { Icon: Store,     text: 'A store built around how you sell' },
@@ -515,9 +517,11 @@ function Step5Review({ form, submitting, submitError, onSubmit, onBack, step, ma
           <Button variant="ghost" size="md" onClick={onBack} className="shrink-0" disabled={submitting}>
             <ArrowLeft size={14} className="inline align-middle mr-1" /> Back
           </Button>
-          <Button variant="primary" size="lg" className="flex-1 justify-center" onClick={onSubmit} loading={submitting}>
-            Launch My Store
-          </Button>
+          <MagneticButton className="flex-1">
+            <Button variant="primary" size="lg" fullWidth onClick={onSubmit} loading={submitting}>
+              Launch My Store
+            </Button>
+          </MagneticButton>
         </div>
       </div>
     </div>
@@ -532,16 +536,23 @@ function StoreReadyConfirmation({ store }: { store: StoreData | null }) {
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
       <OnboardingStepHeader step={TOTAL_STEPS} maxReached={TOTAL_STEPS} onStepClick={() => {}} />
       <div className={clsx(NARROW_CONTENT, 'text-center')}>
-        <div className="size-14 rounded-full bg-success-bg flex items-center justify-center mx-auto mb-4">
+        <motion.div
+          className="size-14 rounded-full bg-success-bg flex items-center justify-center mx-auto mb-4"
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        >
           <Check size={26} className="text-success" />
-        </div>
+        </motion.div>
         <h1 className="text-[28px] font-bold text-carbon mb-[10px]">Your store is live!</h1>
         <p className="text-[14px] text-slate leading-[1.7] mb-7 max-w-[420px] mx-auto">
           {store?.name || 'Your store'} is ready on Solvexo — start adding products and customizing your storefront right away.
         </p>
-        <Button variant="primary" size="lg" fullWidth onClick={() => navigate(`/store/${store?._id}/dashboard`, { replace: true })}>
-          Go to My Store Dashboard <ArrowRight size={14} className="inline align-middle ml-1" />
-        </Button>
+        <MagneticButton className="block">
+          <Button variant="primary" size="lg" fullWidth onClick={() => navigate(`/store/${store?._id}/dashboard`, { replace: true })}>
+            Go to My Store Dashboard <ArrowRight size={14} className="inline align-middle ml-1" />
+          </Button>
+        </MagneticButton>
       </div>
     </div>
   );

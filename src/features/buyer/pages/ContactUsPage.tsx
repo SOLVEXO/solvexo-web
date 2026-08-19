@@ -4,8 +4,11 @@ import { Mail, LifeBuoy, Clock, Send, Check, ArrowRight } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button, Input, Textarea, Select } from '@/components/comman/ui';
 import { apiSubmitContact } from '@/api/services/contact';
-
-const SERIF = "'Lora', Georgia, serif";
+import { RevealStagger } from '@/components/comman/motion/Reveal';
+import { MagneticButton } from '@/components/comman/motion/MagneticButton';
+import { SectionHeading } from '@/components/comman/motion/SectionHeading';
+import { PremiumCard } from '@/components/comman/motion/PremiumCard';
+import { motion } from 'motion/react';
 
 const TOPICS = ['General question', 'Order or delivery', 'Billing & payments', 'Selling on Solvexo', 'Report a problem'];
 
@@ -48,19 +51,14 @@ export function ContactUsPage() {
   return (
     <div className="bg-cream min-h-full">
       {/* ── Hero ── */}
-      <div className="text-center px-4 md:px-8 lg:px-12 pt-14 md:pt-20 pb-10 max-w-[720px] mx-auto">
-        <h1 className="text-2xl md:text-4xl lg:text-[42px] font-bold text-carbon leading-[1.2] mb-[14px] tracking-[-0.01em]" style={{ fontFamily: SERIF }}>
-          Get in touch
-        </h1>
-        <p className="text-sm md:text-[16px] text-slate leading-[1.6]">
-          Questions, feedback, or need a hand with an order? We're here to help.
-        </p>
+      <div className="px-4 md:px-8 lg:px-12 pt-14 md:pt-20 pb-10 max-w-[720px] mx-auto">
+        <SectionHeading title="Get in touch" subtitle="Questions, feedback, or need a hand with an order? We're here to help." align="center" size="lg" />
       </div>
 
       {/* ── Contact info cards ── */}
-      <div className="max-w-[840px] mx-auto px-4 md:px-8 lg:px-12 pb-10 grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <RevealStagger className="max-w-[840px] mx-auto px-4 md:px-8 lg:px-12 pb-10 grid grid-cols-1 sm:grid-cols-3 gap-3" step={0.06} y={14}>
         {CONTACT_CARDS.map(({ Icon, label, value }) => (
-          <div key={label} className="bg-white rounded-xl border border-bone p-5 flex items-start gap-3">
+          <PremiumCard key={label} className="p-5 flex items-start gap-3">
             <div className="w-9 h-9 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
               <Icon size={16} className="text-brand-orange" />
             </div>
@@ -68,18 +66,23 @@ export function ContactUsPage() {
               <p className="text-[12px] font-semibold text-carbon">{label}</p>
               <p className="text-[12px] text-slate mt-0.5 truncate">{value}</p>
             </div>
-          </div>
+          </PremiumCard>
         ))}
-      </div>
+      </RevealStagger>
 
       {/* ── Contact form ── */}
       <div className="bg-white border-t border-b border-bone">
         <div className="max-w-[560px] mx-auto px-4 md:px-8 py-12">
           {sent ? (
             <div className="flex flex-col items-center text-center gap-3 py-6">
-              <div className="w-12 h-12 rounded-full bg-success-bg flex items-center justify-center">
+              <motion.div
+                className="w-12 h-12 rounded-full bg-success-bg flex items-center justify-center"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              >
                 <Check size={22} className="text-success" />
-              </div>
+              </motion.div>
               <p className="text-[16px] font-bold text-carbon">Message sent</p>
               <p className="text-[13px] text-slate max-w-[360px]">
                 Thanks for reaching out — our support team will get back to you at {email}, usually within 24 hours.
@@ -103,25 +106,28 @@ export function ContactUsPage() {
                   placeholder="Tell us a bit about what's going on…"
                   value={message} onChange={e => setMessage(e.target.value)}
                 />
-                {error && <p className="text-[12px] text-error">{error}</p>}
-                <Button type="submit" variant="primary" fullWidth loading={sending} icon={!sending && <Send size={14} />}>
-                  {sending ? 'Sending…' : 'Send Message'}
-                </Button>
+                {error && (
+                  <motion.p className="text-[12px] text-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+                    {error}
+                  </motion.p>
+                )}
+                <MagneticButton className="block">
+                  <Button type="submit" variant="primary" fullWidth loading={sending} icon={!sending && <Send size={14} />}>
+                    {sending ? 'Sending…' : 'Send Message'}
+                  </Button>
+                </MagneticButton>
               </form>
 
               {/* ── FAQ cross-link — inside the same white block, right below
                   the form, so it reads as one connected section instead of a
                   card floating alone in open space. */}
-              <button
-                onClick={() => navigate('/faq')}
-                className="w-full text-left rounded-xl border border-bone bg-cream/60 p-5 flex items-center justify-between gap-3 hover:border-brand-orange/40 transition-colors cursor-pointer mt-8"
-              >
+              <PremiumCard onClick={() => navigate('/faq')} className="p-5 flex items-center justify-between gap-3 mt-8">
                 <div>
                   <p className="text-[13px] font-semibold text-carbon">Looking for a quick answer?</p>
                   <p className="text-[12px] text-slate mt-0.5">Check our Frequently Asked Questions first — you might not need to wait for a reply.</p>
                 </div>
                 <ArrowRight size={16} className="text-slate shrink-0" />
-              </button>
+              </PremiumCard>
             </>
           )}
         </div>

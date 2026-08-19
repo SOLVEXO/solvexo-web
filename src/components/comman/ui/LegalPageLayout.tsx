@@ -4,6 +4,9 @@ import { clsx } from 'clsx';
 import { Info, ShieldAlert, ShieldCheck, Printer, Link2, Check, ArrowRight, LifeBuoy } from 'lucide-react';
 import { Button } from './Button';
 import { scrollRootRef } from '@/utils/scrollRoot';
+import { Reveal } from '@/components/comman/motion/Reveal';
+import { MagneticButton } from '@/components/comman/motion/MagneticButton';
+import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 
 const SERIF = "'Lora', Georgia, serif";
 const WORDS_PER_MINUTE = 200;
@@ -141,31 +144,37 @@ export function LegalPageLayout({ title, subtitle, lastUpdated, sections, relate
 
       {/* ── Hero ── */}
       <div className="max-w-[800px] mx-auto px-4 md:px-6 pt-14 md:pt-20 pb-10 border-b border-bone">
-        <h1 className="text-[28px] md:text-[38px] font-bold text-carbon leading-[1.15] tracking-[-0.01em] mb-3" style={{ fontFamily: SERIF }}>
-          {title}
-        </h1>
-        <p className="text-[14px] md:text-[15.5px] text-slate leading-[1.6] mb-6 max-w-[560px]">
-          {subtitle}
-        </p>
-        <div className="flex items-center gap-3 flex-wrap text-[12.5px] text-slate">
-          <span>Last updated {lastUpdated}</span>
-          <span className="text-bone">•</span>
-          <span>{readingMinutes} min read</span>
-          <div className="print:hidden flex items-center gap-2 sm:ml-auto">
-            <button
-              onClick={() => window.print()}
-              className="flex items-center gap-1.5 px-3 py-[6px] rounded-md border border-bone text-[12px] font-medium text-charcoal bg-white hover:bg-cream transition-colors cursor-pointer"
-            >
-              <Printer size={13} /> Print
-            </button>
-            <button
-              onClick={handleCopyLink}
-              className="flex items-center gap-1.5 px-3 py-[6px] rounded-md border border-bone text-[12px] font-medium text-charcoal bg-white hover:bg-cream transition-colors cursor-pointer"
-            >
-              {copied ? <><Check size={13} className="text-success" /> Copied</> : <><Link2 size={13} /> Copy Link</>}
-            </button>
+        <Reveal delay={0}>
+          <h1 className="text-[28px] md:text-[38px] font-bold text-carbon leading-[1.15] tracking-[-0.01em] mb-3" style={{ fontFamily: SERIF }}>
+            {title}
+          </h1>
+        </Reveal>
+        <Reveal delay={0.08}>
+          <p className="text-[14px] md:text-[15.5px] text-slate leading-[1.6] mb-6 max-w-[560px]">
+            {subtitle}
+          </p>
+        </Reveal>
+        <Reveal delay={0.14}>
+          <div className="flex items-center gap-3 flex-wrap text-[12.5px] text-slate">
+            <span>Last updated {lastUpdated}</span>
+            <span className="text-bone">•</span>
+            <span>{readingMinutes} min read</span>
+            <div className="print:hidden flex items-center gap-2 sm:ml-auto">
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-1.5 px-3 py-[6px] rounded-md border border-bone text-[12px] font-medium text-charcoal bg-white hover:bg-cream transition-colors cursor-pointer"
+              >
+                <Printer size={13} /> Print
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="flex items-center gap-1.5 px-3 py-[6px] rounded-md border border-bone text-[12px] font-medium text-charcoal bg-white hover:bg-cream transition-colors cursor-pointer"
+              >
+                {copied ? <><Check size={13} className="text-success" /> Copied</> : <><Link2 size={13} /> Copy Link</>}
+              </button>
+            </div>
           </div>
-        </div>
+        </Reveal>
       </div>
 
       {/* ── Body: TOC + reading column ── */}
@@ -208,36 +217,40 @@ export function LegalPageLayout({ title, subtitle, lastUpdated, sections, relate
           ))}
 
           {/* ── Contact support outro ── */}
-          <div className="print:hidden mt-4 rounded-xl border border-bone p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
-                <LifeBuoy size={16} className="text-brand-orange" />
+          <Reveal className="print:hidden mt-4">
+            <PremiumCard className="p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
+                  <LifeBuoy size={16} className="text-brand-orange" />
+                </div>
+                <div>
+                  <p className="text-[14px] font-bold text-carbon">Still have questions?</p>
+                  <p className="text-[12.5px] text-slate mt-0.5">Our support team can help clarify anything in this document.</p>
+                </div>
               </div>
-              <div>
-                <p className="text-[14px] font-bold text-carbon">Still have questions?</p>
-                <p className="text-[12.5px] text-slate mt-0.5">Our support team can help clarify anything in this document.</p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" className="shrink-0" onClick={() => navigate('/faq')}>
-              Contact Support
-            </Button>
-          </div>
+              <MagneticButton className="shrink-0">
+                <Button variant="outline" size="sm" onClick={() => navigate('/faq')}>
+                  Contact Support
+                </Button>
+              </MagneticButton>
+            </PremiumCard>
+          </Reveal>
 
           {/* ── Related legal pages ── */}
           {relatedPages.length > 0 && (
             <div className="print:hidden mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
               {relatedPages.map(p => (
-                <button
+                <PremiumCard
                   key={p.path}
                   onClick={() => navigate(p.path)}
-                  className="text-left rounded-xl border border-bone p-5 hover:border-brand-orange/40 transition-colors cursor-pointer bg-white"
+                  className="p-5"
                 >
                   <p className="text-[13px] font-semibold text-carbon flex items-center justify-between gap-2">
                     {p.title}
                     <ArrowRight size={14} className="text-slate shrink-0" />
                   </p>
                   <p className="text-[12px] text-slate mt-1 leading-[1.5]">{p.description}</p>
-                </button>
+                </PremiumCard>
               ))}
             </div>
           )}

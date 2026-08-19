@@ -167,7 +167,13 @@ export function apiGetMyBalance(storeId: string) {
 
 /** POST /api/loyalty/:storeId/redeem */
 export function apiRedeemReward(storeId: string, rewardId: string) {
-  return client.post<never, ApiResponse<{ transaction: LoyaltyTransaction; remainingBalance: number }>>(
+  return client.post<never, ApiResponse<{
+    transaction: LoyaltyTransaction;
+    remainingBalance: number;
+    /** Apply this at checkout (same "Promo code" field a Coupon uses) to actually claim the reward. */
+    voucherCode: string;
+    voucherExpiresAt: string;
+  }>>(
     ENDPOINTS.LOYALTY.REDEEM(storeId), { rewardId },
   );
 }

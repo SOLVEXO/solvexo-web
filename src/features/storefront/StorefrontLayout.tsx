@@ -3,10 +3,11 @@ import { Outlet } from 'react-router-dom';
 import { SkeletonBox, StoreAnnouncementBar } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { Store, ArrowLeft } from 'lucide-react';
-import { apiGetPublicStore, type PublicStoreData } from '@/api/services/store';
+import { apiGetPublicStore, apiResolveStoreByDomain, type PublicStoreData } from '@/api/services/store';
 import { apiGetPublicStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
 import { getStoreSlugFromHost, getMainAppUrl } from '@/utils/storefrontUrl';
-import { StorefrontProvider, STOREFRONT_CFG_DEFAULT, type StorefrontContextValue } from './StorefrontContext';
+import { CartProvider } from '@/contexts/CartContext';
+import { StorefrontProvider, resolveStorefrontCfg, type StorefrontContextValue } from './StorefrontContext';
 import { StorefrontNavbar } from './StorefrontNavbar';
 import { StorefrontFooter } from './StorefrontFooter';
 
@@ -23,10 +24,16 @@ function useStorefrontFavicon(logo: string | null | undefined) {
   }, [logo]);
 }
 
-// Root layout for a store's own subdomain (`hello.solvexo.store`) — the
-// router only ever mounts this tree when `getStoreSlugFromHost()` resolved a
-// slug at boot (see `router/index.tsx`), so the slug comes from the
-// hostname, not a `:slug` path param — subdomains carry no such segment.
+// Root layout for a store's own subdomain (`hello.solvexo.store`) OR a
+// seller-connected Custom Domain — the router mounts this tree whenever
+// EITHER `getStoreSlugFromHost()` resolved a slug at boot, OR the hostname
+// is a non-platform domain (`isCustomDomainCandidate()`, see
+// `router/index.tsx`). A subdomain's slug comes straight from the hostname
+// (synchronous, no network call); a custom domain has no slug to parse, so
+// it's resolved here via `apiResolveStoreByDomain` against the store whose
+// domain has actually been DNS-verified (`DomainWhiteLabelCard`) — an
+// unverified/unconnected domain lands on the "Store not found" state below,
+// never a random store.
 // Fetches the store + its StoreTheme ONCE, provides both via context to
 // every child route (home, custom pages, blog), and renders the seller's
 // own zero-Solvexo-branding navbar/footer around them.
@@ -38,11 +45,11 @@ export function StorefrontLayout() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!slug) return;
     let cancelled = false;
     setLoading(true);
     setError('');
-    apiGetPublicStore(slug)
+    const load = slug ? apiGetPublicStore(slug) : apiResolveStoreByDomain(window.location.hostname);
+    load
       .then(res => {
         if (cancelled) return;
         setStore(res.data);
@@ -55,16 +62,10 @@ export function StorefrontLayout() {
 
   useStorefrontFavicon(store?.logo);
 
-  const cfg = useMemo(() => ({
-    primaryColor: theme?.theme.primaryColor ?? STOREFRONT_CFG_DEFAULT.primaryColor,
-    bgColor:      theme?.theme.bgColor      ?? STOREFRONT_CFG_DEFAULT.bgColor,
-    textColor:    theme?.theme.textColor    ?? STOREFRONT_CFG_DEFAULT.textColor,
-    accentColor:  theme?.theme.accentColor  ?? STOREFRONT_CFG_DEFAULT.accentColor,
-    font:         theme?.theme.font         ?? STOREFRONT_CFG_DEFAULT.font,
-  }), [theme]);
+  const cfg = useMemo(() => resolveStorefrontCfg(theme), [theme]);
 
   const contextValue: StorefrontContextValue | null = useMemo(() => {
-    if (!store || !slug) return null;
+    if (!store) return null;
     return {
       store,
       theme,
@@ -90,33 +91,45 @@ export function StorefrontLayout() {
   }
 
   if (error || !store || !contextValue) {
+    // `getMainAppUrl()` only makes sense on a real `*.solvexo.store`
+    // subdomain (`slug` truthy) — on a genuine custom domain, that helper
+    // would build a URL on the SELLER'S OWN domain, not Solvexo's, so the
+    // "Back to Marketplace" fallback is only shown when it can actually
+    // point somewhere real.
     return (
       <div className="min-h-screen bg-cream flex flex-col items-center justify-center gap-4">
         <Store size={48} className="text-bone" />
-        <p className="text-[15px] text-slate">Store not found</p>
-        <Button variant="secondary" size="sm" onClick={() => { window.location.href = getMainAppUrl('/marketplace'); }}>
-          <ArrowLeft size={13} className="mr-1" /> Back to Marketplace
-        </Button>
+        <p className="text-[15px] text-slate">{slug ? 'Store not found' : "This domain isn't connected to a store yet"}</p>
+        {slug && (
+          <Button variant="secondary" size="sm" onClick={() => { window.location.href = getMainAppUrl('/marketplace'); }}>
+            <ArrowLeft size={13} className="mr-1" /> Back to Marketplace
+          </Button>
+        )}
       </div>
     );
   }
 
   return (
     <StorefrontProvider value={contextValue}>
-      <div className="min-h-screen" style={{ background: cfg.bgColor, color: cfg.textColor }}>
-        <StorefrontNavbar />
-        {store.announcementBar?.message && (
-          <StoreAnnouncementBar
-            storeId={store.storeId}
-            message={store.announcementBar.message}
-            type={store.announcementBar.type}
-            ctaLabel={store.announcementBar.ctaLabel}
-            ctaLink={store.announcementBar.ctaLink}
-          />
-        )}
-        <Outlet />
-        <StorefrontFooter />
-      </div>
+      {/* Scopes the buyer's cart to THIS store — shadows the app-wide
+          CartProvider from main.tsx for everything rendered below, since
+          the store's storeId is only known here, after it's resolved. */}
+      <CartProvider storeId={store.storeId}>
+        <div className="min-h-screen" style={{ background: cfg.bgColor, color: cfg.textColor, fontFamily: `${cfg.font}, sans-serif` }}>
+          <StorefrontNavbar />
+          {store.announcementBar?.message && (
+            <StoreAnnouncementBar
+              storeId={store.storeId}
+              message={store.announcementBar.message}
+              type={store.announcementBar.type}
+              ctaLabel={store.announcementBar.ctaLabel}
+              ctaLink={store.announcementBar.ctaLink}
+            />
+          )}
+          <Outlet />
+          <StorefrontFooter />
+        </div>
+      </CartProvider>
     </StorefrontProvider>
   );
 }

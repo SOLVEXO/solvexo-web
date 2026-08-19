@@ -21,6 +21,10 @@ export function BlockFields({ type, settings, onChange, pageOptions }: {
         <div className="flex flex-col gap-2">
           <Field label="Label"><input className={inp} value={settings.label ?? ''} onChange={e => set({ label: e.target.value })} /></Field>
           <LinkTargetFields value={settings as LinkTarget} onChange={next => onChange({ ...settings, ...next })} pageOptions={pageOptions} />
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] text-charcoal">Highlight as button</span>
+            <Toggle checked={!!settings.highlight} onChange={v => set({ highlight: v })} />
+          </div>
         </div>
       );
 
@@ -36,6 +40,10 @@ export function BlockFields({ type, settings, onChange, pageOptions }: {
                   className="absolute top-1 right-1 text-[11px] text-error bg-transparent border-none cursor-pointer">Remove</button>
                 <Field label="Label"><input className={inp} value={link.label ?? ''} onChange={e => set({ links: links.map((l, j) => j === i ? { ...l, label: e.target.value } : l) })} /></Field>
                 <LinkTargetFields value={link} onChange={next => set({ links: links.map((l, j) => j === i ? { ...l, ...next } : l) })} pageOptions={pageOptions} />
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-[12px] text-charcoal">Highlight as button</span>
+                  <Toggle checked={!!link.highlight} onChange={v => set({ links: links.map((l, j) => j === i ? { ...l, highlight: v } : l) })} />
+                </div>
               </div>
             ))}
             {links.length < 10 && (

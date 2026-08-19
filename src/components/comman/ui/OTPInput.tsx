@@ -1,5 +1,6 @@
 import { useRef, type KeyboardEvent, type ClipboardEvent } from 'react';
 import { Check } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface OTPInputProps {
   values:   string[];
@@ -55,9 +56,14 @@ export function OTPInput({ values, onChange, length = 6 }: OTPInputProps) {
         ))}
       </div>
       {filled && (
-        <p className="text-center text-[11px] text-success flex items-center justify-center gap-1">
+        <motion.p
+          className="text-center text-[11px] text-success flex items-center justify-center gap-1"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        >
           <Check size={11} /> Code entered
-        </p>
+        </motion.p>
       )}
     </div>
   );

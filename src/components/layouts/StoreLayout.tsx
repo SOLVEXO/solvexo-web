@@ -5,10 +5,10 @@ import { clsx } from 'clsx';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, ChevronLeft, ChevronRight, Monitor, Store,
+  Settings, Sparkles, ChevronLeft, ChevronRight, Store,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
-  PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, ShieldCheck, Lock,
+  PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
@@ -51,7 +51,6 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders'  },
       { id: 'returns',  Icon: Undo2,    label: 'Returns',       path: 'returns' },
-      { id: 'pos',      Icon: Monitor,  label: 'POS Register',  path: 'pos'     },
       { id: 'shipping', Icon: Truck,    label: 'Shipping',      path: 'shipping' },
     ],
   },
@@ -93,21 +92,10 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     group: 'Settings',
     items: [
       { id: 'integrations',  Icon: Plug,        label: 'Integrations',          path: 'integrations'  },
-      { id: 'verification',  Icon: ShieldCheck, label: 'Business Verification', path: 'verification'  },
       { id: 'settings',      Icon: Settings,    label: 'Settings',              path: 'settings'      },
     ],
   },
 ];
-
-// Available before the store's business verification is approved — every
-// other nav item is locked (see spec: seller workspace must stay restricted
-// until `verificationStatus === 'verified'`, not just gated on plan tools).
-export const ALLOWED_PRE_VERIFICATION = new Set(['dashboard', 'verification', 'settings']);
-
-export function isItemLocked(item: NavItem, verified: boolean, posEnabled: boolean): boolean {
-  if (item.id === 'pos' && !posEnabled) return true;
-  return !verified && !ALLOWED_PRE_VERIFICATION.has(item.id);
-}
 
 // ── Shared grouped nav menu — the mobile "account hub" content for a store
 // workspace, reused wherever the full list of store sections needs to be
@@ -118,8 +106,8 @@ export function isItemLocked(item: NavItem, verified: boolean, posEnabled: boole
 // page's own metric cards) plus whatever else the caller already covers
 // some other way (e.g. StoreSettings excludes 'settings' from Settings
 // group since its own General tab already covers that destination).
-export function StoreNavMenu({ storeId, verified, posEnabled, onNavigate, excludeGroups = [], excludeItemIds = [] }: {
-  storeId: string; verified: boolean; posEnabled: boolean; onNavigate?: () => void;
+export function StoreNavMenu({ storeId, onNavigate, excludeGroups = [], excludeItemIds = [] }: {
+  storeId: string; onNavigate?: () => void;
   excludeGroups?: string[]; excludeItemIds?: string[];
 }) {
   const navigate = useNavigate();
@@ -137,12 +125,8 @@ export function StoreNavMenu({ storeId, verified, posEnabled, onNavigate, exclud
           </div>
           <div className="divide-y divide-[#f3f2ec]">
             {section.items.map(item => {
-              const locked = isItemLocked(item, verified, posEnabled);
-              const isLockedByVerification = locked && item.id !== 'pos';
               const go = () => {
                 onNavigate?.();
-                if (isLockedByVerification) { navigate(`/store/${storeId}/verification`); return; }
-                if (locked) return;
                 navigate(`/store/${storeId}/${item.path}`);
               };
               return (
@@ -152,14 +136,10 @@ export function StoreNavMenu({ storeId, verified, posEnabled, onNavigate, exclud
                   className="w-full flex items-center gap-3 px-5 py-[13px] bg-transparent border-0 cursor-pointer text-left hover:bg-cream transition-colors"
                 >
                   <div className="w-8 h-8 rounded-[9px] bg-brand-pale-orange flex items-center justify-center shrink-0">
-                    {isLockedByVerification ? <Lock size={15} className="text-brand-orange" /> : <item.Icon size={15} className="text-brand-orange" />}
+                    <item.Icon size={15} className="text-brand-orange" />
                   </div>
-                  <span className={clsx('flex-1 text-[13px] font-medium', locked ? 'text-slate' : 'text-charcoal')}>{item.label}</span>
-                  {isLockedByVerification ? (
-                    <span className="text-[9px] font-bold uppercase tracking-[0.03em] px-[7px] py-[2px] rounded-full bg-brand-orange text-white shrink-0">Locked</span>
-                  ) : (
-                    <ChevronRight size={15} className="text-slate shrink-0" />
-                  )}
+                  <span className="flex-1 text-[13px] font-medium text-charcoal">{item.label}</span>
+                  <ChevronRight size={15} className="text-slate shrink-0" />
                 </button>
               );
             })}
@@ -173,7 +153,7 @@ export function StoreNavMenu({ storeId, verified, posEnabled, onNavigate, exclud
 // ── Mobile bottom tab bar — real navigation for the most frequent
 // destinations, same icon-only pattern as SellerBottomNav. The last tab
 // ("Settings") is where every OTHER section lives (Sales/Catalog/Customers/
-// Growth/Finance, plus Integrations/Business Verification) via StoreSettings'
+// Growth/Finance, plus Integrations) via StoreSettings'
 // own mobile menu — Dashboard itself stays a pure metrics page, it doesn't
 // double as a menu of everything.
 const STORE_TABS: { id: string; Icon: LucideIcon; label: string; path: string }[] = [
@@ -187,18 +167,11 @@ const STORE_TABS: { id: string; Icon: LucideIcon; label: string; path: string }[
 function StoreBottomNav() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { store, storeId } = useStoreWorkspace();
-  const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
-  const verified   = store?.status === 'active';
+  const { storeId } = useStoreWorkspace();
 
   const isActive = (path: string) => pathname === `/store/${storeId}/${path}`;
 
-  const goToTab = (tabId: string, path: string) => {
-    const navItem = NAV.flatMap(s => s.items).find(i => i.id === tabId);
-    const locked = navItem ? isItemLocked(navItem, verified, posEnabled) : false;
-    if (locked) { navigate(`/store/${storeId}/verification`); return; }
-    navigate(`/store/${storeId}/${path}`);
-  };
+  const goToTab = (path: string) => navigate(`/store/${storeId}/${path}`);
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-bone">
@@ -208,7 +181,7 @@ function StoreBottomNav() {
           return (
             <button
               key={tab.id}
-              onClick={() => goToTab(tab.id, tab.path)}
+              onClick={() => goToTab(tab.path)}
               aria-current={active ? 'page' : undefined}
               aria-label={tab.label}
               className="flex-1 flex flex-col items-center justify-center py-[11px] gap-[5px] cursor-pointer bg-transparent border-none"
@@ -230,13 +203,10 @@ function StoreBottomNav() {
 function buildPaletteItems(
   navigate: (path: string) => void,
   storeId: string,
-  posEnabled: boolean,
-  verified: boolean,
 ): CommandPaletteItem[] {
   const result: CommandPaletteItem[] = [];
   NAV.forEach(section => {
     section.items.forEach(item => {
-      if (isItemLocked(item, verified, posEnabled)) return; // exclude locked items from search
       result.push({
         id:       item.id,
         label:    item.label,
@@ -259,17 +229,8 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   const navigate     = useNavigate();
   const { pathname } = useLocation();
   const { store, storeId, loading } = useStoreWorkspace();
-  const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
-  // Gate on `store.status === 'active'`, NOT `verificationStatus === 'verified'`
-  // directly — they're set together by every real approval path (see
-  // AdminMarketplaceService.approveLead), but `status` is also the field a
-  // pre-existing, already-approved store from before verification tracking
-  // existed will have as `'active'` even if its `verificationStatus` was
-  // never backfilled. Gating on the newer field alone would retroactively
-  // lock out real, already-working sellers.
-  const verified   = store?.status === 'active';
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
-  const paletteItems = buildPaletteItems(navigate, storeId, posEnabled, verified);
+  const paletteItems = buildPaletteItems(navigate, storeId);
   const logout = useLogout();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -366,66 +327,34 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
               }
               {section.items.map(item => {
                 const active = isActive(item.path);
-                const isLockedPos = item.id === 'pos' && !posEnabled;
-                // While the store record is still loading, `verified` defaults
-                // to false — without the `!loading` guard every nav item would
-                // flash as "Locked" for that first render before flipping to
-                // its real state once the store fetch resolves.
-                const isLockedByVerification = !loading && !verified && !ALLOWED_PRE_VERIFICATION.has(item.id) && item.id !== 'pos';
-                const locked = isLockedPos || isLockedByVerification;
-                const goToItem = () => {
-                  if (isLockedByVerification) { navigate(`/store/${storeId}/verification`); return; }
-                  if (isLockedPos) return;
-                  navigate(item.path.startsWith('/') ? item.path : `/store/${storeId}/${item.path}`);
-                };
+                const goToItem = () => navigate(item.path.startsWith('/') ? item.path : `/store/${storeId}/${item.path}`);
                 return (
                   <div
                     key={item.id}
                     role="button"
                     tabIndex={0}
                     onClick={goToItem}
-                    onKeyDown={e => { if (!isLockedPos && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); goToItem(); } }}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToItem(); } }}
                     title={!open ? item.label : undefined}
-                    aria-label={locked ? `${item.label} — locked` : item.label}
+                    aria-label={item.label}
                     aria-current={active ? 'page' : undefined}
-                    aria-disabled={isLockedPos || undefined}
                     className={clsx(
-                      'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5',
-                      isLockedPos ? 'cursor-default' : 'cursor-pointer',
+                      'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer',
                       'transition-colors duration-150',
                       !open && 'lg:justify-center lg:px-0',
                       active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1a1917]',
                     )}
                   >
-                    {isLockedByVerification
-                      ? <Lock size={14} className="shrink-0 text-slate opacity-40" />
-                      : <item.Icon
-                          size={15}
-                          className={clsx(
-                            'shrink-0',
-                            isLockedPos ? 'text-slate opacity-35' : active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55',
-                          )}
-                        />}
+                    <item.Icon
+                      size={15}
+                      className={clsx('shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')}
+                    />
                     {open && (
                       <>
-                        <span className={clsx(
-                          'text-[13px] flex-1',
-                          locked ? 'font-normal text-slate opacity-40' : active ? 'font-semibold text-white' : 'font-normal text-slate',
-                        )}>
+                        <span className={clsx('text-[13px] flex-1 font-normal text-slate', active && 'font-semibold text-white')}>
                           {item.label}
                         </span>
-                        {locked ? (
-                          <button
-                            type="button"
-                            onClick={e => {
-                              e.stopPropagation();
-                              navigate(isLockedByVerification ? `/store/${storeId}/verification` : `/store/${storeId}/pos`);
-                            }}
-                            className="text-[9px] font-bold uppercase tracking-[0.03em] px-[7px] py-[2px] rounded-full bg-brand-orange text-white border-none cursor-pointer shrink-0"
-                          >
-                            {isLockedByVerification ? 'Locked' : 'Upgrade'}
-                          </button>
-                        ) : active && (
+                        {active && (
                           <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />
                         )}
                       </>
@@ -684,57 +613,6 @@ function PlatformBillingBanner() {
   return null;
 }
 
-// ── Restricted-feature explainer — shown instead of the real page when a
-// seller navigates directly (URL bar, bookmark, back button) to a nav item
-// that's locked pre-verification, so the restriction is never just a
-// silently-vanished sidebar entry. Mirrors the sidebar's own lock logic
-// rather than a second source of truth. ──
-const VERIFICATION_NOTICE_COPY: Record<StoreData['verificationStatus'], string> = {
-  not_started: 'Complete business verification to unlock this feature.',
-  pending: 'Your verification application has been submitted and is waiting to be reviewed — this unlocks as soon as it’s approved.',
-  under_review: 'Your verification is under review by our team — this unlocks as soon as a decision is made.',
-  verified: '', // never shown — this notice only renders for unverified stores
-  rejected: 'Your last verification submission was rejected. Fix the issues and resubmit to unlock this feature.',
-};
-
-function SellerActivationNotice({ item, storeId, verificationStatus }: {
-  item: NavItem; storeId: string; verificationStatus: StoreData['verificationStatus'];
-}) {
-  const navigate = useNavigate();
-  const ctaLabel = verificationStatus === 'rejected' ? 'Fix & Resubmit'
-    : verificationStatus === 'not_started' ? 'Start Verification'
-    : 'View Verification Status';
-
-  return (
-    <div className="flex flex-col items-center text-center gap-4 px-6 py-16 max-w-[440px] mx-auto">
-      <div className="size-14 rounded-full bg-brand-pale-orange flex items-center justify-center">
-        <Lock size={22} className="text-brand-orange" />
-      </div>
-      <div>
-        <p className="text-[16px] font-bold text-carbon mb-1.5">{item.label} is locked</p>
-        <p className="text-[13px] text-slate leading-[1.6]">{VERIFICATION_NOTICE_COPY[verificationStatus] || VERIFICATION_NOTICE_COPY.not_started}</p>
-      </div>
-      <Button variant="primary" size="md" onClick={() => navigate(`/store/${storeId}/verification`)}>
-        {ctaLabel}
-      </Button>
-    </div>
-  );
-}
-
-/** Finds the NAV item (if any) whose route matches `pathname`, excluding the
- *  always-available items — the single source of truth for "is this route
- *  locked", shared by the sidebar's own lock styling above. */
-function findLockedNavItem(pathname: string, storeId: string): NavItem | null {
-  for (const section of NAV) {
-    for (const item of section.items) {
-      if (ALLOWED_PRE_VERIFICATION.has(item.id) || item.id === 'pos') continue;
-      const full = item.path.startsWith('/') ? item.path : `/store/${storeId}/${item.path}`;
-      if (pathname === full || pathname.startsWith(full + '/')) return item;
-    }
-  }
-  return null;
-}
-
 // Shown instead of the real page when the store fetch itself failed (404,
 // timeout, 500) — so a genuine backend failure is never indistinguishable
 // from "this store just has no data yet" (every nested page would otherwise
@@ -756,23 +634,13 @@ function StoreWorkspaceError({ error, onRetry }: { error: string; onRetry: () =>
   );
 }
 
-// Swaps in for `<Outlet/>` — renders the real nested route unless it's a
-// verification-locked feature being reached by direct URL/bookmark/back
-// button (nav-click already redirects to /verification before ever getting
-// here, but a locked feature must never be reachable just by typing its URL),
-// or the store fetch itself failed, in which case every nested page is
-// blocked behind one shared retry state instead of each page needing its
-// own error handling.
+// Swaps in for `<Outlet/>` — renders the real nested route, or a shared
+// retry state if the store fetch itself failed, instead of each page
+// needing its own error handling.
 function GatedOutlet() {
-  const { store, storeId, loading, error, refetch } = useStoreWorkspace();
-  const { pathname } = useLocation();
+  const { loading, error, refetch } = useStoreWorkspace();
   if (!loading && error) return <StoreWorkspaceError error={error} onRetry={refetch} />;
-  // Same `status === 'active'` boundary as the sidebar — see the comment
-  // on `verified` in StoreSidebar for why this isn't `verificationStatus`.
-  if (!store || store.status === 'active') return <Outlet />;
-  const lockedItem = findLockedNavItem(pathname, storeId);
-  if (!lockedItem) return <Outlet />;
-  return <SellerActivationNotice item={lockedItem} storeId={storeId} verificationStatus={store.verificationStatus} />;
+  return <Outlet />;
 }
 
 // ── Layout ────────────────────────────────────────────────────────────────────

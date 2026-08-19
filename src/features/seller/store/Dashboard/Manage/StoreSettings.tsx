@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, History, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, History, ChevronLeft, ChevronRight, Copy, Check } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, StoreNavMenu } from '@/components/layouts/StoreLayout';
-import { apiUpdateStore, apiSetCustomDomain, apiSetWhiteLabel, type ProductType } from '@/api/services/store';
+import { apiUpdateStore, apiSetCustomDomain, apiVerifyCustomDomain, apiSetWhiteLabel, type ProductType, type CustomDomainStatus } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { useMyStores } from '@/hooks/store/useMyStores';
@@ -155,33 +155,76 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 const inputCls = "w-full px-3 py-[9px] rounded-lg text-[13px] border border-bone bg-bone text-charcoal outline-none box-border";
 
+// Mirrors `CUSTOM_DOMAIN_CNAME_TARGET` in `solvexo-api/src/store/store.service.ts`
+// — the frontend can't import a backend constant, so this literal must be
+// kept in sync by hand if that value ever changes.
+const CUSTOM_DOMAIN_CNAME_TARGET = 'stores.solvexo.store';
+
+function CopyableRow({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard?.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+  return (
+    <div className="flex items-center justify-between gap-2 py-1">
+      <span className="text-[11px] text-slate w-14 shrink-0">{label}</span>
+      <code className="flex-1 text-[12px] text-charcoal bg-white border border-bone rounded-md px-2 py-1 truncate">{value}</code>
+      <button type="button" onClick={copy} title="Copy" className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md border-none bg-transparent text-slate hover:bg-white hover:text-charcoal cursor-pointer">
+        {copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
+      </button>
+    </div>
+  );
+}
+
 // ── Custom Domain & White Label ─────────────────────────────────────────────
-function DomainWhiteLabelCard({ storeId, store, refetch }: { storeId: string; store: { customDomain: string | null; whiteLabelEnabled: boolean } | null; refetch: () => void }) {
+function DomainWhiteLabelCard({ storeId, store, refetch }: {
+  storeId: string;
+  store: { customDomain: string | null; customDomainStatus: CustomDomainStatus; whiteLabelEnabled: boolean } | null;
+  refetch: () => void;
+}) {
   const [entitlements, setEntitlements] = useState<EntitlementsSummary | null>(null);
   const [domain, setDomain] = useState('');
   const [savingDomain, setSavingDomain] = useState(false);
   const [savingWhiteLabel, setSavingWhiteLabel] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<{ verified: boolean; reason: string | null } | null>(null);
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
     apiGetStoreEntitlements(storeId).then(res => setEntitlements(res.data)).catch(() => {});
   }, [storeId]);
 
-  useEffect(() => { setDomain(store?.customDomain ?? ''); }, [store?.customDomain]);
+  useEffect(() => { setDomain(store?.customDomain ?? ''); setVerifyResult(null); }, [store?.customDomain]);
 
   const domainFeature = entitlements?.customDomainAllowed as { allowed: boolean; requiredPlan: string | null } | undefined;
   const whiteLabelFeature = entitlements?.whiteLabelAllowed as { allowed: boolean; requiredPlan: string | null } | undefined;
 
   async function saveDomain() {
-    setSavingDomain(true); setMsg('');
+    setSavingDomain(true); setMsg(''); setVerifyResult(null);
     try {
       await apiSetCustomDomain(storeId, domain.trim() || null);
       refetch();
-      setMsg('Custom domain updated.');
+      setMsg('Custom domain updated — add the DNS record below, then click Verify Domain.');
     } catch (err) {
       setMsg(err instanceof Error ? err.message : 'Failed to update domain.');
     } finally {
       setSavingDomain(false);
+    }
+  }
+
+  async function verifyDomain() {
+    setVerifying(true); setMsg('');
+    try {
+      const res = await apiVerifyCustomDomain(storeId);
+      setVerifyResult({ verified: res.data.verified, reason: res.data.reason });
+      refetch();
+    } catch (err) {
+      setVerifyResult({ verified: false, reason: err instanceof Error ? err.message : 'Verification failed — try again.' });
+    } finally {
+      setVerifying(false);
     }
   }
 
@@ -196,6 +239,8 @@ function DomainWhiteLabelCard({ storeId, store, refetch }: { storeId: string; st
       setSavingWhiteLabel(false);
     }
   }
+
+  const isVerified = store?.customDomainStatus === 'verified';
 
   return (
     <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone">
@@ -215,10 +260,45 @@ function DomainWhiteLabelCard({ storeId, store, refetch }: { storeId: string; st
             Requires the {domainFeature.requiredPlan ?? 'a higher'} plan.
           </div>
         ) : (
-          <div className="flex gap-2">
-            <input value={domain} onChange={e => setDomain(e.target.value)} placeholder="shop.yourbrand.com" className={inputCls} />
-            <Button size="sm" loading={savingDomain} onClick={saveDomain}>Save</Button>
-          </div>
+          <>
+            <div className="flex gap-2">
+              <input value={domain} onChange={e => setDomain(e.target.value)} placeholder="shop.yourbrand.com" className={inputCls} />
+              <Button size="sm" loading={savingDomain} onClick={saveDomain}>Save</Button>
+            </div>
+
+            {store?.customDomain && (
+              <div className="mt-3 flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  {isVerified ? (
+                    <span className="flex items-center gap-1.5 text-[11.5px] font-semibold text-success bg-success-bg px-2.5 py-1 rounded-full">
+                      <CheckCircle size={12} /> Verified — live on {store.customDomain}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-[11.5px] font-semibold text-warning bg-warning-bg px-2.5 py-1 rounded-full">
+                      <AlertCircle size={12} /> Not verified yet
+                    </span>
+                  )}
+                </div>
+
+                {!isVerified && (
+                  <div className="bg-cream/60 border border-bone rounded-lg p-3">
+                    <p className="text-[12px] text-charcoal font-medium mb-2">Add this DNS record with your domain registrar, then verify:</p>
+                    <CopyableRow label="Type" value="CNAME" />
+                    <CopyableRow label="Host" value={store.customDomain.split('.').slice(0, -2).join('.') || '@'} />
+                    <CopyableRow label="Value" value={CUSTOM_DOMAIN_CNAME_TARGET} />
+                    <p className="text-[11px] text-slate mt-2">DNS changes can take a few minutes to a few hours to propagate. A bare root domain (no subdomain, e.g. just "yourbrand.com") may not support a CNAME record with your registrar — a subdomain like "shop.yourbrand.com" is the more universally supported option.</p>
+
+                    <div className="flex items-center gap-2 mt-3">
+                      <Button size="sm" variant="outline" loading={verifying} onClick={verifyDomain}>Verify Domain</Button>
+                      {verifyResult && !verifyResult.verified && (
+                        <p className="text-[11.5px] text-error">{verifyResult.reason}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </Field>
 
@@ -300,11 +380,6 @@ export default function StoreSettings() {
     }
   };
 
-  // For the full store-section list rendered below the local General/
-  // Activity Log menu (same lock rules as everywhere else in the workspace).
-  const posEnabled = store?.enabledTools?.includes('pos_register') ?? false;
-  const verified   = store?.status === 'active';
-
   const isDirty =
     !!store &&
     (name !== store.name ||
@@ -363,7 +438,7 @@ export default function StoreSettings() {
              General tab above already covers it). This is the one place
              the full store workspace list lives on mobile — not the
              Dashboard, which stays a pure metrics page. */}
-          <StoreNavMenu storeId={storeId} verified={verified} posEnabled={posEnabled} excludeItemIds={['settings']} />
+          <StoreNavMenu storeId={storeId} excludeItemIds={['settings']} />
         </div>
       )}
 
@@ -559,7 +634,7 @@ export default function StoreSettings() {
               </div>
             </div>
 
-            {storeId && <DomainWhiteLabelCard storeId={storeId} store={store ? { customDomain: store.customDomain, whiteLabelEnabled: store.whiteLabelEnabled } : null} refetch={refetch} />}
+            {storeId && <DomainWhiteLabelCard storeId={storeId} store={store ? { customDomain: store.customDomain, customDomainStatus: store.customDomainStatus, whiteLabelEnabled: store.whiteLabelEnabled } : null} refetch={refetch} />}
           </div>
         </div>
       )}

@@ -14,6 +14,10 @@ import { TokenStorage, getRoleRedirect, RememberedAccount, type AppRole } from '
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { MarketplaceMockup, DashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
+import { MagneticButton } from '@/components/comman/motion/MagneticButton';
+import { motion } from 'motion/react';
+
+const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } };
 
 const HIGHLIGHTS = [
   { Icon: ShoppingBag, text: 'Shop from thousands of independent sellers' },
@@ -177,10 +181,10 @@ export function RegisterPage() {
           />
 
           {social.error && (
-            <div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mb-3 text-[13px] text-info">
+            <motion.div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mb-3 text-[13px] text-info" {...fadeSlide}>
               <Info size={14} className="shrink-0" />
               <span>{social.error}</span>
-            </div>
+            </motion.div>
           )}
 
           <div className="flex items-center gap-3 mb-3 lg:mb-4">
@@ -202,7 +206,7 @@ export function RegisterPage() {
       {/* The rest of the details only show up once an email has actually
          been typed — same reveal LoginPage uses for its password field. */}
       {emailEntered && (
-        <>
+        <motion.div {...fadeSlide}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 lg:gap-3 mt-3">
             <Input
               ref={nameRef}
@@ -235,33 +239,34 @@ export function RegisterPage() {
             />
           </div>
 
-          <Button
-            variant="primary" size="md" fullWidth
-            onClick={handleSubmit}
-            loading={register.loading}
-            iconRight={!register.loading && <ArrowRight size={14} />}
-            className="mt-3 lg:mt-4"
-          >
-            {isSeller ? 'Create Seller Account' : 'Create Buyer Account'}
-          </Button>
-        </>
+          <MagneticButton className="block mt-3 lg:mt-4">
+            <Button
+              variant="primary" size="md" fullWidth
+              onClick={handleSubmit}
+              loading={register.loading}
+              iconRight={!register.loading && <ArrowRight size={14} />}
+            >
+              {isSeller ? 'Create Seller Account' : 'Create Buyer Account'}
+            </Button>
+          </MagneticButton>
+        </motion.div>
       )}
 
       {register.error && (
-        <div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
+        <motion.div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error" {...fadeSlide}>
           <AlertTriangle size={14} className="shrink-0" />
           <span>{register.error}</span>
-        </div>
+        </motion.div>
       )}
       {!register.error && social.error && emailEntered && (
-        <div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info">
+        <motion.div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info" {...fadeSlide}>
           <Info size={14} className="shrink-0" />
           <span>{social.error}</span>
-        </div>
+        </motion.div>
       )}
 
       {emailEntered && (
-        <>
+        <motion.div {...fadeSlide}>
           <div className="flex items-center gap-3 my-2.5 lg:my-4">
             <div className="flex-1 h-px bg-bone" />
             <span className="text-[11px] text-slate">or continue with</span>
@@ -273,7 +278,7 @@ export function RegisterPage() {
             disabled={social.loading || register.loading}
             className="mb-3 lg:mb-4"
           />
-        </>
+        </motion.div>
       )}
       </>
       )}
