@@ -43,6 +43,8 @@ export interface Checkout {
   subscriberSavingsUSD?: number;
   couponCode?:       string | null;
   couponDiscountUSD?: number;
+  giftCardCode?:       string | null;
+  giftCardDiscountUSD?: number;
   campaignDiscountTotalUSD?: number;
   totalAmount:       number;
   status:            string;
@@ -59,6 +61,7 @@ export interface CheckoutSummary {
   totalAmount: number;
   subscriberSavingsUSD?: number;
   campaignDiscountUSD?: number;
+  autoDiscountUSD?: number;
   /** Only meaningful for a mixed physical+digital cart — see `allowedPaymentMethods`'s 'split' option. */
   digitalSubtotal?:  number;
   physicalSubtotal?: number;
@@ -91,6 +94,28 @@ export interface RemoveCouponData {
   physicalSubtotal?: number;
 }
 interface RemoveCouponResponse { success: boolean; message: string; data: RemoveCouponData }
+
+export interface ApplyGiftCardPayload { checkoutId: string; code: string }
+
+export interface ApplyGiftCardData {
+  checkoutId: string;
+  giftCardCode: string;
+  giftCardDiscountUSD: number;
+  remainingBalance: number;
+  totalAmount: number;
+  digitalSubtotal?:  number;
+  physicalSubtotal?: number;
+}
+
+interface ApplyGiftCardResponse { success: boolean; message: string; data: ApplyGiftCardData }
+
+export interface RemoveGiftCardData {
+  checkoutId: string;
+  totalAmount: number;
+  digitalSubtotal?:  number;
+  physicalSubtotal?: number;
+}
+interface RemoveGiftCardResponse { success: boolean; message: string; data: RemoveGiftCardData }
 
 export interface SubscriptionSavingsHint {
   storeId: string; storeName: string; storeSlug: string; planId: string; planName: string; potentialSavingsUSD: number;
@@ -187,4 +212,12 @@ export function apiApplyCoupon(payload: ApplyCouponPayload) {
 
 export function apiRemoveCoupon(checkoutId: string) {
   return client.delete<never, RemoveCouponResponse>(ENDPOINTS.CHECKOUT.REMOVE_COUPON(checkoutId));
+}
+
+export function apiApplyGiftCard(payload: ApplyGiftCardPayload) {
+  return client.post<never, ApplyGiftCardResponse>(ENDPOINTS.CHECKOUT.APPLY_GIFT_CARD, payload);
+}
+
+export function apiRemoveGiftCard(checkoutId: string) {
+  return client.delete<never, RemoveGiftCardResponse>(ENDPOINTS.CHECKOUT.REMOVE_GIFT_CARD(checkoutId));
 }

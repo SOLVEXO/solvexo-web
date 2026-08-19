@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, History, ChevronLeft, ChevronRight, Copy, Check } from 'lucide-react';
+import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, History, ChevronLeft, ChevronRight, Copy, Check, CreditCard } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, StoreNavMenu } from '@/components/layouts/StoreLayout';
 import { apiUpdateStore, apiSetCustomDomain, apiVerifyCustomDomain, apiSetWhiteLabel, type ProductType, type CustomDomainStatus } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
+import { apiGetStripeConnectStatus, apiCreateStripeConnectOnboardingLink, apiSyncStripeConnectStatus, type StripeConnectStatus } from '@/api/services/stripeConnect';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { useMyStores } from '@/hooks/store/useMyStores';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
@@ -180,6 +181,98 @@ function CopyableRow({ label, value }: { label: string; value: string }) {
 }
 
 // ── Custom Domain & White Label ─────────────────────────────────────────────
+const CONNECT_STATUS_LABEL: Record<StripeConnectStatus['status'], { label: string; cls: string; Icon: typeof CheckCircle }> = {
+  not_connected: { label: 'Not connected', cls: 'text-slate bg-[#f3f2ec]', Icon: AlertCircle },
+  pending:       { label: 'Setup incomplete', cls: 'text-warning bg-warning-bg', Icon: AlertCircle },
+  active:        { label: 'Active — receiving payments directly', cls: 'text-success bg-success-bg', Icon: CheckCircle },
+  restricted:    { label: 'Restricted by Stripe', cls: 'text-error bg-error-bg', Icon: AlertCircle },
+};
+
+/** Seller's own payment gateway (Stripe Connect Express) — when active, a
+ *  buyer's payment for THIS store's checkout is routed directly to the
+ *  seller's own connected Stripe account (Solvexo's commission taken as an
+ *  `application_fee_amount`), bypassing the platform's shared account and
+ *  internal payout-request flow entirely for that sale. Store-agnostic:
+ *  Stripe Connect is a per-SELLER account (one legal entity, one bank
+ *  account), same as `Seller.stripeCustomerId` is already used platform-plan-
+ *  billing-wide regardless of how many stores that seller runs — so this
+ *  card's status is the seller's, not scoped to just the current store. */
+function PaymentGatewayCard() {
+  const [status, setStatus] = useState<StripeConnectStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const load = params.get('connect') === 'done'
+      ? apiSyncStripeConnectStatus()
+      : apiGetStripeConnectStatus();
+    load.then(res => setStatus(res.data)).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  async function startConnect() {
+    setConnecting(true); setError('');
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('connect');
+      const refreshUrl = url.toString();
+      url.searchParams.set('connect', 'done');
+      const returnUrl = url.toString();
+      const res = await apiCreateStripeConnectOnboardingLink(refreshUrl, returnUrl);
+      window.location.href = res.data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start Stripe onboarding.');
+      setConnecting(false);
+    }
+  }
+
+  const info = status ? CONNECT_STATUS_LABEL[status.status] : null;
+
+  return (
+    <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone">
+      <div className="flex items-center gap-2 mb-5">
+        <div className="w-[30px] h-[30px] rounded-lg bg-brand-pale-orange flex items-center justify-center">
+          <CreditCard size={15} className="text-brand-orange" />
+        </div>
+        <p className="text-[14px] font-semibold text-charcoal">Payment Gateway</p>
+      </div>
+
+      {loading ? (
+        <Loader2 size={16} className="animate-spin text-slate" />
+      ) : (
+        <>
+          <p className="text-[12.5px] text-slate mb-3">
+            Connect your own Stripe account to receive buyer payments directly — Solvexo's commission is deducted automatically, and the rest lands straight in your bank account via Stripe's own payout schedule, instead of waiting on a manual payout request.
+          </p>
+
+          {info && (
+            <span className={`inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2.5 py-1 rounded-full mb-3 ${info.cls}`}>
+              <info.Icon size={12} /> {info.label}
+            </span>
+          )}
+
+          {error && <p className="text-[12px] text-error mb-2">{error}</p>}
+
+          {status?.status !== 'active' && (
+            <div>
+              <Button size="sm" loading={connecting} onClick={startConnect}>
+                {status?.connected ? 'Continue Setup' : 'Connect with Stripe'}
+              </Button>
+            </div>
+          )}
+
+          {status?.status === 'active' && (
+            <p className="text-[11px] text-slate">
+              Not seeing a store you expect here? Stripe Connect is tied to your seller account as a whole, not one specific store.
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function DomainWhiteLabelCard({ storeId, store, refetch }: {
   storeId: string;
   store: { customDomain: string | null; customDomainStatus: CustomDomainStatus; whiteLabelEnabled: boolean } | null;
@@ -635,6 +728,8 @@ export default function StoreSettings() {
             </div>
 
             {storeId && <DomainWhiteLabelCard storeId={storeId} store={store ? { customDomain: store.customDomain, customDomainStatus: store.customDomainStatus, whiteLabelEnabled: store.whiteLabelEnabled } : null} refetch={refetch} />}
+
+            <PaymentGatewayCard />
           </div>
         </div>
       )}
