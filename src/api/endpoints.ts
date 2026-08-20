@@ -466,8 +466,8 @@ export const ENDPOINTS = {
   },
 
   UPLOAD: {
-    PUBLIC_FILE: '/api/upload/image',
-    PRIVATE_FILE: '/api/upload/image',
+    PUBLIC_FILE: '/api/upload/file',
+    PRIVATE_FILE: '/api/upload/private-file',
   },
 
   INVENTORY: {
