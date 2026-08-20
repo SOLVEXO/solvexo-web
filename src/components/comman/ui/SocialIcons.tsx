@@ -1,9 +1,6 @@
 import type { ReactElement } from 'react';
 import { clsx } from 'clsx';
 
-/* ── Brand SVG icons — single source of truth (was copy-pasted 3× across
-   LoginPage, RegisterPage and SignInPreview). ─────────────────────────── */
-
 export function GoogleIcon({ size = 17 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
@@ -15,38 +12,12 @@ export function GoogleIcon({ size = 17 }: { size?: number }) {
   );
 }
 
-export function AppleIcon({ size = 17 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
-      <path d="M14.044 9.52c-.02-2.22 1.815-3.293 1.897-3.348-1.033-1.511-2.638-1.718-3.207-1.736-1.363-.14-2.665.806-3.354.806-.69 0-1.755-.788-2.885-.766-1.482.022-2.853.866-3.614 2.197-1.54 2.674-.395 6.633 1.107 8.8.737 1.062 1.61 2.253 2.758 2.21 1.11-.044 1.527-.714 2.868-.714 1.34 0 1.713.714 2.884.69 1.193-.02 1.946-1.082 2.677-2.147.845-1.23 1.19-2.42 1.208-2.482-.027-.012-2.316-.888-2.339-3.51Z" fill="#141413"/>
-      <path d="M11.78 3.06c.613-.742 1.026-1.773.912-2.8-.883.035-1.95.587-2.582 1.33-.567.655-1.063 1.703-.93 2.707 1 .077 2.02-.508 2.6-1.237Z" fill="#141413"/>
-    </svg>
-  );
-}
-
-export function FacebookIcon({ size = 17 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
-      <rect width="18" height="18" rx="4" fill="#1877F2"/>
-      <path d="M12.25 11.5l.375-2.5H10.25V7.5c0-.694.344-1.25 1.313-1.25H12.75V4.062S11.875 3.75 10.938 3.75c-1.875 0-3.063 1.156-3.063 3.25V9H5.75v2.5H7.875V18h2.375v-6.5h2Z" fill="white"/>
-    </svg>
-  );
-}
-
-export type SocialProvider = 'google' | 'facebook' | 'apple';
+export type SocialProvider = 'google';
 
 export const SOCIAL_PROVIDERS: { Icon: (props: { size?: number }) => ReactElement; label: string; provider: SocialProvider }[] = [
-  { Icon: GoogleIcon,   label: 'Google',   provider: 'google'   },
-  { Icon: AppleIcon,    label: 'Apple',    provider: 'apple'    },
-  { Icon: FacebookIcon, label: 'Facebook', provider: 'facebook' },
+  { Icon: GoogleIcon, label: 'Continue with Google', provider: 'google' },
 ];
 
-/** Premium social-login button row — shared by LoginPage, RegisterPage,
- *  SignInPreview, AuthGateModal. `layout="row"` (default) is the compact
- *  3-across icon chip row; `layout="stacked"` is one full-width pill per
- *  line. Both render alongside an email/password form directly on the page
- *  now — there's no separate "choose a sign-in method" step any more, so
- *  this never renders its own email entry point. */
 export function SocialLoginRow({
   onSelect,
   disabled = false,
@@ -67,9 +38,9 @@ export function SocialLoginRow({
           onClick={() => onSelect(provider)}
           disabled={disabled}
           className={[
-            layout === 'row' ? 'flex-1' : 'w-full',
+            'w-full',
             'flex items-center justify-center gap-[7px] px-3 py-[11px] bg-white border border-bone',
-            layout === 'stacked' ? 'rounded-full' : 'rounded-xl',
+            'rounded-full',
             'text-[12.5px] font-medium text-charcoal cursor-pointer',
             'transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out',
             'hover:bg-cream hover:border-slate/40 hover:-translate-y-px',
@@ -79,7 +50,7 @@ export function SocialLoginRow({
           ].join(' ')}
         >
           <Icon />
-          <span className={layout === 'row' ? 'hidden sm:inline' : 'inline'}>{label}</span>
+          <span>{label}</span>
         </button>
       ))}
     </div>
