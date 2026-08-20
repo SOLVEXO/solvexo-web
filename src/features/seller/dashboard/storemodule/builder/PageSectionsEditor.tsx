@@ -9,12 +9,14 @@ import { SortableList } from './Sortable';
 import { AddSectionModal } from './AddSectionModal';
 import { ConfirmDialog } from './ConfirmDialog';
 
-function BlockRow({ block, sectionType, onChange, onRemove, pageOptions }: {
+function BlockRow({ block, sectionType, onChange, onRemove, pageOptions, storeId, mainCategoryId }: {
   block: Block;
   sectionType: string;
   onChange: (next: Block) => void;
   onRemove: () => void;
   pageOptions: PageOption[];
+  storeId: string;
+  mainCategoryId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
@@ -32,7 +34,7 @@ function BlockRow({ block, sectionType, onChange, onRemove, pageOptions }: {
       </div>
       {open && (
         <div className="px-3 pb-3 pt-1 border-t border-bone/70">
-          <BlockFields type={block.type} settings={block.settings} onChange={settings => onChange({ ...block, settings })} pageOptions={pageOptions} />
+          <BlockFields type={block.type} settings={block.settings} onChange={settings => onChange({ ...block, settings })} pageOptions={pageOptions} storeId={storeId} mainCategoryId={mainCategoryId} />
         </div>
       )}
       {confirmingRemove && (
@@ -48,7 +50,7 @@ function BlockRow({ block, sectionType, onChange, onRemove, pageOptions }: {
   );
 }
 
-function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOptions }: {
+function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOptions, storeId, mainCategoryId }: {
   section: Section;
   onChange: (next: Section) => void;
   onRemove: () => void;
@@ -57,6 +59,8 @@ function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOp
    *  as removing the whole section, unlike an ordinary field edit. */
   onPersistBlockRemove: (next: Section) => void;
   pageOptions: PageOption[];
+  storeId: string;
+  mainCategoryId?: string;
 }) {
   const [open, setOpen] = useState(true);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
@@ -90,7 +94,7 @@ function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOp
       )}
       {open && (
         <div className="px-4 pb-4 flex flex-col gap-3 border-t border-bone pt-3.5">
-          <SectionFields type={section.type} settings={section.settings} onChange={settings => onChange({ ...section, settings })} />
+          <SectionFields type={section.type} settings={section.settings} onChange={settings => onChange({ ...section, settings })} storeId={storeId} mainCategoryId={mainCategoryId} />
 
           {meta && meta.allowedBlockTypes.length > 0 && (
             <div className="flex flex-col gap-2 bg-cream/50 rounded-xl p-3 -mx-1">
@@ -111,6 +115,8 @@ function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOp
                       onPersistBlockRemove(next);
                     }}
                     pageOptions={pageOptions}
+                    storeId={storeId}
+                    mainCategoryId={mainCategoryId}
                   />
                 )}
               </SortableList>
@@ -138,7 +144,7 @@ function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOp
   );
 }
 
-export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions }: {
+export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, mainCategoryId }: {
   sections: Section[];
   onChange: (next: Section[]) => void;
   /** Called (with the full next `Section[]`) whenever a section or a block
@@ -148,6 +154,8 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions 
    *  through `onChange` only, unchanged. */
   onPersist: (next: Section[]) => void;
   pageOptions: PageOption[];
+  storeId: string;
+  mainCategoryId?: string;
 }) {
   const [showAdd, setShowAdd] = useState(false);
 
@@ -184,6 +192,8 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions 
                 }}
                 onPersistBlockRemove={nextSection => onPersist(sections.map((s, j) => j === i ? nextSection : s))}
                 pageOptions={pageOptions}
+                storeId={storeId}
+                mainCategoryId={mainCategoryId}
               />
             )}
           </SortableList>

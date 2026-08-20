@@ -56,6 +56,8 @@ export function BuilderPreview({ store, theme, sections, heightClass = 'h-[70vh]
     store: {
       storeId: store._id, sellerId: store.sellerId, name: store.name, slug: store.slug,
       logo: store.logo, coverImage: store.coverImage, description: store.description,
+      tagline: store.tagline ?? null, contactEmail: store.contactEmail ?? null, contactPhone: store.contactPhone ?? null,
+      categoryId: store.categoryId ?? null,
       followersCount: 0, averageRating: 0, reviewCount: 0, builderConfig: null,
       baseCurrency: store.baseCurrency, sellerType: store.sellerType, badges: [],
       createdAt: store.createdAt, activeCampaign: null, announcementBar: null,

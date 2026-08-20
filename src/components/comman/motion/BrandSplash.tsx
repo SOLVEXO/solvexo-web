@@ -1,28 +1,33 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
+import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 
 const FLAG = 'solvexo:splash-shown';
 const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
-// One-time brand splash for a visitor's first hit of the public site this
-// tab session — mounted independently by `PublicLayout` and `AuthSplitLayout`
-// (whichever the visitor actually lands on first) so it plays exactly once no
-// matter the entry route, never again on internal navigation between public
-// pages. The page underneath renders and fetches immediately; this is a
-// fixed overlay on top of already-live content, not a blocking gate, so it
-// never delays anything real — it just gets out of the way quickly.
+// A minimal brand splash — just the Solvexo mark, once, centered. No staged
+// word sequence (that was tried and explicitly asked to be removed). Fades
+// and scales in, holds briefly, then exits with a smooth curtain slide.
+// Mounted independently by `PublicLayout` and `AuthSplitLayout` (whichever
+// the visitor lands on first) so it plays exactly once per tab session in
+// production — in dev it replays on every refresh (import.meta.env.DEV) so
+// it can be iterated on without clearing sessionStorage by hand.
+const ENTER_MS = 450;
+const HOLD_MS = 350;
+const EXIT_MS = 550;
+
 export function BrandSplash() {
   const [visible, setVisible] = useState(() => {
     if (typeof window === 'undefined') return false;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    if (import.meta.env.DEV) return true;
     return sessionStorage.getItem(FLAG) !== '1';
   });
 
   useEffect(() => {
     if (!visible) return;
-    sessionStorage.setItem(FLAG, '1');
-    const t = setTimeout(() => setVisible(false), 650);
+    if (!import.meta.env.DEV) sessionStorage.setItem(FLAG, '1');
+    const t = setTimeout(() => setVisible(false), ENTER_MS + HOLD_MS);
     return () => clearTimeout(t);
   }, [visible]);
 
@@ -31,23 +36,16 @@ export function BrandSplash() {
       {visible && (
         <motion.div
           className="fixed inset-0 z-[999] bg-carbon flex items-center justify-center"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.45, ease: EASE_OUT }}
+          initial={{ y: 0 }}
+          exit={{ y: '-100%' }}
+          transition={{ duration: EXIT_MS / 1000, ease: EASE_OUT }}
         >
           <motion.div
-            className="flex flex-col items-center gap-3"
-            initial={{ opacity: 0, scale: 0.82 }}
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.45, ease: EASE_OUT }}
+            transition={{ duration: ENTER_MS / 1000, ease: EASE_OUT }}
           >
-            <SolvexoIcon size={52} />
-            <motion.div
-              className="h-[2px] w-10 rounded-full bg-brand-orange origin-left"
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ duration: 0.5, delay: 0.15, ease: EASE_OUT }}
-            />
+            <SolvexoLogo size={40} variant="light" />
           </motion.div>
         </motion.div>
       )}

@@ -13,7 +13,16 @@ export type StorePageStatus = 'draft' | 'published';
 
 export interface StorePageSeo {
   metaTitle: string | null;
+  /** @deprecated superseded by `metaDescription` — kept as a read-fallback only. */
   metaDesc:  string | null;
+  metaDescription: string | null;
+  ogImage: string | null;
+  ogTitle: string | null;
+  ogDescription: string | null;
+  twitterCard: 'summary' | 'summary_large_image';
+  canonicalUrlOverride: string | null;
+  noindex: boolean;
+  keywords: string[];
 }
 
 export interface StorePageData {

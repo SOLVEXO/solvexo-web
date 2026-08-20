@@ -7,11 +7,13 @@ const ta  = `${inp} resize-y min-h-[80px]`;
 export interface PageOption { slug: string; title: string }
 
 /** One block's settings-editing form, dispatched by `type`. Mirrors `SectionRenderer`'s per-type dispatch on the read side. */
-export function BlockFields({ type, settings, onChange, pageOptions }: {
+export function BlockFields({ type, settings, onChange, pageOptions, storeId, mainCategoryId }: {
   type: string;
   settings: Record<string, any>;
   onChange: (next: Record<string, any>) => void;
   pageOptions: PageOption[];
+  storeId: string;
+  mainCategoryId?: string;
 }) {
   const set = (patch: Record<string, any>) => onChange({ ...settings, ...patch });
 
@@ -20,7 +22,7 @@ export function BlockFields({ type, settings, onChange, pageOptions }: {
       return (
         <div className="flex flex-col gap-2">
           <Field label="Label"><input className={inp} value={settings.label ?? ''} onChange={e => set({ label: e.target.value })} /></Field>
-          <LinkTargetFields value={settings as LinkTarget} onChange={next => onChange({ ...settings, ...next })} pageOptions={pageOptions} />
+          <LinkTargetFields value={settings as LinkTarget} onChange={next => onChange({ ...settings, ...next })} pageOptions={pageOptions} storeId={storeId} mainCategoryId={mainCategoryId} />
           <div className="flex items-center justify-between">
             <span className="text-[12px] text-charcoal">Highlight as button</span>
             <Toggle checked={!!settings.highlight} onChange={v => set({ highlight: v })} />
@@ -39,7 +41,7 @@ export function BlockFields({ type, settings, onChange, pageOptions }: {
                 <button type="button" onClick={() => set({ links: links.filter((_, j) => j !== i) })}
                   className="absolute top-1 right-1 text-[11px] text-error bg-transparent border-none cursor-pointer">Remove</button>
                 <Field label="Label"><input className={inp} value={link.label ?? ''} onChange={e => set({ links: links.map((l, j) => j === i ? { ...l, label: e.target.value } : l) })} /></Field>
-                <LinkTargetFields value={link} onChange={next => set({ links: links.map((l, j) => j === i ? { ...l, ...next } : l) })} pageOptions={pageOptions} />
+                <LinkTargetFields value={link} onChange={next => set({ links: links.map((l, j) => j === i ? { ...l, ...next } : l) })} pageOptions={pageOptions} storeId={storeId} mainCategoryId={mainCategoryId} />
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-[12px] text-charcoal">Highlight as button</span>
                   <Toggle checked={!!link.highlight} onChange={v => set({ links: links.map((l, j) => j === i ? { ...l, highlight: v } : l) })} />
@@ -79,7 +81,7 @@ export function BlockFields({ type, settings, onChange, pageOptions }: {
           <Field label="Heading"><input className={inp} value={settings.heading ?? ''} onChange={e => set({ heading: e.target.value })} /></Field>
           <Field label="Subheading"><input className={inp} value={settings.subheading ?? ''} onChange={e => set({ subheading: e.target.value })} /></Field>
           <Field label="Button text"><input className={inp} value={settings.ctaText ?? ''} onChange={e => set({ ctaText: e.target.value })} /></Field>
-          {settings.ctaText && <LinkTargetFields value={settings.ctaLink ?? { linkType: 'home' }} onChange={ctaLink => set({ ctaLink })} pageOptions={pageOptions} />}
+          {settings.ctaText && <LinkTargetFields value={settings.ctaLink ?? { linkType: 'home' }} onChange={ctaLink => set({ ctaLink })} pageOptions={pageOptions} storeId={storeId} mainCategoryId={mainCategoryId} />}
         </div>
       );
 
@@ -120,7 +122,7 @@ export function BlockFields({ type, settings, onChange, pageOptions }: {
           <Field label="Heading"><input className={inp} value={settings.heading ?? ''} onChange={e => set({ heading: e.target.value })} /></Field>
           <Field label="Body"><textarea className={ta} value={settings.body ?? ''} onChange={e => set({ body: e.target.value })} /></Field>
           <Field label="Button text"><input className={inp} value={settings.ctaText ?? ''} onChange={e => set({ ctaText: e.target.value })} /></Field>
-          {settings.ctaText && <LinkTargetFields value={settings.ctaLink ?? { linkType: 'home' }} onChange={ctaLink => set({ ctaLink })} pageOptions={pageOptions} />}
+          {settings.ctaText && <LinkTargetFields value={settings.ctaLink ?? { linkType: 'home' }} onChange={ctaLink => set({ ctaLink })} pageOptions={pageOptions} storeId={storeId} mainCategoryId={mainCategoryId} />}
           <div className="flex items-center justify-between">
             <span className="text-[12px] text-charcoal">Image on the right</span>
             <Toggle checked={settings.imagePosition === 'right'} onChange={v => set({ imagePosition: v ? 'right' : 'left' })} />
@@ -147,6 +149,22 @@ export function BlockFields({ type, settings, onChange, pageOptions }: {
         <div className="flex flex-col gap-2">
           <Field label="Question"><input className={inp} value={settings.question ?? ''} onChange={e => set({ question: e.target.value })} /></Field>
           <Field label="Answer"><textarea className={ta} value={settings.answer ?? ''} onChange={e => set({ answer: e.target.value })} /></Field>
+        </div>
+      );
+
+    case 'trust_badge_item':
+      return (
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Icon">
+            <select className={inp} value={settings.icon ?? 'truck'} onChange={e => set({ icon: e.target.value })}>
+              <option value="truck">Shipping</option>
+              <option value="shield">Buyer Protection</option>
+              <option value="refresh">Easy Returns</option>
+              <option value="headset">Support</option>
+              <option value="lock">Secure Payment</option>
+            </select>
+          </Field>
+          <Field label="Text"><input className={inp} value={settings.text ?? ''} onChange={e => set({ text: e.target.value })} /></Field>
         </div>
       );
 

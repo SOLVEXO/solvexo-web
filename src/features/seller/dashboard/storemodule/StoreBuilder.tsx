@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Eye, EyeOff, Check, ExternalLink, LayoutGrid, Palette, PanelTop, PanelBottom, Newspaper, UserCog } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Check, ExternalLink, LayoutGrid, Palette, PanelTop, PanelBottom, Newspaper, UserCog, UploadCloud, RotateCcw } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { SkeletonBox } from '@/components/comman/ui';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
@@ -10,6 +10,7 @@ import {
 } from '@/api/services/storePages';
 import {
   apiGetStoreTheme, apiUpdateStoreThemeColors, apiUpdateStoreHeader, apiUpdateStoreFooter, apiUpdateIdentityBanner,
+  apiPublishStoreTheme, apiRevertStoreThemeDraft,
   type StoreThemeData,
 } from '@/api/services/storeTheme';
 import type { Section } from '@/api/services/storefrontTypes';
@@ -63,9 +64,11 @@ export function StoreBuilder() {
   const [pagesLoading, setPagesLoading] = useState(true);
   const [creatingPage, setCreatingPage] = useState(false);
 
-  // The full saved theme doc is only ever written here (`setTheme`), never
-  // read directly — every consumer works off the per-field drafts below.
-  const [, setTheme] = useState<StoreThemeData | null>(null);
+  // The full saved theme doc — its LIVE (root) fields are read only to
+  // compute `hasUnpublishedChanges` (diffed against the drafts below); every
+  // editing consumer still works off the per-field drafts, never this
+  // directly.
+  const [theme, setTheme] = useState<StoreThemeData | null>(null);
   const [themeLoading, setThemeLoading] = useState(true);
   // Local drafts — Theme/Header/Footer/Store Info tabs call `onChange` on
   // every keystroke/toggle for a responsive UI, so they edit these drafts,
@@ -104,19 +107,32 @@ export function StoreBuilder() {
       .finally(() => setPagesLoading(false));
   }, [storeId]);
 
+  // Loads the working DRAFT into every tab's editable state — Theme/Header/
+  // Footer/Store Info all edit `draft.*` now, never the live fields directly
+  // (see `store-theme.service.ts`'s draft/publish split). `theme` itself
+  // still holds the full doc (live root + draft), used only for the
+  // `hasUnpublishedChanges` diff below.
   const loadTheme = useCallback(() => {
     setThemeLoading(true);
     apiGetStoreTheme(storeId)
       .then(res => {
         setTheme(res.data);
-        setThemeDraft(res.data.theme);
-        setHeaderDraft(res.data.header);
-        setFooterDraft(res.data.footer);
-        setIdentityDraft(res.data.identityBanner);
-        setBaseThemeIdDraft(res.data.baseThemeId);
+        setThemeDraft(res.data.draft.theme);
+        setHeaderDraft(res.data.draft.header);
+        setFooterDraft(res.data.draft.footer);
+        setIdentityDraft(res.data.draft.identityBanner);
+        setBaseThemeIdDraft(res.data.draft.baseThemeId);
       })
       .finally(() => setThemeLoading(false));
   }, [storeId]);
+
+  // Cheap client-side diff — same "is anything customized" idea `ThemeTab`
+  // already uses for its "N settings customized" status line, just scoped
+  // to draft-vs-live instead of draft-vs-gallery-theme.
+  const hasUnpublishedChanges = !!(theme && themeDraft && headerDraft && footerDraft && identityDraft) && (
+    JSON.stringify({ theme: themeDraft, header: headerDraft, footer: footerDraft, identityBanner: identityDraft, baseThemeId: baseThemeIdDraft })
+    !== JSON.stringify({ theme: theme!.theme, header: theme!.header, footer: theme!.footer, identityBanner: theme!.identityBanner, baseThemeId: theme!.baseThemeId })
+  );
 
   useEffect(() => { loadPages(); loadTheme(); }, [loadPages, loadTheme]);
   useEffect(() => { setSections(selectedPage?.sections ?? []); }, [selectedPage?._id]);
@@ -153,12 +169,21 @@ export function StoreBuilder() {
     }
   };
 
-  const handleCreatePage = async (title: string, slug: string) => {
+  const handleCreatePage = async (title: string, slug: string, sections?: Section[]) => {
     setCreatingPage(true);
     try {
       const res = await apiCreateStorePage(storeId, { title, slug });
-      setPages(prev => [...prev, res.data]);
-      setSelectedPageId(res.data._id);
+      let page = res.data;
+      // Template-originated pages seed their sections in a second call —
+      // `create-page` itself always starts a page with `sections: []`, same
+      // as a blank page, so a template is just a convenience pre-fill on top
+      // of that, not a different creation path.
+      if (sections?.length) {
+        const seeded = await apiUpdateStorePageSections(storeId, page._id, sections);
+        page = seeded.data;
+      }
+      setPages(prev => [...prev, page]);
+      setSelectedPageId(page._id);
     } finally {
       setCreatingPage(false);
     }
@@ -203,7 +228,7 @@ export function StoreBuilder() {
     try {
       const res = await apiUpdateStoreHeader(storeId, next);
       setTheme(res.data);
-      setHeaderDraft(res.data.header);
+      setHeaderDraft(res.data.draft.header);
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to remove — try again.');
     }
@@ -214,7 +239,7 @@ export function StoreBuilder() {
     try {
       const res = await apiUpdateStoreFooter(storeId, next.blocks, next.footerStyle);
       setTheme(res.data);
-      setFooterDraft(res.data.footer);
+      setFooterDraft(res.data.draft.footer);
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to remove — try again.');
     }
@@ -237,11 +262,11 @@ export function StoreBuilder() {
       ]);
       const latest = footerRes?.data ?? headerRes?.data ?? themeRes.data;
       setTheme(latest);
-      setThemeDraft(latest.theme);
-      setHeaderDraft(latest.header);
-      setFooterDraft(latest.footer);
-      setBaseThemeIdDraft(latest.baseThemeId);
-      flash(true, 'Theme saved');
+      setThemeDraft(latest.draft.theme);
+      setHeaderDraft(latest.draft.header);
+      setFooterDraft(latest.draft.footer);
+      setBaseThemeIdDraft(latest.draft.baseThemeId);
+      flash(true, 'Draft saved — Publish to make it live.');
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to save theme.');
     } finally {
@@ -275,8 +300,8 @@ export function StoreBuilder() {
     try {
       const res = await apiUpdateStoreHeader(storeId, headerDraft);
       setTheme(res.data);
-      setHeaderDraft(res.data.header);
-      flash(true, 'Header saved');
+      setHeaderDraft(res.data.draft.header);
+      flash(true, 'Draft saved — Publish to make it live.');
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to save header.');
     } finally {
@@ -290,8 +315,8 @@ export function StoreBuilder() {
     try {
       const res = await apiUpdateStoreFooter(storeId, footerDraft.blocks);
       setTheme(res.data);
-      setFooterDraft(res.data.footer);
-      flash(true, 'Footer saved');
+      setFooterDraft(res.data.draft.footer);
+      flash(true, 'Draft saved — Publish to make it live.');
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to save footer.');
     } finally {
@@ -305,10 +330,50 @@ export function StoreBuilder() {
     try {
       const res = await apiUpdateIdentityBanner(storeId, identityDraft);
       setTheme(res.data);
-      setIdentityDraft(res.data.identityBanner);
-      flash(true, 'Store info saved');
+      setIdentityDraft(res.data.draft.identityBanner);
+      flash(true, 'Draft saved — Publish to make it live.');
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to save.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Publish/Discard operate on whatever is currently saved as the draft on
+  // the server — not on possibly-unsaved local field edits — so a seller
+  // must click the tab's own Save first (same two-step model Pages already
+  // uses: Save Changes, then Publish).
+  const handlePublishTheme = async () => {
+    setSaving(true);
+    try {
+      const res = await apiPublishStoreTheme(storeId);
+      setTheme(res.data);
+      setThemeDraft(res.data.draft.theme);
+      setHeaderDraft(res.data.draft.header);
+      setFooterDraft(res.data.draft.footer);
+      setIdentityDraft(res.data.draft.identityBanner);
+      setBaseThemeIdDraft(res.data.draft.baseThemeId);
+      flash(true, 'Published — your storefront is now live with these changes.');
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to publish.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDiscardDraft = async () => {
+    setSaving(true);
+    try {
+      const res = await apiRevertStoreThemeDraft(storeId);
+      setTheme(res.data);
+      setThemeDraft(res.data.draft.theme);
+      setHeaderDraft(res.data.draft.header);
+      setFooterDraft(res.data.draft.footer);
+      setIdentityDraft(res.data.draft.identityBanner);
+      setBaseThemeIdDraft(res.data.draft.baseThemeId);
+      flash(true, 'Draft discarded — reverted to your published theme.');
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to discard draft.');
     } finally {
       setSaving(false);
     }
@@ -365,11 +430,41 @@ export function StoreBuilder() {
         </div>
       </div>
 
+      {/* Theme/Header/Footer/Store Info now share one draft/publish model
+          with Pages — nothing here reaches the live storefront until
+          Publish. Shown whenever the draft actually differs from what's
+          live, on any of those 4 tabs. */}
+      {hasUnpublishedChanges && ['theme', 'header', 'footer', 'storeInfo'].includes(tab) && (
+        <div className="mx-4 lg:mx-7 mt-4 flex flex-wrap items-center justify-between gap-3 bg-brand-pale-orange border border-[#f5d0bc] rounded-2xl px-4 py-3">
+          <p className="text-[12.5px] font-semibold text-brand-deep-orange">You have unpublished changes — your live storefront still shows the last published version.</p>
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href={`/store/${storeId}/live-preview`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3.5 py-[8px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline transition-colors whitespace-nowrap"
+            >
+              <Eye size={13} /> Preview
+            </a>
+            <button onClick={handleDiscardDraft} disabled={saving}
+              className="flex items-center gap-1.5 px-3.5 py-[8px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream cursor-pointer transition-colors disabled:opacity-60 whitespace-nowrap">
+              <RotateCcw size={13} /> Discard Draft
+            </button>
+            <button onClick={handlePublishTheme} disabled={saving}
+              className="flex items-center gap-1.5 px-3.5 py-[8px] rounded-[10px] text-[12.5px] font-bold text-white border-none cursor-pointer transition-opacity disabled:opacity-60 whitespace-nowrap"
+              style={{ background: '#D97757' }}>
+              {saving ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />} Publish
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* No embedded live-preview column anywhere in this page any more —
           "View Live Store" above opens the real thing in its own tab
           instead, and the Theme Gallery's "Preview" opens a specific theme
-          the same way (`ThemePreviewPage`). Every tab is a single, full-width
-          editor column now. */}
+          the same way (`ThemePreviewPage`); the draft's own "Preview" above
+          opens the real real-data live-preview route (Phase 9). Every tab
+          is a single, full-width editor column now. */}
       <div className={`px-4 lg:px-7 py-5 grid grid-cols-1 gap-5 items-start ${tab === 'pages' ? 'lg:grid-cols-[280px_1fr]' : 'lg:grid-cols-1'}`}>
         {tab === 'pages' ? (
           <>
@@ -399,7 +494,7 @@ export function StoreBuilder() {
                       <SaveButton onClick={handleSaveSections} saving={saving} label="Save Changes" />
                     </div>
                   </div>
-                  <PageSectionsEditor sections={sections} onChange={setSections} onPersist={persistSections} pageOptions={pageOptions} />
+                  <PageSectionsEditor sections={sections} onChange={setSections} onPersist={persistSections} pageOptions={pageOptions} storeId={storeId} mainCategoryId={store.categoryId} />
                 </>
               ) : (
                 <div className="bg-white border border-bone rounded-2xl p-10 text-center">
@@ -428,8 +523,8 @@ export function StoreBuilder() {
                     onModeChange={setThemeMode}
                   />
                 )}
-                {tab === 'header'    && <HeaderTab    value={headerDraft}   onChange={setHeaderDraft} onPersist={persistHeader} pageOptions={pageOptions} />}
-                {tab === 'footer'    && <FooterTab    value={footerDraft}   onChange={setFooterDraft} onPersist={persistFooter} pageOptions={pageOptions} />}
+                {tab === 'header'    && <HeaderTab    value={headerDraft}   onChange={setHeaderDraft} onPersist={persistHeader} pageOptions={pageOptions} storeId={storeId} mainCategoryId={store.categoryId} />}
+                {tab === 'footer'    && <FooterTab    value={footerDraft}   onChange={setFooterDraft} onPersist={persistFooter} pageOptions={pageOptions} storeId={storeId} mainCategoryId={store.categoryId} />}
                 {tab === 'storeInfo' && <StoreInfoTab value={identityDraft} onChange={setIdentityDraft} />}
                 <SaveButton
                   onClick={tab === 'theme' ? handleSaveTheme : tab === 'header' ? handleSaveHeader : tab === 'footer' ? handleSaveFooter : handleSaveIdentity}

@@ -17,7 +17,6 @@ import { RequireRole }  from './RequireRole';
 // Critical conversion-path pages — eagerly imported so the highest-traffic
 // storefront flow (home → login/register → product → cart → checkout)
 // never shows a route-level Suspense spinner.
-import { Homepage }     from '@/features/buyer/pages/Homepage';
 import { ProductDetail } from '@/features/buyer/pages/ProductDetail';
 import { CartPage }     from '@/features/buyer/pages/CartPage';
 import { CheckoutPage } from '@/features/buyer/pages/CheckoutPage';
@@ -25,6 +24,22 @@ import { LoginPage }    from '@/features/auth/pages/LoginPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
 import { Marketplace }  from '@/features/buyer/pages/Marketplace';
 import { OnboardingPage } from '@/features/auth/pages/onboard/OnboardingPage';
+
+// Public marketing pages — eagerly imported (no lazy/Suspense split) per
+// explicit instruction.
+import { Homepage }             from '@/features/buyer/pages/Homepage';
+import { PricingPage }          from '@/features/buyer/pages/PricingPage';
+import { ForSellersPage }       from '@/features/buyer/pages/ForSellersPage';
+import { FaqPage }              from '@/features/buyer/pages/FaqPage';
+import { PrivacyPolicyPage }    from '@/features/buyer/pages/PrivacyPolicyPage';
+import { TermsOfServicePage }   from '@/features/buyer/pages/TermsOfServicePage';
+import { CookiePolicyPage }     from '@/features/buyer/pages/CookiePolicyPage';
+import { ContactUsPage }        from '@/features/buyer/pages/ContactUsPage';
+import { AboutPage }            from '@/features/buyer/pages/AboutPage';
+import { ProductsOverviewPage } from '@/features/buyer/pages/products/ProductsOverviewPage';
+import { PlatformProductPage }  from '@/features/buyer/pages/products/PlatformProductPage';
+import { SolutionsOverviewPage } from '@/features/buyer/pages/solutions/SolutionsOverviewPage';
+import { SolutionPage }         from '@/features/buyer/pages/solutions/SolutionPage';
 
 // ── Lazy helpers ──────────────────────────────────────────────────────────────
 const named = <T extends Record<string, unknown>>(
@@ -38,24 +53,15 @@ const OrderSuccessPage     = lazy(() => named(import('@/features/buyer/pages/Ord
 const SellerStorefront     = lazy(() => named(import('@/features/buyer/pages/SellerStorefront'),                'SellerStorefront'));
 const StorefrontLayout     = lazy(() => named(import('@/features/storefront/StorefrontLayout'),                  'StorefrontLayout'));
 const StorefrontCustomPage = lazy(() => named(import('@/features/buyer/pages/StorefrontCustomPage'),             'StorefrontCustomPage'));
+const CategoryBrowsePage   = lazy(() => named(import('@/features/storefront/pages/CategoryBrowsePage'),           'CategoryBrowsePage'));
+const CollectionDetailPage = lazy(() => named(import('@/features/storefront/pages/CollectionDetailPage'),         'CollectionDetailPage'));
+const SearchResultsPage    = lazy(() => named(import('@/features/storefront/pages/SearchResultsPage'),            'SearchResultsPage'));
 const StorefrontBlogIndex  = lazy(() => named(import('@/features/buyer/pages/StorefrontBlogIndex'),              'StorefrontBlogIndex'));
 const StorefrontBlogPost   = lazy(() => named(import('@/features/buyer/pages/StorefrontBlogPost'),               'StorefrontBlogPost'));
 const StorefrontCartPage   = lazy(() => named(import('@/features/storefront/StorefrontCartPage'),                'StorefrontCartPage'));
 const StorefrontLoginPage  = lazy(() => named(import('@/features/storefront/StorefrontLoginPage'),               'StorefrontLoginPage'));
 const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/EducationMarketplace'),            'EducationMarketplace'));
-const PricingPage          = lazy(() => named(import('@/features/buyer/pages/PricingPage'),                     'PricingPage'));
-const ForSellersPage       = lazy(() => named(import('@/features/buyer/pages/ForSellersPage'),                  'ForSellersPage'));
-const FaqPage              = lazy(() => named(import('@/features/buyer/pages/FaqPage'),                         'FaqPage'));
-const PrivacyPolicyPage    = lazy(() => named(import('@/features/buyer/pages/PrivacyPolicyPage'),               'PrivacyPolicyPage'));
-const TermsOfServicePage   = lazy(() => named(import('@/features/buyer/pages/TermsOfServicePage'),              'TermsOfServicePage'));
-const CookiePolicyPage     = lazy(() => named(import('@/features/buyer/pages/CookiePolicyPage'),                'CookiePolicyPage'));
-const ContactUsPage        = lazy(() => named(import('@/features/buyer/pages/ContactUsPage'),                   'ContactUsPage'));
 const MaintenancePage      = lazy(() => named(import('@/features/buyer/pages/MaintenancePage'),                 'MaintenancePage'));
-const AboutPage            = lazy(() => named(import('@/features/buyer/pages/AboutPage'),                       'AboutPage'));
-const ProductsOverviewPage = lazy(() => named(import('@/features/buyer/pages/products/ProductsOverviewPage'),   'ProductsOverviewPage'));
-const PlatformProductPage  = lazy(() => named(import('@/features/buyer/pages/products/PlatformProductPage'),    'PlatformProductPage'));
-const SolutionsOverviewPage = lazy(() => named(import('@/features/buyer/pages/solutions/SolutionsOverviewPage'), 'SolutionsOverviewPage'));
-const SolutionPage         = lazy(() => named(import('@/features/buyer/pages/solutions/SolutionPage'),          'SolutionPage'));
 
 // ── Account (buyer) ───────────────────────────────────────────────────────────
 const AccountDashboard     = lazy(() => named(import('@/features/buyer/pages/account/AccountDashboard'),        'AccountDashboard'));
@@ -88,6 +94,7 @@ const SellerStoreList      = lazy(() => named(import('@/features/seller/dashboar
 const POSRegister          = lazy(() => named(import('@/features/seller/store/pos/POSRegister'),                'POSRegister'));
 const POSEmployeeLogin     = lazy(() => named(import('@/features/seller/store/pos/POSEmployeeLogin'),           'POSEmployeeLogin'));
 const ThemePreviewPage     = lazy(() => named(import('@/features/seller/dashboard/storemodule/ThemePreviewPage'), 'ThemePreviewPage'));
+const LivePreviewPage      = lazy(() => named(import('@/features/seller/dashboard/storemodule/LivePreviewPage'), 'LivePreviewPage'));
 const PosLanding           = lazy(() => named(import('@/features/seller/store/pos/PosLanding'),                 'PosLanding'));
 
 // ── Store Workspace ───────────────────────────────────────────────────────────
@@ -99,6 +106,7 @@ const StoreProductDetail = lazy(() => import('@/features/seller/store/Dashboard/
 const StoreCustomerList  = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomerList'));
 const StoreSettings      = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreSettings'));
 const StoreCategories    = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCategories'));
+const StoreCollections   = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCollections'));
 const StorePlanBilling   = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
 const StoreVerification  = lazy(() => named(import('@/features/seller/store/Dashboard/Manage/StoreVerification'), 'StoreVerification'));
 const StoreOrderList     = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList'),        'StoreOrderList'));
@@ -162,6 +170,12 @@ const storefrontRouter = createBrowserRouter([
           { path: 'blog/:postSlug', element: <StorefrontBlogPost /> },
           { path: 'cart', element: <StorefrontCartPage /> },
           { path: 'login', element: <StorefrontLoginPage /> },
+          // Must come before the `:pageSlug` catch-all below — 'category'/
+          // 'collections' are reserved custom-page slugs precisely so they
+          // can never collide with these (see RESERVED_CUSTOM_PAGE_SLUGS).
+          { path: 'category/:slugOrId', element: <CategoryBrowsePage /> },
+          { path: 'collections/:slugOrId', element: <CollectionDetailPage /> },
+          { path: 'search', element: <SearchResultsPage /> },
           { path: ':pageSlug', element: <StorefrontCustomPage /> },
         ],
       },
@@ -263,6 +277,13 @@ const mainRouter = createBrowserRouter([
       // from any Store Builder in-memory state (see ThemePreviewPage.tsx). ──
       { path: '/store/:storeId/theme-preview/:themeId', element: <ThemePreviewPage /> },
 
+      // ── Live Preview — seller-authenticated only (never public), opened
+      // from the Theme/Header/Footer/Store Info tabs' "Unpublished changes"
+      // banner. Renders the seller's REAL draft against real store data —
+      // distinct from ThemePreviewPage above, which is public precisely
+      // because it has no real seller data to protect (Phase 9). ──
+      { path: '/store/:storeId/live-preview', element: <LivePreviewPage /> },
+
       // ── Seller pages with dark sidebar ────────────────────────────────
       {
         path: '/seller',
@@ -293,6 +314,7 @@ const mainRouter = createBrowserRouter([
           { path: 'analytics',                        element: <StoreAnalytics /> },
           { path: 'settings',                         element: <StoreSettings /> },
           { path: 'categories',                       element: <StoreCategories /> },
+          { path: 'collections',                      element: <StoreCollections /> },
           { path: 'plan-billing',                     element: <StorePlanBilling /> },
           { path: 'verification',                     element: <StoreVerification /> },
           { path: 'storebuilder',                     element: <StoreBuilder /> },

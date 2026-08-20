@@ -44,10 +44,18 @@ function StarRating({ rating, color }: { rating: number; color: string }) {
 }
 
 export interface ProductCatalogSectionSettings {
-  heading?:     string;
-  defaultSort?: 'newest' | 'price_asc' | 'price_desc' | 'best_rated';
-  columns?:     2 | 3 | 4;
-  showFilters?: boolean;
+  heading?:      string;
+  defaultSort?:  'newest' | 'price_asc' | 'price_desc' | 'best_rated';
+  columns?:      2 | 3 | 4;
+  showFilters?:  boolean;
+  /** At most one of these two — a catalog scoped to both at once isn't a
+   *  meaningful combination this builder supports (see the validator). */
+  categoryId?:   string;
+  collectionId?: string;
+  /** Not seller-configurable in the builder — set only by `SearchResultsPage`
+   *  for the navbar search box's results, reusing this section's existing
+   *  grid/sort/pagination instead of a second implementation. */
+  search?: string;
 }
 
 // The seller's full product catalog — tag filter + sort + paginated grid.
@@ -76,7 +84,10 @@ export function ProductCatalogSection({ settings }: { settings: ProductCatalogSe
 
   const load = useCallback(() => {
     setLoading(true);
-    apiGetPublicStoreProducts(store.storeId, { page, limit: 12, sort: sortBy, tag: activeTag !== 'all' ? activeTag : undefined })
+    apiGetPublicStoreProducts(store.storeId, {
+      page, limit: 12, sort: sortBy, tag: activeTag !== 'all' ? activeTag : undefined,
+      categoryId: settings.categoryId, collectionId: settings.collectionId, search: settings.search,
+    })
       .then(res => {
         setProducts(res.data?.products ?? []);
         setTotal(res.data?.pagination?.total ?? 0);
@@ -84,9 +95,15 @@ export function ProductCatalogSection({ settings }: { settings: ProductCatalogSe
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [store.storeId, page, sortBy, activeTag]);
+  }, [store.storeId, page, sortBy, activeTag, settings.categoryId, settings.collectionId, settings.search]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Changing the filter itself (not just paging within it) should always
+  // jump back to page 1 — otherwise a search-results page kept mounted
+  // across two different queries (same route, new `?q=`) could silently
+  // request a now-out-of-range page.
+  useEffect(() => { setPage(1); }, [settings.categoryId, settings.collectionId, settings.search]);
 
   const colClass = { 2: 'grid-cols-2', 3: 'grid-cols-2 md:grid-cols-3', 4: 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4' }[settings.columns ?? 3];
   const gapClass = cfg.productGridDensity === 'relaxed' ? 'gap-4 sm:gap-5 lg:gap-6' : 'gap-[10px] sm:gap-3 lg:gap-[14px]';

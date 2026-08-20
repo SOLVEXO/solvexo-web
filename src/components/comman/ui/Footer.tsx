@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { Send, Check, ChevronDown, ChevronRight, ArrowUp } from 'lucide-react';
+import { Send, Check, ChevronDown, ChevronRight, ArrowUp, Mail } from 'lucide-react';
 import { SolvexoLogo, SolvexoIcon } from './SolvexoLogo';
 import { AppleGlyph, GooglePlayGlyph } from './AppPromoParts';
 import { apiSubscribeNewsletter } from '../../../api/services/newsletter';
 import { scrollRootToTop } from '@/utils/scrollRoot';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { Reveal } from '@/components/comman/motion/Reveal';
+import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 
 interface FooterLink {
   label: string;
@@ -150,7 +151,7 @@ function Newsletter() {
 
   if (subscribed) {
     return (
-      <div className="flex items-center gap-2 text-[13px] text-white bg-white/[0.05] border border-white/[0.12] rounded-lg px-4 py-3">
+      <div className="flex items-center gap-2.5 text-[13px] text-white bg-white/[0.05] border border-white/[0.12] rounded-full px-5 py-3.5">
         <Check size={15} className="text-brand-orange shrink-0" />
         You're subscribed — welcome aboard!
       </div>
@@ -158,8 +159,9 @@ function Newsletter() {
   }
 
   return (
-    <div className="w-full sm:max-w-[400px]">
-      <form onSubmit={submit} className="flex items-stretch gap-2.5">
+    <div className="w-full sm:max-w-[420px]">
+      <form onSubmit={submit} className="relative flex items-center gap-2 p-1.5 rounded-full border border-white/[0.14] bg-white/[0.04] transition-colors duration-200 focus-within:border-brand-orange/50 focus-within:bg-white/[0.06]">
+        <Mail size={15} className="ml-2.5 text-[#7a7873] shrink-0" />
         <input
           value={email}
           onChange={e => setEmail(e.target.value)}
@@ -168,17 +170,19 @@ function Newsletter() {
           placeholder="Your email address"
           aria-label="Email address"
           disabled={loading}
-          className="flex-1 min-w-0 h-11 px-4 rounded-lg border border-white/[0.14] bg-white/[0.03] text-[13px] text-white placeholder:text-[#7a7873] outline-none transition-colors duration-200 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/15 disabled:opacity-60"
+          className="flex-1 min-w-0 h-9 bg-transparent text-[13px] text-white placeholder:text-[#7a7873] outline-none border-none disabled:opacity-60"
         />
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-brand-orange text-white text-[13px] font-semibold border-none cursor-pointer hover:bg-brand-deep-orange transition-colors duration-200 shrink-0 disabled:opacity-70 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
-        >
-          <Send size={14} /> <span className="hidden sm:inline">{loading ? 'Subscribing…' : 'Subscribe'}</span>
-        </button>
+        <MagneticButton className="shrink-0">
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex items-center justify-center gap-2 h-9 px-5 rounded-full bg-brand-orange text-white text-[13px] font-semibold border-none cursor-pointer hover:bg-brand-deep-orange transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange"
+          >
+            <Send size={13} /> <span className="hidden sm:inline">{loading ? 'Subscribing…' : 'Subscribe'}</span>
+          </button>
+        </MagneticButton>
       </form>
-      {error && <p className="mt-2 text-[11.5px] text-red-400">{error}</p>}
+      {error && <p className="mt-2 pl-2 text-[11.5px] text-red-400">{error}</p>}
     </div>
   );
 }
@@ -256,14 +260,23 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
       {/* ── Newsletter — omitted by pages whose own AppDownloadBanner already
            has one (Marketplace's compact variant), so it never renders twice ── */}
       {showNewsletter && (
-        <div className="border-b border-white/10">
-          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-            <div>
-              <p className="text-[18px] sm:text-[20px] font-bold text-white leading-tight">Get deals before anyone else</p>
-              <p className="text-[13px] text-[#8b8985] mt-2">Sign up for exclusive offers, new arrivals and price-drop alerts.</p>
+        <div className="relative overflow-hidden border-b border-white/10">
+          <div
+            className="absolute top-1/2 left-[12%] -translate-y-1/2 w-[360px] h-[360px] rounded-full bg-[radial-gradient(circle,var(--color-brand-orange)_0%,transparent_70%)] opacity-[0.08] blur-3xl pointer-events-none"
+            aria-hidden="true"
+          />
+          <Reveal className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-7 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:flex shrink-0 w-9 h-9 rounded-full bg-brand-orange/10 border border-brand-orange/20 items-center justify-center">
+                <Mail size={15} className="text-brand-orange" />
+              </span>
+              <div>
+                <p className="text-[16px] sm:text-[17px] font-bold text-white leading-tight tracking-[-0.01em]">Get deals before anyone else</p>
+                <p className="text-[12px] text-[#8b8985] mt-1">Sign up for exclusive offers, new arrivals and price-drop alerts.</p>
+              </div>
             </div>
             <Newsletter />
-          </div>
+          </Reveal>
         </div>
       )}
 

@@ -27,6 +27,9 @@ export interface UpdateStorePayload {
   coverImage?:  string | null;
   categoryId?:  string;
   description?: string;
+  tagline?:      string;
+  contactEmail?: string;
+  contactPhone?: string;
   productTypes?: ProductType[];
   codEnabled?:  boolean;
 }
@@ -40,6 +43,10 @@ export interface StoreData {
   coverImage:   string | null;
   categoryId:   string;
   description:  string;
+  /** Short marketing line — distinct from `description`, shown alongside the store name. */
+  tagline:      string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
   sellerType:   SellerType;
   productTypes: ProductType[];
   baseCurrency: SupportedCurrency;
@@ -203,6 +210,12 @@ export interface PublicStoreData {
   logo:           string | null;
   coverImage:     string | null;
   description:    string | null;
+  tagline:        string | null;
+  contactEmail:   string | null;
+  contactPhone:   string | null;
+  /** The store's single fixed root category — needed to resolve its own
+   *  subcategory tree for `/category/:slugOrId` (`apiGetCategoryTree`). */
+  categoryId:     string | null;
   followersCount: number;
   averageRating:  number;
   reviewCount:    number;
@@ -219,12 +232,15 @@ export interface PublicStoreData {
 }
 
 export interface PublicStoreProductsParams {
-  page?:       number;
-  limit?:      number;
-  sort?:       'newest' | 'price_asc' | 'price_desc' | 'best_rated';
-  type?:       'all' | 'physical' | 'digital';
-  categoryId?: string;
-  tag?:        string;
+  page?:         number;
+  limit?:        number;
+  sort?:         'newest' | 'price_asc' | 'price_desc' | 'best_rated';
+  type?:         'all' | 'physical' | 'digital';
+  categoryId?:   string;
+  collectionId?: string;
+  tag?:          string;
+  search?:       string;
+  onSale?:       boolean;
 }
 
 export interface PublicStoreProduct {
@@ -268,8 +284,11 @@ export function apiGetPublicStoreProducts(storeId: string, params?: PublicStoreP
   if (params?.limit)      query.set('limit',      String(params.limit));
   if (params?.sort)       query.set('sort',        params.sort);
   if (params?.type)       query.set('type',        params.type);
-  if (params?.categoryId) query.set('categoryId', params.categoryId);
-  if (params?.tag)        query.set('tag',         params.tag);
+  if (params?.categoryId)   query.set('categoryId',   params.categoryId);
+  if (params?.collectionId) query.set('collectionId', params.collectionId);
+  if (params?.tag)          query.set('tag',          params.tag);
+  if (params?.search)       query.set('search',       params.search);
+  if (params?.onSale)       query.set('onSale',       'true');
   const qs = query.toString();
   return client.get<never, ApiResponse<PublicStoreProductsData>>(
     `${ENDPOINTS.STORE.PUBLIC_PRODUCTS(storeId)}${qs ? `?${qs}` : ''}`,
@@ -278,7 +297,9 @@ export function apiGetPublicStoreProducts(storeId: string, params?: PublicStoreP
 
 /** GET /api/store/public/:storeId/filters */
 export function apiGetPublicStoreFilters(storeId: string) {
-  return client.get<never, ApiResponse<{ tags: string[] }>>(ENDPOINTS.STORE.PUBLIC_FILTERS(storeId));
+  return client.get<never, ApiResponse<{ tags: string[]; categories: { id: string; name: string; slug: string; count: number }[] }>>(
+    ENDPOINTS.STORE.PUBLIC_FILTERS(storeId),
+  );
 }
 
 // ── Public store browse / discovery ────────────────────────────────────────────

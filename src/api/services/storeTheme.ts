@@ -69,16 +69,26 @@ export interface StorefrontFooter {
   footerStyle: ThemeFooterStyle;
 }
 
+export type IdentityBannerLayout = 'standard' | 'compact' | 'immersive';
+
 export interface IdentityBanner {
   showFollowButton:     boolean;
   showMessageButton:    boolean;
   showLoyaltyButton:    boolean;
   showMembershipButton: boolean;
+  layout:               IdentityBannerLayout;
+  showBadges:           boolean;
+  showFollowerCount:    boolean;
+  showProductCount:     boolean;
+  showRating:           boolean;
+  descriptionMaxLines:  number | null;
 }
 
 export interface StoreThemeData {
   _id:            string;
   storeId:        string;
+  // Live/published — read by the public storefront exactly as before the
+  // draft/publish split existed.
   theme:          StorefrontColors;
   header:         StorefrontHeader;
   footer:         StorefrontFooter;
@@ -86,10 +96,46 @@ export interface StoreThemeData {
   // Which curated `themes.ts` definition the `theme`/`header`/`footer`
   // fields were last bulk-applied from — null if never applied one.
   baseThemeId:    string | null;
+  // The seller's working copy — what every `apiUpdateStoreXxx` call below
+  // now writes to. Mirrors the live shape exactly; only `apiPublishStoreTheme`
+  // ever copies this over the live fields above.
+  draft: {
+    theme:          StorefrontColors;
+    header:         StorefrontHeader;
+    footer:         StorefrontFooter;
+    identityBanner: IdentityBanner;
+    baseThemeId:    string | null;
+  };
+  lastPublishedAt: string | null;
+}
+
+/** The seller's working copy — what Store Builder's Theme/Header/Footer tabs
+ *  read/edit and what Live Preview renders. Same shape as the public payload
+ *  plus `lastPublishedAt`, so "unpublished changes" can be diffed against
+ *  `apiGetStoreTheme`'s live root fields without a second round trip. */
+export interface StoreThemeDraftData {
+  theme:          StorefrontColors;
+  header:         StorefrontHeader;
+  footer:         StorefrontFooter;
+  identityBanner: IdentityBanner;
+  baseThemeId:    string | null;
+  lastPublishedAt: string | null;
 }
 
 export function apiGetStoreTheme(storeId: string) {
   return client.get<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.GET(storeId));
+}
+
+export function apiGetStoreThemeDraft(storeId: string) {
+  return client.get<never, ApiResponse<StoreThemeDraftData>>(ENDPOINTS.STORE_THEME.DRAFT(storeId));
+}
+
+export function apiPublishStoreTheme(storeId: string) {
+  return client.post<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.PUBLISH(storeId));
+}
+
+export function apiRevertStoreThemeDraft(storeId: string) {
+  return client.post<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.REVERT_DRAFT(storeId));
 }
 
 export function apiGetPublicStoreTheme(storeId: string) {

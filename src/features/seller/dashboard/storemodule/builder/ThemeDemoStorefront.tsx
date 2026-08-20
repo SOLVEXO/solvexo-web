@@ -54,22 +54,29 @@ export function buildDemoStorefrontData(theme: ThemeDefinition): { store: Public
   const demo = THEME_DEMO_CONTENT[theme.id];
   const store: PublicStoreData = {
     storeId: `demo-${theme.id}`, sellerId: 'demo', name: demo.storeName, slug: 'demo',
-    logo: null, coverImage: null, description: null,
+    logo: null, coverImage: null, description: null, tagline: null, contactEmail: null, contactPhone: null, categoryId: null,
     followersCount: 0, averageRating: 0, reviewCount: 0, builderConfig: null,
     baseCurrency: 'USD', sellerType: null, badges: [],
     createdAt: new Date().toISOString(), activeCampaign: null, announcementBar: null,
   };
+  const header = { logoSource: 'store' as const, customLogoUrl: null, blocks: [
+    { type: 'nav_link', settings: { label: 'Shop', linkType: 'home' } },
+    { type: 'nav_link', settings: { label: 'New In', linkType: 'home' } },
+    { type: 'nav_link', settings: { label: 'About', linkType: 'home' } },
+  ], navAlignment: 'left' as const, headerStyle: theme.headerStyle };
+  const footer = { blocks: DEMO_FOOTER_BLOCKS, footerStyle: theme.footerStyle };
+  const identityBanner = {
+    showFollowButton: true, showMessageButton: true, showLoyaltyButton: true, showMembershipButton: true,
+    layout: 'standard' as const, showBadges: true, showFollowerCount: true, showProductCount: true, showRating: true, descriptionMaxLines: null,
+  };
   const themeData: StoreThemeData = {
     _id: `demo-${theme.id}`, storeId: `demo-${theme.id}`,
-    theme: theme.colors,
-    header: { logoSource: 'store', customLogoUrl: null, blocks: [
-      { type: 'nav_link', settings: { label: 'Shop', linkType: 'home' } },
-      { type: 'nav_link', settings: { label: 'New In', linkType: 'home' } },
-      { type: 'nav_link', settings: { label: 'About', linkType: 'home' } },
-    ], navAlignment: 'left', headerStyle: theme.headerStyle },
-    footer: { blocks: DEMO_FOOTER_BLOCKS, footerStyle: theme.footerStyle },
-    identityBanner: { showFollowButton: true, showMessageButton: true, showLoyaltyButton: true, showMembershipButton: true },
-    baseThemeId: theme.id,
+    theme: theme.colors, header, footer, identityBanner, baseThemeId: theme.id,
+    // A static demo doc has no real draft/publish concept — mirrors the live
+    // fields so it satisfies the shape without implying anything's actually
+    // unpublished (nothing here is ever read via `.draft`).
+    draft: { theme: theme.colors, header, footer, identityBanner, baseThemeId: theme.id },
+    lastPublishedAt: null,
   };
   return { store, themeData };
 }

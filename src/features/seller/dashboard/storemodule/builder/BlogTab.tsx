@@ -161,7 +161,7 @@ export function BlogTab({ storeId }: { storeId: string }) {
                     </select>
                     <button onClick={() => setPendingRemoveBlockIndex(i)} className="text-error text-[11px] font-semibold bg-transparent border-none cursor-pointer">Remove</button>
                   </div>
-                  <BlockFields type={block.type} settings={block.settings} onChange={settings => setContent(content.map((b, j) => j === i ? { ...b, settings } : b))} pageOptions={[]} />
+                  <BlockFields type={block.type} settings={block.settings} onChange={settings => setContent(content.map((b, j) => j === i ? { ...b, settings } : b))} pageOptions={[]} storeId={storeId} />
                 </div>
               )}
             </SortableList>

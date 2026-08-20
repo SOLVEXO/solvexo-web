@@ -10,11 +10,12 @@ import { useStorefront } from '../StorefrontContext';
 import { ProductCardShell, ProductCardImage } from '../ProductCard';
 
 export interface FeaturedProductsSectionSettings {
-  heading?:    string;
-  source:      'manual' | 'category' | 'bestsellers' | 'newArrivals' | 'trending' | 'pinned';
-  categoryId?: string;
-  productIds?: string[];
-  limit?:      number;
+  heading?:      string;
+  source:        'manual' | 'category' | 'collection' | 'bestsellers' | 'newArrivals' | 'trending' | 'pinned' | 'onSale';
+  categoryId?:   string;
+  collectionId?: string;
+  productIds?:   string[];
+  limit?:        number;
 }
 
 const HOOK_SOURCE: Record<string, 'pinned' | 'bestSellers' | 'newArrivals' | 'trending'> = {
@@ -34,6 +35,14 @@ function useCuratedProducts(storeId: string | undefined, settings: FeaturedProdu
       apiGetPublicStoreProducts(storeId, { categoryId: settings.categoryId, limit: settings.limit ?? 8 })
         .then(res => setManualOrCategory(res.data?.products ?? []))
         .finally(() => setLoading(false));
+    } else if (settings.source === 'collection' && settings.collectionId) {
+      apiGetPublicStoreProducts(storeId, { collectionId: settings.collectionId, limit: settings.limit ?? 8 })
+        .then(res => setManualOrCategory(res.data?.products ?? []))
+        .finally(() => setLoading(false));
+    } else if (settings.source === 'onSale') {
+      apiGetPublicStoreProducts(storeId, { onSale: true, limit: settings.limit ?? 8 })
+        .then(res => setManualOrCategory(res.data?.products ?? []))
+        .finally(() => setLoading(false));
     } else if (settings.source === 'manual' && settings.productIds?.length) {
       // No dedicated "fetch by ids" endpoint exists yet — fetch a wider page of
       // the store's own catalog and filter/reorder client-side by the seller's
@@ -47,7 +56,7 @@ function useCuratedProducts(storeId: string | undefined, settings: FeaturedProdu
     } else {
       setLoading(false);
     }
-  }, [storeId, hookSource, settings.source, settings.categoryId, JSON.stringify(settings.productIds), settings.limit]);
+  }, [storeId, hookSource, settings.source, settings.categoryId, settings.collectionId, JSON.stringify(settings.productIds), settings.limit]);
 
   if (hookSource) return { products: hookProducts.slice(0, settings.limit ?? 8), loading: false };
   return { products: manualOrCategory.slice(0, settings.limit ?? 8), loading };

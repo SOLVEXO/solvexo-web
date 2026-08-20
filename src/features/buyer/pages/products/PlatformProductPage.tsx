@@ -11,7 +11,7 @@ import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import {
-  StorefrontPreview, POSPreview, AICommercePreview, AnalyticsPreview, SellerDashboardPreview,
+  StorefrontPreview, POSPreview, AICommercePreview, AnalyticsPreview, InventoryPreview, OrdersTimelinePreview,
 } from '@/components/comman/mockups/ProductMockups';
 import { getPlatformProduct } from '@/features/buyer/data/platformProducts';
 
@@ -23,7 +23,8 @@ function previewFor(slug: string) {
     case 'pos':               return <POSPreview />;
     case 'ai-commerce':       return <AICommercePreview />;
     case 'analytics':         return <AnalyticsPreview />;
-    default:                  return <SellerDashboardPreview />; // inventory, orders-customers
+    case 'inventory':         return <InventoryPreview />;
+    default:                  return <OrdersTimelinePreview />; // orders-customers
   }
 }
 

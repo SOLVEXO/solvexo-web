@@ -176,9 +176,24 @@ export const ENDPOINTS = {
     },
   },
 
+  // ── COLLECTIONS (named, curated per-store product groupings) ────────────
+  COLLECTIONS: {
+    LIST:            (storeId: string) => `/api/collections/${storeId}`,
+    CREATE:          (storeId: string) => `/api/collections/${storeId}`,
+    GET:             (storeId: string, collectionId: string) => `/api/collections/${storeId}/${collectionId}`,
+    UPDATE:          (storeId: string, collectionId: string) => `/api/collections/${storeId}/${collectionId}`,
+    UPDATE_PRODUCTS: (storeId: string, collectionId: string) => `/api/collections/${storeId}/${collectionId}/products`,
+    DELETE:          (storeId: string, collectionId: string) => `/api/collections/${storeId}/${collectionId}`,
+    PUBLIC_LIST:     (storeId: string) => `/api/public/collections/${storeId}`,
+    PUBLIC_GET:      (storeId: string, slugOrId: string) => `/api/public/collections/${storeId}/${slugOrId}`,
+  },
+
   // ── STORE THEME (navbar/footer/colors — replaces STORE.SAVE_BUILDER_CONFIG) ─
   STORE_THEME: {
     GET:            (storeId: string) => `/api/store-theme/${storeId}`,
+    DRAFT:          (storeId: string) => `/api/store-theme/${storeId}/draft`,
+    PUBLISH:        (storeId: string) => `/api/store-theme/${storeId}/publish`,
+    REVERT_DRAFT:   (storeId: string) => `/api/store-theme/${storeId}/revert-draft`,
     UPDATE_THEME:   (storeId: string) => `/api/store-theme/${storeId}/theme`,
     UPDATE_HEADER:  (storeId: string) => `/api/store-theme/${storeId}/header`,
     UPDATE_FOOTER:  (storeId: string) => `/api/store-theme/${storeId}/footer`,

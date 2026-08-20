@@ -3,6 +3,7 @@ import { Plus, FileText, Home, Trash2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Modal, Button, Field } from '@/components/comman/ui';
 import type { StorePageData } from '@/api/services/storePages';
+import type { Section } from '@/api/services/storefrontTypes';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 
@@ -10,15 +11,73 @@ function slugify(title: string) {
   return title.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
 }
 
+// A starter page is just a `rich_text` section with placeholder-but-real
+// paragraph copy the seller edits in place (via the existing Pages section
+// editor — no new backend surface). Every paragraph is deliberately written
+// so it reads as obviously incomplete ("Replace this with…"), so a seller
+// can never mistake it for a finished, ready-to-publish policy.
+function policyTemplate(heading: string, paragraphs: string[]): Section[] {
+  return [{
+    type: 'rich_text',
+    settings: { alignment: 'left' },
+    blocks: [
+      { type: 'heading', settings: { text: heading, level: 'h2' } },
+      ...paragraphs.map(text => ({ type: 'paragraph', settings: { text } })),
+    ],
+  }];
+}
+
+interface PageTemplate { id: string; label: string; title: string; slug: string; sections: Section[] }
+
+const PAGE_TEMPLATES: PageTemplate[] = [
+  { id: 'blank', label: 'Blank', title: '', slug: '', sections: [] },
+  {
+    id: 'about', label: 'About Us', title: 'About Us', slug: 'about-us',
+    sections: policyTemplate('About Us', [
+      'Replace this with your own story — who you are, what you make or sell, and why buyers should trust your store.',
+      'You can add more sections below (images, featured products, testimonials) to build this page out further.',
+    ]),
+  },
+  {
+    id: 'shipping', label: 'Shipping Policy', title: 'Shipping Policy', slug: 'shipping-policy',
+    sections: policyTemplate('Shipping Policy', [
+      'Replace this with your own shipping policy — which regions you ship to, how long delivery typically takes, and what shipping costs buyers can expect.',
+      'List any carriers you use and how buyers can track their order once it ships.',
+    ]),
+  },
+  {
+    id: 'returns', label: 'Return Policy', title: 'Return Policy', slug: 'return-policy',
+    sections: policyTemplate('Return Policy', [
+      'Replace this with your own return policy — the window in which a buyer can request a return, which items are eligible, and who covers return shipping.',
+      'Explain how refunds are issued once a return is received and approved.',
+    ]),
+  },
+  {
+    id: 'privacy', label: 'Privacy Policy', title: 'Privacy Policy', slug: 'privacy-policy',
+    sections: policyTemplate('Privacy Policy', [
+      'Replace this with your own privacy policy — what buyer information you collect, how it is used, and who it may be shared with.',
+      'Consider consulting a template appropriate for your region\'s data-protection laws before publishing this page.',
+    ]),
+  },
+  {
+    id: 'terms', label: 'Terms & Conditions', title: 'Terms & Conditions', slug: 'terms-and-conditions',
+    sections: policyTemplate('Terms & Conditions', [
+      'Replace this with your own terms of sale — payment terms, order acceptance, pricing, and any conditions specific to your store.',
+      'Consider consulting a template appropriate for your region\'s consumer-protection laws before publishing this page.',
+    ]),
+  },
+];
+
 export function PagesList({ pages, selectedId, onSelect, onCreate, onDelete, creating }: {
   pages: StorePageData[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  onCreate: (title: string, slug: string) => Promise<void>;
+  onCreate: (title: string, slug: string, sections?: Section[]) => Promise<void>;
   onDelete: (id: string) => void;
   creating: boolean;
 }) {
   const [showCreate, setShowCreate] = useState(false);
+  const [templateId, setTemplateId] = useState('blank');
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [error, setError] = useState('');
@@ -26,13 +85,20 @@ export function PagesList({ pages, selectedId, onSelect, onCreate, onDelete, cre
   const home = pages.find(p => p.type === 'home');
   const custom = pages.filter(p => p.type === 'custom');
 
+  const applyTemplate = (id: string) => {
+    setTemplateId(id);
+    const tpl = PAGE_TEMPLATES.find(t => t.id === id);
+    if (tpl && tpl.id !== 'blank') { setTitle(tpl.title); setSlug(tpl.slug); }
+  };
+
   const handleCreate = async () => {
     setError('');
     if (!title.trim() || !slug.trim()) { setError('Title and slug are required.'); return; }
     try {
-      await onCreate(title.trim(), slug.trim());
+      const tpl = PAGE_TEMPLATES.find(t => t.id === templateId);
+      await onCreate(title.trim(), slug.trim(), tpl?.sections?.length ? tpl.sections : undefined);
       setShowCreate(false);
-      setTitle(''); setSlug('');
+      setTitle(''); setSlug(''); setTemplateId('blank');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create page.');
     }
@@ -68,12 +134,28 @@ export function PagesList({ pages, selectedId, onSelect, onCreate, onDelete, cre
             <Button variant="primary" onClick={handleCreate} loading={creating}>Create Page</Button>
           </>
         }>
+          <Field label="Start from a template">
+            <div className="grid grid-cols-2 gap-2">
+              {PAGE_TEMPLATES.map(tpl => (
+                <button
+                  key={tpl.id} type="button" onClick={() => applyTemplate(tpl.id)}
+                  className={clsx('px-3 py-2 rounded-lg text-[12.5px] font-semibold text-left border cursor-pointer transition-colors',
+                    templateId === tpl.id ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-charcoal hover:bg-cream')}
+                >
+                  {tpl.label}
+                </button>
+              ))}
+            </div>
+          </Field>
           <Field label="Title" required>
             <input className={inp} value={title} onChange={e => { setTitle(e.target.value); setSlug(slugify(e.target.value)); }} placeholder="About Us" />
           </Field>
           <Field label="URL slug" required hint="Will be served at yourstore/this-slug">
             <input className={inp} value={slug} onChange={e => setSlug(slugify(e.target.value))} placeholder="about-us" />
           </Field>
+          {templateId !== 'blank' && (
+            <p className="text-[11.5px] text-slate -mt-1">This template includes placeholder text — review and edit the section content below before publishing.</p>
+          )}
           {error && <p className="text-[12px] text-error mt-1">{error}</p>}
         </Modal>
       )}

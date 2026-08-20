@@ -9,6 +9,7 @@ import type { LucideIcon } from 'lucide-react';
 import { apiGetPlatformStats, type PlatformStats } from '@/api/services/store';
 import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
+import { ClipReveal } from '@/components/comman/motion/ClipReveal';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
@@ -82,12 +83,10 @@ export function ForSellersPage() {
             </div>
           </Reveal>
 
-          <Reveal delay={0.08}>
-            <h1 className="block text-3xl md:text-5xl lg:text-[48px] font-bold text-white leading-[1.15] mb-5" style={{ fontFamily: SERIF }}>
-              Sell more. Do less.<br />
-              With Solvex<span className="text-brand-orange">o</span>.
-            </h1>
-          </Reveal>
+          <h1 className="block text-3xl md:text-5xl lg:text-[48px] font-bold text-white leading-[1.15] mb-5" style={{ fontFamily: SERIF }}>
+            <ClipReveal as="div" delay={0.06}>Sell more. Do less.</ClipReveal>
+            <ClipReveal as="div" delay={0.18}>With Solvex<span className="text-brand-orange">o</span>.</ClipReveal>
+          </h1>
 
           <Reveal delay={0.16}>
             <p className="text-sm md:text-[17px] text-[#b0aea8] leading-[1.7] max-w-[580px] mx-auto mb-9">

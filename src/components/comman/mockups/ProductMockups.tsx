@@ -1,10 +1,14 @@
+import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import {
   Search, ShoppingCart, CreditCard, Wallet, Banknote, Check,
   TrendingUp, TrendingDown, Users, Package, DollarSign, Sparkles,
-  ArrowRight, Bell,
+  ArrowRight, Bell, PackageCheck, CreditCard as PaymentIcon,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { motion, useReducedMotion, type MotionValue } from 'motion/react';
 import { PhoneShell, StatusBar } from '@/components/comman/ui/AppDownloadBanner';
+import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
 import { unsplashUrl } from '@/assets/stockPhotos';
 
 // ── Shared "browser chrome" strip reused by every desktop-shaped mockup ──────
@@ -33,7 +37,7 @@ const STORE_PRODUCTS = [
 
 export function StorefrontPreview({ className }: { className?: string }) {
   return (
-    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-2xl border border-bone', className)}>
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
       <BrowserChrome label="yourstore.solvexo.store" />
       <div className="flex items-center justify-between px-4 py-3 border-b border-bone">
         <span className="text-[13px] font-bold text-carbon">Aurora Goods</span>
@@ -77,7 +81,7 @@ const POS_ITEMS = [
 export function POSPreview({ className }: { className?: string }) {
   const subtotal = 4200 + 900 * 2 + 350;
   return (
-    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-2xl border border-bone flex flex-col sm:flex-row', className)}>
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone flex flex-col sm:flex-row', className)}>
       <div className="flex-1 min-w-0 border-b sm:border-b-0 sm:border-r border-bone">
         <div className="flex items-center gap-2 px-3 py-2.5 border-b border-bone">
           <Search size={13} className="text-slate" />
@@ -135,7 +139,7 @@ const TOP_PRODUCTS = [
 
 export function SellerDashboardPreview({ className }: { className?: string }) {
   return (
-    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-2xl border border-bone', className)}>
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
       <BrowserChrome label="yourstore — dashboard" />
       <div className="p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
@@ -213,7 +217,7 @@ const AI_INSIGHTS = [
 
 export function AICommercePreview({ className }: { className?: string }) {
   return (
-    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-2xl border border-bone', className)}>
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
       <div className="flex items-center gap-2 px-4 py-3 border-b border-bone bg-gradient-to-r from-accent-violet-bg to-transparent">
         <span className="w-6 h-6 rounded-md bg-accent-violet flex items-center justify-center shrink-0">
           <Sparkles size={13} className="text-white" />
@@ -245,7 +249,7 @@ export function AICommercePreview({ className }: { className?: string }) {
 // ────────────────────────────────────────────────────────────────────────────
 export function AnalyticsPreview({ className }: { className?: string }) {
   return (
-    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-2xl border border-bone p-5', className)}>
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone p-5', className)}>
       <div className="flex items-center justify-between mb-4">
         <p className="text-[12.5px] font-bold text-carbon">Store Revenue</p>
         <span className="flex items-center gap-1 text-[10px] font-semibold text-success"><TrendingUp size={11} /> 24% vs last month</span>
@@ -304,5 +308,225 @@ export function MobileStorePreview({ className }: { className?: string }) {
         </div>
       </div>
     </PhoneShell>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// HeroWorkspacePreview — the hero centerpiece: a real "Solvexo Commerce
+// Workspace" panel, not a stock lifestyle photo. Revenue counts up once in
+// view, and a small activity feed cycles through real workspace events
+// (order → payment → inventory → AI insight) — illustrative content on a
+// real UI shell, same convention as every other mockup in this file, but
+// alive rather than a frozen screenshot. Accepts the hero's own parallax
+// motion values so it can tilt slightly opposite the floating chips around
+// it, instead of sitting dead flat.
+// ────────────────────────────────────────────────────────────────────────────
+const ACTIVITY_FEED: { Icon: LucideIcon; text: string; tone: 'success' | 'info' | 'violet' }[] = [
+  { Icon: PackageCheck, text: 'New order — Rs 4,200',            tone: 'success' },
+  { Icon: PaymentIcon,  text: 'Payment received — Rs 8,900',     tone: 'info' },
+  { Icon: Sparkles,     text: 'AI: “Nike Air Max” is trending',  tone: 'violet' },
+  { Icon: Users,        text: '+3 new customers this hour',      tone: 'success' },
+];
+
+const ACTIVITY_TONE: Record<string, string> = {
+  success: 'bg-success-bg text-success',
+  info:    'bg-info-bg text-info',
+  violet:  'bg-accent-violet-bg text-accent-violet',
+};
+
+export function HeroWorkspacePreview({
+  className, tiltX, tiltY,
+}: {
+  className?: string;
+  tiltX?: MotionValue<number>;
+  tiltY?: MotionValue<number>;
+}) {
+  const reduceMotion = useReducedMotion();
+  const [feedIndex, setFeedIndex] = useState(0);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const id = setInterval(() => setFeedIndex(i => (i + 1) % ACTIVITY_FEED.length), 2600);
+    return () => clearInterval(id);
+  }, [reduceMotion]);
+
+  const activity = ACTIVITY_FEED[feedIndex];
+
+  return (
+    <motion.div
+      className={clsx('w-full rounded-[20px] bg-white/95 backdrop-blur-md overflow-hidden shadow-raised border border-white/60', className)}
+      style={{ perspective: 1200 }}
+    >
+      <motion.div style={{ rotateX: tiltY, rotateY: tiltX }}>
+        <BrowserChrome label="yourstore — commerce workspace" />
+        <div className="p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[13px] font-bold text-carbon">Today</p>
+            <span className="flex items-center gap-1.5 text-[9.5px] font-semibold text-success">
+              <span className="w-[6px] h-[6px] rounded-full bg-success pos-live-pulse" /> Live
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-[8px] mb-4">
+            <div className="rounded-lg bg-cream p-2.5 col-span-1">
+              <DollarSign size={12} className="text-slate mb-1" />
+              <AnimatedCounter value={18400} format={n => `$${(n / 1000).toFixed(1)}k`} className="block text-[14px] font-bold text-carbon leading-tight" />
+              <p className="text-[8.5px] text-slate leading-tight">Revenue</p>
+            </div>
+            <div className="rounded-lg bg-cream p-2.5 col-span-1">
+              <Package size={12} className="text-slate mb-1" />
+              <AnimatedCounter value={412} className="block text-[14px] font-bold text-carbon leading-tight" />
+              <p className="text-[8.5px] text-slate leading-tight">Orders</p>
+            </div>
+            <div className="rounded-lg bg-cream p-2.5 col-span-1">
+              <Users size={12} className="text-slate mb-1" />
+              <AnimatedCounter value={182} format={n => `+${Math.round(n)}`} className="block text-[14px] font-bold text-carbon leading-tight" />
+              <p className="text-[8.5px] text-slate leading-tight">Customers</p>
+            </div>
+          </div>
+
+          <div className="flex items-end gap-[3px] h-[46px] mb-4 px-1">
+            {[30, 45, 38, 60, 52, 70, 64, 80, 74, 90, 82, 96].map((h, i) => (
+              <div key={i} className="flex-1 rounded-t-[2px] bg-gradient-to-t from-brand-orange to-brand-deep-orange/60" style={{ height: `${h}%` }} />
+            ))}
+          </div>
+
+          <div className="rounded-xl bg-cream p-2.5 overflow-hidden">
+            <p className="text-[9px] font-bold text-slate uppercase tracking-[0.06em] mb-2">Activity</p>
+            <motion.div
+              key={feedIndex}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-center gap-2"
+            >
+              <span className={clsx('w-6 h-6 rounded-md flex items-center justify-center shrink-0', ACTIVITY_TONE[activity.tone])}>
+                <activity.Icon size={12} />
+              </span>
+              <span className="text-[10.5px] text-charcoal truncate">{activity.text}</span>
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// InventoryPreview — stock levels + a real low-stock alert + restock action.
+// Distinct from SellerDashboardPreview (which the Inventory tab previously,
+// wrongly, reused verbatim) — this shows the actual inventory concept: stock
+// counts moving toward zero, not orders/revenue.
+// ────────────────────────────────────────────────────────────────────────────
+const STOCK_LEVELS = [
+  { name: 'Wireless Earbuds', img: 'headphones' as const, stock: 84, pct: 84 },
+  { name: 'Classic Watch',    img: 'watch' as const,      stock: 12, pct: 12 },
+  { name: 'Cloud Sneaker',    img: 'sneakers' as const,   stock: 52, pct: 52 },
+  { name: 'Studio Headphones', img: 'headphones' as const, stock: 4,  pct: 4 },
+];
+
+export function InventoryPreview({ className }: { className?: string }) {
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
+      <BrowserChrome label="yourstore — inventory" />
+      <div className="p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[12.5px] font-bold text-carbon">Stock levels</p>
+          <span className="text-[9.5px] text-slate">4 products</span>
+        </div>
+        <div className="flex flex-col gap-2.5 mb-3">
+          {STOCK_LEVELS.map(item => {
+            const low = item.stock <= 15;
+            return (
+              <div key={item.name} className="flex items-center gap-2.5">
+                <img src={unsplashUrl(item.img, 60)} alt="" className="w-8 h-8 rounded-md object-cover shrink-0" loading="lazy" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10.5px] font-medium text-charcoal truncate">{item.name}</span>
+                    <span className={clsx('text-[10px] font-bold shrink-0', low ? 'text-error' : 'text-carbon')}>{item.stock} left</span>
+                  </div>
+                  <div className="h-[4px] rounded-full bg-bone overflow-hidden">
+                    <div className={clsx('h-full rounded-full', low ? 'bg-error' : 'bg-brand-orange')} style={{ width: `${Math.min(100, item.pct)}%` }} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="rounded-lg bg-error-bg p-2.5 flex items-center gap-2.5">
+          <span className="w-6 h-6 rounded-md bg-white flex items-center justify-center shrink-0">
+            <PackageCheck size={13} className="text-error" />
+          </span>
+          <span className="text-[10.5px] text-error flex-1">"Studio Headphones" is almost out of stock</span>
+          <button className="text-[9.5px] font-semibold text-white bg-error rounded-md px-2 py-1 shrink-0">Restock</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// OrdersTimelinePreview — an order's real lifecycle (New → Processing →
+// Shipped → Delivered), auto-advancing, plus a customer's real order
+// history list. Distinct from SellerDashboardPreview's "recent orders" row.
+// ────────────────────────────────────────────────────────────────────────────
+const ORDER_STAGES = ['New', 'Processing', 'Shipped', 'Delivered'];
+const CUSTOMER_ORDERS = [
+  { customer: 'M. Ahmed', orders: 4, spent: 'Rs 18,400' },
+  { customer: 'S. Khan',  orders: 2, spent: 'Rs 6,150' },
+  { customer: 'A. Raza',  orders: 7, spent: 'Rs 31,900' },
+];
+
+export function OrdersTimelinePreview({ className }: { className?: string }) {
+  const [stageIndex, setStageIndex] = useState(0);
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const id = setInterval(() => setStageIndex(i => (i + 1) % ORDER_STAGES.length), 1500);
+    return () => clearInterval(id);
+  }, [reduceMotion]);
+
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
+      <BrowserChrome label="yourstore — orders" />
+      <div className="p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[12.5px] font-bold text-carbon">Order #3921</p>
+          <span className="text-[10px] font-semibold text-brand-orange">Rs 4,200</span>
+        </div>
+
+        <div className="relative flex items-center justify-between mb-5 px-1">
+          <div className="absolute left-0 right-0 top-[9px] h-[2px] bg-bone" />
+          <motion.div
+            className="absolute left-0 top-[9px] h-[2px] bg-brand-orange"
+            animate={{ width: `${(stageIndex / (ORDER_STAGES.length - 1)) * 100}%` }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          />
+          {ORDER_STAGES.map((s, i) => (
+            <div key={s} className="relative z-[1] flex flex-col items-center gap-1.5">
+              <span className={clsx(
+                'w-[18px] h-[18px] rounded-full flex items-center justify-center transition-colors duration-300',
+                i <= stageIndex ? 'bg-brand-orange' : 'bg-bone',
+              )}>
+                {i <= stageIndex && <Check size={10} className="text-white" />}
+              </span>
+              <span className={clsx('text-[8.5px] font-semibold whitespace-nowrap transition-colors duration-300', i === stageIndex ? 'text-brand-orange' : i < stageIndex ? 'text-carbon' : 'text-slate')}>{s}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-[10px] font-bold text-slate uppercase tracking-[0.06em] mb-2">Top customers</p>
+        <div className="flex flex-col gap-[6px]">
+          {CUSTOMER_ORDERS.map(c => (
+            <div key={c.customer} className="flex items-center justify-between text-[10px]">
+              <span className="text-charcoal">{c.customer}</span>
+              <span className="text-slate">{c.orders} orders</span>
+              <span className="font-semibold text-carbon">{c.spent}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

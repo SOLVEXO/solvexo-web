@@ -76,6 +76,14 @@ export function SellerStorefront() {
   const showMessage    = identityBanner?.showMessageButton    !== false;
   const showLoyaltyBtn = identityBanner?.showLoyaltyButton    !== false;
   const showMembership = identityBanner?.showMembershipButton !== false;
+  const bannerLayout      = identityBanner?.layout ?? 'standard';
+  const showBadges        = identityBanner?.showBadges        !== false;
+  const showFollowerCount = identityBanner?.showFollowerCount !== false;
+  const showProductCount  = identityBanner?.showProductCount  !== false;
+  const showRating        = identityBanner?.showRating        !== false;
+  const descriptionClampCls = identityBanner?.descriptionMaxLines
+    ? { 1: 'line-clamp-1', 2: 'line-clamp-2', 3: 'line-clamp-3' }[Math.min(identityBanner.descriptionMaxLines, 3)]
+    : '';
   const { currency: displayCurrency, convert } = useCurrencyPreference();
   const displaySymbol = currencySymbol(displayCurrency);
   const isLoggedIn = TokenStorage.isLoggedIn();
@@ -266,49 +274,74 @@ export function SellerStorefront() {
 
   return (
     <div>
-      {/* ── Store identity banner ──────────────────────────────────────────── */}
+      {/* ── Store identity banner — 3 real layouts (Phase 11), not just a CSS
+          tweak: 'compact' is a shorter cover for stores that want their
+          content sooner; 'immersive' is a taller, centered full-bleed hero;
+          'standard' is today's exact bottom-left composition, unchanged. ── */}
       <CoverImage
-        className="min-h-[300px] sm:min-h-[360px] lg:min-h-[420px] flex items-end"
+        className={clsx(
+          'flex',
+          bannerLayout === 'compact' ? 'min-h-[180px] sm:min-h-[220px] items-end' :
+          bannerLayout === 'immersive' ? 'min-h-[420px] sm:min-h-[520px] lg:min-h-[620px] items-center' :
+          'min-h-[300px] sm:min-h-[360px] lg:min-h-[420px] items-end',
+        )}
         src={store.coverImage}
         loading="eager"
         overlay
-        overlayClassName="bg-black/40"
+        overlayClassName={bannerLayout === 'immersive' ? 'bg-black/50' : 'bg-black/40'}
         fallbackClassName=""
         fallbackStyle={{ background: `linear-gradient(135deg, ${cfg.primaryColor}CC, ${cfg.accentColor}CC)` }}
         backgroundOverride={storeBanners.length > 0
           ? <BannerCarousel entityType="store_banner" banners={storeBanners.map(b => ({ _id: b._id, order: b.order, imageUrl: b.imageUrl, linkUrl: b.linkTarget, mobileImageUrl: b.mobileImageUrl }))} />
           : undefined}
       >
-        <div className="px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
-            <div className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-[18px] bg-white flex items-center justify-center shrink-0 outline outline-2 outline-white/40">
+        <div className={clsx('px-4 sm:px-6 lg:px-10 w-full', bannerLayout === 'compact' ? 'py-4 sm:py-5' : 'py-7 sm:py-9')}>
+          <div className={clsx(
+            'flex gap-5 sm:gap-6',
+            bannerLayout === 'immersive' ? 'flex-col items-center text-center' : 'flex-col sm:flex-row items-start sm:items-center',
+          )}>
+            <div className={clsx(
+              'rounded-[18px] bg-white flex items-center justify-center shrink-0 outline outline-2 outline-white/40',
+              bannerLayout === 'compact' ? 'w-[52px] h-[52px]' : bannerLayout === 'immersive' ? 'w-[96px] h-[96px] sm:w-[108px] sm:h-[108px]' : 'w-[72px] h-[72px] sm:w-[84px] sm:h-[84px]',
+            )}>
               {store.logo
                 ? <img loading="lazy" decoding="async" src={store.logo} alt={store.name} className="w-full h-full rounded-[18px] object-cover" />
-                : <Store size={36} style={{ color: cfg.primaryColor }} />}
+                : <Store size={bannerLayout === 'compact' ? 24 : 36} style={{ color: cfg.primaryColor }} />}
             </div>
 
-            <div className="flex-1 min-w-0">
-              <h1 className="text-[22px] sm:text-[26px] font-bold text-white mb-[4px] leading-tight">{store.name}</h1>
-              <StoreBadges badges={store.badges} sellerType={store.sellerType} />
-              {store.description && (
-                <p className="text-[12px] sm:text-[13px] text-[rgba(255,255,255,0.75)] mt-[8px] mb-[10px] line-clamp-2">{store.description}</p>
+            <div className={clsx('flex-1 min-w-0', bannerLayout === 'immersive' && 'flex-none max-w-2xl')}>
+              <h1 className={clsx('font-bold text-white mb-[4px] leading-tight', bannerLayout === 'compact' ? 'text-[17px]' : bannerLayout === 'immersive' ? 'text-[28px] sm:text-[34px]' : 'text-[22px] sm:text-[26px]')}>{store.name}</h1>
+              {store.tagline && bannerLayout !== 'compact' && (
+                <p className="text-[12.5px] sm:text-[13.5px] text-[rgba(255,255,255,0.85)] font-medium -mt-[2px] mb-[4px]">{store.tagline}</p>
               )}
-              <div className="flex items-center gap-[5px] text-[12px] text-[rgba(255,255,255,0.7)] mt-[6px]">
-                {(store.reviewCount ?? 0) > 0 && (
+              {showBadges && <div className={clsx(bannerLayout === 'immersive' && 'flex justify-center')}><StoreBadges badges={store.badges} sellerType={store.sellerType} /></div>}
+              {store.description && bannerLayout !== 'compact' && (
+                <p className={clsx('text-[12px] sm:text-[13px] text-[rgba(255,255,255,0.75)] mt-[8px] mb-[10px]', descriptionClampCls || 'line-clamp-2')}>{store.description}</p>
+              )}
+              <div className={clsx('flex items-center gap-[5px] text-[12px] text-[rgba(255,255,255,0.7)] mt-[6px]', bannerLayout === 'immersive' && 'justify-center')}>
+                {showRating && (store.reviewCount ?? 0) > 0 && (
                   <>
                     <Star size={13} className="fill-current" style={{ color: cfg.primaryColor }} />
                     <span>{store.averageRating.toFixed(1)} ({store.reviewCount.toLocaleString()} reviews)</span>
                     <span className="mx-1">·</span>
                   </>
                 )}
-                <Users size={13} />
-                <span>{store.followersCount.toLocaleString()} followers</span>
-                <span className="mx-1">·</span>
-                <span>{total} products</span>
+                {showFollowerCount && (
+                  <>
+                    <Users size={13} />
+                    <span>{store.followersCount.toLocaleString()} followers</span>
+                  </>
+                )}
+                {showProductCount && (
+                  <>
+                    <span className="mx-1">·</span>
+                    <span>{total} products</span>
+                  </>
+                )}
               </div>
             </div>
 
-            <div className="flex flex-wrap sm:flex-col gap-2 items-center justify-center sm:items-end shrink-0">
+            <div className={clsx('flex flex-wrap gap-2 items-center justify-center shrink-0', bannerLayout === 'immersive' ? 'sm:flex-row' : 'sm:flex-col sm:items-end')}>
               {showMembership && plans.length > 0 && (
                 <button onClick={() => document.getElementById('store-membership')?.scrollIntoView({ behavior: 'smooth' })}
                   style={{ borderRadius: cfg.buttonRadiusPx }}

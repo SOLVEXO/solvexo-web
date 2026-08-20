@@ -157,12 +157,37 @@ export function resolveStorefrontCfg(theme: StoreThemeData | null): StorefrontCf
   };
 }
 
+export interface StorefrontLinkSettings {
+  linkType:      string;
+  pageSlug?:     string;
+  url?:          string;
+  categoryId?:   string;
+  collectionId?: string;
+}
+
+/** Resolves a nav_link/footer-link/CTA block's link settings into a real
+ *  in-app path or external href — the one place `category`/`collection`
+ *  (Phase 4) join the pre-existing `home`/`page`/`blog`/`external` types.
+ *  `/category/:slugOrId` and `/collections/:slugOrId` (Phase 11) both accept
+ *  a raw id as a fallback to a real slug, so routing by the block's stored
+ *  `categoryId`/`collectionId` here is always valid even though a slug would
+ *  render a prettier URL — matches the existing Marketplace legacy-id
+ *  redirect precedent rather than requiring a second slug lookup here. */
+export function resolveStorefrontLink(link: StorefrontLinkSettings): { to?: string; href?: string } {
+  if (link.linkType === 'external') return { href: link.url };
+  if (link.linkType === 'blog') return { to: `/blog` };
+  if (link.linkType === 'page' && link.pageSlug) return { to: `/${link.pageSlug}` };
+  if (link.linkType === 'category' && link.categoryId) return { to: `/category/${link.categoryId}` };
+  if (link.linkType === 'collection' && link.collectionId) return { to: `/collections/${link.collectionId}` };
+  return { to: `/` }; // 'home' (and any unrecognized/incomplete fallback)
+}
+
 export interface StorefrontContextValue {
   store:  PublicStoreData;
   theme:  StoreThemeData | null;
   cfg:    StorefrontCfg;
-  /** Resolves a nav_link/footer-link block's `{linkType, pageSlug?, url?}` into a real in-app path or external href. */
-  resolveLink: (link: { linkType: string; pageSlug?: string; url?: string }) => { to?: string; href?: string };
+  /** Resolves a nav_link/footer-link block's link settings into a real in-app path or external href. */
+  resolveLink: (link: StorefrontLinkSettings) => { to?: string; href?: string };
 }
 
 const StorefrontContext = createContext<StorefrontContextValue | null>(null);

@@ -14,6 +14,13 @@ export function useStoreCategoriesSeo(storeId: string) {
   );
 }
 
+/** @deprecated Backed by the legacy `Store.seo.pages` map (keyed by a fixed
+ *  'home'/'about'/'contact' enum, not a real `StorePage._id`) — no longer
+ *  called anywhere (`PagesTab.tsx` now edits the real `StorePage.seo` field
+ *  directly via `apiUpdateStorePage`, at parity with Product/Category SEO).
+ *  Left in place rather than deleted per this codebase's migration-safety
+ *  convention; a future pass can remove `Store.seo.pages` and this alongside
+ *  it once confirmed nothing else reads that map. */
 export function usePageSeo(storeId: string, pageId: string) {
   return useAnalyticsQuery(
     (p: { storeId: string; pageId: string }) => apiGetPageSeo(p.storeId, p.pageId),

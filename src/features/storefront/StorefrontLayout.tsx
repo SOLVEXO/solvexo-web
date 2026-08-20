@@ -7,7 +7,7 @@ import { apiGetPublicStore, apiResolveStoreByDomain, type PublicStoreData } from
 import { apiGetPublicStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
 import { getStoreSlugFromHost, getMainAppUrl } from '@/utils/storefrontUrl';
 import { CartProvider } from '@/contexts/CartContext';
-import { StorefrontProvider, resolveStorefrontCfg, type StorefrontContextValue } from './StorefrontContext';
+import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from './StorefrontContext';
 import { StorefrontNavbar } from './StorefrontNavbar';
 import { StorefrontFooter } from './StorefrontFooter';
 
@@ -70,12 +70,7 @@ export function StorefrontLayout() {
       store,
       theme,
       cfg,
-      resolveLink: (link) => {
-        if (link.linkType === 'external') return { href: link.url };
-        if (link.linkType === 'blog') return { to: `/blog` };
-        if (link.linkType === 'page' && link.pageSlug) return { to: `/${link.pageSlug}` };
-        return { to: `/` }; // 'home' (and any unrecognized fallback) — same subdomain, no slug segment needed
-      },
+      resolveLink: resolveStorefrontLink,
     };
   }, [store, theme, cfg, slug]);
 

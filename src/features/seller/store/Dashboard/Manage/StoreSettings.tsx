@@ -426,6 +426,9 @@ export default function StoreSettings() {
   const [mobileDrilledIn, setMobileDrilledIn] = useState(false);
   const [name,         setName]         = useState('');
   const [description,  setDescription]  = useState('');
+  const [tagline,      setTagline]      = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [productTypes, setProductTypes] = useState<ProductType[]>([]);
   const [logo,         setLogo]         = useState('');
   const [coverImage,   setCoverImage]   = useState('');
@@ -441,6 +444,9 @@ export default function StoreSettings() {
     if (!store) return;
     setName(store.name);
     setDescription(store.description ?? '');
+    setTagline(store.tagline ?? '');
+    setContactEmail(store.contactEmail ?? '');
+    setContactPhone(store.contactPhone ?? '');
     setProductTypes(store.productTypes ?? []);
     setLogo(store.logo ?? '');
     setCoverImage(store.coverImage ?? '');
@@ -463,7 +469,7 @@ export default function StoreSettings() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, productTypes, logo, coverImage, categoryId, codEnabled });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, categoryId, codEnabled });
       refetch();
       setSaveMsg({ ok: true, text: 'Store updated successfully.' });
     } catch (err) {
@@ -477,6 +483,9 @@ export default function StoreSettings() {
     !!store &&
     (name !== store.name ||
       description !== (store.description ?? '') ||
+      tagline !== (store.tagline ?? '') ||
+      contactEmail !== (store.contactEmail ?? '') ||
+      contactPhone !== (store.contactPhone ?? '') ||
       logo !== (store.logo ?? '') ||
       coverImage !== (store.coverImage ?? '') ||
       categoryId !== (store.categoryId ?? '') ||
@@ -642,6 +651,37 @@ export default function StoreSettings() {
                   className={`${inputCls} resize-y min-h-[90px]`}
                 />
               </Field>
+
+              <Field label="Tagline">
+                <input
+                  value={tagline}
+                  onChange={e => setTagline(e.target.value)}
+                  placeholder="e.g. Handmade with love since 2020"
+                  maxLength={100}
+                  className={inputCls}
+                />
+                <p className="text-[11px] text-slate mt-1">A short line shown next to your store name on your storefront.</p>
+              </Field>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Contact Email">
+                  <input
+                    type="email"
+                    value={contactEmail}
+                    onChange={e => setContactEmail(e.target.value)}
+                    placeholder="support@yourstore.com"
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Contact Phone">
+                  <input
+                    value={contactPhone}
+                    onChange={e => setContactPhone(e.target.value)}
+                    placeholder="+1 555 123 4567"
+                    className={inputCls}
+                  />
+                </Field>
+              </div>
 
               <Field label="Store URL">
                 <input

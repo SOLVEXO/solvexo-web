@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { ArrowRight, Check } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -8,9 +9,23 @@ import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { unsplashUrl } from '@/assets/stockPhotos';
 import { getSolution } from '@/features/buyer/data/solutions';
-import { SellerDashboardPreview } from '@/components/comman/mockups/ProductMockups';
+import {
+  StorefrontPreview, POSPreview, AICommercePreview, AnalyticsPreview, InventoryPreview, OrdersTimelinePreview,
+} from '@/components/comman/mockups/ProductMockups';
 
 const SERIF = "'Lora', Georgia, serif";
+
+// Each solution gets a different real product preview matched to what its
+// own highlights actually emphasize — not the same dashboard mockup shown
+// six times across six industry pages.
+const SOLUTION_PREVIEW: Record<string, () => ReactElement> = {
+  retail:          () => <OrdersTimelinePreview />,
+  fashion:         () => <InventoryPreview />,
+  restaurants:     () => <POSPreview />,
+  beauty:          () => <StorefrontPreview />,
+  creators:        () => <AICommercePreview />,
+  'small-business': () => <AnalyticsPreview />,
+};
 
 export function SolutionPage() {
   const { slug = '' } = useParams();
@@ -68,7 +83,7 @@ export function SolutionPage() {
           </Button>
         </Reveal>
         <Reveal delay={0.1}>
-          <SellerDashboardPreview />
+          {(SOLUTION_PREVIEW[solution.slug] ?? SOLUTION_PREVIEW.retail)()}
         </Reveal>
       </div>
 

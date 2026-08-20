@@ -9,6 +9,8 @@ export interface Block {
   _id?:      string;
   type:      string;
   settings:  Record<string, any>;
+  /** Missing/undefined behaves exactly like `true` — see SectionRenderer.tsx. */
+  enabled?:  boolean;
 }
 
 export const SECTION_TYPES = [
@@ -20,6 +22,9 @@ export const SECTION_TYPES = [
   'testimonials',
   'faq',
   'video',
+  'featured_category_grid',
+  'trust_badges',
+  'newsletter',
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
 
@@ -28,4 +33,6 @@ export interface Section {
   type:      SectionType;
   settings:  Record<string, any>;
   blocks:    Block[];
+  /** Missing/undefined behaves exactly like `true` — see SectionRenderer.tsx. */
+  enabled?:  boolean;
 }

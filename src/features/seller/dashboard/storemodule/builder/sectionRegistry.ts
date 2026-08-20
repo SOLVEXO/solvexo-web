@@ -1,4 +1,4 @@
-import { Image, Type, Star, LayoutGrid, Columns, Quote, HelpCircle, Video, type LucideIcon } from 'lucide-react';
+import { Image, Type, Star, LayoutGrid, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, type LucideIcon } from 'lucide-react';
 import type { SectionType } from '@/api/services/storefrontTypes';
 
 export interface SectionMeta {
@@ -67,6 +67,27 @@ export const SECTION_META: SectionMeta[] = [
     type: 'video', label: 'Video', description: 'A YouTube or Vimeo embed.',
     Icon: Video, color: '#EF4444',
     defaultSettings: { heading: '', videoUrl: '', aspectRatio: '16:9' },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+  },
+  {
+    type: 'featured_category_grid', label: 'Category Grid', description: 'Tiles linking to your subcategories — a "shop by category" grid.',
+    Icon: Grid3x3, color: '#0891B2',
+    defaultSettings: { heading: 'Shop by Category', categoryIds: [] },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+  },
+  {
+    type: 'trust_badges', label: 'Trust Badges', description: 'A row of reassurance badges — shipping, returns, secure payment, support.',
+    Icon: ShieldCheck, color: '#059669',
+    defaultSettings: {},
+    allowedBlockTypes: ['trust_badge_item'], blockLabel: 'Badge',
+    defaultBlockSettings: { icon: 'truck', text: '' },
+  },
+  {
+    type: 'newsletter', label: 'Newsletter', description: 'An email signup — subscribes to your store\'s newsletter.',
+    Icon: Mail, color: '#7C3AED',
+    defaultSettings: { heading: 'Stay in the loop', subtext: '' },
     allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {},
   },

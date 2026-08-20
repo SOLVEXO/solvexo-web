@@ -9,8 +9,9 @@ import { SortableList } from './Sortable';
 import { IconOptionPicker, DiagramHeaderStandard, DiagramHeaderCentered, DiagramFooterColumns, DiagramFooterMinimal } from './ThemeControls';
 import { ConfirmDialog } from './ConfirmDialog';
 
-function BlockRow({ block, onChange, onRemove, pageOptions }: {
+function BlockRow({ block, onChange, onRemove, pageOptions, storeId, mainCategoryId }: {
   block: Block; onChange: (next: Block) => void; onRemove: () => void; pageOptions: PageOption[];
+  storeId: string; mainCategoryId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
@@ -24,7 +25,7 @@ function BlockRow({ block, onChange, onRemove, pageOptions }: {
         </button>
         <button type="button" onClick={() => setConfirmingRemove(true)} className="text-error text-[11px] font-semibold px-2 py-1 hover:bg-error-bg rounded-md bg-transparent border-none cursor-pointer">Remove</button>
       </div>
-      {open && <div className="px-3 pb-3 pt-1"><BlockFields type={block.type} settings={block.settings} onChange={settings => onChange({ ...block, settings })} pageOptions={pageOptions} /></div>}
+      {open && <div className="px-3 pb-3 pt-1"><BlockFields type={block.type} settings={block.settings} onChange={settings => onChange({ ...block, settings })} pageOptions={pageOptions} storeId={storeId} mainCategoryId={mainCategoryId} /></div>}
       {confirmingRemove && (
         <ConfirmDialog
           title="Remove item"
@@ -38,13 +39,15 @@ function BlockRow({ block, onChange, onRemove, pageOptions }: {
   );
 }
 
-export function HeaderTab({ value, onChange, onPersist, pageOptions }: {
+export function HeaderTab({ value, onChange, onPersist, pageOptions, storeId, mainCategoryId }: {
   value: StorefrontHeader; onChange: (next: StorefrontHeader) => void;
   /** Saves immediately — used only for a confirmed nav-link removal, so it
    *  can never silently revert on reload before the seller clicks "Save
    *  Header." Ordinary edits still go through `onChange` only. */
   onPersist: (next: StorefrontHeader) => void;
   pageOptions: PageOption[];
+  storeId: string;
+  mainCategoryId?: string;
 }) {
   return (
     <div className="flex flex-col gap-4 max-w-[560px]">
@@ -100,6 +103,8 @@ export function HeaderTab({ value, onChange, onPersist, pageOptions }: {
                 onPersist(next);
               }}
               pageOptions={pageOptions}
+              storeId={storeId}
+              mainCategoryId={mainCategoryId}
             />
           )}
         </SortableList>
@@ -120,11 +125,13 @@ const FOOTER_BLOCK_OPTIONS = [
   { type: 'copyright_text', label: 'Copyright text', defaults: { text: '' } },
 ];
 
-export function FooterTab({ value, onChange, onPersist, pageOptions }: {
+export function FooterTab({ value, onChange, onPersist, pageOptions, storeId, mainCategoryId }: {
   value: StorefrontFooter; onChange: (next: StorefrontFooter) => void;
   /** Saves immediately — used only for a confirmed footer-block removal. */
   onPersist: (next: StorefrontFooter) => void;
   pageOptions: PageOption[];
+  storeId: string;
+  mainCategoryId?: string;
 }) {
   return (
     <div className="flex flex-col gap-4 max-w-[560px]">
@@ -154,6 +161,8 @@ export function FooterTab({ value, onChange, onPersist, pageOptions }: {
                 onPersist(next);
               }}
               pageOptions={pageOptions}
+              storeId={storeId}
+              mainCategoryId={mainCategoryId}
             />
           )}
         </SortableList>

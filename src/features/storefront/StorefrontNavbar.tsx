@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { Menu, X, ShoppingCart, User, Store as StoreIcon } from 'lucide-react';
+import { Menu, X, ShoppingCart, User, Store as StoreIcon, Search } from 'lucide-react';
 import { useStorefront } from './StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { TokenStorage } from '@/api/services/auth';
@@ -20,7 +20,7 @@ function NavLinkItem({ link, resolveLink, className, onNavigate }: {
   onNavigate?: () => void;
 }) {
   const navigate = useNavigate();
-  const { to, href } = resolveLink(link.settings as { linkType: string; pageSlug?: string; url?: string });
+  const { to, href } = resolveLink(link.settings as { linkType: string; pageSlug?: string; url?: string; categoryId?: string; collectionId?: string });
   const label = link.settings.label as string;
 
   if (link.settings.highlight) {
@@ -52,7 +52,16 @@ export function StorefrontNavbar() {
   const { store, theme, cfg, resolveLink } = useStorefront();
   const { cartCount } = useCartContext();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const isLoggedIn = TokenStorage.isLoggedIn();
+
+  const submitSearch = (e: FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    setSearchOpen(false);
+  };
 
   const logoUrl = theme?.header.logoSource === 'custom' ? theme.header.customLogoUrl : store.logo;
   const navLinks = theme?.header.blocks.filter(b => b.type === 'nav_link') ?? [];
@@ -87,6 +96,14 @@ export function StorefrontNavbar() {
 
   const icons = (
     <div className="flex items-center gap-1 shrink-0">
+      <button
+        onClick={() => setSearchOpen(o => !o)}
+        aria-label="Search"
+        className={clsx('w-9 h-9 rounded-full flex items-center justify-center border-none bg-transparent cursor-pointer transition-colors', dark ? 'hover:bg-white/10' : 'hover:bg-cream')}
+      >
+        <Search size={18} className={dark ? 'text-white' : 'text-charcoal'} />
+      </button>
+
       <button
         onClick={() => navigate('/cart')}
         aria-label="Cart"
@@ -137,6 +154,25 @@ export function StorefrontNavbar() {
     </nav>
   );
 
+  const searchBar = searchOpen && (
+    <form onSubmit={submitSearch} className={clsx('px-4 sm:px-6 lg:px-10 py-2.5 border-t flex items-center gap-2', dark ? 'border-white/10' : 'border-bone')}>
+      <Search size={15} className={dark ? 'text-white/50' : 'text-slate'} />
+      <input
+        autoFocus
+        value={searchQuery}
+        onChange={e => setSearchQuery(e.target.value)}
+        placeholder={`Search ${store.name}…`}
+        className={clsx(
+          'flex-1 min-w-0 bg-transparent border-none outline-none text-[13.5px]',
+          dark ? 'text-white placeholder:text-white/40' : 'text-charcoal placeholder:text-slate',
+        )}
+      />
+      <button type="button" onClick={() => setSearchOpen(false)} aria-label="Close search" className={clsx('bg-transparent border-none cursor-pointer p-1', dark ? 'text-white/60' : 'text-slate')}>
+        <X size={15} />
+      </button>
+    </form>
+  );
+
   const headerCls = clsx('sticky top-0 z-40 border-b', dark ? 'bg-[#111]/95 backdrop-blur-sm border-white/10' : 'bg-white border-bone');
 
   // 'centered' — logo on its own centered row, nav links centered on a
@@ -153,6 +189,7 @@ export function StorefrontNavbar() {
         {navLinks.length > 0 && (
           <div className={clsx('hidden md:flex justify-center border-t py-2', dark ? 'border-white/10' : 'border-bone')}>{desktopNav}</div>
         )}
+        {searchBar}
         {mobileMenu}
       </header>
     );
@@ -170,6 +207,7 @@ export function StorefrontNavbar() {
         {icons}
       </div>
 
+      {searchBar}
       {mobileMenu}
     </header>
   );

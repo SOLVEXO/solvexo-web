@@ -8,7 +8,7 @@ import {
   Settings, Sparkles, ChevronLeft, ChevronRight, Store,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
-  PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut,
+  PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
@@ -60,6 +60,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
       { id: 'products',      Icon: ShoppingBag,   label: 'Products',      path: 'products'     },
       { id: 'inventory',     Icon: ClipboardList, label: 'Inventory',     path: 'inventory'    },
       { id: 'categories',    Icon: FolderTree,    label: 'Categories',    path: 'categories'   },
+      { id: 'collections',   Icon: Layers,        label: 'Collections',   path: 'collections'  },
       { id: 'store-builder', Icon: Store,         label: 'Store Builder', path: 'storebuilder' },
     ],
   },
