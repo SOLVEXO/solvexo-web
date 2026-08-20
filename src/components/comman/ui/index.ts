@@ -29,7 +29,7 @@ export type { RoleSegmentOption }            from './RoleSegmentedControl';
 
 export { OTPInput }                          from './OTPInput';
 
-export { SocialLoginRow, GoogleIcon, AppleIcon, FacebookIcon, SOCIAL_PROVIDERS } from './SocialIcons';
+export { SocialLoginRow, GoogleIcon, SOCIAL_PROVIDERS } from './SocialIcons';
 export type { SocialProvider }               from './SocialIcons';
 
 export { Table }                             from './Table';
