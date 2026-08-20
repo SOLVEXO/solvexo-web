@@ -257,7 +257,8 @@ export function apiResendOtp(payload: ResendOtpPayload) {
 export interface SocialLoginPayload {
   authProvider: 'google' | 'facebook' | 'apple';
   socialId:     string;
-  userName:     string;
+  userName?:    string;
+  name?:        string;
   email:        string;
   image?:       string;
   fcmToken?:    string;

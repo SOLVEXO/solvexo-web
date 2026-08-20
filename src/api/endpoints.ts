@@ -457,13 +457,13 @@ export const ENDPOINTS = {
 
   // ── ADDRESS ────────────────────────────────────────────────────────────────
   ADDRESS: {
-    ADD: '/address/add-address',
-    GET_ALL: '/address/getMyAddresses',
-    GET_DEFAULT: '/address/getDefaultAddress',
-    UPDATE: '/address/update-address',
-    GET_BY_ID: (addressId: string) => `/address/get-address-by-id/${addressId}`,
-    SET_DEFAULT: (addressId: string) => `/address/setDefaultAddress/${addressId}`,
-    DELETE: (addressId: string) => `/address/delete-address/${addressId}`,
+    ADD: '/api/address/add-address',
+    GET_ALL: '/api/address/getMyAddresses',
+    GET_DEFAULT: '/api/address/getDefaultAddress',
+    UPDATE: '/api/address/update-address',
+    GET_BY_ID: (addressId: string) => `/api/address/get-address-by-id/${addressId}`,
+    SET_DEFAULT: (addressId: string) => `/api/address/setDefaultAddress/${addressId}`,
+    DELETE: (addressId: string) => `/api/address/delete-address/${addressId}`,
   },
 
   SHIPPING: {
