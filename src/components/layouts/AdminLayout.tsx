@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, FolderTree, RefreshCw,
   BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle, Landmark, Percent, Coins, UserPlus, Activity,
-  ChevronDown, TrendingUp, ChevronRight, Quote,
+  ChevronDown, TrendingUp, ChevronRight, Quote, Palette,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -33,6 +33,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'marketplace',   Icon: Store,           label: 'Marketplace',     path: '/admin/marketplace'   },
   { id: 'categories',    Icon: FolderTree,      label: 'Categories',      path: '/admin/categories'    },
   { id: 'subscriptions', Icon: RefreshCw,       label: 'Subscriptions',   path: '/admin/subscriptions' },
+  { id: 'theme-catalog', Icon: Palette,         label: 'Theme Catalog',   path: '/admin/theme-catalog' },
   { id: 'marketing',     Icon: Tag,             label: 'Marketing',       path: '/admin/marketing'     },
   { id: 'platform-plans',Icon: Layers,          label: 'Platform Plans',  path: '/admin/platform-plans' },
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
@@ -67,7 +68,7 @@ interface AdminModule {
 // nothing to expand for a "section" that's really just one page.
 export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
-  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['marketplace', 'categories', 'leads', 'subscriptions', 'platform-plans'] },
+  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['marketplace', 'categories', 'leads', 'subscriptions', 'platform-plans', 'theme-catalog'] },
   { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation', 'messages', 'contact'] },
   { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['marketing', 'seo', 'ai-studio'] },
   { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance', 'manual-payments', 'commission-rules', 'fx-settings'] },

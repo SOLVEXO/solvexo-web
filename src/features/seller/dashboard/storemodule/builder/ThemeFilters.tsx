@@ -1,20 +1,25 @@
 import { Search } from 'lucide-react';
 import { clsx } from 'clsx';
-import { THEME_CATEGORIES, type ThemeCategory } from './themes';
+import { THEME_CATALOG_CATEGORIES, THEME_CATALOG_CATEGORY_LABELS, type ThemeCatalogCategory } from '@/api/services/themeCatalog';
 
-/** Simple client-side filtering — no backend involved, matching the rest of
- *  the gallery's "no API dependency" requirement. Kept to just a category
- *  row + a search box, deliberately not a full filter dashboard. */
+const CATEGORY_OPTIONS: { value: ThemeCatalogCategory | 'all'; label: string }[] = [
+  { value: 'all', label: 'All' },
+  ...THEME_CATALOG_CATEGORIES.map(value => ({ value, label: THEME_CATALOG_CATEGORY_LABELS[value] })),
+];
+
+/** Category row + search box, filtering the already-fetched theme list
+ *  client-side (the initial fetch already narrows to `status: 'published'`
+ *  server-side — this is just gallery-local refinement). */
 export function ThemeFilters({ category, onCategoryChange, search, onSearchChange }: {
-  category: ThemeCategory | 'all';
-  onCategoryChange: (c: ThemeCategory | 'all') => void;
+  category: ThemeCatalogCategory | 'all';
+  onCategoryChange: (c: ThemeCatalogCategory | 'all') => void;
   search: string;
   onSearchChange: (v: string) => void;
 }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3">
       <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
-        {THEME_CATEGORIES.map(c => (
+        {CATEGORY_OPTIONS.map(c => (
           <button
             key={c.value}
             type="button"

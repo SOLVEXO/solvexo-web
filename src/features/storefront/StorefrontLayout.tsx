@@ -110,7 +110,12 @@ export function StorefrontLayout() {
           CartProvider from main.tsx for everything rendered below, since
           the store's storeId is only known here, after it's resolved. */}
       <CartProvider storeId={store.storeId}>
-        <div className="min-h-screen" style={{ background: cfg.bgColor, color: cfg.textColor, fontFamily: `${cfg.font}, sans-serif` }}>
+        <div data-store-theme={store.storeId} className="min-h-screen" style={{ background: cfg.bgColor, color: cfg.textColor, fontFamily: `${cfg.font}, sans-serif` }}>
+          {/* Code editor (Phase 5) — sanitized server-side before it's ever
+              persisted; scoped to this store's own subtree via the
+              `data-store-theme` attribute above, per the theme ecosystem
+              plan's "no arbitrary JS execution" security model. */}
+          {theme?.customCss && <style>{theme.customCss}</style>}
           <StorefrontNavbar />
           {store.announcementBar?.message && (
             <StoreAnnouncementBar

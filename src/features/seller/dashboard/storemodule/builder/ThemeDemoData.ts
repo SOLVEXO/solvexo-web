@@ -40,8 +40,29 @@ function img(id: number, w = 900, h = 900) {
   return `https://picsum.photos/id/${id}/${w}/${h}`;
 }
 
+/** Used for any catalog theme without its own hand-authored entry below
+ *  (every theme added after the original 10, until it gets one) — a
+ *  reasonable generic personality rather than an error/blank state. */
+export const DEFAULT_DEMO_CONTENT: ThemeDemoContent = {
+  storeName: 'Your Store',
+  heroHeadline: 'Welcome to your store.',
+  heroSubheading: 'This is a preview using sample content.',
+  heroCta: 'Shop Now',
+  heroImage: img(410, 1600, 900),
+  products: [
+    { name: 'Sample Product One', price: 49, image: img(420) },
+    { name: 'Sample Product Two', price: 29, image: img(430) },
+    { name: 'Sample Product Three', price: 69, image: img(440) },
+  ],
+  testimonial: { quote: 'A great shopping experience from start to finish.', authorName: 'Jordan P.', authorRole: 'Verified Buyer', rating: 5 },
+};
+
+// Keyed by the catalog theme's `slug` (see `seed-theme-catalog.ts`) — these
+// 10 entries correspond to the original 10 curated themes, now re-slotted
+// into their matching official 44-theme names (Vogue/Urban/etc.) rather than
+// keeping their old working ids.
 export const THEME_DEMO_CONTENT: Record<string, ThemeDemoContent> = {
-  'warm-craft': {
+  horizon: {
     storeName: 'Willow & Clay',
     heroHeadline: 'Handcrafted, with intention.',
     heroSubheading: 'Small-batch ceramics and leather goods, made slowly.',
@@ -54,7 +75,7 @@ export const THEME_DEMO_CONTENT: Record<string, ThemeDemoContent> = {
     ],
     testimonial: { quote: 'Every piece feels like it was made just for me.', authorName: 'Priya N.', authorRole: 'Verified Buyer', rating: 5 },
   },
-  'modern-fashion': {
+  vogue: {
     storeName: 'NOIR MAISON',
     heroHeadline: 'The Fall/Winter Edit.',
     heroSubheading: 'Tailored silhouettes for a modern wardrobe.',
@@ -67,7 +88,7 @@ export const THEME_DEMO_CONTENT: Record<string, ThemeDemoContent> = {
     ],
     testimonial: { quote: 'The quality and fit are unmatched. Worth every dollar.', authorName: 'Amara K.', authorRole: 'Verified Buyer', rating: 5 },
   },
-  'minimal-boutique': {
+  essential: {
     storeName: 'STUDIO EIGHT',
     heroHeadline: 'Less, but better.',
     heroSubheading: 'A tightly-edited collection of everyday essentials.',
@@ -80,7 +101,7 @@ export const THEME_DEMO_CONTENT: Record<string, ThemeDemoContent> = {
     ],
     testimonial: { quote: 'Understated, timeless, exactly what I was looking for.', authorName: 'Elena R.', authorRole: 'Verified Buyer', rating: 5 },
   },
-  'bold-editorial': {
+  atelier: {
     storeName: 'THE FIELD JOURNAL',
     heroHeadline: 'Issue No. 12 — The Edit.',
     heroSubheading: 'Stories in fabric. A seasonal capsule, curated.',
@@ -93,7 +114,7 @@ export const THEME_DEMO_CONTENT: Record<string, ThemeDemoContent> = {
     ],
     testimonial: { quote: 'Feels less like shopping and more like reading a magazine.', authorName: 'Jonas W.', authorRole: 'Verified Buyer', rating: 5 },
   },
-  'clean-grid': {
+  nova: {
     storeName: 'Norm & Co',
     heroHeadline: 'New arrivals, every week.',
     heroSubheading: 'Everyday basics, done right.',
@@ -106,7 +127,7 @@ export const THEME_DEMO_CONTENT: Record<string, ThemeDemoContent> = {
     ],
     testimonial: { quote: 'Easy to browse, easy to buy. My go-to store now.', authorName: 'Sam T.', authorRole: 'Verified Buyer', rating: 4 },
   },
-  'luxury-noir': {
+  royale: {
     storeName: 'AURELIA',
     heroHeadline: 'Timeless, by design.',
     heroSubheading: 'Fine jewelry crafted for a lifetime.',
@@ -119,7 +140,7 @@ export const THEME_DEMO_CONTENT: Record<string, ThemeDemoContent> = {
     ],
     testimonial: { quote: 'Exquisite craftsmanship — it photographs even better in person.', authorName: 'Camille D.', authorRole: 'Verified Buyer', rating: 5 },
   },
-  'fresh-market': {
+  freshly: {
     storeName: 'Bloom & Basket',
     heroHeadline: 'From farm to table.',
     heroSubheading: 'Organic, seasonal, delivered fresh.',
@@ -132,7 +153,7 @@ export const THEME_DEMO_CONTENT: Record<string, ThemeDemoContent> = {
     ],
     testimonial: { quote: 'Everything tastes like it was picked this morning.', authorName: 'Noah B.', authorRole: 'Verified Buyer', rating: 5 },
   },
-  'street-urban': {
+  urban: {
     storeName: 'CONCRETE CO.',
     heroHeadline: 'Built for the street.',
     heroSubheading: 'New drop, limited run.',
@@ -145,7 +166,7 @@ export const THEME_DEMO_CONTENT: Record<string, ThemeDemoContent> = {
     ],
     testimonial: { quote: 'Drops sell out fast — glad I caught this one.', authorName: 'Malik J.', authorRole: 'Verified Buyer', rating: 5 },
   },
-  'soft-studio': {
+  aura: {
     storeName: 'Petal & Glow',
     heroHeadline: 'Skincare, simplified.',
     heroSubheading: 'Clean formulas for your everyday ritual.',
@@ -158,7 +179,7 @@ export const THEME_DEMO_CONTENT: Record<string, ThemeDemoContent> = {
     ],
     testimonial: { quote: 'My skin has never felt this calm — and it smells incredible.', authorName: 'Hana S.', authorRole: 'Verified Buyer', rating: 5 },
   },
-  'tech-commerce': {
+  volt: {
     storeName: 'NEXUS TECH',
     heroHeadline: 'Engineered for everyday.',
     heroSubheading: 'Thoughtfully designed tech, built to last.',

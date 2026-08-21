@@ -1,4 +1,4 @@
-import { Image, Type, Star, LayoutGrid, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, type LucideIcon } from 'lucide-react';
+import { Image, Type, Star, LayoutGrid, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Sparkles, ListChecks, UtensilsCrossed, Users, MapPin, TrendingUp, Images, type LucideIcon } from 'lucide-react';
 import type { SectionType } from '@/api/services/storefrontTypes';
 
 export interface SectionMeta {
@@ -90,6 +90,55 @@ export const SECTION_META: SectionMeta[] = [
     defaultSettings: { heading: 'Stay in the loop', subtext: '' },
     allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {},
+  },
+  {
+    type: 'feature_list', label: 'Feature List', description: 'Icon + title + description items — ingredients, benefits, craftsmanship, materials, or feature highlights.',
+    Icon: Sparkles, color: '#DB2777',
+    defaultSettings: { heading: '' },
+    allowedBlockTypes: ['feature_item'], blockLabel: 'Feature',
+    defaultBlockSettings: { icon: 'star', title: '', description: '' },
+  },
+  {
+    type: 'spec_table', label: 'Spec Table', description: 'A plain label/value table — technical specs, dimensions, or materials.',
+    Icon: ListChecks, color: '#334155',
+    defaultSettings: { heading: '', subheading: '' },
+    allowedBlockTypes: ['spec_row'], blockLabel: 'Row',
+    defaultBlockSettings: { label: '', value: '' },
+  },
+  {
+    type: 'menu_list', label: 'Menu / Item List', description: 'A restaurant menu, course module list, or bundle line items — grouped by category.',
+    Icon: UtensilsCrossed, color: '#B45309',
+    defaultSettings: { heading: 'Our Menu', subheading: '' },
+    allowedBlockTypes: ['menu_item'], blockLabel: 'Item',
+    defaultBlockSettings: { name: '', description: '', price: 0, category: '' },
+  },
+  {
+    type: 'team_grid', label: 'Team', description: 'Team members, chefs, or instructors — photo, name, role.',
+    Icon: Users, color: '#0D9488',
+    defaultSettings: { heading: 'Meet the Team' },
+    allowedBlockTypes: ['team_member'], blockLabel: 'Member',
+    defaultBlockSettings: { name: '', role: '', bio: '' },
+  },
+  {
+    type: 'location_info', label: 'Location & Hours', description: 'Address, hours, contact, and a map — for a restaurant, showroom, or service area.',
+    Icon: MapPin, color: '#DC2626',
+    defaultSettings: { heading: 'Visit Us', address: '', hours: '' },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+  },
+  {
+    type: 'stats_counter', label: 'Stats', description: 'A row of trust/scale statistics.',
+    Icon: TrendingUp, color: '#4338CA',
+    defaultSettings: {},
+    allowedBlockTypes: ['stat_item'], blockLabel: 'Stat',
+    defaultBlockSettings: { value: '', label: '' },
+  },
+  {
+    type: 'gallery_grid', label: 'Gallery', description: 'A lookbook, room/lifestyle imagery, or portfolio grid.',
+    Icon: Images, color: '#0EA5E9',
+    defaultSettings: { heading: '' },
+    allowedBlockTypes: ['gallery_image'], blockLabel: 'Image',
+    defaultBlockSettings: { imageUrl: '', caption: '' },
   },
 ];
 

@@ -1,4 +1,4 @@
-import { THEMES, type ThemeDefinition } from './themes';
+import type { ThemeDefinition } from '@/api/services/themeCatalog';
 import { ThemeCard } from './ThemeCard';
 
 interface StoreHint {
@@ -6,11 +6,14 @@ interface StoreHint {
   productTypes?: string[];
 }
 
-/** A small, explainable heuristic — not a model call. Falls back to a
- *  sensible universal trio whenever the store doesn't give us anything more
- *  specific to go on (a brand-new store, or one with a product mix that
- *  doesn't point clearly at one theme personality). */
-function getRecommendedThemeIds(store: StoreHint): string[] {
+/** A small, explainable heuristic — not a model call. Matches by `slug`
+ *  (stable, human-designed) against whatever's actually in the catalog right
+ *  now, so a recommended slug that's been unpublished/renamed just quietly
+ *  drops out rather than breaking. Falls back to a sensible universal trio
+ *  whenever the store doesn't give us anything more specific to go on (a
+ *  brand-new store, or one with a product mix that doesn't point clearly at
+ *  one theme personality). */
+function getRecommendedThemeSlugs(store: StoreHint): string[] {
   const types = store.productTypes ?? [];
   if (types.includes('digital_downloads') || types.includes('educational_resources')) {
     return ['tech-commerce', 'minimal-boutique', 'clean-grid'];
@@ -24,14 +27,16 @@ function getRecommendedThemeIds(store: StoreHint): string[] {
   return ['warm-craft', 'clean-grid', 'minimal-boutique'];
 }
 
-export function ThemeRecommendation({ store, baseThemeId, onApply, onPreview }: {
+export function ThemeRecommendation({ themes, store, baseThemeId, onApply, onPreview }: {
+  /** The already-fetched catalog list (see `ThemeTab`) — this component never fetches its own data. */
+  themes: ThemeDefinition[];
   store: StoreHint;
   baseThemeId: string | null;
   onApply: (theme: ThemeDefinition) => void;
   onPreview: (theme: ThemeDefinition) => void;
 }) {
-  const ids = getRecommendedThemeIds(store);
-  const recommended = ids.map(id => THEMES.find(t => t.id === id)).filter((t): t is ThemeDefinition => !!t);
+  const slugs = getRecommendedThemeSlugs(store);
+  const recommended = slugs.map(slug => themes.find(t => t.slug === slug)).filter((t): t is ThemeDefinition => !!t);
   if (recommended.length === 0) return null;
 
   return (
@@ -41,9 +46,9 @@ export function ThemeRecommendation({ store, baseThemeId, onApply, onPreview }: 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {recommended.map(theme => (
           <ThemeCard
-            key={theme.id}
+            key={theme._id}
             theme={theme}
-            active={theme.id === baseThemeId}
+            active={theme._id === baseThemeId}
             onApply={() => onApply(theme)}
             onPreview={() => onPreview(theme)}
             size="compact"

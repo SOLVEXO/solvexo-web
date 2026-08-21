@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Trash2, Plus, LayoutTemplate, GripVertical } from 'lucide-react';
+import { ChevronDown, ChevronUp, Trash2, Plus, LayoutTemplate, GripVertical, Copy, Eye, EyeOff } from 'lucide-react';
 import { ActionMenu } from '@/components/comman/ui';
 import type { Section, Block } from '@/api/services/storefrontTypes';
 import { SECTION_META_BY_TYPE } from './sectionRegistry';
@@ -9,11 +9,23 @@ import { SortableList } from './Sortable';
 import { AddSectionModal } from './AddSectionModal';
 import { ConfirmDialog } from './ConfirmDialog';
 
-function BlockRow({ block, sectionType, onChange, onRemove, pageOptions, storeId, mainCategoryId }: {
+/** Clones a section/block for "Duplicate" — strips `_id` so the backend
+ *  treats it as a brand-new subdocument on save, and so `SortableList`'s
+ *  `keyFor` falls back to its existing `new-${index}` convention (the same
+ *  one "Add Section"/"Add Block" already produce), never colliding with
+ *  the original's real `_id`. */
+function cloneWithoutId<T extends { _id?: string }>(item: T): T {
+  const clone = structuredClone(item);
+  delete clone._id;
+  return clone;
+}
+
+function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOptions, storeId, mainCategoryId }: {
   block: Block;
   sectionType: string;
   onChange: (next: Block) => void;
   onRemove: () => void;
+  onDuplicate: () => void;
   pageOptions: PageOption[];
   storeId: string;
   mainCategoryId?: string;
@@ -21,14 +33,24 @@ function BlockRow({ block, sectionType, onChange, onRemove, pageOptions, storeId
   const [open, setOpen] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const label = block.settings.label || block.settings.heading || block.settings.question || block.settings.text || block.settings.authorName || SECTION_META_BY_TYPE[sectionType as keyof typeof SECTION_META_BY_TYPE]?.blockLabel || block.type;
+  const hidden = block.enabled === false;
 
   return (
-    <div className={`border rounded-lg bg-white transition-colors ${open ? 'border-brand-orange/30' : 'border-bone'}`}>
+    <div className={`border rounded-lg bg-white transition-colors ${open ? 'border-brand-orange/30' : 'border-bone'} ${hidden ? 'opacity-50' : ''}`}>
       <div className="flex items-center gap-1.5 pl-1 pr-2 py-1.5">
         <GripVertical size={13} className="text-bone shrink-0" />
         <button type="button" onClick={() => setOpen(o => !o)} className="flex-1 min-w-0 flex items-center gap-2 bg-transparent border-none cursor-pointer text-left p-0 py-0.5">
           {open ? <ChevronUp size={13} className="text-slate shrink-0" /> : <ChevronDown size={13} className="text-slate shrink-0" />}
           <span className="text-[12.5px] font-medium text-charcoal truncate">{label || '(untitled)'}</span>
+          {hidden && <span className="text-[10px] font-bold uppercase tracking-wide text-slate shrink-0">Hidden</span>}
+        </button>
+        <button type="button" onClick={() => onChange({ ...block, enabled: !hidden ? false : true })} aria-label={hidden ? 'Show' : 'Hide'} title={hidden ? 'Show' : 'Hide'}
+          className="text-slate p-1 hover:bg-cream rounded-md bg-transparent border-none cursor-pointer shrink-0 transition-colors">
+          {hidden ? <EyeOff size={13} /> : <Eye size={13} />}
+        </button>
+        <button type="button" onClick={onDuplicate} aria-label="Duplicate" title="Duplicate"
+          className="text-slate p-1 hover:bg-cream rounded-md bg-transparent border-none cursor-pointer shrink-0 transition-colors">
+          <Copy size={13} />
         </button>
         <button type="button" onClick={() => setConfirmingRemove(true)} className="text-error/70 text-[11px] font-semibold px-2 py-1 hover:bg-error-bg hover:text-error rounded-md bg-transparent border-none cursor-pointer shrink-0 transition-colors">Remove</button>
       </div>
@@ -50,10 +72,11 @@ function BlockRow({ block, sectionType, onChange, onRemove, pageOptions, storeId
   );
 }
 
-function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOptions, storeId, mainCategoryId }: {
+function SectionCard({ section, onChange, onRemove, onDuplicate, onPersistBlockRemove, pageOptions, storeId, mainCategoryId }: {
   section: Section;
   onChange: (next: Section) => void;
   onRemove: () => void;
+  onDuplicate: () => void;
   /** Called (with the section's new `blocks` already applied) specifically
    *  when a block inside this section is removed — saved immediately, same
    *  as removing the whole section, unlike an ordinary field edit. */
@@ -65,20 +88,32 @@ function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOp
   const [open, setOpen] = useState(true);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const meta = SECTION_META_BY_TYPE[section.type];
+  const hidden = section.enabled === false;
 
   return (
-    <div className={`border rounded-2xl bg-white overflow-hidden transition-shadow ${open ? 'border-bone shadow-[0_1px_8px_rgba(0,0,0,0.04)]' : 'border-bone'}`}>
+    <div className={`border rounded-2xl bg-white overflow-hidden transition-shadow ${open ? 'border-bone shadow-[0_1px_8px_rgba(0,0,0,0.04)]' : 'border-bone'} ${hidden ? 'opacity-50' : ''}`}>
       <div className="flex items-center gap-3 px-4 py-3.5">
         <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: `${meta?.color ?? '#8C8A82'}18` }}>
           {meta ? <meta.Icon size={16} style={{ color: meta.color }} /> : <LayoutTemplate size={16} className="text-slate" />}
         </div>
         <button type="button" onClick={() => setOpen(o => !o)} className="flex-1 min-w-0 flex flex-col items-start bg-transparent border-none cursor-pointer text-left p-0">
-          <span className="text-[13.5px] font-bold text-charcoal truncate">{meta?.label ?? section.type}</span>
+          <span className="text-[13.5px] font-bold text-charcoal truncate flex items-center gap-1.5">
+            {meta?.label ?? section.type}
+            {hidden && <span className="text-[10px] font-bold uppercase tracking-wide text-slate">Hidden</span>}
+          </span>
           {section.settings.heading && <span className="text-[11.5px] text-slate truncate">{section.settings.heading}</span>}
         </button>
         <button type="button" onClick={() => setOpen(o => !o)} aria-label={open ? 'Collapse' : 'Expand'}
           className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
           {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+        </button>
+        <button type="button" onClick={() => onChange({ ...section, enabled: !hidden ? false : true })} aria-label={hidden ? 'Show section' : 'Hide section'} title={hidden ? 'Show section' : 'Hide section'}
+          className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
+          {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
+        </button>
+        <button type="button" onClick={onDuplicate} aria-label="Duplicate section" title="Duplicate section"
+          className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
+          <Copy size={14} />
         </button>
         <button type="button" onClick={() => setConfirmingRemove(true)} aria-label="Remove section"
           className="w-7 h-7 flex items-center justify-center text-error/70 rounded-md hover:bg-error-bg hover:text-error bg-transparent border-none cursor-pointer shrink-0 transition-colors"><Trash2 size={14} /></button>
@@ -113,6 +148,12 @@ function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOp
                       const next = { ...section, blocks: section.blocks.filter((_, j) => j !== i) };
                       onChange(next);
                       onPersistBlockRemove(next);
+                    }}
+                    onDuplicate={() => {
+                      const copy = cloneWithoutId(block);
+                      const blocks = [...section.blocks];
+                      blocks.splice(i + 1, 0, copy);
+                      onChange({ ...section, blocks });
                     }}
                     pageOptions={pageOptions}
                     storeId={storeId}
@@ -189,6 +230,12 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
                   const next = sections.filter((_, j) => j !== i);
                   onChange(next);
                   onPersist(next);
+                }}
+                onDuplicate={() => {
+                  const copy = cloneWithoutId(section);
+                  const next = [...sections];
+                  next.splice(i + 1, 0, copy);
+                  onChange(next);
                 }}
                 onPersistBlockRemove={nextSection => onPersist(sections.map((s, j) => j === i ? nextSection : s))}
                 pageOptions={pageOptions}

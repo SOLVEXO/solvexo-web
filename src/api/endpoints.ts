@@ -199,6 +199,20 @@ export const ENDPOINTS = {
     UPDATE_FOOTER:  (storeId: string) => `/api/store-theme/${storeId}/footer`,
     UPDATE_IDENTITY_BANNER: (storeId: string) => `/api/store-theme/${storeId}/identity-banner`,
     PUBLIC:         (storeId: string) => `/api/public/store-theme/${storeId}`,
+    APPLY:          (storeId: string, themeDefinitionId: string) => `/api/store-theme/${storeId}/apply/${themeDefinitionId}`,
+    UPDATE_CUSTOM_CSS: (storeId: string) => `/api/store-theme/${storeId}/custom-css`,
+  },
+
+  // ── THEME CATALOG (the Theme Marketplace's global, admin-managed themes) ──
+  THEME_CATALOG: {
+    PUBLIC_LIST:    () => `/api/public/theme-catalog`,
+    PUBLIC_GET:     (slug: string) => `/api/public/theme-catalog/${slug}`,
+    ADMIN_LIST:     () => `/api/admin/theme-catalog`,
+    ADMIN_GET:      (id: string) => `/api/admin/theme-catalog/${id}`,
+    ADMIN_CREATE:   () => `/api/admin/theme-catalog`,
+    ADMIN_UPDATE:   (id: string) => `/api/admin/theme-catalog/${id}`,
+    ADMIN_SET_STATUS:   (id: string) => `/api/admin/theme-catalog/${id}/status`,
+    ADMIN_SET_FEATURED: (id: string) => `/api/admin/theme-catalog/${id}/featured`,
   },
 
   // ── STORE PAGES (home + custom pages, each composed of sections/blocks) ────

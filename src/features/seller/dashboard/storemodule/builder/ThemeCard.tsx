@@ -1,7 +1,7 @@
 import { clsx } from 'clsx';
 import { Check, Eye } from 'lucide-react';
 import { ThemeStorefrontPreview } from './ThemeStorefrontPreview';
-import type { ThemeDefinition } from './themes';
+import type { ThemeDefinition } from '@/api/services/themeCatalog';
 
 const BADGE_LABEL: Record<string, string> = { new: 'NEW', popular: 'POPULAR', trending: 'TRENDING' };
 const BADGE_COLOR: Record<string, string> = {

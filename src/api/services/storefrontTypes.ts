@@ -25,6 +25,15 @@ export const SECTION_TYPES = [
   'featured_category_grid',
   'trust_badges',
   'newsletter',
+  // Generic, reusable additions (Theme Ecosystem Phase 3) — mirrors
+  // `common/schemas/section.schema.ts` on the backend exactly.
+  'feature_list',
+  'spec_table',
+  'menu_list',
+  'team_grid',
+  'location_info',
+  'stats_counter',
+  'gallery_grid',
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
 

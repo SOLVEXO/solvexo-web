@@ -1,6 +1,6 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
-import type { Block } from './storefrontTypes';
+import type { Block, Section } from './storefrontTypes';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -96,6 +96,8 @@ export interface StoreThemeData {
   // Which curated `themes.ts` definition the `theme`/`header`/`footer`
   // fields were last bulk-applied from — null if never applied one.
   baseThemeId:    string | null;
+  /** Live/published scoped custom CSS (code editor) — mirrors `draft.customCss`. */
+  customCss?:     string | null;
   // The seller's working copy — what every `apiUpdateStoreXxx` call below
   // now writes to. Mirrors the live shape exactly; only `apiPublishStoreTheme`
   // ever copies this over the live fields above.
@@ -105,6 +107,8 @@ export interface StoreThemeData {
     footer:         StorefrontFooter;
     identityBanner: IdentityBanner;
     baseThemeId:    string | null;
+    pendingHomeSections?: Section[] | null;
+    customCss?:     string | null;
   };
   lastPublishedAt: string | null;
 }
@@ -119,6 +123,12 @@ export interface StoreThemeDraftData {
   footer:         StorefrontFooter;
   identityBanner: IdentityBanner;
   baseThemeId:    string | null;
+  /** Set only after a Theme Marketplace "Use Theme" and not yet Published —
+   *  the candidate home-page composition, staged here so Live Preview can
+   *  show it before it ever reaches the live `StorePage.sections`. */
+  pendingHomeSections: Section[] | null;
+  /** Scoped custom CSS (code editor) — staged the same way, live-mirrored on publish. */
+  customCss: string | null;
   lastPublishedAt: string | null;
 }
 
@@ -156,4 +166,9 @@ export function apiUpdateStoreFooter(storeId: string, blocks: Block[], footerSty
 
 export function apiUpdateIdentityBanner(storeId: string, payload: Partial<IdentityBanner>) {
   return client.patch<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.UPDATE_IDENTITY_BANNER(storeId), payload);
+}
+
+/** Code editor (Phase 5) — server re-sanitizes independently of whatever the client already checked. */
+export function apiUpdateCustomCss(storeId: string, customCss: string | null) {
+  return client.patch<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.UPDATE_CUSTOM_CSS(storeId), { customCss });
 }

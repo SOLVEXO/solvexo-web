@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
-import type { ThemeDefinition } from './themes';
+import type { ThemeDefinition } from '@/api/services/themeCatalog';
 import { ThemeDemoStorefront } from './ThemeDemoStorefront';
 
 // The design-space canvas every gallery card is rendered at (real component

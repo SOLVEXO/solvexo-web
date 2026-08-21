@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Eye, EyeOff, Check, ExternalLink, LayoutGrid, Palette, PanelTop, PanelBottom, Newspaper, UserCog, UploadCloud, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Loader2, Eye, EyeOff, Check, ExternalLink, LayoutGrid, Palette, PanelTop, PanelBottom, Newspaper, UserCog, UploadCloud, RotateCcw, Code2, Undo2, Redo2 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { SkeletonBox } from '@/components/comman/ui';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
@@ -21,9 +21,11 @@ import { ConfirmDialog } from './builder/ConfirmDialog';
 import { HeaderTab, FooterTab } from './builder/HeaderFooterTabs';
 import { StoreInfoTab } from './builder/StoreInfoTab';
 import { BlogTab } from './builder/BlogTab';
-import type { ThemeDefinition } from './builder/themes';
+import { CodeEditorTab } from './builder/CodeEditorTab';
+import { useSectionsHistory } from './builder/useSectionsHistory';
+import { apiApplyThemeDefinition, type ThemeDefinition } from '@/api/services/themeCatalog';
 
-type Tab = 'pages' | 'theme' | 'header' | 'footer' | 'storeInfo' | 'blog';
+type Tab = 'pages' | 'theme' | 'header' | 'footer' | 'storeInfo' | 'blog' | 'code';
 const TABS: { id: Tab; label: string; Icon: typeof LayoutGrid }[] = [
   { id: 'pages',     label: 'Pages',      Icon: LayoutGrid },
   { id: 'theme',     label: 'Theme',      Icon: Palette },
@@ -31,6 +33,7 @@ const TABS: { id: Tab; label: string; Icon: typeof LayoutGrid }[] = [
   { id: 'footer',    label: 'Footer',     Icon: PanelBottom },
   { id: 'storeInfo', label: 'Store Info', Icon: UserCog },
   { id: 'blog',      label: 'Blog',       Icon: Newspaper },
+  { id: 'code',      label: 'Code Editor', Icon: Code2 },
 ];
 
 function SaveStatus({ message }: { message: { ok: boolean; text: string } | null }) {
@@ -60,9 +63,18 @@ export function StoreBuilder() {
 
   const [pages, setPages] = useState<StorePageData[]>([]);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
-  const [sections, setSections] = useState<Section[]>([]);
+  // Bounded undo/redo (Pages/Sections editor only — Theme/Header/Footer/
+  // Store Info keep their existing Save + Discard Draft model instead).
+  const { sections, setSections, resetSections, undo, redo, canUndo, canRedo } = useSectionsHistory();
   const [pagesLoading, setPagesLoading] = useState(true);
   const [creatingPage, setCreatingPage] = useState(false);
+  // Autosave (Pages tab only) — runs alongside the existing manual "Save
+  // Changes" button, never replacing it. `lastSavedSectionsRef` is the
+  // content actually persisted server-side; only a real diff from it
+  // triggers a debounced save, so loading/switching pages never
+  // spuriously autosaves.
+  const [sectionsSaveStatus, setSectionsSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const lastSavedSectionsRef = useRef<string>('[]');
 
   // The full saved theme doc — its LIVE (root) fields are read only to
   // compute `hasUnpublishedChanges` (diffed against the drafts below); every
@@ -78,6 +90,9 @@ export function StoreBuilder() {
   const [headerDraft, setHeaderDraft] = useState<StoreThemeData['header'] | null>(null);
   const [footerDraft, setFooterDraft] = useState<StoreThemeData['footer'] | null>(null);
   const [identityDraft, setIdentityDraft] = useState<StoreThemeData['identityBanner'] | null>(null);
+  // Code editor's `custom.css` virtual file — mirrors the theme/header/
+  // footer/identity drafts above (loaded/saved/reverted alongside them).
+  const [customCssDraft, setCustomCssDraft] = useState<string | null>(null);
   // Which curated `themes.ts` theme the fields above were last bulk-applied
   // from — tracked alongside the drafts so "Save Theme" can persist it
   // together with everything else in one action (see `handleApplyTheme`).
@@ -122,6 +137,7 @@ export function StoreBuilder() {
         setFooterDraft(res.data.draft.footer);
         setIdentityDraft(res.data.draft.identityBanner);
         setBaseThemeIdDraft(res.data.draft.baseThemeId);
+        setCustomCssDraft(res.data.draft.customCss ?? null);
       })
       .finally(() => setThemeLoading(false));
   }, [storeId]);
@@ -130,12 +146,59 @@ export function StoreBuilder() {
   // already uses for its "N settings customized" status line, just scoped
   // to draft-vs-live instead of draft-vs-gallery-theme.
   const hasUnpublishedChanges = !!(theme && themeDraft && headerDraft && footerDraft && identityDraft) && (
-    JSON.stringify({ theme: themeDraft, header: headerDraft, footer: footerDraft, identityBanner: identityDraft, baseThemeId: baseThemeIdDraft })
-    !== JSON.stringify({ theme: theme!.theme, header: theme!.header, footer: theme!.footer, identityBanner: theme!.identityBanner, baseThemeId: theme!.baseThemeId })
+    JSON.stringify({ theme: themeDraft, header: headerDraft, footer: footerDraft, identityBanner: identityDraft, baseThemeId: baseThemeIdDraft, customCss: customCssDraft })
+    !== JSON.stringify({ theme: theme!.theme, header: theme!.header, footer: theme!.footer, identityBanner: theme!.identityBanner, baseThemeId: theme!.baseThemeId, customCss: theme!.customCss ?? null })
   );
 
   useEffect(() => { loadPages(); loadTheme(); }, [loadPages, loadTheme]);
-  useEffect(() => { setSections(selectedPage?.sections ?? []); }, [selectedPage?._id]);
+  // Loading/switching pages resets the undo history (a page's undo stack
+  // never bleeds into another page's) and re-baselines what autosave
+  // considers "already saved," so the load itself never triggers a save.
+  useEffect(() => {
+    const initial = selectedPage?.sections ?? [];
+    resetSections(initial);
+    lastSavedSectionsRef.current = JSON.stringify(initial);
+    setSectionsSaveStatus('idle');
+  }, [selectedPage?._id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Autosave — debounced, fires only when `sections` actually differs from
+  // what's already persisted. Coexists with the manual "Save Changes"
+  // button below (both call the exact same endpoint); whichever fires
+  // first simply updates `lastSavedSectionsRef` for the other.
+  useEffect(() => {
+    if (!selectedPage || tab !== 'pages') return;
+    const serialized = JSON.stringify(sections);
+    if (serialized === lastSavedSectionsRef.current) return;
+    const pageId = selectedPage._id;
+    const timer = setTimeout(() => {
+      setSectionsSaveStatus('saving');
+      apiUpdateStorePageSections(storeId, pageId, sections)
+        .then(res => {
+          lastSavedSectionsRef.current = serialized;
+          setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+          setSectionsSaveStatus('saved');
+        })
+        .catch(() => setSectionsSaveStatus('error'));
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [sections, selectedPage, tab, storeId]);
+
+  // Ctrl/Cmd+Z / Ctrl/Cmd+Shift+Z, active only on the Pages tab, and only
+  // when a text input/textarea/contenteditable isn't focused — so native
+  // in-field text undo is never hijacked by the section-level history.
+  useEffect(() => {
+    if (tab !== 'pages') return;
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return;
+      const active = document.activeElement;
+      const isEditable = active instanceof HTMLElement && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+      if (isEditable) return;
+      e.preventDefault();
+      if (e.shiftKey) redo(); else undo();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [tab, undo, redo]);
 
   const flash = (ok: boolean, text: string) => { setMessage({ ok, text }); setTimeout(() => setMessage(null), 3000); };
 
@@ -144,7 +207,9 @@ export function StoreBuilder() {
     setSaving(true);
     try {
       const res = await apiUpdateStorePageSections(storeId, selectedPage._id, sections);
+      lastSavedSectionsRef.current = JSON.stringify(sections);
       setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+      setSectionsSaveStatus('saved');
       flash(true, 'Saved');
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to save.');
@@ -217,7 +282,9 @@ export function StoreBuilder() {
     if (!selectedPage) return;
     try {
       const res = await apiUpdateStorePageSections(storeId, selectedPage._id, next);
+      lastSavedSectionsRef.current = JSON.stringify(next);
       setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
+      setSectionsSaveStatus('saved');
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to remove — try again.');
     }
@@ -274,19 +341,33 @@ export function StoreBuilder() {
     }
   };
 
-  // Applying a gallery theme updates every affected draft at once (colors +
-  // baseThemeId + headerStyle + footerStyle) — still just a local, unsaved
-  // change until "Save Theme" is clicked, same as any other Theme-tab edit.
-  // Never fires directly from a card/button click — see `pendingApplyTheme`
-  // below, which gates this behind an explicit confirm dialog first.
-  const applyThemeNow = (t: ThemeDefinition) => {
-    setThemeDraft(t.colors);
-    setBaseThemeIdDraft(t.id);
-    setHeaderDraft(prev => prev ? { ...prev, headerStyle: t.headerStyle } : prev);
-    setFooterDraft(prev => prev ? { ...prev, footerStyle: t.footerStyle } : prev);
-    setPendingApplyTheme(null);
-    setThemeMode('customize');
-    flash(true, `${t.name} applied — customize it below, then Save Theme to publish.`);
+  // Applying a Theme Marketplace theme is a real backend call (see
+  // `StoreThemeService.applyThemeDefinition`) — it stages colors/header/
+  // footer/identity-banner AND the theme's home-page section composition
+  // into the draft in one shot, server-side. Still just an unsaved draft
+  // change until "Publish" is clicked (same safety property every other
+  // draft edit already has). Never fires directly from a card/button click
+  // — see `pendingApplyTheme` below, which gates this behind an explicit
+  // confirm dialog first.
+  const applyThemeNow = async (t: ThemeDefinition) => {
+    setSaving(true);
+    try {
+      const res = await apiApplyThemeDefinition(storeId, t._id);
+      setTheme(res.data);
+      setThemeDraft(res.data.draft.theme);
+      setHeaderDraft(res.data.draft.header);
+      setFooterDraft(res.data.draft.footer);
+      setIdentityDraft(res.data.draft.identityBanner);
+      setBaseThemeIdDraft(res.data.draft.baseThemeId);
+      setCustomCssDraft(res.data.draft.customCss ?? null);
+      setPendingApplyTheme(null);
+      setThemeMode('customize');
+      flash(true, `${t.name} applied — customize it below, then Publish to make it live.`);
+    } catch (err) {
+      flash(false, err instanceof Error ? err.message : 'Failed to apply theme.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Clicking a gallery card or "Use Theme" just requests a confirmation
@@ -353,6 +434,7 @@ export function StoreBuilder() {
       setFooterDraft(res.data.draft.footer);
       setIdentityDraft(res.data.draft.identityBanner);
       setBaseThemeIdDraft(res.data.draft.baseThemeId);
+      setCustomCssDraft(res.data.draft.customCss ?? null);
       flash(true, 'Published — your storefront is now live with these changes.');
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to publish.');
@@ -371,6 +453,7 @@ export function StoreBuilder() {
       setFooterDraft(res.data.draft.footer);
       setIdentityDraft(res.data.draft.identityBanner);
       setBaseThemeIdDraft(res.data.draft.baseThemeId);
+      setCustomCssDraft(res.data.draft.customCss ?? null);
       flash(true, 'Draft discarded — reverted to your published theme.');
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to discard draft.');
@@ -434,7 +517,7 @@ export function StoreBuilder() {
           with Pages — nothing here reaches the live storefront until
           Publish. Shown whenever the draft actually differs from what's
           live, on any of those 4 tabs. */}
-      {hasUnpublishedChanges && ['theme', 'header', 'footer', 'storeInfo'].includes(tab) && (
+      {hasUnpublishedChanges && ['theme', 'header', 'footer', 'storeInfo', 'code'].includes(tab) && (
         <div className="mx-4 lg:mx-7 mt-4 flex flex-wrap items-center justify-between gap-3 bg-brand-pale-orange border border-[#f5d0bc] rounded-2xl px-4 py-3">
           <p className="text-[12.5px] font-semibold text-brand-deep-orange">You have unpublished changes — your live storefront still shows the last published version.</p>
           <div className="flex items-center gap-2 shrink-0">
@@ -487,6 +570,23 @@ export function StoreBuilder() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap shrink-0">
+                      <div className="flex items-center gap-1 mr-1">
+                        <button onClick={undo} disabled={!canUndo} aria-label="Undo" title="Undo (Ctrl+Z)"
+                          className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-bone bg-white text-charcoal hover:bg-cream cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                          <Undo2 size={14} />
+                        </button>
+                        <button onClick={redo} disabled={!canRedo} aria-label="Redo" title="Redo (Ctrl+Shift+Z)"
+                          className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-bone bg-white text-charcoal hover:bg-cream cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                          <Redo2 size={14} />
+                        </button>
+                      </div>
+                      {sectionsSaveStatus !== 'idle' && (
+                        <span className="text-[11.5px] text-slate whitespace-nowrap flex items-center gap-1">
+                          {sectionsSaveStatus === 'saving' && <><Loader2 size={11} className="animate-spin" /> Saving…</>}
+                          {sectionsSaveStatus === 'saved' && <>Saved</>}
+                          {sectionsSaveStatus === 'error' && <span className="text-error">Save failed</span>}
+                        </span>
+                      )}
                       <button onClick={handleTogglePublish} disabled={saving}
                         className="flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream cursor-pointer transition-colors disabled:opacity-60 whitespace-nowrap">
                         {selectedPage.status === 'published' ? <><EyeOff size={13} className="shrink-0" /> Unpublish</> : <><Eye size={13} className="shrink-0" /> Publish</>}
@@ -526,11 +626,22 @@ export function StoreBuilder() {
                 {tab === 'header'    && <HeaderTab    value={headerDraft}   onChange={setHeaderDraft} onPersist={persistHeader} pageOptions={pageOptions} storeId={storeId} mainCategoryId={store.categoryId} />}
                 {tab === 'footer'    && <FooterTab    value={footerDraft}   onChange={setFooterDraft} onPersist={persistFooter} pageOptions={pageOptions} storeId={storeId} mainCategoryId={store.categoryId} />}
                 {tab === 'storeInfo' && <StoreInfoTab value={identityDraft} onChange={setIdentityDraft} />}
-                <SaveButton
-                  onClick={tab === 'theme' ? handleSaveTheme : tab === 'header' ? handleSaveHeader : tab === 'footer' ? handleSaveFooter : handleSaveIdentity}
-                  saving={saving}
-                  label={`Save ${TABS.find(t => t.id === tab)?.label}`}
-                />
+                {tab === 'code' && (
+                  <CodeEditorTab
+                    storeId={storeId}
+                    themeDraft={{ theme: themeDraft, header: headerDraft, footer: footerDraft, identityBanner: identityDraft }}
+                    homePage={pages.find(p => p.type === 'home') ?? null}
+                    customCss={customCssDraft}
+                    onSaved={() => { loadTheme(); loadPages(); }}
+                  />
+                )}
+                {tab !== 'code' && (
+                  <SaveButton
+                    onClick={tab === 'theme' ? handleSaveTheme : tab === 'header' ? handleSaveHeader : tab === 'footer' ? handleSaveFooter : handleSaveIdentity}
+                    saving={saving}
+                    label={`Save ${TABS.find(t => t.id === tab)?.label}`}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -542,6 +653,7 @@ export function StoreBuilder() {
           title={`Apply ${pendingApplyTheme.name}?`}
           message="Your current theme customization will be replaced by this theme. You can customize it again afterward."
           confirmLabel="Apply Theme"
+          loading={saving}
           onCancel={() => setPendingApplyTheme(null)}
           onConfirm={() => applyThemeNow(pendingApplyTheme)}
         />

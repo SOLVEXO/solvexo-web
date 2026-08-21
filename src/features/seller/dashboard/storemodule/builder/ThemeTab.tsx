@@ -6,7 +6,7 @@ import type {
   StorefrontColors, ThemeHeaderStyle, ThemeFooterStyle,
 } from '@/api/services/storeTheme';
 import { RADIUS_PX_MAP } from '@/features/storefront/StorefrontContext';
-import { THEMES, type ThemeDefinition, type ThemeCategory } from './themes';
+import { apiListThemeCatalog, type ThemeDefinition, type ThemeCatalogCategory } from '@/api/services/themeCatalog';
 import { ThemeCard } from './ThemeCard';
 import { ThemeFilters } from './ThemeFilters';
 import { ThemeRecommendation } from './ThemeRecommendation';
@@ -61,11 +61,11 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
  *  compared automatically without listing fields by hand. */
 function fieldsMatchTheme(theme: ThemeDefinition, colors: StorefrontColors, headerStyle: ThemeHeaderStyle, footerStyle: ThemeFooterStyle): { matches: boolean; diffCount: number } {
   let diffCount = 0;
-  for (const [key, val] of Object.entries(theme.colors)) {
+  for (const [key, val] of Object.entries(theme.theme)) {
     if (colors[key as keyof StorefrontColors] !== val) diffCount++;
   }
-  if (headerStyle !== theme.headerStyle) diffCount++;
-  if (footerStyle !== theme.footerStyle) diffCount++;
+  if (headerStyle !== theme.header.headerStyle) diffCount++;
+  if (footerStyle !== theme.footer.footerStyle) diffCount++;
   return { matches: diffCount === 0, diffCount };
 }
 
@@ -138,20 +138,34 @@ export function ThemeTab({
   headerStyle, footerStyle, storeHint, mode, onModeChange,
 }: ThemeTabProps) {
   const [openSection, setOpenSection] = useState<string>('colors');
-  const [category, setCategory] = useState<ThemeCategory | 'all'>('all');
+  const [category, setCategory] = useState<ThemeCatalogCategory | 'all'>('all');
   const [search, setSearch] = useState('');
   const set = (patch: Partial<StorefrontColors>) => onChange({ ...value, ...patch });
   const toggleSection = (id: string) => setOpenSection(prev => prev === id ? '' : id);
 
+  // The catalog is fetched once per mount (not per keystroke/filter change —
+  // category/search filtering happens client-side below, same as the old
+  // static-array gallery) from the real backend Theme Marketplace.
+  const [themes, setThemes] = useState<ThemeDefinition[]>([]);
+  const [themesLoading, setThemesLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    apiListThemeCatalog()
+      .then(res => { if (!cancelled) setThemes(res.data); })
+      .finally(() => { if (!cancelled) setThemesLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
   // "Preview" opens a fully independent page in a NEW browser tab, resolved
-  // purely from the theme's id in the URL — never from any Store Builder
-  // in-memory state (drafts, active theme, etc.), so the previewed theme can
-  // never accidentally be swapped for the currently-applied one.
+  // purely from the theme's slug in the URL (the public catalog is only
+  // fetchable by slug, not by id) — never from any Store Builder in-memory
+  // state (drafts, active theme, etc.), so the previewed theme can never
+  // accidentally be swapped for the currently-applied one.
   const openPreview = (t: ThemeDefinition) => {
-    window.open(`/store/${storeId}/theme-preview/${t.id}`, '_blank', 'noopener,noreferrer');
+    window.open(`/store/${storeId}/theme-preview/${t.slug}`, '_blank', 'noopener,noreferrer');
   };
 
-  const baseTheme = useMemo(() => THEMES.find(t => t.id === baseThemeId) ?? null, [baseThemeId]);
+  const baseTheme = useMemo(() => themes.find(t => t._id === baseThemeId) ?? null, [themes, baseThemeId]);
   const diff = useMemo(
     () => baseTheme ? fieldsMatchTheme(baseTheme, value, headerStyle, footerStyle) : null,
     [baseTheme, value, headerStyle, footerStyle],
@@ -159,12 +173,12 @@ export function ThemeTab({
 
   const filteredThemes = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return THEMES.filter(t => {
+    return themes.filter(t => {
       if (category !== 'all' && t.category !== category) return false;
       if (q && !t.name.toLowerCase().includes(q) && !t.description.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [category, search]);
+  }, [themes, category, search]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -193,25 +207,30 @@ export function ThemeTab({
             <p className="text-[12px] text-slate">Each theme is a complete, professionally composed storefront — header, hero, products, typography and footer all change together. Click a card (or "Use Theme") to apply it, or Preview first to see it on your real storefront.</p>
           </div>
 
-          <ThemeRecommendation
-            store={storeHint}
-            baseThemeId={baseThemeId}
-            onApply={onApplyTheme}
-            onPreview={openPreview}
-          />
+          {!themesLoading && (
+            <ThemeRecommendation
+              themes={themes}
+              store={storeHint}
+              baseThemeId={baseThemeId}
+              onApply={onApplyTheme}
+              onPreview={openPreview}
+            />
+          )}
 
           <div className="flex flex-col gap-3">
             <ThemeFilters category={category} onCategoryChange={setCategory} search={search} onSearchChange={setSearch} />
 
-            {filteredThemes.length === 0 ? (
+            {themesLoading ? (
+              <p className="text-[13px] text-slate py-6 text-center">Loading themes…</p>
+            ) : filteredThemes.length === 0 ? (
               <p className="text-[13px] text-slate py-6 text-center">No themes match your search.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredThemes.map(theme => (
                   <ThemeCard
-                    key={theme.id}
+                    key={theme._id}
                     theme={theme}
-                    active={theme.id === baseThemeId && !!diff?.matches}
+                    active={theme._id === baseThemeId && !!diff?.matches}
                     onApply={() => onApplyTheme(theme)}
                     onPreview={() => openPreview(theme)}
                   />

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Field, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
+import { LocationPickerMap } from '@/components/comman/ui/LocationPickerMap';
 import type { SectionType } from '@/api/services/storefrontTypes';
 import { EntityPickerModal } from './EntityPickerModal';
+import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 
@@ -157,6 +159,38 @@ export function SectionFields({ type, settings, onChange, storeId, mainCategoryI
 
       {type === 'newsletter' && (
         <Field label="Subtext (optional)"><input className={inp} value={settings.subtext ?? ''} onChange={e => set({ subtext: e.target.value })} /></Field>
+      )}
+
+      {(type === 'spec_table' || type === 'menu_list') && (
+        <Field label="Subheading (optional)"><input className={inp} value={settings.subheading ?? ''} onChange={e => set({ subheading: e.target.value })} /></Field>
+      )}
+
+      {type === 'location_info' && (
+        <>
+          <Field label="Address" required><textarea className={`${inp} resize-y min-h-[60px]`} value={settings.address ?? ''} onChange={e => set({ address: e.target.value })} /></Field>
+          <Field label="Hours (optional)" hint="One line per day, e.g. Mon–Fri: 9am–6pm">
+            <textarea className={`${inp} resize-y min-h-[80px]`} value={settings.hours ?? ''} onChange={e => set({ hours: e.target.value })} />
+          </Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Phone (optional)"><input className={inp} value={settings.phone ?? ''} onChange={e => set({ phone: e.target.value })} /></Field>
+            <Field label="Email (optional)"><input className={inp} value={settings.email ?? ''} onChange={e => set({ email: e.target.value })} /></Field>
+          </div>
+          <LocationPickerMap
+            latitude={settings.latitude ?? null}
+            longitude={settings.longitude ?? null}
+            onChange={(lat, lng) => set({ latitude: lat, longitude: lng })}
+          />
+          <Field label="Button text (optional)"><input className={inp} value={settings.ctaText ?? ''} onChange={e => set({ ctaText: e.target.value })} /></Field>
+          {settings.ctaText && (
+            <LinkTargetFields
+              value={(settings.ctaLink ?? { linkType: 'home' }) as LinkTarget}
+              onChange={ctaLink => set({ ctaLink })}
+              pageOptions={[]}
+              storeId={storeId}
+              mainCategoryId={mainCategoryId}
+            />
+          )}
+        </>
       )}
 
       {showCategoryPicker && (

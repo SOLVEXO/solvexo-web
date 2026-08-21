@@ -10,6 +10,13 @@ import { VideoSection, type VideoSectionSettings } from './sections/VideoSection
 import { FeaturedCategoryGridSection, type FeaturedCategoryGridSectionSettings } from './sections/FeaturedCategoryGridSection';
 import { TrustBadgesSection } from './sections/TrustBadgesSection';
 import { NewsletterSection, type NewsletterSectionSettings } from './sections/NewsletterSection';
+import { FeatureListSection } from './sections/FeatureListSection';
+import { SpecTableSection } from './sections/SpecTableSection';
+import { MenuListSection } from './sections/MenuListSection';
+import { TeamGridSection } from './sections/TeamGridSection';
+import { LocationInfoSection } from './sections/LocationInfoSection';
+import { StatsCounterSection } from './sections/StatsCounterSection';
+import { GalleryGridSection } from './sections/GalleryGridSection';
 
 /**
  * type → component map — the single source of truth for how a section
@@ -54,6 +61,20 @@ export function SectionRenderer({ sections }: { sections: Section[] }) {
             return <TrustBadgesSection key={key} settings={section.settings} blocks={blocks.map(b => b.settings) as any} />;
           case 'newsletter':
             return <NewsletterSection key={key} settings={section.settings as NewsletterSectionSettings} />;
+          case 'feature_list':
+            return <FeatureListSection key={key} settings={section.settings} blocks={blocks.map(b => b.settings) as any} />;
+          case 'spec_table':
+            return <SpecTableSection key={key} settings={section.settings} blocks={blocks.map(b => b.settings) as any} />;
+          case 'menu_list':
+            return <MenuListSection key={key} settings={section.settings} blocks={blocks.map(b => b.settings) as any} />;
+          case 'team_grid':
+            return <TeamGridSection key={key} settings={section.settings} blocks={blocks.map(b => b.settings) as any} />;
+          case 'location_info':
+            return <LocationInfoSection key={key} settings={section.settings as any} />;
+          case 'stats_counter':
+            return <StatsCounterSection key={key} settings={section.settings} blocks={blocks.map(b => b.settings) as any} />;
+          case 'gallery_grid':
+            return <GalleryGridSection key={key} settings={section.settings} blocks={blocks.map(b => b.settings) as any} />;
           default:
             return null;
         }

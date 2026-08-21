@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Monitor, Smartphone, Star, Users, Award, BadgeCheck } from 'lucide-react';
+import { ArrowLeft, Monitor, Tablet, Smartphone, Star, Users, Award, BadgeCheck } from 'lucide-react';
 import { clsx } from 'clsx';
 import { CoverImage } from '@/components/comman/ui';
 import { apiGetStoreById } from '@/api/services/store';
@@ -13,8 +13,9 @@ import { StorefrontFooter } from '@/features/storefront/StorefrontFooter';
 import { SectionRenderer } from '@/features/storefront/SectionRenderer';
 import { DeviceFrame } from './builder/DeviceFrame';
 
-type Device = 'desktop' | 'mobile';
-const DEVICE_WIDTH: Record<Device, number> = { desktop: 1280, mobile: 390 };
+type Device = 'desktop' | 'tablet' | 'mobile';
+const DEVICE_WIDTH: Record<Device, number> = { desktop: 1280, tablet: 768, mobile: 390 };
+const DEVICE_ICON: Record<Device, typeof Monitor> = { desktop: Monitor, tablet: Tablet, mobile: Smartphone };
 
 /**
  * Seller-authenticated-only, standalone (no dashboard sidebar) live preview
@@ -41,6 +42,10 @@ export function LivePreviewPage() {
   const [store, setStore] = useState<PublicStoreData | null>(null);
   const [theme, setTheme] = useState<StoreThemeData | null>(null);
   const [homePage, setHomePage] = useState<StorePageData | null>(null);
+  // Set only when a Theme Marketplace "Use Theme" is pending (not yet
+  // published) — takes priority over the home page's live `sections` so the
+  // seller can actually preview a theme application before committing to it.
+  const [pendingHomeSections, setPendingHomeSections] = useState<StorePageData['sections'] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -66,6 +71,7 @@ export function LivePreviewPage() {
           identityBanner: draftRes.data.identityBanner, baseThemeId: draftRes.data.baseThemeId,
           draft: draftRes.data, lastPublishedAt: draftRes.data.lastPublishedAt,
         });
+        setPendingHomeSections(draftRes.data.pendingHomeSections ?? null);
         setHomePage(pagesRes.data.find(p => p.type === 'home') ?? null);
       })
       .catch(() => { if (!cancelled) setError('Could not load your store for preview.'); })
@@ -101,32 +107,38 @@ export function LivePreviewPage() {
             <ArrowLeft size={14} /> Back to Store Builder
           </Link>
           <span className="w-px h-4 bg-bone shrink-0" />
-          <p className="text-[13px] font-semibold text-charcoal truncate">Live Preview — your real, unpublished draft</p>
+          <p className="text-[13px] font-semibold text-charcoal truncate">
+            {pendingHomeSections ? 'Live Preview — includes your pending theme application' : 'Live Preview — your real, unpublished draft'}
+          </p>
         </div>
         <div className="flex items-center gap-1 bg-cream border border-bone rounded-lg p-[3px] shrink-0">
-          {(['desktop', 'mobile'] as Device[]).map(d => (
-            <button
-              key={d} type="button" onClick={() => setDevice(d)} aria-label={d} title={d.charAt(0).toUpperCase() + d.slice(1)}
-              className={clsx('w-8 h-7 rounded-md flex items-center justify-center border-none cursor-pointer transition-colors',
-                device === d ? 'bg-white text-brand-deep-orange shadow-sm' : 'bg-transparent text-slate hover:text-charcoal')}
-            >
-              {d === 'desktop' ? <Monitor size={14} /> : <Smartphone size={14} />}
-            </button>
-          ))}
+          {(['desktop', 'tablet', 'mobile'] as Device[]).map(d => {
+            const Icon = DEVICE_ICON[d];
+            return (
+              <button
+                key={d} type="button" onClick={() => setDevice(d)} aria-label={d} title={d.charAt(0).toUpperCase() + d.slice(1)}
+                className={clsx('w-8 h-7 rounded-md flex items-center justify-center border-none cursor-pointer transition-colors',
+                  device === d ? 'bg-white text-brand-deep-orange shadow-sm' : 'bg-transparent text-slate hover:text-charcoal')}
+              >
+                <Icon size={14} />
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <div className="flex-1 flex justify-center py-6 px-4 overflow-x-auto">
         <div
-          className={clsx('bg-white shrink-0', device === 'mobile' && 'rounded-2xl overflow-hidden border border-bone shadow-lg')}
+          className={clsx('bg-white shrink-0', device !== 'desktop' && 'rounded-2xl overflow-hidden border border-bone shadow-lg')}
           style={{ width: DEVICE_WIDTH[device], height: 'calc(100vh - 110px)' }}
         >
           <DeviceFrame width={DEVICE_WIDTH[device]}>
             <StorefrontProvider value={contextValue}>
-              <div style={{ background: cfg.bgColor, color: cfg.textColor, fontFamily: `${cfg.font}, sans-serif` }}>
+              <div data-store-theme={storeId} style={{ background: cfg.bgColor, color: cfg.textColor, fontFamily: `${cfg.font}, sans-serif` }}>
+                {theme?.draft.customCss && <style>{theme.draft.customCss}</style>}
                 <StorefrontNavbar />
                 <LivePreviewIdentityBanner store={store} identityBanner={identityBanner} />
-                {homePage && <SectionRenderer sections={homePage.sections} />}
+                {(pendingHomeSections ?? homePage?.sections) && <SectionRenderer sections={pendingHomeSections ?? homePage!.sections} />}
                 <StorefrontFooter />
               </div>
             </StorefrontProvider>

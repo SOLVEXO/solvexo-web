@@ -142,6 +142,7 @@ const AdminContactMessages = lazy(() => named(import('@/features/admin/pages/Adm
 const AdminTestimonials  = lazy(() => named(import('@/features/admin/pages/AdminTestimonials'),                  'AdminTestimonials'));
 const AdminManualPayments = lazy(() => named(import('@/features/admin/pages/AdminManualPayments'),               'AdminManualPayments'));
 const AdminCommissionRules = lazy(() => named(import('@/features/admin/pages/AdminCommissionRules'),             'AdminCommissionRules'));
+const AdminThemeCatalog   = lazy(() => named(import('@/features/admin/pages/AdminThemeCatalog'),                  'AdminThemeCatalog'));
 const AdminConfig        = lazy(() => named(import('@/features/admin/pages/AdminConfig'),                       'AdminConfig'));
 const AdminFxSettings    = lazy(() => named(import('@/features/admin/pages/AdminFxSettings'),                   'AdminFxSettings'));
 const AdminMarketing     = lazy(() => named(import('@/features/admin/pages/AdminMarketing'),                     'AdminMarketing'));
@@ -366,6 +367,7 @@ const mainRouter = createBrowserRouter([
           { path: 'settings',     element: <AdminSettings /> },
           { path: 'seo',          element: <RequireRole role="admin"><AdminSEO /></RequireRole> },
           { path: 'ai-studio',    element: <RequireRole role="admin"><AdminAiStudio /></RequireRole> },
+          { path: 'theme-catalog', element: <RequireRole role="admin"><AdminThemeCatalog /></RequireRole> },
         ],
       },
 

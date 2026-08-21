@@ -168,6 +168,68 @@ export function BlockFields({ type, settings, onChange, pageOptions, storeId, ma
         </div>
       );
 
+    case 'feature_item':
+      return (
+        <div className="flex flex-col gap-2">
+          <Field label="Icon">
+            <select className={inp} value={settings.icon ?? 'star'} onChange={e => set({ icon: e.target.value })}>
+              {['leaf', 'shield', 'heart', 'star', 'check', 'sparkles', 'award', 'droplet'].map(i => <option key={i} value={i}>{i}</option>)}
+            </select>
+          </Field>
+          <Field label="Title"><input className={inp} value={settings.title ?? ''} onChange={e => set({ title: e.target.value })} /></Field>
+          <Field label="Description (optional)"><textarea className={ta} value={settings.description ?? ''} onChange={e => set({ description: e.target.value })} /></Field>
+        </div>
+      );
+
+    case 'spec_row':
+      return (
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Label"><input className={inp} value={settings.label ?? ''} onChange={e => set({ label: e.target.value })} /></Field>
+          <Field label="Value"><input className={inp} value={settings.value ?? ''} onChange={e => set({ value: e.target.value })} /></Field>
+        </div>
+      );
+
+    case 'menu_item':
+      return (
+        <div className="flex flex-col gap-2">
+          <Field label="Image (optional)"><ImageUpload value={settings.imageUrl ? [settings.imageUrl] : []} onChange={urls => set({ imageUrl: urls[0] ?? '' })} maxFiles={1} /></Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Name"><input className={inp} value={settings.name ?? ''} onChange={e => set({ name: e.target.value })} /></Field>
+            <Field label="Price (optional)"><input type="number" min={0} step="0.01" className={inp} value={settings.price ?? ''} onChange={e => set({ price: e.target.value === '' ? undefined : Number(e.target.value) })} /></Field>
+          </div>
+          <Field label="Description (optional)"><textarea className={ta} value={settings.description ?? ''} onChange={e => set({ description: e.target.value })} /></Field>
+          <Field label="Group (optional)" hint="Items with the same group are shown together, e.g. 'Starters'."><input className={inp} value={settings.category ?? ''} onChange={e => set({ category: e.target.value })} /></Field>
+        </div>
+      );
+
+    case 'team_member':
+      return (
+        <div className="flex flex-col gap-2">
+          <Field label="Photo (optional)"><ImageUpload value={settings.photoUrl ? [settings.photoUrl] : []} onChange={urls => set({ photoUrl: urls[0] ?? '' })} maxFiles={1} /></Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Name"><input className={inp} value={settings.name ?? ''} onChange={e => set({ name: e.target.value })} /></Field>
+            <Field label="Role (optional)"><input className={inp} value={settings.role ?? ''} onChange={e => set({ role: e.target.value })} /></Field>
+          </div>
+          <Field label="Bio (optional)"><textarea className={ta} value={settings.bio ?? ''} onChange={e => set({ bio: e.target.value })} /></Field>
+        </div>
+      );
+
+    case 'stat_item':
+      return (
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Value" hint="e.g. 10k+"><input className={inp} value={settings.value ?? ''} onChange={e => set({ value: e.target.value })} /></Field>
+          <Field label="Label"><input className={inp} value={settings.label ?? ''} onChange={e => set({ label: e.target.value })} /></Field>
+        </div>
+      );
+
+    case 'gallery_image':
+      return (
+        <div className="flex flex-col gap-2">
+          <Field label="Image" required><ImageUpload value={settings.imageUrl ? [settings.imageUrl] : []} onChange={urls => set({ imageUrl: urls[0] ?? '' })} maxFiles={1} /></Field>
+          <Field label="Caption (optional)"><input className={inp} value={settings.caption ?? ''} onChange={e => set({ caption: e.target.value })} /></Field>
+        </div>
+      );
+
     default:
       return null;
   }
