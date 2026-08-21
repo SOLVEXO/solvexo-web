@@ -93,6 +93,12 @@ export interface RememberedAccountData {
   email: string;
   role:  AppRole;
   image: string | null;
+  /** How this device last actually signed in — a Google-only account has no
+   *  password set at all, so LoginPage's account-picker must offer "Continue
+   *  with Google" instead of a password field for it. Optional so an
+   *  already-stored value from before this field existed still renders (just
+   *  falls back to the password-field path, the previous universal behavior). */
+  authMethod?: 'password' | 'google';
 }
 export const RememberedAccount = {
   get(): RememberedAccountData | null {
@@ -263,6 +269,8 @@ export interface SocialLoginPayload {
   image?:       string;
   fcmToken?:    string;
   token?:       string;
+  /** Which collection this should resolve against — defaults to 'user' on the backend if omitted. */
+  role?:        AppRole;
 }
 
 export function apiSocialLogin(payload: SocialLoginPayload) {

@@ -47,31 +47,42 @@ const HIGHLIGHTS = [
 //     been typed (Google-style progressive disclosure) rather than showing
 //     both at once — that particular transition uses `replace` so typing
 //     doesn't spam browser history.
+// Business rule (frontend-only, deliberately reversible): the web login form
+// only ever signs in as a seller today — buyer login is hidden, not deleted,
+// since it may come back later. Flip SELLER_ONLY_LOGIN back to false to
+// restore the old buyer/seller inline toggle below with zero other changes.
+const SELLER_ONLY_LOGIN = true;
+
 // Which account (buyer vs seller) to sign into is picked via a small inline
 // toggle rather than a separate role-choice step, since it only matters for
 // disambiguating which backend collection to query (a buyer and seller
-// account can share the same email).
+// account can share the same email) — hidden while SELLER_ONLY_LOGIN is true.
 export function LoginPage() {
   const navigate   = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const redirectTo = safeRedirectPath(searchParams.get('redirect'));
   usePageTitle('Login');
   const login      = useLogin();
-  const social     = useSocialLogin();
   // Defaults to whichever role this device last registered/logged in as —
   // previously always hardcoded to "Buyer", so a seller who forgot to flip
   // the toggle got a misleading "Invalid email or password" (their account
   // lives in a different collection than the one being queried). A `?role=`
   // param (e.g. the "Continue as X" button on RegisterPage's account
-  // chooser) wins over both when present.
+  // chooser) wins over both when present. Locked to 'seller' while
+  // SELLER_ONLY_LOGIN is true, regardless of any of the above.
   const queryRole = searchParams.get('role') === 'seller' ? 'seller' : searchParams.get('role') === 'user' ? 'user' : null;
   const remembered = RememberedAccount.get();
-  const [role, setRole]           = useState<AppRole>(() => queryRole ?? remembered?.role ?? LastRolePreference.get());
+  const [role, setRole]           = useState<AppRole>(() => SELLER_ONLY_LOGIN ? 'seller' : (queryRole ?? remembered?.role ?? LastRolePreference.get()));
+  const social     = useSocialLogin(role);
   const [showPass, setShowPass]   = useState(false);
   const passwordRef = useRef<HTMLInputElement>(null);
 
   const explicitNewAccount = searchParams.get('new') === '1';
-  const showChooser = !!remembered && !explicitNewAccount;
+  // A remembered buyer account can't drive the chooser while SELLER_ONLY_LOGIN
+  // is locked to 'seller' — the chooser would sign the password step in
+  // against the wrong collection. Falls through to the normal fresh-email
+  // seller flow instead.
+  const showChooser = !!remembered && !explicitNewAccount && (!SELLER_ONLY_LOGIN || remembered.role === 'seller');
   const onPasswordStep = searchParams.get('step') === 'password';
 
   const { values, errors, set, setValue, blur, handleSubmit } = useForm(
@@ -103,6 +114,11 @@ export function LoginPage() {
   // directly, so the field appears on the very same keystroke instead of
   // waiting a render cycle for the URL-sync effect below to catch up.
   const showPasswordStep = showChooser ? onPasswordStep : freshEmailEntered;
+  // The remembered account picked in the chooser might have no password at
+  // all — it signed in via Google last time. Asking for a password it never
+  // had would just strand the visitor, so this path skips straight to
+  // "Continue with Google" instead of the password field.
+  const googleOnlyContinue = showChooser && onPasswordStep && remembered?.authMethod === 'google';
 
   // Fresh flow only: the URL follows the reactive email-typed reveal (for
   // back-button/shareable-link purposes), as a `replace` (not a new history
@@ -205,14 +221,16 @@ export function LoginPage() {
         )
       ) : (
         <>
-          <p className="text-center lg:text-left mb-2.5 lg:mb-4">
-            <span className="text-[11.5px] text-slate">
-              Signing in as a <strong className="text-charcoal">{roleLabel(role)}</strong> —{' '}
-            </span>
-            <Button variant="link" size="sm" onClick={switchRole} className="font-semibold! text-[11.5px]!">
-              switch to {roleLabel(otherRole)}
-            </Button>
-          </p>
+          {!SELLER_ONLY_LOGIN && (
+            <p className="text-center lg:text-left mb-2.5 lg:mb-4">
+              <span className="text-[11.5px] text-slate">
+                Signing in as a <strong className="text-charcoal">{roleLabel(role)}</strong> —{' '}
+              </span>
+              <Button variant="link" size="sm" onClick={switchRole} className="font-semibold! text-[11.5px]!">
+                switch to {roleLabel(otherRole)}
+              </Button>
+            </p>
+          )}
 
           {/* Before an email is typed: full stacked social pills, one per
              row. Once the password field appears, the socials collapse into
@@ -257,68 +275,90 @@ export function LoginPage() {
       )}
 
       {/* Password — shown once an identity is locked in, whichever path got
-         us there. */}
+         us there. Skipped entirely for a remembered account that signed in
+         via Google last time (see googleOnlyContinue above) — it has no
+         password to ask for. */}
       {showPasswordStep && (
         <motion.div className="mt-3" {...fadeSlide}>
-          <Input
-            ref={passwordRef}
-            id="login-password"
-            label="Password"
-            type={showPass ? 'text' : 'password'} placeholder="Enter Your Password" autoComplete="current-password"
-            value={values.password} onChange={set('password')} onBlur={blur('password')}
-            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-            error={errors.password}
-            // Only steal focus here when we arrived via the account picker
-            // (nothing else was focused) — in the fresh-email flow this
-            // field mounts the instant the FIRST character is typed into
-            // email, so auto-focusing it there would yank focus away
-            // mid-keystroke. The email field's own Enter-key handler covers
-            // that jump instead.
-            autoFocus={showChooser}
-            rightIcon={
-              <button type="button" onClick={() => setShowPass(s => !s)}
-                aria-label={showPass ? 'Hide password' : 'Show password'}
-                className="bg-transparent border-none cursor-pointer text-slate p-0 flex hover:text-charcoal transition-colors">
-                {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            }
-          />
-          <div className="flex justify-end mt-2">
-            <Button variant="link" size="sm" onClick={() => navigate('/forgot-password')}>
-              Forgot password?
-            </Button>
-          </div>
+          {googleOnlyContinue ? (
+            <>
+              <p className="text-[12.5px] text-slate text-center mb-3">
+                This account signs in with Google.
+              </p>
+              <SocialLoginRow
+                onSelect={social.onSelect}
+                disabled={social.loading}
+              />
+              {social.error && (
+                <motion.div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error" {...fadeSlide}>
+                  <AlertTriangle size={14} className="shrink-0" />
+                  <span>{social.error}</span>
+                </motion.div>
+              )}
+            </>
+          ) : (
+            <>
+              <Input
+                ref={passwordRef}
+                id="login-password"
+                label="Password"
+                type={showPass ? 'text' : 'password'} placeholder="Enter Your Password" autoComplete="current-password"
+                value={values.password} onChange={set('password')} onBlur={blur('password')}
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                error={errors.password}
+                // Only steal focus here when we arrived via the account picker
+                // (nothing else was focused) — in the fresh-email flow this
+                // field mounts the instant the FIRST character is typed into
+                // email, so auto-focusing it there would yank focus away
+                // mid-keystroke. The email field's own Enter-key handler covers
+                // that jump instead.
+                autoFocus={showChooser}
+                rightIcon={
+                  <button type="button" onClick={() => setShowPass(s => !s)}
+                    aria-label={showPass ? 'Hide password' : 'Show password'}
+                    className="bg-transparent border-none cursor-pointer text-slate p-0 flex hover:text-charcoal transition-colors">
+                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                }
+              />
+              <div className="flex justify-end mt-2">
+                <Button variant="link" size="sm" onClick={() => navigate('/forgot-password')}>
+                  Forgot password?
+                </Button>
+              </div>
 
-          <MagneticButton className="block mt-3 lg:mt-4">
-            <Button variant="primary" size="md" fullWidth onClick={handleSubmit} loading={login.loading}>
-              Sign In
-            </Button>
-          </MagneticButton>
+              <MagneticButton className="block mt-3 lg:mt-4">
+                <Button variant="primary" size="md" fullWidth onClick={handleSubmit} loading={login.loading}>
+                  Sign In
+                </Button>
+              </MagneticButton>
 
-          {login.error && (
-            <motion.div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error" {...fadeSlide}>
-              <AlertTriangle size={14} className="shrink-0" />
-              <span>{login.error}</span>
-            </motion.div>
+              {login.error && (
+                <motion.div role="alert" className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error" {...fadeSlide}>
+                  <AlertTriangle size={14} className="shrink-0" />
+                  <span>{login.error}</span>
+                </motion.div>
+              )}
+              {!login.error && social.error && (
+                <motion.div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info" {...fadeSlide}>
+                  <Info size={14} className="shrink-0" />
+                  <span>{social.error}</span>
+                </motion.div>
+              )}
+
+              <div className="flex items-center gap-3 my-2.5 lg:my-4">
+                <div className="flex-1 h-px bg-bone" />
+                <span className="text-[11px] text-slate">or continue with</span>
+                <div className="flex-1 h-px bg-bone" />
+              </div>
+
+              <SocialLoginRow
+                onSelect={social.notConfigured}
+                disabled={social.loading || login.loading}
+                className="mb-3 lg:mb-4"
+              />
+            </>
           )}
-          {!login.error && social.error && (
-            <motion.div role="status" className="flex items-center gap-2 rounded-lg bg-info-bg px-[14px] py-[10px] mt-3 text-[13px] text-info" {...fadeSlide}>
-              <Info size={14} className="shrink-0" />
-              <span>{social.error}</span>
-            </motion.div>
-          )}
-
-          <div className="flex items-center gap-3 my-2.5 lg:my-4">
-            <div className="flex-1 h-px bg-bone" />
-            <span className="text-[11px] text-slate">or continue with</span>
-            <div className="flex-1 h-px bg-bone" />
-          </div>
-
-          <SocialLoginRow
-            onSelect={social.notConfigured}
-            disabled={social.loading || login.loading}
-            className="mb-3 lg:mb-4"
-          />
         </motion.div>
       )}
 

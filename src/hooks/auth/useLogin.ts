@@ -25,7 +25,7 @@ export function useLogin() {
       TokenStorage.saveUser(user);
       const serverRole = (user.role ?? payload.role) as AppRole;
       LastRolePreference.set(serverRole);
-      RememberedAccount.set({ name: user.name, email: user.email, role: serverRole, image: user.image ?? null });
+      RememberedAccount.set({ name: user.name, email: user.email, role: serverRole, image: user.image ?? null, authMethod: 'password' });
       toast.success('Logged in successfully');
       if (redirectTo) {
         navigate(redirectTo, { replace: true });

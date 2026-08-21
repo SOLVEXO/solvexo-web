@@ -25,6 +25,14 @@ import { RegisterPage } from '@/features/auth/pages/RegisterPage';
 import { Marketplace }  from '@/features/buyer/pages/Marketplace';
 import { OnboardingPage } from '@/features/auth/pages/onboard/OnboardingPage';
 
+// Remaining auth pages — eagerly imported too (no lazy/Suspense split), same
+// reasoning as LoginPage/RegisterPage/OnboardingPage above: auth is always on
+// the critical path, never worth a route-level Suspense flash.
+import { AdminLoginPage }     from '@/features/auth/pages/admin/AdminLoginPage';
+import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
+import { VerifyOTPPage }      from '@/features/auth/pages/VerifyOTPPage';
+import { NewPasswordPage }    from '@/features/auth/pages/NewPasswordPage';
+
 // Public marketing pages — eagerly imported (no lazy/Suspense split) per
 // explicit instruction.
 import { Homepage }             from '@/features/buyer/pages/Homepage';
@@ -76,12 +84,6 @@ const AccountSecurity      = lazy(() => named(import('@/features/buyer/pages/acc
 const AccountAddresses     = lazy(() => named(import('@/features/buyer/pages/account/Addresses'),                'Addresses'));
 const AccountNotifications = lazy(() => named(import('@/features/buyer/pages/account/Notifications'),            'Notifications'));
 const AccountSubscriptions = lazy(() => named(import('@/features/buyer/pages/MySubscriptionsPage'),              'SubscriptionsTab'));
-
-// ── Auth ──────────────────────────────────────────────────────────────────────
-const AdminLoginPage       = lazy(() => named(import('@/features/auth/pages/admin/AdminLoginPage'),             'AdminLoginPage'));
-const ForgotPasswordPage   = lazy(() => named(import('@/features/auth/pages/ForgotPasswordPage'),              'ForgotPasswordPage'));
-const VerifyOTPPage        = lazy(() => named(import('@/features/auth/pages/VerifyOTPPage'),                    'VerifyOTPPage'));
-const NewPasswordPage      = lazy(() => named(import('@/features/auth/pages/NewPasswordPage'),                  'NewPasswordPage'));
 
 // ── Seller ────────────────────────────────────────────────────────────────────
 const SellerAnalytics      = lazy(() => named(import('@/features/seller/dashboard/SellerAnalytics'),             'SellerAnalytics'));

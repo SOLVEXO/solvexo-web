@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiSocialLogin, TokenStorage, getRoleRedirect, RememberedAccount, type SocialLoginPayload } from '@/api/services/auth';
+import { apiSocialLogin, TokenStorage, getRoleRedirect, LastRolePreference, RememberedAccount, type SocialLoginPayload, type AppRole } from '@/api/services/auth';
+import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import type { SocialProvider } from '@/components/comman/ui/SocialIcons';
 
 declare global {
@@ -19,7 +20,11 @@ declare global {
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
-export function useSocialLogin() {
+// `role` defaults to 'seller' — the web login form only offers seller sign-in
+// today (see LoginPage's hidden buyer toggle), so Google should resolve to a
+// Seller account, not a buyer one. Callers pass their own `role` state so a
+// future re-enabled buyer toggle just flows through unchanged.
+export function useSocialLogin(role: AppRole = 'seller') {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
@@ -28,12 +33,15 @@ export function useSocialLogin() {
     setError('');
     setLoading(true);
     try {
-      const res = await apiSocialLogin(payload);
+      const res = await apiSocialLogin({ ...payload, role });
       const { token, user } = res.data;
+      const serverRole = (user.role ?? role) as AppRole;
       TokenStorage.save(token.accessToken, token.refreshToken);
       TokenStorage.saveUser(user);
-      RememberedAccount.set({ name: user.name, email: user.email, role: 'user', image: user.image ?? null });
-      navigate(getRoleRedirect('user'), { replace: true });
+      LastRolePreference.set(serverRole);
+      RememberedAccount.set({ name: user.name, email: user.email, role: serverRole, image: user.image ?? null, authMethod: 'google' });
+      const destination = serverRole === 'seller' ? await resolveSellerDestinationRemote() : getRoleRedirect(serverRole);
+      navigate(destination, { replace: true });
       window.location.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Social login failed. Please try again.');

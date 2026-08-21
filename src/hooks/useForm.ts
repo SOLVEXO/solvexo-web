@@ -44,9 +44,19 @@ export function useForm<T extends object>(
 
   // ── onBlur handler factory ────────────────────────────────────────────────
   // Usage: onBlur={blur('fieldName')}
+  // A still-empty field never shows red on blur (e.g. autoFocus landing on a
+  // field the visitor hasn't typed into yet, then losing focus) — "required"
+  // is only worth flagging once they've actually tried to submit. A non-empty
+  // but invalid value (bad email format, etc.) still validates on blur as
+  // before.
   const blur = useCallback(<K extends keyof T>(key: K) => () => {
     setTouched(prev => ({ ...prev, [key]: true }));
     if (validateOnBlur) {
+      const currentValue = values[key];
+      if (typeof currentValue === 'string' && currentValue.trim() === '') {
+        setErrors(prev => ({ ...prev, [key]: undefined }));
+        return;
+      }
       const err = runField(schema, key, values);
       setErrors(prev => ({ ...prev, [key]: err ?? undefined }));
     }

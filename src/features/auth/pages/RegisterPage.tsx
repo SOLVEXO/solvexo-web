@@ -48,16 +48,25 @@ const HIGHLIGHTS = [
 // `?new=1`) rather than only in component state, so it's a real navigation
 // (back button, bookmarks/shared links) instead of state that resets the
 // instant the page reloads.
+// Business rule (frontend-only, deliberately reversible — mirrors
+// LoginPage's SELLER_ONLY_LOGIN): registration on the web is seller-only
+// right now. A plain /register visit used to default to a buyer sign-up
+// (only `?role=seller`, e.g. from a "Sell on Solvexo" CTA, went straight to
+// seller); that buyer path is hidden, not deleted — the backend register
+// endpoint still accepts role:'user' unchanged, so flipping this back to
+// false fully restores it with no other changes.
+const SELLER_ONLY_REGISTER = true;
+
 export function RegisterPage() {
   const navigate  = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   usePageTitle('Register');
   const register  = useRegister();
-  const social    = useSocialLogin();
   const [showPass, setShowPass] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
 
-  const role: AppRole = searchParams.get('role') === 'seller' ? 'seller' : 'user';
+  const role: AppRole = SELLER_ONLY_REGISTER ? 'seller' : (searchParams.get('role') === 'seller' ? 'seller' : 'user');
+  const social    = useSocialLogin(role);
   const isSeller = role === 'seller';
   const remembered = RememberedAccount.get();
   const explicitNewAccount = searchParams.get('new') === '1';

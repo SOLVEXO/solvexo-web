@@ -28,7 +28,7 @@ export function useVerifyOtp() {
       // object is what makes the rest of the app's guards work at all.
       TokenStorage.saveUser({ ...res.data.user, role });
       LastRolePreference.set(role);
-      RememberedAccount.set({ name: res.data.user.name, email: res.data.user.email, role, image: null });
+      RememberedAccount.set({ name: res.data.user.name, email: res.data.user.email, role, image: null, authMethod: 'password' });
       AuthContext.clear();
       // Inspect the seller's REAL store state instead of assuming — this
       // path runs right after fresh registration (an already-verified

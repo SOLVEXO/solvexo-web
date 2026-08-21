@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { PublicMegaNavbar } from '@/components/comman/ui/PublicMegaNavbar';
 import { BrandSplash } from '@/components/comman/motion/BrandSplash';
@@ -14,7 +15,17 @@ export function PublicLayout() {
       <BrandSplash />
       <Cursor />
       <PublicMegaNavbar />
-      <main><Outlet /></main>
+      {/* A local Suspense boundary around just the page content (same
+         reasoning as AccountLayout/StoreLayout/etc.'s own content
+         boundaries): without this, the first-visit-this-session load of any
+         one of these lazy-loaded pages bubbles up to RootLayout's outer
+         Suspense and blanks out the ENTIRE screen — navbar included — behind
+         its big spinner. Keeping the navbar outside this boundary means
+         navigating Home → Pricing → FAQ etc. never loses it, and no
+         fallback markup is rendered (TopProgressBar already signals
+         "loading" via its thin bar) instead of flashing a second, heavier
+         loading treatment on top of that. */}
+      <main><Suspense fallback={null}><Outlet /></Suspense></main>
     </div>
   );
 }
