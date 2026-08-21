@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { useEffect, useRef } from 'react';
 import { clsx } from 'clsx';
 
 export function GoogleIcon({ size = 17 }: { size?: number }) {
@@ -14,44 +14,58 @@ export function GoogleIcon({ size = 17 }: { size?: number }) {
 
 export type SocialProvider = 'google';
 
-export const SOCIAL_PROVIDERS: { Icon: (props: { size?: number }) => ReactElement; label: string; provider: SocialProvider }[] = [
-  { Icon: GoogleIcon, label: 'Continue with Google', provider: 'google' },
+export const SOCIAL_PROVIDERS: { provider: SocialProvider }[] = [
+  { provider: 'google' },
 ];
 
+// One provider's real widget mounts into this slot — see SocialLoginRow.
+function ProviderSlot({
+  provider,
+  mount,
+  disabled,
+}: {
+  provider: SocialProvider;
+  mount: (provider: SocialProvider, container: HTMLElement) => void;
+  disabled?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (ref.current) mount(provider, ref.current);
+  }, [provider, mount]);
+
+  return (
+    <div className={clsx('w-full flex justify-center [&>div]:w-full', disabled && 'opacity-50 pointer-events-none')}>
+      <div ref={ref} className="w-full" />
+    </div>
+  );
+}
+
+// Renders each provider's OWN real sign-in widget (Google Identity Services'
+// `renderButton`, mounted via the `mount` callback from useSocialLogin) —
+// not a custom-styled button of ours that then calls the provider's API.
+// The previous version rendered a plain button that called Google's One Tap
+// `prompt()` on click; that silently fails on Safari/mobile/Incognito (One
+// Tap is suppressed under ITP-style third-party-storage restrictions —
+// confirmed via a production repro showing `is_itp=true` on Google's own
+// FedCM status check, with the prompt never displaying). A real, directly
+// user-clicked provider button reliably falls back to a proper popup sign-in
+// flow everywhere instead.
 export function SocialLoginRow({
-  onSelect,
+  mount,
   disabled = false,
   className,
   layout = 'row',
 }: {
-  onSelect:  (provider: SocialProvider) => void;
+  mount: (provider: SocialProvider, container: HTMLElement) => void;
   disabled?: boolean;
   className?: string;
   layout?: 'row' | 'stacked';
 }) {
   return (
     <div className={clsx(layout === 'row' ? 'flex gap-2.5' : 'flex flex-col gap-2.5', className)}>
-      {SOCIAL_PROVIDERS.map(({ Icon, label, provider }) => (
-        <button
-          key={provider}
-          type="button"
-          onClick={() => onSelect(provider)}
-          disabled={disabled}
-          className={[
-            'w-full',
-            'flex items-center justify-center gap-[7px] px-3 py-[11px] bg-white border border-bone',
-            'rounded-full',
-            'text-[12.5px] font-medium text-charcoal cursor-pointer',
-            'transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out',
-            'hover:bg-cream hover:border-slate/40 hover:-translate-y-px',
-            'active:translate-y-0 active:scale-[0.98]',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50',
-            'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0',
-          ].join(' ')}
-        >
-          <Icon />
-          <span>{label}</span>
-        </button>
+      {SOCIAL_PROVIDERS.map(({ provider }) => (
+        <ProviderSlot key={provider} provider={provider} mount={mount} disabled={disabled} />
       ))}
     </div>
   );

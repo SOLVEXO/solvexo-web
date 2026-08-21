@@ -184,7 +184,7 @@ export function RegisterPage() {
         <>
           <SocialLoginRow
             layout="stacked"
-            onSelect={social.notConfigured}
+            mount={social.mount}
             disabled={social.loading}
             className="mb-3 lg:mb-4"
           />
@@ -283,7 +283,7 @@ export function RegisterPage() {
           </div>
 
           <SocialLoginRow
-            onSelect={social.notConfigured}
+            mount={social.mount}
             disabled={social.loading || register.loading}
             className="mb-3 lg:mb-4"
           />

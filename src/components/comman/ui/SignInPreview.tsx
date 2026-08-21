@@ -36,7 +36,10 @@ export function SignInPreview() {
   const pos = useDropdownPosition(ref, open);
 
   const login  = useLogin();
-  const social = useSocialLogin();
+  // Buyer-only quick sign-in preview — matches the hardcoded role: 'user'
+  // below. useSocialLogin defaults to 'seller' for the (now seller-only) main
+  // LoginPage, so this needs the buyer role explicitly.
+  const social = useSocialLogin('user');
 
   const { values, errors, set, blur, handleSubmit } = useForm(
     loginSchema,
@@ -172,7 +175,7 @@ export function SignInPreview() {
             <div className="flex-1 h-px bg-bone" />
           </div>
           <div className="px-4 pb-2">
-            <SocialLoginRow layout="stacked" onSelect={social.notConfigured} disabled={login.loading} />
+            <SocialLoginRow layout="stacked" mount={social.mount} disabled={login.loading} />
           </div>
 
           {social.error && (

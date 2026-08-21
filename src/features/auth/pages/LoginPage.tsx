@@ -239,7 +239,7 @@ export function LoginPage() {
             <>
               <SocialLoginRow
                 layout="stacked"
-                onSelect={social.notConfigured}
+                mount={social.mount}
                 disabled={social.loading}
                 className="mb-3 lg:mb-4"
               />
@@ -286,7 +286,7 @@ export function LoginPage() {
                 This account signs in with Google.
               </p>
               <SocialLoginRow
-                onSelect={social.onSelect}
+                mount={social.mount}
                 disabled={social.loading}
               />
               {social.error && (
@@ -353,7 +353,7 @@ export function LoginPage() {
               </div>
 
               <SocialLoginRow
-                onSelect={social.notConfigured}
+                mount={social.mount}
                 disabled={social.loading || login.loading}
                 className="mb-3 lg:mb-4"
               />
