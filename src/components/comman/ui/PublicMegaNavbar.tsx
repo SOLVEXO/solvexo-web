@@ -207,18 +207,28 @@ export function PublicMegaNavbar() {
             )}
           </div>
 
-          {/* Mobile/tablet header controls — kept deliberately minimal: an
-             optional compact CTA (hidden on the smallest phones so the
-             header never feels crowded at 320–414px) plus the menu toggle. */}
+          {/* Mobile/tablet header controls — kept deliberately minimal: "Log
+             in" (a returning seller's primary action, so it stays visible at
+             every width, not buried inside the hamburger panel), an optional
+             compact CTA (hidden on the smallest phones so the header never
+             feels crowded at 320–414px), and the menu toggle. */}
           <div className="lg:hidden flex items-center gap-1.5 shrink-0">
             {!loggedIn && (
-              <button
-                onClick={sellEntry.go}
-                disabled={sellEntry.loading}
-                className="hidden sm:inline-flex items-center text-[12.5px] font-semibold text-white bg-brand-orange hover:bg-brand-deep-orange transition-colors rounded-lg px-3.5 py-[7px] border-none cursor-pointer disabled:opacity-60"
-              >
-                Start Selling
-              </button>
+              <>
+                <button
+                  onClick={() => navigate('/login')}
+                  className="text-[12.5px] font-medium text-charcoal hover:text-brand-orange transition-colors bg-transparent border-none cursor-pointer px-1.5"
+                >
+                  Log in
+                </button>
+                <button
+                  onClick={sellEntry.go}
+                  disabled={sellEntry.loading}
+                  className="hidden sm:inline-flex items-center text-[12.5px] font-semibold text-white bg-brand-orange hover:bg-brand-deep-orange transition-colors rounded-lg px-3.5 py-[7px] border-none cursor-pointer disabled:opacity-60"
+                >
+                  Start Selling
+                </button>
+              </>
             )}
             <MobileMenuButton open={mobileOpen} onClick={() => setMobileOpen(o => !o)} />
           </div>

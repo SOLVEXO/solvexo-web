@@ -14,6 +14,7 @@ import {
 import { useUpload } from '@/hooks/upload/useUpload';
 import type { SellerType, ProductType, StoreData, SupportedCurrency } from '@/api/services/store';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
+import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { apiCreateOnboardingSetupIntent, apiConfirmOnboardingPaymentMethod, apiGetOnboardingProgress, apiSaveOnboardingDraft } from '@/api/services/platformPlans';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { SellerDashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
@@ -233,7 +234,9 @@ function Step1StoreInfo({ form, setForm, onNext, step, maxReached, onStepClick }
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
           {form.storeName && (
             <p className="text-[11px] text-slate mt-[5px]">
-              Your store URL will look like: <span className="text-brand-orange">solvexo.store/{form.storeName.toLowerCase().replace(/\s+/g, '-')}</span>
+              Your store URL will look like: <span className="text-brand-orange">
+                {getStorefrontUrl(form.storeName.toLowerCase().replace(/\s+/g, '-')).replace(/^https?:\/\//, '')}
+              </span>
             </p>
           )}
         </div>
