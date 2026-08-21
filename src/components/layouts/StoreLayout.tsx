@@ -238,7 +238,9 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
 
   const handleLogout = async () => {
     setLoggingOut(true);
-    await logout();
+    // Seller-only web login (see LoginPage's SELLER_ONLY_LOGIN) — a signed-out
+    // seller belongs back at /login, not the public homepage default.
+    await logout('/login');
   };
 
   const isActive = (seg: string) =>
@@ -270,17 +272,8 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
         open ? 'w-[220px]' : 'w-[60px]',
       )}>
 
-        {/* Sidebar collapse toggle */}
-        <div className={clsx(
-          'flex items-center justify-end pt-[14px] pb-[10px] shrink-0',
-          open ? 'px-4' : 'flex-col px-[10px]',
-        )}>
-          {toggleBtn}
-        </div>
-
-        <div className="h-px bg-dark-active mx-3" />
-
-        {/* Store identity */}
+        {/* Store identity + collapse toggle — same row, toggle on the right,
+           rather than the toggle sitting alone on its own row above this. */}
         {open ? (
           <div className="px-4 pt-[14px] pb-3 shrink-0">
             <div className="flex items-center gap-[10px]">
@@ -306,13 +299,15 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                   </>
                 )}
               </div>
+              {toggleBtn}
             </div>
           </div>
         ) : (
-          <div className="flex justify-center pt-3 pb-2 shrink-0">
+          <div className="flex flex-col items-center gap-2 pt-3 pb-2 shrink-0">
             <div className="size-8 rounded-[8px] shrink-0 bg-brand-orange overflow-hidden flex items-center justify-center text-[11px] font-bold text-white">
               {loading ? '…' : store?.logo ? <img loading="lazy" decoding="async" src={store.logo} className="w-full h-full object-cover" alt="" /> : initials}
             </div>
+            {toggleBtn}
           </div>
         )}
 

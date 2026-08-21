@@ -19,24 +19,41 @@ export const SOCIAL_PROVIDERS: { provider: SocialProvider }[] = [
 ];
 
 // One provider's real widget mounts into this slot — see SocialLoginRow.
+// Google's rendered button is a fixed pixel width (see useSocialLogin's
+// `mount`, clamped to GIS's own [200,400]px range) — it can never genuinely
+// be `w-full` like our own Inputs/Buttons, and its internal colors/fonts/
+// avatar chip (e.g. the personalized "Continue as {name}" state for an
+// already-signed-in browser) aren't ours to restyle: Google's brand
+// guidelines only allow the `theme`/`size`/`shape`/`logo_alignment`/`width`
+// options already set in `mount`, nothing deeper. The one thing we DO
+// control is how that fixed-width pill sits in our own layout — centered
+// in the available width (rather than stranded left with empty space beside
+// it), with a reserved `min-h` so the slot doesn't visibly pop into
+// existence once the script/button finishes loading.
 function ProviderSlot({
   provider,
   mount,
   disabled,
 }: {
   provider: SocialProvider;
-  mount: (provider: SocialProvider, container: HTMLElement) => void;
+  mount: (provider: SocialProvider, container: HTMLElement, availableWidth: number) => void;
   disabled?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (ref.current) mount(provider, ref.current);
+    if (!ref.current) return;
+    // The ref div itself is unsized (Google fills it to whatever fixed pixel
+    // width it's told to render at) — measure the real, already-laid-out
+    // parent instead so the button fills as much of the page's actual form
+    // width as GIS's own [200,400]px cap allows.
+    const availableWidth = ref.current.parentElement?.clientWidth || 300;
+    mount(provider, ref.current, availableWidth);
   }, [provider, mount]);
 
   return (
-    <div className={clsx('w-full flex justify-center [&>div]:w-full', disabled && 'opacity-50 pointer-events-none')}>
-      <div ref={ref} className="w-full" />
+    <div className={clsx('w-full min-h-10 flex justify-center items-center', disabled && 'opacity-50 pointer-events-none')}>
+      <div ref={ref} />
     </div>
   );
 }
@@ -57,7 +74,7 @@ export function SocialLoginRow({
   className,
   layout = 'row',
 }: {
-  mount: (provider: SocialProvider, container: HTMLElement) => void;
+  mount: (provider: SocialProvider, container: HTMLElement, availableWidth: number) => void;
   disabled?: boolean;
   className?: string;
   layout?: 'row' | 'stacked';

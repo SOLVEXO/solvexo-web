@@ -96,6 +96,23 @@ export function useSocialLogin(role: AppRole = 'seller') {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
+  // Loads the script + calls `initialize()` exactly once per hook instance
+  // (guarded by initializedRef) — shared by `mount` (the real button) and
+  // `promptOneTap` (the passive site-wide nudge) below, so both ever only
+  // set up GIS a single time even if a page uses both.
+  const ensureInitialized = useCallback(() => {
+    return loadGoogleScript().then(() => {
+      if (!initializedRef.current) {
+        window.google!.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleCredential,
+          use_fedcm_for_prompt: true,
+        });
+        initializedRef.current = true;
+      }
+    });
+  }, [handleCredential]);
+
   // Mounts a provider's own real sign-in widget into `container` (called by
   // SocialLoginRow's ProviderSlot once its DOM node exists) — for Google,
   // Identity Services' actual `renderButton`. Clicking it opens Google's own
@@ -109,25 +126,17 @@ export function useSocialLogin(role: AppRole = 'seller') {
   // prompt never displayed, landing on "Google sign-in was cancelled or
   // blocked" every time). A real, directly user-clicked provider button
   // reliably falls back to a proper popup sign-in flow everywhere instead.
-  const mount = useCallback((provider: SocialProvider, container: HTMLElement) => {
+  const mount = useCallback((provider: SocialProvider, container: HTMLElement, availableWidth: number) => {
     if (provider !== 'google') return;
     if (!GOOGLE_CLIENT_ID) {
       setError('Google login is not configured. Please use email and password.');
       return;
     }
-    loadGoogleScript()
+    ensureInitialized()
       .then(() => {
-        if (!initializedRef.current) {
-          window.google!.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
-            callback: handleCredential,
-            use_fedcm_for_prompt: true,
-          });
-          initializedRef.current = true;
-        }
-        // Google clamps this to [200, 400]px itself, but clamping here too
-        // avoids relying on that undocumented behavior.
-        const width = Math.min(400, Math.max(200, container.clientWidth || 300));
+        // Fills as much of the real form width as GIS's own [200,400]px
+        // button-width cap allows, instead of a fixed guess.
+        const width = Math.min(400, Math.max(200, availableWidth));
         window.google!.accounts.id.renderButton(container, {
           type: 'standard',
           theme: 'outline',
@@ -139,7 +148,23 @@ export function useSocialLogin(role: AppRole = 'seller') {
         });
       })
       .catch(() => setError('Failed to load Google login. Please try again.'));
-  }, [handleCredential]);
+  }, [ensureInitialized]);
 
-  return { execute, mount, loading, error };
+  // The passive, site-wide "corner" nudge (Google's real One Tap bubble) —
+  // deliberately separate from `mount`'s real button and never surfaces an
+  // error: unlike a deliberate button click, nobody asked for this one, so
+  // Google silently declining to show it (Safari/mobile/Incognito ITP
+  // restrictions, a recent dismissal cooldown, no active Google session,
+  // etc.) is just... nothing happens, not a failure to report. Meant to be
+  // called once from a small always-mounted component for a signed-out
+  // visitor, as a courtesy on top of the real button, never as the only way
+  // to sign in with Google (that mistake is exactly what `mount` replaced).
+  const promptOneTap = useCallback(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+    ensureInitialized()
+      .then(() => window.google!.accounts.id.prompt())
+      .catch(() => {});
+  }, [ensureInitialized]);
+
+  return { execute, mount, promptOneTap, loading, error };
 }

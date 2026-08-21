@@ -213,7 +213,9 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
 
   const handleLogout = async () => {
     setLoggingOut(true);
-    await logout();
+    // Seller-only web login (see LoginPage's SELLER_ONLY_LOGIN) — a signed-out
+    // seller belongs back at /login, not the public homepage default.
+    await logout('/login');
   };
 
   const isActive     = (path: string) => pathname === path || pathname.startsWith(path + '/');

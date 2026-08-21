@@ -5,6 +5,7 @@ import { ErrorBoundary } from '@/components/comman/ErrorBoundary';
 import { scrollRootRef } from '@/utils/scrollRoot';
 import { AuthGateModal } from '@/components/comman/ui/AuthGateModal';
 import { ToastContainer } from '@/components/comman/ui/ToastContainer';
+import { GoogleOneTapPrompt } from '@/components/comman/ui/GoogleOneTapPrompt';
 
 function PageSpinner() {
   return (
@@ -46,6 +47,7 @@ export function RootLayout() {
       <TopProgressBar />
       <AuthGateModal />
       <ToastContainer />
+      <GoogleOneTapPrompt />
       <ReferenceNav />
       {/* `fixed ... top-[44px] bottom-0` (not paddingTop + height:100vh) so this
           wrapper IS the scroll container, confined to the area below the fixed

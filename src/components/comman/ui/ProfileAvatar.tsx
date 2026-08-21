@@ -195,6 +195,16 @@ function DropdownMenu({
   );
 }
 
+// Business rule (frontend-only, deliberately reversible — same pattern as
+// LoginPage's SELLER_ONLY_LOGIN / RegisterPage's SELLER_ONLY_REGISTER):
+// buyer-facing account features (the "Buyer" role chip, My Account, My
+// Orders) are hidden here — there's currently no buyer-facing entry point on
+// the apex domain to use them from, so showing them (even to a seller/admin,
+// which `hasBuyer` below always did) is just confusing dead-end UI. Flip
+// back to true to restore instantly with no other changes; nothing about
+// the underlying role data or routes is touched.
+const SHOW_BUYER_FEATURES = false;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ProfileDropdown
 // ─────────────────────────────────────────────────────────────────────────────
@@ -209,7 +219,7 @@ function ProfileDropdown({
   const role      = profile?.role;
   const isSeller  = role === 'seller';
   const isAdmin   = role === 'admin';
-  const hasBuyer  = role === 'user' || isSeller || isAdmin;
+  const hasBuyer  = SHOW_BUYER_FEATURES && (role === 'user' || isSeller || isAdmin);
   const hasSeller = isSeller;
   const hasAdmin  = isAdmin;
   const hasDash   = isSeller || isAdmin;

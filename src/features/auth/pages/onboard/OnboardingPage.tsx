@@ -14,7 +14,7 @@ import {
 import { useUpload } from '@/hooks/upload/useUpload';
 import type { SellerType, ProductType, StoreData, SupportedCurrency } from '@/api/services/store';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
-import { apiCreateOnboardingSetupIntent, apiConfirmOnboardingPaymentMethod } from '@/api/services/platformPlans';
+import { apiCreateOnboardingSetupIntent, apiConfirmOnboardingPaymentMethod, apiGetOnboardingProgress, apiSaveOnboardingDraft } from '@/api/services/platformPlans';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { SellerDashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
 import { StripeCardSetup, isStripeConfigured } from './StripeCardSetup';
@@ -267,9 +267,14 @@ function Step1StoreInfo({ form, setForm, onNext, step, maxReached, onStepClick }
 // A card on file (never charged today — the store starts on the free plan,
 // see ensureDefaultSubscription) is what lets the store activate immediately
 // on submit instead of sitting in an admin-review queue, Shopify-style.
-function Step2Payment({ onNext, onBack, step, maxReached, onStepClick }: {
+function Step2Payment({ onNext, onBack, step, maxReached, onStepClick, alreadyConfirmed }: {
   onNext: () => void; onBack: () => void;
   step: number; maxReached: number; onStepClick: (step: number) => void;
+  /** True when Seller.hasPlatformPaymentMethod was already true on load —
+   *  e.g. resuming onboarding after a reload/lost connection/different
+   *  device, having already confirmed a card in an earlier session. Skips
+   *  straight to a "already added" confirmation instead of asking again. */
+  alreadyConfirmed: boolean;
 }) {
   const [clientSecret, setClientSecret] = useState('');
   const [loadError, setLoadError] = useState('');
@@ -277,13 +282,13 @@ function Step2Payment({ onNext, onBack, step, maxReached, onStepClick }: {
   const [confirmError, setConfirmError] = useState('');
 
   useEffect(() => {
-    if (!isStripeConfigured()) return;
+    if (alreadyConfirmed || !isStripeConfigured()) return;
     let cancelled = false;
     apiCreateOnboardingSetupIntent()
       .then(res => { if (!cancelled) setClientSecret(res.data.clientSecret); })
       .catch(() => { if (!cancelled) setLoadError('Could not start card setup. Please try again.'); });
     return () => { cancelled = true; };
-  }, []);
+  }, [alreadyConfirmed]);
 
   const handleConfirmed = useCallback(async (setupIntentId: string) => {
     setConfirming(true);
@@ -306,7 +311,15 @@ function Step2Payment({ onNext, onBack, step, maxReached, onStepClick }: {
         <p className="text-[14px] text-slate">Your store starts on the free plan — this just activates your account instantly. You won't be charged today.</p>
       </div>
       <div className={NARROW_CONTENT}>
-        {!isStripeConfigured() ? (
+        {alreadyConfirmed ? (
+          <div className="flex items-start gap-2 text-[12px] text-charcoal bg-success-bg border border-success/30 rounded-[8px] px-3 py-3 mb-4">
+            <Check size={14} className="mt-[1px] flex-shrink-0 text-success" />
+            <div>
+              <p className="font-semibold text-carbon mb-[2px]">Payment method already added</p>
+              <p className="text-slate">You confirmed a card in an earlier session — no need to do it again.</p>
+            </div>
+          </div>
+        ) : !isStripeConfigured() ? (
           <div className="flex items-start gap-2 text-[12px] text-charcoal bg-cream border border-bone rounded-[8px] px-3 py-3 mb-4">
             <Clock size={14} className="mt-[1px] flex-shrink-0 text-slate" />
             <div>
@@ -342,6 +355,11 @@ function Step2Payment({ onNext, onBack, step, maxReached, onStepClick }: {
           <Button variant="ghost" size="md" onClick={onBack} className="shrink-0">
             <ArrowLeft size={14} className="inline align-middle mr-1" /> Back
           </Button>
+          {alreadyConfirmed && (
+            <Button variant="primary" size="md" onClick={onNext} className="flex-1">
+              Continue <ArrowRight size={14} className="inline align-middle ml-1" />
+            </Button>
+          )}
         </div>
       </div>
     </div>
@@ -571,6 +589,32 @@ export function OnboardingPage() {
     storeName: '', categoryId: '', categoryName: '', description: '', logo: '',
     sellerType: '', sellerKey: '', productTypes: [], baseCurrency: DEFAULT_CURRENCY,
   });
+  // Resumability — a reload/lost connection/different device shouldn't send
+  // the seller back to step 1 with everything they've typed gone. Loaded
+  // once on mount from the backend (not localStorage, so it survives a
+  // browser switch too); `alreadyConfirmed` separately tells Step2Payment to
+  // skip re-asking for a card it already has on file.
+  const [progressLoading, setProgressLoading] = useState(true);
+  const [alreadyConfirmed, setAlreadyConfirmed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetOnboardingProgress()
+      .then(res => {
+        if (cancelled) return;
+        const { draft, hasPlatformPaymentMethod } = res.data;
+        if (draft) {
+          setStep(draft.step);
+          setMaxReached(draft.maxReached);
+          setForm(prev => ({ ...prev, ...(draft.form as Partial<StoreForm>) }));
+        }
+        setAlreadyConfirmed(hasPlatformPaymentMethod);
+      })
+      // A failed resume-check isn't fatal — the wizard just starts fresh.
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setProgressLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   // Store setup is a seller-only flow — a logged-out visitor is sent to
   // /login (redirect back here after), and a logged-in buyer is sent to
@@ -585,7 +629,18 @@ export function OnboardingPage() {
     return <Navigate to={getRoleRedirect(user.role)} replace />;
   }
 
-  const next   = () => setStep(s => { const n = Math.min(s + 1, TOTAL_STEPS); setMaxReached(m => Math.max(m, n)); return n; });
+  // Saved on every forward step transition (not on every keystroke) — enough
+  // to survive a reload without saving on every field change.
+  const saveDraft = (nextStep: number, nextMaxReached: number) => {
+    apiSaveOnboardingDraft({ step: nextStep, maxReached: nextMaxReached, form: form as unknown as Record<string, unknown> }).catch(() => {});
+  };
+  const next = () => {
+    setStep(s => {
+      const n = Math.min(s + 1, TOTAL_STEPS);
+      setMaxReached(m => { const newMax = Math.max(m, n); saveDraft(n, newMax); return newMax; });
+      return n;
+    });
+  };
   const back   = () => setStep(s => Math.max(s - 1, 1));
   const jumpTo = (target: number) => setStep(target);
 
@@ -617,6 +672,25 @@ export function OnboardingPage() {
     }
   };
 
+  // Brief — just long enough to know whether to resume a draft — but real,
+  // to avoid flashing an empty step 1 before a resumed draft overwrites it.
+  if (progressLoading) {
+    return (
+      <AuthSplitLayout
+        panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
+        heading="Your store, your way."
+        subtext="A few quick steps and your store goes live — no waiting on review."
+        highlights={ONBOARDING_HIGHLIGHTS}
+        visual={<SellerDashboardMockup />}
+        bare
+      >
+        <div className="flex-1 flex items-center justify-center px-6 py-6">
+          <Loader2 size={24} className="text-brand-orange animate-spin" />
+        </div>
+      </AuthSplitLayout>
+    );
+  }
+
   if (created) {
     return (
       <AuthSplitLayout
@@ -646,7 +720,7 @@ export function OnboardingPage() {
       <div className="flex-1 flex items-start justify-center px-6 py-6">
         <StepPane step={step}>
           {step === 1 && <Step1StoreInfo form={form} setForm={setForm} onNext={next} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
-          {step === 2 && <Step2Payment onNext={next} onBack={back} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
+          {step === 2 && <Step2Payment onNext={next} onBack={back} step={step} maxReached={maxReached} onStepClick={jumpTo} alreadyConfirmed={alreadyConfirmed} />}
           {step === 3 && <Step3SellerType form={form} setForm={setForm} onNext={next} onBack={back} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
           {step === 4 && <Step4WhatYouSell form={form} setForm={setForm} onNext={next} onBack={back} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
           {step === 5 && (
