@@ -10,23 +10,10 @@ import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
-import {
-  StorefrontPreview, POSPreview, AICommercePreview, AnalyticsPreview, InventoryPreview, OrdersTimelinePreview,
-} from '@/components/comman/mockups/ProductMockups';
+import { mockupForProductSlug } from '@/components/comman/mockups/ProductMockups';
 import { getPlatformProduct } from '@/features/buyer/data/platformProducts';
 
 const SERIF = "'Lora', Georgia, serif";
-
-function previewFor(slug: string) {
-  switch (slug) {
-    case 'store-builder':    return <StorefrontPreview />;
-    case 'pos':               return <POSPreview />;
-    case 'ai-commerce':       return <AICommercePreview />;
-    case 'analytics':         return <AnalyticsPreview />;
-    case 'inventory':         return <InventoryPreview />;
-    default:                  return <OrdersTimelinePreview />; // orders-customers
-  }
-}
 
 function ProductFaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -95,7 +82,7 @@ export function PlatformProductPage() {
             </Reveal>
           </div>
           <Reveal delay={0.12} className="w-full">
-            {previewFor(product.slug)}
+            {mockupForProductSlug(product.slug)}
           </Reveal>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
+import { mockupForProductSlug } from '@/components/comman/mockups/ProductMockups';
 import { PLATFORM_PRODUCTS } from '@/features/buyer/data/platformProducts';
 
 const ICONS: Record<string, LucideIcon> = {
@@ -40,15 +41,24 @@ export function ProductsOverviewPage() {
         {PLATFORM_PRODUCTS.map(p => {
           const Icon = ICONS[p.slug] ?? Store;
           return (
-            <PremiumCard key={p.slug} onClick={() => navigate(`/products/${p.slug}`)} className="p-7">
-              <span className="w-11 h-11 rounded-xl bg-brand-pale-orange flex items-center justify-center mb-4">
-                <Icon size={20} className="text-brand-orange" />
-              </span>
-              <p className="text-[17px] font-bold text-carbon mb-1.5">{p.name}</p>
-              <p className="text-[13px] text-slate leading-[1.65] mb-4">{p.heroSubtext}</p>
-              <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-brand-orange">
-                Explore {p.name} <ArrowRight size={13} />
-              </span>
+            <PremiumCard key={p.slug} onClick={() => navigate(`/products/${p.slug}`)} className="overflow-hidden p-0">
+              {/* Real product UI, not a decorative icon panel — cropped to a
+                 peek so the card teases the actual interface. */}
+              <div className="h-[168px] overflow-hidden bg-cream p-4 pointer-events-none flex items-start justify-center">
+                <div className="w-full" style={{ transform: 'scale(0.86)', transformOrigin: 'top center' }}>
+                  {mockupForProductSlug(p.slug)}
+                </div>
+              </div>
+              <div className="p-7">
+                <span className="w-11 h-11 rounded-xl bg-brand-pale-orange flex items-center justify-center mb-4">
+                  <Icon size={20} className="text-brand-orange" />
+                </span>
+                <p className="text-[17px] font-bold text-carbon mb-1.5">{p.name}</p>
+                <p className="text-[13px] text-slate leading-[1.65] mb-4">{p.heroSubtext}</p>
+                <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-brand-orange">
+                  Explore {p.name} <ArrowRight size={13} />
+                </span>
+              </div>
             </PremiumCard>
           );
         })}

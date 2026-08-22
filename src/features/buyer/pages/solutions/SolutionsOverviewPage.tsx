@@ -7,6 +7,7 @@ import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
+import { Check } from 'lucide-react';
 import { unsplashUrl } from '@/assets/stockPhotos';
 import { SOLUTIONS } from '@/features/buyer/data/solutions';
 
@@ -36,6 +37,14 @@ export function SolutionsOverviewPage() {
             <div className="p-5">
               <p className="text-[14.5px] font-bold text-carbon mb-1">{s.name}</p>
               <p className="text-[12.5px] text-slate leading-[1.6] mb-3">{s.headline}</p>
+              <div className="flex flex-col gap-1.5 mb-4">
+                {s.highlights.slice(0, 2).map(h => (
+                  <div key={h} className="flex items-start gap-1.5">
+                    <Check size={12} className="text-success shrink-0 mt-[2px]" />
+                    <span className="text-[11.5px] text-charcoal leading-snug">{h}</span>
+                  </div>
+                ))}
+              </div>
               <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand-orange">
                 Explore <ArrowRight size={12} />
               </span>

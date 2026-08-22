@@ -18,22 +18,9 @@ import { useCompactOnScroll } from './BuyerNavbar';
 import { PLATFORM_PRODUCTS } from '@/features/buyer/data/platformProducts';
 import { SOLUTIONS } from '@/features/buyer/data/solutions';
 import { unsplashUrl } from '@/assets/stockPhotos';
-import {
-  StorefrontPreview, POSPreview, AICommercePreview, AnalyticsPreview, InventoryPreview, OrdersTimelinePreview,
-} from '@/components/comman/mockups/ProductMockups';
+import { mockupForProductSlug } from '@/components/comman/mockups/ProductMockups';
 
 const NAV_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
-
-function productPreviewFor(slug: string) {
-  switch (slug) {
-    case 'store-builder': return <StorefrontPreview />;
-    case 'pos':             return <POSPreview />;
-    case 'ai-commerce':     return <AICommercePreview />;
-    case 'analytics':       return <AnalyticsPreview />;
-    case 'inventory':       return <InventoryPreview />;
-    default:                return <OrdersTimelinePreview />; // orders-customers
-  }
-}
 
 const PRODUCT_ICONS: Record<string, LucideIcon> = {
   'store-builder': Store,
@@ -293,7 +280,7 @@ export function PublicMegaNavbar() {
                           className="w-full [&>div]:shadow-none [&>div]:border-bone/60"
                           style={{ transform: 'scale(0.82)' }}
                         >
-                          {productPreviewFor(hoveredProduct)}
+                          {mockupForProductSlug(hoveredProduct)}
                         </motion.div>
                       </AnimatePresence>
                     </div>

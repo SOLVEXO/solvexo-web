@@ -24,8 +24,7 @@ import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
 import {
-  StorefrontPreview, POSPreview, AICommercePreview, AnalyticsPreview, SellerDashboardPreview,
-  InventoryPreview, OrdersTimelinePreview,
+  StorefrontPreview, POSPreview, SellerDashboardPreview, MobileStorePreview, mockupForProductSlug,
 } from '@/components/comman/mockups/ProductMockups';
 import { PLATFORM_PRODUCTS, getPlatformProduct } from '@/features/buyer/data/platformProducts';
 import { SOLUTIONS } from '@/features/buyer/data/solutions';
@@ -100,13 +99,6 @@ const HOW_IT_WORKS = [
 const EXPLORER_SLUGS = ['analytics', 'inventory', 'orders-customers'] as const;
 const POS_STEPS = ['Search', 'Cart', 'Payment', 'Receipt'] as const;
 
-function explorerPreview(slug: string) {
-  if (slug === 'analytics') return <AnalyticsPreview />;
-  if (slug === 'inventory') return <InventoryPreview />;
-  if (slug === 'orders-customers') return <OrdersTimelinePreview />;
-  return <SellerDashboardPreview />;
-}
-
 const SHORT_PRODUCT_LABEL: Record<string, string> = {
   'store-builder': 'Store',
   pos: 'POS',
@@ -139,27 +131,28 @@ function ConnectedSystemDiagram({ onNavigate, activeIndex, onHover, onLeave }: {
   });
 
   return (
-    <div ref={ref} className="relative w-full max-w-[640px] mx-auto aspect-[4/3.4]">
+    <div ref={ref} className="relative w-full max-w-[720px] mx-auto aspect-[4/3.4]">
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none">
         {positions.map((pos, i) => (
           <motion.line
             key={i}
             x1={50} y1={50} x2={pos.x} y2={pos.y}
-            stroke="var(--color-brand-orange)" strokeWidth={i === activeIndex ? 0.9 : 0.5} strokeLinecap="round"
+            stroke="var(--color-brand-orange)" strokeWidth={i === activeIndex ? 1 : 0.5} strokeLinecap="round"
             initial={{ pathLength: 0, opacity: 0 }}
-            animate={inView ? { pathLength: 1, opacity: i === activeIndex ? 0.85 : 0.3 } : {}}
+            animate={inView ? { pathLength: 1, opacity: i === activeIndex ? 0.9 : 0.3 } : {}}
             transition={{ duration: 0.5, delay: 0.25 + i * 0.1, ease: EASE_OUT, opacity: { duration: 0.3 } }}
           />
         ))}
       </svg>
 
       <motion.div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2] w-[76px] h-[76px] sm:w-[88px] sm:h-[88px] rounded-full bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center shadow-xl"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2] w-[88px] h-[88px] sm:w-[104px] sm:h-[104px] rounded-full bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center shadow-xl"
         initial={{ scale: 0.5, opacity: 0 }}
         animate={inView ? { scale: 1, opacity: 1 } : {}}
         transition={{ duration: 0.5, ease: EASE_OUT }}
       >
-        <span className="text-white font-bold text-[13px] sm:text-[14px] tracking-tight">Solvexo</span>
+        <span className="absolute inset-0 rounded-full bg-brand-orange/40 blur-lg -z-10" />
+        <span className="text-white font-bold text-[14px] sm:text-[16px] tracking-tight">Solvexo</span>
       </motion.div>
 
       {PLATFORM_PRODUCTS.map((p, i) => {
@@ -172,19 +165,19 @@ function ConnectedSystemDiagram({ onNavigate, activeIndex, onHover, onLeave }: {
             onClick={() => onNavigate(p.slug)}
             onMouseEnter={() => onHover(i)}
             onMouseLeave={onLeave}
-            className="absolute z-[2] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 bg-transparent border-none cursor-pointer group"
+            className="absolute z-[2] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 bg-transparent border-none cursor-pointer group"
             style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
             initial={{ scale: 0.5, opacity: 0 }}
-            animate={inView ? { scale: active ? 1.12 : 1, opacity: 1 } : {}}
+            animate={inView ? { scale: active ? 1.14 : 1, opacity: 1 } : {}}
             transition={{ duration: 0.4, delay: 0.45 + i * 0.1, ease: EASE_OUT }}
           >
             <span className={clsx(
-              'w-11 h-11 sm:w-[52px] sm:h-[52px] rounded-xl border flex items-center justify-center transition-all duration-300',
+              'w-12 h-12 sm:w-[60px] sm:h-[60px] rounded-xl border flex items-center justify-center transition-all duration-300',
               active ? 'bg-brand-orange border-brand-orange shadow-card-hover -translate-y-0.5' : 'bg-white border-bone shadow-card group-hover:border-brand-orange/40',
             )}>
-              <Icon size={18} className={active ? 'text-white' : 'text-brand-orange'} />
+              <Icon size={20} className={active ? 'text-white' : 'text-brand-orange'} />
             </span>
-            <span className="text-[10.5px] sm:text-[11px] font-semibold text-carbon whitespace-nowrap">{SHORT_PRODUCT_LABEL[p.slug] ?? p.name}</span>
+            <span className="text-[11px] sm:text-[12px] font-semibold text-carbon whitespace-nowrap">{SHORT_PRODUCT_LABEL[p.slug] ?? p.name}</span>
           </motion.button>
         );
       })}
@@ -303,15 +296,6 @@ export function Homepage() {
     const id = setInterval(() => setPosStep(i => (i + 1) % POS_STEPS.length), 1400);
     return () => clearInterval(id);
   }, [reduceMotion]);
-
-  function systemPreviewFor(slug: string) {
-    if (slug === 'store-builder') return <StorefrontPreview />;
-    if (slug === 'pos') return <POSPreview />;
-    if (slug === 'ai-commerce') return <AICommercePreview />;
-    if (slug === 'analytics') return <AnalyticsPreview />;
-    if (slug === 'inventory') return <InventoryPreview />;
-    return <OrdersTimelinePreview />;
-  }
 
   const activeExplorerProduct = getPlatformProduct(EXPLORER_SLUGS[explorerTab])!;
 
@@ -475,27 +459,31 @@ export function Homepage() {
          underneath it, not a flat card grid. Every node is a real,
          clickable link into that product's own page. ── */}
       <section
-        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-12 bg-cream"
+        className="relative overflow-hidden py-20 sm:py-28 lg:py-36 px-4 sm:px-6 lg:px-12 bg-cream"
         onMouseEnter={() => { systemPausedRef.current = true; }}
         onMouseLeave={() => { systemPausedRef.current = false; }}
       >
-        <div className="max-w-[1320px] mx-auto">
-          <div className="text-center max-w-[780px] mx-auto mb-14">
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full bg-[radial-gradient(circle,var(--color-brand-orange)_0%,transparent_65%)] opacity-[0.06] pointer-events-none"
+          aria-hidden="true"
+        />
+        <div className="relative max-w-[1320px] mx-auto">
+          <div className="text-center max-w-[900px] mx-auto mb-16 lg:mb-20">
             <Reveal>
-              <p className="text-[11px] font-semibold text-brand-deep-orange uppercase tracking-[0.12em] mb-4">One platform</p>
+              <p className="text-[11px] font-semibold text-brand-deep-orange uppercase tracking-[0.12em] mb-5">The Solvexo difference</p>
             </Reveal>
-            <h2 className="font-serif text-[36px] sm:text-[52px] lg:text-[64px] font-bold text-carbon leading-[1.04] tracking-[-0.01em]">
+            <h2 className="font-serif text-[40px] sm:text-[64px] lg:text-[84px] font-bold text-carbon leading-[1.02] tracking-[-0.015em]">
               <SplitText as="div" text="One business." delay={0.05} />
               <SplitText as="div" text="One connected system." delay={0.2} />
             </h2>
             <Reveal delay={0.4}>
-              <p className="text-[14px] sm:text-[16px] text-slate leading-[1.7] mt-6">
-                Every module reads from the same real data — a sale at the counter updates the same stock your storefront shows.
+              <p className="text-[15px] sm:text-[17px] text-slate leading-[1.7] mt-7 max-w-[620px] mx-auto">
+                Store, POS, inventory, orders, customers, payments and analytics all read from the same real data — a sale at the counter updates the same stock your storefront shows, instantly.
               </p>
             </Reveal>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <ConnectedSystemDiagram
               onNavigate={slug => navigate(`/products/${slug}`)}
               activeIndex={systemActive}
@@ -503,10 +491,10 @@ export function Homepage() {
               onLeave={() => {}}
             />
 
-            <div className="relative">
+            <div className="relative rounded-[24px] bg-white border border-bone shadow-raised p-6 sm:p-8">
               <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-2">{systemActiveProduct.name}</p>
-              <p className="text-[13.5px] text-slate leading-[1.65] mb-4 max-w-[380px]">{systemActiveProduct.heroSubtext}</p>
-              <div className="relative min-h-[220px]">
+              <p className="text-[13.5px] text-slate leading-[1.65] mb-5 max-w-[420px]">{systemActiveProduct.heroSubtext}</p>
+              <div className="relative min-h-[240px]">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={systemActiveProduct.slug}
@@ -515,7 +503,7 @@ export function Homepage() {
                     exit={{ opacity: 0, scale: 0.97 }}
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    {systemPreviewFor(systemActiveProduct.slug)}
+                    {mockupForProductSlug(systemActiveProduct.slug)}
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -559,7 +547,15 @@ export function Homepage() {
               <span className="text-[11px] text-slate">Pick a theme, edit sections, publish</span>
               <ArrowRight size={12} className="text-slate/50" />
             </div>
-            <StorefrontPreview />
+            <div className="relative">
+              <StorefrontPreview />
+              {/* Mobile-preview companion — literally illustrates the "Live
+                 desktop & mobile preview" bullet above instead of leaving it
+                 as an unproven text claim. */}
+              <div className="hidden sm:block absolute -bottom-7 -right-6 w-[110px] xl:w-[122px] drop-shadow-xl">
+                <MobileStorePreview />
+              </div>
+            </div>
           </Reveal>
         </div>
       </section>
@@ -718,7 +714,7 @@ export function Homepage() {
                     </div>
                   </div>
                   <div className="w-full sm:w-[320px] shrink-0">
-                    {explorerPreview(activeExplorerProduct.slug)}
+                    {mockupForProductSlug(activeExplorerProduct.slug)}
                   </div>
                 </motion.div>
               </AnimatePresence>

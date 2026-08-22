@@ -3,12 +3,10 @@ import { clsx } from 'clsx';
 import {
   Search, ShoppingCart, CreditCard, Wallet, Banknote, Check,
   TrendingUp, TrendingDown, Users, Package, DollarSign, Sparkles,
-  ArrowRight, Bell, PackageCheck, CreditCard as PaymentIcon,
+  ArrowRight, Bell, PackageCheck,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import { motion, useReducedMotion, type MotionValue } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { PhoneShell, StatusBar } from '@/components/comman/ui/AppDownloadBanner';
-import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
 import { unsplashUrl } from '@/assets/stockPhotos';
 
 // ── Shared "browser chrome" strip reused by every desktop-shaped mockup ──────
@@ -312,107 +310,6 @@ export function MobileStorePreview({ className }: { className?: string }) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// HeroWorkspacePreview — the hero centerpiece: a real "Solvexo Commerce
-// Workspace" panel, not a stock lifestyle photo. Revenue counts up once in
-// view, and a small activity feed cycles through real workspace events
-// (order → payment → inventory → AI insight) — illustrative content on a
-// real UI shell, same convention as every other mockup in this file, but
-// alive rather than a frozen screenshot. Accepts the hero's own parallax
-// motion values so it can tilt slightly opposite the floating chips around
-// it, instead of sitting dead flat.
-// ────────────────────────────────────────────────────────────────────────────
-const ACTIVITY_FEED: { Icon: LucideIcon; text: string; tone: 'success' | 'info' | 'violet' }[] = [
-  { Icon: PackageCheck, text: 'New order — Rs 4,200',            tone: 'success' },
-  { Icon: PaymentIcon,  text: 'Payment received — Rs 8,900',     tone: 'info' },
-  { Icon: Sparkles,     text: 'AI: “Nike Air Max” is trending',  tone: 'violet' },
-  { Icon: Users,        text: '+3 new customers this hour',      tone: 'success' },
-];
-
-const ACTIVITY_TONE: Record<string, string> = {
-  success: 'bg-success-bg text-success',
-  info:    'bg-info-bg text-info',
-  violet:  'bg-accent-violet-bg text-accent-violet',
-};
-
-export function HeroWorkspacePreview({
-  className, tiltX, tiltY,
-}: {
-  className?: string;
-  tiltX?: MotionValue<number>;
-  tiltY?: MotionValue<number>;
-}) {
-  const reduceMotion = useReducedMotion();
-  const [feedIndex, setFeedIndex] = useState(0);
-
-  useEffect(() => {
-    if (reduceMotion) return;
-    const id = setInterval(() => setFeedIndex(i => (i + 1) % ACTIVITY_FEED.length), 2600);
-    return () => clearInterval(id);
-  }, [reduceMotion]);
-
-  const activity = ACTIVITY_FEED[feedIndex];
-
-  return (
-    <motion.div
-      className={clsx('w-full rounded-[20px] bg-white/95 backdrop-blur-md overflow-hidden shadow-raised border border-white/60', className)}
-      style={{ perspective: 1200 }}
-    >
-      <motion.div style={{ rotateX: tiltY, rotateY: tiltX }}>
-        <BrowserChrome label="yourstore — commerce workspace" />
-        <div className="p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-[13px] font-bold text-carbon">Today</p>
-            <span className="flex items-center gap-1.5 text-[9.5px] font-semibold text-success">
-              <span className="w-[6px] h-[6px] rounded-full bg-success pos-live-pulse" /> Live
-            </span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-[8px] mb-4">
-            <div className="rounded-lg bg-cream p-2.5 col-span-1">
-              <DollarSign size={12} className="text-slate mb-1" />
-              <AnimatedCounter value={18400} format={n => `$${(n / 1000).toFixed(1)}k`} className="block text-[14px] font-bold text-carbon leading-tight" />
-              <p className="text-[8.5px] text-slate leading-tight">Revenue</p>
-            </div>
-            <div className="rounded-lg bg-cream p-2.5 col-span-1">
-              <Package size={12} className="text-slate mb-1" />
-              <AnimatedCounter value={412} className="block text-[14px] font-bold text-carbon leading-tight" />
-              <p className="text-[8.5px] text-slate leading-tight">Orders</p>
-            </div>
-            <div className="rounded-lg bg-cream p-2.5 col-span-1">
-              <Users size={12} className="text-slate mb-1" />
-              <AnimatedCounter value={182} format={n => `+${Math.round(n)}`} className="block text-[14px] font-bold text-carbon leading-tight" />
-              <p className="text-[8.5px] text-slate leading-tight">Customers</p>
-            </div>
-          </div>
-
-          <div className="flex items-end gap-[3px] h-[46px] mb-4 px-1">
-            {[30, 45, 38, 60, 52, 70, 64, 80, 74, 90, 82, 96].map((h, i) => (
-              <div key={i} className="flex-1 rounded-t-[2px] bg-gradient-to-t from-brand-orange to-brand-deep-orange/60" style={{ height: `${h}%` }} />
-            ))}
-          </div>
-
-          <div className="rounded-xl bg-cream p-2.5 overflow-hidden">
-            <p className="text-[9px] font-bold text-slate uppercase tracking-[0.06em] mb-2">Activity</p>
-            <motion.div
-              key={feedIndex}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="flex items-center gap-2"
-            >
-              <span className={clsx('w-6 h-6 rounded-md flex items-center justify-center shrink-0', ACTIVITY_TONE[activity.tone])}>
-                <activity.Icon size={12} />
-              </span>
-              <span className="text-[10.5px] text-charcoal truncate">{activity.text}</span>
-            </motion.div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────
 // InventoryPreview — stock levels + a real low-stock alert + restock action.
 // Distinct from SellerDashboardPreview (which the Inventory tab previously,
 // wrongly, reused verbatim) — this shows the actual inventory concept: stock
@@ -422,7 +319,7 @@ const STOCK_LEVELS = [
   { name: 'Wireless Earbuds', img: 'headphones' as const, stock: 84, pct: 84 },
   { name: 'Classic Watch',    img: 'watch' as const,      stock: 12, pct: 12 },
   { name: 'Cloud Sneaker',    img: 'sneakers' as const,   stock: 52, pct: 52 },
-  { name: 'Studio Headphones', img: 'headphones' as const, stock: 4,  pct: 4 },
+  { name: 'Camera Lens',      img: 'cameraGear' as const,  stock: 4,  pct: 4 },
 ];
 
 export function InventoryPreview({ className }: { className?: string }) {
@@ -529,4 +426,18 @@ export function OrdersTimelinePreview({ className }: { className?: string }) {
       </div>
     </div>
   );
+}
+
+// ── Single source of truth for "which mockup represents this platform-
+// product slug" — previously duplicated identically in Homepage.tsx (twice)
+// and PublicMegaNavbar.tsx; every caller now imports this instead. ──
+export function mockupForProductSlug(slug: string) {
+  switch (slug) {
+    case 'store-builder': return <StorefrontPreview />;
+    case 'pos':            return <POSPreview />;
+    case 'ai-commerce':    return <AICommercePreview />;
+    case 'analytics':      return <AnalyticsPreview />;
+    case 'inventory':      return <InventoryPreview />;
+    default:               return <OrdersTimelinePreview />; // orders-customers
+  }
 }
