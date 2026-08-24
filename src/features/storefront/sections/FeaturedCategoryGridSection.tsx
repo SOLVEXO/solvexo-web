@@ -1,3 +1,4 @@
+import { registerSection } from '../sectionRenderRegistry';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
@@ -73,3 +74,7 @@ export function FeaturedCategoryGridSection({ settings }: { settings: FeaturedCa
     </div>
   );
 }
+
+registerSection('featured_category_grid', (section) =>
+  <FeaturedCategoryGridSection settings={section.settings as FeaturedCategoryGridSectionSettings} />,
+);

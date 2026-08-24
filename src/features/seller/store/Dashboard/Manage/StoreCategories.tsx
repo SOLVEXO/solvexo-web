@@ -10,8 +10,8 @@ import { SkeletonBox, ImageUpload } from '@/components/comman/ui';
 // A store's main category is fixed at creation (assertValidRootCategory on
 // the backend) — sellers can never change it or see other main categories
 // here. The only action available is adding subcategories under it.
-function AddSubcategoryModal({ mainCategoryId, onClose, onCreated }: {
-  mainCategoryId: string; onClose: () => void; onCreated: () => void;
+function AddSubcategoryModal({ mainCategoryId, storeId, onClose, onCreated }: {
+  mainCategoryId: string; storeId?: string; onClose: () => void; onCreated: () => void;
 }) {
   const [name, setName]               = useState('');
   const [description, setDescription] = useState('');
@@ -59,7 +59,7 @@ function AddSubcategoryModal({ mainCategoryId, onClose, onCreated }: {
         </div>
         <div>
           <label className="text-[12px] font-medium text-charcoal block mb-1.5">Image (optional)</label>
-          <ImageUpload value={image ? [image] : []} onChange={urls => setImage(urls[0] ?? '')} maxFiles={1} />
+          <ImageUpload value={image ? [image] : []} onChange={urls => setImage(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
         </div>
         {error && <p className="text-[12px] text-error">{error}</p>}
       </div>
@@ -139,6 +139,7 @@ export default function StoreCategories() {
       {adding && store?.categoryId && (
         <AddSubcategoryModal
           mainCategoryId={store.categoryId}
+          storeId={store._id}
           onClose={() => setAdding(false)}
           onCreated={() => { setAdding(false); refetch(); }}
         />

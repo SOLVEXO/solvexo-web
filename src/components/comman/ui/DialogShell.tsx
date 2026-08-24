@@ -52,7 +52,10 @@ export function DialogShell({ onClose, children, align = 'center', className, st
         onKeyDown={onKeyDown}
         style={style}
         className={clsx(
-          'relative flex flex-col w-full bg-white border-bone overflow-hidden outline-none',
+          // Modals/sheets sit at the top of the elevation stack, so they get
+          // the brightest surface + the strongest shadow token rather than
+          // reusing the resting-card treatment at a bigger size.
+          'relative flex flex-col w-full bg-paper-raised border-bone shadow-raised overflow-hidden outline-none',
           align === 'bottom'
             ? 'sheet-panel-enter rounded-t-2xl border-t pb-[env(safe-area-inset-bottom)]'
             : align === 'bottom-mobile'

@@ -1,4 +1,5 @@
-import { type ReactNode, useState, useRef, useEffect } from 'react';
+import { type ReactNode, useState, useRef, useEffect, useId } from 'react';
+import { motion } from 'motion/react';
 import { ActiveStoreProvider, useActiveStore } from '@/contexts/ActiveStoreContext';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useLogout } from '@/hooks/auth/useLogout';
@@ -220,6 +221,8 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
 
   const isActive     = (path: string) => pathname === path || pathname.startsWith(path + '/');
   const toggleDropdown = (id: string) => setOpenDropdowns(prev => ({ ...prev, [id]: !prev[id] }));
+  const topPillId    = useId();
+  const childPillId  = useId();
 
   const paletteItems = buildPaletteItems(navigate);
 
@@ -252,7 +255,7 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
       <aside className={clsx(
         'hidden lg:flex bg-carbon flex-col shrink-0',
         'transition-[width] duration-300 ease-in-out',
-        import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen',
+        'h-screen',
         open ? 'w-[220px]' : 'w-[60px]',
       )}>
 
@@ -304,11 +307,18 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
                         title={item.label}
                         aria-label={item.label}
                         className={clsx(
-                          'w-full flex items-center justify-center py-[9px] rounded-md mb-0.5 cursor-pointer border-none transition-colors duration-150',
-                          anyChildActive ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
+                          'relative w-full flex items-center justify-center py-[9px] rounded-md mb-0.5 cursor-pointer border-none',
+                          !anyChildActive && 'hover:bg-dark-active transition-colors duration-fast',
                         )}
                       >
-                        <item.Icon size={15} className={clsx('shrink-0', anyChildActive ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
+                        {anyChildActive && (
+                          <motion.div
+                            layoutId={`seller-nav-top-pill-${topPillId}`}
+                            className="absolute inset-0 rounded-md bg-dark-active"
+                            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                          />
+                        )}
+                        <item.Icon size={15} className={clsx('relative shrink-0', anyChildActive ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
                       </button>
                     );
                   }
@@ -338,16 +348,23 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
                                 onClick={() => navigate(child.path)}
                                 aria-current={active ? 'page' : undefined}
                                 className={clsx(
-                                  'w-full flex items-center gap-[10px] py-2 px-[10px] rounded-md mb-0.5 border-none text-left',
-                                  'cursor-pointer transition-colors duration-150',
-                                  active ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
+                                  'relative w-full flex items-center gap-[10px] py-2 px-[10px] rounded-md mb-0.5 border-none text-left',
+                                  'cursor-pointer',
+                                  !active && 'hover:bg-dark-active transition-colors duration-fast',
                                 )}
                               >
-                                <child.Icon size={13} className={clsx('shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
-                                <span className={clsx('text-[12px] flex-1', active ? 'font-semibold text-white' : 'font-normal text-slate')}>
+                                {active && (
+                                  <motion.div
+                                    layoutId={`seller-nav-child-pill-${childPillId}`}
+                                    className="absolute inset-0 rounded-md bg-dark-active"
+                                    transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                                  />
+                                )}
+                                <child.Icon size={13} className={clsx('relative shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
+                                <span className={clsx('relative text-[12px] flex-1', active ? 'font-semibold text-white' : 'font-normal text-slate')}>
                                   {child.label}
                                 </span>
-                                {active && <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
+                                {active && <div className="relative w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
                               </button>
                             );
                           })}
@@ -367,19 +384,26 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
                     aria-label={item.label}
                     aria-current={active ? 'page' : undefined}
                     className={clsx(
-                      'w-full flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 border-none text-left',
-                      'cursor-pointer transition-colors duration-150',
+                      'relative w-full flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 border-none text-left',
+                      'cursor-pointer',
                       !open && 'lg:justify-center lg:px-0',
-                      active ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
+                      !active && 'hover:bg-dark-active transition-colors duration-fast',
                     )}
                   >
-                    <item.Icon size={15} className={clsx('shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
+                    {active && (
+                      <motion.div
+                        layoutId={`seller-nav-top-pill-${topPillId}`}
+                        className="absolute inset-0 rounded-md bg-dark-active"
+                        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                      />
+                    )}
+                    <item.Icon size={15} className={clsx('relative shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
                     {open && (
                       <>
-                        <span className={clsx('text-[13px] flex-1', active ? 'font-semibold text-white' : 'font-normal text-slate')}>
+                        <span className={clsx('relative text-[13px] flex-1', active ? 'font-semibold text-white' : 'font-normal text-slate')}>
                           {item.label}
                         </span>
-                        {active && <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
+                        {active && <div className="relative w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
                       </>
                     )}
                   </button>
@@ -526,7 +550,7 @@ export function SellerLayout() {
 
   return (
     <ActiveStoreProvider>
-      <div className={clsx('flex bg-cream', import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen')}>
+      <div className={clsx('flex bg-cream', 'h-screen')}>
         <SellerSidebar open={sidebarOpen} onToggle={toggle} />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <AnnouncementBanner audience="sellers" />

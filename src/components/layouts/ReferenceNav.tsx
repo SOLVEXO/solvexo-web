@@ -42,7 +42,7 @@ const SELLER_PAGES: NavPage[] = [
   // { label: 'Products',       path: '/seller/products',         Icon: ShoppingBag     },
   // { label: 'Add Product',  path: '/seller/products/add',     Icon: Plus            },
   // { label: 'Digital Upload', path: '/seller/products/digital', Icon: Upload          },
-  { label: 'Store Builder',  path: '/seller/store',            Icon: Store, prefetch: () => { void import('@/features/seller/dashboard/storemodule/StoreBuilder'); } },
+  { label: 'Store Builder',  path: '/seller/store',            Icon: Store, prefetch: () => { void import('@/features/seller/store/Dashboard/OnlineStore/StoreBuilder'); } },
   // { label: 'POS Register',   path: '/seller/pos',              Icon: Monitor         },
   // { label: 'Orders',         path: '/seller/orders',           Icon: Package         },
   // { label: 'Returns',        path: '/seller/returns',          Icon: CornerUpLeft    },
@@ -136,7 +136,11 @@ export function ReferenceNav() {
   // reason to exist for a real visitor and every layout's 44px offset below
   // is dev-only too (see the `import.meta.env.DEV` ternaries in
   // RootLayout/StoreLayout/SellerLayout/AdminLayout/AuthSplitLayout).
-  if (!import.meta.env.DEV) return null;
+  // Turned off in dev too, on request, while iterating on the public
+  // navbar — it was cluttering every screenshot. The 44px dev-only offset
+  // in those other layouts is left as-is (harmless empty space, not a
+  // bug); flip this guard back to `!import.meta.env.DEV` to bring it back.
+  if (true) return null;
 
   return (
     <div style={{

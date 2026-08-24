@@ -484,13 +484,9 @@ export function SearchBox({
         // filling the rest) instead of a small dropdown hanging off the
         // input. `md:` and up keeps the original anchored-dropdown behavior
         // unchanged — a mouse user doesn't need a full takeover.
-        // `inset-0` would tuck the top edge under ReferenceNav's 44px dev-only
-        // bar (see AdminLayout/BuyerNavbar's own `top-[44px]`-in-DEV pattern
-        // elsewhere) — production has no such bar, so `top-0` there is exact.
-        open && !alwaysFullScreen && clsx(
-          'max-md:fixed max-md:right-0 max-md:bottom-0 max-md:left-0 max-md:z-[9999] max-md:flex-col max-md:justify-start max-md:bg-white max-md:px-3 max-md:pt-3',
-          import.meta.env.DEV ? 'max-md:top-[44px]' : 'max-md:top-0',
-        ),
+        // ReferenceNav (the dev-only route bar this used to tuck under) is
+        // disabled, so `top-0` applies unconditionally now.
+        open && !alwaysFullScreen && 'max-md:fixed max-md:top-0 max-md:right-0 max-md:bottom-0 max-md:left-0 max-md:z-[9999] max-md:flex-col max-md:justify-start max-md:bg-white max-md:px-3 max-md:pt-3',
         // The full-screen and normal-anchored states are written as two
         // complete, mutually exclusive literal class strings — never
         // composed piecemeal from separate flags — because several of these
@@ -502,10 +498,7 @@ export function SearchBox({
         // silently kept `justify-center` active despite `alwaysFullScreen`,
         // which is exactly what collapsed the layout down to a sliver.
         open && alwaysFullScreen
-          ? clsx(
-              'fixed right-0 bottom-0 left-0 z-[9999] flex flex-col justify-start bg-white px-3 pt-3',
-              import.meta.env.DEV ? 'top-[44px]' : 'top-0',
-            )
+          ? 'fixed top-0 right-0 bottom-0 left-0 z-[9999] flex flex-col justify-start bg-white px-3 pt-3'
           : 'relative flex justify-center',
       )}
       onKeyDown={handleKeyDown}
@@ -861,9 +854,14 @@ const CURRENCY_OPTIONS: { code: SupportedCurrency; Flag: typeof FlagPK; label: s
 // actions) rather than a one-off implementation. Manual selection here
 // always wins and persists — location detection only ever sets the
 // initial default, never overrides an explicit choice.
-export function CurrencySelector() {
+export function CurrencySelector({ allowed }: { allowed?: SupportedCurrency[] } = {}) {
   const { currency, setCurrency } = useCurrencyPreference();
-  const active = CURRENCY_OPTIONS.find(c => c.code === currency) ?? CURRENCY_OPTIONS[0];
+  // `allowed` scopes this to one store's own "Markets" selection (see
+  // Store.enabledCurrencies) — omitted on the marketplace, which has no
+  // single store's currency restriction to respect.
+  const options = allowed ? CURRENCY_OPTIONS.filter(c => allowed.includes(c.code)) : CURRENCY_OPTIONS;
+  const active = options.find(c => c.code === currency) ?? options[0];
+  if (options.length <= 1) return null;
 
   return (
     <ActionMenu
@@ -876,7 +874,7 @@ export function CurrencySelector() {
         </>
       }
       triggerClassName="flex items-center gap-1.5 text-[12px] font-semibold text-charcoal border border-bone rounded-md pl-2 pr-2 md:pr-[7px] py-1 bg-white hover:bg-cream transition-colors cursor-pointer shrink-0"
-      items={CURRENCY_OPTIONS.map(c => ({
+      items={options.map(c => ({
         label: (
           <span className="flex items-center gap-2 flex-1">
             <span className="flex-1">{c.code} — {c.label}</span>

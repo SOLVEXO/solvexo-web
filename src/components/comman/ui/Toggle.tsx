@@ -5,14 +5,21 @@ interface ToggleProps {
   onChange:  (v: boolean) => void;
   disabled?: boolean;
   size?:     'sm' | 'md';
+  /** Required whenever this toggle has no adjacent visible text that's
+   *  already programmatically tied to it (e.g. via a wrapping `<label>`) —
+   *  the vast majority of call sites in this app place it next to a plain
+   *  `<span>`, which a screen reader has no way to associate with the
+   *  control (confirmed by axe: "Buttons must have discernible text"). */
+  ariaLabel?: string;
 }
 
-export function Toggle({ checked, onChange, disabled = false, size = 'md' }: ToggleProps) {
+export function Toggle({ checked, onChange, disabled = false, size = 'md', ariaLabel }: ToggleProps) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={ariaLabel}
       disabled={disabled}
       onClick={() => !disabled && onChange(!checked)}
       className={clsx(

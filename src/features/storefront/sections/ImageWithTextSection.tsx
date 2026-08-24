@@ -1,3 +1,4 @@
+import { registerSection } from '../sectionRenderRegistry';
 import { useNavigate } from 'react-router-dom';
 import { useStorefront } from '../StorefrontContext';
 import { ThemedButton } from '../ThemedButton';
@@ -41,3 +42,7 @@ export function ImageWithTextSection({ blocks }: { settings: Record<string, any>
     </div>
   );
 }
+
+registerSection('image_with_text', (section, blocks) =>
+  <ImageWithTextSection settings={section.settings} blocks={blocks.map(b => b.settings) as any} />,
+);

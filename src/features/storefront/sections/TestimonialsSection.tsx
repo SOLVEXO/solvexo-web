@@ -1,3 +1,4 @@
+import { registerSection } from '../sectionRenderRegistry';
 import { Star } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useStorefront } from '../StorefrontContext';
@@ -85,3 +86,7 @@ export function TestimonialsSection({ settings, blocks }: { settings: { heading?
     </div>
   );
 }
+
+registerSection('testimonials', (section, blocks) =>
+  <TestimonialsSection settings={section.settings} blocks={blocks.map(b => b.settings) as any} />,
+);

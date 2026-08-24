@@ -49,17 +49,20 @@ export function RootLayout() {
       <ToastContainer />
       <GoogleOneTapPrompt />
       <ReferenceNav />
-      {/* `fixed ... top-[44px] bottom-0` (not paddingTop + height:100vh) so this
-          wrapper IS the scroll container, confined to the area below the fixed
-          44px ReferenceNav — the previous approach had no overflow container of
-          its own, so tall pages fell back to scrolling the whole document, and
-          the native scrollbar then spanned the full viewport behind the fixed
-          top bar instead of starting under it. Anything that used to read
-          window.scrollY / call window.scrollTo now goes through scrollRootRef
-          (see utils/scrollRoot.ts) instead, since window itself no longer scrolls. */}
+      {/* `fixed ... top-0 bottom-0` (not paddingTop + height:100vh) so this
+          wrapper IS the scroll container — the previous approach had no
+          overflow container of its own, so tall pages fell back to
+          scrolling the whole document, and the native scrollbar then
+          spanned the full viewport behind the fixed top bar instead of
+          starting under it. Anything that used to read window.scrollY /
+          call window.scrollTo now goes through scrollRootRef (see
+          utils/scrollRoot.ts) instead, since window itself no longer
+          scrolls. ReferenceNav is disabled (see ReferenceNav.tsx), so this
+          no longer reserves a dev-only 44px strip for it either — that
+          empty space at the top was a leftover once the bar was turned off. */}
       <div
         ref={el => { scrollRootRef.current = el; }}
-        className={`fixed inset-x-0 bottom-0 overflow-y-auto ${import.meta.env.DEV ? 'top-[44px]' : 'top-0'}`}
+        className="fixed inset-x-0 top-0 bottom-0 overflow-y-auto"
       >
         {/* keyed by pathname so navigating to a new route always remounts past a caught error */}
         <ErrorBoundary key={pathname}>

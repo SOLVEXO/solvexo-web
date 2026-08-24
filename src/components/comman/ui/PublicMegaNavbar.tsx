@@ -5,10 +5,8 @@ import { clsx } from 'clsx';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import type { Variants } from 'motion/react';
 import {
-  Store, MonitorSmartphone, Sparkles, BarChart3, PackageCheck, Users,
-  ChevronDown, ArrowRight, Plus, LifeBuoy, HelpCircle, Mail,
+  Store, ChevronDown, ArrowRight, Plus, HelpCircle, Mail, Building2, ShieldCheck, Search,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { SolvexoLogo } from './SolvexoLogo';
 import { TokenStorage } from '@/api/services/auth';
 import { NotificationBell } from './NotificationBell';
@@ -18,38 +16,116 @@ import { useCompactOnScroll } from './BuyerNavbar';
 import { PLATFORM_PRODUCTS } from '@/features/buyer/data/platformProducts';
 import { SOLUTIONS } from '@/features/buyer/data/solutions';
 import { unsplashUrl } from '@/assets/stockPhotos';
-import { mockupForProductSlug } from '@/components/comman/mockups/ProductMockups';
+import { mockupForProductSlug, PRODUCT_ICONS } from '@/components/comman/mockups/ProductMockups';
 
 const NAV_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
-const PRODUCT_ICONS: Record<string, LucideIcon> = {
-  'store-builder': Store,
-  pos: MonitorSmartphone,
-  'ai-commerce': Sparkles,
-  analytics: BarChart3,
-  inventory: PackageCheck,
-  'orders-customers': Users,
+// Real products, organized as the actual commerce journey a seller moves
+// through — not a technical/database-shaped grouping. Every slug exists in
+// PLATFORM_PRODUCTS; there's no "Marketplace" or "Payments" stage since
+// neither has a real dedicated public product page (Marketplace stays
+// unlinked from public nav by deliberate decision; Payments is a feature
+// bullet, not its own product slug — fabricating a page for either would
+// violate this project's real-content-only rule).
+const PRODUCT_JOURNEY = [
+  { stage: 'Build',              slugs: ['store-builder', 'pos'] },
+  { stage: 'Operate',            slugs: ['inventory', 'orders-customers'] },
+  { stage: 'Grow & Understand',  slugs: ['ai-commerce', 'analytics', 'loyalty'] },
+] as const;
+
+// A tiny supporting detail next to each product name — never the primary
+// label. Numbering follows journey order, not PLATFORM_PRODUCTS array order.
+const PRODUCT_NUMBER: Record<string, string> = {
+  'store-builder': '01', pos: '02', inventory: '03', 'orders-customers': '04',
+  'ai-commerce': '05', analytics: '06', loyalty: '07',
 };
 
-const RESOURCE_LINKS = [
+// Tighter, benefit-led one-liners for the nav row specifically — the full
+// page (`PlatformProductPage`) keeps its own `tagline`/`heroSubtext` copy;
+// this is a nav-only rewording, not a change to the real product data.
+const PRODUCT_NAV_BLURB: Record<string, string> = {
+  'store-builder':    'Launch a storefront built around your brand.',
+  pos:                'Sell in person with every order synced.',
+  inventory:          'Know what\'s in stock before it becomes a problem.',
+  'orders-customers': 'Every order and customer in one place.',
+  'ai-commerce':      'Turn commerce data into useful decisions.',
+  analytics:          'See what\'s actually driving your business.',
+  loyalty:            'Turn first-time buyers into returning customers.',
+};
+
+// "Resources" → "Learn & Support": the label now says what's actually behind
+// it (answers, help, contact) instead of a vague catch-all noun that read
+// almost identically to "Company" in the old navbar.
+const LEARN_LINKS = [
   { Icon: HelpCircle, label: 'FAQ', desc: 'Answers to common questions', path: '/faq' },
-  { Icon: LifeBuoy,    label: 'Help Center', desc: 'Get support from our team', path: '/help' },
   { Icon: Mail,        label: 'Contact Us', desc: 'Reach sales, support or partnerships', path: '/contact-us' },
 ];
 
-type MenuKey = 'products' | 'solutions' | 'resources' | null;
+const COMPANY_LINKS = [
+  { Icon: Building2,   label: 'About Solvexo', desc: 'Why we built one connected commerce platform', path: '/about' },
+  { Icon: ShieldCheck, label: 'Security', desc: 'How we protect your account, data and payments', path: '/security' },
+];
 
-function DesktopMenuButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+type MenuKey = 'products' | 'solutions' | 'learn' | 'company' | null;
+
+// One shared layoutId per indicator kind (`nav-hover-pill`/`nav-active-
+// underline`) across every top-level item — Motion slides the same element
+// between whichever item currently owns it, instead of it popping in/out
+// fresh under each item.
+function DesktopMenuButton({ label, active, hovered, onClick, onHoverStart }: {
+  label: string; active: boolean; hovered: boolean; onClick: () => void; onHoverStart: () => void;
+}) {
   return (
     <button
       onClick={onClick}
+      onMouseEnter={onHoverStart}
       className={clsx(
-        'flex items-center gap-1 text-[13px] font-medium px-1 py-2 bg-transparent border-none cursor-pointer transition-colors',
+        'relative flex items-center gap-1 text-[13px] font-medium px-3 py-[7px] rounded-lg bg-transparent border-none cursor-pointer transition-colors',
         active ? 'text-brand-orange' : 'text-charcoal hover:text-brand-orange',
       )}
     >
+      {(hovered || active) && (
+        <motion.span
+          layoutId="nav-hover-pill"
+          className={clsx('absolute inset-0 rounded-lg -z-10', active ? 'bg-brand-pale-orange/70' : 'bg-cream')}
+          transition={{ duration: 0.22, ease: NAV_EASE }}
+        />
+      )}
       {label} <ChevronDown size={13} className={clsx('transition-transform duration-200', active && 'rotate-180')} />
+      {/* Shared layoutId — Motion animates this underline sliding between
+         whichever top-level item is currently active instead of it just
+         appearing/disappearing under a new item. */}
+      {active && (
+        <motion.span
+          layoutId="nav-active-underline"
+          className="absolute left-3 right-7 -bottom-[1px] h-[2px] rounded-full bg-brand-orange"
+          transition={{ duration: 0.25, ease: NAV_EASE }}
+        />
+      )}
     </button>
+  );
+}
+
+// Same hover-pill language as DesktopMenuButton, for the two plain links
+// (Pricing, For Sellers) that have no dropdown/active-open concept.
+function DesktopNavLink({ to, label, hovered, onHoverStart }: {
+  to: string; label: string; hovered: boolean; onHoverStart: () => void;
+}) {
+  return (
+    <Link
+      to={to}
+      onMouseEnter={onHoverStart}
+      className="relative text-[13px] font-medium text-charcoal hover:text-brand-orange transition-colors px-3 py-[7px] rounded-lg"
+    >
+      {hovered && (
+        <motion.span
+          layoutId="nav-hover-pill"
+          className="absolute inset-0 rounded-lg bg-cream -z-10"
+          transition={{ duration: 0.22, ease: NAV_EASE }}
+        />
+      )}
+      {label}
+    </Link>
   );
 }
 
@@ -99,15 +175,69 @@ const navFadeVariants: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: NAV_EASE } },
 };
 
+// ── Desktop mega-menu panel choreography — clip-path + opacity on the
+// container, then a staggered internal reveal for whichever dropdown is
+// currently open, so content always enters with the same "expensive" feel
+// regardless of which of the 4 very differently-laid-out panels is showing.
+const panelVariants: Variants = {
+  hidden: { opacity: 0, clipPath: 'inset(0% 0% 100% 0%)' },
+  show: { opacity: 1, clipPath: 'inset(0% 0% 0% 0%)', transition: { duration: 0.28, ease: NAV_EASE } },
+  exit: { opacity: 0, clipPath: 'inset(0% 0% 100% 0%)', transition: { duration: 0.18, ease: NAV_EASE } },
+};
+const panelContentVariants: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.045, delayChildren: 0.05 } },
+};
+const panelItemVariants: Variants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.28, ease: NAV_EASE } },
+};
+
+// A small, original "Help Center" UI composition for the Learn & Support
+// panel's featured slot — deliberately not one of the 7 product mockups
+// (which already appear in the Products panel) and not a fabricated blog
+// image. A search bar + 3 real question rows pulled straight from this
+// panel's own FAQ link, just visualized instead of just linked.
+function SupportPreviewMock() {
+  const rows = ['Do I need an online store to use POS?', 'Can I change themes after launching?', 'How is AI usage billed?'];
+  return (
+    <div className="w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone">
+      <div className="flex items-center gap-2 px-3 py-2 bg-cream border-b border-bone">
+        <span className="size-[7px] rounded-full bg-[#e5675b]" />
+        <span className="size-[7px] rounded-full bg-[#e8b74e]" />
+        <span className="size-[7px] rounded-full bg-[#59c26a]" />
+        <span className="ml-2 text-[10px] text-slate truncate">solvexo.com — help center</span>
+      </div>
+      <div className="p-4">
+        <div className="flex items-center gap-2 rounded-lg bg-cream border border-bone px-3 py-2 mb-3">
+          <Search size={13} className="text-slate shrink-0" />
+          <span className="text-[11px] text-slate">Search the Help Center…</span>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          {rows.map(r => (
+            <div key={r} className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 hover:bg-cream transition-colors">
+              <span className="text-[11px] text-charcoal leading-snug">{r}</span>
+              <ArrowRight size={11} className="text-brand-orange shrink-0" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function PublicMegaNavbar() {
   const navigate = useNavigate();
   const sellEntry = useSellEntry();
   const { scrolled } = useCompactOnScroll();
   const [openMenu, setOpenMenu] = useState<MenuKey>(null);
+  const [hoverKey, setHoverKey] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [expanded, setExpanded] = useState<'products' | 'solutions' | 'resources' | null>(null);
+  const [expanded, setExpanded] = useState<'products' | 'solutions' | 'learn' | 'company' | null>(null);
   const [hoveredProduct, setHoveredProduct] = useState(PLATFORM_PRODUCTS[0].slug);
+  const [hoveredSolution, setHoveredSolution] = useState(SOLUTIONS[0].slug);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   const openNow = useCallback((key: MenuKey) => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -117,6 +247,24 @@ export function PublicMegaNavbar() {
     closeTimer.current = setTimeout(() => setOpenMenu(null), 120);
   }, []);
   const closeMenu = useCallback(() => setMobileOpen(false), []);
+
+  // Desktop dropdowns close on Escape or a click outside the header — not
+  // just on mouse-leave, so keyboard/touch users have a real way out too.
+  useEffect(() => {
+    if (!openMenu) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpenMenu(null);
+    }
+    function onPointerDown(e: MouseEvent) {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) setOpenMenu(null);
+    }
+    window.addEventListener('keydown', onKeyDown);
+    document.addEventListener('mousedown', onPointerDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('mousedown', onPointerDown);
+    };
+  }, [openMenu]);
 
   // Lock the page underneath while the overlay is open — the overlay itself
   // scrolls independently (`overscroll-contain`), the homepage must not.
@@ -141,34 +289,74 @@ export function PublicMegaNavbar() {
   }, [mobileOpen]);
 
   const loggedIn = TokenStorage.isLoggedIn();
+  const hoveredSolutionData = SOLUTIONS.find(s => s.slug === hoveredSolution) ?? SOLUTIONS[0];
 
   return (
     <>
       <header
+        ref={navRef}
         className={clsx(
-          'sticky top-0 z-50 transition-[background-color,border-color,box-shadow] duration-200 border-b',
-          scrolled ? 'bg-white/95 backdrop-blur-md border-bone shadow-[0_1px_0_rgba(0,0,0,0.03)]' : 'bg-white/80 backdrop-blur-sm border-transparent',
+          'sticky top-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 ease-out border-b',
+          // Flat/plain at the very top, then sticky + a real, layered
+          // ambient shadow (not a flat 1px line) + a light blur once
+          // scrolled — opacity stays high (94%) so there's essentially
+          // nothing to bleed through and mismatch, but it's still
+          // technically glass, not a solid repaint.
+          scrolled
+            ? 'bg-white/[0.94] backdrop-blur-md border-bone shadow-[0_1px_2px_rgba(20,15,10,0.04),0_12px_28px_-14px_rgba(20,15,10,0.16)]'
+            : 'bg-white border-transparent',
         )}
         onMouseLeave={closeSoon}
       >
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 h-[60px] flex items-center justify-between gap-4">
+        <div className={clsx(
+          'max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4',
+          'transition-[height] duration-300 ease-out',
+          scrolled ? 'h-[54px]' : 'h-[60px]',
+        )}>
           <Link to="/" className="shrink-0" aria-label="Solvexo home">
             <SolvexoLogo size={28} />
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-6">
+          {/* Desktop nav — a shared sliding highlight (layoutId) follows
+             whichever item the cursor is over, so switching between items
+             reads as one indicator travelling rather than each hover state
+             popping in fresh — the actual "modern nav" cue, independent of
+             the navbar's own background color/theme. */}
+          <nav className="hidden lg:flex items-center gap-1" onMouseLeave={() => setHoverKey(null)}>
             <div onMouseEnter={() => openNow('products')}>
-              <DesktopMenuButton label="Products" active={openMenu === 'products'} onClick={() => openNow(openMenu === 'products' ? null : 'products')} />
+              <DesktopMenuButton
+                label="Products" active={openMenu === 'products'} hovered={hoverKey === 'products'}
+                onHoverStart={() => setHoverKey('products')}
+                onClick={() => openNow(openMenu === 'products' ? null : 'products')}
+              />
             </div>
             <div onMouseEnter={() => openNow('solutions')}>
-              <DesktopMenuButton label="Solutions" active={openMenu === 'solutions'} onClick={() => openNow(openMenu === 'solutions' ? null : 'solutions')} />
+              <DesktopMenuButton
+                label="Solutions" active={openMenu === 'solutions'} hovered={hoverKey === 'solutions'}
+                onHoverStart={() => setHoverKey('solutions')}
+                onClick={() => openNow(openMenu === 'solutions' ? null : 'solutions')}
+              />
             </div>
-            <div onMouseEnter={() => openNow('resources')}>
-              <DesktopMenuButton label="Resources" active={openMenu === 'resources'} onClick={() => openNow(openMenu === 'resources' ? null : 'resources')} />
+            <div onMouseEnter={() => openNow('learn')}>
+              <DesktopMenuButton
+                label="Learn & Support" active={openMenu === 'learn'} hovered={hoverKey === 'learn'}
+                onHoverStart={() => setHoverKey('learn')}
+                onClick={() => openNow(openMenu === 'learn' ? null : 'learn')}
+              />
             </div>
-            <Link to="/pricing" onMouseEnter={() => openNow(null)} className="text-[13px] font-medium text-charcoal hover:text-brand-orange transition-colors">Pricing</Link>
-            <Link to="/sellers" onMouseEnter={() => openNow(null)} className="text-[13px] font-medium text-charcoal hover:text-brand-orange transition-colors">For Sellers</Link>
+            <div onMouseEnter={() => openNow('company')}>
+              <DesktopMenuButton
+                label="Company" active={openMenu === 'company'} hovered={hoverKey === 'company'}
+                onHoverStart={() => setHoverKey('company')}
+                onClick={() => openNow(openMenu === 'company' ? null : 'company')}
+              />
+            </div>
+            <div onMouseEnter={() => openNow(null)}>
+              <DesktopNavLink to="/pricing" label="Pricing" hovered={hoverKey === 'pricing'} onHoverStart={() => setHoverKey('pricing')} />
+            </div>
+            <div onMouseEnter={() => openNow(null)}>
+              <DesktopNavLink to="/sellers" label="For Sellers" hovered={hoverKey === 'sellers'} onHoverStart={() => setHoverKey('sellers')} />
+            </div>
           </nav>
 
           {/* Actions */}
@@ -221,121 +409,281 @@ export function PublicMegaNavbar() {
           </div>
         </div>
 
-        {/* Mega menu panels (desktop only, unchanged) */}
+        {/* ── Mega menu panels — each one a genuinely different layout, not
+           the same card grid re-skinned. Products = category groups + a
+           live crossfading/blurring product preview. Solutions = an
+           editorial master/detail list, the hovered industry taking over
+           the whole right half. Learn & Support = one featured "Help
+           Center" visual beside a short utility list. Company = a large
+           brand statement beside a plain, minimal link list — the one
+           panel with no icon chips at all, so it reads as institutional
+           rather than another product-shaped menu. ── */}
         <AnimatePresence>
           {openMenu && (
             <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18, ease: NAV_EASE }}
+              key={openMenu}
+              variants={panelVariants}
+              initial="hidden"
+              animate="show"
+              exit="exit"
               onMouseEnter={() => openNow(openMenu)}
-              className="hidden lg:block absolute left-0 right-0 top-full bg-white border-b border-bone shadow-xl"
+              className="hidden lg:block absolute left-0 right-0 top-full bg-white border-b border-bone shadow-xl overflow-hidden"
+              role="menu"
+              aria-label={`${openMenu} menu`}
             >
-              <div className="max-w-[1280px] mx-auto px-8 py-7">
-                {openMenu === 'products' && (
-                  <div className="grid grid-cols-[1fr_320px] gap-8">
-                    <div className="grid grid-cols-2 gap-1">
-                      {PLATFORM_PRODUCTS.map(p => {
-                        const Icon = PRODUCT_ICONS[p.slug] ?? Store;
-                        return (
-                          <Link
-                            key={p.slug}
-                            to={`/products/${p.slug}`}
-                            onClick={() => setOpenMenu(null)}
-                            onMouseEnter={() => setHoveredProduct(p.slug)}
-                            className={clsx(
-                              'flex items-start gap-3 rounded-xl p-3 transition-colors',
-                              hoveredProduct === p.slug ? 'bg-cream' : 'hover:bg-cream',
-                            )}
-                          >
-                            <span className={clsx('w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors', hoveredProduct === p.slug ? 'bg-brand-orange' : 'bg-brand-pale-orange')}>
-                              <Icon size={17} className={hoveredProduct === p.slug ? 'text-white' : 'text-brand-orange'} />
-                            </span>
-                            <span>
-                              <span className="block text-[13px] font-semibold text-carbon">{p.name}</span>
-                              <span className="block text-[11.5px] text-slate leading-snug mt-0.5">{p.tagline}</span>
-                            </span>
-                          </Link>
-                        );
-                      })}
-                      <Link
-                        to="/products"
-                        onClick={() => setOpenMenu(null)}
-                        className="flex items-center justify-between rounded-xl p-3 bg-cream text-[13px] font-semibold text-brand-orange hover:bg-brand-pale-orange transition-colors col-span-2"
-                      >
-                        Explore all products <ArrowRight size={14} />
-                      </Link>
-                    </div>
-
-                    {/* Live preview — swaps to whichever product row is hovered */}
-                    <div className="rounded-2xl bg-cream p-4 flex items-center justify-center overflow-hidden">
-                      <AnimatePresence mode="wait">
-                        <motion.div
-                          key={hoveredProduct}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          transition={{ duration: 0.2, ease: NAV_EASE }}
-                          className="w-full [&>div]:shadow-none [&>div]:border-bone/60"
-                          style={{ transform: 'scale(0.82)' }}
+              <motion.div variants={panelContentVariants} initial="hidden" animate="show" className="max-w-[1280px] mx-auto px-8 py-7">
+                {openMenu === 'products' && (() => {
+                  const activeProduct = PLATFORM_PRODUCTS.find(p => p.slug === hoveredProduct);
+                  return (
+                    <div className="flex flex-col gap-5">
+                      {/* Compact editorial header — statement + CTA share one
+                         row instead of stacking and eating vertical space. */}
+                      <motion.div variants={panelItemVariants} className="flex items-end justify-between gap-6">
+                        <div>
+                          <p className="text-[10px] font-bold text-brand-orange uppercase tracking-[0.1em] mb-1.5">Products</p>
+                          <p className="text-[17px] font-bold text-carbon leading-snug">Everything your commerce business needs.</p>
+                        </div>
+                        <Link
+                          to="/products"
+                          onClick={() => setOpenMenu(null)}
+                          className="group flex items-center gap-2 shrink-0 text-[12.5px] font-semibold text-carbon hover:text-brand-orange transition-colors whitespace-nowrap pb-0.5"
                         >
-                          {mockupForProductSlug(hoveredProduct)}
+                          <span>
+                            Explore all products
+                            <span className="block text-[10.5px] font-normal text-slate">{PLATFORM_PRODUCTS.length} products · one commerce system</span>
+                          </span>
+                          <ArrowRight size={15} className="transition-transform duration-200 group-hover:translate-x-1" />
+                        </Link>
+                      </motion.div>
+
+                      {/* Primary navigation — every product name and
+                         description is always visible and always
+                         clickable; nothing is hidden behind a number.
+                         Grouped by BUILD / OPERATE / GROW & UNDERSTAND so
+                         the list still reads as a journey, not a flat
+                         dump of seven links. */}
+                      <div className="grid grid-cols-[1fr_360px] gap-8">
+                        <motion.div variants={panelItemVariants} className="flex flex-col gap-4">
+                          {PRODUCT_JOURNEY.map(stage => (
+                            <div key={stage.stage}>
+                              <p className="text-[10px] font-bold text-slate uppercase tracking-[0.08em] mb-1 px-3">{stage.stage}</p>
+                              <div className="grid grid-cols-2 gap-1">
+                                {stage.slugs.map(slug => {
+                                  const p = PLATFORM_PRODUCTS.find(pp => pp.slug === slug);
+                                  if (!p) return null;
+                                  const Icon = PRODUCT_ICONS[slug] ?? Store;
+                                  const active = hoveredProduct === slug;
+                                  return (
+                                    <Link
+                                      key={slug}
+                                      to={`/products/${slug}`}
+                                      onClick={() => setOpenMenu(null)}
+                                      onMouseEnter={() => setHoveredProduct(slug)}
+                                      className={clsx(
+                                        'group relative flex items-start gap-2.5 rounded-lg pl-4 pr-3 py-2.5 transition-colors',
+                                        active ? 'bg-cream' : 'hover:bg-cream/60',
+                                      )}
+                                    >
+                                      {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-brand-orange" />}
+                                      <Icon size={16} className={clsx('shrink-0 mt-0.5 transition-all duration-200', active ? 'text-brand-orange scale-110' : 'text-slate')} />
+                                      <span className="min-w-0 flex-1">
+                                        <span className="flex items-center justify-between gap-1">
+                                          <span className={clsx('block text-[13.5px] font-semibold transition-colors', active ? 'text-carbon' : 'text-charcoal')}>{p.name}</span>
+                                          <span className="shrink-0 text-[10px] font-bold text-bone tabular-nums">{PRODUCT_NUMBER[slug]}</span>
+                                        </span>
+                                        <span className={clsx('block text-[11.5px] leading-snug mt-0.5 transition-opacity', active ? 'text-slate opacity-100' : 'text-slate opacity-80')}>
+                                          {PRODUCT_NAV_BLURB[slug] ?? p.tagline}
+                                        </span>
+                                      </span>
+                                    </Link>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
                         </motion.div>
-                      </AnimatePresence>
+
+                        {/* Secondary — the live preview supports the
+                           navigation, it isn't the navigation. */}
+                        <motion.div variants={panelItemVariants} className="rounded-2xl bg-cream p-5 flex flex-col justify-center self-start overflow-hidden">
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={hoveredProduct}
+                              initial={{ opacity: 0, scale: 0.97, filter: 'blur(6px)' }}
+                              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                              exit={{ opacity: 0, scale: 0.97, filter: 'blur(6px)' }}
+                              transition={{ duration: 0.26, ease: NAV_EASE }}
+                            >
+                              <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.08em] mb-3">{activeProduct?.name}</p>
+                              <div className="w-full [&>div]:shadow-none [&>div]:border-bone/60">
+                                {mockupForProductSlug(hoveredProduct)}
+                              </div>
+                            </motion.div>
+                          </AnimatePresence>
+                        </motion.div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {openMenu === 'solutions' && (
-                  <div className="grid grid-cols-4 gap-3">
-                    {SOLUTIONS.map(s => (
-                      <Link
-                        key={s.slug}
-                        to={`/solutions/${s.slug}`}
-                        onClick={() => setOpenMenu(null)}
-                        className="group rounded-xl overflow-hidden border border-transparent hover:border-bone transition-colors"
-                      >
-                        <div className="aspect-[16/9] overflow-hidden">
-                          <img src={unsplashUrl(s.image, 240)} alt="" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
-                        </div>
-                        <div className="p-2.5">
-                          <span className="block text-[12.5px] font-semibold text-carbon">{s.name}</span>
-                          <span className="block text-[11px] text-slate leading-snug mt-0.5">{s.headline}</span>
-                        </div>
-                      </Link>
-                    ))}
-                    <Link
-                      to="/solutions"
-                      onClick={() => setOpenMenu(null)}
-                      className="flex items-center justify-center gap-1.5 rounded-xl bg-cream text-[13px] font-semibold text-brand-orange hover:bg-brand-pale-orange transition-colors p-2.5"
+                  <div className="grid grid-cols-[280px_1fr] gap-8">
+                    {/* Editorial master list — the hovered industry gets a
+                       filled row + accent bar; unhovered ones recede to
+                       quieter text, unlike Products' equal-weight grid. */}
+                    <div
+                      className="flex flex-col gap-0.5"
+                      onMouseLeave={() => setHoveredSolution(SOLUTIONS[0].slug)}
                     >
-                      All solutions <ArrowRight size={14} />
-                    </Link>
+                      {SOLUTIONS.map(s => {
+                        const active = s.slug === hoveredSolution;
+                        return (
+                          <motion.div key={s.slug} variants={panelItemVariants}>
+                            <Link
+                              to={`/solutions/${s.slug}`}
+                              onClick={() => setOpenMenu(null)}
+                              onMouseEnter={() => setHoveredSolution(s.slug)}
+                              className={clsx(
+                                'relative flex items-center justify-between gap-2 rounded-lg pl-4 pr-3 py-3 transition-colors',
+                                active ? 'bg-cream' : 'hover:bg-cream/60',
+                              )}
+                            >
+                              {active && <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full bg-brand-orange" />}
+                              <span className={clsx('text-[13.5px] font-semibold transition-colors', active ? 'text-carbon' : 'text-slate')}>{s.name}</span>
+                              <ArrowRight size={13} className={clsx('shrink-0 transition-all duration-200', active ? 'text-brand-orange translate-x-0 opacity-100' : '-translate-x-1 opacity-0')} />
+                            </Link>
+                          </motion.div>
+                        );
+                      })}
+                      <motion.div variants={panelItemVariants}>
+                        <Link
+                          to="/solutions"
+                          onClick={() => setOpenMenu(null)}
+                          className="mt-1 flex items-center gap-1.5 rounded-lg pl-4 pr-3 py-2.5 text-[12.5px] font-semibold text-brand-orange hover:bg-cream/60 transition-colors"
+                        >
+                          All solutions <ArrowRight size={12} />
+                        </Link>
+                      </motion.div>
+                    </div>
+
+                    {/* Large detail panel — real image, real headline,
+                       real highlights, changes with the hovered industry. */}
+                    <motion.div variants={panelItemVariants} className="relative rounded-2xl overflow-hidden bg-carbon min-h-[280px]">
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={hoveredSolutionData.slug}
+                          initial={{ opacity: 0, scale: 1.04 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.3, ease: NAV_EASE }}
+                          className="absolute inset-0"
+                        >
+                          <img src={unsplashUrl(hoveredSolutionData.image, 640)} alt="" className="w-full h-full object-cover" loading="lazy" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-carbon via-carbon/50 to-transparent" />
+                        </motion.div>
+                      </AnimatePresence>
+                      <div className="relative z-[1] h-full flex flex-col justify-end p-6">
+                        <p className="text-[10.5px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-2">Built for {hoveredSolutionData.name}</p>
+                        <p className="text-[17px] font-bold text-white leading-[1.3] mb-3 max-w-[420px]">{hoveredSolutionData.headline}</p>
+                        <div className="flex flex-wrap gap-x-5 gap-y-1.5 mb-4">
+                          {hoveredSolutionData.highlights.slice(0, 2).map(h => (
+                            <span key={h} className="text-[11.5px] text-white/70">{h}</span>
+                          ))}
+                        </div>
+                        <Link
+                          to={`/solutions/${hoveredSolutionData.slug}`}
+                          onClick={() => setOpenMenu(null)}
+                          className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-white hover:text-brand-orange transition-colors w-fit"
+                        >
+                          Explore solution <ArrowRight size={13} />
+                        </Link>
+                      </div>
+                    </motion.div>
                   </div>
                 )}
 
-                {openMenu === 'resources' && (
-                  <div className="grid grid-cols-3 gap-2 max-w-[600px]">
-                    {RESOURCE_LINKS.map(r => (
-                      <Link
-                        key={r.path}
-                        to={r.path}
-                        onClick={() => setOpenMenu(null)}
-                        className="flex items-start gap-3 rounded-xl p-3 hover:bg-cream transition-colors"
-                      >
-                        <span className="w-9 h-9 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
-                          <r.Icon size={16} className="text-brand-orange" />
-                        </span>
-                        <span>
-                          <span className="block text-[13px] font-semibold text-carbon">{r.label}</span>
-                          <span className="block text-[11.5px] text-slate leading-snug mt-0.5">{r.desc}</span>
-                        </span>
+                {openMenu === 'learn' && (
+                  // Centered and width-capped — this menu only has 3 real
+                  // destinations (1 featured + 2 links), so it deliberately
+                  // does NOT stretch to fill the full 1280px panel the way
+                  // Products/Solutions do. A centered, proportioned block
+                  // reads as intentional; left-anchoring the same content
+                  // inside the full-width panel read as a stray sidebar
+                  // with dead space beside it.
+                  <div className="max-w-[760px] mx-auto grid grid-cols-[340px_1fr] gap-10 items-center">
+                    {/* Featured slot — one real visual, not a list item. */}
+                    <motion.div variants={panelItemVariants}>
+                      <Link to="/faq" onClick={() => setOpenMenu(null)} className="group block">
+                        <SupportPreviewMock />
+                        <p className="text-[13px] font-semibold text-carbon mt-3 group-hover:text-brand-orange transition-colors">Browse the Help Center</p>
+                        <p className="text-[11.5px] text-slate mt-0.5">Search real answers before reaching out to support.</p>
                       </Link>
-                    ))}
+                    </motion.div>
+
+                    {/* Smaller utility links — rendered as two real cards
+                       filling their half of the block, not thin rows
+                       floating in leftover space beside the featured card. */}
+                    <div className="flex flex-col gap-3">
+                      {LEARN_LINKS.map(r => (
+                        <motion.div key={r.path} variants={panelItemVariants}>
+                          <Link
+                            to={r.path}
+                            onClick={() => setOpenMenu(null)}
+                            className="flex items-start gap-3 rounded-xl border border-bone p-4 hover:border-brand-orange/30 hover:bg-cream/60 transition-colors"
+                          >
+                            <span className="w-10 h-10 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
+                              <r.Icon size={17} className="text-brand-orange" />
+                            </span>
+                            <span>
+                              <span className="block text-[13.5px] font-semibold text-carbon">{r.label}</span>
+                              <span className="block text-[11.5px] text-slate leading-snug mt-0.5">{r.desc}</span>
+                            </span>
+                          </Link>
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
                 )}
-              </div>
+
+                {openMenu === 'company' && (
+                  // Same "don't stretch thin content across the full panel"
+                  // fix as Learn & Support, but a genuinely different
+                  // composition: two EQUAL-weight editorial columns (big
+                  // statement / supporting text + links) instead of a
+                  // narrow featured-card-plus-list.
+                  <div className="max-w-[880px] mx-auto grid grid-cols-2 gap-16 items-center">
+                    <motion.div variants={panelItemVariants}>
+                      <p className="text-[26px] font-bold text-carbon leading-[1.25]" style={{ fontFamily: "'Lora', Georgia, serif" }}>
+                        One connected platform, not five separate logins.
+                      </p>
+                    </motion.div>
+
+                    <motion.div variants={panelItemVariants}>
+                      <p className="text-[13px] text-slate leading-[1.7] mb-5">
+                        That's the whole reason Solvexo exists — see how we think about it.
+                      </p>
+                      {/* Plain minimal link list — no icon chips, the one
+                         panel that deliberately doesn't look product-shaped. */}
+                      <div className="flex flex-col border-t border-bone">
+                        {COMPANY_LINKS.map(c => (
+                          <Link
+                            key={c.path}
+                            to={c.path}
+                            onClick={() => setOpenMenu(null)}
+                            className="group flex items-center justify-between gap-2 py-3 border-b border-bone"
+                          >
+                            <span>
+                              <span className="block text-[14px] font-semibold text-carbon group-hover:text-brand-orange transition-colors">{c.label}</span>
+                              <span className="block text-[11px] text-slate mt-0.5">{c.desc}</span>
+                            </span>
+                            <ArrowRight size={14} className="text-bone shrink-0 transition-all duration-200 group-hover:text-brand-orange group-hover:translate-x-0.5" />
+                          </Link>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -354,9 +702,11 @@ export function PublicMegaNavbar() {
             role="navigation"
             aria-label="Mobile navigation"
             initial={{ clipPath: 'inset(0% 0% 100% 0%)' }}
-            animate={{ clipPath: 'inset(0% 0% 0% 0%)' }}
-            exit={{ clipPath: 'inset(0% 0% 100% 0%)' }}
-            transition={{ duration: 0.55, ease: NAV_EASE }}
+            animate={{ clipPath: 'inset(0% 0% 0% 0%)', transition: { duration: 0.55, ease: NAV_EASE } }}
+            // Exit runs at ~65% of the enter duration ("exit faster than
+            // enter") so closing the menu reads as responsive rather than
+            // taking the same unhurried beat as opening it.
+            exit={{ clipPath: 'inset(0% 0% 100% 0%)', transition: { duration: 0.36, ease: NAV_EASE } }}
             className="lg:hidden fixed left-0 right-0 top-[60px] bottom-0 z-[55] bg-cream"
           >
             <motion.div
@@ -369,6 +719,7 @@ export function PublicMegaNavbar() {
             >
               <div className="flex-1 flex flex-col">
                 <MobileAccordionRow
+                  index="01"
                   title="Products"
                   isOpen={expanded === 'products'}
                   onToggle={() => setExpanded(e => (e === 'products' ? null : 'products'))}
@@ -392,6 +743,7 @@ export function PublicMegaNavbar() {
                 </MobileAccordionRow>
 
                 <MobileAccordionRow
+                  index="02"
                   title="Solutions"
                   isOpen={expanded === 'solutions'}
                   onToggle={() => setExpanded(e => (e === 'solutions' ? null : 'solutions'))}
@@ -412,11 +764,12 @@ export function PublicMegaNavbar() {
                 </MobileAccordionRow>
 
                 <MobileAccordionRow
-                  title="Resources"
-                  isOpen={expanded === 'resources'}
-                  onToggle={() => setExpanded(e => (e === 'resources' ? null : 'resources'))}
+                  index="03"
+                  title="Learn & Support"
+                  isOpen={expanded === 'learn'}
+                  onToggle={() => setExpanded(e => (e === 'learn' ? null : 'learn'))}
                 >
-                  {RESOURCE_LINKS.map(r => (
+                  {LEARN_LINKS.map(r => (
                     <MobileNavRow
                       key={r.path}
                       to={r.path}
@@ -424,6 +777,24 @@ export function PublicMegaNavbar() {
                       desc={r.desc}
                       onNavigate={closeMenu}
                       icon={<r.Icon size={16} className="text-brand-orange" />}
+                    />
+                  ))}
+                </MobileAccordionRow>
+
+                <MobileAccordionRow
+                  index="04"
+                  title="Company"
+                  isOpen={expanded === 'company'}
+                  onToggle={() => setExpanded(e => (e === 'company' ? null : 'company'))}
+                >
+                  {COMPANY_LINKS.map(c => (
+                    <MobileNavRow
+                      key={c.path}
+                      to={c.path}
+                      title={c.label}
+                      desc={c.desc}
+                      onNavigate={closeMenu}
+                      icon={<c.Icon size={16} className="text-brand-orange" />}
                     />
                   ))}
                 </MobileAccordionRow>
@@ -496,12 +867,14 @@ export function PublicMegaNavbar() {
   );
 }
 
-// One accordion row of the mobile panel — large editorial label + a plus
-// indicator that rotates into a cross, expanding into real icon/thumbnail
-// rows via a smooth height animation (not a boring instant show/hide).
-// Wrapped in its own overflow-hidden mask so it participates in the panel's
-// entrance stagger like every other row.
-function MobileAccordionRow({ title, isOpen, onToggle, children }: {
+// One accordion row of the mobile panel — a subtle "01/02/03/04" index label
+// (app-like section numbering) beside the large editorial title, plus a
+// plus indicator that rotates into a cross, expanding into real icon/
+// thumbnail rows via a smooth height animation (not a boring instant
+// show/hide). Wrapped in its own overflow-hidden mask so it participates in
+// the panel's entrance stagger like every other row.
+function MobileAccordionRow({ index, title, isOpen, onToggle, children }: {
+  index: string;
   title: string;
   isOpen: boolean;
   onToggle: () => void;
@@ -515,7 +888,10 @@ function MobileAccordionRow({ title, isOpen, onToggle, children }: {
           aria-expanded={isOpen}
           className="w-full flex items-center justify-between py-[18px] bg-transparent border-none cursor-pointer text-left"
         >
-          <span className="text-[26px] sm:text-[30px] font-extrabold text-carbon tracking-tight">{title}</span>
+          <span className="flex items-baseline gap-3">
+            <span className="text-[11px] font-bold text-brand-orange/60 tabular-nums">{index}</span>
+            <span className="text-[26px] sm:text-[30px] font-extrabold text-carbon tracking-tight">{title}</span>
+          </span>
           <motion.span
             animate={{ rotate: isOpen ? 45 : 0 }}
             transition={{ duration: 0.3, ease: NAV_EASE }}

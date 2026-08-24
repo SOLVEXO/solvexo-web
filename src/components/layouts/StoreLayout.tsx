@@ -1,14 +1,15 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useId, type ReactNode } from 'react';
 import { Outlet, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { clsx } from 'clsx';
+import { motion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
   Settings, Sparkles, ChevronLeft, ChevronRight, Store,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
-  PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers,
+  PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
@@ -50,6 +51,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     group: 'Sales',
     items: [
       { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders'  },
+      { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders' },
       { id: 'returns',  Icon: Undo2,    label: 'Returns',       path: 'returns' },
       { id: 'shipping', Icon: Truck,    label: 'Shipping',      path: 'shipping' },
     ],
@@ -61,6 +63,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
       { id: 'inventory',     Icon: ClipboardList, label: 'Inventory',     path: 'inventory'    },
       { id: 'categories',    Icon: FolderTree,    label: 'Categories',    path: 'categories'   },
       { id: 'collections',   Icon: Layers,        label: 'Collections',   path: 'collections'  },
+      { id: 'files',         Icon: ImageIcon,     label: 'Files',         path: 'files'        },
       { id: 'store-builder', Icon: Store,         label: 'Store Builder', path: 'storebuilder' },
     ],
   },
@@ -229,6 +232,10 @@ interface StoreSidebarProps { open: boolean; onToggle: () => void; }
 function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   const navigate     = useNavigate();
   const { pathname } = useLocation();
+  // Shared layoutId so the active-item background actually travels between
+  // nav entries on navigation instead of one bg instantly disappearing while
+  // another instantly appears — scoped per sidebar instance via useId().
+  const navPillId = useId();
   const { store, storeId, loading } = useStoreWorkspace();
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
   const paletteItems = buildPaletteItems(navigate, storeId);
@@ -268,7 +275,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
       <aside className={clsx(
         'hidden lg:flex bg-carbon flex-col shrink-0',
         'transition-[width] duration-300 ease-in-out',
-        import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen',
+        'h-screen',
         open ? 'w-[220px]' : 'w-[60px]',
       )}>
 
@@ -335,23 +342,29 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                     aria-label={item.label}
                     aria-current={active ? 'page' : undefined}
                     className={clsx(
-                      'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer',
-                      'transition-colors duration-150',
+                      'relative flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer',
                       !open && 'lg:justify-center lg:px-0',
-                      active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1a1917]',
+                      !active && 'hover:bg-[#1a1917] transition-colors duration-fast',
                     )}
                   >
+                    {active && (
+                      <motion.div
+                        layoutId={`store-nav-pill-${navPillId}`}
+                        className="absolute inset-0 rounded-md bg-dark-active"
+                        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                      />
+                    )}
                     <item.Icon
                       size={15}
-                      className={clsx('shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')}
+                      className={clsx('relative shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')}
                     />
                     {open && (
                       <>
-                        <span className={clsx('text-[13px] flex-1 font-normal text-slate', active && 'font-semibold text-white')}>
+                        <span className={clsx('relative text-[13px] flex-1 font-normal text-slate', active && 'font-semibold text-white')}>
                           {item.label}
                         </span>
                         {active && (
-                          <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />
+                          <div className="relative w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />
                         )}
                       </>
                     )}
@@ -453,9 +466,9 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
             <ChevronLeft size={19} />
           </button>
         )}
-        <div>
-          <h1 className="text-[18px] font-bold text-carbon leading-[1.3]">{title}</h1>
-          {subtitle && <p className="text-[12px] text-slate mt-0.5">{subtitle}</p>}
+        <div key={title}>
+          <h1 className="solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.3]">{title}</h1>
+          {subtitle && <p className="solvexo-subtitle-reveal text-[12px] text-slate mt-0.5">{subtitle}</p>}
         </div>
       </div>
       <div className="flex items-center gap-[10px]">
@@ -656,7 +669,7 @@ export function StoreLayout() {
 
   return (
     <StoreWorkspaceProvider>
-      <div className={clsx('flex bg-cream overflow-hidden', import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen')}>
+      <div className={clsx('flex bg-cream overflow-hidden', 'h-screen')}>
         <StoreSidebar open={sidebarOpen} onToggle={toggle} />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <AnnouncementBanner audience="sellers" />

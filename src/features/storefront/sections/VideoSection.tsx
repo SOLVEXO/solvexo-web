@@ -1,3 +1,4 @@
+import { registerSection } from '../sectionRenderRegistry';
 import { useStorefront } from '../StorefrontContext';
 
 export interface VideoSectionSettings {
@@ -35,3 +36,7 @@ export function VideoSection({ settings }: { settings: VideoSectionSettings }) {
     </div>
   );
 }
+
+registerSection('video', (section) =>
+  <VideoSection settings={section.settings as VideoSectionSettings} />,
+);

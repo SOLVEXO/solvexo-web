@@ -1,3 +1,4 @@
+import { registerSection } from '../sectionRenderRegistry';
 import { useStorefront } from '../StorefrontContext';
 import { ContentBlocks, type ContentBlock } from './ContentBlocks';
 
@@ -23,3 +24,7 @@ export function RichTextSection({ settings, blocks }: { settings: RichTextSectio
     </div>
   );
 }
+
+registerSection('rich_text', (section, blocks) =>
+  <RichTextSection settings={section.settings} blocks={blocks.map(b => ({ type: b.type, settings: b.settings })) as any} />,
+);

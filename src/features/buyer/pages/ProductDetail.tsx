@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -86,11 +87,24 @@ function ImageGallery({ images, name }: { images: string[]; name: string }) {
           </div>
         ) : (
           <>
-            <img
-              loading="lazy" decoding="async" src={src} alt={name}
-              onError={() => setErrored(e => ({ ...e, [selected]: true }))}
-              className="w-full h-full object-cover"
-            />
+            {/* Crossfade between images on thumbnail change instead of an
+               instant swap — the one "smooth transition between product
+               states" moment on this page. */}
+            {/* Default (non-"wait") mode so the old and new image actually
+               overlap and crossfade, rather than a flash-to-empty gap
+               between the exit and the next enter. */}
+            <AnimatePresence>
+              <motion.img
+                key={selected}
+                loading="lazy" decoding="async" src={src} alt={name}
+                onError={() => setErrored(e => ({ ...e, [selected]: true }))}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            </AnimatePresence>
             {zooming && (
               <div
                 className="absolute inset-0 bg-no-repeat pointer-events-none transition-opacity duration-100"

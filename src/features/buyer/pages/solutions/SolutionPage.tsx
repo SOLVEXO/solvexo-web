@@ -1,7 +1,6 @@
 import type { ReactElement } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { ArrowRight, Check, Store, MonitorSmartphone, Sparkles, BarChart3, PackageCheck, Users } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { ArrowRight, Check, Store } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { Button, Footer } from '@/components/comman/ui';
@@ -13,7 +12,7 @@ import { unsplashUrl } from '@/assets/stockPhotos';
 import { getSolution } from '@/features/buyer/data/solutions';
 import { getPlatformProduct } from '@/features/buyer/data/platformProducts';
 import {
-  StorefrontPreview, POSPreview, AICommercePreview, AnalyticsPreview, InventoryPreview, OrdersTimelinePreview,
+  StorefrontPreview, POSPreview, AICommercePreview, AnalyticsPreview, InventoryPreview, OrdersTimelinePreview, PRODUCT_ICONS,
 } from '@/components/comman/mockups/ProductMockups';
 
 const SERIF = "'Lora', Georgia, serif";
@@ -30,22 +29,13 @@ const SOLUTION_PREVIEW: Record<string, () => ReactElement> = {
   'small-business': () => <AnalyticsPreview />,
 };
 
-const PRODUCT_ICONS: Record<string, LucideIcon> = {
-  'store-builder': Store,
-  pos: MonitorSmartphone,
-  'ai-commerce': Sparkles,
-  analytics: BarChart3,
-  inventory: PackageCheck,
-  'orders-customers': Users,
-};
-
 // Which real platform products this industry actually leans on most —
 // genuine cross-links into /products/:slug, not invented per-industry copy.
 const RELATED_PRODUCTS: Record<string, string[]> = {
   retail:           ['store-builder', 'pos', 'inventory'],
   fashion:          ['store-builder', 'inventory', 'ai-commerce'],
   restaurants:      ['pos', 'inventory', 'orders-customers'],
-  beauty:           ['store-builder', 'ai-commerce', 'analytics'],
+  beauty:           ['store-builder', 'loyalty', 'ai-commerce'],
   creators:         ['ai-commerce', 'store-builder', 'analytics'],
   'small-business': ['store-builder', 'pos', 'analytics'],
 };

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, History, ChevronLeft, ChevronRight, Copy, Check, CreditCard } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, StoreNavMenu } from '@/components/layouts/StoreLayout';
-import { apiUpdateStore, apiSetCustomDomain, apiVerifyCustomDomain, apiSetWhiteLabel, type ProductType, type CustomDomainStatus } from '@/api/services/store';
+import { apiUpdateStore, apiSetCustomDomain, apiVerifyCustomDomain, apiSetWhiteLabel, type ProductType, type CustomDomainStatus, type SupportedCurrency } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { apiGetStripeConnectStatus, apiCreateStripeConnectOnboardingLink, apiSyncStripeConnectStatus, type StripeConnectStatus } from '@/api/services/stripeConnect';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
@@ -436,6 +436,9 @@ export default function StoreSettings() {
   const [coverImage,   setCoverImage]   = useState('');
   const [categoryId,   setCategoryId]   = useState('');
   const [codEnabled,   setCodEnabled]   = useState(true);
+  const [lowStockThreshold, setLowStockThreshold] = useState(10);
+  const [taxRate, setTaxRate] = useState(0);
+  const [enabledCurrencies, setEnabledCurrencies] = useState<SupportedCurrency[]>(['PKR', 'USD']);
   const [categories,   setCategories]   = useState<CategoryNode[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [saving,       setSaving]       = useState(false);
@@ -454,6 +457,9 @@ export default function StoreSettings() {
     setCoverImage(store.coverImage ?? '');
     setCategoryId(store.categoryId ?? '');
     setCodEnabled(store.codEnabled !== false);
+    setLowStockThreshold(store.lowStockThreshold ?? 10);
+    setTaxRate(store.taxRate ?? 0);
+    setEnabledCurrencies(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies : ['PKR', 'USD']);
   }, [store]);
 
   useEffect(() => {
@@ -471,7 +477,7 @@ export default function StoreSettings() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, categoryId, codEnabled });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, categoryId, codEnabled, lowStockThreshold, taxRate, enabledCurrencies });
       refetch();
       setSaveMsg({ ok: true, text: 'Store updated successfully.' });
     } catch (err) {
@@ -493,7 +499,11 @@ export default function StoreSettings() {
       categoryId !== (store.categoryId ?? '') ||
       JSON.stringify(productTypes.slice().sort()) !==
         JSON.stringify((store.productTypes ?? []).slice().sort()) ||
-      codEnabled !== (store.codEnabled !== false));
+      codEnabled !== (store.codEnabled !== false) ||
+      lowStockThreshold !== (store.lowStockThreshold ?? 10) ||
+      taxRate !== (store.taxRate ?? 0) ||
+      JSON.stringify(enabledCurrencies.slice().sort()) !==
+        JSON.stringify((store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies : ['PKR', 'USD']).slice().sort()));
 
   return (
     <div>
@@ -607,6 +617,7 @@ export default function StoreSettings() {
                       value={logo ? [logo] : []}
                       onChange={urls => setLogo(urls[0] ?? '')}
                       maxFiles={1}
+                      storeId={storeId}
                     />
                     <p className="text-[11px] text-slate">PNG, JPG or WebP</p>
                   </div>
@@ -618,6 +629,7 @@ export default function StoreSettings() {
                       value={coverImage ? [coverImage] : []}
                       onChange={urls => setCoverImage(urls[0] ?? '')}
                       maxFiles={1}
+                      storeId={storeId}
                     />
                     <p className="text-[11px] text-slate">PNG, JPG or WebP</p>
                   </div>
@@ -685,6 +697,30 @@ export default function StoreSettings() {
                 </Field>
               </div>
 
+              <Field label="Low Stock Threshold">
+                <input
+                  type="number"
+                  min={1}
+                  value={lowStockThreshold}
+                  onChange={e => setLowStockThreshold(Math.max(1, Number(e.target.value) || 1))}
+                  className={inputCls}
+                />
+                <p className="text-[11px] text-slate mt-1">Products at or below this stock count are flagged "Low Stock" in your Inventory page and dashboard alerts.</p>
+              </Field>
+
+              <Field label="Tax Rate (%)">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  value={taxRate}
+                  onChange={e => setTaxRate(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+                  className={inputCls}
+                />
+                <p className="text-[11px] text-slate mt-1">A flat percentage added to every order's subtotal at checkout. This is not a tax-compliance engine — set the rate that applies to your own business.</p>
+              </Field>
+
               <Field label="Store URL">
                 <input
                   value={store?.slug ?? ''}
@@ -749,7 +785,34 @@ export default function StoreSettings() {
                     <p className="text-[13px] font-medium text-charcoal">Cash on Delivery</p>
                     <p className="text-[11px] text-slate">Let buyers pay in cash when their physical order arrives.</p>
                   </div>
-                  <Toggle checked={codEnabled} onChange={setCodEnabled} />
+                  <Toggle checked={codEnabled} onChange={setCodEnabled} ariaLabel="Enable Cash on Delivery" />
+                </div>
+              </div>
+
+              {/* Markets — which currencies buyers may check out in on this store */}
+              <div className="mt-6 border-t border-bone pt-[18px]">
+                <p className="text-[12px] font-semibold text-charcoal mb-1">Markets</p>
+                <p className="text-[11px] text-slate mb-3">Which currencies can buyers pay in at checkout on your store?</p>
+                <div className="flex flex-col gap-2">
+                  {(['PKR', 'USD'] as SupportedCurrency[]).map(c => {
+                    const isBase = c === store?.baseCurrency;
+                    const checked = enabledCurrencies.includes(c);
+                    return (
+                      <div key={c} className="flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
+                        <div>
+                          <p className="text-[13px] font-medium text-charcoal">{c}{isBase ? ' (your store currency)' : ''}</p>
+                        </div>
+                        <Toggle
+                          checked={checked}
+                          ariaLabel={`Accept ${c} at checkout`}
+                          onChange={v => {
+                            if (isBase && !v) return; // can never disable your own store currency
+                            setEnabledCurrencies(prev => v ? [...prev, c] : prev.filter(x => x !== c));
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

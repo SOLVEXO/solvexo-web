@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Users, ShoppingBag, DollarSign } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import { apiGetStoreCustomers, apiUpdateStoreCustomer, type StoreCustomer } from '@/api/services/store';
+import { apiGetStoreCustomers, apiUpdateStoreCustomer, apiUpdateStoreCustomerMeta, type StoreCustomer, type StoreCustomerSegment } from '@/api/services/store';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { Table, type TableColumn } from '@/components/comman/ui/Table';
@@ -26,6 +26,13 @@ function fmtDate(d: string | null) {
   return d ? new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 }
 
+const SEGMENT_META: Record<StoreCustomerSegment, { label: string; color: 'green' | 'blue' | 'orange' | 'red' }> = {
+  new:       { label: 'New',       color: 'blue' },
+  returning: { label: 'Returning', color: 'green' },
+  vip:       { label: 'VIP',       color: 'orange' },
+  at_risk:   { label: 'At Risk',   color: 'red' },
+};
+
 export default function StoreCustomerList() {
   usePageTitle('Customers');
   const { storeId, store } = useStoreWorkspace();
@@ -44,6 +51,11 @@ export default function StoreCustomerList() {
   const [form, setForm] = useState({ name: '', phone: '', email: '' });
   const [saving, setSaving] = useState(false);
 
+  const [notes, setNotes] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [savingMeta, setSavingMeta] = useState(false);
+
   useEffect(() => {
     if (!storeId || activeTab !== 'customers') return;
     setLoading(true);
@@ -60,6 +72,36 @@ export default function StoreCustomerList() {
   function select(c: StoreCustomer) {
     setSel(c);
     setForm({ name: c.name, phone: c.phone ?? '', email: c.email });
+    setNotes(c.notes ?? '');
+    setTags(c.tags ?? []);
+    setTagInput('');
+  }
+
+  async function saveMeta(nextTags: string[], nextNotes: string) {
+    if (!sel) return;
+    setSavingMeta(true);
+    try {
+      const res = await apiUpdateStoreCustomerMeta(storeId, sel._id, { tags: nextTags, notes: nextNotes });
+      setCustomers(prev => prev.map(c => c._id === sel._id ? { ...c, ...res.data } : c));
+      setSel(prev => prev ? { ...prev, ...res.data } : prev);
+    } finally {
+      setSavingMeta(false);
+    }
+  }
+
+  function addTag() {
+    const t = tagInput.trim();
+    if (!t || tags.includes(t)) { setTagInput(''); return; }
+    const next = [...tags, t];
+    setTags(next);
+    setTagInput('');
+    saveMeta(next, notes);
+  }
+
+  function removeTag(t: string) {
+    const next = tags.filter(x => x !== t);
+    setTags(next);
+    saveMeta(next, notes);
   }
 
   async function saveEdit() {
@@ -93,6 +135,10 @@ export default function StoreCustomerList() {
       ),
     },
     { key: 'phone', header: 'Phone', render: c => <span className="text-slate">{c.phone || '—'}</span> },
+    {
+      key: 'segment', header: 'Segment',
+      render: c => <Badge color={SEGMENT_META[c.segment].color}>{SEGMENT_META[c.segment].label}</Badge>,
+    },
     {
       key: 'orderCount', header: 'Orders', align: 'center',
       render: c => <Badge color={c.orderCount > 1 ? 'green' : 'orange'}>{c.orderCount}</Badge>,
@@ -204,6 +250,39 @@ export default function StoreCustomerList() {
                 <button onClick={saveEdit} disabled={saving} className="w-full py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer disabled:opacity-50">
                   {saving ? 'Saving…' : 'Save Changes'}
                 </button>
+
+                <div className="mt-4 pt-4 border-t border-[#f0eee6] flex flex-col gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-graphite mb-[5px] block">Tags <span className="text-slate font-normal">(private to you)</span></label>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {tags.map(t => (
+                        <span key={t} className="inline-flex items-center gap-1 px-2 py-[3px] rounded-full bg-brand-pale-orange text-brand-deep-orange text-[11px] font-medium">
+                          {t}
+                          <button onClick={() => removeTag(t)} className="bg-transparent border-none cursor-pointer p-0 text-brand-deep-orange/60 hover:text-brand-deep-orange leading-none">×</button>
+                        </span>
+                      ))}
+                    </div>
+                    <input
+                      value={tagInput}
+                      onChange={e => setTagInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+                      placeholder="e.g. VIP, Wholesale — press Enter"
+                      className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-graphite mb-[5px] block">Notes <span className="text-slate font-normal">(private to you)</span></label>
+                    <textarea
+                      value={notes}
+                      onChange={e => setNotes(e.target.value)}
+                      onBlur={() => saveMeta(tags, notes)}
+                      placeholder="Anything worth remembering about this customer…"
+                      rows={3}
+                      className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border resize-y"
+                    />
+                    {savingMeta && <p className="text-[10px] text-slate mt-1">Saving…</p>}
+                  </div>
+                </div>
               </div>
             </div>
           )}

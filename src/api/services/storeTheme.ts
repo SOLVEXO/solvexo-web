@@ -96,6 +96,7 @@ export interface StoreThemeData {
   // Which curated `themes.ts` definition the `theme`/`header`/`footer`
   // fields were last bulk-applied from — null if never applied one.
   baseThemeId:    string | null;
+  customCss:      string | null;
   // The seller's working copy — what every `apiUpdateStoreXxx` call below
   // now writes to. Mirrors the live shape exactly; only `apiPublishStoreTheme`
   // ever copies this over the live fields above.
@@ -105,6 +106,7 @@ export interface StoreThemeData {
     footer:         StorefrontFooter;
     identityBanner: IdentityBanner;
     baseThemeId:    string | null;
+    customCss:      string | null;
   };
   lastPublishedAt: string | null;
 }
@@ -119,6 +121,7 @@ export interface StoreThemeDraftData {
   footer:         StorefrontFooter;
   identityBanner: IdentityBanner;
   baseThemeId:    string | null;
+  customCss:      string | null;
   lastPublishedAt: string | null;
 }
 
@@ -136,6 +139,29 @@ export function apiPublishStoreTheme(storeId: string) {
 
 export function apiRevertStoreThemeDraft(storeId: string) {
   return client.post<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.REVERT_DRAFT(storeId));
+}
+
+/** A real, immutable snapshot of the live theme taken at the moment of
+ *  every publish — see `ThemeVersion` on the backend. Newest first. */
+export interface ThemeVersionData {
+  _id:            string;
+  theme:          StorefrontColors;
+  header:         StorefrontHeader;
+  footer:         StorefrontFooter;
+  identityBanner: IdentityBanner;
+  baseThemeId:    string | null;
+  customCss:      string | null;
+  publishedAt:    string;
+}
+
+export function apiListStoreThemeVersions(storeId: string) {
+  return client.get<never, ApiResponse<ThemeVersionData[]>>(ENDPOINTS.STORE_THEME.VERSIONS(storeId));
+}
+
+/** Restores a past version into the DRAFT slot for review — the seller still
+ *  has to hit Publish afterward, same as any other draft edit. */
+export function apiRestoreStoreThemeVersion(storeId: string, versionId: string) {
+  return client.post<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.RESTORE_VERSION(storeId, versionId));
 }
 
 export function apiGetPublicStoreTheme(storeId: string) {
@@ -156,4 +182,11 @@ export function apiUpdateStoreFooter(storeId: string, blocks: Block[], footerSty
 
 export function apiUpdateIdentityBanner(storeId: string, payload: Partial<IdentityBanner>) {
   return client.patch<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.UPDATE_IDENTITY_BANNER(storeId), payload);
+}
+
+/** Real, bounded "developer/advanced authoring" capability — raw CSS
+ *  injected into the storefront. See the backend `StoreTheme.customCss`
+ *  schema comment for the full safety rationale (CSS-only, no custom JS). */
+export function apiUpdateStoreCustomCss(storeId: string, customCss: string | null) {
+  return client.patch<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.UPDATE_CUSTOM_CSS(storeId), { customCss });
 }

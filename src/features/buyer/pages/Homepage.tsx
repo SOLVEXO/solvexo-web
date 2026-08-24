@@ -10,21 +10,21 @@ import { Footer, SkeletonBox, ClosingCtaBanner } from '@/components/comman/ui';
 import {
   ArrowRight, Store, Sparkles, Check,
   Star, BadgeCheck, Quote, Loader2,
-  MonitorSmartphone, BarChart3, PackageCheck, Users, UserPlus, Link2, Rows3, TrendingUp,
+  BarChart3, UserPlus, Link2, Rows3, TrendingUp,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { apiGetTestimonials, type Testimonial } from '@/api/services/testimonials';
 import { apiGetPlatformStats, type PlatformStats } from '@/api/services/store';
 import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SplitText } from '@/components/comman/motion/SplitText';
+import { useBrandSplashReady } from '@/components/comman/motion/BrandSplashContext';
 import { Marquee } from '@/components/comman/motion/Marquee';
 import { useMouseParallax } from '@/components/comman/motion/useMouseParallax';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
 import {
-  StorefrontPreview, POSPreview, SellerDashboardPreview, MobileStorePreview, mockupForProductSlug,
+  StorefrontPreview, POSPreview, SellerDashboardPreview, MobileStorePreview, mockupForProductSlug, PRODUCT_ICONS,
 } from '@/components/comman/mockups/ProductMockups';
 import { PLATFORM_PRODUCTS, getPlatformProduct } from '@/features/buyer/data/platformProducts';
 import { SOLUTIONS } from '@/features/buyer/data/solutions';
@@ -79,15 +79,6 @@ function HeroActivityTicker() {
     </div>
   );
 }
-
-const PRODUCT_ICONS: Record<string, LucideIcon> = {
-  'store-builder': Store,
-  pos: MonitorSmartphone,
-  'ai-commerce': Sparkles,
-  analytics: BarChart3,
-  inventory: PackageCheck,
-  'orders-customers': Users,
-};
 
 const HOW_IT_WORKS = [
   { Icon: Store,    step: 'Create',  desc: 'Build your storefront from a curated theme, or set up POS to sell in person.' },
@@ -221,6 +212,10 @@ export function Homepage() {
   const navigate = useNavigate();
   const sellEntry = useSellEntry();
   const reduceMotion = useReducedMotion();
+  // Held true immediately when there's no splash to wait for (repeat visit
+  // this session, reduced motion); flips true once the one-time brand
+  // splash actually finishes — see PublicLayout/BrandSplash.
+  const splashReady = useBrandSplashReady();
   const heroSectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress: heroScroll } = useScroll({ target: heroSectionRef, offset: ['start start', 'end start'] });
   const heroTextFade = useTransform(heroScroll, [0, 0.85], [1, 0]);
@@ -325,6 +320,12 @@ export function Homepage() {
         <HeroActivityTicker />
 
         <div ref={heroTiltRef} className="relative z-[1] flex-1 flex flex-col justify-center px-5 sm:px-8 lg:px-14 pt-24 pb-16">
+          {/* Held back until the one-time brand splash has actually
+             finished (see PublicLayout/useBrandSplashReady) — otherwise
+             this whole entrance sequence plays out invisibly underneath the
+             splash overlay and the curtain lifts onto an already-static
+             headline instead of a still-animating one. */}
+          {splashReady && (
           <motion.div style={reduceMotion ? undefined : { opacity: heroTextFade }}>
             <Reveal delay={0}>
               <p className="flex items-center gap-2 text-[11px] sm:text-[12px] font-semibold uppercase tracking-[0.22em] text-brand-orange mb-6">
@@ -335,22 +336,38 @@ export function Homepage() {
 
             <motion.div style={reduceMotion ? undefined : { rotateX: heroTiltRotateX, rotateY: heroTiltRotateY, transformPerspective: 1000 }}>
               <h1 className="font-sans font-extrabold text-white leading-[0.94] tracking-[-0.03em] pb-[0.05em]">
-                <motion.div style={reduceMotion ? undefined : { x: heroLine1X }}>
+                {/* Each line settles into focus (blur → sharp, a hair of
+                   scale-down) on top of SplitText's own per-word mask-slide,
+                   and the three lines are spaced ~0.32s apart instead of
+                   ~0.2s — line 1 visibly finishes its cascade before line 2
+                   commits, then line 3, rather than all three blurring into
+                   view as one overlapping wash. */}
+                <motion.div
+                  style={reduceMotion ? undefined : { x: heroLine1X }}
+                  initial={reduceMotion ? undefined : { opacity: 0, scale: 1.04, filter: 'blur(14px)' }}
+                  animate={reduceMotion ? undefined : { opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                  transition={reduceMotion ? undefined : { duration: 1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                >
                   <SplitText
                     as="div"
                     text="Create. Sell."
                     delay={0.1}
-                    stagger={0.07}
+                    stagger={0.06}
                     animateOnMount
                     className="text-[15vw] sm:text-[12vw] lg:text-[9.5vw] block"
                   />
                 </motion.div>
-                <motion.div style={reduceMotion ? undefined : { x: heroLine2X }}>
+                <motion.div
+                  style={reduceMotion ? undefined : { x: heroLine2X }}
+                  initial={reduceMotion ? undefined : { opacity: 0, scale: 1.04, filter: 'blur(14px)' }}
+                  animate={reduceMotion ? undefined : { opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                  transition={reduceMotion ? undefined : { duration: 1, delay: 0.42, ease: [0.16, 1, 0.3, 1] }}
+                >
                   <SplitText
                     as="div"
                     text="Manage. Grow."
-                    delay={0.3}
-                    stagger={0.07}
+                    delay={0.42}
+                    stagger={0.06}
                     animateOnMount
                     className="text-[15vw] sm:text-[12vw] lg:text-[9.5vw] block bg-gradient-to-r from-brand-orange to-[#f0a57a] bg-clip-text text-transparent"
                   />
@@ -365,32 +382,38 @@ export function Homepage() {
                    (vs. the solid white and gradient fills above it) gives
                    the headline a layered, editorial hierarchy at this size
                    instead of three identically-styled lines. */}
-                <SplitText
-                  as="div"
-                  text="Launch Instantly."
-                  delay={0.5}
-                  stagger={0.07}
-                  animateOnMount
-                  className="hero-outline-text text-[13vw] sm:text-[10.5vw] lg:text-[8vw] block"
-                />
+                <motion.div
+                  initial={reduceMotion ? undefined : { opacity: 0, scale: 1.04, filter: 'blur(14px)' }}
+                  animate={reduceMotion ? undefined : { opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                  transition={reduceMotion ? undefined : { duration: 1, delay: 0.74, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <SplitText
+                    as="div"
+                    text="Launch Instantly."
+                    delay={0.74}
+                    stagger={0.06}
+                    animateOnMount
+                    className="hero-outline-text text-[13vw] sm:text-[10.5vw] lg:text-[8vw] block"
+                  />
+                </motion.div>
               </h1>
             </motion.div>
 
             <div className="mt-[9vw] sm:mt-[5vw] lg:mt-[3.5vw] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 max-w-[1100px]">
-              <Reveal delay={0.55}>
-                <p className="text-[13.5px] sm:text-[14.5px] text-[#b0aea8] leading-[1.75] max-w-[420px]">
+              <Reveal delay={1.05}>
+                <p className="text-[13.5px] sm:text-[14.5px] text-[#b0aea8] leading-[1.75] max-w-[420px] border-l-2 border-brand-orange/50 pl-4">
                   One connected commerce platform — build your store, sell in person with POS, manage every order, and grow with real analytics and AI.
                 </p>
               </Reveal>
 
-              <Reveal delay={0.68}>
+              <Reveal delay={1.2}>
                 <div className="flex flex-col sm:flex-row items-start gap-3 shrink-0">
                   <MagneticButton className="w-full sm:w-auto">
                     <button
                       onClick={sellEntry.go}
                       disabled={sellEntry.loading}
                       data-cursor="hover"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-[11px] rounded-lg text-[13.5px] font-semibold text-white bg-gradient-to-r from-brand-orange to-brand-deep-orange hover:brightness-105 transition-[filter] cursor-pointer disabled:opacity-60"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-[11px] rounded-lg text-[13.5px] font-semibold text-white bg-gradient-to-r from-brand-orange to-brand-deep-orange cursor-pointer disabled:opacity-60 transition-[filter,box-shadow,transform] duration-normal ease-out hover:brightness-110 hover:shadow-glow hover:-translate-y-[1.5px] active:translate-y-0 active:duration-micro active:ease-spring active:scale-[0.97]"
                     >
                       {sellEntry.loading ? <Loader2 size={14} className="animate-spin" /> : null}
                       Start Selling Free <ArrowRight size={13} className="inline align-middle" />
@@ -399,24 +422,33 @@ export function Homepage() {
                   <MagneticButton className="w-full sm:w-auto">
                     <button
                       onClick={() => navigate('/products')}
-                      className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] hover:border-white/40 transition-all cursor-pointer"
+                      className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] hover:border-white/40 transition-all duration-normal ease-out cursor-pointer"
                     >
                       Explore the Platform
-                      <ArrowRight size={13} className="transition-transform duration-300 group-hover:translate-x-1" />
+                      <ArrowRight size={13} className="transition-transform duration-normal ease-spring group-hover:translate-x-1" />
                     </button>
                   </MagneticButton>
                 </div>
               </Reveal>
             </div>
 
-            <Reveal delay={0.8}>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8">
-                {['Self-serve setup — no approval queue', 'One login for store, POS & analytics', 'Real-time inventory sync'].map(label => (
-                  <span key={label} className="text-[11.5px] text-white/35">{label}</span>
-                ))}
-              </div>
-            </Reveal>
+            {/* Trust bullets — individually staggered with a check-dot icon
+               and a hover brighten, instead of three flat, identically-
+               faded text strings that all appeared as one static block. */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2.5 mt-8">
+              {['Self-serve setup — no approval queue', 'One login for store, POS & analytics', 'Real-time inventory sync'].map((label, i) => (
+                <Reveal key={label} delay={1.4 + i * 0.1} y={8}>
+                  <span className="group flex items-center gap-[7px] text-[11.5px] text-white/40 transition-colors duration-normal hover:text-white/75 cursor-default">
+                    <span className="relative flex size-[5px] shrink-0">
+                      <span className="absolute inset-0 rounded-full bg-brand-orange/60 transition-transform duration-normal ease-spring group-hover:scale-[1.8]" />
+                    </span>
+                    {label}
+                  </span>
+                </Reveal>
+              ))}
+            </div>
           </motion.div>
+          )}
         </div>
 
         {/* Scroll indicator — fades out almost as soon as scrolling starts */}
@@ -470,15 +502,15 @@ export function Homepage() {
         <div className="relative max-w-[1320px] mx-auto">
           <div className="text-center max-w-[900px] mx-auto mb-16 lg:mb-20">
             <Reveal>
-              <p className="text-[11px] font-semibold text-brand-deep-orange uppercase tracking-[0.12em] mb-5">The Solvexo difference</p>
+              <p className="text-[11px] font-semibold text-brand-deep-orange uppercase tracking-[0.12em] mb-5">Create · Sell · Manage · Understand · Grow</p>
             </Reveal>
             <h2 className="font-serif text-[40px] sm:text-[64px] lg:text-[84px] font-bold text-carbon leading-[1.02] tracking-[-0.015em]">
-              <SplitText as="div" text="One business." delay={0.05} />
-              <SplitText as="div" text="One connected system." delay={0.2} />
+              <SplitText as="div" text="Everything you need" delay={0.05} />
+              <SplitText as="div" text="to build, sell and grow." delay={0.2} />
             </h2>
             <Reveal delay={0.4}>
-              <p className="text-[15px] sm:text-[17px] text-slate leading-[1.7] mt-7 max-w-[620px] mx-auto">
-                Store, POS, inventory, orders, customers, payments and analytics all read from the same real data — a sale at the counter updates the same stock your storefront shows, instantly.
+              <p className="text-[15px] sm:text-[17px] text-slate leading-[1.7] mt-7 max-w-[660px] mx-auto">
+                Store Builder, Point of Sale, Inventory, Orders &amp; Customers, AI Commerce, Analytics and Loyalty &amp; Rewards — seven real tools reading from the same data, in one commerce platform.
               </p>
             </Reveal>
           </div>

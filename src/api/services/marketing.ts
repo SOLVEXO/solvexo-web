@@ -12,6 +12,8 @@ export interface Coupon {
   minOrderAmount: number | null;
   usageLimit:     number | null;
   usageCount:     number;
+  /** Coupon is inactive until this date — null means active immediately. */
+  startsAt:       string | null;
   expiresAt:      string | null;
   isActive:       boolean;
   createdAt:      string;
@@ -23,6 +25,7 @@ export interface CreateCouponPayload {
   discountValue:   number;
   minOrderAmount?: number;
   usageLimit?:     number;
+  startsAt?:       string;
   expiresAt?:      string;
 }
 

@@ -1,3 +1,4 @@
+import { registerSection } from '../sectionRenderRegistry';
 import { Truck, ShieldCheck, RefreshCw, Headset, Lock, type LucideIcon } from 'lucide-react';
 import { useStorefront } from '../StorefrontContext';
 
@@ -46,3 +47,7 @@ export function TrustBadgesSection({ blocks }: { settings: Record<string, any>; 
     </div>
   );
 }
+
+registerSection('trust_badges', (section, blocks) =>
+  <TrustBadgesSection settings={section.settings} blocks={blocks.map(b => b.settings) as any} />,
+);

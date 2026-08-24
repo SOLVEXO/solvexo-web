@@ -1,11 +1,12 @@
+import { registerSection } from '../sectionRenderRegistry';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Package } from 'lucide-react';
 import { ProductImage, StarRating } from '@/components/comman/marketplace/ProductCard';
 import { useStorefrontProductSection } from '@/hooks/useStorefrontProductSections';
 import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { currencySymbol } from '@/utils/currency';
-import { getMainAppUrl } from '@/utils/storefrontUrl';
 import { useStorefront } from '../StorefrontContext';
 import { ProductCardShell, ProductCardImage } from '../ProductCard';
 
@@ -67,6 +68,7 @@ function useCuratedProducts(storeId: string | undefined, settings: FeaturedProdu
 // showed), a specific category, or a hand-picked list. Distinct from
 // `ProductCatalogSection`, which is the full paginated browse grid.
 export function FeaturedProductsSection({ settings }: { settings: FeaturedProductsSectionSettings }) {
+  const navigate = useNavigate();
   const { store, cfg } = useStorefront();
   const { currency: displayCurrency, convert } = useCurrencyPreference();
   const displaySymbol = currencySymbol(displayCurrency);
@@ -82,7 +84,7 @@ export function FeaturedProductsSection({ settings }: { settings: FeaturedProduc
           const pType = p.productType ?? p.type ?? 'physical';
           const isDigital = pType !== 'physical';
           return (
-            <ProductCardShell key={p._id} onClick={() => { window.location.href = getMainAppUrl(`/product/${p.slug}`); }} className="shrink-0 w-[160px] text-left">
+            <ProductCardShell key={p._id} onClick={() => navigate(`/product/${p.slug}`)} className="shrink-0 w-[160px] text-left">
               <div className="relative p-2">
                 <ProductCardImage>
                   {p.images?.[0]
@@ -107,3 +109,7 @@ export function FeaturedProductsSection({ settings }: { settings: FeaturedProduc
     </div>
   );
 }
+
+registerSection('featured_products', (section) =>
+  <FeaturedProductsSection settings={section.settings as FeaturedProductsSectionSettings} />,
+);

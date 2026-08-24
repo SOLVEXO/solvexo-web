@@ -25,6 +25,10 @@ export const SECTION_TYPES = [
   'featured_category_grid',
   'trust_badges',
   'newsletter',
+  // Contextual — always renders whichever collection is currently being
+  // browsed. Only ever appears inside the singleton Collection Template, not
+  // the general Pages/Home "Add Section" picker (see `sectionRegistry.ts`).
+  'collection_product_grid',
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
 

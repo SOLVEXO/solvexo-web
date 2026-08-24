@@ -4,7 +4,7 @@ import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLa
 import { SkeletonBox, EmptyState } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { ActionMenu, type ActionMenuItem } from '@/components/comman/ui/ActionMenu';
-import { ConfirmDialog } from '@/features/seller/dashboard/storemodule/builder/ConfirmDialog';
+import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { apiListCollections, apiDeleteCollection, type CollectionData } from '@/api/services/collections';
 import { CollectionFormModal } from './CollectionFormModal';
 

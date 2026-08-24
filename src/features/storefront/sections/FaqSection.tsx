@@ -1,3 +1,4 @@
+import { registerSection } from '../sectionRenderRegistry';
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -44,3 +45,7 @@ export function FaqSection({ settings, blocks }: { settings: { heading?: string 
     </div>
   );
 }
+
+registerSection('faq', (section, blocks) =>
+  <FaqSection settings={section.settings} blocks={blocks.map(b => b.settings) as any} />,
+);

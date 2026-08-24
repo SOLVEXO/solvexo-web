@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, AlertCircle, RefreshCw,
   DollarSign, Clock, TrendingUp, CheckCheck, Truck,
@@ -13,9 +14,14 @@ import {
   Avatar,
   SearchInput,
   ActionMenu,
+  Modal,
+  Field,
+  Input,
+  Button,
 } from '@/components/comman/ui';
 import {
   apiGetSellerOrders,
+  apiExportOrdersCsv,
   type SellerOrder,
   type SellerOrderStats,
 } from '@/api/services/product';
@@ -38,6 +44,7 @@ function CustomerCell({ name, email }: { name: string; email: string }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function StoreOrderList() {
   usePageTitle('Orders');
+  const navigate = useNavigate();
   const { storeId, store } = useStoreWorkspace();
 
   const [orders,      setOrders]      = useState<SellerOrder[]>([]);
@@ -53,6 +60,14 @@ export function StoreOrderList() {
   const [refreshKey,    setRefreshKey]    = useState(0);
   const [markingPaidId,    setMarkingPaidId]    = useState<string | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+
+  // Shipping an order requires a tracking number server-side — this modal is what
+  // actually collects it before the status update is sent, instead of firing the
+  // update immediately and letting it fail against that requirement.
+  const [shippingOrder, setShippingOrder] = useState<SellerOrder | null>(null);
+  const [trackingForm, setTrackingForm] = useState({ carrier: '', trackingNumber: '', trackingUrl: '' });
+  const [trackingErrors, setTrackingErrors] = useState<{ carrier?: string; trackingNumber?: string }>({});
+  const [submittingTracking, setSubmittingTracking] = useState(false);
 
   const LIMIT = 10;
   // No server-side order search endpoint exists — when searching, fetch a
@@ -99,6 +114,65 @@ export function StoreOrderList() {
     setLoading(true);
     setError('');
     setRefreshKey(k => k + 1);
+  };
+
+  const [exporting, setExporting] = useState(false);
+  const handleExportCsv = () => {
+    setExporting(true);
+    setError('');
+    apiExportOrdersCsv(storeId, {
+      status: statusF || undefined,
+      type: typeF || undefined,
+    })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      })
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to export orders.'))
+      .finally(() => setExporting(false));
+  };
+
+  const handleSubmitTracking = () => {
+    if (!shippingOrder) return;
+    const carrier = trackingForm.carrier.trim();
+    const trackingNumber = trackingForm.trackingNumber.trim();
+    const errors: { carrier?: string; trackingNumber?: string } = {};
+    if (!carrier) errors.carrier = 'Carrier is required.';
+    if (!trackingNumber) errors.trackingNumber = 'Tracking number is required.';
+    if (Object.keys(errors).length) {
+      setTrackingErrors(errors);
+      return;
+    }
+
+    const orderId = shippingOrder.orderId;
+    setSubmittingTracking(true);
+    apiUpdateOrderStatus({
+      orderId,
+      storeId,
+      status: 'shipped',
+      tracking: {
+        carrier,
+        trackingNumber,
+        trackingUrl: trackingForm.trackingUrl.trim(),
+      },
+    })
+      .then(() => {
+        setOrders(prev =>
+          prev.map(x => x.orderId === orderId ? { ...x, status: 'shipped' } : x)
+        );
+        setShippingOrder(null);
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Failed to mark order as shipped.');
+        setShippingOrder(null);
+      })
+      .finally(() => setSubmittingTracking(false));
   };
 
   const filtered = orders.filter(o => {
@@ -186,7 +260,7 @@ export function StoreOrderList() {
       render: o => {
         const busy = markingPaidId === o.orderId || updatingStatusId === o.orderId;
 
-        const changeStatus = (status: 'processing' | 'shipped' | 'completed' | 'cancelled') => {
+        const changeStatus = (status: 'processing' | 'completed' | 'cancelled') => {
           if (busy) return;
           setUpdatingStatusId(o.orderId);
           apiUpdateOrderStatus({ orderId: o.orderId, storeId, status })
@@ -225,9 +299,14 @@ export function StoreOrderList() {
                 onClick: () => changeStatus('processing'),
               }] : []),
               ...(o.status !== 'completed' && o.status !== 'cancelled' ? [{
-                label: updatingStatusId === o.orderId ? 'Updating…' : 'Mark Shipped',
+                label: 'Mark Shipped',
                 icon: <Truck size={13} />,
-                onClick: () => changeStatus('shipped'),
+                onClick: () => {
+                  if (busy) return;
+                  setTrackingForm({ carrier: '', trackingNumber: '', trackingUrl: '' });
+                  setTrackingErrors({});
+                  setShippingOrder(o);
+                },
               }, {
                 label: updatingStatusId === o.orderId ? 'Updating…' : 'Mark Completed',
                 icon: <CheckCheck size={13} />,
@@ -247,11 +326,11 @@ export function StoreOrderList() {
         subtitle={loading ? 'Loading…' : `${totalOrders} order${totalOrders !== 1 ? 's' : ''}`}
         actions={
           <button
-            disabled
-            title="Order export isn't available yet — coming soon"
-            className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-4 py-[9px] text-[13px] font-medium opacity-50 cursor-not-allowed"
+            onClick={handleExportCsv}
+            disabled={exporting}
+            className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-4 py-[9px] text-[13px] font-medium cursor-pointer hover:bg-cream transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Export CSV (Coming Soon)
+            {exporting ? 'Exporting…' : 'Export CSV'}
           </button>
         }
       />
@@ -317,7 +396,7 @@ export function StoreOrderList() {
                   onChange={e => setStatusF(e.target.value === 'All Status' ? '' : e.target.value)}
                   className="text-[13px] px-3 py-2 sm:py-[7px] rounded-lg border border-bone bg-white text-charcoal outline-none cursor-pointer shrink-0"
                 >
-                  {['All Status', 'pending', 'completed', 'cancelled', 'processing'].map(o => (
+                  {['All Status', 'pending', 'processing', 'shipped', 'completed', 'cancelled'].map(o => (
                     <option key={o} value={o}>{o === 'All Status' ? 'All Status' : o.charAt(0).toUpperCase() + o.slice(1)}</option>
                   ))}
                 </select>
@@ -349,6 +428,7 @@ export function StoreOrderList() {
               columns={columns}
               data={filtered}
               keyExtractor={o => o.orderId}
+              onRowClick={o => navigate(`/store/${storeId}/orders/detail/${o.orderId}`)}
               loading={loading}
               emptyState={{
                 icon: <ShoppingCart size={30} className="text-brand-orange opacity-55" />,
@@ -370,6 +450,52 @@ export function StoreOrderList() {
         )}
 
       </div>
+
+      {shippingOrder && (
+        <Modal
+          title={`Mark ${shippingOrder.orderNumber} as Shipped`}
+          onClose={() => { if (!submittingTracking) setShippingOrder(null); }}
+          footer={
+            <>
+              <Button variant="outline" size="sm" onClick={() => setShippingOrder(null)} disabled={submittingTracking}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleSubmitTracking} loading={submittingTracking}>
+                Mark Shipped
+              </Button>
+            </>
+          }
+        >
+          <p className="text-[12.5px] text-slate mb-4">
+            Add the shipment's tracking details so the customer can follow their delivery.
+          </p>
+          <Field label="Carrier" required error={trackingErrors.carrier}>
+            <Input
+              placeholder="e.g. DHL, FedEx, Local Courier"
+              value={trackingForm.carrier}
+              onChange={e => setTrackingForm(f => ({ ...f, carrier: e.target.value }))}
+              disabled={submittingTracking}
+            />
+          </Field>
+          <Field label="Tracking Number" required error={trackingErrors.trackingNumber}>
+            <Input
+              placeholder="e.g. 1Z999AA10123456784"
+              value={trackingForm.trackingNumber}
+              onChange={e => setTrackingForm(f => ({ ...f, trackingNumber: e.target.value }))}
+              disabled={submittingTracking}
+            />
+          </Field>
+          <Field label="Tracking Link" hint="Optional — lets the customer open the carrier's tracking page directly.">
+            <Input
+              type="url"
+              placeholder="https://…"
+              value={trackingForm.trackingUrl}
+              onChange={e => setTrackingForm(f => ({ ...f, trackingUrl: e.target.value }))}
+              disabled={submittingTracking}
+            />
+          </Field>
+        </Modal>
+      )}
     </>
   );
 }

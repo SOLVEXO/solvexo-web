@@ -1,3 +1,4 @@
+import { registerSection } from '../sectionRenderRegistry';
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import { useNavigate } from 'react-router-dom';
@@ -127,3 +128,7 @@ export function HeroSection({ settings, blocks }: { settings: HeroSectionSetting
     </div>
   );
 }
+
+registerSection('hero', (section, blocks) =>
+  <HeroSection settings={section.settings} blocks={blocks.map(b => b.settings) as any} />,
+);

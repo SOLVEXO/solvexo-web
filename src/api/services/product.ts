@@ -54,6 +54,7 @@ export interface ProductVariant {
   _id:            string;
   productId:      string;
   sku:            string;
+  barcode?:       string | null;
   price:          number;
   /** The currency `price`/`compareAtPrice` are denominated in — the owning
    *  store's own Store.baseCurrency, stamped server-side at creation. */
@@ -81,6 +82,7 @@ export interface VariantInput {
   shippingWeight?: string;
   images?:        string[];
   sku?:           string;
+  barcode?:       string;
   isDefault?:     boolean;
 }
 
@@ -375,6 +377,93 @@ export function apiGetMySellerOrders(page = 1, limit = 10) {
   return client.get<never, ApiResponse<GetSellerOrdersData>>(
     `${ENDPOINTS.SELLER_ACCOUNT.GET_MY_SELLER_ORDERS}?page=${page}&limit=${limit}`,
   );
+}
+
+// ── Seller Order Detail ─────────────────────────────────────────────────────
+
+export interface SellerOrderDetailItem {
+  _id:          string;
+  productId:    string;
+  variantId:    string | null;
+  type:         'physical' | 'digital';
+  productType:  'physical' | 'digital' | 'educational' | null;
+  name:         string;
+  image:        string | null;
+  sku:          string | null;
+  options:      { name: string; value: string }[];
+  quantity:     number;
+  price:        number;
+  totalPrice:   number;
+  status:       string;
+  cancelledAt:  string | null;
+  cancelReason: string | null;
+  refundedAmount: number;
+  returnStatus: string;
+  returnReason: string | null;
+}
+
+export interface SellerOrderDetailTracking {
+  carrier:        string | null;
+  trackingNumber: string | null;
+  trackingUrl:    string | null;
+}
+
+export interface SellerOrderDetailSellerOrder {
+  _id:             string;
+  fulfillmentType: 'physical' | 'digital' | 'mixed';
+  items:           SellerOrderDetailItem[];
+  subtotal:        number;
+  status:          string;
+  tracking:        SellerOrderDetailTracking | null;
+  shippedAt:       string | null;
+  deliveredAt:     string | null;
+  cancelledAt:     string | null;
+  cancelReason:    string | null;
+  returnStatus:    string;
+}
+
+export interface SellerOrderDetailShippingAddress {
+  recipientName: string;
+  phoneNumber:   string;
+  addressLine1:  string;
+  addressLine2:  string | null;
+  city:          string;
+  state:         string;
+  zipCode:       string;
+}
+
+export interface SellerOrderDetailBuyer {
+  name:  string;
+  email: string;
+  phone: string;
+}
+
+export interface SellerOrderDetail {
+  orderId:         string;
+  orderNumber:     string;
+  createdAt:       string;
+  currency:        string;
+  paymentType:     string;
+  paymentStatus:   string;
+  isPaid:          boolean;
+  paidAt:          string | null;
+  shippingAddress: SellerOrderDetailShippingAddress | null;
+  buyer:           SellerOrderDetailBuyer;
+  sellerOrder:     SellerOrderDetailSellerOrder;
+}
+
+export function apiGetSellerOrderDetail(storeId: string, orderId: string) {
+  return client.get<never, ApiResponse<SellerOrderDetail>>(
+    ENDPOINTS.SELLER_ACCOUNT.GET_SELLER_ORDER_DETAIL(storeId, orderId),
+  );
+}
+
+/** Same status/type/time filters as `apiGetSellerOrders` — capped at 5000 rows server-side. Was previously a permanently-disabled "Coming Soon" button with no backend route behind it. */
+export function apiExportOrdersCsv(storeId: string, params?: { status?: string; type?: string; time?: string }) {
+  return client.get<never, Blob>(ENDPOINTS.SELLER_ACCOUNT.EXPORT_ORDERS_CSV(storeId), {
+    params,
+    responseType: 'blob',
+  });
 }
 
 /** GET /api/products/education/custom-level-suggestions?q= — seller-only autocomplete for the "Other" custom level input. */

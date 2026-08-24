@@ -1,23 +1,32 @@
+import { cloneElement, isValidElement } from 'react';
 import type { Section } from '@/api/services/storefrontTypes';
-import { HeroSection } from './sections/HeroSection';
-import { RichTextSection } from './sections/RichTextSection';
-import { FeaturedProductsSection, type FeaturedProductsSectionSettings } from './sections/FeaturedProductsSection';
-import { ProductCatalogSection, type ProductCatalogSectionSettings } from './sections/ProductCatalogSection';
-import { ImageWithTextSection } from './sections/ImageWithTextSection';
-import { TestimonialsSection } from './sections/TestimonialsSection';
-import { FaqSection } from './sections/FaqSection';
-import { VideoSection, type VideoSectionSettings } from './sections/VideoSection';
-import { FeaturedCategoryGridSection, type FeaturedCategoryGridSectionSettings } from './sections/FeaturedCategoryGridSection';
-import { TrustBadgesSection } from './sections/TrustBadgesSection';
-import { NewsletterSection, type NewsletterSectionSettings } from './sections/NewsletterSection';
+import { getSectionRender } from './sectionRenderRegistry';
+
+// Importing every section module once is what makes their self-registration
+// (see the bottom of each file in `sections/`) actually run — same
+// requirement any registration-based plugin architecture has. Adding a new
+// section type means creating its file (which registers itself) and adding
+// ONE import line here — never touching branching logic, unlike the old
+// hardcoded `switch (section.type)` this file used to be.
+import './sections/HeroSection';
+import './sections/RichTextSection';
+import './sections/FeaturedProductsSection';
+import './sections/ProductCatalogSection';
+import './sections/ImageWithTextSection';
+import './sections/TestimonialsSection';
+import './sections/FaqSection';
+import './sections/VideoSection';
+import './sections/FeaturedCategoryGridSection';
+import './sections/TrustBadgesSection';
+import './sections/NewsletterSection';
+import './sections/CollectionProductGridSection';
 
 /**
- * type → component map — the single source of truth for how a section
- * renders. Used identically by the real public storefront AND the builder's
- * live preview pane (Phase 3), which is what makes the preview genuinely
- * WYSIWYG instead of the old disconnected mock (`StoreBuilder`'s
- * `StorePreview`, which used hardcoded sample data and rendered features —
- * custom hero text, a custom footer — the real page never displayed).
+ * type → renderer dispatch, driven entirely by `sectionRenderRegistry`'s
+ * open registry (see that file's comment) — the single source of truth for
+ * how a section renders. Used identically by the real public storefront AND
+ * the builder's live preview pane, which is what makes the preview
+ * genuinely WYSIWYG instead of a disconnected mock.
  */
 export function SectionRenderer({ sections }: { sections: Section[] }) {
   return (
@@ -31,32 +40,10 @@ export function SectionRenderer({ sections }: { sections: Section[] }) {
         if (section.enabled === false) return null;
         const key = section._id ?? i;
         const blocks = section.blocks.filter(b => b.enabled !== false);
-        switch (section.type) {
-          case 'hero':
-            return <HeroSection key={key} settings={section.settings} blocks={blocks.map(b => b.settings) as any} />;
-          case 'rich_text':
-            return <RichTextSection key={key} settings={section.settings} blocks={blocks.map(b => ({ type: b.type, settings: b.settings })) as any} />;
-          case 'featured_products':
-            return <FeaturedProductsSection key={key} settings={section.settings as FeaturedProductsSectionSettings} />;
-          case 'product_catalog':
-            return <ProductCatalogSection key={key} settings={section.settings as ProductCatalogSectionSettings} />;
-          case 'image_with_text':
-            return <ImageWithTextSection key={key} settings={section.settings} blocks={blocks.map(b => b.settings) as any} />;
-          case 'testimonials':
-            return <TestimonialsSection key={key} settings={section.settings} blocks={blocks.map(b => b.settings) as any} />;
-          case 'faq':
-            return <FaqSection key={key} settings={section.settings} blocks={blocks.map(b => b.settings) as any} />;
-          case 'video':
-            return <VideoSection key={key} settings={section.settings as VideoSectionSettings} />;
-          case 'featured_category_grid':
-            return <FeaturedCategoryGridSection key={key} settings={section.settings as FeaturedCategoryGridSectionSettings} />;
-          case 'trust_badges':
-            return <TrustBadgesSection key={key} settings={section.settings} blocks={blocks.map(b => b.settings) as any} />;
-          case 'newsletter':
-            return <NewsletterSection key={key} settings={section.settings as NewsletterSectionSettings} />;
-          default:
-            return null;
-        }
+        const render = getSectionRender(section.type);
+        if (!render) return null;
+        const node = render(section, blocks);
+        return isValidElement(node) ? cloneElement(node, { key }) : null;
       })}
     </>
   );

@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { ImageUpload } from '@/components/comman/ui';
-import { EntityPickerModal } from '@/features/seller/dashboard/storemodule/builder/EntityPickerModal';
+import { EntityPickerModal } from '@/features/seller/store/Dashboard/OnlineStore/builder/EntityPickerModal';
 import { apiGetStoreInventory } from '@/api/services/product';
 import { apiGetCategoryById } from '@/api/services/categories';
 import {
@@ -134,7 +134,7 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
 
           <div>
             <label className="text-[12px] font-medium text-charcoal block mb-1.5">Image (optional)</label>
-            <ImageUpload value={image ? [image] : []} onChange={urls => setImage(urls[0] ?? '')} maxFiles={1} />
+            <ImageUpload value={image ? [image] : []} onChange={urls => setImage(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
           </div>
 
           <div>

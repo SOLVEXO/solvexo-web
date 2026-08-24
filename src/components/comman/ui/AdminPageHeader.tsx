@@ -26,9 +26,9 @@ export function AdminPageHeader({ title, subtitle, actions, icon }: AdminPageHea
             {icon}
           </div>
         )}
-        <div>
-          <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">{title}</h1>
-          {subtitle && <p className="text-[12px] text-slate mt-[2px]">{subtitle}</p>}
+        <div key={title}>
+          <h1 className="solvexo-title-reveal text-[18px] font-bold text-charcoal leading-[1.3]">{title}</h1>
+          {subtitle && <p className="solvexo-subtitle-reveal text-[12px] text-slate mt-[2px]">{subtitle}</p>}
         </div>
       </div>
       {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}

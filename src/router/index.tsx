@@ -44,6 +44,7 @@ import { TermsOfServicePage }   from '@/features/buyer/pages/TermsOfServicePage'
 import { CookiePolicyPage }     from '@/features/buyer/pages/CookiePolicyPage';
 import { ContactUsPage }        from '@/features/buyer/pages/ContactUsPage';
 import { AboutPage }            from '@/features/buyer/pages/AboutPage';
+import { SecurityPage }         from '@/features/buyer/pages/SecurityPage';
 import { ProductsOverviewPage } from '@/features/buyer/pages/products/ProductsOverviewPage';
 import { PlatformProductPage }  from '@/features/buyer/pages/products/PlatformProductPage';
 import { SolutionsOverviewPage } from '@/features/buyer/pages/solutions/SolutionsOverviewPage';
@@ -67,6 +68,8 @@ const SearchResultsPage    = lazy(() => named(import('@/features/storefront/page
 const StorefrontBlogIndex  = lazy(() => named(import('@/features/buyer/pages/StorefrontBlogIndex'),              'StorefrontBlogIndex'));
 const StorefrontBlogPost   = lazy(() => named(import('@/features/buyer/pages/StorefrontBlogPost'),               'StorefrontBlogPost'));
 const StorefrontCartPage   = lazy(() => named(import('@/features/storefront/StorefrontCartPage'),                'StorefrontCartPage'));
+const StorefrontCheckoutPage = lazy(() => named(import('@/features/storefront/StorefrontCheckoutPage'),          'StorefrontCheckoutPage'));
+const StorefrontProductPage  = lazy(() => named(import('@/features/storefront/StorefrontProductPage'),           'StorefrontProductPage'));
 const StorefrontLoginPage  = lazy(() => named(import('@/features/storefront/StorefrontLoginPage'),               'StorefrontLoginPage'));
 const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/EducationMarketplace'),            'EducationMarketplace'));
 const MaintenancePage      = lazy(() => named(import('@/features/buyer/pages/MaintenancePage'),                 'MaintenancePage'));
@@ -87,16 +90,16 @@ const AccountSubscriptions = lazy(() => named(import('@/features/buyer/pages/MyS
 
 // ── Seller ────────────────────────────────────────────────────────────────────
 const SellerAnalytics      = lazy(() => named(import('@/features/seller/dashboard/SellerAnalytics'),             'SellerAnalytics'));
-const StoreBuilder         = lazy(() => named(import('@/features/seller/dashboard/storemodule/StoreBuilder'),   'StoreBuilder'));
-const StoreBuilderRedirect = lazy(() => named(import('@/features/seller/dashboard/storemodule/StoreBuilderRedirect'), 'StoreBuilderRedirect'));
+const StoreBuilder         = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/StoreBuilder'),   'StoreBuilder'));
+const StoreBuilderRedirect = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/StoreBuilderRedirect'), 'StoreBuilderRedirect'));
 const SellerSettings       = lazy(() => named(import('@/features/seller/dashboard/settings/SellerSettings'),   'SellerSettings'));
 const SellerShipping       = lazy(() => named(import('@/features/seller/dashboard/SellerShipping'),             'SellerShipping'));
 const SellerMessages       = lazy(() => named(import('@/features/seller/dashboard/SellerMessages'),             'SellerMessages'));
-const SellerStoreList      = lazy(() => named(import('@/features/seller/dashboard/storemodule/SellerStoreList'),'SellerStoreList'));
+const SellerStoreList      = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/SellerStoreList'),'SellerStoreList'));
 const POSRegister          = lazy(() => named(import('@/features/seller/store/pos/POSRegister'),                'POSRegister'));
 const POSEmployeeLogin     = lazy(() => named(import('@/features/seller/store/pos/POSEmployeeLogin'),           'POSEmployeeLogin'));
-const ThemePreviewPage     = lazy(() => named(import('@/features/seller/dashboard/storemodule/ThemePreviewPage'), 'ThemePreviewPage'));
-const LivePreviewPage      = lazy(() => named(import('@/features/seller/dashboard/storemodule/LivePreviewPage'), 'LivePreviewPage'));
+const ThemePreviewPage     = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/ThemePreviewPage'), 'ThemePreviewPage'));
+const LivePreviewPage      = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/LivePreviewPage'), 'LivePreviewPage'));
 const PosLanding           = lazy(() => named(import('@/features/seller/store/pos/PosLanding'),                 'PosLanding'));
 
 // ── Store Workspace ───────────────────────────────────────────────────────────
@@ -109,9 +112,13 @@ const StoreCustomerList  = lazy(() => import('@/features/seller/store/Dashboard/
 const StoreSettings      = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreSettings'));
 const StoreCategories    = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCategories'));
 const StoreCollections   = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCollections'));
+const FilesLibrary       = lazy(() => import('@/features/seller/store/Dashboard/Manage/FilesLibrary'));
 const StorePlanBilling   = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
 const StoreVerification  = lazy(() => named(import('@/features/seller/store/Dashboard/Manage/StoreVerification'), 'StoreVerification'));
 const StoreOrderList     = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList'),        'StoreOrderList'));
+const StoreOrderDetail   = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail'),      'StoreOrderDetail'));
+const DraftOrdersList    = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DraftOrdersList'));
+const DraftOrderForm     = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DraftOrderForm'));
 const StoreReturnList    = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/returns/ReturnList'),      'StoreReturnList'));
 const StoreAnalytics     = lazy(() => named(import('@/features/seller/store/Dashboard/Analytic/analytics/Analytics'),        'StoreAnalytics'));
 const StoreAIStudio      = lazy(() => named(import('@/features/seller/store/Dashboard/Analytic/ai/AiStudio'),                'StoreAIStudio'));
@@ -140,6 +147,7 @@ const AdminFinance       = lazy(() => named(import('@/features/admin/pages/Admin
 const AdminAnnouncements = lazy(() => named(import('@/features/admin/pages/AdminAnnouncements'),                'AdminAnnouncements'));
 const AdminBanners       = lazy(() => named(import('@/features/admin/pages/AdminBanners'),                       'AdminBanners'));
 const AdminFaqs          = lazy(() => named(import('@/features/admin/pages/AdminFaqs'),                          'AdminFaqs'));
+const AdminShippingZones = lazy(() => named(import('@/features/admin/pages/AdminShippingZones'),                 'AdminShippingZones'));
 const AdminContactMessages = lazy(() => named(import('@/features/admin/pages/AdminContactMessages'),             'AdminContactMessages'));
 const AdminTestimonials  = lazy(() => named(import('@/features/admin/pages/AdminTestimonials'),                  'AdminTestimonials'));
 const AdminManualPayments = lazy(() => named(import('@/features/admin/pages/AdminManualPayments'),               'AdminManualPayments'));
@@ -171,12 +179,14 @@ const storefrontRouter = createBrowserRouter([
           { path: 'blog', element: <StorefrontBlogIndex /> },
           { path: 'blog/:postSlug', element: <StorefrontBlogPost /> },
           { path: 'cart', element: <StorefrontCartPage /> },
+          { path: 'checkout', element: <StorefrontCheckoutPage /> },
           { path: 'login', element: <StorefrontLoginPage /> },
           // Must come before the `:pageSlug` catch-all below — 'category'/
-          // 'collections' are reserved custom-page slugs precisely so they
-          // can never collide with these (see RESERVED_CUSTOM_PAGE_SLUGS).
+          // 'collections'/'checkout' are reserved custom-page slugs precisely
+          // so they can never collide with these (see RESERVED_CUSTOM_PAGE_SLUGS).
           { path: 'category/:slugOrId', element: <CategoryBrowsePage /> },
           { path: 'collections/:slugOrId', element: <CollectionDetailPage /> },
+          { path: 'product/:slug', element: <StorefrontProductPage /> },
           { path: 'search', element: <SearchResultsPage /> },
           { path: ':pageSlug', element: <StorefrontCustomPage /> },
         ],
@@ -212,6 +222,7 @@ const mainRouter = createBrowserRouter([
               { path: 'contact-us',      element: <ContactUsPage /> },
               { path: 'contact',         element: <Navigate to="/contact-us" replace /> },
               { path: 'about',           element: <AboutPage /> },
+              { path: 'security',        element: <SecurityPage /> },
               { path: 'products',        element: <ProductsOverviewPage /> },
               { path: 'products/:slug',  element: <PlatformProductPage /> },
               { path: 'solutions',       element: <SolutionsOverviewPage /> },
@@ -308,6 +319,9 @@ const mainRouter = createBrowserRouter([
           { path: 'dashboard',                        element: <StoreDashboard /> },
           { path: 'pos',                               element: <PosLanding /> },
           { path: 'orders',                           element: <StoreOrderList /> },
+          { path: 'orders/detail/:orderId',           element: <StoreOrderDetail /> },
+          { path: 'draft-orders',                     element: <DraftOrdersList /> },
+          { path: 'draft-orders/:draftId',             element: <DraftOrderForm /> },
           { path: 'products',                         element: <StoreProductList /> },
           { path: 'products/add',                     element: <StoreAddProduct /> },
           { path: 'products/edit/:productId',         element: <StoreEditProduct /> },
@@ -317,6 +331,7 @@ const mainRouter = createBrowserRouter([
           { path: 'settings',                         element: <StoreSettings /> },
           { path: 'categories',                       element: <StoreCategories /> },
           { path: 'collections',                      element: <StoreCollections /> },
+          { path: 'files',                            element: <FilesLibrary /> },
           { path: 'plan-billing',                     element: <StorePlanBilling /> },
           { path: 'verification',                     element: <StoreVerification /> },
           { path: 'storebuilder',                     element: <StoreBuilder /> },
@@ -361,6 +376,7 @@ const mainRouter = createBrowserRouter([
           { path: 'announcements',element: <RequireRole role="admin"><AdminAnnouncements /></RequireRole> },
           { path: 'banners',      element: <AdminBanners /> },
           { path: 'faqs',         element: <AdminFaqs /> },
+          { path: 'shipping-zones', element: <AdminShippingZones /> },
           { path: 'contact',      element: <AdminContactMessages /> },
           { path: 'testimonials', element: <AdminTestimonials /> },
           { path: 'config',       element: <RequireRole role="admin"><AdminConfig /></RequireRole> },

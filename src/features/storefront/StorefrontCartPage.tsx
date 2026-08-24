@@ -10,6 +10,9 @@ import {
 import { clsx } from 'clsx';
 import { currencySymbol } from '@/utils/currency';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+import { useStorefront } from './StorefrontContext';
+import { ThemedButton } from './ThemedButton';
+import { useNavigate } from 'react-router-dom';
 
 function CartItemImage({ images, name }: { images?: string[]; name: string }) {
   const [errored, setErrored] = useState(false);
@@ -31,11 +34,13 @@ function CartItemImage({ images, name }: { images?: string[]; name: string }) {
 
 // This store's own cart — no marketplace breadcrumb, no cross-store
 // "recently viewed"/"browse marketplace" recovery links, since a buyer on
-// this subdomain only ever shops this one store. Checkout itself isn't
-// wired up yet (needs its own storefront-local page — a later phase), so
-// the CTA is shown but disabled rather than bouncing somewhere broken.
+// this subdomain only ever shops this one store. Checkout is a real,
+// storefront-local page (`StorefrontCheckoutPage`) — see that file for the
+// (deliberately leaner than the marketplace `CheckoutPage`) supported flow.
 export function StorefrontCartPage() {
   usePageTitle('Cart');
+  const navigate = useNavigate();
+  const { cfg } = useStorefront();
   const { cart, loading, cartCount, updateQty, removeItem, clearCart, error, clearError } = useCartContext();
   const [clearing,   setClearing]   = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -43,6 +48,7 @@ export function StorefrontCartPage() {
 
   const items   = cart?.items ?? [];
   const isEmpty = !loading && !items.length;
+  const radius  = cfg.buttonRadiusPx;
 
   const { currency: displayCurrency, convert } = useCurrencyPreference();
   const displaySymbol = currencySymbol(displayCurrency);
@@ -84,10 +90,10 @@ export function StorefrontCartPage() {
 
       {isEmpty && (
         <div className="relative overflow-hidden bg-white rounded-2xl border border-bone px-6 py-10 sm:py-12 flex flex-col items-center text-center">
-          <span className="flex size-16 items-center justify-center rounded-full bg-brand-pale-orange mb-4">
-            <ShoppingBag size={26} className="text-brand-orange" />
+          <span className="flex size-16 items-center justify-center rounded-full mb-4" style={{ background: `${cfg.primaryColor}18` }}>
+            <ShoppingBag size={26} style={{ color: cfg.primaryColor }} />
           </span>
-          <p className="text-[19px] font-bold text-carbon mb-1">Your cart is empty</p>
+          <p className="text-[19px] font-bold mb-1" style={{ color: cfg.textColor }}>Your cart is empty</p>
           <p className="text-[13px] text-slate max-w-[360px] leading-[1.6]">
             Nothing here yet — browse the store to find something you'll love.
           </p>
@@ -99,13 +105,13 @@ export function StorefrontCartPage() {
           <div className="bg-white rounded-xl border border-bone overflow-hidden">
             <div className="px-6 pt-5 pb-4 border-b border-bone flex items-center justify-between">
               <div>
-                <h1 className="text-[20px] font-bold text-carbon leading-tight">Shopping Cart</h1>
+                <h1 className="text-[20px] font-bold leading-tight" style={{ color: cfg.textColor }}>Shopping Cart</h1>
                 <p className="text-[12px] text-slate mt-[2px]">
                   {loading ? 'Loading…' : `${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart`}
                 </p>
               </div>
               {!loading && cartCount > 0 && (
-                <span className="text-[11px] font-semibold px-3 py-[5px] rounded-full bg-brand-pale-orange text-brand-orange">
+                <span className="text-[11px] font-semibold px-3 py-[5px] rounded-full" style={{ background: `${cfg.primaryColor}18`, color: cfg.primaryColor }}>
                   {cartCount} {cartCount === 1 ? 'item' : 'items'}
                 </span>
               )}
@@ -151,7 +157,7 @@ export function StorefrontCartPage() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-2 mb-[3px] flex-wrap">
-                      <p className="font-semibold text-[14px] text-carbon leading-[1.35]">{item.name}</p>
+                      <p className="font-semibold text-[14px] leading-[1.35]" style={{ color: cfg.textColor }}>{item.name}</p>
                       {item.type === 'digital' && (
                         <span className="shrink-0 flex items-center gap-[3px] px-2 py-[2px] rounded-full text-[10px] font-semibold bg-[#eef0ff] text-[#3851d1]">
                           <Download size={9} /> Digital
@@ -165,22 +171,24 @@ export function StorefrontCartPage() {
                         onClick={() => handleUpdateQty(item.productId, key, 'decrease')}
                         disabled={item.quantity <= 1 || isUpdating}
                         aria-label={`Decrease quantity of ${item.name}`}
+                        style={{ borderRadius: radius }}
                         className={clsx(
-                          'w-10 h-10 rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors',
+                          'w-10 h-10 border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors',
                           item.quantity <= 1 || isUpdating ? 'cursor-not-allowed opacity-40' : 'cursor-pointer hover:bg-bone',
                         )}
                       >
                         <Minus size={14} />
                       </button>
-                      <span className="min-w-[36px] text-center text-[14px] font-bold text-carbon">
+                      <span className="min-w-[36px] text-center text-[14px] font-bold" style={{ color: cfg.textColor }}>
                         {isUpdating ? <Loader2 size={13} className="animate-spin mx-auto block" /> : item.quantity}
                       </span>
                       <button
                         onClick={() => handleUpdateQty(item.productId, key, 'increase')}
                         disabled={isUpdating}
                         aria-label={`Increase quantity of ${item.name}`}
+                        style={{ borderRadius: radius }}
                         className={clsx(
-                          'w-10 h-10 rounded-[7px] border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors',
+                          'w-10 h-10 border border-bone bg-cream flex items-center justify-center text-charcoal transition-colors',
                           isUpdating ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-bone',
                         )}
                       >
@@ -198,7 +206,7 @@ export function StorefrontCartPage() {
                     </div>
                   </div>
 
-                  <p className="font-bold text-[15px] text-carbon shrink-0">{displaySymbol}{lineTotal.toLocaleString()}</p>
+                  <p className="font-bold text-[15px] shrink-0" style={{ color: cfg.textColor }}>{displaySymbol}{lineTotal.toLocaleString()}</p>
                 </div>
               );
             })}
@@ -213,7 +221,7 @@ export function StorefrontCartPage() {
           </div>
 
           <div className="bg-white rounded-xl border border-bone p-6 lg:sticky top-20 flex flex-col gap-5">
-            <p className="text-[15px] font-bold text-carbon">Order Summary</p>
+            <p className="text-[15px] font-bold" style={{ color: cfg.textColor }}>Order Summary</p>
 
             {!loading && (
               <div className="flex flex-col gap-2">
@@ -223,10 +231,10 @@ export function StorefrontCartPage() {
                   const ttl = convert(nativeTtl, item.currency);
                   return (
                     <div key={item.productVariantId} className="flex justify-between text-[12px] gap-2">
-                      <span className="text-carbon truncate">
+                      <span className="truncate" style={{ color: cfg.textColor }}>
                         {item.name}<span className="text-slate ml-1">×{item.quantity}</span>
                       </span>
-                      <span className="font-medium text-carbon shrink-0">{displaySymbol}{ttl.toLocaleString()}</span>
+                      <span className="font-medium shrink-0" style={{ color: cfg.textColor }}>{displaySymbol}{ttl.toLocaleString()}</span>
                     </div>
                   );
                 })}
@@ -236,13 +244,13 @@ export function StorefrontCartPage() {
             <div className="h-px bg-bone" />
 
             <div className="flex justify-between text-[16px] font-bold">
-              <span className="text-carbon">Total</span>
-              <span className="text-carbon">{displaySymbol}{displayTotal.toLocaleString()}</span>
+              <span style={{ color: cfg.textColor }}>Total</span>
+              <span style={{ color: cfg.textColor }}>{displaySymbol}{displayTotal.toLocaleString()}</span>
             </div>
 
-            <Button variant="primary" fullWidth disabled className="justify-center! opacity-60">
-              <Lock size={13} className="mr-1.5" /> Checkout coming soon
-            </Button>
+            <ThemedButton className="w-full text-center flex items-center justify-center" onClick={() => navigate('/checkout')}>
+              <Lock size={13} className="mr-1.5" /> Checkout
+            </ThemedButton>
           </div>
         </div>
       )}

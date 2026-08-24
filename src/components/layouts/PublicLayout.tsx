@@ -1,7 +1,8 @@
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { PublicMegaNavbar } from '@/components/comman/ui/PublicMegaNavbar';
-import { BrandSplash } from '@/components/comman/motion/BrandSplash';
+import { BrandSplash, willShowBrandSplash } from '@/components/comman/motion/BrandSplash';
+import { BrandSplashReadyProvider } from '@/components/comman/motion/BrandSplashContext';
 import { Cursor } from '@/components/comman/motion/Cursor';
 
 // Public marketing/product/solutions pages share one navigation system —
@@ -10,9 +11,18 @@ import { Cursor } from '@/components/comman/motion/Cursor';
 // site's information architecture). The custom cursor is scoped here too —
 // desktop marketing pages only, never the buyer/seller/admin app.
 export function PublicLayout() {
+  // Real bug this fixes: BrandSplash and the page underneath it (e.g.
+  // Homepage's hero) used to mount at the same time, so a mount-triggered
+  // entrance animation finished invisibly behind the splash overlay — the
+  // splash lifted onto an already-settled, static hero. `splashReady`
+  // starts correctly `true`/`false` from the very first render (same
+  // synchronous check BrandSplash itself uses) and only flips true once the
+  // splash has actually finished, via `onDone` below.
+  const [splashReady, setSplashReady] = useState(() => !willShowBrandSplash());
+
   return (
     <div className="min-h-screen bg-white">
-      <BrandSplash />
+      <BrandSplash onDone={() => setSplashReady(true)} />
       <Cursor />
       <PublicMegaNavbar />
       {/* A local Suspense boundary around just the page content (same
@@ -25,7 +35,13 @@ export function PublicLayout() {
          fallback markup is rendered (TopProgressBar already signals
          "loading" via its thin bar) instead of flashing a second, heavier
          loading treatment on top of that. */}
-      <main><Suspense fallback={null}><Outlet /></Suspense></main>
+      <main>
+        <Suspense fallback={null}>
+          <BrandSplashReadyProvider value={splashReady}>
+            <Outlet />
+          </BrandSplashReadyProvider>
+        </Suspense>
+      </main>
     </div>
   );
 }

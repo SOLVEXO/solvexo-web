@@ -5,6 +5,17 @@ import { SolvexoLogo } from '@/components/comman/ui/SolvexoLogo';
 const FLAG = 'solvexo:splash-shown';
 const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
+/** Same decision `BrandSplash` makes internally, exposed so a parent layout
+ *  (PublicLayout) can synchronously agree on it during the same render pass
+ *  — before BrandSplash's own effect ever writes the sessionStorage flag —
+ *  instead of re-deriving it later and risking a stale read. */
+export function willShowBrandSplash(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  if (import.meta.env.DEV) return true;
+  return sessionStorage.getItem(FLAG) !== '1';
+}
+
 // A minimal brand splash — just the Solvexo mark, once, centered. No staged
 // word sequence (tried, then explicitly asked to be removed — that decision
 // stands). What was upgraded instead is production quality within that
@@ -21,26 +32,35 @@ const ENTER_MS = 500;
 const HOLD_MS = 380;
 const EXIT_MS = 550;
 
-export function BrandSplash() {
-  const [visible, setVisible] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
-    if (import.meta.env.DEV) return true;
-    return sessionStorage.getItem(FLAG) !== '1';
-  });
+interface BrandSplashProps {
+  /** Fires once — either immediately (this load was never going to show a
+   *  splash at all: reduced motion, or already shown this session) or once
+   *  the exit slide has actually finished playing. A page whose entrance
+   *  animation would otherwise race the splash overlay (and finish
+   *  invisibly underneath it) should hold its own mount-triggered motion
+   *  until this fires — see PublicLayout/useBrandSplashReady. */
+  onDone?: () => void;
+}
+
+export function BrandSplash({ onDone }: BrandSplashProps = {}) {
+  // Frozen at mount — "was this load ever going to show a splash," decided
+  // once and never recomputed, so the effect below only ever runs once too.
+  const [willShow] = useState(willShowBrandSplash);
+  const [show, setShow] = useState(willShow);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!willShow) { onDone?.(); return; }
     if (!import.meta.env.DEV) sessionStorage.setItem(FLAG, '1');
-    const t = setTimeout(() => setVisible(false), ENTER_MS + HOLD_MS);
+    const t = setTimeout(() => setShow(false), ENTER_MS + HOLD_MS);
     return () => clearTimeout(t);
-  }, [visible]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [willShow]);
 
   return (
-    <AnimatePresence>
-      {visible && (
+    <AnimatePresence onExitComplete={willShow ? onDone : undefined}>
+      {show && (
         <motion.div
-          className="fixed inset-0 z-[999] bg-carbon flex items-center justify-center overflow-hidden"
+          className="fixed inset-0 z-[999] bg-[#111110] flex items-center justify-center overflow-hidden"
           initial={{ y: 0 }}
           exit={{ y: '-100%' }}
           transition={{ duration: EXIT_MS / 1000, ease: EASE_OUT }}

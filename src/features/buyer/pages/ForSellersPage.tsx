@@ -13,6 +13,9 @@ import { ClipReveal } from '@/components/comman/motion/ClipReveal';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
+import { TiltPreview } from '@/components/comman/motion/TiltPreview';
+import { Marquee } from '@/components/comman/motion/Marquee';
+import { SellerDashboardPreview } from '@/components/comman/mockups/ProductMockups';
 
 const compactNumber   = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const compactCurrency = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1, style: 'currency', currency: 'USD' });
@@ -74,83 +77,106 @@ export function ForSellersPage() {
         <div className="absolute rounded-full w-[400px] h-[400px] bg-brand-orange opacity-[0.08] -top-[80px] -right-[80px]" />
         <div className="absolute rounded-full w-[300px] h-[300px] bg-brand-deep-orange opacity-[0.06] -bottom-[60px] left-[40%]" />
 
-        <div className="max-w-[760px] mx-auto text-center relative z-[1]">
-          <Reveal delay={0}>
-            <div className="inline-flex items-center gap-2 bg-[rgba(217,119,87,0.15)] border border-[rgba(217,119,87,0.3)] rounded-[20px] px-[14px] py-[5px] mb-6">
-              <span className="text-[12px] text-brand-orange font-medium">
-                Trusted by {stats ? `${compactNumber.format(stats.sellersCount)}+` : '50,000+'} sellers worldwide
-              </span>
-            </div>
-          </Reveal>
+        {/* Asymmetric two-column hero — copy left, a real (tilted, cursor-
+           reactive) seller-dashboard preview right, instead of a centered
+           text block with nothing to look at beside it. */}
+        <div className="max-w-[1180px] mx-auto relative z-[1] grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center">
+          <div className="text-center lg:text-left">
+            <Reveal delay={0}>
+              <div className="inline-flex items-center gap-2 bg-[rgba(217,119,87,0.15)] border border-[rgba(217,119,87,0.3)] rounded-[20px] px-[14px] py-[5px] mb-6">
+                <span className="text-[12px] text-brand-orange font-medium">
+                  Trusted by {stats ? `${compactNumber.format(stats.sellersCount)}+` : '50,000+'} sellers worldwide
+                </span>
+              </div>
+            </Reveal>
 
-          <h1 className="block text-3xl md:text-5xl lg:text-[48px] font-bold text-white leading-[1.15] mb-5" style={{ fontFamily: SERIF }}>
-            <ClipReveal as="div" delay={0.06}>Sell more. Do less.</ClipReveal>
-            <ClipReveal as="div" delay={0.18}>With Solvex<span className="text-brand-orange">o</span>.</ClipReveal>
-          </h1>
+            <h1 className="block text-3xl md:text-5xl lg:text-[46px] font-bold text-white leading-[1.15] mb-5" style={{ fontFamily: SERIF }}>
+              <ClipReveal as="div" delay={0.06}>Sell more. Do less.</ClipReveal>
+              <ClipReveal as="div" delay={0.18}>With Solvex<span className="text-brand-orange">o</span>.</ClipReveal>
+            </h1>
 
-          <Reveal delay={0.16}>
-            <p className="text-sm md:text-[17px] text-[#b0aea8] leading-[1.7] max-w-[580px] mx-auto mb-9">
-              The all-in-one commerce platform for educators, creators, and independent sellers.
-              Get your store live in minutes. Start selling today.
-            </p>
-          </Reveal>
+            <Reveal delay={0.16}>
+              <p className="text-sm md:text-[17px] text-[#b0aea8] leading-[1.7] max-w-[480px] mx-auto lg:mx-0 mb-9">
+                The all-in-one commerce platform for educators, creators, and independent sellers.
+                Get your store live in minutes. Start selling today.
+              </p>
+            </Reveal>
 
-          <Reveal delay={0.24}>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <MagneticButton>
-                <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
-                  Start for Free <ArrowRight size={14} className="inline align-middle ml-1" />
-                </Button>
-              </MagneticButton>
-              <button
-                onClick={() => navigate('/pricing')}
-                className="inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] transition-colors cursor-pointer"
-              >
-                See Pricing
-              </button>
-            </div>
+            <Reveal delay={0.24}>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+                <MagneticButton>
+                  <Button size="lg" onClick={sellEntry.go} loading={sellEntry.loading}>
+                    Start for Free <ArrowRight size={14} className="inline align-middle ml-1" />
+                  </Button>
+                </MagneticButton>
+                <button
+                  onClick={() => navigate('/pricing')}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] transition-colors cursor-pointer"
+                >
+                  See Pricing
+                </button>
+              </div>
+            </Reveal>
+          </div>
+
+          <Reveal delay={0.3} className="hidden lg:block">
+            <TiltPreview>
+              <SellerDashboardPreview />
+            </TiltPreview>
           </Reveal>
         </div>
       </div>
 
-      {/* ── Seller Types ─────────────────────────────────────────────────── */}
+      {/* ── Seller Types — an alternating light/dark rhythm instead of six
+         identical white cards, so the grid reads as intentional composition
+         rather than a repeated template tile. ── */}
       <div className="px-4 md:px-8 lg:px-12 py-12 md:py-[72px] bg-cream">
         <div className="max-w-[1100px] mx-auto">
           <SectionHeading kicker="Built for you" title="Whatever you sell, we've got you covered" align="center" className="mb-12" size="lg" />
           <RevealStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" step={0.08} y={20}>
-            {SELLER_TYPES.map(s => (
-              <PremiumCard key={s.title} className="p-7">
-                <s.Icon size={36} className="block mb-4 text-brand-orange" />
-                <p className="text-[17px] font-bold text-carbon mb-2">{s.title}</p>
-                <p className="text-[13px] text-slate leading-[1.7] mb-5">{s.desc}</p>
-                <Button
-                  variant="secondary" size="sm"
-                  onClick={() => s.cta === 'Contact Us'
-                    ? (window.location.href = 'mailto:support@solvexo.com?subject=Institutional%20Account%20Inquiry')
-                    : sellEntry.go()}
-                >
-                  {s.cta} <ArrowRight size={14} className="inline align-middle ml-1" />
-                </Button>
-              </PremiumCard>
-            ))}
+            {SELLER_TYPES.map((s, i) => {
+              const featured = i % 3 === 0;
+              return (
+                <PremiumCard key={s.title} tone={featured ? 'dark' : 'light'} className="p-7">
+                  <s.Icon size={36} className="block mb-4 text-brand-orange" />
+                  <p className={featured ? 'text-[17px] font-bold text-white mb-2' : 'text-[17px] font-bold text-carbon mb-2'}>{s.title}</p>
+                  <p className={featured ? 'text-[13px] text-white/65 leading-[1.7] mb-5' : 'text-[13px] text-slate leading-[1.7] mb-5'}>{s.desc}</p>
+                  <Button
+                    variant={featured ? 'primary' : 'secondary'} size="sm"
+                    onClick={() => s.cta === 'Contact Us'
+                      ? (window.location.href = 'mailto:support@solvexo.com?subject=Institutional%20Account%20Inquiry')
+                      : sellEntry.go()}
+                  >
+                    {s.cta} <ArrowRight size={14} className="inline align-middle ml-1" />
+                  </Button>
+                </PremiumCard>
+              );
+            })}
           </RevealStagger>
         </div>
       </div>
 
-      {/* ── Feature Highlights ───────────────────────────────────────────── */}
-      <div className="px-4 md:px-8 lg:px-12 py-12 md:py-[72px] bg-white">
-        <div className="max-w-[1100px] mx-auto">
+      {/* ── Feature Highlights — a slow, continuous strip instead of an
+         8-up card grid. Supporting content gets the quieter, ambient motion
+         tier (a marquee that pauses on hover) rather than another staggered
+         card reveal identical to the section above it. ── */}
+      <div className="py-12 md:py-[72px] bg-white overflow-hidden">
+        <div className="max-w-[1100px] mx-auto px-4 md:px-8 lg:px-12">
           <SectionHeading title="Everything you need to run your business" subtitle="One subscription. Every tool. Zero technical headaches." align="center" className="mb-12" size="lg" />
-          <RevealStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" step={0.05} y={16}>
-            {FEATURES.map(f => (
-              <PremiumCard key={f.title} className="px-[18px] py-5">
-                <f.Icon size={28} className="block mb-3 text-brand-orange" />
-                <p className="text-[13px] font-bold text-carbon mb-[6px]">{f.title}</p>
-                <p className="text-[12px] text-slate leading-[1.6]">{f.desc}</p>
-              </PremiumCard>
-            ))}
-          </RevealStagger>
         </div>
+        <Marquee duration={38}>
+          {FEATURES.map(f => (
+            <div key={f.title} className="flex items-center gap-3 rounded-2xl border border-bone bg-cream px-5 py-4 mx-2.5 w-[280px] shrink-0">
+              <span className="w-10 h-10 rounded-lg bg-brand-pale-orange flex items-center justify-center shrink-0">
+                <f.Icon size={19} className="text-brand-orange" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[12.5px] font-bold text-carbon mb-[2px]">{f.title}</p>
+                <p className="text-[11.5px] text-slate leading-[1.5] truncate">{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </Marquee>
       </div>
 
       {/* ── Social Proof ─────────────────────────────────────────────────── */}

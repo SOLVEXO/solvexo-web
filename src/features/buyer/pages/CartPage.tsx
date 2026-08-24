@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCartContext } from '@/contexts/CartContext';
+import { useCountUp } from '@/hooks/useCountUp';
 import { Button } from '@/components/comman/ui/Button';
 import { BuyerNavbar, Breadcrumb, Footer, SkeletonBox, getRecentlyViewed } from '@/components/comman/ui';
+import { Reveal } from '@/components/comman/motion/Reveal';
 import {
   Minus, Plus, Trash2, ShoppingBag, ImageOff,
   Loader2, Package, Download, ChevronRight, ShieldCheck, RotateCcw, Lock,
@@ -11,6 +14,16 @@ import {
 import { clsx } from 'clsx';
 import { currencySymbol } from '@/utils/currency';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+
+const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+// Animates the cart/summary total counting between its old and new value —
+// reused from MetricCard's exact same hook — instead of the number just
+// snapping the instant a quantity changes or an item is removed.
+function AnimatedTotal({ symbol, value, className }: { symbol: string; value: number; className?: string }) {
+  const { display, ref } = useCountUp<HTMLSpanElement>(`${symbol}${value.toLocaleString()}`);
+  return <span ref={ref} className={clsx('tabular-nums', className)}>{display}</span>;
+}
 
 function CartItemImage({ images, name }: { images?: string[]; name: string }) {
   const [errored, setErrored] = useState(false);
@@ -121,11 +134,16 @@ export function CartPage() {
             instead of just an icon and one button. ── */}
         {isEmpty && (
           <div className="flex flex-col gap-5">
-            <div className="relative overflow-hidden bg-white rounded-2xl border border-bone px-6 py-10 sm:py-12 flex flex-col items-center text-center">
+            <Reveal className="relative overflow-hidden bg-white rounded-2xl border border-bone px-6 py-10 sm:py-12 flex flex-col items-center text-center">
               <div className="absolute inset-0 bg-gradient-to-b from-brand-pale-orange/40 to-transparent pointer-events-none" />
-              <span className="relative flex size-16 items-center justify-center rounded-full bg-brand-pale-orange mb-4">
+              <motion.span
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5, ease: EASE_OUT, delay: 0.1 }}
+                className="relative flex size-16 items-center justify-center rounded-full bg-brand-pale-orange mb-4"
+              >
                 <ShoppingBag size={26} className="text-brand-orange" />
-              </span>
+              </motion.span>
               <p className="relative text-[19px] font-bold text-carbon mb-1">Your cart is empty</p>
               <p className="relative text-[13px] text-slate max-w-[360px] leading-[1.6] mb-5">
                 Nothing here yet — browse the marketplace to find products, digital downloads, and courses from verified sellers.
@@ -134,12 +152,12 @@ export function CartPage() {
                 <Button variant="primary" onClick={() => navigate('/marketplace')}>Browse Marketplace</Button>
                 <Button variant="outline" onClick={() => navigate('/education')}>Explore Education</Button>
               </div>
-            </div>
+            </Reveal>
 
             {/* Continue where you left off — the shopper's own recently-viewed
                 products, real client-tracked history, shown only when it exists. */}
             {recentlyViewed.length > 0 && (
-              <div className="bg-white rounded-xl border border-bone p-5">
+              <div className="surface-panel rounded-xl p-5">
                 <p className="text-[13px] font-bold text-carbon mb-3">Continue where you left off</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {recentlyViewed.slice(0, 4).map(item => (
@@ -185,7 +203,7 @@ export function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
 
             {/* ── Left: Cart card ── */}
-            <div className="bg-white rounded-xl border border-bone overflow-hidden">
+            <div className="surface-panel rounded-xl overflow-hidden">
 
               {/* Card header */}
               <div className="px-6 pt-5 pb-4 border-b border-bone flex items-center justify-between">
@@ -219,7 +237,11 @@ export function CartPage() {
                 </div>
               )}
 
-              {/* Items */}
+              {/* Items — AnimatePresence so a removed line slides/fades out
+                 instead of instantly disappearing, and its neighbors
+                 smoothly close the gap (layout animation) rather than
+                 snapping into place. */}
+              <AnimatePresence initial={false}>
               {!loading && items.map((item, idx) => {
                 const key        = item.productVariantId;
                 const imgs       = item.image ?? item.images;
@@ -232,12 +254,16 @@ export function CartPage() {
                 const isLast     = idx === (items.length - 1);
 
                 return (
-                  <div
+                  <motion.div
                     key={key}
+                    layout
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: isRemoving ? 0.5 : 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, ease: EASE_OUT }}
                     className={clsx(
-                      'flex flex-wrap gap-4 items-start px-5 py-4 transition-opacity duration-200',
+                      'flex flex-wrap gap-4 items-start px-5 py-4 overflow-hidden',
                       !isLast && 'border-b border-bone',
-                      isRemoving && 'opacity-50',
                     )}
                   >
                     <CartItemImage images={imgs} name={item.name} />
@@ -310,11 +336,12 @@ export function CartPage() {
 
                     {/* Line total */}
                     <p className="font-bold text-[15px] text-carbon shrink-0">
-                      {displaySymbol}{lineTotal.toLocaleString()}
+                      <AnimatedTotal symbol={displaySymbol} value={lineTotal} />
                     </p>
-                  </div>
+                  </motion.div>
                 );
               })}
+              </AnimatePresence>
 
               {/* Footer: clear cart */}
               {!loading && items.length > 0 && (
@@ -332,7 +359,7 @@ export function CartPage() {
             </div>
 
             {/* ── Right: Order Summary ── */}
-            <div className="bg-white rounded-xl border border-bone p-6 lg:sticky top-20 flex flex-col gap-5">
+            <div className="surface-panel rounded-xl p-6 lg:sticky top-20 flex flex-col gap-5">
               <p className="text-[15px] font-bold text-carbon">Order Summary</p>
 
               {/* Item list */}
@@ -360,7 +387,7 @@ export function CartPage() {
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-[13px]">
                   <span className="text-slate">Subtotal ({cartCount} items)</span>
-                  <span className="font-semibold text-carbon">{displaySymbol}{displayTotal.toLocaleString()}</span>
+                  <span className="font-semibold text-carbon"><AnimatedTotal symbol={displaySymbol} value={displayTotal} /></span>
                 </div>
                 <div className="flex justify-between text-[13px]">
                   <span className="text-slate">{hasPhysical ? 'Shipping' : 'Delivery'}</span>
@@ -374,7 +401,7 @@ export function CartPage() {
 
               <div className="flex justify-between text-[16px] font-bold">
                 <span className="text-carbon">Total</span>
-                <span className="text-carbon">{displaySymbol}{displayTotal.toLocaleString()}</span>
+                <span className="text-carbon"><AnimatedTotal symbol={displaySymbol} value={displayTotal} /></span>
               </div>
 
               {/* ── Checkout ── One order for the whole cart, mixed physical +
@@ -421,7 +448,7 @@ export function CartPage() {
         <div className="fixed bottom-[64px] inset-x-0 z-40 lg:hidden bg-white border-t border-bone px-4 py-3 flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-[10px] text-slate leading-none mb-[3px]">Total</p>
-            <p className="text-[17px] font-extrabold text-carbon leading-none truncate">{displaySymbol}{displayTotal.toLocaleString()}</p>
+            <p className="text-[17px] font-extrabold text-carbon leading-none truncate"><AnimatedTotal symbol={displaySymbol} value={displayTotal} /></p>
           </div>
           <Button
             variant="primary" size="md" className="justify-center flex-1 max-w-[220px]"

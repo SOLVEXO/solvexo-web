@@ -1,4 +1,6 @@
+import { registerSection } from '../sectionRenderRegistry';
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Package, Heart, ShoppingCart, Loader2, Zap } from 'lucide-react';
 import { Button } from '@/components/comman/ui/Button';
@@ -11,7 +13,6 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { currencySymbol } from '@/utils/currency';
-import { getMainAppUrl } from '@/utils/storefrontUrl';
 import { useStorefront } from '../StorefrontContext';
 import { ProductCardShell, ProductCardImage } from '../ProductCard';
 
@@ -63,6 +64,7 @@ export interface ProductCatalogSectionSettings {
 // as one section among others (hero, testimonials, etc.) instead of always
 // being hardcoded on the page.
 export function ProductCatalogSection({ settings }: { settings: ProductCatalogSectionSettings }) {
+  const navigate = useNavigate();
   const { store, cfg } = useStorefront();
   const { currency: displayCurrency, convert } = useCurrencyPreference();
   const displaySymbol = currencySymbol(displayCurrency);
@@ -152,7 +154,7 @@ export function ProductCatalogSection({ settings }: { settings: ProductCatalogSe
               const typeLabel = isPhysical ? 'Physical' : pType === 'educational' ? 'Educational' : 'Digital';
               const vId = p.variantId ?? '';
               return (
-                <ProductCardShell key={p._id} onClick={() => { window.location.href = getMainAppUrl(`/product/${p.slug}`); }}>
+                <ProductCardShell key={p._id} onClick={() => navigate(`/product/${p.slug}`)}>
                   <div className="absolute top-0 left-0 w-full h-[3px] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 z-[1]" style={{ background: cfg.primaryColor }} />
                   <ProductCardImage>
                     {p.images?.[0] ? <ProductImage src={p.images[0]} alt={p.name} /> : <Package size={28} className="text-brand-orange" />}
@@ -224,3 +226,7 @@ export function ProductCatalogSection({ settings }: { settings: ProductCatalogSe
     </div>
   );
 }
+
+registerSection('product_catalog', (section) =>
+  <ProductCatalogSection settings={section.settings as ProductCatalogSectionSettings} />,
+);

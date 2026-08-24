@@ -188,7 +188,7 @@ function StoreBannerFormModal({ storeId, onClose, onSaved }: { storeId: string; 
   );
 }
 
-const emptyForm = { code: '', discountType: '' as DiscountType | '', value: '', minOrder: '', usageLimit: '', expiryDate: '' };
+const emptyForm = { code: '', discountType: '' as DiscountType | '', value: '', minOrder: '', usageLimit: '', startDate: '', expiryDate: '' };
 
 const INPUT_CLS = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border transition-shadow duration-150 focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50';
 
@@ -627,6 +627,7 @@ export function StoreMarketing() {
       value: String(c.discountValue),
       minOrder: c.minOrderAmount != null ? String(c.minOrderAmount) : '',
       usageLimit: c.usageLimit != null ? String(c.usageLimit) : '',
+      startDate: c.startsAt ? c.startsAt.slice(0, 10) : '',
       expiryDate: c.expiresAt ? c.expiresAt.slice(0, 10) : '',
     });
   }
@@ -653,6 +654,7 @@ export function StoreMarketing() {
       discountValue: Number(form.value),
       minOrderAmount: form.minOrder ? Number(form.minOrder) : undefined,
       usageLimit: form.usageLimit ? Number(form.usageLimit) : undefined,
+      startsAt: form.startDate || undefined,
       expiresAt: form.expiryDate || undefined,
     };
     try {
@@ -751,6 +753,7 @@ export function StoreMarketing() {
   // ── Automatic Discounts ───────────────────────────────────────────────────
   const emptyDiscountForm = {
     name: '', discountType: 'percentage' as AutoDiscountType, value: '',
+    buyQuantity: '', getQuantity: '', getDiscountPercent: '100',
     target: 'store' as DiscountTarget, categoryIds: [] as string[], productIds: [] as string[],
     minOrderAmount: '', startsAt: '', endsAt: '',
   };
@@ -782,7 +785,10 @@ export function StoreMarketing() {
   const flatCategories = flattenCategories(categoryTree);
 
   async function handleCreateDiscount() {
-    if (!discountForm.name || !discountForm.value) return;
+    if (!discountForm.name) return;
+    if (discountForm.discountType !== 'bogo' && discountForm.discountType !== 'free_shipping' && !discountForm.value) return;
+    if (discountForm.discountType === 'bogo' && (!discountForm.buyQuantity || !discountForm.getQuantity)) return;
+    if (discountForm.discountType === 'free_shipping' && discountForm.target !== 'store') return;
     if (discountForm.target === 'category' && discountForm.categoryIds.length === 0) return;
     if (discountForm.target === 'products' && discountForm.productIds.length === 0) return;
     setDiscountSaving(true);
@@ -791,8 +797,11 @@ export function StoreMarketing() {
       const res = await apiCreateDiscount(storeId, {
         name: discountForm.name,
         discountType: discountForm.discountType,
-        discountValue: Number(discountForm.value),
-        target: discountForm.target,
+        discountValue: discountForm.discountType === 'bogo' || discountForm.discountType === 'free_shipping' ? 0 : Number(discountForm.value),
+        buyQuantity: discountForm.discountType === 'bogo' ? Number(discountForm.buyQuantity) : undefined,
+        getQuantity: discountForm.discountType === 'bogo' ? Number(discountForm.getQuantity) : undefined,
+        getDiscountPercent: discountForm.discountType === 'bogo' ? Number(discountForm.getDiscountPercent || 100) : undefined,
+        target: discountForm.discountType === 'free_shipping' ? 'store' : discountForm.target,
         categoryIds: discountForm.target === 'category' ? discountForm.categoryIds : undefined,
         productIds: discountForm.target === 'products' ? discountForm.productIds : undefined,
         minOrderAmount: discountForm.minOrderAmount ? Number(discountForm.minOrderAmount) : undefined,
@@ -1165,9 +1174,16 @@ export function StoreMarketing() {
                       <div className="px-3 py-[5px] rounded-lg border-2 border-dashed border-brand-orange font-mono text-[13px] font-bold text-brand-deep-orange bg-brand-pale-orange">
                         {coupon.code}
                       </div>
-                      <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: coupon.isActive ? '#E3F4EA' : '#F0EEE6', color: coupon.isActive ? '#1E7A3C' : '#5A5852' }}>
-                        {coupon.isActive ? 'Active' : 'Paused'}
-                      </span>
+                      {(() => {
+                        const isScheduled = coupon.isActive && !!coupon.startsAt && new Date(coupon.startsAt) > new Date();
+                        const label = isScheduled ? 'Scheduled' : coupon.isActive ? 'Active' : 'Paused';
+                        const colors = isScheduled ? { bg: '#FBECE4', fg: '#B95A3A' } : coupon.isActive ? { bg: '#E3F4EA', fg: '#1E7A3C' } : { bg: '#F0EEE6', fg: '#5A5852' };
+                        return (
+                          <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: colors.bg, color: colors.fg }}>
+                            {label}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <p className="text-[13px] font-semibold text-carbon mb-3">
                       {coupon.discountType === 'percentage' ? `${coupon.discountValue}% Off` : `${currencySymbol(store?.baseCurrency)}${coupon.discountValue} Off`}
@@ -1176,6 +1192,7 @@ export function StoreMarketing() {
                       <tbody>
                         {[
                           ['Uses', `${coupon.usageCount} / ${coupon.usageLimit ?? 'Unlimited'}`],
+                          ...(coupon.startsAt ? [['Starts', new Date(coupon.startsAt).toLocaleDateString()]] : []),
                           ['Expires', coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : 'Never'],
                         ].map(([label, val], i) => (
                           <tr key={label} style={{ borderBottom: i === 0 ? '1px solid #F0EEE6' : 'none' }}>
@@ -1227,6 +1244,12 @@ export function StoreMarketing() {
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Usage Limit</label>
                   <input placeholder="Leave blank for unlimited" value={form.usageLimit} onChange={e => setForm(f => ({ ...f, usageLimit: e.target.value }))}
                     className={INPUT_CLS} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-graphite mb-[5px] block">Start Date</label>
+                  <input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                    className={INPUT_CLS} />
+                  <p className="text-[10px] text-slate mt-1">Leave blank to activate immediately.</p>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Expiry Date</label>
@@ -1353,7 +1376,10 @@ export function StoreMarketing() {
                       </span>
                     </div>
                     <p className="text-[13px] font-semibold text-brand-deep-orange mb-1">
-                      {d.discountType === 'percentage' ? `${d.discountValue}% off` : `${currencySymbol(d.currency ?? store?.baseCurrency)}${d.discountValue} off`}
+                      {d.discountType === 'percentage' ? `${d.discountValue}% off`
+                        : d.discountType === 'fixed' ? `${currencySymbol(d.currency ?? store?.baseCurrency)}${d.discountValue} off`
+                        : d.discountType === 'bogo' ? `Buy ${d.buyQuantity} Get ${d.getQuantity} — ${d.getDiscountPercent}% off`
+                        : 'Free Shipping'}
                     </p>
                     <p className="text-xs text-slate mb-3 capitalize">
                       {d.target === 'store' ? 'Entire store' : d.target === 'category' ? `${d.categoryIds.length} categor${d.categoryIds.length === 1 ? 'y' : 'ies'}` : `${d.productIds.length} product${d.productIds.length === 1 ? '' : 's'}`}
@@ -1377,23 +1403,45 @@ export function StoreMarketing() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Discount Type</label>
-                  <select value={discountForm.discountType} onChange={e => setDiscountForm(f => ({ ...f, discountType: e.target.value as AutoDiscountType }))} className={`${INPUT_CLS} cursor-pointer`}>
+                  <select value={discountForm.discountType} onChange={e => setDiscountForm(f => ({ ...f, discountType: e.target.value as AutoDiscountType, ...(e.target.value === 'free_shipping' ? { target: 'store' as DiscountTarget, categoryIds: [], productIds: [] } : {}) }))} className={`${INPUT_CLS} cursor-pointer`}>
                     <option value="percentage">Percentage Off</option>
                     <option value="fixed">Fixed Amount Off</option>
+                    <option value="bogo">Buy X Get Y</option>
+                    <option value="free_shipping">Free Shipping</option>
                   </select>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-graphite mb-[5px] block">Value</label>
-                  <input value={discountForm.value} onChange={e => setDiscountForm(f => ({ ...f, value: e.target.value }))} placeholder="e.g. 15" className={INPUT_CLS} />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-graphite mb-[5px] block">Applies To</label>
-                  <select value={discountForm.target} onChange={e => setDiscountForm(f => ({ ...f, target: e.target.value as DiscountTarget, categoryIds: [], productIds: [] }))} className={`${INPUT_CLS} cursor-pointer`}>
-                    <option value="store">Entire Store</option>
-                    <option value="category">Specific Categories</option>
-                    <option value="products">Specific Products</option>
-                  </select>
-                </div>
+                {discountForm.discountType !== 'bogo' && discountForm.discountType !== 'free_shipping' && (
+                  <div>
+                    <label className="text-xs font-medium text-graphite mb-[5px] block">Value</label>
+                    <input value={discountForm.value} onChange={e => setDiscountForm(f => ({ ...f, value: e.target.value }))} placeholder="e.g. 15" className={INPUT_CLS} />
+                  </div>
+                )}
+                {discountForm.discountType === 'bogo' && (
+                  <>
+                    <div>
+                      <label className="text-xs font-medium text-graphite mb-[5px] block">Buy Quantity</label>
+                      <input type="number" min={1} value={discountForm.buyQuantity} onChange={e => setDiscountForm(f => ({ ...f, buyQuantity: e.target.value }))} placeholder="e.g. 2" className={INPUT_CLS} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-graphite mb-[5px] block">Get Quantity</label>
+                      <input type="number" min={1} value={discountForm.getQuantity} onChange={e => setDiscountForm(f => ({ ...f, getQuantity: e.target.value }))} placeholder="e.g. 1" className={INPUT_CLS} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-graphite mb-[5px] block">Get Discount %</label>
+                      <input type="number" min={1} max={100} value={discountForm.getDiscountPercent} onChange={e => setDiscountForm(f => ({ ...f, getDiscountPercent: e.target.value }))} placeholder="100 = free" className={INPUT_CLS} />
+                    </div>
+                  </>
+                )}
+                {discountForm.discountType !== 'free_shipping' && (
+                  <div>
+                    <label className="text-xs font-medium text-graphite mb-[5px] block">Applies To</label>
+                    <select value={discountForm.target} onChange={e => setDiscountForm(f => ({ ...f, target: e.target.value as DiscountTarget, categoryIds: [], productIds: [] }))} className={`${INPUT_CLS} cursor-pointer`}>
+                      <option value="store">Entire Store</option>
+                      <option value="category">Specific Categories</option>
+                      <option value="products">Specific Products</option>
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="text-xs font-medium text-graphite mb-[5px] block">Minimum Order ({currencySymbol(store?.baseCurrency)})</label>
                   <input value={discountForm.minOrderAmount} onChange={e => setDiscountForm(f => ({ ...f, minOrderAmount: e.target.value }))} placeholder="Optional" className={INPUT_CLS} />

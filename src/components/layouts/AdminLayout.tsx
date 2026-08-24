@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
+import { motion } from 'motion/react';
 import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, FolderTree, RefreshCw,
   BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle, Landmark, Percent, Coins, UserPlus, Activity,
-  ChevronDown, TrendingUp, ChevronRight, Quote,
+  ChevronDown, TrendingUp, ChevronRight, Quote, Truck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -38,6 +39,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
   { id: 'manual-payments', Icon: Landmark,      label: 'Manual Payments', path: '/admin/manual-payments' },
   { id: 'commission-rules', Icon: Percent,      label: 'Commission Rules', path: '/admin/commission-rules' },
+  { id: 'shipping-zones', Icon: Truck,          label: 'Shipping Zones',  path: '/admin/shipping-zones' },
   { id: 'fx-settings',   Icon: Coins,           label: 'FX Settings',     path: '/admin/fx-settings'   },
   { id: 'seo',           Icon: Search,          label: 'SEO',             path: '/admin/seo'           },
   { id: 'ai-studio',     Icon: Sparkles,        label: 'AI Studio',       path: '/admin/ai-studio'     },
@@ -67,7 +69,7 @@ interface AdminModule {
 // nothing to expand for a "section" that's really just one page.
 export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
-  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['marketplace', 'categories', 'leads', 'subscriptions', 'platform-plans'] },
+  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['marketplace', 'categories', 'leads', 'subscriptions', 'platform-plans', 'shipping-zones'] },
   { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation', 'messages', 'contact'] },
   { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['marketing', 'seo', 'ai-studio'] },
   { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance', 'manual-payments', 'commission-rules', 'fx-settings'] },
@@ -206,6 +208,13 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
   const [expandedModuleId, setExpandedModuleId] = useState<string | null>(() => moduleForPath(pathname));
   useEffect(() => { setExpandedModuleId(moduleForPath(pathname)); }, [pathname]);
 
+  // Two separate travelling-pill scopes — one for the top-level module row
+  // (whether it's a direct link or a group's own trigger), one for the
+  // nested child list inside an expanded group — so the active background
+  // slides between rows instead of one instantly vanishing/appearing.
+  const topPillId   = useId();
+  const childPillId = useId();
+
   const handleLogout = async () => {
     setLoggingOut(true);
     await logout('/admin/login');
@@ -252,7 +261,7 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
       <aside className={clsx(
         'hidden lg:flex bg-admin-bg flex-col shrink-0',
         'transition-[width] duration-300 ease-in-out',
-        import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen',
+        'h-screen',
         open ? 'w-[220px]' : 'w-[60px]',
       )}>
 
@@ -302,24 +311,31 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
                   aria-label={module.label}
                   aria-current={active ? 'page' : undefined}
                   className={clsx(
-                    'w-full flex items-center gap-[10px] py-[11px] lg:py-[9px] px-[10px] rounded-md mb-0.5 border-none text-left',
-                    'cursor-pointer transition-colors duration-150 outline-none',
+                    'relative w-full flex items-center gap-[10px] py-[11px] lg:py-[9px] px-[10px] rounded-md mb-0.5 border-none text-left',
+                    'cursor-pointer outline-none',
                     'focus-visible:ring-2 focus-visible:ring-brand-orange/40',
-                    'active:scale-[0.98]',
+                    'active:scale-[0.98] active:duration-micro active:ease-spring',
                     !open && 'lg:justify-center lg:px-0',
-                    active ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
+                    !active && 'hover:bg-dark-active transition-colors duration-fast',
                   )}
                 >
+                  {active && (
+                    <motion.div
+                      layoutId={`admin-nav-top-pill-${topPillId}`}
+                      className="absolute inset-0 rounded-md bg-dark-active"
+                      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                    />
+                  )}
                   <module.Icon
                     size={15}
-                    className={clsx('shrink-0 transition-opacity duration-150', active ? 'text-brand-orange opacity-100' : 'text-pos-faint opacity-40')}
+                    className={clsx('relative shrink-0 transition-opacity duration-150', active ? 'text-brand-orange opacity-100' : 'text-pos-faint opacity-40')}
                   />
                   {open && (
                     <>
-                      <span className={clsx('text-[12px] flex-1 truncate', active ? 'font-semibold text-white' : 'font-normal text-pos-faint')}>
+                      <span className={clsx('relative text-[12px] flex-1 truncate', active ? 'font-semibold text-white' : 'font-normal text-pos-faint')}>
                         {module.label}
                       </span>
-                      {active && <div className="w-[3px] h-3 rounded-[2px] bg-brand-orange shrink-0" />}
+                      {active && <div className="relative w-[3px] h-3 rounded-[2px] bg-brand-orange shrink-0" />}
                     </>
                   )}
                 </button>
@@ -348,26 +364,33 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
                   aria-expanded={expanded}
                   aria-controls={groupId}
                   className={clsx(
-                    'w-full flex items-center gap-[10px] py-[11px] lg:py-[9px] px-[10px] rounded-md border-none text-left',
-                    'cursor-pointer transition-colors duration-150 outline-none',
+                    'relative w-full flex items-center gap-[10px] py-[11px] lg:py-[9px] px-[10px] rounded-md border-none text-left',
+                    'cursor-pointer outline-none',
                     'focus-visible:ring-2 focus-visible:ring-brand-orange/40',
-                    'active:scale-[0.98]',
+                    'active:scale-[0.98] active:duration-micro active:ease-spring',
                     !open && 'lg:justify-center lg:px-0',
-                    expanded ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
+                    !expanded && 'hover:bg-dark-active transition-colors duration-fast',
                   )}
                 >
+                  {expanded && (
+                    <motion.div
+                      layoutId={`admin-nav-top-pill-${topPillId}`}
+                      className="absolute inset-0 rounded-md bg-dark-active"
+                      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                    />
+                  )}
                   <module.Icon
                     size={15}
-                    className={clsx('shrink-0 transition-opacity duration-150', moduleHasActive ? 'text-brand-orange opacity-100' : 'text-pos-faint opacity-40')}
+                    className={clsx('relative shrink-0 transition-opacity duration-150', moduleHasActive ? 'text-brand-orange opacity-100' : 'text-pos-faint opacity-40')}
                   />
                   {open && (
                     <>
-                      <span className={clsx('text-[12px] flex-1 truncate', moduleHasActive ? 'font-semibold text-white' : 'font-normal text-pos-faint')}>
+                      <span className={clsx('relative text-[12px] flex-1 truncate', moduleHasActive ? 'font-semibold text-white' : 'font-normal text-pos-faint')}>
                         {module.label}
                       </span>
                       <ChevronDown
                         size={13}
-                        className={clsx('shrink-0 text-pos-faint transition-transform duration-200', expanded && 'rotate-180')}
+                        className={clsx('relative shrink-0 text-pos-faint transition-transform duration-200', expanded && 'rotate-180')}
                       />
                     </>
                   )}
@@ -384,21 +407,28 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
                           onClick={() => goTo(item.path)}
                           aria-current={active ? 'page' : undefined}
                           className={clsx(
-                            'w-full flex items-center gap-[8px] py-[9px] px-[8px] rounded-md border-none text-left',
-                            'cursor-pointer transition-colors duration-150 outline-none',
+                            'relative w-full flex items-center gap-[8px] py-[9px] px-[8px] rounded-md border-none text-left',
+                            'cursor-pointer outline-none',
                             'focus-visible:ring-2 focus-visible:ring-brand-orange/40',
-                            'active:scale-[0.98]',
-                            active ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
+                            'active:scale-[0.98] active:duration-micro active:ease-spring',
+                            !active && 'hover:bg-dark-active transition-colors duration-fast',
                           )}
                         >
+                          {active && (
+                            <motion.div
+                              layoutId={`admin-nav-child-pill-${childPillId}`}
+                              className="absolute inset-0 rounded-md bg-dark-active"
+                              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                            />
+                          )}
                           <item.Icon
                             size={13}
-                            className={clsx('shrink-0', active ? 'text-brand-orange opacity-100' : 'text-pos-faint opacity-40')}
+                            className={clsx('relative shrink-0', active ? 'text-brand-orange opacity-100' : 'text-pos-faint opacity-40')}
                           />
-                          <span className={clsx('text-[11.5px] flex-1 truncate', active ? 'font-semibold text-white' : 'font-normal text-pos-faint')}>
+                          <span className={clsx('relative text-[11.5px] flex-1 truncate', active ? 'font-semibold text-white' : 'font-normal text-pos-faint')}>
                             {item.label}
                           </span>
-                          {active && <div className="w-[3px] h-3 rounded-[2px] bg-brand-orange shrink-0" />}
+                          {active && <div className="relative w-[3px] h-3 rounded-[2px] bg-brand-orange shrink-0" />}
                         </button>
                       );
                     })}
@@ -491,7 +521,7 @@ export function AdminLayout() {
   }
 
   return (
-    <div className={clsx('flex bg-cream overflow-hidden', import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen')}>
+    <div className={clsx('flex bg-cream overflow-hidden', 'h-screen')}>
       <AdminSidebar open={sidebarOpen} onToggle={toggle} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <div className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">

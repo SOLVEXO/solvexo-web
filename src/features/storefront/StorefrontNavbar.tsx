@@ -1,27 +1,35 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { Menu, X, ShoppingCart, User, Store as StoreIcon, Search } from 'lucide-react';
+import { Menu, X, ShoppingCart, User, Store as StoreIcon, Search, ChevronDown } from 'lucide-react';
 import { useStorefront } from './StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { TokenStorage } from '@/api/services/auth';
 import { getMainAppUrl } from '@/utils/storefrontUrl';
 import { ThemedButton } from './ThemedButton';
+import { CurrencySelector } from '@/components/comman/ui/BuyerNavbar';
 
 type ResolveLink = ReturnType<typeof useStorefront>['resolveLink'];
+type NavLinkData = { _id?: string; settings: Record<string, any> };
+
+function plainLinkProps(link: NavLinkData, resolveLink: ResolveLink) {
+  const { to, href } = resolveLink(link.settings as { linkType: string; pageSlug?: string; url?: string; categoryId?: string; collectionId?: string });
+  return { to, href, label: link.settings.label as string };
+}
 
 // One nav link, shared by the desktop and mobile menus — renders as a
 // themed button when the seller toggled "Highlight as button" on it in the
-// Store Builder, otherwise the same plain text link as before.
+// Store Builder, otherwise the same plain text link as before. Used only for
+// links with NO dropdown children — see `DesktopNavLinkItem`/`MobileNavLinkItem`
+// below for the dropdown-aware variants.
 function NavLinkItem({ link, resolveLink, className, onNavigate }: {
-  link: { _id?: string; settings: Record<string, any> };
+  link: NavLinkData;
   resolveLink: ResolveLink;
   className: string;
   onNavigate?: () => void;
 }) {
   const navigate = useNavigate();
-  const { to, href } = resolveLink(link.settings as { linkType: string; pageSlug?: string; url?: string; categoryId?: string; collectionId?: string });
-  const label = link.settings.label as string;
+  const { to, href, label } = plainLinkProps(link, resolveLink);
 
   if (link.settings.highlight) {
     return (
@@ -37,6 +45,99 @@ function NavLinkItem({ link, resolveLink, className, onNavigate }: {
   return to
     ? <Link key={link._id ?? label} to={to} onClick={onNavigate} className={className}>{label}</Link>
     : <a key={link._id ?? label} href={href} target="_blank" rel="noopener noreferrer" onClick={onNavigate} className={className}>{label}</a>;
+}
+
+// Desktop nav item — renders a real dropdown (hover on pointer devices,
+// click-toggle for keyboard/touch) when the block has `settings.children`.
+function DesktopNavLinkItem({ link, resolveLink, className, dark }: {
+  link: NavLinkData;
+  resolveLink: ResolveLink;
+  className: string;
+  dark: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const children: Array<{ _id?: string; label: string; linkType: string; pageSlug?: string; url?: string; categoryId?: string; collectionId?: string }> = link.settings.children ?? [];
+  if (children.length === 0) return <NavLinkItem link={link} resolveLink={resolveLink} className={className} />;
+
+  const { label } = plainLinkProps(link, resolveLink);
+  return (
+    <div
+      key={link._id ?? label}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={clsx(className, 'bg-transparent border-none cursor-pointer flex items-center gap-1 p-0')}
+      >
+        {label}
+        <ChevronDown size={13} className={clsx('transition-transform', open && 'rotate-180')} />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className={clsx(
+            'absolute left-0 top-full mt-1 min-w-[180px] rounded-lg border shadow-lg py-1.5 z-50',
+            dark ? 'bg-[#1a1a1a] border-white/10' : 'bg-white border-bone',
+          )}
+        >
+          {children.map((child, i) => {
+            const { to, href } = resolveLink(child);
+            const itemCls = clsx(
+              'block px-3.5 py-2 text-[13px] font-medium no-underline transition-colors',
+              dark ? 'text-white/80 hover:text-white hover:bg-white/5' : 'text-graphite hover:text-charcoal hover:bg-cream',
+            );
+            return to
+              ? <Link key={child._id ?? i} to={to} role="menuitem" className={itemCls} onClick={() => setOpen(false)}>{child.label}</Link>
+              : <a key={child._id ?? i} href={href} target="_blank" rel="noopener noreferrer" role="menuitem" className={itemCls}>{child.label}</a>;
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Mobile nav item — an accordion: a parent with children expands/collapses
+// in place instead of navigating, matching the standard mobile-menu pattern.
+function MobileNavLinkItem({ link, resolveLink, className, onNavigate }: {
+  link: NavLinkData;
+  resolveLink: ResolveLink;
+  className: string;
+  onNavigate?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const children: Array<{ _id?: string; label: string; linkType: string; pageSlug?: string; url?: string; categoryId?: string; collectionId?: string }> = link.settings.children ?? [];
+  if (children.length === 0) return <NavLinkItem link={link} resolveLink={resolveLink} className={className} onNavigate={onNavigate} />;
+
+  const { label } = plainLinkProps(link, resolveLink);
+  return (
+    <div key={link._id ?? label} className="flex flex-col">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        className={clsx(className, 'bg-transparent border-none cursor-pointer flex items-center justify-between w-full p-0')}
+      >
+        {label}
+        <ChevronDown size={14} className={clsx('transition-transform', open && 'rotate-180')} />
+      </button>
+      {open && (
+        <div className="flex flex-col pl-3 gap-1.5 pb-1">
+          {children.map((child, i) => {
+            const { to, href } = resolveLink(child);
+            const itemCls = clsx(className, 'text-[12.5px] opacity-80');
+            return to
+              ? <Link key={child._id ?? i} to={to} onClick={onNavigate} className={itemCls}>{child.label}</Link>
+              : <a key={child._id ?? i} href={href} target="_blank" rel="noopener noreferrer" onClick={onNavigate} className={itemCls}>{child.label}</a>;
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // The seller's own storefront chrome — deliberately has ZERO Solvexo branding
@@ -84,10 +185,11 @@ export function StorefrontNavbar() {
   const desktopNav = (
     <nav className="hidden md:flex items-center gap-5">
       {navLinks.map(link => (
-        <NavLinkItem
+        <DesktopNavLinkItem
           key={link._id ?? link.settings.label}
           link={link}
           resolveLink={resolveLink}
+          dark={dark}
           className={clsx('text-[13px] font-medium no-underline transition-colors', dark ? 'text-white/70 hover:text-white' : 'text-graphite hover:text-charcoal')}
         />
       ))}
@@ -96,6 +198,7 @@ export function StorefrontNavbar() {
 
   const icons = (
     <div className="flex items-center gap-1 shrink-0">
+      <CurrencySelector allowed={store.enabledCurrencies ?? undefined} />
       <button
         onClick={() => setSearchOpen(o => !o)}
         aria-label="Search"
@@ -143,7 +246,7 @@ export function StorefrontNavbar() {
   const mobileMenu = mobileOpen && navLinks.length > 0 && (
     <nav className={clsx('md:hidden flex flex-col gap-2 border-t px-4 py-2', dark ? 'border-white/10' : 'border-bone')}>
       {navLinks.map(link => (
-        <NavLinkItem
+        <MobileNavLinkItem
           key={link._id ?? link.settings.label}
           link={link}
           resolveLink={resolveLink}

@@ -1,3 +1,4 @@
+import { registerSection } from '../sectionRenderRegistry';
 import { useState, type FormEvent } from 'react';
 import { Mail, Check } from 'lucide-react';
 import { useStorefront } from '../StorefrontContext';
@@ -67,3 +68,7 @@ export function NewsletterSection({ settings }: { settings: NewsletterSectionSet
     </div>
   );
 }
+
+registerSection('newsletter', (section) =>
+  <NewsletterSection settings={section.settings as NewsletterSectionSettings} />,
+);

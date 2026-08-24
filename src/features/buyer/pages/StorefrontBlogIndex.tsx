@@ -16,7 +16,7 @@ export function StorefrontBlogIndex() {
   }, [store.name]);
 
   useEffect(() => {
-    apiListPublicBlogPosts(store.storeId, 1, 20).then(res => setPosts(res.data.posts)).finally(() => setLoading(false));
+    apiListPublicBlogPosts(store.storeId, undefined, 1, 20).then(res => setPosts(res.data.posts)).finally(() => setLoading(false));
   }, [store.storeId]);
 
   return (

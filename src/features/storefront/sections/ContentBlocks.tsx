@@ -21,7 +21,12 @@ export function ContentBlocks({ blocks }: { blocks: ContentBlock[] }) {
           case 'paragraph':
             return <p key={i} className="text-[14px] leading-relaxed whitespace-pre-wrap" style={{ color: cfg.textColor }}>{block.settings.text}</p>;
           case 'image':
-            return <img key={i} src={block.settings.imageUrl} alt={block.settings.alt ?? ''} className="max-w-full rounded-lg" />;
+            return (
+              <figure key={i} className="m-0">
+                <img src={block.settings.imageUrl} alt={block.settings.alt ?? ''} className="max-w-full rounded-lg" />
+                {block.settings.caption && <figcaption className="text-[12px] mt-1.5 opacity-70" style={{ color: cfg.textColor }}>{block.settings.caption}</figcaption>}
+              </figure>
+            );
           case 'quote':
             return (
               <blockquote key={i} className="border-l-4 pl-4 italic text-[15px]" style={{ borderColor: cfg.primaryColor, color: cfg.textColor }}>

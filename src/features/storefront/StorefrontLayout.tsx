@@ -111,6 +111,13 @@ export function StorefrontLayout() {
           the store's storeId is only known here, after it's resolved. */}
       <CartProvider storeId={store.storeId}>
         <div className="min-h-screen" style={{ background: cfg.bgColor, color: cfg.textColor, fontFamily: `${cfg.font}, sans-serif` }}>
+          {/* Real "developer/advanced authoring" capability — raw, unscoped
+              CSS the seller opted into via the Theme tab's Advanced mode.
+              Deliberately last in the cascade (after every other inline
+              style/class on this page) so it can genuinely override
+              anything, including this component's own theme tokens — that's
+              the point of an "advanced" escape hatch. */}
+          {theme?.customCss && <style>{theme.customCss}</style>}
           <StorefrontNavbar />
           {store.announcementBar?.message && (
             <StoreAnnouncementBar

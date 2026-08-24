@@ -95,6 +95,13 @@ export const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'blue' | 'gray' 
   physical:         'orange',
   completed:        'green',
   Completed:        'green',
+  // Order rollup statuses — see order-status.util.ts (backend) for where
+  // these values actually come from (SellerOrder.status/Order.orderStatus).
+  shipped:              'blue',
+  Shipped:              'blue',
+  partially_shipped:    'blue',
+  partially_cancelled:  'red',
+  partially_refunded:   'gray',
 };
 
 // ── Seller Onboarding Steps ──────────────────────────────────────────────────
