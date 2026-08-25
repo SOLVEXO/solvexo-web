@@ -32,5 +32,68 @@ export const freshMarket: ThemeModule = {
       { name: 'Farm Honey Jar', price: 14, image: img(280) },
     ],
     testimonial: { quote: 'Everything tastes like it was picked this morning.', authorName: 'Noah B.', authorRole: 'Verified Buyer', rating: 5 },
+    extras: {
+      story: {
+        heading: 'Our Farm-to-Table Journey',
+        body: 'From seed to table, every step stays close to home.',
+        imageUrl: img(560),
+      },
+      trustBadges: [
+        { icon: 'truck', text: 'Same-day local delivery' },
+        { icon: 'shield', text: '100% organic certified' },
+        { icon: 'refresh', text: 'Freshness guaranteed' },
+      ],
+    },
+  },
+  // Farm Story (exclusive) — the icon-led "seed to table" journey strip —
+  // followed by a trust-badges row. The one theme built around the
+  // icon-driven journey format, distinct from Warm Craft's numeral-driven
+  // Craft Process.
+  templates: {
+    home: [
+      {
+        type: 'farm_story',
+        settings: {
+          heading: 'Our Farm-to-Table Journey',
+          subheading: 'From seed to table, every step stays close to home.',
+          imageUrl: img(560),
+        },
+        blocks: [
+          { type: 'farm_story_step', settings: { icon: 'sprout', title: 'Planted Locally', body: 'Seeds sown on partner farms within 50 miles of our kitchen.' } },
+          { type: 'farm_story_step', settings: { icon: 'sun', title: 'Grown Naturally', body: 'No synthetic pesticides — just sun, soil, and patience.' } },
+          { type: 'farm_story_step', settings: { icon: 'truck', title: 'Delivered Fresh', body: 'Harvested and on your doorstep within 24 hours.' } },
+          { type: 'farm_story_step', settings: { icon: 'heart', title: 'Enjoyed at Home', body: 'Real food, the way nature intended it.' } },
+        ],
+      },
+      {
+        type: 'trust_badges',
+        settings: {},
+        blocks: [
+          { type: 'trust_badge_item', settings: { icon: 'truck', text: 'Same-day local delivery' } },
+          { type: 'trust_badge_item', settings: { icon: 'shield', text: '100% organic certified' } },
+          { type: 'trust_badge_item', settings: { icon: 'refresh', text: 'Freshness guaranteed' } },
+        ],
+      },
+    ],
+    collection: [
+      {
+        type: 'trust_badges',
+        settings: {},
+        blocks: [
+          { type: 'trust_badge_item', settings: { icon: 'truck', text: 'Same-day local delivery' } },
+          { type: 'trust_badge_item', settings: { icon: 'shield', text: '100% organic certified' } },
+        ],
+      },
+    ],
+    product: [
+      {
+        type: 'faq',
+        settings: { heading: 'Freshness & Delivery' },
+        blocks: [
+          { type: 'faq_item', settings: { question: 'How fresh is this when it arrives?', answer: 'Harvested or made to order and delivered within 24 hours — nothing sits in a warehouse.' } },
+          { type: 'faq_item', settings: { question: 'Do you list allergens?', answer: 'Yes — every product page lists allergens and ingredients in full.' } },
+        ],
+      },
+    ],
   },
 };

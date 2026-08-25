@@ -42,7 +42,7 @@ const SELLER_PAGES: NavPage[] = [
   // { label: 'Products',       path: '/seller/products',         Icon: ShoppingBag     },
   // { label: 'Add Product',  path: '/seller/products/add',     Icon: Plus            },
   // { label: 'Digital Upload', path: '/seller/products/digital', Icon: Upload          },
-  { label: 'Store Builder',  path: '/seller/store',            Icon: Store, prefetch: () => { void import('@/features/seller/store/Dashboard/OnlineStore/StoreBuilder'); } },
+  { label: 'Store Builder',  path: '/seller/store',            Icon: Store, prefetch: () => { void import('@/features/seller/store/Dashboard/OnlineStore/customize/CustomizerPage'); } },
   // { label: 'POS Register',   path: '/seller/pos',              Icon: Monitor         },
   // { label: 'Orders',         path: '/seller/orders',           Icon: Package         },
   // { label: 'Returns',        path: '/seller/returns',          Icon: CornerUpLeft    },

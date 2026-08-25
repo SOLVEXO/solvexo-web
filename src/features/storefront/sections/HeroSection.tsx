@@ -1,6 +1,9 @@
 import { registerSection } from '../sectionRenderRegistry';
+import { registerSectionSchema } from '../sectionSchemaRegistry';
+import { registerBlockSchema } from '../blockSchemaRegistry';
 import { useState } from 'react';
 import { clsx } from 'clsx';
+import { Image } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
@@ -132,3 +135,31 @@ export function HeroSection({ settings, blocks }: { settings: HeroSectionSetting
 registerSection('hero', (section, blocks) =>
   <HeroSection settings={section.settings} blocks={blocks.map(b => b.settings) as any} />,
 );
+
+registerSectionSchema({
+  type: 'hero',
+  label: 'Hero / Slider',
+  description: 'Full-width image slides with a headline and call-to-action button.',
+  icon: Image,
+  color: '#D97757',
+  group: 'Hero',
+  templateTypes: ['home', 'page'],
+  settings: [
+    { key: 'heightPreset', kind: 'select', label: 'Height', default: 'medium', options: [
+      { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
+    ] },
+  ],
+  blocks: { allowedTypes: ['hero_slide'], max: 8, label: 'Slide', defaultSettings: { imageUrl: '', heading: '', subheading: '', ctaText: '', ctaLink: { linkType: 'home' } } },
+});
+
+registerBlockSchema({
+  type: 'hero_slide',
+  label: 'Slide',
+  fields: [
+    { key: 'imageUrl', kind: 'image', label: 'Image' },
+    { key: 'heading', kind: 'text', label: 'Heading' },
+    { key: 'subheading', kind: 'text', label: 'Subheading' },
+    { key: 'ctaText', kind: 'text', label: 'Button text' },
+    { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: (v) => !!v.ctaText },
+  ],
+});

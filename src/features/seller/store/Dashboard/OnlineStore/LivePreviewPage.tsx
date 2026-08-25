@@ -80,6 +80,11 @@ export function LivePreviewPage() {
         // `.identityBanner`, never `._id`/`.storeId`/`.draft` on it.
         setTheme({
           _id: storeId, storeId,
+          // Live Preview always reflects the store's ACTIVE installed theme —
+          // these three fields aren't read by `resolveStorefrontCfg`/the
+          // identity banner (see the comment above), just present to satisfy
+          // `StoreThemeData`'s shape.
+          themeDefinitionId: draftRes.data.themeDefinitionId ?? null, status: 'active', installedAt: new Date().toISOString(),
           theme: draftRes.data.theme, header: draftRes.data.header, footer: draftRes.data.footer,
           identityBanner: draftRes.data.identityBanner, baseThemeId: draftRes.data.baseThemeId,
           customCss: draftRes.data.customCss,

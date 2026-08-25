@@ -1,4 +1,7 @@
 import { registerSection } from '../sectionRenderRegistry';
+import { registerSectionSchema } from '../sectionSchemaRegistry';
+import { registerBlockSchema } from '../blockSchemaRegistry';
+import { Columns } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStorefront } from '../StorefrontContext';
 import { ThemedButton } from '../ThemedButton';
@@ -46,3 +49,42 @@ export function ImageWithTextSection({ blocks }: { settings: Record<string, any>
 registerSection('image_with_text', (section, blocks) =>
   <ImageWithTextSection settings={section.settings} blocks={blocks.map(b => b.settings) as any} />,
 );
+
+registerSectionSchema({
+  type: 'image_with_text',
+  label: 'Image with Text',
+  description: 'An image next to a heading, body copy and an optional button.',
+  icon: Columns,
+  color: '#14B8A6',
+  group: 'Content',
+  settings: [
+    // Reproduced for fidelity with the current hand form (`SectionFields.tsx`
+    // shows this field for every type except hero/trust_badges/
+    // collection_product_grid) — note `ImageWithTextSection`'s own render
+    // function never actually reads `settings.heading`, so this field is a
+    // pre-existing no-op in the current form too, not something introduced
+    // here.
+    { key: 'heading', kind: 'text', label: 'Heading (optional)', default: '' },
+  ],
+  blocks: { allowedTypes: ['image_text_pair'], max: 20, label: 'Pair', defaultSettings: { imageUrl: '', heading: '', body: '', ctaText: '', imagePosition: 'left' } },
+});
+
+registerBlockSchema({
+  type: 'image_text_pair',
+  label: 'Pair',
+  fields: [
+    { key: 'imageUrl', kind: 'image', label: 'Image' },
+    { key: 'heading', kind: 'text', label: 'Heading' },
+    { key: 'body', kind: 'textarea', label: 'Body' },
+    { key: 'ctaText', kind: 'text', label: 'Button text' },
+    { key: 'ctaLink', kind: 'link', label: 'Button link', showIf: (v) => !!v.ctaText },
+    // A Toggle in `BlockFields.tsx` ("Image on the right"), but it maps to
+    // the real stored `imagePosition: 'left'|'right'` string enum, not a
+    // true boolean — using `kind: 'boolean'` would have `SchemaForm` write a
+    // raw `true`/`false` into that field instead. Mapped to `select` to
+    // preserve the actual stored data shape.
+    { key: 'imagePosition', kind: 'select', label: 'Image position', default: 'left', options: [
+      { value: 'left', label: 'Image on the left' }, { value: 'right', label: 'Image on the right' },
+    ] },
+  ],
+});

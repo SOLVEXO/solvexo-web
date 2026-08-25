@@ -32,5 +32,68 @@ export const boldEditorial: ThemeModule = {
       { name: 'Structured Tote', price: 210, image: img(160) },
     ],
     testimonial: { quote: 'Feels less like shopping and more like reading a magazine.', authorName: 'Jonas W.', authorRole: 'Verified Buyer', rating: 5 },
+    extras: {
+      story: {
+        heading: 'Behind Issue No. 12',
+        body: 'Shot over three days on location, styled entirely with pieces from this capsule.',
+        imageUrl: img(530),
+        ctaText: 'See the Story',
+      },
+      faqs: [
+        { question: 'How do I care for these fabrics?', answer: 'Most pieces are dry-clean only — full care instructions ship with every order.' },
+        { question: 'Can I return an item from a capsule?', answer: 'Yes, within 14 days, unworn and with tags attached.' },
+      ],
+    },
+  },
+  // No exclusive section fits this theme — composed entirely from shared
+  // types instead: an editor's-note rich-text essay, a feature spread, then
+  // an FAQ. A genuinely different sequence/mix from every other theme.
+  templates: {
+    home: [
+      {
+        type: 'rich_text',
+        settings: { heading: 'From the Editor' },
+        blocks: [
+          { type: 'paragraph', settings: { text: 'This season’s edit is about restraint — fewer pieces, worn longer, chosen with intention.' } },
+          { type: 'quote', settings: { text: 'Style is a sentence, and every piece is a word.', author: 'THE FIELD JOURNAL' } },
+        ],
+      },
+      {
+        type: 'image_with_text',
+        settings: {},
+        blocks: [
+          { type: 'image_text_pair', settings: { imageUrl: img(530), heading: 'Behind Issue No. 12', body: 'Shot over three days on location, styled entirely with pieces from this capsule.', ctaText: 'See the Story', imagePosition: 'left' } },
+        ],
+      },
+      {
+        type: 'faq',
+        settings: { heading: 'Ordering & Care' },
+        blocks: [
+          { type: 'faq_item', settings: { question: 'How do I care for these fabrics?', answer: 'Most pieces are dry-clean only — full care instructions ship with every order.' } },
+          { type: 'faq_item', settings: { question: 'Can I return an item from a capsule?', answer: 'Yes, within 14 days, unworn and with tags attached.' } },
+        ],
+      },
+    ],
+    collection: [
+      {
+        type: 'trust_badges',
+        settings: {},
+        blocks: [
+          { type: 'trust_badge_item', settings: { icon: 'truck', text: 'Complimentary shipping' } },
+          { type: 'trust_badge_item', settings: { icon: 'refresh', text: '14-day returns' } },
+          { type: 'trust_badge_item', settings: { icon: 'headset', text: 'Styling support' } },
+        ],
+      },
+    ],
+    product: [
+      {
+        type: 'faq',
+        settings: { heading: 'Ordering & Care' },
+        blocks: [
+          { type: 'faq_item', settings: { question: 'How do I care for these fabrics?', answer: 'Most pieces are dry-clean only — full care instructions ship with every order.' } },
+          { type: 'faq_item', settings: { question: 'Can I return an item from a capsule?', answer: 'Yes, within 14 days, unworn and with tags attached.' } },
+        ],
+      },
+    ],
   },
 };

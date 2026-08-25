@@ -32,5 +32,63 @@ export const artisanMarket: ThemeModule = {
       { name: 'Woven Wall Hanging', price: 64, image: img(480) },
     ],
     testimonial: { quote: 'You can feel the craftsmanship in every purchase.', authorName: 'Owen R.', authorRole: 'Verified Buyer', rating: 5 },
+    extras: {
+      processSteps: [
+        { title: 'Apply', body: 'Makers submit their portfolio and a sample of their work for review.' },
+        { title: 'Verify', body: 'We confirm every item is genuinely handmade, not mass-produced.' },
+        { title: 'Onboard', body: 'Approved makers get their own shop page within The Maker’s Market.' },
+      ],
+      story: {
+        heading: 'Meet Owen, Our Featured Woodworker',
+        body: 'Owen has been hand-carving bowls from reclaimed walnut for over a decade.',
+        imageUrl: img(610),
+        ctaText: 'Read His Story',
+      },
+    },
+  },
+  // Craft Process (secondary use of Warm Craft's exclusive section — here
+  // framed as "how we vet every maker" rather than "how a piece is made")
+  // followed by a featured-maker spotlight — a shorter, two-section
+  // composition distinct from Warm Craft's own three-section one.
+  templates: {
+    home: [
+      {
+        type: 'craft_process',
+        settings: { heading: 'How We Vet Every Maker' },
+        blocks: [
+          { type: 'craft_process_step', settings: { title: 'Apply', body: 'Makers submit their portfolio and a sample of their work for review.' } },
+          { type: 'craft_process_step', settings: { title: 'Verify', body: 'We confirm every item is genuinely handmade, not mass-produced.' } },
+          { type: 'craft_process_step', settings: { title: 'Onboard', body: 'Approved makers get their own shop page within The Maker’s Market.' } },
+        ],
+      },
+      {
+        type: 'image_with_text',
+        settings: {},
+        blocks: [
+          { type: 'image_text_pair', settings: { imageUrl: img(610), heading: 'Meet Owen, Our Featured Woodworker', body: 'Owen has been hand-carving bowls from reclaimed walnut for over a decade.', ctaText: 'Read His Story', imagePosition: 'right' } },
+        ],
+      },
+    ],
+    collection: [
+      {
+        type: 'trust_badges',
+        settings: {},
+        blocks: [
+          { type: 'trust_badge_item', settings: { icon: 'shield', text: 'Verified handmade' } },
+          { type: 'trust_badge_item', settings: { icon: 'lock', text: 'Secure checkout' } },
+          { type: 'trust_badge_item', settings: { icon: 'headset', text: 'Support independent makers' } },
+        ],
+      },
+    ],
+    product: [
+      {
+        type: 'faq',
+        settings: { heading: 'About This Piece' },
+        blocks: [
+          { type: 'faq_item', settings: { question: 'Is this genuinely handmade?', answer: 'Yes — every maker in our market is verified before their shop goes live.' } },
+          { type: 'faq_item', settings: { question: 'How should I care for this piece?', answer: 'Care instructions specific to the material are included with every order.' } },
+        ],
+      },
+    ],
   },
 };

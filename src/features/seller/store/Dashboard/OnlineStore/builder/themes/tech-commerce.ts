@@ -32,5 +32,75 @@ export const techCommerce: ThemeModule = {
       { name: 'USB-C Fast Charger', price: 39, image: img(400) },
     ],
     testimonial: { quote: 'Battery life and build quality both exceeded expectations.', authorName: 'Derek L.', authorRole: 'Verified Buyer', rating: 4 },
+    extras: {
+      specs: [
+        { label: 'Driver Size', value: '40mm Dynamic' },
+        { label: 'Battery Life', value: 'Up to 35 hours (ANC on)' },
+        { label: 'Charging', value: 'USB-C, 10 min = 5 hrs playback' },
+        { label: 'Bluetooth', value: '5.3, multipoint pairing' },
+        { label: 'Weight', value: '254g' },
+        { label: 'Water Resistance', value: 'IPX4' },
+        { label: 'Warranty', value: '2-year limited warranty' },
+      ],
+      faqs: [
+        { question: 'What’s covered under warranty?', answer: 'Manufacturing defects for 2 years from purchase date.' },
+        { question: 'Is this compatible with both iOS and Android?', answer: 'Yes — full feature parity across both platforms via our app.' },
+      ],
+    },
+  },
+  // Spec Table (exclusive) — the one theme with a real data table — then a
+  // durability blurb and a pre-purchase FAQ.
+  templates: {
+    home: [
+      {
+        type: 'tech_specs_compare',
+        settings: { heading: 'Nexus Pro Headphones — Full Specs' },
+        blocks: [
+          { type: 'spec_row', settings: { label: 'Driver Size', value: '40mm Dynamic' } },
+          { type: 'spec_row', settings: { label: 'Battery Life', value: 'Up to 35 hours (ANC on)' } },
+          { type: 'spec_row', settings: { label: 'Charging', value: 'USB-C, 10 min = 5 hrs playback' } },
+          { type: 'spec_row', settings: { label: 'Bluetooth', value: '5.3, multipoint pairing' } },
+          { type: 'spec_row', settings: { label: 'Weight', value: '254g' } },
+          { type: 'spec_row', settings: { label: 'Water Resistance', value: 'IPX4' } },
+          { type: 'spec_row', settings: { label: 'Warranty', value: '2-year limited warranty' } },
+        ],
+      },
+      {
+        type: 'rich_text',
+        settings: { heading: 'Built to Last' },
+        blocks: [
+          { type: 'paragraph', settings: { text: 'Every Nexus product goes through 200+ hours of stress testing before it ships — because "durable" should mean something.' } },
+        ],
+      },
+      {
+        type: 'faq',
+        settings: { heading: 'Before You Buy' },
+        blocks: [
+          { type: 'faq_item', settings: { question: 'What’s covered under warranty?', answer: 'Manufacturing defects for 2 years from purchase date.' } },
+          { type: 'faq_item', settings: { question: 'Is this compatible with both iOS and Android?', answer: 'Yes — full feature parity across both platforms via our app.' } },
+        ],
+      },
+    ],
+    collection: [
+      {
+        type: 'trust_badges',
+        settings: {},
+        blocks: [
+          { type: 'trust_badge_item', settings: { icon: 'shield', text: '2-year limited warranty' } },
+          { type: 'trust_badge_item', settings: { icon: 'truck', text: 'Free shipping over $75' } },
+          { type: 'trust_badge_item', settings: { icon: 'lock', text: 'Secure payment' } },
+        ],
+      },
+    ],
+    product: [
+      {
+        type: 'faq',
+        settings: { heading: 'Before You Buy' },
+        blocks: [
+          { type: 'faq_item', settings: { question: 'What’s covered under warranty?', answer: 'Manufacturing defects for 2 years from purchase date.' } },
+          { type: 'faq_item', settings: { question: 'Is this compatible with both iOS and Android?', answer: 'Yes — full feature parity across both platforms via our app.' } },
+        ],
+      },
+    ],
   },
 };

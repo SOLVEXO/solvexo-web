@@ -33,5 +33,74 @@ export const cleanGrid: ThemeModule = {
       { name: 'Essential Backpack', price: 76, image: img(200) },
     ],
     testimonial: { quote: 'Easy to browse, easy to buy. My go-to store now.', authorName: 'Sam T.', authorRole: 'Verified Buyer', rating: 4 },
+    extras: {
+      trustBadges: [
+        { icon: 'truck', text: 'Free shipping over $50' },
+        { icon: 'refresh', text: '60-day easy returns' },
+        { icon: 'lock', text: 'Secure checkout' },
+      ],
+      faqs: [
+        { question: 'What’s your return policy?', answer: '60 days, no questions asked.' },
+        { question: 'Do you restock sold-out sizes?', answer: 'Yes — join the waitlist on any sold-out product page.' },
+      ],
+    },
+  },
+  // Soft Gallery (secondary use of Soft Studio's exclusive section — a
+  // shoppable "feed" grid fits this theme's vibrant, contemporary identity)
+  // followed by trust badges then FAQ — the reverse order from Soft Studio's
+  // own gallery/FAQ/trust-badges sequence.
+  templates: {
+    home: [
+      {
+        type: 'soft_gallery',
+        settings: { heading: 'Shop the Feed' },
+        blocks: [
+          { type: 'gallery_item', settings: { imageUrl: img(540), caption: '@normandco community' } },
+          { type: 'gallery_item', settings: { imageUrl: img(541) } },
+          { type: 'gallery_item', settings: { imageUrl: img(542), caption: 'New arrivals this week' } },
+          { type: 'gallery_item', settings: { imageUrl: img(543) } },
+          { type: 'gallery_item', settings: { imageUrl: img(544) } },
+          { type: 'gallery_item', settings: { imageUrl: img(545) } },
+        ],
+      },
+      {
+        type: 'trust_badges',
+        settings: {},
+        blocks: [
+          { type: 'trust_badge_item', settings: { icon: 'truck', text: 'Free shipping over $50' } },
+          { type: 'trust_badge_item', settings: { icon: 'refresh', text: '60-day easy returns' } },
+          { type: 'trust_badge_item', settings: { icon: 'lock', text: 'Secure checkout' } },
+        ],
+      },
+      {
+        type: 'faq',
+        settings: { heading: 'Good to Know' },
+        blocks: [
+          { type: 'faq_item', settings: { question: 'What’s your return policy?', answer: '60 days, no questions asked.' } },
+          { type: 'faq_item', settings: { question: 'Do you restock sold-out sizes?', answer: 'Yes — join the waitlist on any sold-out product page.' } },
+        ],
+      },
+    ],
+    collection: [
+      {
+        type: 'trust_badges',
+        settings: {},
+        blocks: [
+          { type: 'trust_badge_item', settings: { icon: 'truck', text: 'Free shipping over $50' } },
+          { type: 'trust_badge_item', settings: { icon: 'refresh', text: '60-day easy returns' } },
+          { type: 'trust_badge_item', settings: { icon: 'lock', text: 'Secure checkout' } },
+        ],
+      },
+    ],
+    product: [
+      {
+        type: 'faq',
+        settings: { heading: 'Good to Know' },
+        blocks: [
+          { type: 'faq_item', settings: { question: 'What’s your return policy?', answer: '60 days, no questions asked.' } },
+          { type: 'faq_item', settings: { question: 'Do you restock sold-out sizes?', answer: 'Yes — join the waitlist on any sold-out product page.' } },
+        ],
+      },
+    ],
   },
 };

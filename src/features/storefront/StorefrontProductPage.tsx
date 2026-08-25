@@ -11,6 +11,9 @@ import type { ProductVariant } from '@/api/services/marketplace';
 import { useStorefront } from './StorefrontContext';
 import { ThemedButton } from './ThemedButton';
 import { ProductReviewsSection } from '@/features/buyer/pages/ProductReviews';
+import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
+import { SectionRenderer } from './SectionRenderer';
+import type { Section } from '@/api/services/storefrontTypes';
 
 function Gallery({ images, name }: { images: string[]; name: string }) {
   const [selected, setSelected] = useState(0);
@@ -84,7 +87,7 @@ function VariantSelector({ variants, selected, onSelect, textColor, primaryColor
 export function StorefrontProductPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { cfg } = useStorefront();
+  const { cfg, store } = useStorefront();
   const { detail, loading, error } = useProductById(slug ?? '');
   const { addToCart, adding } = useCartContext();
   const { currency: displayCurrency, convert } = useCurrencyPreference();
@@ -93,9 +96,22 @@ export function StorefrontProductPage() {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [qty, setQty] = useState(1);
   const [addedFeedback, setAddedFeedback] = useState(false);
+  // The Product Template's own surrounding-sections composition (recommendations,
+  // rich text, etc.) — a real theme template, per the Product Template
+  // architecture. Never includes the commerce-critical core above (gallery/
+  // variant/qty/add-to-cart) — that stays fixed chrome outside this system,
+  // per the same architectural boundary Home/Collection sections follow.
+  const [templateSections, setTemplateSections] = useState<Section[]>([]);
 
   const product = detail?.product ?? null;
   usePageTitle(product?.name ?? 'Product');
+
+  useEffect(() => {
+    if (!store?.storeId) return;
+    apiGetPublicCollectionTemplate(store.storeId, 'product', product?.templateKey ?? 'default')
+      .then((res) => setTemplateSections(res.data.sections ?? []))
+      .catch(() => setTemplateSections([]));
+  }, [store?.storeId, product?.templateKey]);
 
   useEffect(() => {
     if (product && product.slug && product.slug !== slug) {
@@ -184,6 +200,12 @@ export function StorefrontProductPage() {
       <div className="max-w-[1100px] mx-auto mt-10">
         <ProductReviewsSection productId={product._id} />
       </div>
+
+      {templateSections.length > 0 && (
+        <div className="mt-10 -mx-4 sm:-mx-6 lg:-mx-10">
+          <SectionRenderer sections={templateSections} />
+        </div>
+      )}
     </div>
   );
 }

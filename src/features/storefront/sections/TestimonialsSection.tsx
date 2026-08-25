@@ -1,5 +1,7 @@
 import { registerSection } from '../sectionRenderRegistry';
-import { Star } from 'lucide-react';
+import { registerSectionSchema } from '../sectionSchemaRegistry';
+import { registerBlockSchema } from '../blockSchemaRegistry';
+import { Star, Quote } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useStorefront } from '../StorefrontContext';
 
@@ -90,3 +92,32 @@ export function TestimonialsSection({ settings, blocks }: { settings: { heading?
 registerSection('testimonials', (section, blocks) =>
   <TestimonialsSection settings={section.settings} blocks={blocks.map(b => b.settings) as any} />,
 );
+
+registerSectionSchema({
+  type: 'testimonials',
+  label: 'Testimonials',
+  description: 'Customer quotes with a name, role, and star rating.',
+  icon: Quote,
+  color: '#A855F7',
+  group: 'Social Proof',
+  settings: [
+    { key: 'heading', kind: 'text', label: 'Heading (optional)', default: 'What buyers say' },
+  ],
+  blocks: { allowedTypes: ['testimonial'], max: 20, label: 'Testimonial', defaultSettings: { quote: '', authorName: '', rating: 5 } },
+});
+
+registerBlockSchema({
+  type: 'testimonial',
+  label: 'Testimonial',
+  fields: [
+    { key: 'quote', kind: 'textarea', label: 'Quote' },
+    { key: 'authorName', kind: 'text', label: 'Author name' },
+    { key: 'authorRole', kind: 'text', label: 'Author role' },
+    { key: 'rating', kind: 'number', label: 'Rating (1-5)', default: 5, min: 1, max: 5 },
+    // Present on `TestimonialBlock`'s own TS interface and validated
+    // server-side (`assertHttpsUrl` in `section-settings.validator.ts`), but
+    // missing from `BlockFields.tsx`'s hand form entirely — added here per
+    // the "component interface is ground truth" rule.
+    { key: 'avatarUrl', kind: 'image', label: 'Avatar (optional)' },
+  ],
+});

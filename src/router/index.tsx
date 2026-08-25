@@ -90,8 +90,12 @@ const AccountSubscriptions = lazy(() => named(import('@/features/buyer/pages/MyS
 
 // ── Seller ────────────────────────────────────────────────────────────────────
 const SellerAnalytics      = lazy(() => named(import('@/features/seller/dashboard/SellerAnalytics'),             'SellerAnalytics'));
-const StoreBuilder         = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/StoreBuilder'),   'StoreBuilder'));
 const StoreBuilderRedirect = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/StoreBuilderRedirect'), 'StoreBuilderRedirect'));
+const CustomizerPage       = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/customize/CustomizerPage'), 'CustomizerPage'));
+const PagesPage            = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/pages/PagesPage'),         'PagesPage'));
+const BlogPage             = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/blog/BlogPage'),           'BlogPage'));
+const ThemeLibraryPage     = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeLibraryPage'), 'ThemeLibraryPage'));
+const CodeEditorPage       = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/code/CodeEditorPage'),     'CodeEditorPage'));
 const SellerSettings       = lazy(() => named(import('@/features/seller/dashboard/settings/SellerSettings'),   'SellerSettings'));
 const SellerShipping       = lazy(() => named(import('@/features/seller/dashboard/SellerShipping'),             'SellerShipping'));
 const SellerMessages       = lazy(() => named(import('@/features/seller/dashboard/SellerMessages'),             'SellerMessages'));
@@ -329,12 +333,18 @@ const mainRouter = createBrowserRouter([
           { path: 'customer/list',                    element: <StoreCustomerList /> },
           { path: 'analytics',                        element: <StoreAnalytics /> },
           { path: 'settings',                         element: <StoreSettings /> },
+          { path: 'account',                          element: <SellerSettings variant="store" /> },
           { path: 'categories',                       element: <StoreCategories /> },
           { path: 'collections',                      element: <StoreCollections /> },
           { path: 'files',                            element: <FilesLibrary /> },
           { path: 'plan-billing',                     element: <StorePlanBilling /> },
           { path: 'verification',                     element: <StoreVerification /> },
-          { path: 'storebuilder',                     element: <StoreBuilder /> },
+          { path: 'storebuilder',                     element: <Navigate to="online-store/customize" replace /> },
+          { path: 'online-store/themes',               element: <ThemeLibraryPage /> },
+          { path: 'online-store/customize',           element: <CustomizerPage /> },
+          { path: 'online-store/pages',               element: <PagesPage /> },
+          { path: 'online-store/blog',                element: <BlogPage /> },
+          { path: 'online-store/code',                element: <CodeEditorPage /> },
           { path: 'returns',                          element: <StoreReturnList /> },
           { path: 'seo',                              element: <StoreSEO /> },
           { path: 'ai/studio',                        element: <StoreAIStudio /> },

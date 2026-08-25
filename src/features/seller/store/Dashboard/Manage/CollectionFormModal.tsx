@@ -4,6 +4,7 @@ import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { ImageUpload } from '@/components/comman/ui';
 import { EntityPickerModal } from '@/features/seller/store/Dashboard/OnlineStore/builder/EntityPickerModal';
+import { TemplateKeyPicker } from '@/features/seller/store/Dashboard/OnlineStore/customize/TemplateKeyPicker';
 import { apiGetStoreInventory } from '@/api/services/product';
 import { apiGetCategoryById } from '@/api/services/categories';
 import {
@@ -39,6 +40,7 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
   const [categoryLabel, setCategoryLabel] = useState<string>('');
   const [tags, setTags] = useState<string>((collection?.rules?.tags ?? []).join(', '));
   const [matchType, setMatchType] = useState<'all' | 'any'>(collection?.rules?.matchType ?? 'any');
+  const [templateKey, setTemplateKey] = useState(collection?.templateKey ?? 'default');
 
   const [showProductPicker, setShowProductPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
@@ -85,7 +87,7 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
       };
       let saved: CollectionData;
       if (isEdit) {
-        const res = await apiUpdateCollection(storeId, collection!._id, { ...payload, status });
+        const res = await apiUpdateCollection(storeId, collection!._id, { ...payload, status, templateKey });
         saved = res.data;
         if (type === 'manual') {
           const prodRes = await apiUpdateCollectionProducts(storeId, saved._id, productIds);
@@ -200,6 +202,10 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
                 </div>
               </div>
             </div>
+          )}
+
+          {isEdit && (
+            <TemplateKeyPicker storeId={storeId} resourceType="collection" value={templateKey} onChange={setTemplateKey} />
           )}
 
           <div>

@@ -1,16 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { clsx } from 'clsx';
-import { ChevronDown, ChevronUp, AlignLeft, AlignCenter, Code2, AlertTriangle } from 'lucide-react';
-import { Field, Button } from '@/components/comman/ui';
+import { Link } from 'react-router-dom';
+import { ChevronDown, ChevronUp, AlignLeft, AlignCenter } from 'lucide-react';
+import { Field } from '@/components/comman/ui';
 import {
-  apiGetStoreThemeDraft, apiUpdateStoreCustomCss,
   type StorefrontColors, type ThemeHeaderStyle, type ThemeFooterStyle,
 } from '@/api/services/storeTheme';
 import { RADIUS_PX_MAP } from '@/features/storefront/StorefrontContext';
-import { THEMES, type ThemeDefinition, type ThemeCategory } from './themes';
-import { ThemeCard } from './ThemeCard';
-import { ThemeFilters } from './ThemeFilters';
-import { ThemeRecommendation } from './ThemeRecommendation';
+import { THEMES, type ThemeDefinition } from './themes';
 import {
   RadiusPicker, StylePreviewPicker, IconOptionPicker, ScaleSegmentPicker,
   DiagramHeroOverlay, DiagramHeroSplit, DiagramTestimonialCards, DiagramTestimonialMinimal,
@@ -91,70 +87,6 @@ function ScopeSection({ id, title, open, onToggle, children }: {
   );
 }
 
-// Real "developer/advanced authoring" capability — raw CSS injected into
-// the storefront (see the backend `StoreTheme.customCss` schema comment for
-// the full safety rationale). A self-contained load/edit/save lifecycle,
-// deliberately separate from the rest of the Theme tab's shared
-// draft/undo-redo engine — this is the one field on this tab that isn't a
-// structured token, so it gets its own explicit "Save Custom CSS" instead
-// of silently riding along with the next unrelated Save click.
-function AdvancedCustomCssSection({ storeId }: { storeId: string }) {
-  const [css, setCss] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    apiGetStoreThemeDraft(storeId)
-      .then(res => setCss(res.data.customCss ?? ''))
-      .catch(() => setError('Failed to load custom CSS.'))
-      .finally(() => setLoading(false));
-  }, [storeId]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    setError('');
-    setSaved(false);
-    try {
-      await apiUpdateStoreCustomCss(storeId, css.trim() || null);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save custom CSS.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-start gap-2 text-[11.5px] text-slate bg-cream rounded-lg px-3 py-2.5">
-        <AlertTriangle size={13} className="mt-[1px] shrink-0" />
-        <span>For developers/advanced users. This CSS applies directly to your live storefront with no scoping — a careless rule can break your layout. Saved to your draft; Publish (top of this tab) to make it live.</span>
-      </div>
-      {loading ? (
-        <p className="text-[12px] text-slate">Loading…</p>
-      ) : (
-        <>
-          <textarea
-            value={css}
-            onChange={e => setCss(e.target.value)}
-            placeholder={'.storefront-hero {\n  /* your custom rule */\n}'}
-            spellCheck={false}
-            className="w-full min-h-[180px] px-3 py-2.5 text-[12.5px] font-mono border border-bone rounded-lg text-charcoal bg-white outline-none resize-y"
-          />
-          {error && <p className="text-[12px] text-error">{error}</p>}
-          <div className="flex items-center gap-2">
-            <Button size="sm" onClick={handleSave} loading={saving} icon={!saving && <Code2 size={13} />}>Save Custom CSS</Button>
-            {saved && <span className="text-[12px] text-success font-semibold">Saved to draft.</span>}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
 function buttonPreview(style: StorefrontColors['buttonStyle'], primaryColor: string, radiusPx: string) {
   const s =
     style === 'outline' ? { background: 'transparent', border: `1.2px solid ${primaryColor}`, color: primaryColor } :
@@ -178,43 +110,26 @@ function cardPreview(style: StorefrontColors['productCardStyle'], radiusPx: stri
 }
 
 export interface ThemeTabProps {
-  storeId: string;
   value: StorefrontColors;
   onChange: (next: StorefrontColors) => void;
+  /** Which theme package (from the Theme Library) this active installed
+   *  theme's fields were seeded from — shown as a small "based on X, N
+   *  settings customized" status line only. Switching WHICH theme is active
+   *  now happens exclusively on the Theme Library page (`online-store/themes`)
+   *  — this tab only fine-tunes the currently active one's tokens, per the
+   *  "Customize and Theme Library are separate surfaces" architecture. */
   baseThemeId: string | null;
-  /** Requests applying a theme — the parent shows a confirm dialog and only
-   *  actually mutates the drafts once the seller confirms (see StoreBuilder). */
-  onApplyTheme: (theme: ThemeDefinition) => void;
   headerStyle: ThemeHeaderStyle;
   footerStyle: ThemeFooterStyle;
-  /** A light hint about the store, used only for the "Recommended for your
-   *  store" heuristic — never a real category field, so it's optional. */
-  storeHint: { sellerType?: string | null; productTypes?: string[] };
-  /** Controlled by `StoreBuilder` (not local state) — it needs to know
-   *  whether the seller is browsing the gallery or fine-tuning fields so it
-   *  can give the gallery the full page width instead of squeezing it into
-   *  the narrow control rail that only Customize mode actually needs. */
-  mode: 'themes' | 'customize';
-  onModeChange: (mode: 'themes' | 'customize') => void;
 }
 
 export function ThemeTab({
-  storeId, value, onChange, baseThemeId, onApplyTheme,
-  headerStyle, footerStyle, storeHint, mode, onModeChange,
+  value, onChange, baseThemeId,
+  headerStyle, footerStyle,
 }: ThemeTabProps) {
   const [openSection, setOpenSection] = useState<string>('colors');
-  const [category, setCategory] = useState<ThemeCategory | 'all'>('all');
-  const [search, setSearch] = useState('');
   const set = (patch: Partial<StorefrontColors>) => onChange({ ...value, ...patch });
   const toggleSection = (id: string) => setOpenSection(prev => prev === id ? '' : id);
-
-  // "Preview" opens a fully independent page in a NEW browser tab, resolved
-  // purely from the theme's id in the URL — never from any Store Builder
-  // in-memory state (drafts, active theme, etc.), so the previewed theme can
-  // never accidentally be swapped for the currently-applied one.
-  const openPreview = (t: ThemeDefinition) => {
-    window.open(`/store/${storeId}/theme-preview/${t.id}`, '_blank', 'noopener,noreferrer');
-  };
 
   const baseTheme = useMemo(() => THEMES.find(t => t.id === baseThemeId) ?? null, [baseThemeId]);
   const diff = useMemo(
@@ -222,86 +137,25 @@ export function ThemeTab({
     [baseTheme, value, headerStyle, footerStyle],
   );
 
-  const filteredThemes = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return THEMES.filter(t => {
-      if (category !== 'all' && t.category !== category) return false;
-      if (q && !t.name.toLowerCase().includes(q) && !t.description.toLowerCase().includes(q)) return false;
-      return true;
-    });
-  }, [category, search]);
-
   return (
     <div className="flex flex-col gap-5">
-      {/* ── Themes vs. Customize — mirrors a real theme customizer's Theme
-          Library / Customize split instead of one long page mixing both. ── */}
-      <div className="flex items-center gap-1 bg-cream border border-bone rounded-xl p-1 w-fit">
-        {(['themes', 'customize'] as const).map(m => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => onModeChange(m)}
-            className={clsx(
-              'px-4 py-1.5 rounded-lg text-[12.5px] font-semibold cursor-pointer border-none transition-colors',
-              mode === m ? 'bg-white text-charcoal shadow-[0_1px_4px_rgba(0,0,0,0.08)]' : 'bg-transparent text-slate hover:text-charcoal',
-            )}
-          >
-            {m === 'themes' ? 'Themes' : 'Customize'}
-          </button>
-        ))}
+      <div className="flex items-center justify-between gap-3 bg-cream/60 border border-bone rounded-lg px-3 py-2.5">
+        {!baseTheme ? (
+          <p className="text-[12.5px] text-slate">Custom design — not based on any Theme Library package.</p>
+        ) : diff!.matches ? (
+          <p className="text-[12.5px] text-slate">Based on <span className="font-semibold text-charcoal">{baseTheme.name}</span>.</p>
+        ) : (
+          <p className="text-[12.5px] text-slate">
+            Based on <span className="font-semibold text-charcoal">{baseTheme.name}</span> · {diff!.diffCount} setting{diff!.diffCount === 1 ? '' : 's'} customized
+          </p>
+        )}
+        <Link to="../themes" className="text-[12px] font-semibold text-brand-orange no-underline whitespace-nowrap shrink-0">Switch theme →</Link>
       </div>
 
-      {mode === 'themes' ? (
-        <div className="flex flex-col gap-6">
-          <div>
-            <p className="text-[13px] font-bold text-charcoal mb-1">Theme Library</p>
-            <p className="text-[12px] text-slate">Each theme is a complete, professionally composed storefront — header, hero, products, typography and footer all change together. Click a card (or "Use Theme") to apply it, or Preview first to see it on your real storefront.</p>
-          </div>
-
-          <ThemeRecommendation
-            store={storeHint}
-            baseThemeId={baseThemeId}
-            onApply={onApplyTheme}
-            onPreview={openPreview}
-          />
-
-          <div className="flex flex-col gap-3">
-            <ThemeFilters category={category} onCategoryChange={setCategory} search={search} onSearchChange={setSearch} />
-
-            {filteredThemes.length === 0 ? (
-              <p className="text-[13px] text-slate py-6 text-center">No themes match your search.</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredThemes.map(theme => (
-                  <ThemeCard
-                    key={theme.id}
-                    theme={theme}
-                    active={theme.id === baseThemeId && !!diff?.matches}
-                    onApply={() => onApplyTheme(theme)}
-                    onPreview={() => openPreview(theme)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between gap-3 bg-cream/60 border border-bone rounded-lg px-3 py-2.5">
-            {!baseTheme ? (
-              <p className="text-[12.5px] text-slate">Custom design — not based on any gallery theme yet.</p>
-            ) : diff!.matches ? (
-              <p className="text-[12.5px] text-slate">Currently using <span className="font-semibold text-charcoal">{baseTheme.name}</span>.</p>
-            ) : (
-              <p className="text-[12.5px] text-slate">
-                Custom — based on <span className="font-semibold text-charcoal">{baseTheme.name}</span> · {diff!.diffCount} setting{diff!.diffCount === 1 ? '' : 's'} customized
-              </p>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <p className="text-[12px] text-slate -mt-1">
-            Every control below is independent — changing one, like button radius, never affects unrelated elements like product cards or images.
-          </p>
+      <div className="flex flex-col gap-3">
+        <p className="text-[12px] text-slate -mt-1">
+          Every control below is independent — changing one, like button radius, never affects unrelated elements like product cards or images.
+        </p>
 
           <ScopeSection id="brand" title="Brand" open={openSection === 'brand'} onToggle={toggleSection}>
             <p className="text-[12.5px] text-slate leading-relaxed">
@@ -423,11 +277,12 @@ export function ThemeTab({
               Footer layout is currently <span className="font-semibold text-charcoal">{footerStyle === 'minimal' ? 'Minimal' : 'Columns'}</span> — edit layout, columns, social links, and copyright on the <span className="font-semibold text-charcoal">Footer</span> tab. Applying a gallery theme sets this automatically.
             </p>
           </ScopeSection>
-          <ScopeSection id="advanced" title="Advanced (Custom CSS)" open={openSection === 'advanced'} onToggle={toggleSection}>
-            <AdvancedCustomCssSection storeId={storeId} />
+          <ScopeSection id="advanced" title="Advanced" open={openSection === 'advanced'} onToggle={toggleSection}>
+            <p className="text-[12.5px] text-slate leading-relaxed">
+              Custom CSS and other developer-level theme authoring now live in their own dedicated workspace — see <span className="font-semibold text-charcoal">Edit Code</span> in the Online Store sidebar.
+            </p>
           </ScopeSection>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

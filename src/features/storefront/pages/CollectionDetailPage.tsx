@@ -29,12 +29,16 @@ export function CollectionDetailPage() {
       .catch(() => setCollection(null));
   }, [store.storeId, slugOrId]);
 
+  // Waits for `collection` to resolve first — the template to fetch depends
+  // on which alternate template THIS collection is assigned to
+  // (`collection.templateKey`), not always the store's `'default'` one.
   useEffect(() => {
+    if (collection === undefined) return;
     setSections(undefined);
-    apiGetPublicCollectionTemplate(store.storeId)
+    apiGetPublicCollectionTemplate(store.storeId, 'collection', collection?.templateKey ?? 'default')
       .then(res => setSections(res.data.sections))
       .catch(() => setSections([]));
-  }, [store.storeId]);
+  }, [store.storeId, collection]);
 
   useEffect(() => {
     document.title = collection ? `${collection.name} — ${store.name}` : store.name;

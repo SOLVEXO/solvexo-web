@@ -1,4 +1,4 @@
-import { type ReactNode, useState, useRef, useEffect, useId } from 'react';
+import { type ReactNode, useState, useId } from 'react';
 import { motion } from 'motion/react';
 import { ActiveStoreProvider, useActiveStore } from '@/contexts/ActiveStoreContext';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -13,10 +13,11 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Store,
   Settings, BarChart2,
-  ChevronDown, Plus, PanelLeftClose, PanelLeftOpen, LogOut,
+  ChevronDown, PanelLeftClose, PanelLeftOpen, LogOut,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { NotificationBell, AnnouncementBanner, CurrencySelector } from '@/components/comman/ui';
+import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface NavItem {
@@ -98,100 +99,6 @@ function buildPaletteItems(navigate: (path: string) => void): CommandPaletteItem
   return result;
 }
 
-// ── Store Switcher ────────────────────────────────────────────────────────────
-function SidebarStoreSwitcher() {
-  const navigate = useNavigate();
-  const { stores, loading } = useActiveStore();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  const displayName = loading ? 'Loading…' : 'My Stores';
-  const displaySub  = loading ? '' : `${stores.length} store${stores.length !== 1 ? 's' : ''}`;
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(p => !p)}
-        className={clsx(
-          'w-full rounded-md py-2 px-[10px] flex items-center gap-2',
-          'cursor-pointer border-0 transition-colors duration-150',
-          open ? 'bg-charcoal' : 'bg-dark-active hover:bg-charcoal',
-        )}
-      >
-        <div className="size-6 rounded-sm bg-brand-orange flex items-center justify-center shrink-0">
-          <Store size={13} className="text-white" />
-        </div>
-        <div className="flex-1 min-w-0 text-left">
-          <p className="text-[11px] font-semibold text-white leading-[1.3] truncate">{displayName}</p>
-          {displaySub && <p className="text-[10px] text-slate leading-[1.3]">{displaySub}</p>}
-        </div>
-        <ChevronDown size={13} className={clsx('text-slate shrink-0 transition-transform duration-200', open && 'rotate-180')} />
-      </button>
-
-      {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-[#1a1917] border border-charcoal rounded-[10px] p-[6px]">
-          <p className="text-[10px] font-semibold text-dark-label uppercase tracking-[0.08em] px-[10px] pt-1 pb-2">
-            Switch Store
-          </p>
-          <div className="max-h-[205px] overflow-y-auto">
-            {stores.map(store => (
-              <SidebarStoreItem
-                key={store._id}
-                label={store.name}
-                sub={`/${store.slug} · ${store.plan}`}
-                logo={store.logo}
-                onClick={() => { navigate(`/store/${store._id}/dashboard`); setOpen(false); }}
-              />
-            ))}
-            {stores.length === 0 && !loading && (
-              <p className="text-[11px] text-dark-label px-[10px] py-[6px]">No stores yet</p>
-            )}
-          </div>
-          <div className="h-px bg-charcoal mx-[6px] my-1" />
-          <button
-            onClick={() => { setOpen(false); navigate('/onboard'); }}
-            className="flex items-center gap-[7px] w-full py-2 px-[10px] rounded-[7px] bg-transparent border-0 cursor-pointer text-[11px] font-semibold text-brand-orange hover:bg-charcoal transition-colors duration-150"
-          >
-            <Plus size={12} /> New Store
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SidebarStoreItem({ label, sub, logo, onClick }: {
-  label:   string;
-  sub:     string;
-  logo?:   string | null;
-  onClick: () => void;
-}) {
-  const initials = label.slice(0, 2).toUpperCase();
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-[9px] w-full py-[7px] px-[10px] rounded-md bg-transparent border-0 cursor-pointer text-left transition-colors duration-[120ms] hover:bg-dark-hover"
-    >
-      <div className="size-[26px] rounded-[7px] shrink-0 bg-charcoal overflow-hidden flex items-center justify-center text-[9px] font-bold text-slate">
-        {logo ? <img loading="lazy" decoding="async" src={logo} alt={label} className="w-full h-full object-cover" /> : initials}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-medium text-dark-text truncate">{label}</p>
-        <p className="text-[10px] text-dark-label">{sub}</p>
-      </div>
-    </button>
-  );
-}
-
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 function isDropdown(item: NavEntry): item is NavDropdown {
   return 'children' in item;
@@ -207,6 +114,7 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
   const { pathname } = useLocation();
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   const { profile, loading: profileLoading } = useGetProfile();
+  const { stores, loading: storesLoading } = useActiveStore();
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
   const logout = useLogout();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -280,7 +188,7 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
         {/* Store switcher (only when expanded) */}
         {open && (
           <div className="px-5 pb-4 shrink-0">
-            <SidebarStoreSwitcher />
+            <StoreSwitcher stores={stores} loading={storesLoading} />
           </div>
         )}
 

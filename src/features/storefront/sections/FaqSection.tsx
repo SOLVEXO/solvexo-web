@@ -1,6 +1,8 @@
 import { registerSection } from '../sectionRenderRegistry';
+import { registerSectionSchema } from '../sectionSchemaRegistry';
+import { registerBlockSchema } from '../blockSchemaRegistry';
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, HelpCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useStorefront } from '../StorefrontContext';
 
@@ -49,3 +51,25 @@ export function FaqSection({ settings, blocks }: { settings: { heading?: string 
 registerSection('faq', (section, blocks) =>
   <FaqSection settings={section.settings} blocks={blocks.map(b => b.settings) as any} />,
 );
+
+registerSectionSchema({
+  type: 'faq',
+  label: 'FAQ',
+  description: 'A list of collapsible question/answer pairs.',
+  icon: HelpCircle,
+  color: '#EC4899',
+  group: 'Content',
+  settings: [
+    { key: 'heading', kind: 'text', label: 'Heading (optional)', default: 'Frequently Asked Questions' },
+  ],
+  blocks: { allowedTypes: ['faq_item'], max: 20, label: 'Question', defaultSettings: { question: '', answer: '' } },
+});
+
+registerBlockSchema({
+  type: 'faq_item',
+  label: 'Question',
+  fields: [
+    { key: 'question', kind: 'text', label: 'Question' },
+    { key: 'answer', kind: 'textarea', label: 'Answer' },
+  ],
+});

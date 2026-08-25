@@ -20,6 +20,12 @@ import './sections/FeaturedCategoryGridSection';
 import './sections/TrustBadgesSection';
 import './sections/NewsletterSection';
 import './sections/CollectionProductGridSection';
+import './sections/EditorialLookbookSection';
+import './sections/FarmStorySection';
+import './sections/DropCountdownSection';
+import './sections/CraftProcessSection';
+import './sections/TechSpecsCompareSection';
+import './sections/SoftGallerySection';
 
 /**
  * type → renderer dispatch, driven entirely by `sectionRenderRegistry`'s

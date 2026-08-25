@@ -14,6 +14,7 @@ import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal, SkeletonBox } from '@/components/comman/ui';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 import { VariantMatrixEditor } from './VariantMatrixEditor';
+import { TemplateKeyPicker } from '@/features/seller/store/Dashboard/OnlineStore/customize/TemplateKeyPicker';
 import { combinationKey, MAX_VARIANT_COMBINATIONS, type OptionType, type VariantRow } from './variantMatrix';
 
 type ProductStatus = 'draft' | 'active' | 'scheduled';
@@ -190,6 +191,7 @@ export default function StoreEditProduct() {
   const [error,             setError]             = useState('');
   const [pType,             setPType]             = useState<'physical' | 'digital' | 'educational'>('physical');
   const [variantId,         setVariantId]         = useState<string | null>(null);
+  const [templateKey,       setTemplateKey]       = useState('default');
   const [phys,              setPhys]              = useState<PhysForm>(blankPhys);
   const [dig,               setDig]               = useState<DigForm>(blankDig);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -205,6 +207,7 @@ export default function StoreEditProduct() {
   function init(p: StoreProduct, v: ProductVariant) {
     setPType(p.productType);
     setVariantId(v._id || null);
+    setTemplateKey(p.templateKey ?? 'default');
     if (p.productType === 'physical') {
       setPhys(physFromEntry(p, v));
       // Real variant list arrives slightly after first paint — see the
@@ -267,6 +270,7 @@ export default function StoreEditProduct() {
           subCategoryId: phys.subCategoryId || null, images: phys.images, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
+          templateKey,
         });
 
         // Reconcile the desired variant set (either the real matrix, or a
@@ -336,6 +340,7 @@ export default function StoreEditProduct() {
           scheduledAt: finalStatus === 'scheduled' ? dig.scheduledAt || null : null,
           price: Number(dig.price),
           compareAtPrice: dig.compareAtPrice ? Number(dig.compareAtPrice) : null,
+          templateKey,
           digital: { files, downloadLimit: dig.downloadLimit, linkExpiryDays: dig.linkExpiryDays ? Number(dig.linkExpiryDays) : null, pdfStampingEnabled: dig.pdfStampingEnabled, licenseType: dig.licenseType, buyerDeliveryMessage: dig.buyerDeliveryMessage, preview: { enabled: dig.previewEnabled, sourceFileIndex: 0 } },
         });
         updateCachedProduct(storeId, productId, { product: res.data.product, variant: res.data.variant });
@@ -695,6 +700,7 @@ export default function StoreEditProduct() {
                   onChange={v => pType === 'physical' ? sp('isListedOnSolvexo', v) : sd('isListedOnSolvexo', v)}
                 />
               </div>
+              <TemplateKeyPicker storeId={storeId} resourceType="product" value={templateKey} onChange={setTemplateKey} label="Product Page Template" />
             </div>
           </Card>
 

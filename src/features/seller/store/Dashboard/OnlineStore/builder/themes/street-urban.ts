@@ -33,5 +33,59 @@ export const streetUrban: ThemeModule = {
       { name: 'Cargo Utility Pants', price: 92, image: img(320) },
     ],
     testimonial: { quote: 'Drops sell out fast — glad I caught this one.', authorName: 'Malik J.', authorRole: 'Verified Buyer', rating: 5 },
+    extras: {
+      dropDate: '2026-09-15T18:00:00Z',
+      story: {
+        heading: 'Made for the Block, Tested on It',
+        body: 'Every CONCRETE CO. piece is sampled and worn by our own crew before it ever ships.',
+        imageUrl: img(570),
+        ctaText: 'Shop Now',
+      },
+    },
+  },
+  // Drop Countdown (exclusive) hits first — the hype band a streetwear
+  // storefront actually needs — followed by a brand-story feature. No
+  // FAQ/trust badges here; this theme leans entirely on urgency + brand.
+  templates: {
+    home: [
+      {
+        type: 'drop_countdown',
+        settings: {
+          heading: 'NEXT DROP: VOLT PACK',
+          subheading: 'Limited to 200 pairs. Once they’re gone, they’re gone.',
+          targetDate: '2026-09-15T18:00:00Z',
+          ctaText: 'Notify Me',
+          ctaLink: { linkType: 'home' },
+        },
+      },
+      {
+        type: 'image_with_text',
+        settings: {},
+        blocks: [
+          { type: 'image_text_pair', settings: { imageUrl: img(570), heading: 'Made for the Block, Tested on It', body: 'Every CONCRETE CO. piece is sampled and worn by our own crew before it ever ships.', ctaText: 'Shop Now', imagePosition: 'left' } },
+        ],
+      },
+    ],
+    collection: [
+      {
+        type: 'trust_badges',
+        settings: {},
+        blocks: [
+          { type: 'trust_badge_item', settings: { icon: 'shield', text: '100% authentic, verified' } },
+          { type: 'trust_badge_item', settings: { icon: 'truck', text: 'Fast tracked shipping' } },
+          { type: 'trust_badge_item', settings: { icon: 'lock', text: 'Secure checkout' } },
+        ],
+      },
+    ],
+    product: [
+      {
+        type: 'faq',
+        settings: { heading: 'Sizing & Restocks' },
+        blocks: [
+          { type: 'faq_item', settings: { question: 'How does the sizing run?', answer: 'True to size for most pieces — oversized fits are noted on the product page.' } },
+          { type: 'faq_item', settings: { question: 'Will this restock if it sells out?', answer: 'Limited drops rarely restock — join the waitlist to get notified if it does.' } },
+        ],
+      },
+    ],
   },
 };

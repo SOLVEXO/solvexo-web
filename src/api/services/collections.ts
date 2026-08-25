@@ -38,6 +38,8 @@ export interface CollectionData {
   status: 'active' | 'draft';
   sortOrder: number;
   seo: CollectionSeo;
+  /** Which of the store's own Collection alternate templates this collection renders through. Defaults to `'default'`. */
+  templateKey: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -50,6 +52,8 @@ export interface PublicCollectionSummary {
   image: string | null;
   type: 'manual' | 'automatic';
   sortOrder: number;
+  /** Which of the store's own Collection alternate templates this collection renders through — see `CollectionDetailPage`. Defaults to `'default'` when absent. */
+  templateKey?: string;
 }
 
 export interface CreateCollectionPayload {
@@ -61,7 +65,7 @@ export interface CreateCollectionPayload {
   rules?: Partial<CollectionRules>;
 }
 
-export type UpdateCollectionPayload = Partial<CreateCollectionPayload> & { status?: 'active' | 'draft' };
+export type UpdateCollectionPayload = Partial<CreateCollectionPayload> & { status?: 'active' | 'draft'; templateKey?: string };
 
 // ── Seller ───────────────────────────────────────────────────────────────────
 

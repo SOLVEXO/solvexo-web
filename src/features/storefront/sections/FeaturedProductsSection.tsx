@@ -1,7 +1,8 @@
 import { registerSection } from '../sectionRenderRegistry';
+import { registerSectionSchema } from '../sectionSchemaRegistry';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package } from 'lucide-react';
+import { Package, Star } from 'lucide-react';
 import { ProductImage, StarRating } from '@/components/comman/marketplace/ProductCard';
 import { useStorefrontProductSection } from '@/hooks/useStorefrontProductSections';
 import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
@@ -113,3 +114,34 @@ export function FeaturedProductsSection({ settings }: { settings: FeaturedProduc
 registerSection('featured_products', (section) =>
   <FeaturedProductsSection settings={section.settings as FeaturedProductsSectionSettings} />,
 );
+
+registerSectionSchema({
+  type: 'featured_products',
+  label: 'Featured Products',
+  description: 'A curated strip of products — pinned, best sellers, trending, new arrivals, a category, or hand-picked.',
+  icon: Star,
+  color: '#F59E0B',
+  group: 'Products',
+  settings: [
+    { key: 'heading', kind: 'text', label: 'Heading (optional)', default: 'Featured' },
+    { key: 'source', kind: 'select', label: 'Source', default: 'pinned', options: [
+      { value: 'pinned', label: 'Pinned / Featured' },
+      { value: 'bestsellers', label: 'Best Sellers' },
+      { value: 'newArrivals', label: 'New Arrivals' },
+      { value: 'trending', label: 'Trending' },
+      { value: 'onSale', label: 'On Sale' },
+      { value: 'category', label: 'A specific category' },
+      { value: 'collection', label: 'A collection' },
+      { value: 'manual', label: 'Hand-picked products' },
+    ] },
+    { key: 'categoryId', kind: 'categoryPicker', label: 'Category', showIf: (v) => v.source === 'category' },
+    { key: 'collectionId', kind: 'collectionPicker', label: 'Collection', showIf: (v) => v.source === 'collection' },
+    // The current hand form (`SectionFields.tsx`) edits this as a plain
+    // comma-separated text input, not an `EntityPickerModal` — reproduced
+    // as-is rather than upgraded to `productPicker` (which would change the
+    // stored shape from a raw string to an array without the form itself
+    // being wired to do that split/join).
+    { key: 'productIds', kind: 'text', label: 'Product IDs', helpText: 'Comma-separated product IDs, in display order.', showIf: (v) => v.source === 'manual' },
+    { key: 'limit', kind: 'number', label: 'How many to show', default: 8, min: 1, max: 24 },
+  ],
+});

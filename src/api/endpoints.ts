@@ -203,6 +203,11 @@ export const ENDPOINTS = {
     UPDATE_IDENTITY_BANNER: (storeId: string) => `/api/store-theme/${storeId}/identity-banner`,
     UPDATE_CUSTOM_CSS: (storeId: string) => `/api/store-theme/${storeId}/custom-css`,
     PUBLIC:         (storeId: string) => `/api/public/store-theme/${storeId}`,
+    // ── Theme Library (installed theme instances) ──
+    LIST_INSTALLED: (storeId: string) => `/api/store-theme/${storeId}/installed`,
+    INSTALL:        (storeId: string) => `/api/store-theme/${storeId}/install`,
+    ACTIVATE:       (storeId: string, installedThemeId: string) => `/api/store-theme/${storeId}/installed/${installedThemeId}/activate`,
+    UNINSTALL:      (storeId: string, installedThemeId: string) => `/api/store-theme/${storeId}/installed/${installedThemeId}`,
   },
 
   // ── STORE PAGES (home + custom pages, each composed of sections/blocks) ────
@@ -243,6 +248,8 @@ export const ENDPOINTS = {
     REVERT_DRAFT:    (storeId: string) => `/api/collection-template/${storeId}/revert-draft`,
     VERSIONS:        (storeId: string) => `/api/collection-template/${storeId}/versions`,
     RESTORE_VERSION: (storeId: string, versionId: string) => `/api/collection-template/${storeId}/versions/${versionId}/restore`,
+    LIST_TEMPLATES:  (storeId: string) => `/api/collection-template/${storeId}/templates`,
+    DELETE_TEMPLATE: (storeId: string, templateKey: string) => `/api/collection-template/${storeId}/templates/${templateKey}`,
 
     PUBLIC: (storeId: string) => `/api/public/collection-template/${storeId}`,
   },

@@ -32,5 +32,57 @@ export const luxuryNoir: ThemeModule = {
       { name: 'Sterling Cuff Bracelet', price: 310, image: img(240) },
     ],
     testimonial: { quote: 'Exquisite craftsmanship — it photographs even better in person.', authorName: 'Camille D.', authorRole: 'Verified Buyer', rating: 5 },
+    extras: {
+      lookbook: [
+        { imageUrl: img(550), caption: 'Solitaire, Reimagined' },
+        { imageUrl: img(551), caption: 'Cast in 18k Gold' },
+        { imageUrl: img(552), caption: 'The Aurelia Signature' },
+      ],
+    },
+  },
+  // Editorial Lookbook (exclusive/primary) sets the cinematic tone, followed
+  // by a short atelier promise in rich_text — no products grid repetition,
+  // no FAQ/trust badges (deliberately spare, matching this theme's minimal
+  // testimonial/FAQ style elsewhere).
+  templates: {
+    home: [
+      {
+        type: 'editorial_lookbook',
+        settings: { heading: 'The Atelier Edit' },
+        blocks: [
+          { type: 'lookbook_item', settings: { imageUrl: img(550), caption: 'Solitaire, Reimagined' } },
+          { type: 'lookbook_item', settings: { imageUrl: img(551), caption: 'Cast in 18k Gold' } },
+          { type: 'lookbook_item', settings: { imageUrl: img(552), caption: 'The Aurelia Signature' } },
+        ],
+      },
+      {
+        type: 'rich_text',
+        settings: { heading: 'Our Promise', alignment: 'center' },
+        blocks: [
+          { type: 'paragraph', settings: { text: 'Every Aurelia piece is cast, set, and polished by hand in our Milan atelier — a process that hasn’t changed in three generations.' } },
+        ],
+      },
+    ],
+    collection: [
+      {
+        type: 'trust_badges',
+        settings: {},
+        blocks: [
+          { type: 'trust_badge_item', settings: { icon: 'shield', text: 'Certificate of authenticity' } },
+          { type: 'trust_badge_item', settings: { icon: 'lock', text: 'Fully insured shipping' } },
+          { type: 'trust_badge_item', settings: { icon: 'headset', text: 'Private client service' } },
+        ],
+      },
+    ],
+    product: [
+      {
+        type: 'faq',
+        settings: { heading: 'Ownership & Care' },
+        blocks: [
+          { type: 'faq_item', settings: { question: 'Does this piece come with a certificate?', answer: 'Every Aurelia piece ships with a signed certificate of authenticity and hallmark verification.' } },
+          { type: 'faq_item', settings: { question: 'Can this be resized?', answer: 'Yes — complimentary resizing is available within 60 days of purchase.' } },
+        ],
+      },
+    ],
   },
 };

@@ -1,4 +1,5 @@
 import { registerSection } from '../sectionRenderRegistry';
+import { registerSectionSchema } from '../sectionSchemaRegistry';
 import { useState, type FormEvent } from 'react';
 import { Mail, Check } from 'lucide-react';
 import { useStorefront } from '../StorefrontContext';
@@ -72,3 +73,16 @@ export function NewsletterSection({ settings }: { settings: NewsletterSectionSet
 registerSection('newsletter', (section) =>
   <NewsletterSection settings={section.settings as NewsletterSectionSettings} />,
 );
+
+registerSectionSchema({
+  type: 'newsletter',
+  label: 'Newsletter',
+  description: 'An email signup — subscribes to your store\'s newsletter.',
+  icon: Mail,
+  color: '#7C3AED',
+  group: 'Forms',
+  settings: [
+    { key: 'heading', kind: 'text', label: 'Heading (optional)', default: 'Stay in the loop' },
+    { key: 'subtext', kind: 'text', label: 'Subtext (optional)', default: '' },
+  ],
+});

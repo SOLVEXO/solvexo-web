@@ -8,7 +8,9 @@ import { StorefrontFooter } from '@/features/storefront/StorefrontFooter';
 import { HeroSection } from '@/features/storefront/sections/HeroSection';
 import { TestimonialsSection } from '@/features/storefront/sections/TestimonialsSection';
 import { ProductCardShell, ProductCardImage } from '@/features/storefront/ProductCard';
-import { THEME_DEMO_CONTENT, type ThemeDefinition, type DemoProduct } from './themes';
+import { getSectionRender } from '@/features/storefront/sectionRenderRegistry';
+import type { Section } from '@/api/services/storefrontTypes';
+import { THEME_DEMO_CONTENT, THEME_TEMPLATES, type ThemeDefinition, type DemoProduct } from './themes';
 
 // Generic, theme-agnostic demo footer content — real enough that every
 // theme's footerStyle (columns vs. minimal) has something real to compose,
@@ -70,6 +72,7 @@ export function buildDemoStorefrontData(theme: ThemeDefinition): { store: Public
   };
   const themeData: StoreThemeData = {
     _id: `demo-${theme.id}`, storeId: `demo-${theme.id}`,
+    themeDefinitionId: theme.id, status: 'active', installedAt: new Date().toISOString(),
     theme: theme.colors, header, footer, identityBanner, baseThemeId: theme.id, customCss: null,
     // A static demo doc has no real draft/publish concept — mirrors the live
     // fields so it satisfies the shape without implying anything's actually
@@ -120,6 +123,13 @@ export function ThemeDemoStorefront({ theme, compact = false }: { theme: ThemeDe
         </div>
         {!compact && (
           <>
+            {(THEME_TEMPLATES[theme.id]?.home ?? []).map((instance, i) => {
+              const render = getSectionRender(instance.type);
+              if (!render) return null;
+              const section = { type: instance.type, settings: instance.settings ?? {}, blocks: [] } as unknown as Section;
+              const blocks = (instance.blocks ?? []).map((b) => ({ type: b.type, settings: b.settings, blocks: [] })) as unknown as Section['blocks'];
+              return <div key={i}>{render(section, blocks)}</div>;
+            })}
             <TestimonialsSection settings={{ heading: 'What customers say' }} blocks={[testimonialBlock]} />
             <StorefrontFooter />
           </>

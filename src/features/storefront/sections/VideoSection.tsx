@@ -1,4 +1,6 @@
 import { registerSection } from '../sectionRenderRegistry';
+import { registerSectionSchema } from '../sectionSchemaRegistry';
+import { Video } from 'lucide-react';
 import { useStorefront } from '../StorefrontContext';
 
 export interface VideoSectionSettings {
@@ -40,3 +42,19 @@ export function VideoSection({ settings }: { settings: VideoSectionSettings }) {
 registerSection('video', (section) =>
   <VideoSection settings={section.settings as VideoSectionSettings} />,
 );
+
+registerSectionSchema({
+  type: 'video',
+  label: 'Video',
+  description: 'A YouTube or Vimeo embed.',
+  icon: Video,
+  color: '#EF4444',
+  group: 'Media',
+  settings: [
+    { key: 'heading', kind: 'text', label: 'Heading (optional)', default: '' },
+    { key: 'videoUrl', kind: 'text', label: 'Video URL', helpText: 'YouTube or Vimeo link', placeholder: 'https://youtube.com/watch?v=…' },
+    { key: 'aspectRatio', kind: 'select', label: 'Aspect ratio', default: '16:9', options: [
+      { value: '16:9', label: '16:9' }, { value: '4:3', label: '4:3' }, { value: '1:1', label: '1:1' },
+    ] },
+  ],
+});

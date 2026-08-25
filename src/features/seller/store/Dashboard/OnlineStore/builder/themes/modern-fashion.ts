@@ -32,5 +32,61 @@ export const modernFashion: ThemeModule = {
       { name: 'Structured Leather Bag', price: 265, image: img(80) },
     ],
     testimonial: { quote: 'The quality and fit are unmatched. Worth every dollar.', authorName: 'Amara K.', authorRole: 'Verified Buyer', rating: 5 },
+    extras: {
+      lookbook: [
+        { imageUrl: img(510), caption: 'Look 01 — The Tailored Coat' },
+        { imageUrl: img(511), caption: 'Look 02 — Silk & Structure' },
+        { imageUrl: img(512), caption: 'Look 03 — Evening Edit' },
+      ],
+      faqs: [
+        { question: 'How does NOIR MAISON sizing run?', answer: 'True to size — check our size guide for exact measurements before ordering.' },
+        { question: 'Do you ship internationally?', answer: 'Yes, we ship to over 30 countries with tracked delivery.' },
+      ],
+    },
+  },
+  // Editorial Lookbook (secondary use of luxury-noir's exclusive section —
+  // fits Modern Fashion's own editorial identity just as well) followed by
+  // a sizing/shipping FAQ.
+  templates: {
+    home: [
+      {
+        type: 'editorial_lookbook',
+        settings: { heading: 'The Fall/Winter Lookbook' },
+        blocks: [
+          { type: 'lookbook_item', settings: { imageUrl: img(510), caption: 'Look 01 — The Tailored Coat' } },
+          { type: 'lookbook_item', settings: { imageUrl: img(511), caption: 'Look 02 — Silk & Structure' } },
+          { type: 'lookbook_item', settings: { imageUrl: img(512), caption: 'Look 03 — Evening Edit' } },
+        ],
+      },
+      {
+        type: 'faq',
+        settings: { heading: 'Sizing & Shipping' },
+        blocks: [
+          { type: 'faq_item', settings: { question: 'How does NOIR MAISON sizing run?', answer: 'True to size — check our size guide for exact measurements before ordering.' } },
+          { type: 'faq_item', settings: { question: 'Do you ship internationally?', answer: 'Yes, we ship to over 30 countries with tracked delivery.' } },
+        ],
+      },
+    ],
+    collection: [
+      {
+        type: 'trust_badges',
+        settings: {},
+        blocks: [
+          { type: 'trust_badge_item', settings: { icon: 'truck', text: 'Complimentary tracked shipping' } },
+          { type: 'trust_badge_item', settings: { icon: 'refresh', text: '30-day exchanges' } },
+          { type: 'trust_badge_item', settings: { icon: 'lock', text: 'Secure checkout' } },
+        ],
+      },
+    ],
+    product: [
+      {
+        type: 'faq',
+        settings: { heading: 'Sizing & Shipping' },
+        blocks: [
+          { type: 'faq_item', settings: { question: 'How does NOIR MAISON sizing run?', answer: 'True to size — check our size guide for exact measurements before ordering.' } },
+          { type: 'faq_item', settings: { question: 'Do you ship internationally?', answer: 'Yes, we ship to over 30 countries with tracked delivery.' } },
+        ],
+      },
+    ],
   },
 };

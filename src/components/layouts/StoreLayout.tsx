@@ -6,18 +6,21 @@ import { motion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, ChevronLeft, ChevronRight, Store,
+  Settings, Sparkles, ChevronLeft, ChevronRight, Store, User,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
+  LayoutGrid, Newspaper, Palette, Code2,
 } from 'lucide-react';
-import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, type StorePlatformSubscription } from '@/api/services/platformPlans';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { useLogout } from '@/hooks/auth/useLogout';
-import { NotificationBell, AnnouncementBanner, Modal, Button } from '@/components/comman/ui';
+import { useMyStores } from '@/hooks/store/useMyStores';
+import { useGetProfile } from '@/hooks/auth/useGetProfile';
+import { NotificationBell, AnnouncementBanner, Modal, Button, CopyIconButton } from '@/components/comman/ui';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
+import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
 interface StoreWorkspaceValue {
@@ -63,8 +66,17 @@ export const NAV: { group: string; items: NavItem[] }[] = [
       { id: 'inventory',     Icon: ClipboardList, label: 'Inventory',     path: 'inventory'    },
       { id: 'categories',    Icon: FolderTree,    label: 'Categories',    path: 'categories'   },
       { id: 'collections',   Icon: Layers,        label: 'Collections',   path: 'collections'  },
-      { id: 'files',         Icon: ImageIcon,     label: 'Files',         path: 'files'        },
-      { id: 'store-builder', Icon: Store,         label: 'Store Builder', path: 'storebuilder' },
+    ],
+  },
+  {
+    group: 'Online Store',
+    items: [
+      { id: 'online-store-themes',    Icon: Palette,    label: 'Themes',    path: 'online-store/themes'    },
+      { id: 'online-store-customize', Icon: Store,      label: 'Customize', path: 'online-store/customize' },
+      { id: 'online-store-code',      Icon: Code2,      label: 'Edit Code', path: 'online-store/code'      },
+      { id: 'online-store-pages',     Icon: LayoutGrid, label: 'Pages',     path: 'online-store/pages'     },
+      { id: 'online-store-blog',      Icon: Newspaper,  label: 'Blog',      path: 'online-store/blog'      },
+      { id: 'online-store-files',     Icon: ImageIcon,  label: 'Files',     path: 'files'                  },
     ],
   },
   {
@@ -97,6 +109,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { id: 'integrations',  Icon: Plug,        label: 'Integrations',          path: 'integrations'  },
       { id: 'settings',      Icon: Settings,    label: 'Settings',              path: 'settings'      },
+      { id: 'account',       Icon: User,        label: 'Account',               path: 'account'       },
     ],
   },
 ];
@@ -237,6 +250,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   // another instantly appears — scoped per sidebar instance via useId().
   const navPillId = useId();
   const { store, storeId, loading } = useStoreWorkspace();
+  const { profile, loading: profileLoading } = useGetProfile();
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
   const paletteItems = buildPaletteItems(navigate, storeId);
   const logout = useLogout();
@@ -280,7 +294,9 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
       )}>
 
         {/* Store identity + collapse toggle — same row, toggle on the right,
-           rather than the toggle sitting alone on its own row above this. */}
+           rather than the toggle sitting alone on its own row above this.
+           (The store SWITCHER itself lives in the top navbar — StorePageHeader
+           below — not here.) */}
         {open ? (
           <div className="px-4 pt-[14px] pb-3 shrink-0">
             <div className="flex items-center gap-[10px]">
@@ -375,7 +391,10 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
           ))}
         </nav>
 
-        {/* Footer: AI credits */}
+        {/* Footer: AI credits + seller identity (email/logout) — the seller's
+           own account, never a separate cross-store "seller dashboard" page,
+           lives right here in this store's sidebar (clicking it opens the
+           per-store Account page). */}
         {open ? (
           <div className="px-4 py-3 border-t border-dark-active shrink-0">
             <div className="bg-dark-active rounded-md px-3 py-[10px] mb-[10px]">
@@ -394,8 +413,26 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <SolvexoIcon size={20} />
-              <p className="text-[11px] text-dark-label flex-1 min-w-0 truncate">Solvexo Store</p>
+              <button
+                onClick={() => navigate(`/store/${storeId}/account`)}
+                title="Account settings"
+                className="flex-1 min-w-0 flex items-center gap-2 bg-transparent border-0 p-0 cursor-pointer text-left"
+              >
+                <div className="size-7 rounded-full shrink-0 bg-charcoal flex items-center justify-center overflow-hidden">
+                  {profileLoading
+                    ? <div className="animate-pulse w-full h-full bg-[#3c3a38]" />
+                    : profile?.profileImage
+                      ? <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                      : <span className="text-[10px] font-bold text-brand-orange">{profile?.name?.slice(0, 2).toUpperCase() ?? '--'}</span>}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-medium text-white leading-[1.3] truncate">{profile?.name ?? '—'}</p>
+                  <p className="text-[10px] text-slate leading-[1.3] truncate">{profile?.email ?? '—'}</p>
+                </div>
+              </button>
+              {profile?.email && (
+                <CopyIconButton value={profile.email} title="Copy email" size={11} className="text-slate hover:text-white shrink-0" />
+              )}
               <button
                 onClick={() => setShowLogoutConfirm(true)}
                 title="Logout"
@@ -408,7 +445,16 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
           </div>
         ) : (
           <div className="py-3 border-t border-dark-active flex flex-col items-center gap-2 shrink-0">
-            <SolvexoIcon size={20} />
+            <button
+              onClick={() => navigate(`/store/${storeId}/account`)}
+              title="Account settings"
+              aria-label="Account settings"
+              className="size-7 rounded-full shrink-0 bg-charcoal flex items-center justify-center overflow-hidden border-0 cursor-pointer p-0"
+            >
+              {profile?.profileImage
+                ? <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                : <span className="text-[10px] font-bold text-brand-orange">{profile?.name?.slice(0, 2).toUpperCase() ?? '--'}</span>}
+            </button>
             <button
               onClick={() => setShowLogoutConfirm(true)}
               title="Logout"
@@ -448,12 +494,13 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { storeId } = useStoreWorkspace();
+  const { stores: myStores, loading: myStoresLoading } = useMyStores();
   const dashboardPath = `/store/${storeId}/dashboard`;
   const isDashboard = pathname === dashboardPath;
 
   return (
     <div className="bg-white/90 backdrop-blur-md border-b border-bone px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0">
         {/* Mobile only, and only away from the dashboard "menu" screen —
            real drill-in navigation (back to the menu) instead of a
            hamburger that used to open a copy of the desktop sidebar. */}
@@ -466,13 +513,16 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
             <ChevronLeft size={19} />
           </button>
         )}
-        <div key={title}>
-          <h1 className="solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.3]">{title}</h1>
-          {subtitle && <p className="solvexo-subtitle-reveal text-[12px] text-slate mt-0.5">{subtitle}</p>}
+        <div key={title} className="min-w-0">
+          <h1 className="solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.3] truncate">{title}</h1>
+          {subtitle && <p className="solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate">{subtitle}</p>}
         </div>
       </div>
-      <div className="flex items-center gap-[10px]">
+      <div className="flex items-center gap-[10px] shrink-0">
         {actions}
+        {/* Shopify-style store switcher — jump to another of this seller's
+           stores right from the navbar, on every store page. */}
+        <StoreSwitcher stores={myStores} loading={myStoresLoading} currentStoreId={storeId} variant="light" compact />
         <NotificationBell />
       </div>
     </div>

@@ -32,9 +32,21 @@ export function ThemeCard({ theme, active, onApply, onPreview, size = 'default' 
         active ? 'border-brand-orange shadow-[0_2px_14px_rgba(217,119,87,0.18)]' : 'border-bone hover:border-slate/30 hover:shadow-[0_2px_14px_rgba(0,0,0,0.06)]',
       )}
     >
-      <button
-        type="button"
+      {/* A real `<button>` here would be invalid HTML — `ThemeStorefrontPreview`
+          renders a full (if inert/pointer-events-none) storefront preview,
+          which itself contains real interactive elements like the navbar's
+          currency selector button. A `<button>` can never contain another
+          `<button>` per the HTML content model — browsers silently
+          "recover" from this by closing the outer button early, and React
+          logs a hydration-mismatch warning for it (both confirmed via live
+          testing). `role="button"` + keyboard handling preserves the exact
+          same interaction/accessibility contract without the invalid
+          nesting. */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onApply}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onApply(); } }}
         aria-label={`Use ${theme.name} theme`}
         className="relative block w-full border-none bg-transparent p-0 cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50 rounded-t-2xl overflow-hidden"
       >
@@ -50,7 +62,7 @@ export function ThemeCard({ theme, active, onApply, onPreview, size = 'default' 
             <Check size={11} /> Active
           </span>
         )}
-      </button>
+      </div>
 
       <div className={clsx('flex flex-col gap-2', size === 'compact' ? 'p-3' : 'p-4')}>
         <div>

@@ -1,6 +1,8 @@
 import { registerSection } from '../sectionRenderRegistry';
+import { registerSectionSchema } from '../sectionSchemaRegistry';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Grid3x3 } from 'lucide-react';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { useStorefront } from '../StorefrontContext';
 
@@ -78,3 +80,16 @@ export function FeaturedCategoryGridSection({ settings }: { settings: FeaturedCa
 registerSection('featured_category_grid', (section) =>
   <FeaturedCategoryGridSection settings={section.settings as FeaturedCategoryGridSectionSettings} />,
 );
+
+registerSectionSchema({
+  type: 'featured_category_grid',
+  label: 'Category Grid',
+  description: 'Tiles linking to your subcategories — a "shop by category" grid.',
+  icon: Grid3x3,
+  color: '#0891B2',
+  group: 'Products',
+  settings: [
+    { key: 'heading', kind: 'text', label: 'Heading (optional)', default: 'Shop by Category' },
+    { key: 'categoryIds', kind: 'categoryPicker', multiple: true, label: 'Categories', helpText: 'Tiles are shown in the order chosen (up to 12).' },
+  ],
+});

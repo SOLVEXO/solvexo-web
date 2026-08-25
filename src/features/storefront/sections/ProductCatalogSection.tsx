@@ -1,8 +1,9 @@
 import { registerSection } from '../sectionRenderRegistry';
+import { registerSectionSchema } from '../sectionSchemaRegistry';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { Package, Heart, ShoppingCart, Loader2, Zap } from 'lucide-react';
+import { Package, Heart, ShoppingCart, Loader2, Zap, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/comman/ui/Button';
 import { FilterDropdown, SkeletonBox } from '@/components/comman/ui';
 import {
@@ -230,3 +231,33 @@ export function ProductCatalogSection({ settings }: { settings: ProductCatalogSe
 registerSection('product_catalog', (section) =>
   <ProductCatalogSection settings={section.settings as ProductCatalogSectionSettings} />,
 );
+
+registerSectionSchema({
+  type: 'product_catalog',
+  label: 'Product Catalog',
+  description: 'The full, paginated browse grid with tag filters and sorting.',
+  icon: LayoutGrid,
+  color: '#0EA5E9',
+  group: 'Products',
+  settings: [
+    { key: 'heading', kind: 'text', label: 'Heading (optional)', default: 'Our Products' },
+    { key: 'defaultSort', kind: 'select', label: 'Default sort', default: 'newest', options: [
+      { value: 'newest', label: 'Newest' },
+      { value: 'price_asc', label: 'Price: Low–High' },
+      { value: 'price_desc', label: 'Price: High–Low' },
+      { value: 'best_rated', label: 'Best Rated' },
+    ] },
+    { key: 'columns', kind: 'select', label: 'Columns', default: 3, options: [
+      { value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' },
+    ] },
+    // The old hand form's "Filter to (optional)" control is a UI-only
+    // mutual-exclusivity selector with no field of its own in
+    // `ProductCatalogSectionSettings` to hang a `showIf` off — flattened
+    // here into the two real, independently-optional stored fields it
+    // actually toggles between. The backend validator still rejects both
+    // being set at once.
+    { key: 'categoryId', kind: 'categoryPicker', label: 'Category' },
+    { key: 'collectionId', kind: 'collectionPicker', label: 'Collection' },
+    { key: 'showFilters', kind: 'boolean', label: 'Show tag filters', default: true },
+  ],
+});

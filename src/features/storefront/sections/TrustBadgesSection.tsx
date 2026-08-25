@@ -1,4 +1,6 @@
 import { registerSection } from '../sectionRenderRegistry';
+import { registerSectionSchema } from '../sectionSchemaRegistry';
+import { registerBlockSchema } from '../blockSchemaRegistry';
 import { Truck, ShieldCheck, RefreshCw, Headset, Lock, type LucideIcon } from 'lucide-react';
 import { useStorefront } from '../StorefrontContext';
 
@@ -51,3 +53,29 @@ export function TrustBadgesSection({ blocks }: { settings: Record<string, any>; 
 registerSection('trust_badges', (section, blocks) =>
   <TrustBadgesSection settings={section.settings} blocks={blocks.map(b => b.settings) as any} />,
 );
+
+registerSectionSchema({
+  type: 'trust_badges',
+  label: 'Trust Badges',
+  description: 'A row of reassurance badges — shipping, returns, secure payment, support.',
+  icon: ShieldCheck,
+  color: '#059669',
+  group: 'Marketing',
+  settings: [],
+  blocks: { allowedTypes: ['trust_badge_item'], max: 20, label: 'Badge', defaultSettings: { icon: 'truck', text: '' } },
+});
+
+registerBlockSchema({
+  type: 'trust_badge_item',
+  label: 'Badge',
+  fields: [
+    { key: 'icon', kind: 'icon', label: 'Icon', default: 'truck', options: [
+      { value: 'truck', label: 'Shipping' },
+      { value: 'shield', label: 'Buyer Protection' },
+      { value: 'refresh', label: 'Easy Returns' },
+      { value: 'headset', label: 'Support' },
+      { value: 'lock', label: 'Secure Payment' },
+    ] },
+    { key: 'text', kind: 'text', label: 'Text' },
+  ],
+});

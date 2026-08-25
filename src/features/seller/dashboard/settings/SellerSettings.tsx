@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useGetProfile, invalidateProfileCache } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
@@ -14,6 +14,7 @@ import {
   Trash2, Camera, Settings, Check, Loader2, Eye, EyeOff, ChevronLeft, ChevronRight, type LucideIcon,
 } from 'lucide-react';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { StorePageHeader } from '@/components/layouts/StoreLayout';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 // Account-level only. Store Info/Domain/Payments/Shipping/Billing/Payouts/
@@ -153,15 +154,30 @@ function MobileSellerMenu({ active, onSelect }: { active: SettingSection; onSele
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function SellerSettings() {
+// `variant="store"` renders this same account-settings content inside a
+// specific store's dashboard (via StorePageHeader, with that workspace's
+// back-nav/notification bell) — used at /store/:storeId/account. There's no
+// separate cross-store "seller dashboard" page any more, so a seller's own
+// profile/security/notifications must be reachable from inside whichever
+// store they're currently working in, not just from the legacy /seller/settings
+// page (kept reachable by direct URL only, matching this project's established
+// "disconnect, don't delete" convention — nothing links to it any more).
+export function SellerSettings({ variant = 'seller' }: { variant?: 'seller' | 'store' } = {}) {
   usePageTitle('Settings');
   const navigate = useNavigate();
-  const [active,    setActive]    = useState<SettingSection>('profile');
+  const [searchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab') as SettingSection | null;
+  const validTabs: SettingSection[] = ['profile', 'email-password', 'two-factor', 'notifications', 'delete-account'];
+  const [active, setActive] = useState<SettingSection>(
+    requestedTab && validTabs.includes(requestedTab) ? requestedTab : 'profile',
+  );
   // Mobile-only: whether we've drilled into a section from the account-hub
   // menu below (mirrors the buyer AccountLayout's back-arrow drill-in, done
   // via local state instead of real routes since this page has none).
   // Desktop ignores this entirely — content + sidebar are always shown there.
-  const [mobileDrilledIn, setMobileDrilledIn] = useState(false);
+  const [mobileDrilledIn, setMobileDrilledIn] = useState(
+    !!(requestedTab && validTabs.includes(requestedTab)),
+  );
   const { summary: storesSummary, loading: storesLoading } = useMyStores();
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
@@ -228,10 +244,9 @@ export function SellerSettings() {
 
   return (
     <>
-      <SellerPageHeader
-        title="Settings"
-        subtitle="Manage your account preferences."
-      />
+      {variant === 'store'
+        ? <StorePageHeader title="Account" subtitle="Manage your personal profile, security, and notifications." />
+        : <SellerPageHeader title="Settings" subtitle="Manage your account preferences." />}
 
       <div className="px-4 lg:px-7 pt-5 pb-8">
         {/* Mobile-only account hub — hero (avatar/name/email/role + real

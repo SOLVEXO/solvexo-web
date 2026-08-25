@@ -113,6 +113,8 @@ export interface StoreProduct {
   sellerName:        string | null;
   storeSlug:         string | null;
   storeName:         string | null;
+  /** Which of the store's own Product alternate templates this product's detail page renders its surrounding sections through. Defaults to `'default'`. */
+  templateKey?:      string;
 }
 
 // ── Request payloads ──────────────────────────────────────────────────────────
@@ -163,6 +165,7 @@ export interface EditPhysicalPayload {
   isListedOnSolvexo: boolean;
   status:            'draft' | 'active' | 'scheduled';
   scheduledAt?:      string | null;
+  templateKey?:      string;
 }
 
 export interface EditDigitalPayload {
@@ -178,6 +181,7 @@ export interface EditDigitalPayload {
   price:          number;
   compareAtPrice: number | null;
   digital:        DigitalMeta;
+  templateKey?:   string;
 }
 
 // ── Response shapes ───────────────────────────────────────────────────────────

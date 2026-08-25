@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { TokenStorage, apiLogout } from '@/api/services/auth';
+import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import { CopyIconButton } from './CopyIconButton';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -154,10 +155,10 @@ function MenuItem({
 // DropdownMenu
 // ─────────────────────────────────────────────────────────────────────────────
 function DropdownMenu({
-  hasBuyer, hasDash, isAdmin, onNavigate, onLogout,
+  hasBuyer, hasDash, isAdmin, onNavigate, onGoToStore, onLogout,
 }: {
   hasBuyer: boolean; hasDash: boolean; isAdmin: boolean;
-  onNavigate: (path: string) => void; onLogout: () => void;
+  onNavigate: (path: string) => void; onGoToStore: () => void; onLogout: () => void;
 }) {
   return (
     <>
@@ -181,9 +182,9 @@ function DropdownMenu({
         {hasDash && (
           <MenuItem
             icon={isAdmin ? Shield : LayoutDashboard}
-            label={isAdmin ? 'Admin Panel' : 'Seller Dashboard'}
-            sublabel={isAdmin ? 'Manage the platform' : 'Manage your store'}
-            onClick={() => onNavigate(isAdmin ? '/admin' : '/seller/stores')}
+            label={isAdmin ? 'Admin Panel' : 'My Store'}
+            sublabel={isAdmin ? 'Manage the platform' : 'Go to your store dashboard'}
+            onClick={() => (isAdmin ? onNavigate('/admin') : onGoToStore())}
           />
         )}
       </div>
@@ -209,11 +210,12 @@ const SHOW_BUYER_FEATURES = false;
 // ProfileDropdown
 // ─────────────────────────────────────────────────────────────────────────────
 function ProfileDropdown({
-  profile, initials, onNavigate, onLogout,
+  profile, initials, onNavigate, onGoToStore, onLogout,
 }: {
   profile: ReturnType<typeof useGetProfile>['profile'];
   initials: string;
   onNavigate: (path: string) => void;
+  onGoToStore: () => void;
   onLogout: () => void;
 }) {
   const role      = profile?.role;
@@ -244,6 +246,7 @@ function ProfileDropdown({
         hasDash={hasDash}
         isAdmin={isAdmin}
         onNavigate={onNavigate}
+        onGoToStore={onGoToStore}
         onLogout={onLogout}
       />
       </div>
@@ -317,6 +320,16 @@ export function ProfileAvatar() {
 
   const initials = profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? '..';
   const handleNavigate = (path: string) => { navigate(path); setOpen(false); };
+  // Same resolver login already uses (useLogin/useVerifyOtp/useSocialLogin) —
+  // lands on THIS seller's own store dashboard (or /onboard if they have none
+  // yet), never a generic "seller dashboard"/store-picker page. Keeps this
+  // avatar's destination identical to where the seller already landed after
+  // signing in, instead of drifting into its own hardcoded route.
+  const handleGoToStore = async () => {
+    setOpen(false);
+    const destination = await resolveSellerDestinationRemote();
+    navigate(destination);
+  };
   const handleLogout   = async () => {
     try { await apiLogout(); } catch { /* best-effort — clear local session regardless */ }
     TokenStorage.clear();
@@ -362,6 +375,7 @@ export function ProfileAvatar() {
             profile={profile}
             initials={initials}
             onNavigate={handleNavigate}
+            onGoToStore={handleGoToStore}
             onLogout={handleLogout}
           />
         </div>,
