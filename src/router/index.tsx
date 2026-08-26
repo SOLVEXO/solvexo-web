@@ -71,6 +71,9 @@ const StorefrontCartPage   = lazy(() => named(import('@/features/storefront/Stor
 const StorefrontCheckoutPage = lazy(() => named(import('@/features/storefront/StorefrontCheckoutPage'),          'StorefrontCheckoutPage'));
 const StorefrontProductPage  = lazy(() => named(import('@/features/storefront/StorefrontProductPage'),           'StorefrontProductPage'));
 const StorefrontLoginPage  = lazy(() => named(import('@/features/storefront/StorefrontLoginPage'),               'StorefrontLoginPage'));
+const StorefrontRegisterPage = lazy(() => named(import('@/features/storefront/StorefrontRegisterPage'),          'StorefrontRegisterPage'));
+const StorefrontVerifyOtpPage = lazy(() => named(import('@/features/storefront/StorefrontVerifyOtpPage'),        'StorefrontVerifyOtpPage'));
+const StorefrontAccountPage = lazy(() => named(import('@/features/storefront/StorefrontAccountPage'),            'StorefrontAccountPage'));
 const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/EducationMarketplace'),            'EducationMarketplace'));
 const MaintenancePage      = lazy(() => named(import('@/features/buyer/pages/MaintenancePage'),                 'MaintenancePage'));
 
@@ -108,6 +111,7 @@ const PosLanding           = lazy(() => named(import('@/features/seller/store/po
 
 // ── Store Workspace ───────────────────────────────────────────────────────────
 const StoreDashboard     = lazy(() => import('@/features/seller/store/Dashboard/StoreDashboard'));
+const StoreNotFound      = lazy(() => import('@/features/seller/store/Dashboard/StoreNotFound'));
 const StoreProductList   = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreProductList'));
 const StoreAddProduct    = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreAddProduct'));
 const StoreEditProduct   = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreEditProduct'));
@@ -185,6 +189,9 @@ const storefrontRouter = createBrowserRouter([
           { path: 'cart', element: <StorefrontCartPage /> },
           { path: 'checkout', element: <StorefrontCheckoutPage /> },
           { path: 'login', element: <StorefrontLoginPage /> },
+          { path: 'register', element: <StorefrontRegisterPage /> },
+          { path: 'verify-otp', element: <StorefrontVerifyOtpPage /> },
+          { path: 'account', element: <StorefrontAccountPage /> },
           // Must come before the `:pageSlug` catch-all below — 'category'/
           // 'collections'/'checkout' are reserved custom-page slugs precisely
           // so they can never collide with these (see RESERVED_CUSTOM_PAGE_SLUGS).
@@ -360,6 +367,7 @@ const mainRouter = createBrowserRouter([
           { path: 'pos-admin',                        element: <Navigate to="../pos" replace /> },
           { path: 'shipping',                         element: <SellerShipping /> },
           { path: 'messages',                         element: <SellerMessages /> },
+          { path: '*',                                element: <StoreNotFound /> },
         ],
       },
 

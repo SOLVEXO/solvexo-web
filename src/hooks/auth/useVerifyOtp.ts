@@ -15,8 +15,11 @@ export function useVerifyOtp() {
     setError('');
     setLoading(true);
     try {
-      const res = await apiVerifyOtp({ email: ctx.email, role: ctx.role, otp });
-      TokenStorage.save(res.data.token.accessToken, res.data.token.refreshToken);
+      const res = await apiVerifyOtp({ email: ctx.email, role: ctx.role, otp, storeId: ctx.storeId });
+      // A store-scoped account's session must never leak onto another
+      // store's subdomain or the apex — see authCookie.ts's AuthCookieScope.
+      const cookieScope = ctx.storeId ? 'host' : 'shared';
+      TokenStorage.save(res.data.token.accessToken, res.data.token.refreshToken, cookieScope);
       const role = ctx.role as AppRole;
       // The verify-otp response's `user` has no `role` field at all (backend
       // only returns id/name/email/phone/address here) — saving it as-is
@@ -26,7 +29,7 @@ export function useVerifyOtp() {
       // right after they just verified. Stamping the role we already know
       // client-side (the one they registered with) onto the saved user
       // object is what makes the rest of the app's guards work at all.
-      TokenStorage.saveUser({ ...res.data.user, role });
+      TokenStorage.saveUser({ ...res.data.user, role }, cookieScope);
       LastRolePreference.set(role);
       RememberedAccount.set({ name: res.data.user.name, email: res.data.user.email, role, image: null, authMethod: 'password' });
       AuthContext.clear();

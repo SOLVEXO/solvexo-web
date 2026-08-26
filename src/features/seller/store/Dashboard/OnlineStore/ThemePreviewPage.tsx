@@ -56,7 +56,7 @@ export function ThemePreviewPage() {
       await Promise.all([
         apiUpdateStoreThemeColors(storeId, { ...theme.colors, baseThemeId: theme.id }),
         apiUpdateStoreHeader(storeId, { headerStyle: theme.headerStyle }),
-        apiUpdateStoreFooter(storeId, realTheme?.footer.blocks ?? [], theme.footerStyle),
+        apiUpdateStoreFooter(storeId, realTheme?.footer?.blocks ?? [], theme.footerStyle),
       ]);
       setConfirming(false);
       setApplied(true);

@@ -506,8 +506,16 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
            hamburger that used to open a copy of the desktop sidebar. */}
         {!isDashboard && (
           <button
-            onClick={() => navigate(dashboardPath)}
-            aria-label="Back to Store Dashboard"
+            onClick={() => {
+              // Prefer real browser back (returns to wherever the seller
+              // actually came from — the Settings hub, a list page, etc.)
+              // over always landing on Dashboard, which used to make
+              // browsing multiple sub-pages back-to-back re-open Dashboard
+              // every time instead of the page just visited.
+              if (window.history.state?.idx > 0) navigate(-1);
+              else navigate(dashboardPath);
+            }}
+            aria-label="Go back"
             className="lg:hidden size-8 -ml-1 rounded-md flex items-center justify-center text-charcoal hover:bg-cream transition-colors cursor-pointer shrink-0"
           >
             <ChevronLeft size={19} />

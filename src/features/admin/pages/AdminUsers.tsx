@@ -124,6 +124,17 @@ export function AdminUsers() {
     },
     { key: 'email', header: 'Email', render: (u) => <span className="text-[13px] text-graphite">{u.email}</span> },
     { key: 'role', header: 'Role', render: (u) => <Badge color={ROLE_COLOR[u.role]} size="sm">{ROLE_LABEL[u.role]}</Badge> },
+    {
+      key: 'stores',
+      header: 'Store(s)',
+      // Buyers have no store field of their own — this is derived from their
+      // real order history (which store(s) they've actually bought from),
+      // not a platform-wide "Solvexo customer" label. Sellers own their
+      // store(s) directly, already reachable via that store's own workspace.
+      render: (u) => u.role === 'buyer'
+        ? (u.stores?.length ? <span className="text-[12.5px] text-graphite">{u.stores.join(', ')}</span> : <span className="text-[12.5px] text-slate">No orders yet</span>)
+        : <span className="text-[12.5px] text-slate">—</span>,
+    },
     { key: 'plan', header: 'Plan', render: (u) => <span className="text-[13px] text-graphite capitalize">{u.plan}</span> },
     { key: 'status', header: 'Status', render: (u) => <StatusBadge status={u.status} size="sm" /> },
     { key: 'createdAt', header: 'Joined', render: (u) => <span className="text-[13px] text-slate whitespace-nowrap">{formatDate(u.createdAt)}</span> },

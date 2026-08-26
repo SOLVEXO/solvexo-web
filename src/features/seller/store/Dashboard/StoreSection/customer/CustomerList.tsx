@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Users, ShoppingBag, DollarSign } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Users, ShoppingBag, DollarSign, Package } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { apiGetStoreCustomers, apiUpdateStoreCustomer, apiUpdateStoreCustomerMeta, type StoreCustomer, type StoreCustomerSegment } from '@/api/services/store';
+import { apiGetSellerOrders, type SellerOrder } from '@/api/services/product';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { Table, type TableColumn } from '@/components/comman/ui/Table';
-import { Badge } from '@/components/comman/ui/Badge';
+import { Badge, StatusBadge } from '@/components/comman/ui/Badge';
 import { SearchInput } from '@/components/comman/ui/SearchInput';
-import { formatMoneyCompact } from '@/utils/currency';
+import { formatMoneyCompact, currencySymbol, fmt2 } from '@/utils/currency';
 import { FollowersTab } from './tabs/FollowersTab';
 
 const TABS: Tab[] = [
@@ -35,6 +37,7 @@ const SEGMENT_META: Record<StoreCustomerSegment, { label: string; color: 'green'
 
 export default function StoreCustomerList() {
   usePageTitle('Customers');
+  const navigate = useNavigate();
   const { storeId, store } = useStoreWorkspace();
 
   const [activeTab, setActiveTab] = useState('customers');
@@ -56,6 +59,10 @@ export default function StoreCustomerList() {
   const [tagInput, setTagInput] = useState('');
   const [savingMeta, setSavingMeta] = useState(false);
 
+  const [customerOrders, setCustomerOrders] = useState<SellerOrder[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState('');
+
   useEffect(() => {
     if (!storeId || activeTab !== 'customers') return;
     setLoading(true);
@@ -68,6 +75,19 @@ export default function StoreCustomerList() {
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load customers.'))
       .finally(() => setLoading(false));
   }, [storeId, page, activeTab]);
+
+  // The customer detail panel's own order-history list — reuses the same
+  // seller-orders endpoint the Orders page uses, just scoped to this one
+  // buyer via `userId`, instead of a separate customer-order endpoint.
+  useEffect(() => {
+    if (!sel || !storeId) { setCustomerOrders([]); return; }
+    setOrdersLoading(true);
+    setOrdersError('');
+    apiGetSellerOrders(storeId, 1, 10, sel._id)
+      .then(res => setCustomerOrders(res.data.orders ?? []))
+      .catch(err => setOrdersError(err instanceof Error ? err.message : 'Failed to load orders.'))
+      .finally(() => setOrdersLoading(false));
+  }, [sel, storeId]);
 
   function select(c: StoreCustomer) {
     setSel(c);
@@ -250,6 +270,42 @@ export default function StoreCustomerList() {
                 <button onClick={saveEdit} disabled={saving} className="w-full py-2 bg-brand-orange border-none rounded-lg text-xs font-semibold text-white cursor-pointer disabled:opacity-50">
                   {saving ? 'Saving…' : 'Save Changes'}
                 </button>
+
+                <div className="mt-4 pt-4 border-t border-[#f0eee6]">
+                  <label className="text-xs font-medium text-graphite mb-[7px] block">Order History</label>
+                  {ordersLoading ? (
+                    <div className="flex flex-col gap-1.5">
+                      {[0, 1, 2].map(i => <div key={i} className="h-9 rounded-lg bg-cream animate-pulse" />)}
+                    </div>
+                  ) : ordersError ? (
+                    <p className="text-[11px] text-error">{ordersError}</p>
+                  ) : customerOrders.length === 0 ? (
+                    <p className="text-[11.5px] text-slate">No orders yet.</p>
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      {customerOrders.map(o => (
+                        <button
+                          key={o.orderId}
+                          onClick={() => navigate(`/store/${storeId}/orders/detail/${o.orderId}`)}
+                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-cream hover:bg-bone border-0 cursor-pointer text-left transition-colors"
+                        >
+                          <Package size={13} className="text-slate shrink-0" />
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-[12px] font-semibold text-charcoal truncate">{o.orderNumber}</span>
+                            <span className="block text-[10.5px] text-slate">{fmtDate(o.date)}</span>
+                          </span>
+                          <span className="shrink-0 text-right">
+                            <span className="block text-[12px] font-bold text-charcoal">{currencySymbol(o.currency)}{fmt2(o.amount)}</span>
+                            <StatusBadge status={o.status} size="sm" />
+                          </span>
+                        </button>
+                      ))}
+                      {sel.orderCount > customerOrders.length && (
+                        <p className="text-[10.5px] text-slate text-center mt-1">+{sel.orderCount - customerOrders.length} more order{sel.orderCount - customerOrders.length === 1 ? '' : 's'}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 <div className="mt-4 pt-4 border-t border-[#f0eee6] flex flex-col gap-3">
                   <div>

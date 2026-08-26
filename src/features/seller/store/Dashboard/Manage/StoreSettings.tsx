@@ -6,6 +6,7 @@ import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/service
 import { apiGetStripeConnectStatus, apiCreateStripeConnectOnboardingLink, apiSyncStripeConnectStatus, type StripeConnectStatus } from '@/api/services/stripeConnect';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { useMyStores } from '@/hooks/store/useMyStores';
+import { currencySymbol } from '@/utils/currency';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
@@ -28,11 +29,35 @@ const STORE_SETTINGS_NAV: { id: string; label: string; Icon: typeof Store }[] = 
 // same useMyStores() list the "My Stores" page already uses — never
 // fabricated numbers.
 function MobileStoreHero({
-  name, slug, logo, status, productCount, totalSalesUSD, aiCredits, loading,
+  name, slug, logo, status, productCount, totalSales, currency, aiCredits, loading,
 }: {
   name?: string; slug?: string; logo?: string | null; status?: string;
-  productCount: number | null; totalSalesUSD: number | null; aiCredits: number; loading: boolean;
+  productCount: number | null; totalSales: number | null; currency?: string; aiCredits: number; loading: boolean;
 }) {
+  // While the real store identity hasn't loaded yet, don't render a fallback
+  // name/status ("Your Store" / "Pending") that reads as real data — a
+  // brand-agnostic skeleton avoids momentarily telling the merchant their
+  // store is "Pending" when it may not be.
+  if (loading) {
+    return (
+      <div className="lg:hidden -mx-4 -mt-3">
+        <div className="relative overflow-hidden bg-gradient-to-br from-brand-orange via-[#d98a6f] to-[#f0b8a0] px-6 pt-8 pb-12 flex flex-col items-center text-center">
+          <div className="relative size-24 rounded-full bg-white/15 ring-4 ring-white/40 animate-pulse" />
+          <div className="relative w-32 h-4 rounded bg-white/25 animate-pulse mt-4" />
+          <div className="relative w-20 h-5 rounded-full bg-white/20 animate-pulse mt-3" />
+        </div>
+        <div className="relative -mt-6 mx-4 rounded-t-[24px] bg-white px-2 pt-5 pb-4 flex items-center">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-[2px]">
+              <div className="w-10 h-5 rounded bg-bone animate-pulse" />
+              <div className="w-14 h-3 rounded bg-bone animate-pulse mt-1" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="lg:hidden -mx-4 -mt-3">
       <div className="relative overflow-hidden bg-gradient-to-br from-brand-orange via-[#d98a6f] to-[#f0b8a0] px-6 pt-8 pb-12 flex flex-col items-center text-center">
@@ -60,13 +85,13 @@ function MobileStoreHero({
 
       <div className="relative -mt-6 mx-4 rounded-t-[24px] bg-white px-2 pt-5 pb-4 flex items-center">
         <div className="flex-1 flex flex-col items-center gap-[2px]">
-          <span className="text-[19px] font-bold text-brand-orange leading-none">{loading || productCount == null ? '—' : productCount}</span>
+          <span className="text-[19px] font-bold text-brand-orange leading-none">{productCount == null ? '—' : productCount}</span>
           <span className="text-[11px] text-slate">Products</span>
         </div>
         <div className="w-px h-9 bg-bone" />
         <div className="flex-1 flex flex-col items-center gap-[2px]">
           <span className="text-[19px] font-bold text-brand-orange leading-none">
-            {loading || totalSalesUSD == null ? '—' : `$${totalSalesUSD.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+            {totalSales == null ? '—' : `${currencySymbol(currency)}${totalSales.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
           </span>
           <span className="text-[11px] text-slate">Revenue</span>
         </div>
@@ -540,7 +565,8 @@ export default function StoreSettings() {
             logo={store?.logo}
             status={store?.status}
             productCount={thisStoreListItem?.productCount ?? null}
-            totalSalesUSD={thisStoreListItem?.totalSalesUSD ?? null}
+            totalSales={thisStoreListItem?.totalSalesUSD ?? null}
+            currency={store?.baseCurrency}
             aiCredits={store?.aiCredits ?? 0}
             loading={loading}
           />

@@ -71,7 +71,7 @@ export function ForSellersPage() {
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <div
-        className="px-4 md:px-8 lg:px-12 pt-12 md:pt-20 pb-10 md:pb-16 relative overflow-hidden"
+        className="px-4 md:px-8 lg:px-12 pt-24 md:pt-28 pb-10 md:pb-16 relative overflow-hidden"
         style={{ background: 'linear-gradient(135deg, #141413 0%, #2C2A28 100%)' }}
       >
         <div className="absolute rounded-full w-[400px] h-[400px] bg-brand-orange opacity-[0.08] -top-[80px] -right-[80px]" />

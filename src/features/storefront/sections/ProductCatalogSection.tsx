@@ -13,7 +13,7 @@ import {
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
-import { currencySymbol } from '@/utils/currency';
+import { currencySymbol, fmt2 } from '@/utils/currency';
 import { useStorefront } from '../StorefrontContext';
 import { ProductCardShell, ProductCardImage } from '../ProductCard';
 
@@ -194,12 +194,12 @@ export function ProductCatalogSection({ settings }: { settings: ProductCatalogSe
                         <span className="font-bold text-[12px] sm:text-[15px]" style={{ color: p.subscriberPrice != null ? cfg.primaryColor : cfg.textColor }}>
                           {(() => {
                             const shown = p.subscriberPrice ?? p.defaultVariantPrice;
-                            return shown != null ? `${displaySymbol}${convert(shown, store.baseCurrency).toLocaleString()}` : '—';
+                            return shown != null ? `${displaySymbol}${fmt2(convert(shown, store.baseCurrency))}` : '—';
                           })()}
                         </span>
                         {p.subscriberPrice != null && p.defaultVariantPrice != null && (
                           <span className="text-[10px] sm:text-[11px] line-through opacity-60" style={{ color: cfg.textColor }}>
-                            {displaySymbol}{convert(p.defaultVariantPrice, store.baseCurrency).toLocaleString()}
+                            {displaySymbol}{fmt2(convert(p.defaultVariantPrice, store.baseCurrency))}
                           </span>
                         )}
                       </span>

@@ -18,7 +18,7 @@ export interface AdminFinanceParams {
   [key: string]: unknown;
 }
 
-export type TransactionType = 'sale' | 'payout' | 'fee' | 'refund' | 'adjustment';
+export type TransactionType = 'sale' | 'payout' | 'fee' | 'refund' | 'adjustment' | 'platform_subsidy';
 export type TransactionStatus = 'completed' | 'pending' | 'failed';
 export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed';
 

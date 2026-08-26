@@ -45,7 +45,7 @@ export interface FinanceDashboard {
   };
 }
 
-export type TransactionType   = 'sale' | 'payout' | 'fee' | 'refund' | 'adjustment';
+export type TransactionType   = 'sale' | 'payout' | 'fee' | 'refund' | 'adjustment' | 'platform_subsidy';
 export type TransactionStatus = 'completed' | 'pending' | 'failed';
 
 export interface Transaction {

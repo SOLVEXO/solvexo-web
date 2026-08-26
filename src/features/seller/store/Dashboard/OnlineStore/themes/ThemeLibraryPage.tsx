@@ -223,10 +223,10 @@ export function ThemeLibraryPage() {
                     <div className="flex items-center gap-2 px-1">
                       {isActive ? (
                         <>
-                          <Link to="../customize" className="flex-1 flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline">
+                          <Link to={`/store/${storeId}/online-store/customize`} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline">
                             <Settings2 size={13} /> Customize
                           </Link>
-                          <Link to="../code" className="flex-1 flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline">
+                          <Link to={`/store/${storeId}/online-store/code`} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline">
                             <Code2 size={13} /> Edit Code
                           </Link>
                         </>
@@ -263,6 +263,7 @@ export function ThemeLibraryPage() {
                     active={false}
                     onApply={() => handleInstall(def)}
                     onPreview={() => window.open(`/store/${storeId}/theme-preview/${def.id}`, '_blank')}
+                    actionLabel="Install"
                   />
                   <button
                     type="button"

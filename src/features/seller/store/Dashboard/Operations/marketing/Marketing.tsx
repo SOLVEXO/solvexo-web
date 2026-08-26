@@ -405,7 +405,11 @@ export function StoreMarketing() {
     if (!storeId || tab !== 'featured') return;
     setPinnedIds(store?.pinnedProductIds ?? []);
     setInventoryLoading(true);
-    apiGetStoreInventory(storeId, 1, 100)
+    // Pinned products are resolved to name/thumbnail by matching against this
+    // list client-side (no batch product-by-ids endpoint exists yet) — fetch
+    // a large page so a pinned product elsewhere in a large catalog still
+    // resolves instead of falling back to its raw id.
+    apiGetStoreInventory(storeId, 1, 500)
       .then(res => setInventory(res.data.products ?? []))
       .catch(() => {})
       .finally(() => setInventoryLoading(false));
@@ -1053,20 +1057,27 @@ export function StoreMarketing() {
             {pinnedIds.length > 0 && (
               <div className="bg-white border border-bone rounded-[10px] px-[18px] py-4">
                 <p className="text-[11px] font-semibold text-slate uppercase tracking-[0.06em] mb-2">Pinned Order</p>
-                <div className="flex flex-col gap-1.5">
-                  {pinnedIds.map((id, i) => {
-                    const product = inventory.find(p => p.productId === id);
-                    return (
-                      <div key={id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-cream">
-                        <span className="text-[11px] text-slate w-4">{i + 1}</span>
-                        <span className="text-[13px] text-charcoal flex-1 truncate">{product?.name ?? id}</span>
-                        <button onClick={() => movePinned(i, -1)} disabled={i === 0} className="p-1 rounded-md border-0 bg-transparent cursor-pointer disabled:opacity-30 hover:bg-bone"><ArrowUp size={13} /></button>
-                        <button onClick={() => movePinned(i, 1)} disabled={i === pinnedIds.length - 1} className="p-1 rounded-md border-0 bg-transparent cursor-pointer disabled:opacity-30 hover:bg-bone"><ArrowDown size={13} /></button>
-                        <button onClick={() => togglePin(id)} className="p-1 rounded-md border-0 bg-transparent cursor-pointer hover:bg-bone text-error"><Trash2 size={13} /></button>
-                      </div>
-                    );
-                  })}
-                </div>
+                {inventoryLoading ? (
+                  <div className="flex flex-col gap-1.5">
+                    {pinnedIds.map(id => <div key={id} className="h-8 rounded-lg bg-cream animate-pulse" />)}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {pinnedIds.map((id, i) => {
+                      const product = inventory.find(p => p.productId === id);
+                      return (
+                        <div key={id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-cream">
+                          <span className="text-[11px] text-slate w-4">{i + 1}</span>
+                          {product?.image && <img src={product.image} alt="" className="w-6 h-6 rounded object-cover shrink-0" />}
+                          <span className="text-[13px] text-charcoal flex-1 truncate">{product?.name ?? 'Unknown product'}</span>
+                          <button onClick={() => movePinned(i, -1)} disabled={i === 0} className="p-1 rounded-md border-0 bg-transparent cursor-pointer disabled:opacity-30 hover:bg-bone"><ArrowUp size={13} /></button>
+                          <button onClick={() => movePinned(i, 1)} disabled={i === pinnedIds.length - 1} className="p-1 rounded-md border-0 bg-transparent cursor-pointer disabled:opacity-30 hover:bg-bone"><ArrowDown size={13} /></button>
+                          <button onClick={() => togglePin(id)} className="p-1 rounded-md border-0 bg-transparent cursor-pointer hover:bg-bone text-error"><Trash2 size={13} /></button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1175,9 +1186,10 @@ export function StoreMarketing() {
                         {coupon.code}
                       </div>
                       {(() => {
-                        const isScheduled = coupon.isActive && !!coupon.startsAt && new Date(coupon.startsAt) > new Date();
-                        const label = isScheduled ? 'Scheduled' : coupon.isActive ? 'Active' : 'Paused';
-                        const colors = isScheduled ? { bg: '#FBECE4', fg: '#B95A3A' } : coupon.isActive ? { bg: '#E3F4EA', fg: '#1E7A3C' } : { bg: '#F0EEE6', fg: '#5A5852' };
+                        const isExpired = !!coupon.expiresAt && new Date(coupon.expiresAt) < new Date();
+                        const isScheduled = !isExpired && coupon.isActive && !!coupon.startsAt && new Date(coupon.startsAt) > new Date();
+                        const label = isExpired ? 'Expired' : isScheduled ? 'Scheduled' : coupon.isActive ? 'Active' : 'Paused';
+                        const colors = isExpired ? { bg: '#F0EEE6', fg: '#8C8A82' } : isScheduled ? { bg: '#FBECE4', fg: '#B95A3A' } : coupon.isActive ? { bg: '#E3F4EA', fg: '#1E7A3C' } : { bg: '#F0EEE6', fg: '#5A5852' };
                         return (
                           <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: colors.bg, color: colors.fg }}>
                             {label}

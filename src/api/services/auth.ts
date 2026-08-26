@@ -1,6 +1,7 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
-import { setAuthCookie, getAuthCookie, deleteAuthCookie } from '@/utils/authCookie';
+import { setAuthCookie, getAuthCookie, deleteAuthCookie, type AuthCookieScope } from '@/utils/authCookie';
+import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TOKEN STORAGE — cookie-backed (domain-wide: `.solvexo.store`/`localhost`),
@@ -13,9 +14,18 @@ import { setAuthCookie, getAuthCookie, deleteAuthCookie } from '@/utils/authCook
 // working synchronously with zero changes. See `utils/authCookie.ts`.
 // ─────────────────────────────────────────────────────────────────────────────
 export const TokenStorage = {
-  save(accessToken: string, refreshToken: string) {
-    setAuthCookie('accessToken',  accessToken);
-    setAuthCookie('refreshToken', refreshToken);
+  // `scope: 'host'` — used only by a per-store buyer session (storefront
+  // register/login) — see `authCookie.ts`'s `AuthCookieScope`. Always clears
+  // any pre-existing SHARED cookie of the same name first, so a buyer who
+  // previously held an apex-wide (or another store's) session doesn't end
+  // up with two ambiguous same-named cookies visible on this one origin.
+  save(accessToken: string, refreshToken: string, scope: AuthCookieScope = 'shared') {
+    if (scope === 'host') {
+      deleteAuthCookie('accessToken', 'shared');
+      deleteAuthCookie('refreshToken', 'shared');
+    }
+    setAuthCookie('accessToken',  accessToken, scope);
+    setAuthCookie('refreshToken', refreshToken, scope);
     // Every real login path (LoginPage, AuthGateModal, social login, OTP
     // verify) funnels through this one function — firing here, rather than
     // duplicating a "just logged in" signal at each call site, is what lets
@@ -23,13 +33,21 @@ export const TokenStorage = {
     // any of them succeeds.
     window.dispatchEvent(new Event('solvexo:auth-login'));
   },
-  saveUser(user: object) {
-    setAuthCookie('user', JSON.stringify(user));
+  saveUser(user: object, scope: AuthCookieScope = 'shared') {
+    if (scope === 'host') deleteAuthCookie('user', 'shared');
+    setAuthCookie('user', JSON.stringify(user), scope);
   },
+  // Always clears BOTH cookie scopes, regardless of which one the active
+  // session actually used to log in — deleting a scope that was never set
+  // is a harmless no-op, and this way every existing caller (unaware of
+  // 'host'-scoped per-store sessions) still logs out completely with zero
+  // changes needed at the call site.
   clear() {
-    deleteAuthCookie('accessToken');
-    deleteAuthCookie('refreshToken');
-    deleteAuthCookie('user');
+    (['shared', 'host'] as const).forEach(scope => {
+      deleteAuthCookie('accessToken', scope);
+      deleteAuthCookie('refreshToken', scope);
+      deleteAuthCookie('user', scope);
+    });
     sessionStorage.removeItem('authCtx');
   },
   getToken()     { return getAuthCookie('accessToken'); },
@@ -54,7 +72,12 @@ export function getRoleRedirect(role: AppRole): string {
     // it depends on which store, if any, the seller owns) — this is just the
     // last-resort fallback if one ever doesn't.
     case 'seller': return '/seller/stores';
-    default:       return '/marketplace';       // "user" / buyer
+    default:
+      // A buyer on a store's own subdomain/custom domain belongs on that
+      // store's own account page — `/marketplace` doesn't even exist in the
+      // storefront route tree (see `router/index.tsx`'s `storefrontRouter`).
+      if (getStoreSlugFromHost() || isCustomDomainCandidate()) return '/account';
+      return '/marketplace';       // "user" / buyer, apex domain
   }
 }
 
@@ -125,6 +148,10 @@ export interface AuthCtx {
   role:    AppRole;
   userId?: string;
   flow?:   'register' | 'forgot';
+  /** Carried from register through to verify-otp so the OTP check resolves
+   *  against the SAME store-scoped account that was just created — see
+   *  User.storeId. Omitted = the legacy apex-wide account. */
+  storeId?: string;
   /** Set once the forgot-password OTP step passes its own client-side format
    *  check, so NewPasswordPage can submit it together with the new password
    *  without asking the user to re-type it — the backend's reset-password
@@ -160,6 +187,9 @@ export interface RegisterPayload {
   phone:    string;
   address:  string;
   role:     AppRole;
+  /** Set only when registering through a specific store's own storefront —
+   *  see User.storeId. Omitted = the legacy apex-wide buyer account. */
+  storeId?: string;
 }
 interface RegisterData { userId: string; otp?: string }
 
@@ -167,19 +197,21 @@ export interface LoginPayload {
   email:    string;
   password: string;
   role:     AppRole;
+  /** Must match the storeId the account was actually registered under. */
+  storeId?: string;
 }
 interface LoginUser   { id: string; name: string; email: string; role: AppRole; image: string | null }
 interface AuthTokens  { accessToken: string; refreshToken: string }
 interface LoginData   { user: LoginUser; token: AuthTokens }
 
-export interface VerifyOtpPayload { email: string; role: AppRole; otp: string }
+export interface VerifyOtpPayload { email: string; role: AppRole; otp: string; storeId?: string }
 interface VerifyOtpUser { id: string; name: string; email: string; phone: string; address: string }
 interface VerifyOtpData { user: VerifyOtpUser; token: AuthTokens }
 
-export interface ForgotPayload  { email: string; role: AppRole }
+export interface ForgotPayload  { email: string; role: AppRole; storeId?: string }
 interface ForgotData            { userId: string; otp?: string }
 
-export interface ResetPayload   { email: string; role: AppRole; otp: string; newPassword: string }
+export interface ResetPayload   { email: string; role: AppRole; otp: string; newPassword: string; storeId?: string }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTH API FUNCTIONS  (all use Axios client → base URL from .env)
@@ -252,7 +284,7 @@ export function apiEditProfile(payload: EditProfilePayload) {
 }
 
 /** POST /auth/resend-otp — resends OTP to email during signup/forgot-password flow */
-export interface ResendOtpPayload { email: string; role: AppRole }
+export interface ResendOtpPayload { email: string; role: AppRole; storeId?: string }
 interface ResendOtpData { userId: string; otp?: string }
 
 export function apiResendOtp(payload: ResendOtpPayload) {
@@ -271,6 +303,9 @@ export interface SocialLoginPayload {
   token?:       string;
   /** Which collection this should resolve against — defaults to 'user' on the backend if omitted. */
   role?:        AppRole;
+  /** Same store-scoping as RegisterPayload/LoginPayload.storeId — backend-
+   *  contract-complete; no storefront social-login UI exists yet to send it. */
+  storeId?:     string;
 }
 
 export function apiSocialLogin(payload: SocialLoginPayload) {

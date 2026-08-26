@@ -28,6 +28,10 @@ export interface AccountRow {
   plan: string;
   status: string;
   createdAt: string;
+  /** Buyer rows only — names of the store(s) this account has actually
+   *  ordered from (derived from real Orders, since a buyer has no store
+   *  field of its own — it's one global identity, not owned by any store). */
+  stores?: string[];
 }
 
 export interface AdminUsersListData {

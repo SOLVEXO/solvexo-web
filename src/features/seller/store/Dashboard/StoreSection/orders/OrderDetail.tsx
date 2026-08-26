@@ -14,6 +14,9 @@ import {
   SkeletonBox, StatusBadge, Button, Modal, Field, Input,
 } from '@/components/comman/ui';
 import { currencySymbol } from '@/utils/currency';
+import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
+
+type OrderAction = 'paid' | 'processing' | 'shipping' | 'completed' | null;
 
 function formatDate(iso: string | null) {
   if (!iso) return '—';
@@ -50,11 +53,13 @@ export function StoreOrderDetail() {
   const [detail,  setDetail]  = useState<SellerOrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
-  const [busy,    setBusy]    = useState(false);
+  const [busyAction, setBusyAction] = useState<OrderAction>(null);
+  const busy = busyAction !== null;
 
   const [showShipModal, setShowShipModal] = useState(false);
   const [trackingForm, setTrackingForm] = useState({ carrier: '', trackingNumber: '', trackingUrl: '' });
   const [trackingErrors, setTrackingErrors] = useState<{ carrier?: string; trackingNumber?: string }>({});
+  const [confirmComplete, setConfirmComplete] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -67,22 +72,32 @@ export function StoreOrderDetail() {
 
   useEffect(() => { if (storeId && orderId) load(); }, [storeId, orderId]);
 
-  const changeStatus = (status: 'processing' | 'completed' | 'cancelled') => {
+  const changeStatus = (status: 'processing' | 'completed' | 'cancelled', action: OrderAction) => {
     if (busy) return;
-    setBusy(true);
+    setBusyAction(action);
     apiUpdateOrderStatus({ orderId, storeId, status })
       .then(load)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to update status.'))
-      .finally(() => setBusy(false));
+      .finally(() => setBusyAction(null));
   };
 
   const handleMarkPaid = () => {
     if (busy) return;
-    setBusy(true);
+    setBusyAction('paid');
     apiMarkOrderPaid(orderId)
       .then(load)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to mark as paid.'))
-      .finally(() => setBusy(false));
+      .finally(() => setBusyAction(null));
+  };
+
+  const handleMarkCompleted = () => {
+    const so = detail!.sellerOrder;
+    // A completion that skips payment collection or shipment is unusual, not
+    // impossible (e.g. a merchant honoring a manual/offline settlement) — so
+    // it's confirmed rather than blocked outright.
+    const needsConfirm = !detail!.isPaid || (so.fulfillmentType !== 'digital' && so.status !== 'shipped' && !so.deliveredAt);
+    if (needsConfirm) { setConfirmComplete(true); return; }
+    changeStatus('completed', 'completed');
   };
 
   const handleSubmitTracking = () => {
@@ -93,14 +108,14 @@ export function StoreOrderDetail() {
     if (!trackingNumber) errors.trackingNumber = 'Tracking number is required.';
     if (Object.keys(errors).length) { setTrackingErrors(errors); return; }
 
-    setBusy(true);
+    setBusyAction('shipping');
     apiUpdateOrderStatus({
       orderId, storeId, status: 'shipped',
       tracking: { carrier, trackingNumber, trackingUrl: trackingForm.trackingUrl.trim() },
     })
       .then(() => { setShowShipModal(false); load(); })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to mark order as shipped.'))
-      .finally(() => setBusy(false));
+      .finally(() => setBusyAction(null));
   };
 
   if (loading) {
@@ -236,22 +251,22 @@ export function StoreOrderDetail() {
             <Card title="Actions">
               <div className="flex flex-col gap-2">
                 {!detail.isPaid && (
-                  <Button size="sm" variant="outline" onClick={handleMarkPaid} loading={busy}>
+                  <Button size="sm" variant="outline" onClick={handleMarkPaid} loading={busyAction === 'paid'} disabled={busy && busyAction !== 'paid'}>
                     <CheckCheck size={13} /> Mark as Paid
                   </Button>
                 )}
                 {canProcess && (
-                  <Button size="sm" variant="outline" onClick={() => changeStatus('processing')} loading={busy}>
+                  <Button size="sm" variant="outline" onClick={() => changeStatus('processing', 'processing')} loading={busyAction === 'processing'} disabled={busy && busyAction !== 'processing'}>
                     <RefreshCw size={13} /> Mark Processing
                   </Button>
                 )}
                 {canShip && (
-                  <Button size="sm" variant="outline" onClick={() => { setTrackingForm({ carrier: '', trackingNumber: '', trackingUrl: '' }); setTrackingErrors({}); setShowShipModal(true); }}>
+                  <Button size="sm" variant="outline" disabled={busy} onClick={() => { setTrackingForm({ carrier: '', trackingNumber: '', trackingUrl: '' }); setTrackingErrors({}); setShowShipModal(true); }}>
                     <Truck size={13} /> Mark Shipped
                   </Button>
                 )}
                 {canComplete && (
-                  <Button size="sm" onClick={() => changeStatus('completed')} loading={busy}>
+                  <Button size="sm" onClick={handleMarkCompleted} loading={busyAction === 'completed'} disabled={busy && busyAction !== 'completed'}>
                     <CheckCheck size={13} /> Mark Completed
                   </Button>
                 )}
@@ -271,7 +286,7 @@ export function StoreOrderDetail() {
           footer={
             <>
               <Button variant="outline" size="sm" onClick={() => setShowShipModal(false)} disabled={busy}>Cancel</Button>
-              <Button size="sm" onClick={handleSubmitTracking} loading={busy}>Mark Shipped</Button>
+              <Button size="sm" onClick={handleSubmitTracking} loading={busyAction === 'shipping'}>Mark Shipped</Button>
             </>
           }
         >
@@ -286,6 +301,17 @@ export function StoreOrderDetail() {
             <Input type="url" placeholder="https://…" value={trackingForm.trackingUrl} onChange={e => setTrackingForm(f => ({ ...f, trackingUrl: e.target.value }))} disabled={busy} />
           </Field>
         </Modal>
+      )}
+
+      {confirmComplete && (
+        <ConfirmDialog
+          title="Complete this order?"
+          message={`${!detail.isPaid ? 'This order has not been marked as paid yet. ' : ''}${so.fulfillmentType !== 'digital' && so.status !== 'shipped' && !so.deliveredAt ? 'It has not been marked as shipped yet. ' : ''}Completing it now will close the order out of its normal workflow. This cannot be undone.`}
+          confirmLabel="Complete Order"
+          loading={busyAction === 'completed'}
+          onConfirm={() => { setConfirmComplete(false); changeStatus('completed', 'completed'); }}
+          onCancel={() => setConfirmComplete(false)}
+        />
       )}
     </>
   );

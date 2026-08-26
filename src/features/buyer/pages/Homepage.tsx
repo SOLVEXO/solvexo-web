@@ -58,7 +58,12 @@ function HeroActivityTicker() {
   }, [reduceMotion]);
   const signal = HERO_SIGNALS[index];
   return (
-    <div className="hidden lg:block absolute top-8 right-8 lg:right-14 text-right z-[2]">
+    // Aligned to the eyebrow line's own top offset (`pt-24` on the hero
+    // text block below), not an arbitrary top-8 — now that the navbar is
+    // `fixed` and the hero reaches all the way to y:0, top-8 used to sit
+    // right underneath/behind the header instead of level with real hero
+    // content.
+    <div className="hidden lg:block absolute top-24 right-8 lg:right-14 text-right z-[2]">
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
@@ -219,11 +224,8 @@ export function Homepage() {
   const heroSectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress: heroScroll } = useScroll({ target: heroSectionRef, offset: ['start start', 'end start'] });
   const heroTextFade = useTransform(heroScroll, [0, 0.85], [1, 0]);
-  // Editorial hero — each headline line drifts a few px in an alternating
-  // direction as the page scrolls, and the scroll indicator fades out
-  // almost immediately once the visitor actually starts scrolling.
-  const heroLine1X = useTransform(heroScroll, [0, 1], [0, 26]);
-  const heroLine2X = useTransform(heroScroll, [0, 1], [0, -26]);
+  // Scroll indicator fades out almost immediately once the visitor
+  // actually starts scrolling.
   const heroScrollHintOpacity = useTransform(heroScroll, [0, 0.12], [1, 0]);
   // Subtle cursor-driven 3D tilt on the headline itself — desktop-only, a
   // few degrees at most — so the huge type feels alive/responsive instead
@@ -336,42 +338,27 @@ export function Homepage() {
 
             <motion.div style={reduceMotion ? undefined : { rotateX: heroTiltRotateX, rotateY: heroTiltRotateY, transformPerspective: 1000 }}>
               <h1 className="font-sans font-extrabold text-white leading-[0.94] tracking-[-0.03em] pb-[0.05em]">
-                {/* Each line settles into focus (blur → sharp, a hair of
-                   scale-down) on top of SplitText's own per-word mask-slide,
-                   and the three lines are spaced ~0.32s apart instead of
-                   ~0.2s — line 1 visibly finishes its cascade before line 2
-                   commits, then line 3, rather than all three blurring into
-                   view as one overlapping wash. */}
-                <motion.div
-                  style={reduceMotion ? undefined : { x: heroLine1X }}
-                  initial={reduceMotion ? undefined : { opacity: 0, scale: 1.04, filter: 'blur(14px)' }}
-                  animate={reduceMotion ? undefined : { opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                  transition={reduceMotion ? undefined : { duration: 1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <SplitText
-                    as="div"
-                    text="Create. Sell."
-                    delay={0.1}
-                    stagger={0.06}
-                    animateOnMount
-                    className="text-[15vw] sm:text-[12vw] lg:text-[9.5vw] block"
-                  />
-                </motion.div>
-                <motion.div
-                  style={reduceMotion ? undefined : { x: heroLine2X }}
-                  initial={reduceMotion ? undefined : { opacity: 0, scale: 1.04, filter: 'blur(14px)' }}
-                  animate={reduceMotion ? undefined : { opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                  transition={reduceMotion ? undefined : { duration: 1, delay: 0.42, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <SplitText
-                    as="div"
-                    text="Manage. Grow."
-                    delay={0.42}
-                    stagger={0.06}
-                    animateOnMount
-                    className="text-[15vw] sm:text-[12vw] lg:text-[9.5vw] block bg-gradient-to-r from-brand-orange to-[#f0a57a] bg-clip-text text-transparent"
-                  />
-                </motion.div>
+                {/* Pure per-word mask-slide reveal (SplitText's own
+                   y:110%→0% + opacity, no outer blur/scale/x-drift layered
+                   on top) — the three lines are spaced ~0.32s apart so line 1
+                   visibly finishes its cascade before line 2 commits, then
+                   line 3, rather than overlapping. */}
+                <SplitText
+                  as="div"
+                  text="Create. Sell."
+                  delay={0.1}
+                  stagger={0.06}
+                  animateOnMount
+                  className="text-[15vw] sm:text-[12vw] lg:text-[9.5vw] block"
+                />
+                <SplitText
+                  as="div"
+                  text="Manage. Grow."
+                  delay={0.42}
+                  stagger={0.06}
+                  animateOnMount
+                  className="text-[15vw] sm:text-[12vw] lg:text-[9.5vw] block bg-gradient-to-r from-brand-orange to-[#f0a57a] bg-clip-text text-transparent"
+                />
                 {/* Third giant line — same masked-reveal treatment as the
                    two lines above it, not a separate small paragraph. Names
                    a real, specific Solvexo differentiator (self-serve
@@ -382,20 +369,14 @@ export function Homepage() {
                    (vs. the solid white and gradient fills above it) gives
                    the headline a layered, editorial hierarchy at this size
                    instead of three identically-styled lines. */}
-                <motion.div
-                  initial={reduceMotion ? undefined : { opacity: 0, scale: 1.04, filter: 'blur(14px)' }}
-                  animate={reduceMotion ? undefined : { opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                  transition={reduceMotion ? undefined : { duration: 1, delay: 0.74, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <SplitText
-                    as="div"
-                    text="Launch Instantly."
-                    delay={0.74}
-                    stagger={0.06}
-                    animateOnMount
-                    className="hero-outline-text text-[13vw] sm:text-[10.5vw] lg:text-[8vw] block"
-                  />
-                </motion.div>
+                <SplitText
+                  as="div"
+                  text="Launch Instantly."
+                  delay={0.74}
+                  stagger={0.06}
+                  animateOnMount
+                  className="hero-outline-text text-[13vw] sm:text-[10.5vw] lg:text-[8vw] block"
+                />
               </h1>
             </motion.div>
 
@@ -469,18 +450,18 @@ export function Homepage() {
       {/* ── Industries strip — a continuous marquee instead of a static pill
          row, editorial text links (no pill chrome) with a dot separator,
          real navigation into /solutions on click. ── */}
-      <section className="bg-carbon border-b border-bone/20 py-5 overflow-hidden">
-        <Marquee duration={26}>
+      <section className="bg-carbon border-b border-bone/20 py-8 sm:py-10 overflow-hidden">
+        <Marquee duration={30}>
           {SOLUTIONS.map(s => (
             <span key={s.slug} className="flex items-center shrink-0">
               <button
                 onClick={() => navigate(`/solutions/${s.slug}`)}
                 data-cursor="hover"
-                className="text-[15px] sm:text-[17px] font-semibold uppercase tracking-[0.02em] text-white/50 hover:text-white transition-colors duration-300 bg-transparent border-none cursor-pointer px-5"
+                className="text-2xl sm:text-3xl lg:text-4xl font-bold uppercase tracking-[0.01em] text-white/50 hover:text-white transition-colors duration-300 bg-transparent border-none cursor-pointer px-5"
               >
                 {s.name}
               </button>
-              <span className="w-[5px] h-[5px] rounded-full bg-brand-orange/60 shrink-0" />
+              <span className="w-[7px] h-[7px] sm:w-[8px] sm:h-[8px] rounded-full bg-brand-orange/60 shrink-0" />
             </span>
           ))}
         </Marquee>

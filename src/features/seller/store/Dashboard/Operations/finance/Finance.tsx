@@ -21,12 +21,20 @@ import {
 } from '@/api/services/finance';
 
 const TYPE_STYLE: Record<TransactionType, { color: BadgeColor; label: string }> = {
-  sale:       { color: 'green',  label: 'Sale' },
-  payout:     { color: 'gray',   label: 'Payout' },
-  fee:        { color: 'yellow', label: 'Fee' },
-  refund:     { color: 'red',    label: 'Refund' },
-  adjustment: { color: 'blue',   label: 'Adjustment' },
+  sale:             { color: 'green',  label: 'Sale' },
+  payout:           { color: 'gray',   label: 'Payout' },
+  fee:              { color: 'yellow', label: 'Fee' },
+  refund:           { color: 'red',    label: 'Refund' },
+  adjustment:       { color: 'blue',   label: 'Adjustment' },
+  platform_subsidy: { color: 'blue',   label: 'Platform Subsidy' },
 };
+// Real fallback, not just a wider lookup table — `Transaction.type` is a
+// loosely-typed string on the backend (`type: string`, only the array
+// literal passed to `enum` is actually checked), so a value this map
+// doesn't recognize yet must never crash the whole page (found via a live
+// QA pass: TransactionType.color was accessed on `undefined` for an
+// unmapped type, taking down Finance entirely with no in-app recovery).
+const UNKNOWN_TYPE_STYLE = { color: 'gray' as BadgeColor, label: 'Other' };
 
 const METHOD_LABEL: Record<PayoutMethodType, string> = {
   bank_transfer: 'Bank Transfer', paypal: 'PayPal', stripe: 'Stripe',
@@ -303,7 +311,7 @@ export function StoreFinance() {
     { key: 'description', header: 'Description', render: t => <span className="text-graphite">{t.description}</span> },
     {
       key: 'type', header: 'Type',
-      render: t => <Badge color={TYPE_STYLE[t.type].color}>{TYPE_STYLE[t.type].label}</Badge>,
+      render: t => { const s = TYPE_STYLE[t.type] ?? UNKNOWN_TYPE_STYLE; return <Badge color={s.color}>{s.label}</Badge>; },
     },
     {
       key: 'amount', header: 'Amount',

@@ -1,9 +1,10 @@
 import { Suspense, useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import { PublicMegaNavbar } from '@/components/comman/ui/PublicMegaNavbar';
+import { Outlet, useLocation } from 'react-router-dom';
+import { PublicMegaNavbar, isDarkHeroRoute } from '@/components/comman/ui/PublicMegaNavbar';
 import { BrandSplash, willShowBrandSplash } from '@/components/comman/motion/BrandSplash';
 import { BrandSplashReadyProvider } from '@/components/comman/motion/BrandSplashContext';
 import { Cursor } from '@/components/comman/motion/Cursor';
+import { clsx } from 'clsx';
 
 // Public marketing/product/solutions pages share one navigation system —
 // PublicMegaNavbar's Products/Solutions/Resources mega-menus — instead of
@@ -19,6 +20,13 @@ export function PublicLayout() {
   // synchronous check BrandSplash itself uses) and only flips true once the
   // splash has actually finished, via `onDone` below.
   const [splashReady, setSplashReady] = useState(() => !willShowBrandSplash());
+  const { pathname } = useLocation();
+  // PublicMegaNavbar is `fixed`, not `sticky`, so it no longer reserves its
+  // own space in flow — every route needs that space compensated with real
+  // padding, except the dark-hero routes (see DARK_HERO_ROUTES), whose hero
+  // is deliberately full-bleed to y:0 so the transparent-over-hero header
+  // has something to float over.
+  const overDarkHero = isDarkHeroRoute(pathname);
 
   return (
     <div className="min-h-screen bg-white">
@@ -35,7 +43,7 @@ export function PublicLayout() {
          fallback markup is rendered (TopProgressBar already signals
          "loading" via its thin bar) instead of flashing a second, heavier
          loading treatment on top of that. */}
-      <main>
+      <main className={clsx(!overDarkHero && 'pt-[76px]')}>
         <Suspense fallback={null}>
           <BrandSplashReadyProvider value={splashReady}>
             <Outlet />

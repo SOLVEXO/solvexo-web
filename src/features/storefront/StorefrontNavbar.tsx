@@ -5,7 +5,6 @@ import { Menu, X, ShoppingCart, User, Store as StoreIcon, Search, ChevronDown } 
 import { useStorefront } from './StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { TokenStorage } from '@/api/services/auth';
-import { getMainAppUrl } from '@/utils/storefrontUrl';
 import { ThemedButton } from './ThemedButton';
 import { CurrencySelector } from '@/components/comman/ui/BuyerNavbar';
 
@@ -143,11 +142,12 @@ function MobileNavLinkItem({ link, resolveLink, className, onNavigate }: {
 // The seller's own storefront chrome — deliberately has ZERO Solvexo branding
 // (no Solvexo logo, no platform nav links). Used only on a store's own
 // subdomain via `StorefrontLayout`; the rest of the app keeps the shared
-// `BuyerNavbar`. Cart and (logged-out) sign-in now stay on this same
-// subdomain (`StorefrontCartPage`/`StorefrontLoginPage`, both store-scoped)
-// — only the logged-in Account button still hard-navigates cross-origin to
-// the apex app's Account Workspace, since there's no storefront-local
-// account view yet (a later phase).
+// `BuyerNavbar`. Cart, sign-in/register, and the logged-in Account button
+// all stay on this same subdomain now (`StorefrontCartPage`/
+// `StorefrontLoginPage`/`StorefrontRegisterPage`/`StorefrontAccountPage`) —
+// a buyer's session here is genuinely store-scoped (see `User.storeId`) and
+// isn't even visible on the apex origin any more, so a cross-origin nav to
+// the apex Account Workspace would show a false logged-out state.
 export function StorefrontNavbar() {
   const navigate = useNavigate();
   const { store, theme, cfg, resolveLink } = useStorefront();
@@ -164,9 +164,9 @@ export function StorefrontNavbar() {
     setSearchOpen(false);
   };
 
-  const logoUrl = theme?.header.logoSource === 'custom' ? theme.header.customLogoUrl : store.logo;
-  const navLinks = theme?.header.blocks.filter(b => b.type === 'nav_link') ?? [];
-  const navAlignment = theme?.header.navAlignment ?? 'left';
+  const logoUrl = theme?.header?.logoSource === 'custom' ? theme.header.customLogoUrl : store.logo;
+  const navLinks = theme?.header?.blocks?.filter(b => b.type === 'nav_link') ?? [];
+  const navAlignment = theme?.header?.navAlignment ?? 'left';
   const isCentered = cfg.headerStyle === 'centered';
   const dark = cfg.isDarkTheme;
 
@@ -224,7 +224,7 @@ export function StorefrontNavbar() {
       </button>
 
       <button
-        onClick={() => { isLoggedIn ? window.location.href = getMainAppUrl('/account') : navigate('/login'); }}
+        onClick={() => navigate(isLoggedIn ? '/account' : '/login')}
         aria-label="Account"
         className={clsx('w-9 h-9 rounded-full flex items-center justify-center border-none bg-transparent cursor-pointer transition-colors', dark ? 'hover:bg-white/10' : 'hover:bg-cream')}
       >

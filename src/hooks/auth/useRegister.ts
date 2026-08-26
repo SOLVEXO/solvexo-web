@@ -12,7 +12,7 @@ export function useRegister() {
     setLoading(true);
     try {
       const res = await apiRegister(payload);
-      AuthContext.set({ email: payload.email, role: payload.role, userId: res.data.userId, flow: 'register' });
+      AuthContext.set({ email: payload.email, role: payload.role, userId: res.data.userId, flow: 'register', storeId: payload.storeId });
       LastRolePreference.set(payload.role);
       // Remember this account from the moment registration is submitted, not
       // only after OTP verification completes — someone who fills the form

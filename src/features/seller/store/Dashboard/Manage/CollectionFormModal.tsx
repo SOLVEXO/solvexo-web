@@ -4,6 +4,8 @@ import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { ImageUpload } from '@/components/comman/ui';
 import { EntityPickerModal } from '@/features/seller/store/Dashboard/OnlineStore/builder/EntityPickerModal';
+import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { currencySymbol } from '@/utils/currency';
 import { TemplateKeyPicker } from '@/features/seller/store/Dashboard/OnlineStore/customize/TemplateKeyPicker';
 import { apiGetStoreInventory } from '@/api/services/product';
 import { apiGetCategoryById } from '@/api/services/categories';
@@ -28,6 +30,8 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { store } = useStoreWorkspace();
+  const symbol = currencySymbol(store?.baseCurrency);
   const isEdit = !!collection;
   const [name, setName] = useState(collection?.name ?? '');
   const [description, setDescription] = useState(collection?.description ?? '');
@@ -67,6 +71,15 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
     apiGetCategoryById(categoryId).then(res => setCategoryLabel(res.data.category.name)).catch(() => {});
   }, [categoryId]);
 
+  // Clear the "add a product" warning as soon as its condition is satisfied
+  // (or no longer applies), instead of leaving it on screen describing a
+  // state that's no longer true.
+  useEffect(() => {
+    if (error === 'Add at least one product, or switch to Automatic.' && (type !== 'manual' || productIds.length > 0)) {
+      setError('');
+    }
+  }, [type, productIds, error]);
+
   const handleSave = async () => {
     if (!name.trim()) { setError('Name is required.'); return; }
     if (type === 'manual' && productIds.length === 0) { setError('Add at least one product, or switch to Automatic.'); return; }
@@ -84,10 +97,11 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
           tags: tags.split(',').map(t => t.trim()).filter(Boolean),
           matchType,
         } : undefined,
+        status,
       };
       let saved: CollectionData;
       if (isEdit) {
-        const res = await apiUpdateCollection(storeId, collection!._id, { ...payload, status, templateKey });
+        const res = await apiUpdateCollection(storeId, collection!._id, { ...payload, templateKey });
         saved = res.data;
         if (type === 'manual') {
           const prodRes = await apiUpdateCollectionProducts(storeId, saved._id, productIds);
@@ -96,7 +110,6 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
       } else {
         const res = await apiCreateCollection(storeId, payload);
         saved = res.data;
-        if (status === 'draft') await apiUpdateCollection(storeId, saved._id, { status: 'draft' });
       }
       onSaved();
     } catch (err) {
@@ -233,6 +246,7 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
           multiple
           initialSelectedIds={productIds}
           onConfirm={(ids) => { setProductIds(ids); setShowProductPicker(false); }}
+          currencySymbol={symbol}
         />
       )}
       {showCategoryPicker && (

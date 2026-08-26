@@ -2,7 +2,8 @@ import { Suspense, useEffect } from 'react';
 import { Outlet, useLocation, useNavigation } from 'react-router-dom';
 import { ReferenceNav } from './ReferenceNav';
 import { ErrorBoundary } from '@/components/comman/ErrorBoundary';
-import { scrollRootRef } from '@/utils/scrollRoot';
+import { scrollRootRef, scrollRootToTop, lenisRef } from '@/utils/scrollRoot';
+import { SmoothScroll } from '@/components/comman/motion/SmoothScroll';
 import { AuthGateModal } from '@/components/comman/ui/AuthGateModal';
 import { ToastContainer } from '@/components/comman/ui/ToastContainer';
 import { GoogleOneTapPrompt } from '@/components/comman/ui/GoogleOneTapPrompt';
@@ -39,7 +40,20 @@ export function RootLayout() {
   // footer instead of its top, looking like navigation went to the wrong
   // place entirely.
   useEffect(() => {
-    scrollRootRef.current?.scrollTo({ top: 0 });
+    scrollRootToTop();
+    // The outgoing page's DOM is swapped for the new one on every
+    // navigation (ErrorBoundary above the scroll container is keyed by
+    // pathname), which can change the container's scrollHeight without
+    // Lenis's own resize-observer necessarily catching it (that observer
+    // watches the container's own box, which has a fixed height and never
+    // fires from a child's height changing) — force a remeasure so its
+    // scroll bounds match the page that just mounted. A second pass one
+    // frame later covers the common case where the new page's layout
+    // settles slightly after paint (async images, lazy chunks still
+    // resolving behind Suspense).
+    lenisRef.current?.resize();
+    const raf = requestAnimationFrame(() => lenisRef.current?.resize());
+    return () => cancelAnimationFrame(raf);
   }, [pathname]);
 
   return (
@@ -49,6 +63,11 @@ export function RootLayout() {
       <ToastContainer />
       <GoogleOneTapPrompt />
       <ReferenceNav />
+      {/* Eases wheel/touch input on the scroll container below instead of
+         jumping the raw delta — the same Lenis smooth-scroll layer the
+         reference design runs site-wide. Mounted once here so it wraps
+         every route, same as the container itself. */}
+      <SmoothScroll />
       {/* `fixed ... top-0 bottom-0` (not paddingTop + height:100vh) so this
           wrapper IS the scroll container — the previous approach had no
           overflow container of its own, so tall pages fell back to

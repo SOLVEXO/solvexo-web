@@ -17,13 +17,17 @@ const BADGE_COLOR: Record<string, string> = {
  *  storefront in a brand-new browser tab (`onPreview`, resolved purely from
  *  this theme's own id — see `ThemeTab.tsx`'s `openPreview`) without
  *  applying anything. */
-export function ThemeCard({ theme, active, onApply, onPreview, size = 'default' }: {
+export function ThemeCard({ theme, active, onApply, onPreview, size = 'default', actionLabel = 'Use Theme' }: {
   theme: ThemeDefinition;
   active: boolean;
   onApply: () => void;
   onPreview: () => void;
   /** `compact` is used by the Recommended strip — same card, smaller type. */
   size?: 'default' | 'compact';
+  /** Label for the primary action when the card isn't active — e.g. 'Install'
+   *  for the Discover grid, where `onApply` only installs the theme rather
+   *  than making it live immediately. */
+  actionLabel?: string;
 }) {
   return (
     <div
@@ -86,7 +90,7 @@ export function ThemeCard({ theme, active, onApply, onPreview, size = 'default' 
               active ? 'bg-brand-pale-orange text-brand-deep-orange' : 'bg-brand-orange text-white hover:bg-brand-deep-orange',
             )}
           >
-            {active ? 'Active' : 'Use Theme'}
+            {active ? 'Active' : actionLabel}
           </button>
         </div>
       </div>

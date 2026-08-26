@@ -1,4 +1,4 @@
-import { useState, useEffect, useId } from 'react';
+import { useState, useId } from 'react';
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { motion } from 'motion/react';
@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, FolderTree, RefreshCw,
   BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle, Landmark, Percent, Coins, UserPlus, Activity,
-  ChevronDown, TrendingUp, ChevronRight, Quote, Truck,
+  TrendingUp, ChevronRight, Quote, Truck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -60,41 +60,52 @@ interface AdminModule {
 }
 
 // Sidebar presentation only — every route/page listed in ADMIN_NAV above
-// still exists and works exactly as before; this only controls how they're
-// grouped and revealed. 'settings' is deliberately excluded from every
-// module here — "My Settings" moves to the account menu in the sidebar
-// footer instead of taking up a primary navigation slot (see AdminSidebar's
-// footer + accountMenuItems below). A module with exactly one id (Overview,
-// Analytics) renders as a plain link, not a collapsible group — there's
-// nothing to expand for a "section" that's really just one page.
+// still exists and works exactly as before; this only controls what's
+// actually navigable from the sidebar/mobile-menu/command-palette. 'settings'
+// is deliberately excluded from every module here — "My Settings" moves to
+// the account menu in the sidebar footer instead of taking up a primary
+// navigation slot (see AdminSidebar's footer below). Flat groups only — no
+// collapsible/expand-on-click accordion (see AdminSidebar), matching
+// StoreLayout/SellerLayout's plain grouped-list sidebar pattern.
+//
+// 'marketplace' (central-listing curation), 'marketing' (cross-store platform
+// sale campaigns), 'messages' (real private buyer-seller chat content — a
+// genuine privacy overreach once there's no admin-curated marketplace to
+// justify it), 'leads' (the pending-store approval queue — dormant for any
+// seller onboarded through the current self-serve flow, only a legacy
+// fallback for a pre-self-serve-activation store), and 'banners' (verified:
+// every real placement — marketplaceHero/categoryHero/educationHero — only
+// ever renders on the now-disconnected Marketplace/EducationMarketplace
+// pages; the remaining placement, homepageHero, is defined but wired to no
+// page at all) are deliberately left OUT of every module below — none of
+// them fit a pure Shopify-style "host many independent, self-serve stores"
+// platform. Their routes/pages/backend endpoints are untouched (same
+// "disconnect, don't delete" convention used throughout this project) —
+// reachable by direct URL only, linked from nowhere in the admin UI.
+// (`StoreBanner` — the seller's own per-store storefront hero, managed from
+// that store's own Marketing tab — is a completely separate schema/system,
+// unaffected by any of this.)
 export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
-  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['marketplace', 'categories', 'leads', 'subscriptions', 'platform-plans', 'shipping-zones'] },
-  { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation', 'messages', 'contact'] },
-  { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['marketing', 'seo', 'ai-studio'] },
+  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['categories', 'subscriptions', 'platform-plans', 'shipping-zones'] },
+  { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation', 'contact'] },
+  { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio'] },
   { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance', 'manual-payments', 'commission-rules', 'fx-settings'] },
-  { id: 'content',   label: 'Content',               Icon: ImageIcon,      ids: ['banners', 'faqs', 'testimonials', 'announcements'] },
+  { id: 'content',   label: 'Content',               Icon: ImageIcon,      ids: ['faqs', 'testimonials', 'announcements'] },
   { id: 'analytics', label: 'Analytics',             Icon: BarChart3,       ids: ['analytics'] },
   { id: 'system',    label: 'System',                Icon: Settings,       ids: ['activity-log', 'config'] },
 ];
 
+// The subset of ADMIN_NAV actually reachable from the sidebar/mobile-menu/
+// command-palette — everything ADMIN_MODULES references. Kept as its own
+// derived list (rather than filtering ADMIN_NAV directly) so ADMIN_NAV stays
+// the complete route registry the app can still use for `isNavItemActive`
+// checks against a deep-linked legacy page.
+const VISIBLE_NAV_IDS = new Set(ADMIN_MODULES.flatMap(m => m.ids));
+const VISIBLE_ADMIN_NAV = ADMIN_NAV.filter(item => VISIBLE_NAV_IDS.has(item.id));
+
 function isNavItemActive(item: AdminNavItem, pathname: string) {
   return item.path === '/admin' ? pathname === '/admin' : pathname.startsWith(item.path);
-}
-
-// Which module should be expanded for a given route — the module whose
-// child list contains the currently active page. Used both for the
-// sidebar's initial state and to re-sync whenever the route changes (e.g.
-// navigating via the command palette), without fighting a manual
-// expand/collapse the admin made while staying on the same page.
-function moduleForPath(pathname: string): string | null {
-  for (const m of ADMIN_MODULES) {
-    if (m.ids.some(id => {
-      const item = ADMIN_NAV.find(n => n.id === id);
-      return item ? isNavItemActive(item, pathname) : false;
-    })) return m.id;
-  }
-  return null;
 }
 
 // ── Shared grouped nav menu — the mobile "account hub" content for the admin
@@ -151,7 +162,7 @@ export function AdminNavMenu({ excludeItemIds = [] }: { excludeItemIds?: string[
 const ADMIN_TABS: { id: string; Icon: LucideIcon; label: string; path: string }[] = [
   { id: 'overview',   Icon: LayoutDashboard, label: 'Overview',    path: '/admin'            },
   { id: 'users',      Icon: Users,           label: 'Users',       path: '/admin/users'      },
-  { id: 'marketplace',Icon: Store,           label: 'Marketplace', path: '/admin/marketplace' },
+  { id: 'finance',    Icon: DollarSign,      label: 'Finance',     path: '/admin/finance'    },
   { id: 'moderation', Icon: Shield,          label: 'Moderation',  path: '/admin/moderation' },
   { id: 'settings',   Icon: Settings,        label: 'Settings',    path: '/admin/settings'   },
 ];
@@ -202,18 +213,11 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
-  // Accordion state — only the module containing the current page is open
-  // by default; re-synced on every route change, but a manual
-  // expand/collapse while staying on the same page is left alone.
-  const [expandedModuleId, setExpandedModuleId] = useState<string | null>(() => moduleForPath(pathname));
-  useEffect(() => { setExpandedModuleId(moduleForPath(pathname)); }, [pathname]);
-
-  // Two separate travelling-pill scopes — one for the top-level module row
-  // (whether it's a direct link or a group's own trigger), one for the
-  // nested child list inside an expanded group — so the active background
-  // slides between rows instead of one instantly vanishing/appearing.
-  const topPillId   = useId();
-  const childPillId = useId();
+  // Flat sidebar — every module's items are always visible (no expand/
+  // collapse accordion), matching StoreLayout/SellerLayout's plain grouped-
+  // list pattern. Single travelling-pill scope since there's only one list
+  // level now.
+  const navPillId = useId();
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -225,7 +229,7 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
 
   const goTo = (path: string) => navigate(path);
 
-  const paletteItems = ADMIN_NAV.map(item => ({
+  const paletteItems = VISIBLE_ADMIN_NAV.map(item => ({
     id:       item.id,
     label:    item.label,
     icon:     item.Icon,
@@ -288,9 +292,9 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
           </div>
         )}
 
-        {/* Nav — module-based accordion. Each module is either a single
-            direct link (Overview, Analytics — nothing to expand) or a
-            collapsible group; only one group is open at a time. */}
+        {/* Nav — flat grouped list (a plain label per module, items always
+            visible), matching StoreLayout/SellerLayout's sidebar pattern —
+            no expand/collapse accordion. */}
         <nav className={clsx('flex-1 overflow-y-auto py-1', open ? 'px-3' : 'px-[10px] pt-1')}>
           {ADMIN_MODULES.map(module => {
             const children = module.ids
@@ -298,142 +302,53 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
               .filter((n): n is AdminNavItem => !!n);
             if (!children.length) return null;
 
-            const single = children.length === 1 ? children[0] : null;
-
-            if (single) {
-              const active = isActive(single.path);
-              return (
-                <button
-                  key={module.id}
-                  type="button"
-                  onClick={() => goTo(single.path)}
-                  title={!open ? module.label : undefined}
-                  aria-label={module.label}
-                  aria-current={active ? 'page' : undefined}
-                  className={clsx(
-                    'relative w-full flex items-center gap-[10px] py-[11px] lg:py-[9px] px-[10px] rounded-md mb-0.5 border-none text-left',
-                    'cursor-pointer outline-none',
-                    'focus-visible:ring-2 focus-visible:ring-brand-orange/40',
-                    'active:scale-[0.98] active:duration-micro active:ease-spring',
-                    !open && 'lg:justify-center lg:px-0',
-                    !active && 'hover:bg-dark-active transition-colors duration-fast',
-                  )}
-                >
-                  {active && (
-                    <motion.div
-                      layoutId={`admin-nav-top-pill-${topPillId}`}
-                      className="absolute inset-0 rounded-md bg-dark-active"
-                      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                    />
-                  )}
-                  <module.Icon
-                    size={15}
-                    className={clsx('relative shrink-0 transition-opacity duration-150', active ? 'text-brand-orange opacity-100' : 'text-pos-faint opacity-40')}
-                  />
-                  {open && (
-                    <>
-                      <span className={clsx('relative text-[12px] flex-1 truncate', active ? 'font-semibold text-white' : 'font-normal text-pos-faint')}>
-                        {module.label}
-                      </span>
-                      {active && <div className="relative w-[3px] h-3 rounded-[2px] bg-brand-orange shrink-0" />}
-                    </>
-                  )}
-                </button>
-              );
-            }
-
-            const expanded = open && expandedModuleId === module.id;
-            const moduleHasActive = children.some(c => isActive(c.path));
-            const groupId = `admin-nav-group-${module.id}`;
-
             return (
-              <div key={module.id} className="mb-0.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!open) {
-                      // Collapsed icon-rail: reopen the sidebar straight into this module.
-                      onToggle();
-                      setExpandedModuleId(module.id);
-                      return;
-                    }
-                    setExpandedModuleId(curr => (curr === module.id ? null : module.id));
-                  }}
-                  title={!open ? module.label : undefined}
-                  aria-label={module.label}
-                  aria-expanded={expanded}
-                  aria-controls={groupId}
-                  className={clsx(
-                    'relative w-full flex items-center gap-[10px] py-[11px] lg:py-[9px] px-[10px] rounded-md border-none text-left',
-                    'cursor-pointer outline-none',
-                    'focus-visible:ring-2 focus-visible:ring-brand-orange/40',
-                    'active:scale-[0.98] active:duration-micro active:ease-spring',
-                    !open && 'lg:justify-center lg:px-0',
-                    !expanded && 'hover:bg-dark-active transition-colors duration-fast',
-                  )}
-                >
-                  {expanded && (
-                    <motion.div
-                      layoutId={`admin-nav-top-pill-${topPillId}`}
-                      className="absolute inset-0 rounded-md bg-dark-active"
-                      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                    />
-                  )}
-                  <module.Icon
-                    size={15}
-                    className={clsx('relative shrink-0 transition-opacity duration-150', moduleHasActive ? 'text-brand-orange opacity-100' : 'text-pos-faint opacity-40')}
-                  />
-                  {open && (
-                    <>
-                      <span className={clsx('relative text-[12px] flex-1 truncate', moduleHasActive ? 'font-semibold text-white' : 'font-normal text-pos-faint')}>
-                        {module.label}
-                      </span>
-                      <ChevronDown
-                        size={13}
-                        className={clsx('relative shrink-0 text-pos-faint transition-transform duration-200', expanded && 'rotate-180')}
+              <div key={module.id} className="mb-1">
+                {open
+                  ? <p className="text-[10px] font-semibold text-pos-faint px-2 py-1 uppercase tracking-[0.08em] mb-0.5">{module.label}</p>
+                  : <div className="h-px bg-dark-active mx-1 mb-2" />
+                }
+                {children.map(item => {
+                  const active = isActive(item.path);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => goTo(item.path)}
+                      title={!open ? item.label : undefined}
+                      aria-label={item.label}
+                      aria-current={active ? 'page' : undefined}
+                      className={clsx(
+                        'relative w-full flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 border-none text-left',
+                        'cursor-pointer outline-none',
+                        'focus-visible:ring-2 focus-visible:ring-brand-orange/40',
+                        'active:scale-[0.98] active:duration-micro active:ease-spring',
+                        !open && 'lg:justify-center lg:px-0',
+                        !active && 'hover:bg-dark-active transition-colors duration-fast',
+                      )}
+                    >
+                      {active && (
+                        <motion.div
+                          layoutId={`admin-nav-pill-${navPillId}`}
+                          className="absolute inset-0 rounded-md bg-dark-active"
+                          transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                        />
+                      )}
+                      <item.Icon
+                        size={15}
+                        className={clsx('relative shrink-0 transition-opacity duration-150', active ? 'text-brand-orange opacity-100' : 'text-pos-faint opacity-40')}
                       />
-                    </>
-                  )}
-                </button>
-
-                {expanded && (
-                  <div id={groupId} role="group" aria-label={module.label} className="mt-0.5 pl-[27px] flex flex-col gap-0.5">
-                    {children.map(item => {
-                      const active = isActive(item.path);
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => goTo(item.path)}
-                          aria-current={active ? 'page' : undefined}
-                          className={clsx(
-                            'relative w-full flex items-center gap-[8px] py-[9px] px-[8px] rounded-md border-none text-left',
-                            'cursor-pointer outline-none',
-                            'focus-visible:ring-2 focus-visible:ring-brand-orange/40',
-                            'active:scale-[0.98] active:duration-micro active:ease-spring',
-                            !active && 'hover:bg-dark-active transition-colors duration-fast',
-                          )}
-                        >
-                          {active && (
-                            <motion.div
-                              layoutId={`admin-nav-child-pill-${childPillId}`}
-                              className="absolute inset-0 rounded-md bg-dark-active"
-                              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                            />
-                          )}
-                          <item.Icon
-                            size={13}
-                            className={clsx('relative shrink-0', active ? 'text-brand-orange opacity-100' : 'text-pos-faint opacity-40')}
-                          />
-                          <span className={clsx('relative text-[11.5px] flex-1 truncate', active ? 'font-semibold text-white' : 'font-normal text-pos-faint')}>
+                      {open && (
+                        <>
+                          <span className={clsx('relative text-[12.5px] flex-1 truncate', active ? 'font-semibold text-white' : 'font-normal text-pos-faint')}>
                             {item.label}
                           </span>
                           {active && <div className="relative w-[3px] h-3 rounded-[2px] bg-brand-orange shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             );
           })}

@@ -338,7 +338,7 @@ export default function DraftOrderForm() {
       </div>
 
       {pickerOpen && (
-        <EntityPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} mode="products" storeId={storeId} multiple={false} initialSelectedIds={[]} onConfirm={addProduct} title="Add a product" />
+        <EntityPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} mode="products" storeId={storeId} multiple={false} initialSelectedIds={[]} onConfirm={addProduct} title="Add a product" currencySymbol={symbol} />
       )}
 
       {confirmingCancel && (

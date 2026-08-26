@@ -151,8 +151,8 @@ export function resolveStorefrontCfg(theme: StoreThemeData | null): StorefrontCf
     productGridDensity: t?.productGridDensity ?? STOREFRONT_CFG_DEFAULT.productGridDensity,
     testimonialStyle:   t?.testimonialStyle   ?? STOREFRONT_CFG_DEFAULT.testimonialStyle,
     faqStyle:           t?.faqStyle           ?? STOREFRONT_CFG_DEFAULT.faqStyle,
-    headerStyle:        theme?.header.headerStyle ?? STOREFRONT_CFG_DEFAULT.headerStyle,
-    footerStyle:        theme?.footer.footerStyle  ?? STOREFRONT_CFG_DEFAULT.footerStyle,
+    headerStyle:        theme?.header?.headerStyle ?? STOREFRONT_CFG_DEFAULT.headerStyle,
+    footerStyle:        theme?.footer?.footerStyle  ?? STOREFRONT_CFG_DEFAULT.footerStyle,
     isDarkTheme:        isDarkHex(t?.bgColor ?? STOREFRONT_CFG_DEFAULT.bgColor),
   };
 }

@@ -370,9 +370,10 @@ export interface GetSellerOrdersData {
   orders:     SellerOrder[];
 }
 
-export function apiGetSellerOrders(storeId: string, page = 1, limit = 10) {
+export function apiGetSellerOrders(storeId: string, page = 1, limit = 10, userId?: string) {
+  const userIdParam = userId ? `&userId=${encodeURIComponent(userId)}` : '';
   return client.get<never, ApiResponse<GetSellerOrdersData>>(
-    `${ENDPOINTS.SELLER_ACCOUNT.GET_SELLER_ORDERS(storeId)}?page=${page}&limit=${limit}`,
+    `${ENDPOINTS.SELLER_ACCOUNT.GET_SELLER_ORDERS(storeId)}?page=${page}&limit=${limit}${userIdParam}`,
   );
 }
 

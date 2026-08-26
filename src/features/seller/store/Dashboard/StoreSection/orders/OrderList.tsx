@@ -26,7 +26,7 @@ import {
   type SellerOrderStats,
 } from '@/api/services/product';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { currencySymbol } from '@/utils/currency';
+import { currencySymbol, fmt2 } from '@/utils/currency';
 
 // ── Customer cell ──────────────────────────────────────────────────────────────
 function CustomerCell({ name, email }: { name: string; email: string }) {
@@ -235,7 +235,7 @@ export function StoreOrderList() {
       key: 'amount', header: 'Amount', align: 'right',
       render: o => (
         <span className="text-[13px] font-bold text-charcoal whitespace-nowrap">
-          {currencySymbol(store?.baseCurrency)}{o.amount.toLocaleString()}
+          {currencySymbol(store?.baseCurrency)}{fmt2(o.amount)}
         </span>
       ),
     },

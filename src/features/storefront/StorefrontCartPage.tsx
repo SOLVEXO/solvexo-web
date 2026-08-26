@@ -8,7 +8,7 @@ import {
   Loader2, Download, Lock,
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { currencySymbol } from '@/utils/currency';
+import { currencySymbol, fmt2 } from '@/utils/currency';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { useStorefront } from './StorefrontContext';
 import { ThemedButton } from './ThemedButton';
@@ -164,7 +164,7 @@ export function StorefrontCartPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-[12px] text-slate mb-3">{displaySymbol}{price.toLocaleString()} each</p>
+                    <p className="text-[12px] text-slate mb-3">{displaySymbol}{fmt2(price)} each</p>
 
                     <div className="flex items-center gap-[6px] flex-wrap">
                       <button
@@ -206,7 +206,7 @@ export function StorefrontCartPage() {
                     </div>
                   </div>
 
-                  <p className="font-bold text-[15px] shrink-0" style={{ color: cfg.textColor }}>{displaySymbol}{lineTotal.toLocaleString()}</p>
+                  <p className="font-bold text-[15px] shrink-0" style={{ color: cfg.textColor }}>{displaySymbol}{fmt2(lineTotal)}</p>
                 </div>
               );
             })}
@@ -234,7 +234,7 @@ export function StorefrontCartPage() {
                       <span className="truncate" style={{ color: cfg.textColor }}>
                         {item.name}<span className="text-slate ml-1">×{item.quantity}</span>
                       </span>
-                      <span className="font-medium shrink-0" style={{ color: cfg.textColor }}>{displaySymbol}{ttl.toLocaleString()}</span>
+                      <span className="font-medium shrink-0" style={{ color: cfg.textColor }}>{displaySymbol}{fmt2(ttl)}</span>
                     </div>
                   );
                 })}
@@ -245,7 +245,7 @@ export function StorefrontCartPage() {
 
             <div className="flex justify-between text-[16px] font-bold">
               <span style={{ color: cfg.textColor }}>Total</span>
-              <span style={{ color: cfg.textColor }}>{displaySymbol}{displayTotal.toLocaleString()}</span>
+              <span style={{ color: cfg.textColor }}>{displaySymbol}{fmt2(displayTotal)}</span>
             </div>
 
             <ThemedButton className="w-full text-center flex items-center justify-center" onClick={() => navigate('/checkout')}>

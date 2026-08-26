@@ -14,6 +14,10 @@
  * attribute at all (browsers reject it for IPs) — those fall back to a
  * plain host-only cookie, which is fine since an IP has no subdomains to
  * share with anyway.
+ *
+ * A per-store buyer account (see `User.storeId`) is the one deliberate
+ * exception to "shared across every subdomain" — see the `scope` param
+ * below.
  */
 
 const MAX_AGE_SECONDS = 400 * 24 * 60 * 60; // ~400 days — the browser-enforced cap, matches "persists until logout" like localStorage did
@@ -31,8 +35,16 @@ function cookieDomain(): string | null {
   return `.${parts.slice(-2).join('.')}`;
 }
 
-export function setAuthCookie(name: string, value: string): void {
-  const domain = cookieDomain();
+// `scope: 'shared'` (default) — the behavior above, visible from every
+// subdomain. `scope: 'host'` — omits `domain=` entirely, so the cookie is
+// visible ONLY on the exact origin that set it (the browser default). Used
+// by a per-store buyer session (see `TokenStorage`), which must NOT leak
+// into another store's subdomain or the apex the way a seller/admin/legacy
+// buyer session deliberately still does.
+export type AuthCookieScope = 'shared' | 'host';
+
+export function setAuthCookie(name: string, value: string, scope: AuthCookieScope = 'shared'): void {
+  const domain = scope === 'host' ? null : cookieDomain();
   const parts = [
     `${name}=${encodeURIComponent(value)}`,
     `path=/`,
@@ -49,8 +61,8 @@ export function getAuthCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-export function deleteAuthCookie(name: string): void {
-  const domain = cookieDomain();
+export function deleteAuthCookie(name: string, scope: AuthCookieScope = 'shared'): void {
+  const domain = scope === 'host' ? null : cookieDomain();
   const parts = [`${name}=`, `path=/`, `max-age=0`];
   if (domain) parts.push(`domain=${domain}`);
   document.cookie = parts.join('; ');

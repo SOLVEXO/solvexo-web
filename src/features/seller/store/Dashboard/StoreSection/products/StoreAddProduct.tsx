@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { clsx } from 'clsx';
 import { Package, Download, GraduationCap, Loader2, CalendarClock } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { apiCreatePhysicalProduct, apiCreateDigitalProduct, EDUCATION_LEVELS, type EducationLevel, type VariantInput } from '@/api/services/product';
 import { addCachedProduct } from './_cache';
+import { invalidateMyStoresCache } from '@/hooks/store/useMyStores';
 import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
 import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
@@ -26,8 +28,8 @@ function L({ children, req }: { children: ReactNode; req?: boolean }) {
     </label>
   );
 }
-function F({ label, req, children }: { label: string; req?: boolean; children: ReactNode }) {
-  return <div><L req={req}>{label}</L>{children}</div>;
+function F({ label, req, error, children }: { label: string; req?: boolean; error?: string; children: ReactNode }) {
+  return <div><L req={req}>{label}</L>{children}{error && <p className="text-[11.5px] text-error mt-1">{error}</p>}</div>;
 }
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -113,6 +115,7 @@ export default function StoreAddProduct() {
   const [pType,             setPType]             = useState<ProductType>('physical');
   const [saving,            setSaving]            = useState(false);
   const [error,             setError]             = useState('');
+  const [nameError,         setNameError]         = useState('');
   const [phys,              setPhys]              = useState<PhysForm>(initPhys);
   const [dig,               setDig]               = useState<DigForm>(initDig);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -134,7 +137,9 @@ export default function StoreAddProduct() {
 
   const handleSubmit = async (statusOverride?: ProductStatus) => {
     setError('');
-    if (pType === 'physical' && !phys.name) { setError('Product name is required.'); return; }
+    setNameError('');
+    if (pType === 'physical' && !phys.name) { setNameError('Product name is required.'); return; }
+    if (pType !== 'physical' && !dig.name) { setNameError('Product name is required.'); return; }
     if (pType === 'physical' && !hasVariants && (!phys.price || !phys.stock)) { setError('Price and stock are required.'); return; }
     if (hasVariants) {
       if (phys.variantRows.length === 0) { setError('Add at least one value to your variant options, or remove them to use a single price/stock instead.'); return; }
@@ -142,7 +147,7 @@ export default function StoreAddProduct() {
       const incomplete = phys.variantRows.find(r => !r.price || (!r.unlimitedStock && !r.stock));
       if (incomplete) { setError(`Set a price and stock for the "${incomplete.options.map(o => o.value).join(' / ')}" variant.`); return; }
     }
-    if (pType !== 'physical' && (!dig.name  || !dig.price))                  { setError('Name and price are required.'); return; }
+    if (pType !== 'physical' && !dig.price)                                  { setError('Price is required.'); return; }
     if (pType === 'educational' && !dig.educationLevel)                      { setError('Education level is required for educational resources.'); return; }
     if (pType === 'educational' && dig.educationLevel === 'other' && !dig.customLevel.trim()) { setError('Please describe the custom education level.'); return; }
     setSaving(true);
@@ -192,6 +197,7 @@ export default function StoreAddProduct() {
         });
         addCachedProduct(storeId, { product: res.data.product, variant: res.data.defaultVariant });
       }
+      invalidateMyStoresCache();
       navigate(`/store/${storeId}/products`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
@@ -257,11 +263,11 @@ export default function StoreAddProduct() {
           {/* Basic Information */}
           <Card title="Basic Information">
             <div className="flex flex-col gap-4">
-              <F label="Product Title" req>
+              <F label="Product Title" req error={nameError}>
                 <input value={cur.name}
-                  onChange={e => pType === 'physical' ? sp('name', e.target.value) : sd('name', e.target.value)}
+                  onChange={e => { if (nameError && e.target.value.trim()) setNameError(''); pType === 'physical' ? sp('name', e.target.value) : sd('name', e.target.value); }}
                   placeholder={pType === 'physical' ? 'e.g. Premium Cotton T-Shirt' : 'e.g. Complete Web Design Course'}
-                  className={inp} />
+                  className={clsx(inp, nameError && 'border-error')} />
               </F>
               <F label="Description">
                 <textarea value={cur.description}
@@ -409,12 +415,12 @@ export default function StoreAddProduct() {
               <div className="flex flex-col gap-3">
                 <F label={`Price (${currencySymbol})`} req>
                   <input type="number" min="0" value={cur.price}
-                    onChange={e => pType === 'physical' ? sp('price', e.target.value) : sd('price', e.target.value)}
+                    onChange={e => { if (Number(e.target.value) < 0) return; const v = e.target.value; pType === 'physical' ? sp('price', v) : sd('price', v); }}
                     placeholder="0.00" className={inp} />
                 </F>
                 <F label={`Compare-at Price (${currencySymbol})`}>
                   <input type="number" min="0" value={cur.compareAtPrice}
-                    onChange={e => pType === 'physical' ? sp('compareAtPrice', e.target.value) : sd('compareAtPrice', e.target.value)}
+                    onChange={e => { if (Number(e.target.value) < 0) return; const v = e.target.value; pType === 'physical' ? sp('compareAtPrice', v) : sd('compareAtPrice', v); }}
                     placeholder="0.00" className={inp} />
                 </F>
                 {discountPct !== null && (
@@ -432,7 +438,7 @@ export default function StoreAddProduct() {
             <Card title="Inventory & Shipping">
               <div className="flex flex-col gap-3">
                 <F label="Stock Quantity" req>
-                  <input type="number" min="0" value={phys.stock} onChange={e => sp('stock', e.target.value)} placeholder="0" className={inp} />
+                  <input type="number" min="0" value={phys.stock} onChange={e => { if (Number(e.target.value) < 0) return; sp('stock', e.target.value); }} placeholder="0" className={inp} />
                 </F>
                 <div className="grid grid-cols-2 gap-3">
                   <F label="SKU">

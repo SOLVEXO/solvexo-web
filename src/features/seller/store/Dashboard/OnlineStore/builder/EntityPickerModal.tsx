@@ -41,7 +41,7 @@ const PRODUCTS_FETCH_LIMIT = 200;
  * root's direct children).
  */
 export function EntityPickerModal({
-  open, onClose, mode, storeId, mainCategoryId, multiple, initialSelectedIds, onConfirm, title,
+  open, onClose, mode, storeId, mainCategoryId, multiple, initialSelectedIds, onConfirm, title, currencySymbol = 'Rs',
 }: {
   open: boolean;
   onClose: () => void;
@@ -53,6 +53,10 @@ export function EntityPickerModal({
   initialSelectedIds: string[];
   onConfirm: (ids: string[]) => void;
   title?: string;
+  /** The calling store's own currency symbol (e.g. `Rs`) for product-price
+   *  rows — defaults to `Rs`, matching this app's dominant currency, rather
+   *  than a hardcoded `$` that was always wrong for a PKR store. */
+  currencySymbol?: string;
 }) {
   const [rows, setRows] = useState<PickerRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +73,7 @@ export function EntityPickerModal({
 
     if (mode === 'products') {
       apiGetStoreInventory(storeId, 1, PRODUCTS_FETCH_LIMIT)
-        .then(res => setRows(res.data.products.map(p => ({ id: p.productId, label: p.name, sub: `$${p.price.toLocaleString()}`, image: p.image }))))
+        .then(res => setRows(res.data.products.map(p => ({ id: p.productId, label: p.name, sub: `${currencySymbol}${p.price.toLocaleString()}`, image: p.image }))))
         .catch(() => setError('Failed to load products.'))
         .finally(() => setLoading(false));
     } else if (mode === 'categories') {

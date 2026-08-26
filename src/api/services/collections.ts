@@ -63,6 +63,7 @@ export interface CreateCollectionPayload {
   type: 'manual' | 'automatic';
   productIds?: string[];
   rules?: Partial<CollectionRules>;
+  status?: 'active' | 'draft';
 }
 
 export type UpdateCollectionPayload = Partial<CreateCollectionPayload> & { status?: 'active' | 'draft'; templateKey?: string };

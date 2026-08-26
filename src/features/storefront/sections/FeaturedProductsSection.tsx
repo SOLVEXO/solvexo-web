@@ -7,7 +7,7 @@ import { ProductImage, StarRating } from '@/components/comman/marketplace/Produc
 import { useStorefrontProductSection } from '@/hooks/useStorefrontProductSections';
 import { apiGetPublicStoreProducts, type PublicStoreProduct } from '@/api/services/store';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
-import { currencySymbol } from '@/utils/currency';
+import { currencySymbol, fmt2 } from '@/utils/currency';
 import { useStorefront } from '../StorefrontContext';
 import { ProductCardShell, ProductCardImage } from '../ProductCard';
 
@@ -100,7 +100,7 @@ export function FeaturedProductsSection({ settings }: { settings: FeaturedProduc
                 <p className="text-[12px] font-semibold text-carbon mb-[3px] line-clamp-2 leading-[1.3]">{p.name}</p>
                 <StarRating rating={p.averageRating ?? 0} />
                 {p.defaultVariantPrice != null && (
-                  <p className="text-[14px] font-bold text-carbon mt-[6px]">{displaySymbol}{convert(p.defaultVariantPrice, store.baseCurrency).toLocaleString()}</p>
+                  <p className="text-[14px] font-bold text-carbon mt-[6px]">{displaySymbol}{fmt2(convert(p.defaultVariantPrice, store.baseCurrency))}</p>
                 )}
               </div>
             </ProductCardShell>

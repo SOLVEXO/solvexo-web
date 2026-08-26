@@ -6,7 +6,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
-import { currencySymbol } from '@/utils/currency';
+import { currencySymbol, fmt2 } from '@/utils/currency';
 import type { ProductVariant } from '@/api/services/marketplace';
 import { useStorefront } from './StorefrontContext';
 import { ThemedButton } from './ThemedButton';
@@ -140,7 +140,21 @@ export function StorefrontProductPage() {
   };
 
   if (loading) {
-    return <div className="px-4 sm:px-6 lg:px-10 py-10 max-w-[1100px] mx-auto text-[13px] text-slate">Loading…</div>;
+    return (
+      <div className="px-4 sm:px-6 lg:px-10 py-8">
+        <div className="max-w-[1100px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-8 items-start">
+          <div className="w-full h-[320px] md:h-[420px] rounded-2xl bg-cream animate-pulse" />
+          <div className="flex flex-col gap-3">
+            <div className="w-3/4 h-6 rounded bg-cream animate-pulse" />
+            <div className="w-1/3 h-8 rounded bg-cream animate-pulse mt-2" />
+            <div className="w-full h-11 rounded-lg bg-cream animate-pulse mt-3" />
+            <div className="w-full h-11 rounded-lg bg-cream animate-pulse" />
+            <div className="w-full h-4 rounded bg-cream animate-pulse mt-3" />
+            <div className="w-2/3 h-4 rounded bg-cream animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
   }
   if (error || !product) {
     return <div className="px-4 sm:px-6 lg:px-10 py-16 text-center text-[13px] text-slate">This product isn't available.</div>;
@@ -161,10 +175,10 @@ export function StorefrontProductPage() {
           )}
 
           <div className="flex items-baseline gap-2 my-2">
-            <span className="text-[26px] font-bold" style={{ color: cfg.textColor }}>{displaySymbol}{displayPrice?.toFixed(2)}</span>
+            <span className="text-[26px] font-bold" style={{ color: cfg.textColor }}>{displaySymbol}{displayPrice != null ? fmt2(displayPrice) : ''}</span>
             {displayCompareAt != null && (
               <>
-                <span className="text-[15px] line-through opacity-50" style={{ color: cfg.textColor }}>{displaySymbol}{displayCompareAt.toFixed(2)}</span>
+                <span className="text-[15px] line-through opacity-50" style={{ color: cfg.textColor }}>{displaySymbol}{fmt2(displayCompareAt)}</span>
                 {pctOff != null && <span className="text-[12px] font-bold px-2 py-[2px] rounded-full" style={{ background: `${cfg.primaryColor}18`, color: cfg.primaryColor }}>-{pctOff}%</span>}
               </>
             )}

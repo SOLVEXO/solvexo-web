@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import type { Variants } from 'motion/react';
@@ -8,6 +8,7 @@ import {
   Store, ChevronDown, ArrowRight, Plus, HelpCircle, Mail, Building2, ShieldCheck, Search,
 } from 'lucide-react';
 import { SolvexoLogo } from './SolvexoLogo';
+import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { TokenStorage } from '@/api/services/auth';
 import { NotificationBell } from './NotificationBell';
 import { ProfileAvatar } from './ProfileAvatar';
@@ -68,30 +69,50 @@ const COMPANY_LINKS = [
 
 type MenuKey = 'products' | 'solutions' | 'learn' | 'company' | null;
 
-// One shared layoutId per indicator kind (`nav-hover-pill`/`nav-active-
-// underline`) across every top-level item — Motion slides the same element
-// between whichever item currently owns it, instead of it popping in/out
-// fresh under each item.
-function DesktopMenuButton({ label, active, hovered, onClick, onHoverStart }: {
-  label: string; active: boolean; hovered: boolean; onClick: () => void; onHoverStart: () => void;
+// Every public route whose page opens on a full-bleed dark hero — audited
+// directly against each page file: Homepage (`bg-carbon`), ForSellersPage
+// (a dark `#141413→#2C2A28` gradient), and every `/solutions/:slug` detail
+// page (SolutionPage — a full-bleed image with a `from-carbon` gradient
+// overlay, shared by every solution regardless of slug). Every other public
+// route (About, Pricing, FAQ, Contact, the legal pages, Products/Solutions
+// overviews, individual product pages) starts on `bg-white`/`bg-cream`,
+// where the header's default opaque state already reads fine.
+//
+// `/solutions/:slug` needs a prefix check rather than a literal entry since
+// the slug varies — exported as a match function (not a plain array) so
+// PublicLayout's top-padding compensation and this file's own `overHero`
+// flag can never drift apart on how a route is classified.
+const EXACT_DARK_HERO_ROUTES = ['/', '/sellers'];
+export function isDarkHeroRoute(pathname: string) {
+  return EXACT_DARK_HERO_ROUTES.includes(pathname) || pathname.startsWith('/solutions/');
+}
+
+// Hover state is a plain CSS underline that grows from the left (`group` +
+// `group-hover:scale-x-100`) — the reference nav's link-hover language,
+// replacing the old sliding "pill" background. `active` keeps its own
+// shared-layoutId underline (a genuinely different signal: which menu is
+// currently open, not just hovered) so the two never fight for the same pixel.
+function DesktopMenuButton({ label, active, light, onClick }: {
+  label: string; active: boolean; light: boolean; onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
-      onMouseEnter={onHoverStart}
       className={clsx(
-        'relative flex items-center gap-1 text-[13px] font-medium px-3 py-[7px] rounded-lg bg-transparent border-none cursor-pointer transition-colors',
-        active ? 'text-brand-orange' : 'text-charcoal hover:text-brand-orange',
+        'group relative flex items-center gap-1 text-[13px] font-medium px-3 py-[7px] bg-transparent border-none cursor-pointer transition-colors duration-300',
+        active ? 'text-brand-orange' : light ? 'text-white/90 hover:text-white' : 'text-charcoal hover:text-brand-orange',
       )}
     >
-      {(hovered || active) && (
-        <motion.span
-          layoutId="nav-hover-pill"
-          className={clsx('absolute inset-0 rounded-lg -z-10', active ? 'bg-brand-pale-orange/70' : 'bg-cream')}
-          transition={{ duration: 0.22, ease: NAV_EASE }}
+      {label} <ChevronDown size={13} className={clsx('transition-transform duration-200', active && 'rotate-180')} />
+      {!active && (
+        <span
+          aria-hidden
+          className={clsx(
+            'pointer-events-none absolute left-3 right-7 -bottom-[1px] h-[2px] origin-left scale-x-0 rounded-full transition-transform duration-500 ease-out group-hover:scale-x-100',
+            light ? 'bg-white' : 'bg-brand-orange',
+          )}
         />
       )}
-      {label} <ChevronDown size={13} className={clsx('transition-transform duration-200', active && 'rotate-180')} />
       {/* Shared layoutId — Motion animates this underline sliding between
          whichever top-level item is currently active instead of it just
          appearing/disappearing under a new item. */}
@@ -106,25 +127,27 @@ function DesktopMenuButton({ label, active, hovered, onClick, onHoverStart }: {
   );
 }
 
-// Same hover-pill language as DesktopMenuButton, for the two plain links
-// (Pricing, For Sellers) that have no dropdown/active-open concept.
-function DesktopNavLink({ to, label, hovered, onHoverStart }: {
-  to: string; label: string; hovered: boolean; onHoverStart: () => void;
+// Same underline-hover language as DesktopMenuButton, for the two plain
+// links (Pricing, For Sellers) that have no dropdown/active-open concept.
+function DesktopNavLink({ to, label, light }: {
+  to: string; label: string; light: boolean;
 }) {
   return (
     <Link
       to={to}
-      onMouseEnter={onHoverStart}
-      className="relative text-[13px] font-medium text-charcoal hover:text-brand-orange transition-colors px-3 py-[7px] rounded-lg"
-    >
-      {hovered && (
-        <motion.span
-          layoutId="nav-hover-pill"
-          className="absolute inset-0 rounded-lg bg-cream -z-10"
-          transition={{ duration: 0.22, ease: NAV_EASE }}
-        />
+      className={clsx(
+        'group relative text-[13px] font-medium transition-colors duration-300 px-3 py-[7px]',
+        light ? 'text-white/90 hover:text-white' : 'text-charcoal hover:text-brand-orange',
       )}
+    >
       {label}
+      <span
+        aria-hidden
+        className={clsx(
+          'pointer-events-none absolute left-3 right-3 -bottom-[1px] h-[2px] origin-left scale-x-0 rounded-full transition-transform duration-500 ease-out group-hover:scale-x-100',
+          light ? 'bg-white' : 'bg-brand-orange',
+        )}
+      />
     </Link>
   );
 }
@@ -132,9 +155,10 @@ function DesktopNavLink({ to, label, hovered, onHoverStart }: {
 // Real hamburger→X bar morph (two bars rotating/translating to converge),
 // not an icon swap — the touch target is a full 44px even though the
 // visible glyph is small.
-function MobileMenuButton({ open, onClick }: { open: boolean; onClick: () => void }) {
+function MobileMenuButton({ open, light, onClick }: { open: boolean; light: boolean; onClick: () => void }) {
   const reduceMotion = useReducedMotion();
   const transition = { duration: reduceMotion ? 0 : 0.32, ease: NAV_EASE };
+  const barClass = clsx('absolute w-[19px] h-[1.5px] rounded-full transition-colors duration-300', light ? 'bg-white' : 'bg-carbon');
   return (
     <button
       onClick={onClick}
@@ -144,12 +168,12 @@ function MobileMenuButton({ open, onClick }: { open: boolean; onClick: () => voi
       className="lg:hidden relative flex items-center justify-center w-11 h-11 -mr-1 bg-transparent border-none cursor-pointer"
     >
       <motion.span
-        className="absolute w-[19px] h-[1.5px] rounded-full bg-carbon"
+        className={barClass}
         animate={{ y: open ? 0 : -4, rotate: open ? 45 : 0 }}
         transition={transition}
       />
       <motion.span
-        className="absolute w-[19px] h-[1.5px] rounded-full bg-carbon"
+        className={barClass}
         animate={{ y: open ? 0 : 4, rotate: open ? -45 : 0 }}
         transition={transition}
       />
@@ -228,10 +252,11 @@ function SupportPreviewMock() {
 
 export function PublicMegaNavbar() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const sellEntry = useSellEntry();
   const { scrolled } = useCompactOnScroll();
+  const overHero = isDarkHeroRoute(pathname) && !scrolled;
   const [openMenu, setOpenMenu] = useState<MenuKey>(null);
-  const [hoverKey, setHoverKey] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expanded, setExpanded] = useState<'products' | 'solutions' | 'learn' | 'company' | null>(null);
   const [hoveredProduct, setHoveredProduct] = useState(PLATFORM_PRODUCTS[0].slug);
@@ -296,25 +321,40 @@ export function PublicMegaNavbar() {
       <header
         ref={navRef}
         className={clsx(
-          'sticky top-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 ease-out border-b',
-          // Flat/plain at the very top, then sticky + a real, layered
-          // ambient shadow (not a flat 1px line) + a light blur once
-          // scrolled — opacity stays high (94%) so there's essentially
-          // nothing to bleed through and mismatch, but it's still
-          // technically glass, not a solid repaint.
-          scrolled
-            ? 'bg-white/[0.94] backdrop-blur-md border-bone shadow-[0_1px_2px_rgba(20,15,10,0.04),0_12px_28px_-14px_rgba(20,15,10,0.16)]'
-            : 'bg-white border-transparent',
+          // `fixed`, not `sticky` — a sticky header still occupies its own
+          // slot in normal flow above whatever comes next, so making it
+          // transparent there just exposes the *page's* white background,
+          // not the hero (which only starts after that slot). `fixed` pulls
+          // it out of flow entirely so it floats directly over the hero's
+          // own full-bleed background, letting the transparent state
+          // actually show hero through it. PublicLayout compensates with
+          // top padding on every route except the homepage, whose hero
+          // already reaches all the way up to y:0 on purpose.
+          'fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 ease-out border-b',
+          // Flat/plain at the very top, then a soft, translucent glass bar
+          // once scrolled — kept genuinely light (70% + blur) rather than a
+          // near-solid repaint, so it still reads as glass over content
+          // scrolling underneath it. On the homepage's dark hero
+          // specifically, the unscrolled state is fully transparent instead
+          // of `bg-white` so the header reads as part of the hero, not a
+          // white bar painted over it.
+          overHero
+            ? 'bg-transparent border-transparent'
+            : scrolled
+              ? 'bg-white/70 backdrop-blur-lg border-bone/60 shadow-[0_1px_2px_rgba(20,15,10,0.04),0_12px_28px_-14px_rgba(20,15,10,0.16)]'
+              : 'bg-white border-transparent',
         )}
         onMouseLeave={closeSoon}
       >
         <div className={clsx(
           'max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4',
           'transition-[height] duration-300 ease-out',
-          scrolled ? 'h-[54px]' : 'h-[60px]',
+          // Grows slightly once scrolled instead of shrinking — the glass
+          // bar reads as a deliberately roomier surface, not a compacted one.
+          scrolled ? 'h-[76px]' : 'h-[64px]',
         )}>
           <Link to="/" className="shrink-0" aria-label="Solvexo home">
-            <SolvexoLogo size={28} />
+            <SolvexoLogo size={28} variant={overHero ? 'light' : 'dark'} />
           </Link>
 
           {/* Desktop nav — a shared sliding highlight (layoutId) follows
@@ -322,40 +362,36 @@ export function PublicMegaNavbar() {
              reads as one indicator travelling rather than each hover state
              popping in fresh — the actual "modern nav" cue, independent of
              the navbar's own background color/theme. */}
-          <nav className="hidden lg:flex items-center gap-1" onMouseLeave={() => setHoverKey(null)}>
+          <nav className="hidden lg:flex items-center gap-1">
             <div onMouseEnter={() => openNow('products')}>
               <DesktopMenuButton
-                label="Products" active={openMenu === 'products'} hovered={hoverKey === 'products'}
-                onHoverStart={() => setHoverKey('products')}
+                label="Products" active={openMenu === 'products'} light={overHero}
                 onClick={() => openNow(openMenu === 'products' ? null : 'products')}
               />
             </div>
             <div onMouseEnter={() => openNow('solutions')}>
               <DesktopMenuButton
-                label="Solutions" active={openMenu === 'solutions'} hovered={hoverKey === 'solutions'}
-                onHoverStart={() => setHoverKey('solutions')}
+                label="Solutions" active={openMenu === 'solutions'} light={overHero}
                 onClick={() => openNow(openMenu === 'solutions' ? null : 'solutions')}
               />
             </div>
             <div onMouseEnter={() => openNow('learn')}>
               <DesktopMenuButton
-                label="Learn & Support" active={openMenu === 'learn'} hovered={hoverKey === 'learn'}
-                onHoverStart={() => setHoverKey('learn')}
+                label="Learn & Support" active={openMenu === 'learn'} light={overHero}
                 onClick={() => openNow(openMenu === 'learn' ? null : 'learn')}
               />
             </div>
             <div onMouseEnter={() => openNow('company')}>
               <DesktopMenuButton
-                label="Company" active={openMenu === 'company'} hovered={hoverKey === 'company'}
-                onHoverStart={() => setHoverKey('company')}
+                label="Company" active={openMenu === 'company'} light={overHero}
                 onClick={() => openNow(openMenu === 'company' ? null : 'company')}
               />
             </div>
             <div onMouseEnter={() => openNow(null)}>
-              <DesktopNavLink to="/pricing" label="Pricing" hovered={hoverKey === 'pricing'} onHoverStart={() => setHoverKey('pricing')} />
+              <DesktopNavLink to="/pricing" label="Pricing" light={overHero} />
             </div>
             <div onMouseEnter={() => openNow(null)}>
-              <DesktopNavLink to="/sellers" label="For Sellers" hovered={hoverKey === 'sellers'} onHoverStart={() => setHoverKey('sellers')} />
+              <DesktopNavLink to="/sellers" label="For Sellers" light={overHero} />
             </div>
           </nav>
 
@@ -368,16 +404,24 @@ export function PublicMegaNavbar() {
               </>
             ) : (
               <>
-                <button onClick={() => navigate('/login')} className="text-[13px] font-medium text-charcoal hover:text-brand-orange transition-colors bg-transparent border-none cursor-pointer">
+                <button
+                  onClick={() => navigate('/login')}
+                  className={clsx(
+                    'text-[13px] font-medium transition-colors duration-300 bg-transparent border-none cursor-pointer',
+                    overHero ? 'text-white/90 hover:text-white' : 'text-charcoal hover:text-brand-orange',
+                  )}
+                >
                   Log in
                 </button>
-                <button
-                  onClick={sellEntry.go}
-                  disabled={sellEntry.loading}
-                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white bg-brand-orange hover:bg-brand-deep-orange transition-colors rounded-lg px-4 py-[9px] border-none cursor-pointer disabled:opacity-60"
-                >
-                  Start Selling
-                </button>
+                <MagneticButton>
+                  <button
+                    onClick={sellEntry.go}
+                    disabled={sellEntry.loading}
+                    className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white bg-brand-orange hover:bg-brand-deep-orange transition-colors rounded-lg px-4 py-[9px] border-none cursor-pointer disabled:opacity-60"
+                  >
+                    Start Selling
+                  </button>
+                </MagneticButton>
               </>
             )}
           </div>
@@ -392,7 +436,10 @@ export function PublicMegaNavbar() {
               <>
                 <button
                   onClick={() => navigate('/login')}
-                  className="text-[12.5px] font-medium text-charcoal hover:text-brand-orange transition-colors bg-transparent border-none cursor-pointer px-1.5"
+                  className={clsx(
+                    'text-[12.5px] font-medium transition-colors duration-300 bg-transparent border-none cursor-pointer px-1.5',
+                    overHero ? 'text-white/90 hover:text-white' : 'text-charcoal hover:text-brand-orange',
+                  )}
                 >
                   Log in
                 </button>
@@ -405,7 +452,7 @@ export function PublicMegaNavbar() {
                 </button>
               </>
             )}
-            <MobileMenuButton open={mobileOpen} onClick={() => setMobileOpen(o => !o)} />
+            <MobileMenuButton open={mobileOpen} light={overHero} onClick={() => setMobileOpen(o => !o)} />
           </div>
         </div>
 
@@ -707,7 +754,7 @@ export function PublicMegaNavbar() {
             // enter") so closing the menu reads as responsive rather than
             // taking the same unhurried beat as opening it.
             exit={{ clipPath: 'inset(0% 0% 100% 0%)', transition: { duration: 0.36, ease: NAV_EASE } }}
-            className="lg:hidden fixed left-0 right-0 top-[60px] bottom-0 z-[55] bg-cream"
+            className="lg:hidden fixed left-0 right-0 top-[64px] bottom-0 z-[55] bg-cream"
           >
             <motion.div
               variants={navListVariants}
@@ -833,15 +880,17 @@ export function PublicMegaNavbar() {
                   </div>
                 ) : (
                   <>
-                    <motion.div whileTap={{ scale: 0.97 }}>
-                      <button
-                        onClick={() => { closeMenu(); sellEntry.go(); }}
-                        disabled={sellEntry.loading}
-                        className="w-full text-[14.5px] font-semibold text-white bg-gradient-to-r from-brand-orange to-brand-deep-orange rounded-xl py-[14px] border-none cursor-pointer disabled:opacity-60"
-                      >
-                        Start Selling Free
-                      </button>
-                    </motion.div>
+                    <MagneticButton className="block">
+                      <motion.div whileTap={{ scale: 0.97 }}>
+                        <button
+                          onClick={() => { closeMenu(); sellEntry.go(); }}
+                          disabled={sellEntry.loading}
+                          className="w-full text-[14.5px] font-semibold text-white bg-gradient-to-r from-brand-orange to-brand-deep-orange rounded-xl py-[14px] border-none cursor-pointer disabled:opacity-60"
+                        >
+                          Start Selling Free
+                        </button>
+                      </motion.div>
+                    </MagneticButton>
                     <motion.div whileTap={{ scale: 0.97 }}>
                       <button
                         onClick={() => { closeMenu(); navigate('/products'); }}
