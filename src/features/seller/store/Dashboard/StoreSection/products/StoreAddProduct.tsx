@@ -8,7 +8,7 @@ import { addCachedProduct } from './_cache';
 import { invalidateMyStoresCache } from '@/hooks/store/useMyStores';
 import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
-import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
+import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal } from '@/components/comman/ui';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 import { VariantMatrixEditor } from './VariantMatrixEditor';
@@ -74,7 +74,7 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
 
 const initPhys = {
   name: '', description: '', price: '', compareAtPrice: '',
-  stock: '', sku: '', barcode: '', shippingWeight: '', subCategoryId: '',
+  stock: '', sku: '', barcode: '', shippingWeight: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   // Non-empty optionTypes switches the Pricing/Inventory cards over to the
@@ -85,7 +85,7 @@ const initPhys = {
   variantRows: [] as VariantRow[],
 };
 const initDig = {
-  name: '', description: '', price: '', compareAtPrice: '', subCategoryId: '',
+  name: '', description: '', price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   fileData: null as PrivateUploadData | null,
@@ -110,7 +110,7 @@ export default function StoreAddProduct() {
   const supportsDigital     = !store || (store.productTypes ?? []).includes('digital_downloads');
   const supportsEducational = !store || (store.productTypes ?? []).includes('educational_resources');
 
-  const { mainCategory, subcategories, loading: catLoading, refetch: refetchCats } = useStoreSubcategories(store?.categoryId);
+  const { tree: categoryTree, loading: catLoading, refetch: refetchCats } = useStoreCategoryTree(storeId);
 
   const [pType,             setPType]             = useState<ProductType>('physical');
   const [saving,            setSaving]            = useState(false);
@@ -176,6 +176,7 @@ export default function StoreAddProduct() {
             }];
         const res = await apiCreatePhysicalProduct({
           storeId, name: phys.name, description: phys.description,
+          categoryId: phys.categoryId || null,
           subCategoryId: phys.subCategoryId || null, images: phys.images, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
@@ -187,6 +188,7 @@ export default function StoreAddProduct() {
         const res = await apiCreateDigitalProduct({
           storeId, name: dig.name, description: dig.description,
           productType: pType === 'educational' ? 'educational' : 'digital',
+          categoryId: dig.categoryId || null,
           subCategoryId: dig.subCategoryId || null, images: dig.images, tags: dig.tags,
           educationLevel: pType === 'educational' ? (dig.educationLevel || null) : null,
           customLevel: pType === 'educational' && dig.educationLevel === 'other' ? dig.customLevel : null,
@@ -281,13 +283,16 @@ export default function StoreAddProduct() {
           {/* Category */}
           <Card title="Category">
             <SubcategoryField
-              mainCategoryName={mainCategory?.name ?? ''}
-              mainCategoryId={store?.categoryId ?? ''}
-              subcategories={subcategories}
+              storeId={storeId}
+              tree={categoryTree}
               loading={catLoading}
-              value={cur.subCategoryId}
-              onChange={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
-              onCreated={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
+              categoryId={cur.categoryId}
+              subCategoryId={cur.subCategoryId}
+              onCategoryChange={id => {
+                if (pType === 'physical') { sp('categoryId', id); sp('subCategoryId', ''); }
+                else { sd('categoryId', id); sd('subCategoryId', ''); }
+              }}
+              onSubCategoryChange={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
               refetch={refetchCats}
             />
           </Card>

@@ -1,0 +1,28 @@
+/* Theme 01 – Atelier: keyboard-focus visibility.
+   Every text input in this theme sets `outline: none` inline (a deliberate
+   flat, borderless look) which would otherwise silently remove the
+   browser's default focus ring for keyboard users — this restores a real,
+   on-brand one instead of just deleting the inline override. */
+.atelier-form input:focus,
+.atelier-form textarea:focus {
+  border-color: #161412 !important;
+  box-shadow: 0 0 0 3px rgba(22, 20, 18, 0.08);
+}
+
+/* Buttons/links that don't already get a visible default outline (icon-only
+   controls, OTP boxes) get an explicit on-brand focus-visible ring. */
+.atelier-focus-ring:focus-visible {
+  outline: 2px solid #9C7A3C;
+  outline-offset: 2px;
+}
+
+/* Navbar search bar, footer newsletter field, OTP digit boxes — each sets
+   `outline-none`/`outline: 'none'` inline for a flat look outside a form
+   with the .atelier-form wrapper above, so they need their own explicit
+   focus-visible treatment individually. */
+#atelier-search:focus-visible,
+.atelier-newsletter-input:focus-visible,
+.atelier-otp-digit:focus-visible {
+  outline: 2px solid #9C7A3C;
+  outline-offset: 2px;
+}

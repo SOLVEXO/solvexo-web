@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import { motion } from 'motion/react';
 import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
-  PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, FolderTree, RefreshCw,
+  PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, RefreshCw,
   BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle, Landmark, Percent, Coins, UserPlus, Activity,
   TrendingUp, ChevronRight, Quote, Truck,
 } from 'lucide-react';
@@ -32,7 +32,6 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'messages',      Icon: MessageSquare,   label: 'Messaging',       path: '/admin/messages'      },
   { id: 'leads',         Icon: UserPlus,        label: 'Leads',           path: '/admin/leads'         },
   { id: 'marketplace',   Icon: Store,           label: 'Marketplace',     path: '/admin/marketplace'   },
-  { id: 'categories',    Icon: FolderTree,      label: 'Categories',      path: '/admin/categories'    },
   { id: 'subscriptions', Icon: RefreshCw,       label: 'Subscriptions',   path: '/admin/subscriptions' },
   { id: 'marketing',     Icon: Tag,             label: 'Marketing',       path: '/admin/marketing'     },
   { id: 'platform-plans',Icon: Layers,          label: 'Platform Plans',  path: '/admin/platform-plans' },
@@ -85,9 +84,22 @@ interface AdminModule {
 // (`StoreBanner` — the seller's own per-store storefront hero, managed from
 // that store's own Marketing tab — is a completely separate schema/system,
 // unaffected by any of this.)
+//
+// 'categories' is different — actually DELETED, not disconnected (per
+// explicit instruction, not this project's usual precedent): `AdminCategories.tsx`,
+// its route, and its ADMIN_NAV entry are gone outright. Categories are now
+// store-owned — every seller builds their own tree from their own store's
+// Categories page, entirely at their own discretion — so there is no
+// remaining admin curation task here at all, unlike the items above (which
+// still have real, if presently-unwanted, functionality). The underlying
+// legacy/global `Category` collection, its backend admin-only root-category
+// creation path, and every consumer that still legitimately needs it
+// (grandfathered legacy stores' `Store.categoryId`, the disconnected
+// Marketplace/EducationMarketplace pages, SEO/sitemap) are all untouched —
+// only the admin-facing management PAGE was removed.
 export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
-  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['categories', 'subscriptions', 'platform-plans', 'shipping-zones'] },
+  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['subscriptions', 'platform-plans', 'shipping-zones'] },
   { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation', 'contact'] },
   { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio'] },
   { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance', 'manual-payments', 'commission-rules', 'fx-settings'] },
@@ -295,7 +307,7 @@ function AdminSidebar({ open, onToggle }: AdminSidebarProps) {
         {/* Nav — flat grouped list (a plain label per module, items always
             visible), matching StoreLayout/SellerLayout's sidebar pattern —
             no expand/collapse accordion. */}
-        <nav className={clsx('flex-1 overflow-y-auto py-1', open ? 'px-3' : 'px-[10px] pt-1')}>
+        <nav data-lenis-prevent className={clsx('flex-1 overflow-y-auto py-1', open ? 'px-3' : 'px-[10px] pt-1')}>
           {ADMIN_MODULES.map(module => {
             const children = module.ids
               .map(id => ADMIN_NAV.find(n => n.id === id))
@@ -439,7 +451,7 @@ export function AdminLayout() {
     <div className={clsx('flex bg-cream overflow-hidden', 'h-screen')}>
       <AdminSidebar open={sidebarOpen} onToggle={toggle} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">
+        <div data-lenis-prevent className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">
           <Outlet />
         </div>
       </div>

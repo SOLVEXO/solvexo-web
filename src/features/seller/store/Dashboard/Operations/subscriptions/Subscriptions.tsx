@@ -9,7 +9,7 @@ import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { Input, Textarea, Select } from '@/components/comman/ui/Input';
 import { SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
-import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
+import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import {
   apiListPlans, apiCreatePlan, apiUpdatePlan, apiArchivePlan, apiEstimatePlanHealth,
   apiGetSubscriptionDashboard, apiExportSubscribersCsv,
@@ -170,7 +170,10 @@ function PlanFormModal({ storeId, plan, onClose, onSaved }: {
 }) {
   const isEdit = !!plan;
   const { store } = useStoreWorkspace();
-  const { subcategories } = useStoreSubcategories(store?.categoryId);
+  // Every subcategory across every one of this store's own root categories —
+  // a benefit's category scoping isn't tied to any single root.
+  const { tree: categoryTree } = useStoreCategoryTree(store?._id);
+  const subcategories = categoryTree.flatMap(c => c.children);
   const [name, setName] = useState(plan?.name ?? '');
   const [description, setDescription] = useState(plan?.description ?? '');
   const [monthlyPrice, setMonthlyPrice] = useState(plan ? String(plan.monthlyPriceUSD) : '');

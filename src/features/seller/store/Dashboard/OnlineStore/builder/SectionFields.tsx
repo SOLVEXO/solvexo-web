@@ -7,12 +7,12 @@ import { EntityPickerModal } from './EntityPickerModal';
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 
 /** A section's own settings form (separate from its blocks) — heading is common to most types, the rest is type-specific. */
-export function SectionFields({ type, settings, onChange, storeId, mainCategoryId }: {
+export function SectionFields({ type, settings, onChange, storeId }: {
   type: SectionType;
   settings: Record<string, any>;
   onChange: (next: Record<string, any>) => void;
   storeId: string;
-  mainCategoryId?: string;
+ 
 }) {
   const set = (patch: Record<string, any>) => onChange({ ...settings, ...patch });
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
@@ -189,7 +189,7 @@ export function SectionFields({ type, settings, onChange, storeId, mainCategoryI
           onClose={() => setShowCategoryPicker(false)}
           mode="categories"
           storeId={storeId}
-          mainCategoryId={mainCategoryId}
+         
           multiple={false}
           initialSelectedIds={settings.categoryId ? [settings.categoryId] : []}
           onConfirm={(ids) => { set({ categoryId: ids[0] }); setShowCategoryPicker(false); }}
@@ -212,7 +212,7 @@ export function SectionFields({ type, settings, onChange, storeId, mainCategoryI
           onClose={() => setShowGridCategoryPicker(false)}
           mode="categories"
           storeId={storeId}
-          mainCategoryId={mainCategoryId}
+         
           multiple
           initialSelectedIds={settings.categoryIds ?? []}
           onConfirm={(ids) => { set({ categoryIds: ids.slice(0, 12) }); setShowGridCategoryPicker(false); }}

@@ -152,7 +152,7 @@ export function AuthSplitLayout({
          screens, and on the rare oversized form only the invisible-scrollbar
          internal scroll (never a visible bar, never the page) kicks in. ── */}
       {bare ? (
-        <div className={clsx(
+        <div data-lenis-prevent className={clsx(
           'flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col',
           'rounded-t-[28px] -mt-6 relative z-10 bg-cream shadow-[0_-6px_20px_rgba(0,0,0,0.06)]',
           'lg:rounded-none lg:mt-0 lg:shadow-none',
@@ -160,7 +160,7 @@ export function AuthSplitLayout({
           {children}
         </div>
       ) : (
-        <div className={clsx(
+        <div data-lenis-prevent className={clsx(
           'flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col items-center px-4 py-[clamp(12px,3vh,32px)]',
           'rounded-t-[28px] -mt-6 relative z-10 bg-cream shadow-[0_-6px_20px_rgba(0,0,0,0.06)]',
           'lg:rounded-none lg:mt-0 lg:shadow-none',

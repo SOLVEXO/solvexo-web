@@ -135,7 +135,7 @@ function AccountSidebar({ open, onToggle }: SidebarProps) {
         <div className="h-px bg-dark-active mx-3 mb-[6px]" />
 
         {/* Nav */}
-        <nav className={clsx('flex-1 overflow-y-auto', open ? 'px-[10px] pt-1' : 'px-[10px] pt-2')}>
+        <nav data-lenis-prevent className={clsx('flex-1 overflow-y-auto', open ? 'px-[10px] pt-1' : 'px-[10px] pt-2')}>
           {navGroups.map(section => (
             <div key={section.group} className="mb-1">
               {open
@@ -270,7 +270,7 @@ export function AccountLayout() {
 
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
         <MobileTopBar label={currentLabel} isRoot={isRoot} onBack={goHome} />
-        <main className="flex-1 min-h-0 min-w-0 px-4 md:px-7 py-4 md:py-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <main data-lenis-prevent className="flex-1 min-h-0 min-w-0 px-4 md:px-7 py-4 md:py-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Suspense fallback={<AccountContentSkeleton />}>
             <Outlet />
           </Suspense>

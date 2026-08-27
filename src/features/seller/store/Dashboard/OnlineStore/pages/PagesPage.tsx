@@ -17,7 +17,6 @@ import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { VersionHistoryModal } from '../builder/VersionHistoryModal';
 import { useEditorState } from '../builder/editor/useEditorState';
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
-import { previewChannelName, type PreviewSyncMessage } from '../builder/editor/previewSync';
 
 function SaveButton({ onClick, saving, label }: { onClick: () => void; saving: boolean; label: string }) {
   return (
@@ -224,15 +223,6 @@ export function PagesPage() {
   const pagesEditorBusy = pagesEditor.phase === 'saving' || pagesEditor.phase === 'publishing' || discardingPageDraft;
   useUndoRedoShortcuts(pagesEditor.undo, pagesEditor.redo, true);
 
-  // Live Preview only ever renders the Home page — no broadcast needed for
-  // any other page.
-  useEffect(() => {
-    if (!pagesEditor.workingCopy || selectedPage?.type !== 'home') return;
-    const channel = new BroadcastChannel(previewChannelName(storeId));
-    channel.postMessage({ type: 'homeSections', sections: pagesEditor.workingCopy } satisfies PreviewSyncMessage);
-    channel.close();
-  }, [storeId, pagesEditor.workingCopy, selectedPage?.type]);
-
   const pageOptions = pages.filter(p => p.type === 'custom' && p.status === 'published').map(p => ({ slug: p.slug, title: p.title }));
 
   if (storeLoading || !store) {
@@ -274,14 +264,6 @@ export function PagesPage() {
         <div className="mx-4 lg:mx-7 mt-4 flex flex-wrap items-center justify-between gap-3 bg-brand-pale-orange border border-[#f5d0bc] rounded-2xl px-4 py-3">
           <p className="text-[12.5px] font-semibold text-brand-deep-orange">You have unpublished changes — your live storefront still shows the last published version.</p>
           <div className="flex items-center gap-2 shrink-0">
-            <a
-              href={`/store/${storeId}/live-preview`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3.5 py-[8px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline transition-colors whitespace-nowrap"
-            >
-              <Eye size={13} /> Preview
-            </a>
             <button
               onClick={handleDiscardPageDraft}
               disabled={pagesEditorBusy}
@@ -353,7 +335,7 @@ export function PagesPage() {
                   )}
                 </div>
               </div>
-              <PageSectionsEditor sections={pagesEditor.workingCopy ?? []} onChange={pagesEditor.edit} onPersist={persistSections} pageOptions={pageOptions} storeId={storeId} mainCategoryId={store.categoryId} />
+              <PageSectionsEditor sections={pagesEditor.workingCopy ?? []} onChange={pagesEditor.edit} onPersist={persistSections} pageOptions={pageOptions} storeId={storeId} />
             </>
           ) : (
             <div className="bg-white border border-bone rounded-2xl p-10 text-center">

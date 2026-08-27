@@ -10,7 +10,7 @@ import {
 import { getCachedProducts, updateCachedProduct, type ProductEntry } from './_cache';
 import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
-import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
+import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal, SkeletonBox } from '@/components/comman/ui';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 import { VariantMatrixEditor } from './VariantMatrixEditor';
@@ -75,7 +75,7 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
 
 const blankPhys = {
   name: '', description: '', price: '', compareAtPrice: '',
-  stock: '', sku: '', barcode: '', shippingWeight: '', subCategoryId: '',
+  stock: '', sku: '', barcode: '', shippingWeight: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   // Non-empty optionTypes switches Pricing/Inventory over to the real
@@ -86,7 +86,7 @@ const blankPhys = {
   variantRows: [] as VariantRow[],
 };
 const blankDig = {
-  name: '', description: '', price: '', compareAtPrice: '', subCategoryId: '',
+  name: '', description: '', price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   fileData: null as PrivateUploadData | null,
@@ -110,6 +110,7 @@ function physFromEntry(p: StoreProduct, v: ProductVariant): PhysForm {
     name: p.name, description: p.description,
     price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
     stock: String(v.stock), sku: v.sku ?? '', barcode: v.barcode ?? '', shippingWeight: v.shippingWeight ?? '',
+    categoryId: p.categoryId ?? '',
     subCategoryId: p.subCategoryId ?? '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
     scheduledAt: '', tags: [...(p.tags ?? [])], tagInput: '', images: [...(p.images ?? [])],
@@ -159,6 +160,7 @@ function digFromEntry(p: StoreProduct, v: ProductVariant): DigForm {
   return {
     name: p.name, description: p.description,
     price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
+    categoryId: p.categoryId ?? '',
     subCategoryId: p.subCategoryId ?? '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
     scheduledAt: '', tags: [...(p.tags ?? [])], tagInput: '', images: [...(p.images ?? [])],
@@ -184,7 +186,7 @@ export default function StoreEditProduct() {
   // (supports every SupportedCurrency, not just a PKR/USD ternary that
   // mislabeled any other currency as "Rs").
   const currencySymbol = symbolForCurrency(store?.baseCurrency);
-  const { mainCategory, subcategories, loading: catLoading, refetch: refetchCats } = useStoreSubcategories(store?.categoryId);
+  const { tree: categoryTree, loading: catLoading, refetch: refetchCats } = useStoreCategoryTree(storeId);
 
   const [fetching,          setFetching]          = useState(true);
   const [saving,            setSaving]            = useState(false);
@@ -267,6 +269,7 @@ export default function StoreEditProduct() {
       if (pType === 'physical') {
         const res = await apiEditPhysicalProduct(productId, {
           productId, name: phys.name, description: phys.description,
+          categoryId: phys.categoryId || null,
           subCategoryId: phys.subCategoryId || null, images: phys.images, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
@@ -333,6 +336,7 @@ export default function StoreEditProduct() {
         const res = await apiEditDigitalProduct(productId, {
           productId, variantId,
           name: dig.name, description: dig.description,
+          categoryId: dig.categoryId || null,
           subCategoryId: dig.subCategoryId || null,
           educationLevel: pType === 'educational' ? (dig.educationLevel || null) : undefined,
           customLevel: pType === 'educational' && dig.educationLevel === 'other' ? dig.customLevel : undefined,
@@ -457,13 +461,16 @@ export default function StoreEditProduct() {
           {/* Category */}
           <Card title="Category">
             <SubcategoryField
-              mainCategoryName={mainCategory?.name ?? ''}
-              mainCategoryId={store?.categoryId ?? ''}
-              subcategories={subcategories}
+              storeId={storeId}
+              tree={categoryTree}
               loading={catLoading}
-              value={cur.subCategoryId}
-              onChange={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
-              onCreated={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
+              categoryId={cur.categoryId}
+              subCategoryId={cur.subCategoryId}
+              onCategoryChange={id => {
+                if (pType === 'physical') { sp('categoryId', id); sp('subCategoryId', ''); }
+                else { sd('categoryId', id); sd('subCategoryId', ''); }
+              }}
+              onSubCategoryChange={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
               refetch={refetchCats}
             />
           </Card>

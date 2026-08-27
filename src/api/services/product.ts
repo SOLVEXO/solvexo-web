@@ -123,6 +123,8 @@ export interface CreatePhysicalPayload {
   storeId:           string;
   name:              string;
   description:       string;
+  /** From the store's own category tree — omitted falls back to the store's legacy fixed category, if any. */
+  categoryId?:       string | null;
   subCategoryId:     string | null;
   images:            string[];
   tags:              string[];
@@ -139,6 +141,8 @@ export interface CreateDigitalPayload {
   name:              string;
   description:       string;
   productType:       'digital' | 'educational';
+  /** From the store's own category tree — omitted falls back to the store's legacy fixed category, if any. */
+  categoryId?:       string | null;
   subCategoryId:     string | null;
   educationLevel?:   EducationLevel | null;
   customLevel?:      string | null;
@@ -159,6 +163,7 @@ export interface EditPhysicalPayload {
   productId:         string;
   name:              string;
   description:       string;
+  categoryId?:       string | null;
   subCategoryId:     string | null;
   images:            string[];
   tags:              string[];
@@ -173,6 +178,7 @@ export interface EditDigitalPayload {
   variantId:      string | null;
   name:           string;
   description:    string;
+  categoryId?:    string | null;
   subCategoryId:  string | null;
   educationLevel?: EducationLevel | null;
   customLevel?:   string | null;

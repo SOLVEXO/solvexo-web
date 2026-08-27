@@ -10,7 +10,6 @@ import {
 import { SolvexoLogo } from './SolvexoLogo';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { TokenStorage } from '@/api/services/auth';
-import { NotificationBell } from './NotificationBell';
 import { ProfileAvatar } from './ProfileAvatar';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { useCompactOnScroll } from './BuyerNavbar';
@@ -398,10 +397,7 @@ export function PublicMegaNavbar() {
           {/* Actions */}
           <div className="hidden lg:flex items-center gap-3 shrink-0">
             {loggedIn ? (
-              <>
-                <NotificationBell />
-                <ProfileAvatar />
-              </>
+              <ProfileAvatar />
             ) : (
               <>
                 <button

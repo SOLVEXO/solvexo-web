@@ -22,5 +22,5 @@ export function StoreBuilderRedirect() {
     );
   }
 
-  return <Navigate to={`/store/${targetId}/online-store/customize`} replace />;
+  return <Navigate to={`/store/${targetId}/online-store/themes`} replace />;
 }

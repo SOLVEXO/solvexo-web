@@ -4,7 +4,7 @@ import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { SkeletonBox } from '@/components/comman/ui';
 import { apiGetStoreInventory } from '@/api/services/product';
-import { apiGetCategoryTree } from '@/api/services/categories';
+import { apiGetStoreCategoryTree } from '@/api/services/categories';
 import { apiListCollections } from '@/api/services/collections';
 
 export type EntityPickerMode = 'products' | 'categories' | 'collections';
@@ -34,21 +34,17 @@ const PRODUCTS_FETCH_LIMIT = 200;
  * One reusable searchable picker for Products / Categories / Collections —
  * replaces every raw-ID-paste input across the Store Builder (featured
  * products, product catalog filters, nav-link targets, collection product
- * pickers). Products/Collections are always scoped to `storeId`; Categories
- * are scoped to the store's own subcategory tree via `mainCategoryId`
- * (the store's single root category — categories never nest beyond one
- * level in this app, so "the store's own categories" always means that
- * root's direct children).
+ * pickers). All three modes are scoped to `storeId` — Categories shows the
+ * store's own entire category tree (every root category it created, plus
+ * each root's subcategories), not any fixed/legacy single root.
  */
 export function EntityPickerModal({
-  open, onClose, mode, storeId, mainCategoryId, multiple, initialSelectedIds, onConfirm, title, currencySymbol = 'Rs',
+  open, onClose, mode, storeId, multiple, initialSelectedIds, onConfirm, title, currencySymbol = 'Rs',
 }: {
   open: boolean;
   onClose: () => void;
   mode: EntityPickerMode;
   storeId: string;
-  /** Required for `mode === 'categories'` — the store's root category id. */
-  mainCategoryId?: string;
   multiple: boolean;
   initialSelectedIds: string[];
   onConfirm: (ids: string[]) => void;
@@ -77,9 +73,14 @@ export function EntityPickerModal({
         .catch(() => setError('Failed to load products.'))
         .finally(() => setLoading(false));
     } else if (mode === 'categories') {
-      if (!mainCategoryId) { setRows([]); setLoading(false); return; }
-      apiGetCategoryTree(mainCategoryId)
-        .then(res => setRows((res.data.children ?? []).map(c => ({ id: c._id, label: c.name, sub: c.productCount != null ? `${c.productCount} products` : undefined, image: c.image }))))
+      apiGetStoreCategoryTree(storeId)
+        .then(res => {
+          const flat = (res.data ?? []).flatMap(root => [
+            { id: root._id, label: root.name, sub: root.productCount != null ? `${root.productCount} products` : undefined, image: root.image },
+            ...root.children.map(sub => ({ id: sub._id, label: `${root.name} / ${sub.name}`, sub: sub.productCount != null ? `${sub.productCount} products` : undefined, image: sub.image })),
+          ]);
+          setRows(flat);
+        })
         .catch(() => setError('Failed to load categories.'))
         .finally(() => setLoading(false));
     } else {
@@ -88,7 +89,7 @@ export function EntityPickerModal({
         .catch(() => setError('Failed to load collections.'))
         .finally(() => setLoading(false));
     }
-  }, [open, mode, storeId, mainCategoryId, JSON.stringify(initialSelectedIds)]);
+  }, [open, mode, storeId, JSON.stringify(initialSelectedIds)]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

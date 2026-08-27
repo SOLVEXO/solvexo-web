@@ -6,11 +6,11 @@ import { motion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, ChevronLeft, ChevronRight, Store, User,
+  Settings, Sparkles, ChevronLeft, ChevronRight, User,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
-  LayoutGrid, Newspaper, Palette, Code2,
+  LayoutGrid, Newspaper, Palette,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, type StorePlatformSubscription } from '@/api/services/platformPlans';
@@ -72,8 +72,6 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     group: 'Online Store',
     items: [
       { id: 'online-store-themes',    Icon: Palette,    label: 'Themes',    path: 'online-store/themes'    },
-      { id: 'online-store-customize', Icon: Store,      label: 'Customize', path: 'online-store/customize' },
-      { id: 'online-store-code',      Icon: Code2,      label: 'Edit Code', path: 'online-store/code'      },
       { id: 'online-store-pages',     Icon: LayoutGrid, label: 'Pages',     path: 'online-store/pages'     },
       { id: 'online-store-blog',      Icon: Newspaper,  label: 'Blog',      path: 'online-store/blog'      },
       { id: 'online-store-files',     Icon: ImageIcon,  label: 'Files',     path: 'files'                  },
@@ -337,7 +335,7 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
         <div className="h-px bg-dark-active mx-3 mb-[6px]" />
 
         {/* Nav */}
-        <nav className={clsx('flex-1 overflow-y-auto', open ? 'px-[10px] pt-1' : 'px-[10px] pt-2')}>
+        <nav data-lenis-prevent className={clsx('flex-1 overflow-y-auto', open ? 'px-[10px] pt-1' : 'px-[10px] pt-2')}>
           {NAV.map(section => (
             <div key={section.group} className="mb-1">
               {open
@@ -647,6 +645,15 @@ function PlatformBillingBanner() {
   if (!sub) return null;
   const goToBilling = () => navigate(`/store/${storeId}/plan-billing`);
 
+  if (sub.status === 'locked') {
+    return (
+      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer">
+        <AlertTriangle size={14} className="shrink-0" />
+        This store is locked — choose a plan and complete payment to resume selling. Your data is safe.
+        <span className="underline font-semibold">Unlock now</span>
+      </button>
+    );
+  }
   if (sub.status === 'past_due') {
     return (
       <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer">
@@ -733,7 +740,7 @@ export function StoreLayout() {
           <AnnouncementBanner audience="sellers" />
           <StoreVerificationBanner />
           <PlatformBillingBanner />
-          <div className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">
+          <div data-lenis-prevent className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">
             <GatedOutlet />
           </div>
         </div>

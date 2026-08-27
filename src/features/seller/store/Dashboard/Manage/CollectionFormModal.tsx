@@ -23,9 +23,8 @@ function slugify(name: string) {
  *  rule resolved fresh at read time). Manual product selection reuses
  *  `EntityPickerModal` (products mode); automatic's category rule reuses it
  *  too (categories mode, single-select). */
-export function CollectionFormModal({ storeId, mainCategoryId, collection, onClose, onSaved }: {
+export function CollectionFormModal({ storeId, collection, onClose, onSaved }: {
   storeId: string;
-  mainCategoryId?: string;
   collection?: CollectionData | null;
   onClose: () => void;
   onSaved: () => void;
@@ -195,7 +194,7 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
                     <Button size="sm" variant="outline" onClick={() => { setCategoryId(null); setCategoryLabel(''); }}>Clear</Button>
                   </div>
                 ) : (
-                  <Button size="sm" variant="outline" onClick={() => setShowCategoryPicker(true)} disabled={!mainCategoryId}>Choose Category</Button>
+                  <Button size="sm" variant="outline" onClick={() => setShowCategoryPicker(true)}>Choose Category</Button>
                 )}
               </div>
               <div>
@@ -255,7 +254,6 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
           onClose={() => setShowCategoryPicker(false)}
           mode="categories"
           storeId={storeId}
-          mainCategoryId={mainCategoryId}
           multiple={false}
           initialSelectedIds={categoryId ? [categoryId] : []}
           onConfirm={(ids) => { setCategoryId(ids[0] ?? null); setShowCategoryPicker(false); }}

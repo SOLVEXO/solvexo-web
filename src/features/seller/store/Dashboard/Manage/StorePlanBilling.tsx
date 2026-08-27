@@ -188,10 +188,19 @@ export default function StorePlanBilling() {
   }
 
   const trialDaysLeft = current?.trialEndsAt ? daysUntil(current.trialEndsAt) : null;
+  const isLocked = current?.status === 'locked';
   const isPastDue = current?.status === 'past_due';
   const isCancelPending = !!current?.cancelAtPeriodEnd;
 
   const banner = useMemo(() => {
+    if (isLocked) {
+      return {
+        tone: 'error' as const, Icon: AlertTriangle,
+        text: 'This store is locked — choose a plan and complete payment below to resume selling. Every product, order, and setting is untouched.',
+        actionLabel: 'Choose a plan',
+        onAction: () => document.getElementById('platform-plans-list')?.scrollIntoView({ behavior: 'smooth' }),
+      };
+    }
     if (isPastDue) {
       return {
         tone: 'error' as const, Icon: AlertTriangle,
@@ -215,7 +224,7 @@ export default function StorePlanBilling() {
     }
     return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPastDue, isCancelPending, trialDaysLeft, current]);
+  }, [isLocked, isPastDue, isCancelPending, trialDaysLeft, current]);
 
   const BANNER_STYLE = {
     error:   { bg: 'bg-error-bg', border: 'border-error-border', text: 'text-error', icon: 'text-error' },
@@ -331,7 +340,7 @@ export default function StorePlanBilling() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div id="platform-plans-list" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {plans.map(plan => {
             const isCurrent = current?.platformPlanId === plan._id;
             const price = interval === 'yearly' && plan.yearlyPriceUSD != null ? plan.yearlyPriceUSD : plan.monthlyPriceUSD;

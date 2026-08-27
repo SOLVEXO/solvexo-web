@@ -12,7 +12,6 @@ import { ProductImage } from '@/components/comman/marketplace/ProductCard';
 import { Button } from './Button';
 import { SolvexoLogo } from './SolvexoLogo';
 import { SkeletonBox } from './SkeletonBox';
-import { NotificationBell } from './NotificationBell';
 import { ProfileAvatar } from './ProfileAvatar';
 import { ActionMenu } from './ActionMenu';
 import { useCurrencyPreference, type SupportedCurrency } from '@/contexts/CurrencyPreferenceContext';
@@ -901,7 +900,6 @@ function AccountActions({ simple = false }: { simple?: boolean }) {
   if (TokenStorage.isLoggedIn()) {
     return (
       <div className="flex items-center gap-2.5">
-        <NotificationBell />
         <ProfileAvatar />
         {!simple && <CurrencySelector />}
       </div>

@@ -10,7 +10,10 @@ export type SupportedCurrency = 'PKR' | 'USD';
 export interface CreateStorePayload {
   name:         string;
   logo?:        string;
-  categoryId:   string;
+  /** Legacy global/admin root category — optional. Categories are now
+   *  store-owned (see StoreCategories.tsx): a seller builds their own
+   *  category tree AFTER the store exists, never chosen at onboarding. */
+  categoryId?:  string;
   description?: string;
   sellerType:   SellerType;
   productTypes: ProductType[];
@@ -18,6 +21,9 @@ export interface CreateStorePayload {
    *  required, and locked forever the moment the store has its first
    *  product (see backend StoreService.createStore's comment). */
   baseCurrency: SupportedCurrency;
+  /** Which PlatformPlan to trial for 3 days — omitted falls back to the
+   *  cheapest real paid plan (see backend ensureDefaultSubscription). */
+  platformPlanId?: string;
 }
 
 export interface UpdateStorePayload {

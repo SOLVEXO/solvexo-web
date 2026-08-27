@@ -21,7 +21,7 @@ function StatusBadge({ status }: { status: 'active' | 'draft' }) {
 // `pinnedProductIds` list Marketing.tsx's "Featured & Collections" tab
 // manages (that tab is untouched; a seller can have both today).
 export default function StoreCollections() {
-  const { storeId, store } = useStoreWorkspace();
+  const { storeId } = useStoreWorkspace();
   const [collections, setCollections] = useState<CollectionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -109,7 +109,6 @@ export default function StoreCollections() {
       {showForm && (
         <CollectionFormModal
           storeId={storeId}
-          mainCategoryId={store?.categoryId}
           collection={editing}
           onClose={() => setShowForm(false)}
           onSaved={() => { setShowForm(false); load(); }}

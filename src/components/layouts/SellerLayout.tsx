@@ -193,7 +193,7 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
         )}
 
         {/* Nav sections */}
-        <nav className={clsx('flex-1 overflow-y-auto', open ? 'px-3 pt-1' : 'px-[10px] pt-2')}>
+        <nav data-lenis-prevent className={clsx('flex-1 overflow-y-auto', open ? 'px-3 pt-1' : 'px-[10px] pt-2')}>
           {NAV_SECTIONS.map(section => (
             <div key={section.label} className="mb-1">
               {open
@@ -462,7 +462,7 @@ export function SellerLayout() {
         <SellerSidebar open={sidebarOpen} onToggle={toggle} />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <AnnouncementBanner audience="sellers" />
-          <div className="flex-1 overflow-y-auto overflow-x-hidden pb-[64px] lg:pb-0">
+          <div data-lenis-prevent className="flex-1 overflow-y-auto overflow-x-hidden pb-[64px] lg:pb-0">
             <Outlet />
           </div>
         </div>

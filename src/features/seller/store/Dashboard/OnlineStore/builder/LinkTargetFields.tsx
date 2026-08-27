@@ -18,12 +18,11 @@ const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-cha
  *  target — nav links, footer links, hero/image CTAs. `category`/`collection`
  *  (Phase 4) resolve through `EntityPickerModal` rather than a raw-ID paste
  *  field, same as every other entity reference in this builder. */
-export function LinkTargetFields({ value, onChange, pageOptions, storeId, mainCategoryId }: {
+export function LinkTargetFields({ value, onChange, pageOptions, storeId }: {
   value: LinkTarget;
   onChange: (next: LinkTarget) => void;
   pageOptions: { slug: string; title: string }[];
   storeId: string;
-  mainCategoryId?: string;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [resolvedLabel, setResolvedLabel] = useState('');
@@ -94,7 +93,6 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId, mainCa
           onClose={() => setPickerOpen(false)}
           mode={value.linkType === 'category' ? 'categories' : 'collections'}
           storeId={storeId}
-          mainCategoryId={mainCategoryId}
           multiple={false}
           initialSelectedIds={value.linkType === 'category' ? (value.categoryId ? [value.categoryId] : []) : (value.collectionId ? [value.collectionId] : [])}
           onConfirm={(ids) => {

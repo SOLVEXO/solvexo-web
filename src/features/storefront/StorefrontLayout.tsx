@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
-import { SkeletonBox, StoreAnnouncementBar } from '@/components/comman/ui';
+import { SkeletonBox } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { Store, ArrowLeft } from 'lucide-react';
 import { apiGetPublicStore, apiResolveStoreByDomain, type PublicStoreData } from '@/api/services/store';
@@ -8,8 +8,7 @@ import { apiGetPublicStoreTheme, type StoreThemeData } from '@/api/services/stor
 import { getStoreSlugFromHost, getMainAppUrl } from '@/utils/storefrontUrl';
 import { CartProvider } from '@/contexts/CartContext';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from './StorefrontContext';
-import { StorefrontNavbar } from './StorefrontNavbar';
-import { StorefrontFooter } from './StorefrontFooter';
+import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 
 const DEFAULT_FAVICON = '/favicon.png';
 
@@ -104,33 +103,24 @@ export function StorefrontLayout() {
     );
   }
 
+  // Every store now renders through a genuinely independent theme (see
+  // `storefront-themes/registry.ts`) — the legacy 12-theme shared engine
+  // has been removed. A store whose `themeDefinitionId` doesn't match a
+  // registered theme (e.g. a pre-migration row still pointing at a deleted
+  // legacy theme id) falls back to `DEFAULT_THEME_ID` rather than crashing.
+  // Each theme owns its own chrome entirely — no shared navbar/footer, no
+  // `cfg`-driven inline styles. `store`/`theme`/`cfg` are still provided via
+  // context (real store data + cart are legitimate shared infra) for any
+  // theme that wants them, but nothing about this component's own rendering
+  // reaches the page any more.
+  const themeId = theme?.themeDefinitionId;
+  const Layout = (themeId && NEW_THEME_REGISTRY[themeId]?.Layout) || NEW_THEME_REGISTRY[DEFAULT_THEME_ID].Layout;
   return (
     <StorefrontProvider value={contextValue}>
-      {/* Scopes the buyer's cart to THIS store — shadows the app-wide
-          CartProvider from main.tsx for everything rendered below, since
-          the store's storeId is only known here, after it's resolved. */}
       <CartProvider storeId={store.storeId}>
-        <div className="min-h-screen" style={{ background: cfg.bgColor, color: cfg.textColor, fontFamily: `${cfg.font}, sans-serif` }}>
-          {/* Real "developer/advanced authoring" capability — raw, unscoped
-              CSS the seller opted into via the Theme tab's Advanced mode.
-              Deliberately last in the cascade (after every other inline
-              style/class on this page) so it can genuinely override
-              anything, including this component's own theme tokens — that's
-              the point of an "advanced" escape hatch. */}
-          {theme?.customCss && <style>{theme.customCss}</style>}
-          <StorefrontNavbar />
-          {store.announcementBar?.message && (
-            <StoreAnnouncementBar
-              storeId={store.storeId}
-              message={store.announcementBar.message}
-              type={store.announcementBar.type}
-              ctaLabel={store.announcementBar.ctaLabel}
-              ctaLink={store.announcementBar.ctaLink}
-            />
-          )}
+        <Layout>
           <Outlet />
-          <StorefrontFooter />
-        </div>
+        </Layout>
       </CartProvider>
     </StorefrontProvider>
   );
