@@ -147,6 +147,16 @@ export function ThemeLibraryPage() {
                         >
                           {installingId === entry.id ? <Loader2 size={13} className="animate-spin" /> : null} Install
                         </button>
+                        {/* Demo-content preview is currently only wired for
+                            Atelier (`AtelierThemeDemoPreview`/`atelier/preview`
+                            route) — a theme with no demo preview of its own
+                            (e.g. Nova, this pass) simply doesn't get this
+                            button, a disclosed gap rather than a broken link.
+                            This is the one editor entry point that's
+                            legitimately per-theme content, not a generic
+                            platform surface — unlike Customize/Header-Footer/
+                            Edit Code below, which every installed+active
+                            theme can always reach. */}
                         {entry.id === 'theme-01-atelier' && (
                           <Link
                             to="atelier/preview"
@@ -159,30 +169,46 @@ export function ThemeLibraryPage() {
                       </>
                     ) : isActive && store ? (
                       <>
-                        {entry.id === 'theme-01-atelier' && (
-                          <>
-                            <Link
-                              to="atelier/customize"
-                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border-none bg-brand-orange text-white hover:bg-brand-deep-orange no-underline"
-                            >
-                              <Settings2 size={13} /> Customize
-                            </Link>
-                            <Link
-                              to="atelier/header-footer"
-                              className="flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline"
-                              title="Header & Footer"
-                            >
-                              <PanelTop size={13} />
-                            </Link>
-                            <Link
-                              to="atelier/edit-code"
-                              className="flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline"
-                              title="Edit Code"
-                            >
-                              <Code2 size={13} />
-                            </Link>
-                          </>
-                        )}
+                        {/* Customize/Header & Footer/Edit Code all route
+                            through the SAME three generic editor pages
+                            regardless of which theme is active (each page
+                            resolves the active store's real
+                            `themeDefinitionId` against `THEME_MANIFESTS`/
+                            `THEME_DEV_FILES` internally — see
+                            `AtelierCustomizePage`/`AtelierEditCodePage`'s own
+                            doc comments). Gating these three links behind
+                            `entry.id === 'theme-01-atelier'` was a real bug:
+                            it left ANY second installed+active theme with no
+                            way to reach its own editor pages from this UI at
+                            all — exactly the "hardcoded per-theme editor
+                            page" failure this platform's theme-agnostic
+                            architecture is required to avoid. These render
+                            for any installed+active theme now; only the
+                            route's own URL segment still literally reads
+                            "atelier" (a cosmetic naming leak — the
+                            destination page resolves the real active theme
+                            internally regardless — tracked as a lower-
+                            priority follow-up, not a functional blocker). */}
+                        <Link
+                          to="atelier/customize"
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border-none bg-brand-orange text-white hover:bg-brand-deep-orange no-underline"
+                        >
+                          <Settings2 size={13} /> Customize
+                        </Link>
+                        <Link
+                          to="atelier/header-footer"
+                          className="flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline"
+                          title="Header & Footer"
+                        >
+                          <PanelTop size={13} />
+                        </Link>
+                        <Link
+                          to="atelier/edit-code"
+                          className="flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline"
+                          title="Edit Code"
+                        >
+                          <Code2 size={13} />
+                        </Link>
                         <a
                           href={getStorefrontUrl(store.slug)}
                           target="_blank"

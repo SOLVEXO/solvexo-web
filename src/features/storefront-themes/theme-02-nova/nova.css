@@ -1,0 +1,30 @@
+/* Theme 02 – Nova: keyboard-focus visibility.
+   Mirrors `atelier.css`'s own rationale exactly (see that file's doc
+   comment) — several controls in this theme set `outline: none` inline for
+   a flat, borderless look, which would otherwise silently remove the
+   browser's default focus ring for keyboard users. This restores a real,
+   on-brand one (Nova's vivid indigo accent) instead of just deleting the
+   inline override. */
+.nova-form input:focus,
+.nova-form textarea:focus {
+  border-color: #4B3BFF !important;
+  box-shadow: 0 0 0 3px rgba(75, 59, 255, 0.14);
+}
+
+/* Buttons/links that don't already get a visible default outline (icon-only
+   controls, OTP boxes) get an explicit on-brand focus-visible ring. */
+.nova-focus-ring:focus-visible {
+  outline: 2px solid #4B3BFF;
+  outline-offset: 2px;
+}
+
+/* Navbar search bar, footer newsletter field, OTP digit boxes — each sets
+   `outline-none`/`outline: 'none'` inline for a flat look outside a form
+   with the .nova-form wrapper above, so they need their own explicit
+   focus-visible treatment individually. */
+#nova-search:focus-visible,
+.nova-newsletter-input:focus-visible,
+.nova-otp-digit:focus-visible {
+  outline: 2px solid #4B3BFF;
+  outline-offset: 2px;
+}

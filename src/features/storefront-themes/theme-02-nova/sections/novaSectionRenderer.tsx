@@ -1,0 +1,84 @@
+import type { ReactNode } from 'react';
+import type { Section, Block } from '@/api/services/storefrontTypes';
+
+type SectionRenderFn = (section: Section, blocks: Block[]) => ReactNode;
+
+/** Nova's own open section registry — byte-for-byte the same pattern as
+ *  `atelierSectionRenderer.tsx` (see that file's doc comment for the full
+ *  rationale: section *data* is real shared platform infra, only the
+ *  rendering is theme-specific), scoped to this theme's own render
+ *  functions. This is the exact mechanism that makes a second theme
+ *  possible without any change to the section-data layer or the editor. */
+const registry = new Map<string, SectionRenderFn>();
+
+export function registerNovaSection(type: string, render: SectionRenderFn) {
+  registry.set(type, render);
+}
+
+export function getNovaSectionRender(type: string): SectionRenderFn | undefined {
+  return registry.get(type);
+}
+
+interface NovaSectionRendererProps {
+  sections: Section[];
+  /** Editor-only click-to-select — same contract as
+   *  `AtelierSectionRenderer`'s own `selectable` prop, so the generic
+   *  Customize page's click-to-select preview works identically regardless
+   *  of which theme is active. */
+  selectable?: boolean;
+  selectedSectionId?: string | null;
+  onSelectSection?: (sectionId: string) => void;
+}
+
+/** Renders a real `Section[]` (as authored via the seller's Pages editor)
+ *  through Nova's own section components. Unknown/unregistered types (this
+ *  theme implements a real subset of the shared vocabulary — see this
+ *  theme's own README in `theme.config.ts`) and `enabled: false` sections
+ *  are skipped silently — matches the platform's own established convention. */
+export function NovaSectionRenderer({ sections, selectable, selectedSectionId, onSelectSection }: NovaSectionRendererProps) {
+  if (!selectable) {
+    return (
+      <>
+        {sections.map((section, i) => {
+          if (section.enabled === false) return null;
+          const render = getNovaSectionRender(section.type);
+          if (!render) return null;
+          const blocks = (section.blocks ?? []).filter(b => b.enabled !== false);
+          return <div key={section._id ?? i}>{render(section, blocks)}</div>;
+        })}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <style>{`
+        .nova-section-selectable{outline:2px solid transparent;outline-offset:-2px;cursor:pointer;transition:outline-color 120ms ease;}
+        .nova-section-selectable:hover{outline-color:rgba(75,59,255,0.35);}
+        .nova-section-selected{outline:2px solid #4B3BFF;outline-offset:-2px;cursor:pointer;}
+      `}</style>
+      {sections.map((section, i) => {
+        if (section.enabled === false) return null;
+        const render = getNovaSectionRender(section.type);
+        if (!render) return null;
+        const blocks = (section.blocks ?? []).filter(b => b.enabled !== false);
+        const sectionId = String(section._id ?? i);
+        const isSelected = selectedSectionId === sectionId;
+        return (
+          <div
+            key={section._id ?? i}
+            data-nova-section-id={sectionId}
+            className={isSelected ? 'nova-section-selected' : 'nova-section-selectable'}
+            onClickCapture={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              onSelectSection?.(sectionId);
+            }}
+          >
+            {render(section, blocks)}
+          </div>
+        );
+      })}
+    </>
+  );
+}

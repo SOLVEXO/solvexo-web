@@ -28,13 +28,35 @@ import './theme-01-atelier/theme.manifest';
 // `import.meta.glob` constraint, not a design choice).
 import './theme-01-atelier/theme.devFiles';
 
-/** Every storefront route a theme must implement. The legacy shared-engine
- *  fallback (per-key "not built yet" tolerance) has been removed along with
- *  the legacy rendering code — every theme in `NEW_THEME_REGISTRY` is now
- *  expected to cover all 16 keys before it's installable. `forgotPassword`/
- *  `newPassword` were added alongside `login`/`register`/`verifyOtp` — a
- *  storefront's own account-recovery flow is as required as being able to
- *  sign in at all, not a later nice-to-have. */
+// Theme 02 — "Nova": the reusability-proof second theme. Its own real,
+// independent implementation (own components/sections/pages), registered
+// through the exact same three generic contracts Atelier uses above — see
+// `theme-02-nova/theme.config.ts`'s README for its disclosed 7/16-route
+// scope and why that's safe (this file's own `ThemedRoute` fallback, below).
+import { NovaLayout } from './theme-02-nova/layout/NovaLayout';
+import { NovaHomePage } from './theme-02-nova/pages/NovaHomePage';
+import { NovaProductPage } from './theme-02-nova/pages/NovaProductPage';
+import { NovaCategoryPage } from './theme-02-nova/pages/NovaCategoryPage';
+import { NovaCollectionPage } from './theme-02-nova/pages/NovaCollectionPage';
+import { NovaSearchPage } from './theme-02-nova/pages/NovaSearchPage';
+import { NovaBlogIndexPage } from './theme-02-nova/pages/NovaBlogIndexPage';
+import { NovaBlogPostPage } from './theme-02-nova/pages/NovaBlogPostPage';
+import './theme-02-nova/theme.manifest';
+import './theme-02-nova/theme.devFiles';
+
+/** Every storefront route a theme can implement. The legacy shared-engine's
+ *  per-key fallback (silently rendering nothing for an unbuilt key) has been
+ *  removed along with the legacy rendering code — but `ThemedRoute` (below)
+ *  keeps a real, deliberate replacement for it: a route a theme's `pages`
+ *  map doesn't cover falls back to `DEFAULT_THEME_ID`'s own real,
+ *  fully-functional page for that route, rather than a blank screen or a
+ *  crash. A theme is expected to disclose its real build progress honestly
+ *  (`display.builtRouteCount`/`totalRouteCount`, shown on its Theme Library
+ *  card) rather than claim completeness it doesn't have — see
+ *  `theme-02-nova`'s own manifest/README for a real theme that uses this.
+ *  `forgotPassword`/`newPassword` were added alongside `login`/`register`/
+ *  `verifyOtp` — a storefront's own account-recovery flow is as required as
+ *  being able to sign in at all, not a later nice-to-have. */
 export type StorefrontRouteKey =
   | 'home' | 'product' | 'category' | 'collection' | 'search'
   | 'cart' | 'checkout' | 'login' | 'register' | 'verifyOtp' | 'account'
@@ -96,6 +118,29 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       name: 'Atelier',
       description: 'Premium editorial fashion & lifestyle — asymmetric layouts, large photography, and a quiet, confident typographic voice. Its own independent storefront implementation, not a re-skin.',
       builtRouteCount: 16,
+      totalRouteCount: 16,
+    },
+  },
+  'theme-02-nova': {
+    Layout: NovaLayout,
+    pages: {
+      home: NovaHomePage,
+      product: NovaProductPage,
+      category: NovaCategoryPage,
+      collection: NovaCollectionPage,
+      search: NovaSearchPage,
+      blogIndex: NovaBlogIndexPage,
+      blogPost: NovaBlogPostPage,
+      // cart/checkout/login/register/verifyOtp/forgotPassword/newPassword/
+      // account/customPage are deliberately NOT implemented yet — see
+      // `theme-02-nova/theme.config.ts`'s README. `ThemedRoute` falls back
+      // to Atelier's real page for each of those, so a Nova store is fully
+      // usable end-to-end today.
+    },
+    display: {
+      name: 'Nova',
+      description: 'Bold, energetic, commerce-first — vivid color, confident geometric type, and punchy pill buttons. Its own independent storefront implementation, not a re-skin.',
+      builtRouteCount: 7,
       totalRouteCount: 16,
     },
   },
