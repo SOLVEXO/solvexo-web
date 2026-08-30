@@ -20,6 +20,16 @@ export function getAtelierSectionRender(type: string): SectionRenderFn | undefin
   return registry.get(type);
 }
 
+/** Every section type this theme actually has a render function for — read
+ *  by `theme.preview.ts` at registration time and published as
+ *  `ThemePreviewComponents.supportedSectionTypes`, so `AddSectionModal` can
+ *  offer merchants only what this theme can really render. Called after
+ *  `sections/index.ts`'s own imports have already registered everything, so
+ *  this is always the complete, real list, never a partial snapshot. */
+export function getRegisteredAtelierSectionTypes(): string[] {
+  return Array.from(registry.keys());
+}
+
 interface AtelierSectionRendererProps {
   sections: Section[];
   /** Editor-only click-to-select. When true, each rendered section becomes a

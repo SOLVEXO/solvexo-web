@@ -77,7 +77,16 @@ export function getRoleRedirect(role: AppRole): string {
       // store's own account page — `/marketplace` doesn't even exist in the
       // storefront route tree (see `router/index.tsx`'s `storefrontRouter`).
       if (getStoreSlugFromHost() || isCustomDomainCandidate()) return '/account';
-      return '/marketplace';       // "user" / buyer, apex domain
+      // Apex domain, "user"/buyer: `/marketplace` (and the whole apex-domain
+      // Account/Cart/Checkout flow it belonged to) was removed outright from
+      // `router/index.tsx` — every real buyer shops a store's own themed
+      // subdomain now (the branch above), which already has its own real
+      // account/cart/checkout. This default is a last-resort safety net for
+      // a pre-existing buyer account logging in from the apex domain (new
+      // buyer signup there is already hidden by LoginPage's own
+      // `SELLER_ONLY_LOGIN = true`), not a real product flow any more, so it
+      // falls back to the public homepage rather than a deleted route.
+      return '/';
   }
 }
 

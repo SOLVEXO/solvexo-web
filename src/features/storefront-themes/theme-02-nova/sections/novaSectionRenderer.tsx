@@ -19,6 +19,17 @@ export function getNovaSectionRender(type: string): SectionRenderFn | undefined 
   return registry.get(type);
 }
 
+/** Every section type this theme actually has a render function for — read
+ *  by `theme.preview.ts` at registration time and published as
+ *  `ThemePreviewComponents.supportedSectionTypes`, so `AddSectionModal` can
+ *  offer merchants only what this theme can really render (this is exactly
+ *  what closes the gap this theme's own `sections/index.ts` doc comment
+ *  flagged: Video/DropCountdown being unregistered here used to be silently
+ *  invisible to the "Add a Section" picker too, not just to rendering). */
+export function getRegisteredNovaSectionTypes(): string[] {
+  return Array.from(registry.keys());
+}
+
 interface NovaSectionRendererProps {
   sections: Section[];
   /** Editor-only click-to-select — same contract as

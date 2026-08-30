@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronUp, Trash2, Plus, LayoutTemplate, GripVertical } from 'lucide-react';
 import { ActionMenu } from '@/components/comman/ui';
-import type { Section, Block } from '@/api/services/storefrontTypes';
+import type { Section, Block, SectionType } from '@/api/services/storefrontTypes';
 import { SECTION_META_BY_TYPE } from './sectionRegistry';
 import { SectionFields } from './SectionFields';
 import { BlockFields, type PageOption } from './BlockFields';
@@ -161,7 +161,7 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
   );
 }
 
-export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, onSelectSection }: {
+export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, onSelectSection, supportedSectionTypes }: {
   sections: Section[];
   onChange: (next: Section[]) => void;
   /** Called (with the full next `Section[]`) whenever a section or a block
@@ -177,6 +177,12 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
    *  them. */
   selectedSectionId?: string | null;
   onSelectSection?: (sectionId: string) => void;
+  /** The active store's real theme's registered section types (see
+   *  `AddSectionModal`'s own doc comment for the bug this closes) — passed
+   *  straight through to the "Add a Section" picker. Optional and defaults
+   *  to "show everything," same as before this existed, for any caller that
+   *  hasn't resolved a theme yet. */
+  supportedSectionTypes?: SectionType[];
 }) {
   const [showAdd, setShowAdd] = useState(false);
 
@@ -239,6 +245,7 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
       {showAdd && (
         <AddSectionModal
           onClose={() => setShowAdd(false)}
+          supportedTypes={supportedSectionTypes}
           onPick={type => {
             const meta = SECTION_META_BY_TYPE[type];
             onChange([...sections, { type, settings: { ...meta.defaultSettings }, blocks: [] }]);

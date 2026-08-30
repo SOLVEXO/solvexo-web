@@ -98,7 +98,13 @@ export function NotificationBell() {
     } else if (role === 'admin') {
       navigate('/admin/settings?tab=notifications');
     } else {
-      navigate('/account/notifications');
+      // `role === 'user'` (a buyer) on the apex domain — `/account/notifications`
+      // no longer exists (see `ProfileAvatar.tsx`'s own `SHOW_BUYER_FEATURES`
+      // comment: the whole apex-domain Account/Marketplace/Cart/Checkout flow
+      // was removed outright, since a real buyer always shops a store's own
+      // themed subdomain now — the branch above already handles that case).
+      // Nothing meaningful to land a bare apex-domain buyer on any more.
+      navigate('/');
     }
   };
 

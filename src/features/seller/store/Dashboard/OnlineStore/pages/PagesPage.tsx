@@ -17,6 +17,9 @@ import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { VersionHistoryModal } from '../builder/VersionHistoryModal';
 import { useEditorState } from '../builder/editor/useEditorState';
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
+import { apiGetStoreTheme } from '@/api/services/storeTheme';
+import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
+import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 
 function SaveButton({ onClick, saving, label }: { onClick: () => void; saving: boolean; label: string }) {
   return (
@@ -45,6 +48,20 @@ export function PagesPage() {
   const flash = (ok: boolean, text: string) => { if (ok) toast.success(text); else toast.error(text); };
 
   const selectedPage = pages.find(p => p._id === selectedPageId) ?? null;
+
+  // Which section types this store's REAL active theme can actually render
+  // — this page never had a theme lookup at all before, so its own "Add a
+  // Section" picker (via PageSectionsEditor below) always showed the full,
+  // theme-agnostic catalogue regardless of which theme was active. On Nova
+  // that meant Video/Drop Countdown could be "added" to a custom page here
+  // too and silently render as nothing — same bug as Customize, same fix:
+  // resolve the real theme once and filter the picker against it. Falls
+  // back to Atelier's full set (same as every other `getThemePreviewComponents`
+  // call in the app) while this hasn't loaded yet, so the picker never sits
+  // empty.
+  const [themeDefinitionId, setThemeDefinitionId] = useState<string | undefined>(undefined);
+  useEffect(() => { apiGetStoreTheme(storeId).then(res => setThemeDefinitionId(res.data.themeDefinitionId)).catch(() => {}); }, [storeId]);
+  const supportedSectionTypes = getThemePreviewComponents(themeDefinitionId, DEFAULT_THEME_ID).supportedSectionTypes;
 
   const loadPages = useCallback(() => {
     setPagesLoading(true);
@@ -346,7 +363,7 @@ export function PagesPage() {
                   )}
                 </div>
               </div>
-              <PageSectionsEditor sections={pagesEditor.workingCopy ?? []} onChange={pagesEditor.edit} onPersist={persistSections} pageOptions={pageOptions} storeId={storeId} />
+              <PageSectionsEditor sections={pagesEditor.workingCopy ?? []} onChange={pagesEditor.edit} onPersist={persistSections} pageOptions={pageOptions} storeId={storeId} supportedSectionTypes={supportedSectionTypes} />
             </>
           ) : (
             <div className="bg-white border border-bone rounded-2xl p-10 text-center">

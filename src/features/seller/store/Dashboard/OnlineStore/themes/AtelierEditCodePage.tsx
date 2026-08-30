@@ -17,7 +17,7 @@ import { apiBrowseMediaLibrary, type MediaAsset } from '@/api/services/mediaLibr
 import { apiGetStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
 import { SECTION_META } from '../builder/sectionRegistry';
 import { AtelierLivePreview } from './AtelierLivePreview';
-import { atelierTheme as t } from '@/features/storefront-themes/theme-01-atelier/theme.config';
+import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
 import { getThemeManifest, type ThemeTemplateScopeDef } from '@/features/storefront-themes/themeManifest';
 import { getThemeDevFiles } from '@/features/storefront-themes/themeDevFiles';
 // See the load-bearing comment on this same import in
@@ -328,7 +328,7 @@ export function AtelierEditCodePage() {
   return (
     <div className="bg-[#FAF9F5] min-h-full">
       <StorePageHeader
-        title="Edit Code — Atelier"
+        title={`Edit Code — ${manifest.name}`}
         subtitle="Developer workspace — each templates/*.json is the same real draft document the Customize page edits, just as raw data."
         actions={
           selected?.kind === 'json' ? (
@@ -413,7 +413,7 @@ export function AtelierEditCodePage() {
                 </div>
                 <div className="border border-bone rounded-xl bg-white overflow-hidden" style={{ height: 'calc(100vh - 300px)' }}>
                   <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-3">
-                    <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: t.colors.bg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
+                    <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: getThemePreviewComponents(draftTheme?.themeDefinitionId, DEFAULT_THEME_ID).theme.colors.bg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
                       <AtelierLivePreview
                         sections={previewSections}
                         showChrome={selectedTemplate?.resourceType === 'home'}

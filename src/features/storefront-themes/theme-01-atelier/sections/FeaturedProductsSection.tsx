@@ -30,13 +30,23 @@ function paramsForSource(settings: Section['settings']): PublicStoreProductsPara
 function FeaturedProductsSection({ section }: { section: Section }) {
   const { store } = useStorefront();
   const { currency } = useCurrencyPreference();
-  const [products, setProducts] = useState<PublicStoreProduct[] | null>(null);
+  // The Theme Library's static demo preview (`themeDemoPreview.ts`) has no
+  // real store/products to fetch — it sets `section.settings.demoProducts`
+  // to a fixed, fictional list instead, so this same registered section
+  // (and the same real `AtelierProductCard`, with `demo` passed through)
+  // renders a genuinely finished-looking product grid there too, rather
+  // than every theme's preview disclosing away every section that needs
+  // real data. A real store's sections never set this, so the live fetch
+  // below is completely untouched for every actual seller.
+  const demoProducts = section.settings.demoProducts as PublicStoreProduct[] | undefined;
+  const [products, setProducts] = useState<PublicStoreProduct[] | null>(demoProducts ?? null);
 
   useEffect(() => {
+    if (demoProducts) return;
     apiGetPublicStoreProducts(store.storeId, paramsForSource(section.settings))
       .then(res => setProducts(res.data?.products ?? []))
       .catch(() => setProducts([]));
-  }, [store.storeId, section.settings]);
+  }, [store.storeId, section.settings, demoProducts]);
 
   if (products !== null && products.length === 0) return null;
 
@@ -59,7 +69,7 @@ function FeaturedProductsSection({ section }: { section: Section }) {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
-            {products.map(p => <AtelierProductCard key={p._id} product={p} currency={currency} />)}
+            {products.map(p => <AtelierProductCard key={p._id} product={p} currency={currency} demo={!!demoProducts} />)}
           </div>
         )}
       </div>

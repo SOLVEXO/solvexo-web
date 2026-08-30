@@ -28,13 +28,18 @@ function paramsForSource(settings: Section['settings']): PublicStoreProductsPara
 function FeaturedProductsSection({ section }: { section: Section }) {
   const { store } = useStorefront();
   const { currency } = useCurrencyPreference();
-  const [products, setProducts] = useState<PublicStoreProduct[] | null>(null);
+  // Same static demo-data escape hatch as `AtelierFeaturedProductsSection`
+  // (see its doc comment) — the Theme Library preview sets
+  // `section.settings.demoProducts` since it has no real store to fetch.
+  const demoProducts = section.settings.demoProducts as PublicStoreProduct[] | undefined;
+  const [products, setProducts] = useState<PublicStoreProduct[] | null>(demoProducts ?? null);
 
   useEffect(() => {
+    if (demoProducts) return;
     apiGetPublicStoreProducts(store.storeId, paramsForSource(section.settings))
       .then(res => setProducts(res.data?.products ?? []))
       .catch(() => setProducts([]));
-  }, [store.storeId, section.settings]);
+  }, [store.storeId, section.settings, demoProducts]);
 
   if (products !== null && products.length === 0) return null;
 
@@ -57,7 +62,7 @@ function FeaturedProductsSection({ section }: { section: Section }) {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
-            {products.map(p => <NovaProductCard key={p._id} product={p} currency={currency} />)}
+            {products.map(p => <NovaProductCard key={p._id} product={p} currency={currency} demo={!!demoProducts} />)}
           </div>
         )}
       </div>

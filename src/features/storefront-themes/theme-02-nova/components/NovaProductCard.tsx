@@ -11,33 +11,44 @@ const CARD_WIDTHS = [320, 480, 640];
 /** Theme 02's own product card — rounded image frame, bold sale badge pill,
  *  accent-colored price. Independently implemented from `AtelierProductCard`
  *  and the legacy `ProductCard.tsx` — its own visual language, same real
- *  data shape and wishlist behavior. */
-export function NovaProductCard({ product, currency }: { product: PublicStoreProduct; currency: string }) {
+ *  data shape and wishlist behavior.
+ *
+ *  `demo` (default false, every real storefront call site omits it) — see
+ *  the identical doc comment on `AtelierProductCard`: swaps the two
+ *  `<Link>`s for plain non-navigating wrappers for the Theme Library
+ *  preview's fictional showcase products, which have no real `slug` a
+ *  `/product/:slug` route could resolve. */
+export function NovaProductCard({ product, currency, demo = false }: { product: PublicStoreProduct; currency: string; demo?: boolean }) {
   const { isWishlisted, toggleWishlist } = useWishlistContext();
   const inWishlist = product.variantId ? isWishlisted(product._id, product.variantId) : false;
   const symbol = currencySymbol(currency);
   const price = product.subscriberPrice ?? product.defaultVariantPrice;
   const onSale = product.compareAtPrice != null && product.defaultVariantPrice != null && product.compareAtPrice > product.defaultVariantPrice;
 
+  const media = product.images?.[0] ? (
+    <img
+      src={cloudinaryUrl(product.images[0], 480)}
+      srcSet={cloudinarySrcSet(product.images[0], CARD_WIDTHS)}
+      sizes="(min-width: 1024px) 25vw, 50vw"
+      alt={product.name}
+      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+      loading="lazy"
+    />
+  ) : (
+    <div className="w-full h-full flex items-center justify-center">
+      <ImageOff size={28} style={{ color: t.colors.inkMuted }} />
+    </div>
+  );
+  const title = <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.ink, fontWeight: 600 }}>{product.name}</p>;
+
   return (
     <div className="group flex flex-col">
       <div className="relative" style={{ aspectRatio: '1/1', background: t.colors.bgAlt, overflow: 'hidden', borderRadius: t.radius.md }}>
-        <Link to={`/product/${product.slug}`} className="block w-full h-full">
-          {product.images?.[0] ? (
-            <img
-              src={cloudinaryUrl(product.images[0], 480)}
-              srcSet={cloudinarySrcSet(product.images[0], CARD_WIDTHS)}
-              sizes="(min-width: 1024px) 25vw, 50vw"
-              alt={product.name}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <ImageOff size={28} style={{ color: t.colors.inkMuted }} />
-            </div>
-          )}
-        </Link>
+        {demo ? (
+          <div className="block w-full h-full">{media}</div>
+        ) : (
+          <Link to={`/product/${product.slug}`} className="block w-full h-full">{media}</Link>
+        )}
         {onSale && (
           <span
             className="absolute top-3 left-3"
@@ -58,9 +69,11 @@ export function NovaProductCard({ product, currency }: { product: PublicStorePro
           </button>
         )}
       </div>
-      <Link to={`/product/${product.slug}`} className="no-underline mt-3">
-        <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.ink, fontWeight: 600 }}>{product.name}</p>
-      </Link>
+      {demo ? (
+        <div className="no-underline mt-3">{title}</div>
+      ) : (
+        <Link to={`/product/${product.slug}`} className="no-underline mt-3">{title}</Link>
+      )}
       <div className="flex items-center gap-2 mt-1">
         <span style={{ fontFamily: t.fonts.display, fontSize: '13.5px', fontWeight: 700, color: onSale ? t.colors.accent : t.colors.ink }}>
           {price != null ? `${symbol}${fmt2(price)}` : '—'}

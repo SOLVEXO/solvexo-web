@@ -6,7 +6,6 @@ import { RootLayout }   from '@/components/layouts/RootLayout';
 
 // Layouts
 import { BuyerLayout }  from '@/components/layouts/BuyerLayout';
-import { AccountLayout } from '@/components/layouts/AccountLayout';
 import { PublicLayout } from '@/components/layouts/PublicLayout';
 import { SellerLayout } from '@/components/layouts/SellerLayout';
 import { AdminLayout }  from '@/components/layouts/AdminLayout';
@@ -14,12 +13,8 @@ import { StoreLayout }  from '@/components/layouts/StoreLayout';
 import { RequireRole }  from './RequireRole';
 
 // Critical conversion-path pages
-import { ProductDetail } from '@/features/buyer/pages/ProductDetail';
-import { CartPage }     from '@/features/buyer/pages/CartPage';
-import { CheckoutPage } from '@/features/buyer/pages/CheckoutPage';
 import { LoginPage }    from '@/features/auth/pages/LoginPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
-import { Marketplace }  from '@/features/buyer/pages/Marketplace';
 import { OnboardingPage, OnboardingEntry } from '@/features/auth/pages/onboard/OnboardingPage';
 
 // Remaining auth pages
@@ -45,25 +40,9 @@ import { SolutionsOverviewPage } from '@/features/buyer/pages/solutions/Solution
 import { SolutionPage }         from '@/features/buyer/pages/solutions/SolutionPage';
 
 // ── Public / Buyer ────────────────────────────────────────────────────────────
-import { OrderSuccessPage } from '@/features/buyer/pages/OrderSuccessPage';
 import { StorefrontLayout } from '@/features/storefront/StorefrontLayout';
 import { ThemedRoute } from '@/features/storefront-themes/ThemedRoute';
-import { EducationMarketplace } from '@/features/buyer/pages/EducationMarketplace';
 import { MaintenancePage } from '@/features/buyer/pages/MaintenancePage';
-
-// ── Account (buyer) ───────────────────────────────────────────────────────────
-import { AccountDashboard } from '@/features/buyer/pages/account/AccountDashboard';
-import { OrdersTab as AccountOrders } from '@/features/buyer/pages/MyOrdersPage';
-import { Wishlist as AccountWishlist } from '@/features/buyer/pages/account/Wishlist';
-import { ReviewsTab as AccountReviews } from '@/features/buyer/pages/MyReviewsPage';
-import { Payments as AccountPayments } from '@/features/buyer/pages/account/Payments';
-import { Messages as AccountMessages } from '@/features/buyer/pages/account/Messages';
-// Real routes replacing Settings' old ?tab=<name> query-param switcher.
-import { PersonalInfo as AccountProfile } from '@/features/buyer/pages/account/PersonalInfo';
-import { Security as AccountSecurity } from '@/features/buyer/pages/account/Security';
-import { Addresses as AccountAddresses } from '@/features/buyer/pages/account/Addresses';
-import { Notifications as AccountNotifications } from '@/features/buyer/pages/account/Notifications';
-import { SubscriptionsTab as AccountSubscriptions } from '@/features/buyer/pages/MySubscriptionsPage';
 
 // ── Seller ────────────────────────────────────────────────────────────────────
 import { SellerAnalytics } from '@/features/seller/dashboard/SellerAnalytics';
@@ -74,7 +53,7 @@ import { ThemeLibraryPage } from '@/features/seller/store/Dashboard/OnlineStore/
 import { AtelierCustomizePage } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierCustomizePage';
 import { AtelierEditCodePage } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierEditCodePage';
 import { AtelierHeaderFooterPage } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierHeaderFooterPage';
-import { AtelierThemeDemoPreview } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierThemeDemoPreview';
+import { ThemeDemoPreview } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierThemeDemoPreview';
 import { SellerSettings } from '@/features/seller/dashboard/settings/SellerSettings';
 import { SellerShipping } from '@/features/seller/dashboard/SellerShipping';
 import { SellerMessages } from '@/features/seller/dashboard/SellerMessages';
@@ -93,7 +72,6 @@ import StoreCategories from '@/features/seller/store/Dashboard/Manage/StoreCateg
 import StoreCollections from '@/features/seller/store/Dashboard/Manage/StoreCollections';
 import FilesLibrary from '@/features/seller/store/Dashboard/Manage/FilesLibrary';
 import StorePlanBilling from '@/features/seller/store/Dashboard/Manage/StorePlanBilling';
-import { StoreVerification } from '@/features/seller/store/Dashboard/Manage/StoreVerification';
 import { StoreOrderList } from '@/features/seller/store/Dashboard/StoreSection/orders/OrderList';
 import { StoreOrderDetail } from '@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail';
 import DraftOrdersList from '@/features/seller/store/Dashboard/StoreSection/orders/DraftOrdersList';
@@ -109,6 +87,13 @@ import { StoreMarketing } from '@/features/seller/store/Dashboard/Operations/mar
 import { StoreLoyalty } from '@/features/seller/store/Dashboard/Operations/loyalty/Loyalty';
 import { StoreSubscriptions } from '@/features/seller/store/Dashboard/Operations/subscriptions/Subscriptions';
 import { StoreIntegrations } from '@/features/seller/store/Dashboard/Operations/integrations/Integrations';
+// Seller-facing surfaces for two features whose backend + frontend API
+// clients already existed (automatic discounts, gift cards — both already
+// wired into checkout pricing) but had no dashboard page anywhere to reach
+// them from — the same "built but unreachable" gap as AtelierLivePreview's
+// hardcoded-theme bug, just in a different corner of the app.
+import StoreDiscounts from '@/features/seller/store/Dashboard/Manage/StoreDiscounts';
+import StoreGiftCards from '@/features/seller/store/Dashboard/Manage/StoreGiftCards';
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 import { AdminOverview } from '@/features/admin/pages/AdminOverview';
@@ -216,43 +201,28 @@ const mainRouter = createBrowserRouter([
               { path: 'solutions/:slug', element: <SolutionPage /> },
             ],
           },
-          // Account — nested routes, each section is its own deep-linkable page
-          {
-            path: 'account',
-            element: <AccountLayout />,
-            children: [
-              { index: true,          element: <Navigate to="dashboard" replace /> },
-              { path: 'dashboard',     element: <AccountDashboard /> },
-              { path: 'orders',        element: <AccountOrders /> },
-              { path: 'wishlist',      element: <AccountWishlist /> },
-              { path: 'reviews',       element: <AccountReviews /> },
-              { path: 'payments',      element: <AccountPayments /> },
-              { path: 'profile',       element: <AccountProfile /> },
-              { path: 'security',      element: <AccountSecurity /> },
-              { path: 'addresses',     element: <AccountAddresses /> },
-              { path: 'notifications', element: <AccountNotifications /> },
-              { path: 'subscriptions', element: <AccountSubscriptions /> },
-              // Settings merged into Profile — old bookmarks/links still land somewhere real.
-              { path: 'settings',      element: <Navigate to="/account/profile" replace /> },
-              { path: 'messages',      element: <AccountMessages /> },
-            ],
-          },
-          // Pages with their own embedded navbar (no PublicLayout wrapper needed)
-          // `:slugOrId` is optional (bare `/marketplace` browses everything) and
-          // does double duty: a category slug narrows the browse view, while a
-          // 24-hex-char value is treated by Marketplace as a legacy bookmarked
-          // product id (old `/marketplace/:id` product links) and resolved/
-          // redirected to the new canonical `/product/:slug` — see
-          // Marketplace.tsx's handling of `slugOrId`. Can't be two separate
-          // sibling routes since both shapes share the identical path pattern.
-          { path: 'marketplace/:slugOrId?', element: <Marketplace /> },
-          { path: 'cart',            element: <CartPage /> },
-          { path: 'checkout',        element: <CheckoutPage /> },
-          { path: 'order-success',   element: <OrderSuccessPage /> },
-          { path: 'product/:slug',   element: <ProductDetail /> },
-          { path: 'education/:levelSlug?', element: <EducationMarketplace /> },
-          // Old mis-cased path — static alias, same idiom as 'settings' above.
-          { path: 'EducationMarketplace', element: <Navigate to="/education" replace /> },
+          // The apex-domain "Account" section (Dashboard/Orders/Wishlist/
+          // Reviews/Payments/Profile/Security/Addresses/Notifications/
+          // Subscriptions/Messages) and the whole Marketplace/Cart/Checkout/
+          // Order-Success/ProductDetail/Education flow that used to live here
+          // were removed (frontend-only, at the seller's explicit request) —
+          // they were the pre-"store-wise" unified buyer experience, from
+          // before every store got its own themed subdomain
+          // (`storefrontRouter` above, via `ThemedRoute`, already has its own
+          // real `account`/`cart`/`checkout`/`login` etc. that correctly
+          // render in THAT store's active theme). Nothing here was still
+          // reachable: `LoginPage`'s own `SELLER_ONLY_LOGIN = true` and
+          // `ProfileAvatar`'s own `SHOW_BUYER_FEATURES = false` had already
+          // hidden every path that led here. `getRoleRedirect`'s buyer/apex
+          // fallback and `ProfileAvatar`'s buyer menu items were updated in
+          // the same pass so nothing is left pointing at a deleted route —
+          // see those files' own comments. The actual page files under
+          // `features/buyer/pages/{Marketplace,CartPage,CheckoutPage,
+          // OrderSuccessPage,ProductDetail,EducationMarketplace,account/*,
+          // MyOrdersPage,MyReviewsPage,MySubscriptionsPage}` and
+          // `components/layouts/AccountLayout.tsx` are now unreferenced by
+          // any route — kept on disk only because this session couldn't
+          // delete files directly; safe to delete outright.
         ],
       },
 
@@ -305,13 +275,28 @@ const mainRouter = createBrowserRouter([
           { path: 'collections',                      element: <StoreCollections /> },
           { path: 'files',                            element: <FilesLibrary /> },
           { path: 'plan-billing',                     element: <StorePlanBilling /> },
-          { path: 'verification',                     element: <StoreVerification /> },
+          // Verification's sidebar NAV item and workspace banner were removed
+          // (dashboard-declutter request) while the underlying feature/page/
+          // backend stay intact — this redirect just keeps the old URL from
+          // 404ing for anyone with it bookmarked or linked, matching the
+          // activity/followers/pos-admin pattern below.
+          { path: 'verification',                     element: <Navigate to="../settings" replace /> },
           { path: 'storebuilder',                     element: <Navigate to="online-store/themes" replace /> },
           { path: 'online-store/themes',               element: <ThemeLibraryPage /> },
-          { path: 'online-store/themes/atelier/customize', element: <AtelierCustomizePage /> },
-          { path: 'online-store/themes/atelier/edit-code', element: <AtelierEditCodePage /> },
-          { path: 'online-store/themes/atelier/header-footer', element: <AtelierHeaderFooterPage /> },
-          { path: 'online-store/themes/atelier/preview', element: <AtelierThemeDemoPreview /> },
+          // `:themeId` is carried in the URL for a real reason now — it used
+          // to be the literal word "atelier" unconditionally, even while
+          // editing a Nova (or any other) store's theme, which is exactly
+          // the kind of "as a developer I can't tell what's happening here"
+          // confusion a real URL segment is supposed to prevent (matches
+          // Shopify's own `/admin/themes/<id>/editor` convention). None of
+          // the three pages below actually READ this param — each already
+          // resolves the store's real active theme itself via
+          // `apiGetStoreTheme(storeId)` — so this is purely a legibility fix,
+          // not a functional one; `ThemeLibraryPage.tsx`'s links now build
+          // this segment from the real `entry.id` instead of hardcoding it.
+          { path: 'online-store/themes/:themeId/customize', element: <AtelierCustomizePage /> },
+          { path: 'online-store/themes/:themeId/edit-code', element: <AtelierEditCodePage /> },
+          { path: 'online-store/themes/:themeId/header-footer', element: <AtelierHeaderFooterPage /> },
           { path: 'online-store/pages',               element: <PagesPage /> },
           { path: 'online-store/blog',                element: <BlogPage /> },
           { path: 'returns',                          element: <StoreReturnList /> },
@@ -321,6 +306,8 @@ const mainRouter = createBrowserRouter([
           { path: 'finance',                          element: <StoreFinance /> },
           { path: 'inventory',                        element: <StoreInventory /> },
           { path: 'marketing',                        element: <StoreMarketing /> },
+          { path: 'discounts',                        element: <StoreDiscounts /> },
+          { path: 'gift-cards',                       element: <StoreGiftCards /> },
           { path: 'loyalty',                          element: <StoreLoyalty /> },
           { path: 'subscriptions',                    element: <StoreSubscriptions /> },
           { path: 'integrations',                     element: <StoreIntegrations /> },
@@ -332,6 +319,19 @@ const mainRouter = createBrowserRouter([
           { path: '*',                                element: <StoreNotFound /> },
         ],
       },
+
+      // ── Theme Library preview — deliberately OUTSIDE `StoreLayout` ─────
+      // A storefront preview has to look like the real, finished storefront
+      // a buyer would see — full-bleed, zero admin chrome. Nesting this
+      // under `/store/:storeId`'s `StoreLayout` (as it used to be) wrapped
+      // every preview in the seller's own dashboard sidebar/header, which is
+      // exactly the "why is my dashboard showing inside the theme preview"
+      // bug reported against the previous version of this route. Same
+      // literal path as before (`/store/:storeId/online-store/themes/:themeId/preview`),
+      // so the existing relative `<Link to={`${entry.id}/preview`}>` in
+      // `ThemeLibraryPage.tsx` still resolves to this exact route — only
+      // where it's registered in the tree changed, not the URL.
+      { path: '/store/:storeId/online-store/themes/:themeId/preview', element: <ThemeDemoPreview /> },
 
       // ── Admin pages ───────────────────────────────────────────────────
       {

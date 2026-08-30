@@ -18,7 +18,19 @@ import { useEditorState } from '../builder/editor/useEditorState';
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
 import { apiListStorePages } from '@/api/services/storePages';
 import { AtelierLivePreview } from './AtelierLivePreview';
-import { atelierTheme as t } from '@/features/storefront-themes/theme-01-atelier/theme.config';
+import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
+import { getThemeManifest } from '@/features/storefront-themes/themeManifest';
+import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
+
+// Fixed platform brand color — same literal `ThemeLibraryPage.tsx`'s Install
+// button and `AtelierCustomizePage.tsx`'s `SaveButton` use. Admin-chrome
+// controls (Save/Publish/"+ Add" links here) intentionally use the
+// PLATFORM's own brand color rather than the active theme's accent — this
+// page previously read Atelier's static accent color unconditionally
+// regardless of which theme was actually active on the store, a real (if
+// purely cosmetic) per-theme-hardcoding bug fixed alongside the live-preview
+// panel's own fix (see `themePreviewComponents.ts`).
+const ADMIN_ACCENT = '#D97757';
 
 const ANNOUNCEMENT_TYPE_LABEL: Record<StoreAnnouncementType, string> = {
   info: 'Info', sale: 'Sale', coupon: 'Coupon', warning: 'Warning', shipping: 'Shipping', holiday: 'Holiday',
@@ -343,6 +355,17 @@ export function AtelierHeaderFooterPage() {
     return { ...themeDoc, draft: { ...themeDoc.draft, header: headerDraft, footer: footerDraft } };
   }, [themeDoc, headerDraft, footerDraft]);
 
+  // The preview PANEL's own background — resolved against the real active
+  // theme (not hardcoded to Atelier), same fix as `AtelierCustomizePage.tsx`'s
+  // own `previewPanelBg` — see that file's comment.
+  const previewPanelBg = getThemePreviewComponents(previewTheme?.themeDefinitionId, DEFAULT_THEME_ID).theme.colors.bg;
+
+  // Page title's theme name — resolved the same way, instead of a literal
+  // "Atelier" that kept showing even while editing a Nova (or any other
+  // non-Atelier) store's Header & Footer. See `AtelierCustomizePage.tsx`'s
+  // identical `manifest.name` fix for the full story.
+  const manifest = getThemeManifest(themeDoc?.themeDefinitionId, DEFAULT_THEME_ID);
+
   const busy = editor.phase === 'saving' || editor.phase === 'publishing' || discarding;
 
   if (storeLoading || loading || !headerDraft || !footerDraft) {
@@ -352,7 +375,7 @@ export function AtelierHeaderFooterPage() {
   return (
     <div className="bg-[#FAF9F5] min-h-full">
       <StorePageHeader
-        title="Header & Footer — Atelier"
+        title={`Header & Footer — ${manifest.name}`}
         subtitle={tab === 'announcement'
           ? 'A message strip shown across your whole storefront. Saving here takes effect immediately — there is no separate Publish step.'
           : 'Navigation links, footer columns, social links, and copyright text. Edits save to a draft — nothing goes live until you Publish.'}
@@ -385,7 +408,7 @@ export function AtelierHeaderFooterPage() {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {tab === 'announcement' ? (
-                <button onClick={handleSaveAnnouncement} disabled={savingAnnouncement || !announcementForm} className="flex items-center gap-1.5 px-5 py-[9px] rounded-[10px] text-[13px] font-bold text-white border-none cursor-pointer disabled:opacity-60" style={{ background: t.colors.accent }}>
+                <button onClick={handleSaveAnnouncement} disabled={savingAnnouncement || !announcementForm} className="flex items-center gap-1.5 px-5 py-[9px] rounded-[10px] text-[13px] font-bold text-white border-none cursor-pointer disabled:opacity-60" style={{ background: ADMIN_ACCENT }}>
                   {savingAnnouncement ? <Loader2 size={13} className="animate-spin" /> : null} Save — goes live immediately
                 </button>
               ) : (
@@ -395,10 +418,10 @@ export function AtelierHeaderFooterPage() {
                       <RotateCcw size={13} /> Discard Draft
                     </button>
                   )}
-                  <button onClick={handleSave} disabled={editor.phase === 'saving'} className="flex items-center gap-1.5 px-5 py-[9px] rounded-[10px] text-[13px] font-bold text-white border-none cursor-pointer disabled:opacity-60" style={{ background: t.colors.accent }}>
+                  <button onClick={handleSave} disabled={editor.phase === 'saving'} className="flex items-center gap-1.5 px-5 py-[9px] rounded-[10px] text-[13px] font-bold text-white border-none cursor-pointer disabled:opacity-60" style={{ background: ADMIN_ACCENT }}>
                     {editor.phase === 'saving' ? <Loader2 size={13} className="animate-spin" /> : null} Save Draft
                   </button>
-                  <button onClick={handlePublish} disabled={editor.phase === 'publishing'} className="flex items-center gap-1.5 px-5 py-[9px] rounded-[10px] text-[13px] font-bold text-white border-none cursor-pointer disabled:opacity-60" style={{ background: t.colors.accent }}>
+                  <button onClick={handlePublish} disabled={editor.phase === 'publishing'} className="flex items-center gap-1.5 px-5 py-[9px] rounded-[10px] text-[13px] font-bold text-white border-none cursor-pointer disabled:opacity-60" style={{ background: ADMIN_ACCENT }}>
                     {editor.phase === 'publishing' ? <Loader2 size={13} className="animate-spin" /> : null} Publish
                   </button>
                 </>
@@ -442,7 +465,7 @@ export function AtelierHeaderFooterPage() {
               </SortableList>
               {headerDraft.blocks.length < 10 && (
                 <button type="button" onClick={() => editor.edit(prev => ({ ...prev!, header: { ...headerDraft, blocks: [...headerDraft.blocks, { type: 'nav_link', settings: { label: '', linkType: 'home' } }] } }))}
-                  className="text-[12px] font-semibold cursor-pointer bg-transparent border-none text-left flex items-center gap-1" style={{ color: t.colors.accent }}>
+                  className="text-[12px] font-semibold cursor-pointer bg-transparent border-none text-left flex items-center gap-1" style={{ color: ADMIN_ACCENT }}>
                   <Plus size={13} /> Add nav link
                 </button>
               )}
@@ -475,7 +498,7 @@ export function AtelierHeaderFooterPage() {
                 {FOOTER_BLOCK_OPTIONS.map(opt => (
                   <button key={opt.type} type="button"
                     onClick={() => editor.edit(prev => ({ ...prev!, footer: { ...footerDraft, blocks: [...footerDraft.blocks, { type: opt.type, settings: { ...opt.defaults } }] } }))}
-                    className="text-[12px] font-semibold cursor-pointer bg-transparent border-none text-left flex items-center gap-1" style={{ color: t.colors.accent }}>
+                    className="text-[12px] font-semibold cursor-pointer bg-transparent border-none text-left flex items-center gap-1" style={{ color: ADMIN_ACCENT }}>
                     <Plus size={13} /> {opt.label}
                   </button>
                 ))}
@@ -488,7 +511,7 @@ export function AtelierHeaderFooterPage() {
 
         <div className="border border-bone rounded-2xl bg-white overflow-hidden" style={{ height: 'calc(100vh - 220px)' }}>
           <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-4">
-            <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: t.colors.bg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
+            <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
               <AtelierLivePreview sections={[]} showChrome draftTheme={previewTheme} announcementOverride={announcementForm} />
             </div>
           </div>

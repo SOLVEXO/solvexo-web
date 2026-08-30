@@ -6,11 +6,11 @@ import { motion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, ChevronLeft, ChevronRight, User,
+  Settings, Sparkles, ChevronLeft, ChevronRight,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
-  LayoutGrid, Newspaper, Palette,
+  LayoutGrid, Newspaper, Palette, Percent, Gift,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, type StorePlatformSubscription } from '@/api/services/platformPlans';
@@ -89,6 +89,8 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     group: 'Growth',
     items: [
       { id: 'marketing',     Icon: Megaphone, label: 'Marketing',     path: 'marketing'     },
+      { id: 'discounts',     Icon: Percent,   label: 'Discounts',     path: 'discounts'     },
+      { id: 'gift-cards',    Icon: Gift,      label: 'Gift Cards',    path: 'gift-cards'    },
       { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty'       },
       { id: 'subscriptions', Icon: RefreshCw, label: 'Subscriptions', path: 'subscriptions' },
       { id: 'seo',           Icon: Search,    label: 'SEO',           path: 'seo'           },
@@ -98,16 +100,27 @@ export const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: 'Finance',
     items: [
-      { id: 'finance',      Icon: Wallet,     label: 'Finance',        path: 'finance'      },
-      { id: 'plan-billing', Icon: CreditCard, label: 'Plan & Billing', path: 'plan-billing' },
+      { id: 'finance',      Icon: Wallet,     label: 'Finance',  path: 'finance'      },
+      // Renamed from "Plan & Billing" — that name read as the same thing as
+      // Growth's "Subscriptions" item above, but they're unrelated: this is
+      // the SELLER's own Solvexo plan/invoices (`StorePlanBilling.tsx`),
+      // "Subscriptions" is a customer-facing recurring-order feature for
+      // THIS store's shoppers (`Operations/subscriptions/Subscriptions.tsx`).
+      // Kept as two separate pages (merging them would combine two
+      // unrelated feature sets into one confusing screen) but renamed so the
+      // two no longer sound like the same page. Route path (`plan-billing`)
+      // is unchanged — only the label a seller sees changed.
+      { id: 'plan-billing', Icon: CreditCard, label: 'Billing',  path: 'plan-billing' },
     ],
   },
   {
     group: 'Settings',
     items: [
-      { id: 'integrations',  Icon: Plug,        label: 'Integrations',          path: 'integrations'  },
-      { id: 'settings',      Icon: Settings,    label: 'Settings',              path: 'settings'      },
-      { id: 'account',       Icon: User,        label: 'Account',               path: 'account'       },
+      { id: 'integrations',  Icon: Plug,        label: 'Integrations', path: 'integrations'  },
+      // 'verification' and 'account' were removed from here — see the doc
+      // comment above `StoreVerificationBanner`'s old call site (deleted
+      // below) and `StorePageHeader`'s new account button for why.
+      { id: 'settings',      Icon: Settings,    label: 'Settings',     path: 'settings'      },
     ],
   },
 ];
@@ -493,6 +506,12 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
   const { pathname } = useLocation();
   const { storeId } = useStoreWorkspace();
   const { stores: myStores, loading: myStoresLoading } = useMyStores();
+  // Same real photo/initials the sidebar footer's own account button already
+  // shows (and the same profile source public pages' ProfileAvatar reads) —
+  // a fresh, independently-cached call, not a prop drilled down from
+  // StoreWorkspaceProvider, since this header is exported and used on its
+  // own by every store page.
+  const { profile, loading: profileLoading } = useGetProfile();
   const dashboardPath = `/store/${storeId}/dashboard`;
   const isDashboard = pathname === dashboardPath;
 
@@ -530,6 +549,37 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
            stores right from the navbar, on every store page. */}
         <StoreSwitcher stores={myStores} loading={myStoresLoading} currentStoreId={storeId} variant="light" compact />
         <NotificationBell />
+        {/* Account moved here from the sidebar NAV list — it's the seller's
+           own personal identity/profile, not a store workspace section, so
+           it belongs beside the store switcher and notifications (matching
+           how public-facing pages put account access in the top nav), not
+           listed alongside Products/Orders/Settings in the sidebar. Styled as
+           a real avatar (photo, falling back to initials) — same visual
+           treatment as the public navbar's ProfileAvatar and this same
+           sidebar's own footer account button — instead of a generic
+           person-icon button, so it actually reads as "your account" at a
+           glance rather than just another chrome icon. Kept as a direct
+           link straight to this store's Account page (not the full
+           public ProfileAvatar dropdown, which is built for logged-in
+           visitors on the public site — its "My Store"/Logout menu has no
+           useful destination once you're already inside a store's own
+           dashboard, and Logout already lives in the sidebar footer). */}
+        <button
+          onClick={() => navigate(`/store/${storeId}/account`)}
+          title="Account settings"
+          aria-label="Account settings"
+          className="size-8 rounded-full shrink-0 overflow-hidden border-2 border-bone bg-brand-pale-orange flex items-center justify-center cursor-pointer hover:border-brand-orange/60 transition-colors"
+        >
+          {profileLoading ? (
+            <div className="w-full h-full bg-bone animate-pulse" />
+          ) : profile?.profileImage ? (
+            <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-[10px] font-bold text-brand-deep-orange">
+              {profile?.name?.slice(0, 2).toUpperCase() ?? '--'}
+            </span>
+          )}
+        </button>
       </div>
     </div>
   );
@@ -573,57 +623,15 @@ function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// ── Seller business-verification status — workspace-wide so a not-yet-
-// verified store's owner sees it on every page, not just their store list.
-// Reads `verificationStatus` (never `store.status`, which is the separate
-// marketplace-listing lifecycle field — see store.schema.ts). A verified
-// store never renders anything here. ──
-function StoreVerificationBanner() {
-  const navigate = useNavigate();
-  const { store, storeId } = useStoreWorkspace();
-  // A store that's already marketplace-active (including a pre-verification-
-  // tracking legacy approval) never shows a verification nag, even if
-  // `verificationStatus` is stale/missing — `status` is the authoritative
-  // "already approved" signal (see the `verified` comment in StoreSidebar).
-  if (!store || store.status === 'active') return null;
-
-  const goToVerification = () => navigate(`/store/${storeId}/verification`);
-
-  switch (store.verificationStatus) {
-    case 'rejected':
-      return (
-        <button onClick={goToVerification} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer text-center">
-          <XCircle size={14} className="shrink-0" />
-          Your business verification was rejected{store.rejectionReason ? `: ${store.rejectionReason}` : '.'}
-          <span className="underline font-semibold shrink-0">Fix &amp; resubmit</span>
-        </button>
-      );
-    case 'under_review':
-      return (
-        <div className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3]">
-          <Clock size={14} className="shrink-0" />
-          Your store is under review by our team — you'll be notified as soon as a decision is made.
-        </div>
-      );
-    case 'pending':
-      return (
-        <div className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3]">
-          <Clock size={14} className="shrink-0" />
-          Your verification application has been submitted and is waiting to be reviewed.
-        </div>
-      );
-    case 'not_started':
-      return (
-        <button onClick={goToVerification} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#946200] bg-warning-bg border-b border-[#f5dfa6] cursor-pointer text-center">
-          <AlertTriangle size={14} className="shrink-0" />
-          Your store isn't visible on the marketplace yet — complete business verification to submit it for review.
-          <span className="underline font-semibold shrink-0">Complete verification</span>
-        </button>
-      );
-    default:
-      return null;
-  }
-}
+// `StoreVerificationBanner` (the workspace-wide "complete business
+// verification" nag) was removed along with the `verification` sidebar
+// item and route — a banner nagging the seller toward a page that no
+// longer exists in navigation is worse than no banner. The underlying
+// verification feature/data (`useStoreVerification`, `StoreVerification.tsx`,
+// the backend endpoints, the marketplace-visibility gate itself) is
+// untouched — only this page's reachability from the dashboard was cut, at
+// the seller's explicit request, pending a later decision on the feature
+// itself.
 
 // ── Platform-plan billing banner — past-due / scheduled-cancellation / trial-ending,
 // surfaced workspace-wide (not just on the Billing Center page) so a seller can't
@@ -738,7 +746,6 @@ export function StoreLayout() {
         <StoreSidebar open={sidebarOpen} onToggle={toggle} />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <AnnouncementBanner audience="sellers" />
-          <StoreVerificationBanner />
           <PlatformBillingBanner />
           <div data-lenis-prevent className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">
             <GatedOutlet />

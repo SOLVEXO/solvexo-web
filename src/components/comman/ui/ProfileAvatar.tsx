@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
-  User, LayoutDashboard, LogOut, ShoppingBag, Bell,
+  LayoutDashboard, LogOut, Bell,
   ChevronRight, Shield, type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -174,30 +174,14 @@ function MenuItem({
 // DropdownMenu
 // ─────────────────────────────────────────────────────────────────────────────
 function DropdownMenu({
-  hasBuyer, hasDash, isAdmin, onNavigate, onGoToStore, onLogout,
+  hasDash, isAdmin, onNavigate, onGoToStore, onLogout,
 }: {
-  hasBuyer: boolean; hasDash: boolean; isAdmin: boolean;
+  hasDash: boolean; isAdmin: boolean;
   onNavigate: (path: string) => void; onGoToStore: () => void; onLogout: () => void;
 }) {
   return (
     <>
       <div className="p-[6px]">
-        {hasBuyer && (
-          <MenuItem
-            icon={User}
-            label="My Account"
-            sublabel="Dashboard & settings"
-            onClick={() => onNavigate('/account/dashboard')}
-          />
-        )}
-        {hasBuyer && (
-          <MenuItem
-            icon={ShoppingBag}
-            label="My Orders"
-            sublabel="Track your purchases"
-            onClick={() => onNavigate('/account/orders')}
-          />
-        )}
         {hasDash && (
           <MenuItem
             icon={isAdmin ? Shield : LayoutDashboard}
@@ -215,14 +199,17 @@ function DropdownMenu({
   );
 }
 
-// Business rule (frontend-only, deliberately reversible — same pattern as
-// LoginPage's SELLER_ONLY_LOGIN / RegisterPage's SELLER_ONLY_REGISTER):
-// buyer-facing account features (the "Buyer" role chip, My Account, My
-// Orders) are hidden here — there's currently no buyer-facing entry point on
-// the apex domain to use them from, so showing them (even to a seller/admin,
-// which `hasBuyer` below always did) is just confusing dead-end UI. Flip
-// back to true to restore instantly with no other changes; nothing about
-// the underlying role data or routes is touched.
+// Same business rule LoginPage's `SELLER_ONLY_LOGIN` / RegisterPage's
+// `SELLER_ONLY_REGISTER` already encode, now made permanent here too: the
+// apex-domain "Buyer" role chip only (My Account/My Orders were removed
+// outright from `DropdownMenu` below, not just hidden — their destinations,
+// the whole apex-domain Marketplace/Account/Cart/Checkout flow, were
+// deleted from `router/index.tsx`; a real buyer now always shops a store's
+// own themed subdomain instead, which has its own real account/cart/
+// checkout via `ThemedRoute`). Unlike the old comment here, flipping this
+// back to `true` would NOT "restore instantly with no other changes" any
+// more for My Account/My Orders — only the role chip badge itself still
+// works either way, since it doesn't navigate anywhere.
 const SHOW_BUYER_FEATURES = false;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -265,7 +252,6 @@ function ProfileDropdown({
         onNotificationsClick={onNotificationsClick}
       />
       <DropdownMenu
-        hasBuyer={hasBuyer}
         hasDash={hasDash}
         isAdmin={isAdmin}
         onNavigate={onNavigate}
@@ -385,7 +371,14 @@ export function ProfileAvatar() {
     } else if (role === 'admin') {
       navigate('/admin/settings?tab=notifications');
     } else {
-      navigate('/account/notifications');
+      // `role === 'user'` (a buyer) on the apex domain — `/account/notifications`
+      // no longer exists (see `SHOW_BUYER_FEATURES`'s own comment above: the
+      // whole apex-domain Account/Marketplace/Cart/Checkout flow was removed
+      // outright, since a real buyer always shops a store's own themed
+      // subdomain now, which has its own real notifications inside that
+      // store's `/account?tab=notifications`). Nothing meaningful to land a
+      // bare apex-domain buyer on any more, so just go home.
+      navigate('/');
     }
   };
 

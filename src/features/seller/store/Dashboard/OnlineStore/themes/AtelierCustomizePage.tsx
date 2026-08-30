@@ -23,7 +23,7 @@ import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
 import { AtelierLivePreview } from './AtelierLivePreview';
 import { AtelierThemeSettingsPanel } from './AtelierThemeSettingsPanel';
 import { apiGetStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
-import { atelierTheme as t } from '@/features/storefront-themes/theme-01-atelier/theme.config';
+import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
 import { getThemeManifest, type ThemeTemplateScopeDef } from '@/features/storefront-themes/themeManifest';
 // See the load-bearing comment on this same import in
 // `AtelierThemeSettingsPanel.tsx` — importing `DEFAULT_THEME_ID` from
@@ -50,12 +50,23 @@ const DEVICE_WIDTH: Record<'desktop' | 'tablet' | 'mobile', string> = { desktop:
  *  with no new code here. */
 type ResourceConfig = { resourceType: ResourceTemplateType; templateKey: string; allowAltTemplates: boolean };
 
+// Fixed platform brand color — same literal `ThemeLibraryPage.tsx` uses for
+// its own Install button. Admin-chrome controls (Save Draft/Publish here,
+// same reasoning as every other seller-dashboard button) intentionally use
+// the PLATFORM's own brand color, not the active theme's accent — an admin
+// screen isn't the merchant's storefront, so it shouldn't visually change
+// depending on which theme happens to be active (this was ALSO a real,
+// if purely cosmetic, per-theme-hardcoding bug before this pass: it read
+// Atelier's static accent color unconditionally, regardless of which theme
+// was actually active on the store being edited).
+const ADMIN_ACCENT = '#D97757';
+
 function SaveButton({ onClick, saving, label }: { onClick: () => void; saving: boolean; label: string }) {
   return (
     <button
       onClick={onClick} disabled={saving}
       className="flex items-center gap-1.5 px-5 py-[9px] rounded-[10px] text-[13px] font-bold text-white border-none cursor-pointer transition-opacity disabled:opacity-60"
-      style={{ background: t.colors.accent }}
+      style={{ background: ADMIN_ACCENT }}
     >
       {saving ? <Loader2 size={13} className="animate-spin" /> : null} {label}
     </button>
@@ -327,11 +338,24 @@ export function AtelierCustomizePage() {
 
   const docMissing = scope === 'theme' ? false : isStorePage ? !homePage : !activeTemplate;
   const effectiveDraftTheme = scope === 'theme' && themeScopePreview ? themeScopePreview : draftTheme;
+  // The preview PANEL's own background — resolved against the real active
+  // theme (not hardcoded to Atelier) so the frame around the embedded
+  // storefront preview matches whichever theme is actually being edited,
+  // instead of showing Atelier's background color behind a Nova preview.
+  const previewPanelBg = getThemePreviewComponents(effectiveDraftTheme?.themeDefinitionId, DEFAULT_THEME_ID).theme.colors.bg;
+  // The real active theme's own registered section types — NOT
+  // `effectiveDraftTheme` (which briefly swaps to a theme-settings-only
+  // preview while scope === 'theme'), since "which sections can I add" is a
+  // property of the store's actual theme, unrelated to which scope's colors
+  // are being previewed right now. See `AddSectionModal`'s own doc comment
+  // for the bug this closes (Nova could "add" Video/Drop Countdown and have
+  // them silently render as nothing).
+  const supportedSectionTypes = getThemePreviewComponents(draftTheme?.themeDefinitionId, DEFAULT_THEME_ID).supportedSectionTypes;
 
   return (
     <div className="bg-[#FAF9F5] min-h-full">
       <StorePageHeader
-        title="Customize — Atelier"
+        title={`Customize — ${manifest.name}`}
         subtitle="Edits save to a draft — nothing goes live until you Publish."
         actions={
           // Two groups: the left one scrolls horizontally on narrow screens
@@ -413,7 +437,7 @@ export function AtelierCustomizePage() {
           <AtelierThemeSettingsPanel storeId={storeId} onDraftChange={setThemeScopePreview} />
           <div className="border border-bone rounded-2xl bg-white overflow-hidden" style={{ height: 'calc(100vh - 220px)' }}>
             <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-4">
-              <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: t.colors.bg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
+              <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
                 <AtelierLivePreview sections={[]} showChrome draftTheme={effectiveDraftTheme} />
               </div>
             </div>
@@ -433,12 +457,13 @@ export function AtelierCustomizePage() {
               storeId={storeId}
               selectedSectionId={selectedSectionId}
               onSelectSection={setSelectedSectionId}
+              supportedSectionTypes={supportedSectionTypes}
             />
           </div>
 
           <div className="border border-bone rounded-2xl bg-white overflow-hidden" style={{ height: 'calc(100vh - 220px)' }}>
             <div className="h-full overflow-auto flex justify-center bg-[#F1EDE5] p-4">
-              <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: t.colors.bg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
+              <div style={{ width: DEVICE_WIDTH[device], maxWidth: '100%', background: previewPanelBg, boxShadow: device !== 'desktop' ? '0 0 0 1px #E4DFD3' : undefined, transition: 'width 200ms' }}>
                 <AtelierLivePreview
                   sections={editor.workingCopy ?? []}
                   showChrome={activeScopeDef?.showChrome ?? false}

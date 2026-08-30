@@ -11,9 +11,17 @@ import { useEditorState } from '../builder/editor/useEditorState';
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
 import { VersionHistoryModal } from '../builder/VersionHistoryModal';
 import { useState } from 'react';
-import { atelierTheme as t } from '@/features/storefront-themes/theme-01-atelier/theme.config';
 import { getThemeManifest, type ThemeSettingsFieldDef } from '@/features/storefront-themes/themeManifest';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
+
+// Fixed platform brand color — same literal `ThemeLibraryPage.tsx`'s Install
+// button, `AtelierCustomizePage.tsx`'s `SaveButton`, and
+// `AtelierHeaderFooterPage.tsx`'s admin buttons use. See
+// `AtelierCustomizePage.tsx`'s own `ADMIN_ACCENT` comment for why admin
+// chrome intentionally stays a fixed platform color rather than the active
+// theme's accent (this was the same per-theme-hardcoding bug, fixed here
+// too for consistency).
+const ADMIN_ACCENT = '#D97757';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 const label = 'text-[11.5px] font-bold uppercase tracking-wide text-slate';
@@ -45,7 +53,7 @@ function SaveButton({ onClick, saving, label: text }: { onClick: () => void; sav
   return (
     <button onClick={onClick} disabled={saving}
       className="flex items-center gap-1.5 px-5 py-[9px] rounded-[10px] text-[13px] font-bold text-white border-none cursor-pointer transition-opacity disabled:opacity-60"
-      style={{ background: t.colors.accent }}>
+      style={{ background: ADMIN_ACCENT }}>
       {saving ? <Loader2 size={13} className="animate-spin" /> : null} {text}
     </button>
   );
