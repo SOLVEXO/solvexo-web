@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { FileQuestion } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { apiGetPublicStorePage, type StorePageData } from '@/api/services/storePages';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { AtelierContentBlocks } from '../components/AtelierContentBlocks';
+import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { atelierTheme as t } from '../theme.config';
 
 /** Theme 01's own leaf page for any seller-created custom page (About Us,
@@ -32,7 +32,11 @@ export function AtelierCustomPage() {
       .finally(() => setLoading(false));
   }, [store.storeId, pageSlug]);
 
-  usePageTitle(page?.seo.metaTitle || page?.title || store.name);
+  useStorefrontSeo({
+    title: page?.seo.metaTitle || page?.title || undefined,
+    description: page?.seo.metaDescription || page?.seo.metaDesc || undefined,
+    image: page?.seo.ogImage || undefined,
+  });
 
   if (loading) {
     return (

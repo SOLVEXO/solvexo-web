@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, Menu, X, ChevronDown } from 'lucide-react';
-import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categories';
@@ -19,7 +19,7 @@ import { atelierTheme as t } from '../theme.config';
  *  (this theme doesn't consume the legacy seller-configured Header nav-link
  *  blocks, so without this a buyer could never reach either page type). */
 export function AtelierNavbar() {
-  const { store } = useStorefront();
+  const { store, theme, resolveLink } = useStorefront();
   const { cartCount } = useCartContext();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -37,6 +37,15 @@ export function AtelierNavbar() {
   }, [store.storeId]);
 
   const hasShopMenu = categories.length > 0 || collections.length > 0;
+
+  // Real, merchant-authored nav links (Customize → Header) — the same
+  // `nav_link` block vocabulary every theme's header content uses. Falls
+  // back to a single "Journal" link only when the seller hasn't configured
+  // any yet, so a brand-new store's nav isn't empty.
+  const headerNavBlocks = (theme?.header?.blocks ?? []).filter(b => b.type === 'nav_link' && b.enabled !== false);
+  const navLinks = headerNavBlocks.length > 0
+    ? headerNavBlocks.map(b => ({ id: b._id ?? b.settings.label, label: b.settings.label as string, link: resolveLink(b.settings as StorefrontLinkSettings) }))
+    : [{ id: 'journal', label: 'Journal', link: { to: '/blog' } }];
 
   const submitSearch = (e: FormEvent) => {
     e.preventDefault();
@@ -108,13 +117,27 @@ export function AtelierNavbar() {
               </div>
             )}
           </div>
-          <Link
-            to="/blog"
-            className="no-underline uppercase"
-            style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500 }}
-          >
-            Journal
-          </Link>
+          {navLinks.map(item => (
+            item.link.to ? (
+              <Link
+                key={item.id}
+                to={item.link.to}
+                className="no-underline uppercase"
+                style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500 }}
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <a
+                key={item.id}
+                href={item.link.href}
+                className="no-underline uppercase"
+                style={{ color: t.colors.ink, fontSize: '12px', letterSpacing: '0.12em', fontFamily: t.fonts.body, fontWeight: 500 }}
+              >
+                {item.label}
+              </a>
+            )
+          ))}
         </nav>
 
         {/* Center wordmark */}
@@ -205,14 +228,29 @@ export function AtelierNavbar() {
               {c.name}
             </Link>
           ))}
-          <Link
-            to="/blog"
-            onClick={() => setMobileOpen(false)}
-            className="no-underline uppercase"
-            style={{ color: t.colors.ink, fontSize: '13px', letterSpacing: '0.1em', fontFamily: t.fonts.body, padding: `14px ${t.layout.containerPadX}`, borderBottom: `1px solid ${t.colors.border}` }}
-          >
-            Journal
-          </Link>
+          {navLinks.map(item => (
+            item.link.to ? (
+              <Link
+                key={item.id}
+                to={item.link.to}
+                onClick={() => setMobileOpen(false)}
+                className="no-underline uppercase"
+                style={{ color: t.colors.ink, fontSize: '13px', letterSpacing: '0.1em', fontFamily: t.fonts.body, padding: `14px ${t.layout.containerPadX}`, borderBottom: `1px solid ${t.colors.border}` }}
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <a
+                key={item.id}
+                href={item.link.href}
+                onClick={() => setMobileOpen(false)}
+                className="no-underline uppercase"
+                style={{ color: t.colors.ink, fontSize: '13px', letterSpacing: '0.1em', fontFamily: t.fonts.body, padding: `14px ${t.layout.containerPadX}`, borderBottom: `1px solid ${t.colors.border}` }}
+              >
+                {item.label}
+              </a>
+            )
+          ))}
         </nav>
       )}
     </header>

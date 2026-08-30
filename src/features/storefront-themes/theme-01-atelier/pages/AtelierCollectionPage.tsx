@@ -1,22 +1,28 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetPublicCollectionBySlug, type PublicCollectionSummary } from '@/api/services/collections';
+import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
+import type { Section } from '@/api/services/storefrontTypes';
+import { AtelierSectionRenderer } from '../sections';
+import { AtelierCollectionScopeProvider } from '../sections/collectionScope';
 import { AtelierProductGrid } from '../components/AtelierProductGrid';
+import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { atelierTheme as t } from '../theme.config';
 
-/** `/collections/:slugOrId` — resolves the named collection for its
- *  name/description, then scopes Theme 01's own `AtelierProductGrid` to it.
- *  Deliberately does not consume the legacy Collection Template's
- *  seller-editable section list (a legacy-engine-only authoring concept) —
- *  a genuinely independent theme renders its own collection page from real
- *  commerce data (collection + products), not another engine's content
- *  model. A disclosed scope boundary, not an oversight. */
+/** `/collections/:slugOrId` — genuinely template-driven: renders the
+ *  store's real "collection" alternate-template document (same
+ *  `collection-template` backend infra Product Template and the Customize
+ *  page's Collection Template tab use) through Atelier's own section
+ *  engine. The template's `collection_product_grid` section is the
+ *  structural anchor (always the collection currently being browsed); if a
+ *  store's template has never been customized (no sections yet), this page
+ *  still shows a real product grid by itself rather than a blank page. */
 export function AtelierCollectionPage() {
   const { slugOrId = '' } = useParams<{ slugOrId: string }>();
   const { store } = useStorefront();
   const [collection, setCollection] = useState<PublicCollectionSummary | null | undefined>(undefined);
+  const [sections, setSections] = useState<Section[] | undefined>(undefined);
 
   useEffect(() => {
     setCollection(undefined);
@@ -25,9 +31,21 @@ export function AtelierCollectionPage() {
       .catch(() => setCollection(null));
   }, [store.storeId, slugOrId]);
 
-  usePageTitle(collection ? collection.name : store.name);
+  useEffect(() => {
+    if (collection === undefined) return;
+    setSections(undefined);
+    apiGetPublicCollectionTemplate(store.storeId, 'collection', collection?.templateKey || 'default')
+      .then(res => setSections(res.data.sections ?? []))
+      .catch(() => setSections([]));
+  }, [store.storeId, collection]);
 
-  if (collection === undefined) {
+  useStorefrontSeo({
+    title: collection ? collection.name : undefined,
+    description: collection?.description || undefined,
+    image: collection?.image || undefined,
+  });
+
+  if (collection === undefined || sections === undefined) {
     return <div style={{ padding: '96px 0', textAlign: 'center', fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted }}>Loading…</div>;
   }
 
@@ -40,14 +58,22 @@ export function AtelierCollectionPage() {
     );
   }
 
+  const hasGridAnchor = sections.some(s => s.type === 'collection_product_grid' && s.enabled !== false);
+
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `40px ${t.layout.containerPadX}` }}>
-      {collection.description && (
-        <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.inkMuted, maxWidth: '640px', marginBottom: '24px', lineHeight: 1.7 }}>
-          {collection.description}
-        </p>
-      )}
-      <AtelierProductGrid heading={collection.name} collectionId={collection._id} />
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink }}>{collection.name}</h1>
+        {collection.description && (
+          <p style={{ fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.inkMuted, maxWidth: '640px', marginTop: '10px', lineHeight: 1.7 }}>
+            {collection.description}
+          </p>
+        )}
+      </div>
+      <AtelierCollectionScopeProvider value={collection._id}>
+        <AtelierSectionRenderer sections={sections} />
+      </AtelierCollectionScopeProvider>
+      {!hasGridAnchor && <AtelierProductGrid collectionId={collection._id} />}
     </main>
   );
 }

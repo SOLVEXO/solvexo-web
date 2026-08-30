@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Minus, Plus, Trash2, ShoppingBag, ImageOff, Loader2, Download } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
+import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
+import type { Section } from '@/api/services/storefrontTypes';
 import { currencySymbol, fmt2 } from '@/utils/currency';
+import { AtelierSectionRenderer } from '../sections';
 import { AtelierButton } from '../components/AtelierButton';
 import { atelierTheme as t } from '../theme.config';
 
@@ -27,12 +31,24 @@ function CartItemImage({ images, name }: { images?: string[]; name: string }) {
 }
 
 export function AtelierCartPage() {
-  usePageTitle('Cart');
+  useStorefrontSeo({ title: 'Cart', noindex: true });
   const navigate = useNavigate();
+  const { store } = useStorefront();
   const { cart, loading, updateQty, removeItem, clearCart, error, clearError } = useCartContext();
   const [clearing, setClearing] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [templateSections, setTemplateSections] = useState<Section[]>([]);
+
+  // Real, theme-driven surrounding content — a cross-sell/promo section
+  // below the cart, matching real Shopify OS2.0 cart-page section support.
+  // The cart line items/totals/checkout button above stay fixed
+  // commerce-critical core, same boundary as every other template here.
+  useEffect(() => {
+    apiGetPublicCollectionTemplate(store.storeId, 'page', 'cart')
+      .then(res => setTemplateSections(res.data.sections ?? []))
+      .catch(() => setTemplateSections([]));
+  }, [store.storeId]);
 
   const items = cart?.items ?? [];
   const isEmpty = !loading && !items.length;
@@ -215,6 +231,8 @@ export function AtelierCartPage() {
           </div>
         </div>
       )}
+
+      {templateSections.length > 0 && <div style={{ marginTop: '56px' }}><AtelierSectionRenderer sections={templateSections} /></div>}
     </main>
   );
 }

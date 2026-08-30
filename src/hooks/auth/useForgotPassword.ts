@@ -7,12 +7,12 @@ export function useForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
 
-  async function execute(email: string, role: AppRole = 'user') {
+  async function execute(email: string, role: AppRole = 'user', storeId?: string) {
     setError('');
     setLoading(true);
     try {
-      await apiForgotPassword({ email, role });
-      AuthContext.set({ email, role, flow: 'forgot' });
+      await apiForgotPassword({ email, role, storeId });
+      AuthContext.set({ email, role, flow: 'forgot', storeId });
       navigate('/verify-otp');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');

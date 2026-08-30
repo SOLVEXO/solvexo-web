@@ -1,4 +1,4 @@
-import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, type LucideIcon } from 'lucide-react';
+import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, type LucideIcon } from 'lucide-react';
 import type { SectionType } from '@/api/services/storefrontTypes';
 
 export interface SectionMeta {
@@ -100,6 +100,13 @@ export const SECTION_META: SectionMeta[] = [
     allowedBlockTypes: [], blockLabel: '',
     defaultBlockSettings: {},
     hidden: true,
+  },
+  {
+    type: 'drop_countdown', label: 'Drop Countdown', description: 'A live countdown to a launch/drop date, with an optional call-to-action button.',
+    Icon: Timer, color: '#DC2626',
+    defaultSettings: { heading: 'New Drop', subheading: 'Coming soon', targetDate: '', ctaText: '', ctaLink: { linkType: 'home' } },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
   },
 ];
 

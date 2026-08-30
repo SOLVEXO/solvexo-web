@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Loader2, Trash2, Sparkles, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Loader2, Trash2, Sparkles, ExternalLink, Settings2, Code2, PanelTop } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { SkeletonBox } from '@/components/comman/ui';
@@ -136,24 +137,62 @@ export function ThemeLibraryPage() {
                   </p>
                   <div className="flex items-center gap-2 mt-1">
                     {!isInstalled ? (
-                      <button
-                        type="button"
-                        onClick={() => handleInstallNewTheme(entry.id, entry.name)}
-                        disabled={installingId === entry.id}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-[8px] rounded-lg text-[12.5px] font-bold text-white border-none cursor-pointer disabled:opacity-60"
-                        style={{ background: '#D97757' }}
-                      >
-                        {installingId === entry.id ? <Loader2 size={13} className="animate-spin" /> : null} Install
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleInstallNewTheme(entry.id, entry.name)}
+                          disabled={installingId === entry.id}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-[8px] rounded-lg text-[12.5px] font-bold text-white border-none cursor-pointer disabled:opacity-60"
+                          style={{ background: '#D97757' }}
+                        >
+                          {installingId === entry.id ? <Loader2 size={13} className="animate-spin" /> : null} Install
+                        </button>
+                        {entry.id === 'theme-01-atelier' && (
+                          <Link
+                            to="atelier/preview"
+                            className="flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline"
+                            title="Preview with demo content"
+                          >
+                            <ExternalLink size={13} />
+                          </Link>
+                        )}
+                      </>
                     ) : isActive && store ? (
-                      <a
-                        href={getStorefrontUrl(store.slug)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline"
-                      >
-                        <ExternalLink size={13} /> View Live Store
-                      </a>
+                      <>
+                        {entry.id === 'theme-01-atelier' && (
+                          <>
+                            <Link
+                              to="atelier/customize"
+                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border-none bg-brand-orange text-white hover:bg-brand-deep-orange no-underline"
+                            >
+                              <Settings2 size={13} /> Customize
+                            </Link>
+                            <Link
+                              to="atelier/header-footer"
+                              className="flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline"
+                              title="Header & Footer"
+                            >
+                              <PanelTop size={13} />
+                            </Link>
+                            <Link
+                              to="atelier/edit-code"
+                              className="flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline"
+                              title="Edit Code"
+                            >
+                              <Code2 size={13} />
+                            </Link>
+                          </>
+                        )}
+                        <a
+                          href={getStorefrontUrl(store.slug)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-1.5 px-3 py-[7px] rounded-lg text-[12px] font-semibold border border-bone bg-white text-charcoal hover:bg-cream no-underline"
+                          title="View Live Store"
+                        >
+                          <ExternalLink size={13} />
+                        </a>
+                      </>
                     ) : (
                       <>
                         <button

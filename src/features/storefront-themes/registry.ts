@@ -7,6 +7,8 @@ import { AtelierCheckoutPage } from './theme-01-atelier/pages/AtelierCheckoutPag
 import { AtelierLoginPage } from './theme-01-atelier/pages/AtelierLoginPage';
 import { AtelierRegisterPage } from './theme-01-atelier/pages/AtelierRegisterPage';
 import { AtelierVerifyOtpPage } from './theme-01-atelier/pages/AtelierVerifyOtpPage';
+import { AtelierForgotPasswordPage } from './theme-01-atelier/pages/AtelierForgotPasswordPage';
+import { AtelierNewPasswordPage } from './theme-01-atelier/pages/AtelierNewPasswordPage';
 import { AtelierAccountPage } from './theme-01-atelier/pages/AtelierAccountPage';
 import { AtelierCategoryPage } from './theme-01-atelier/pages/AtelierCategoryPage';
 import { AtelierCollectionPage } from './theme-01-atelier/pages/AtelierCollectionPage';
@@ -14,15 +16,30 @@ import { AtelierSearchPage } from './theme-01-atelier/pages/AtelierSearchPage';
 import { AtelierBlogIndexPage } from './theme-01-atelier/pages/AtelierBlogIndexPage';
 import { AtelierBlogPostPage } from './theme-01-atelier/pages/AtelierBlogPostPage';
 import { AtelierCustomPage } from './theme-01-atelier/pages/AtelierCustomPage';
+// Registers this theme's `ThemeManifest` (see `themeManifest.ts`) as a side
+// effect of importing this module — pure addition, nothing reads
+// `THEME_MANIFESTS` yet, so this cannot change any existing behavior. It's
+// wired here (not left for some future page to remember to import) so the
+// manifest is guaranteed live wherever the theme registry itself is.
+import './theme-01-atelier/theme.manifest';
+// Same pattern, for the Edit Code developer workspace's real read-only
+// source files (see `themeDevFiles.ts` for why this is a separate registry
+// from `theme.manifest.ts` rather than folded into it — a Vite
+// `import.meta.glob` constraint, not a design choice).
+import './theme-01-atelier/theme.devFiles';
 
 /** Every storefront route a theme must implement. The legacy shared-engine
  *  fallback (per-key "not built yet" tolerance) has been removed along with
  *  the legacy rendering code — every theme in `NEW_THEME_REGISTRY` is now
- *  expected to cover all 14 keys before it's installable. */
+ *  expected to cover all 16 keys before it's installable. `forgotPassword`/
+ *  `newPassword` were added alongside `login`/`register`/`verifyOtp` — a
+ *  storefront's own account-recovery flow is as required as being able to
+ *  sign in at all, not a later nice-to-have. */
 export type StorefrontRouteKey =
   | 'home' | 'product' | 'category' | 'collection' | 'search'
   | 'cart' | 'checkout' | 'login' | 'register' | 'verifyOtp' | 'account'
-  | 'blogIndex' | 'blogPost' | 'customPage';
+  | 'blogIndex' | 'blogPost' | 'customPage'
+  | 'forgotPassword' | 'newPassword';
 
 interface NewThemeImpl {
   Layout: ComponentType<{ children: ReactNode }>;
@@ -65,6 +82,8 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       login: AtelierLoginPage,
       register: AtelierRegisterPage,
       verifyOtp: AtelierVerifyOtpPage,
+      forgotPassword: AtelierForgotPasswordPage,
+      newPassword: AtelierNewPasswordPage,
       account: AtelierAccountPage,
       category: AtelierCategoryPage,
       collection: AtelierCollectionPage,
@@ -76,8 +95,8 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
     display: {
       name: 'Atelier',
       description: 'Premium editorial fashion & lifestyle — asymmetric layouts, large photography, and a quiet, confident typographic voice. Its own independent storefront implementation, not a re-skin.',
-      builtRouteCount: 14,
-      totalRouteCount: 14,
+      builtRouteCount: 16,
+      totalRouteCount: 16,
     },
   },
 };

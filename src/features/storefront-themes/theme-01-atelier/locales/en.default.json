@@ -1,0 +1,46 @@
+{
+  "nav": {
+    "shop": "Shop",
+    "journal": "Journal",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "account": "Account",
+    "cart": "Cart"
+  },
+  "product": {
+    "addToCart": "Add to Cart",
+    "addToWishlist": "Add to wishlist",
+    "removeFromWishlist": "Remove from wishlist",
+    "notAvailable": "This product isn't available.",
+    "backToShop": "Back to shop",
+    "description": "Description"
+  },
+  "cart": {
+    "title": "Your Bag",
+    "empty": "Nothing here yet — browse the shop to find something you'll love.",
+    "orderSummary": "Order Summary",
+    "total": "Total",
+    "checkout": "Checkout",
+    "clearBag": "Clear Bag",
+    "remove": "Remove"
+  },
+  "search": {
+    "resultsFor": "Results for \"{query}\"",
+    "nothingHereYet": "Nothing here yet",
+    "tryDifferentSearch": "Try a different search or check back soon."
+  },
+  "account": {
+    "myAccount": "My Account",
+    "profile": "Profile",
+    "orderHistory": "Order History",
+    "noOrdersYet": "You haven't placed any orders yet.",
+    "logOut": "Log out",
+    "saveChanges": "Save Changes",
+    "saved": "Saved"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "createAccount": "Create an account",
+    "invalidCredentials": "Invalid email or password"
+  }
+}

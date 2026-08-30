@@ -3,7 +3,10 @@ import { ImageOff, Heart } from 'lucide-react';
 import { useWishlistContext } from '@/contexts/WishlistContext';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import type { PublicStoreProduct } from '@/api/services/store';
+import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { atelierTheme as t } from '../theme.config';
+
+const CARD_WIDTHS = [320, 480, 640];
 
 /** Theme 01's own product card — portrait ratio, no border, generous
  *  whitespace, price emphasis with the brass accent. Independently
@@ -21,7 +24,9 @@ export function AtelierProductCard({ product, currency }: { product: PublicStore
         <Link to={`/product/${product.slug}`} className="block w-full h-full">
           {product.images?.[0] ? (
             <img
-              src={product.images[0]}
+              src={cloudinaryUrl(product.images[0], 480)}
+              srcSet={cloudinarySrcSet(product.images[0], CARD_WIDTHS)}
+              sizes="(min-width: 1024px) 25vw, 50vw"
               alt={product.name}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
               loading="lazy"

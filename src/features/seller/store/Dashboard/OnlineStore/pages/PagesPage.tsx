@@ -92,6 +92,11 @@ export function PagesPage() {
     if (!selectedPage) return;
     setSaving(true);
     try {
+      // Going live for the first time must never publish stale sections — if
+      // there's a local edit that hasn't been saved yet, persist it first.
+      if (selectedPage.status !== 'published' && pagesEditor.dirty && pagesEditor.workingCopy) {
+        await apiUpdateStorePageSections(storeId, selectedPage._id, pagesEditor.workingCopy);
+      }
       const res = selectedPage.status === 'published'
         ? await apiUnpublishStorePage(storeId, selectedPage._id)
         : await apiPublishStorePage(storeId, selectedPage._id);
@@ -109,6 +114,12 @@ export function PagesPage() {
     if (!selectedPage) return;
     pagesEditor.markPublishing();
     try {
+      // Publish must never republish a stale backend draft — if there's a
+      // local edit that hasn't been saved yet, persist it first so Publish
+      // always promotes exactly what the merchant currently sees.
+      if (pagesEditor.dirty && pagesEditor.workingCopy) {
+        await apiUpdateStorePageSections(storeId, selectedPage._id, pagesEditor.workingCopy);
+      }
       const res = await apiPublishStorePage(storeId, selectedPage._id);
       setPages(prev => prev.map(p => p._id === res.data._id ? res.data : p));
       pagesEditor.markPublished(res.data.sections);

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
+import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useLogin } from '@/hooks/auth/useLogin';
 import { safeRedirectPath } from '@/utils/safeRedirect';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -12,7 +12,7 @@ import { atelierTheme as t } from '../theme.config';
 /** Theme 01's own sign-in — a store's own account, no marketplace chrome,
  *  no buyer/seller toggle (a storefront login is always a buyer). */
 export function AtelierLoginPage() {
-  usePageTitle('Sign In');
+  useStorefrontSeo({ title: 'Sign In', noindex: true });
   const { store } = useStorefront();
   const [searchParams] = useSearchParams();
   const redirectTo = safeRedirectPath(searchParams.get('redirect')) ?? '/';
@@ -49,7 +49,12 @@ export function AtelierLoginPage() {
           <input id="atelier-login-email" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} style={atelierInput} />
         </div>
         <div>
-          <label htmlFor="atelier-login-password" style={atelierLabel}>Password</label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="atelier-login-password" style={atelierLabel}>Password</label>
+            <a href="forgot-password" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.accent, textDecoration: 'none' }}>
+              Forgot password?
+            </a>
+          </div>
           <div className="relative">
             <input
               id="atelier-login-password"

@@ -1,11 +1,10 @@
-import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
 
-// Root wrapper (reference nav + outlet + global Suspense)
+// Root wrapper (reference nav + outlet)
 import { RootLayout }   from '@/components/layouts/RootLayout';
 
-// Layouts — eagerly imported (needed as wrappers immediately)
+// Layouts
 import { BuyerLayout }  from '@/components/layouts/BuyerLayout';
 import { AccountLayout } from '@/components/layouts/AccountLayout';
 import { PublicLayout } from '@/components/layouts/PublicLayout';
@@ -14,9 +13,7 @@ import { AdminLayout }  from '@/components/layouts/AdminLayout';
 import { StoreLayout }  from '@/components/layouts/StoreLayout';
 import { RequireRole }  from './RequireRole';
 
-// Critical conversion-path pages — eagerly imported so the highest-traffic
-// storefront flow (home → login/register → product → cart → checkout)
-// never shows a route-level Suspense spinner.
+// Critical conversion-path pages
 import { ProductDetail } from '@/features/buyer/pages/ProductDetail';
 import { CartPage }     from '@/features/buyer/pages/CartPage';
 import { CheckoutPage } from '@/features/buyer/pages/CheckoutPage';
@@ -25,16 +22,13 @@ import { RegisterPage } from '@/features/auth/pages/RegisterPage';
 import { Marketplace }  from '@/features/buyer/pages/Marketplace';
 import { OnboardingPage, OnboardingEntry } from '@/features/auth/pages/onboard/OnboardingPage';
 
-// Remaining auth pages — eagerly imported too (no lazy/Suspense split), same
-// reasoning as LoginPage/RegisterPage/OnboardingPage above: auth is always on
-// the critical path, never worth a route-level Suspense flash.
+// Remaining auth pages
 import { AdminLoginPage }     from '@/features/auth/pages/admin/AdminLoginPage';
 import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
 import { VerifyOTPPage }      from '@/features/auth/pages/VerifyOTPPage';
 import { NewPasswordPage }    from '@/features/auth/pages/NewPasswordPage';
 
-// Public marketing pages — eagerly imported (no lazy/Suspense split) per
-// explicit instruction.
+// Public marketing pages
 import { Homepage }             from '@/features/buyer/pages/Homepage';
 import { PricingPage }          from '@/features/buyer/pages/PricingPage';
 import { ForSellersPage }       from '@/features/buyer/pages/ForSellersPage';
@@ -50,104 +44,98 @@ import { PlatformProductPage }  from '@/features/buyer/pages/products/PlatformPr
 import { SolutionsOverviewPage } from '@/features/buyer/pages/solutions/SolutionsOverviewPage';
 import { SolutionPage }         from '@/features/buyer/pages/solutions/SolutionPage';
 
-// ── Lazy helpers ──────────────────────────────────────────────────────────────
-const named = <T extends Record<string, unknown>>(
-  p: Promise<T>,
-  key: keyof T,
-): Promise<{ default: T[keyof T] }> =>
-  p.then(m => ({ default: m[key] }));
-
 // ── Public / Buyer ────────────────────────────────────────────────────────────
-const OrderSuccessPage     = lazy(() => named(import('@/features/buyer/pages/OrderSuccessPage'),                'OrderSuccessPage'));
-const StorefrontLayout     = lazy(() => named(import('@/features/storefront/StorefrontLayout'),                  'StorefrontLayout'));
-const ThemedRoute          = lazy(() => named(import('@/features/storefront-themes/ThemedRoute'),                 'ThemedRoute'));
-const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/EducationMarketplace'),            'EducationMarketplace'));
-const MaintenancePage      = lazy(() => named(import('@/features/buyer/pages/MaintenancePage'),                 'MaintenancePage'));
+import { OrderSuccessPage } from '@/features/buyer/pages/OrderSuccessPage';
+import { StorefrontLayout } from '@/features/storefront/StorefrontLayout';
+import { ThemedRoute } from '@/features/storefront-themes/ThemedRoute';
+import { EducationMarketplace } from '@/features/buyer/pages/EducationMarketplace';
+import { MaintenancePage } from '@/features/buyer/pages/MaintenancePage';
 
 // ── Account (buyer) ───────────────────────────────────────────────────────────
-const AccountDashboard     = lazy(() => named(import('@/features/buyer/pages/account/AccountDashboard'),        'AccountDashboard'));
-const AccountOrders        = lazy(() => named(import('@/features/buyer/pages/MyOrdersPage'),                     'OrdersTab'));
-const AccountWishlist      = lazy(() => named(import('@/features/buyer/pages/account/Wishlist'),                 'Wishlist'));
-const AccountReviews       = lazy(() => named(import('@/features/buyer/pages/MyReviewsPage'),                    'ReviewsTab'));
-const AccountPayments      = lazy(() => named(import('@/features/buyer/pages/account/Payments'),                 'Payments'));
-const AccountMessages      = lazy(() => named(import('@/features/buyer/pages/account/Messages'),                 'Messages'));
+import { AccountDashboard } from '@/features/buyer/pages/account/AccountDashboard';
+import { OrdersTab as AccountOrders } from '@/features/buyer/pages/MyOrdersPage';
+import { Wishlist as AccountWishlist } from '@/features/buyer/pages/account/Wishlist';
+import { ReviewsTab as AccountReviews } from '@/features/buyer/pages/MyReviewsPage';
+import { Payments as AccountPayments } from '@/features/buyer/pages/account/Payments';
+import { Messages as AccountMessages } from '@/features/buyer/pages/account/Messages';
 // Real routes replacing Settings' old ?tab=<name> query-param switcher.
-const AccountProfile       = lazy(() => named(import('@/features/buyer/pages/account/PersonalInfo'),             'PersonalInfo'));
-const AccountSecurity      = lazy(() => named(import('@/features/buyer/pages/account/Security'),                 'Security'));
-const AccountAddresses     = lazy(() => named(import('@/features/buyer/pages/account/Addresses'),                'Addresses'));
-const AccountNotifications = lazy(() => named(import('@/features/buyer/pages/account/Notifications'),            'Notifications'));
-const AccountSubscriptions = lazy(() => named(import('@/features/buyer/pages/MySubscriptionsPage'),              'SubscriptionsTab'));
+import { PersonalInfo as AccountProfile } from '@/features/buyer/pages/account/PersonalInfo';
+import { Security as AccountSecurity } from '@/features/buyer/pages/account/Security';
+import { Addresses as AccountAddresses } from '@/features/buyer/pages/account/Addresses';
+import { Notifications as AccountNotifications } from '@/features/buyer/pages/account/Notifications';
+import { SubscriptionsTab as AccountSubscriptions } from '@/features/buyer/pages/MySubscriptionsPage';
 
 // ── Seller ────────────────────────────────────────────────────────────────────
-const SellerAnalytics      = lazy(() => named(import('@/features/seller/dashboard/SellerAnalytics'),             'SellerAnalytics'));
-const StoreBuilderRedirect = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/StoreBuilderRedirect'), 'StoreBuilderRedirect'));
-const PagesPage            = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/pages/PagesPage'),         'PagesPage'));
-const BlogPage             = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/blog/BlogPage'),           'BlogPage'));
-const ThemeLibraryPage     = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeLibraryPage'), 'ThemeLibraryPage'));
-const SellerSettings       = lazy(() => named(import('@/features/seller/dashboard/settings/SellerSettings'),   'SellerSettings'));
-const SellerShipping       = lazy(() => named(import('@/features/seller/dashboard/SellerShipping'),             'SellerShipping'));
-const SellerMessages       = lazy(() => named(import('@/features/seller/dashboard/SellerMessages'),             'SellerMessages'));
-const SellerStoreList      = lazy(() => named(import('@/features/seller/store/Dashboard/OnlineStore/SellerStoreList'),'SellerStoreList'));
-const POSRegister          = lazy(() => named(import('@/features/seller/store/pos/POSRegister'),                'POSRegister'));
-const POSEmployeeLogin     = lazy(() => named(import('@/features/seller/store/pos/POSEmployeeLogin'),           'POSEmployeeLogin'));
-const PosLanding           = lazy(() => named(import('@/features/seller/store/pos/PosLanding'),                 'PosLanding'));
+import { SellerAnalytics } from '@/features/seller/dashboard/SellerAnalytics';
+import { StoreBuilderRedirect } from '@/features/seller/store/Dashboard/OnlineStore/StoreBuilderRedirect';
+import { PagesPage } from '@/features/seller/store/Dashboard/OnlineStore/pages/PagesPage';
+import { BlogPage } from '@/features/seller/store/Dashboard/OnlineStore/blog/BlogPage';
+import { ThemeLibraryPage } from '@/features/seller/store/Dashboard/OnlineStore/themes/ThemeLibraryPage';
+import { AtelierCustomizePage } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierCustomizePage';
+import { AtelierEditCodePage } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierEditCodePage';
+import { AtelierHeaderFooterPage } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierHeaderFooterPage';
+import { AtelierThemeDemoPreview } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierThemeDemoPreview';
+import { SellerSettings } from '@/features/seller/dashboard/settings/SellerSettings';
+import { SellerShipping } from '@/features/seller/dashboard/SellerShipping';
+import { SellerMessages } from '@/features/seller/dashboard/SellerMessages';
+import { SellerStoreList } from '@/features/seller/store/Dashboard/OnlineStore/SellerStoreList';
 
 // ── Store Workspace ───────────────────────────────────────────────────────────
-const StoreDashboard     = lazy(() => import('@/features/seller/store/Dashboard/StoreDashboard'));
-const StoreNotFound      = lazy(() => import('@/features/seller/store/Dashboard/StoreNotFound'));
-const StoreProductList   = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreProductList'));
-const StoreAddProduct    = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreAddProduct'));
-const StoreEditProduct   = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreEditProduct'));
-const StoreProductDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreProductDetail'));
-const StoreCustomerList  = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomerList'));
-const StoreSettings      = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreSettings'));
-const StoreCategories    = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCategories'));
-const StoreCollections   = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCollections'));
-const FilesLibrary       = lazy(() => import('@/features/seller/store/Dashboard/Manage/FilesLibrary'));
-const StorePlanBilling   = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
-const StoreVerification  = lazy(() => named(import('@/features/seller/store/Dashboard/Manage/StoreVerification'), 'StoreVerification'));
-const StoreOrderList     = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList'),        'StoreOrderList'));
-const StoreOrderDetail   = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail'),      'StoreOrderDetail'));
-const DraftOrdersList    = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DraftOrdersList'));
-const DraftOrderForm     = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DraftOrderForm'));
-const StoreReturnList    = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/returns/ReturnList'),      'StoreReturnList'));
-const StoreAnalytics     = lazy(() => named(import('@/features/seller/store/Dashboard/Analytic/analytics/Analytics'),        'StoreAnalytics'));
-const StoreAIStudio      = lazy(() => named(import('@/features/seller/store/Dashboard/Analytic/ai/AiStudio'),                'StoreAIStudio'));
-const StoreSEO           = lazy(() => named(import('@/features/seller/store/Dashboard/Analytic/seo/StoreSEO'),               'StoreSEO'));
-const StoreFinance       = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/finance/Finance'),          'StoreFinance'));
-const StoreReviews       = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/reviews/reviews'),          'StoreReviews'));
-const StoreInventory     = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/inventory/Inventory'),      'StoreInventory'));
-const StoreMarketing     = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/marketing/Marketing'),      'StoreMarketing'));
-const StoreLoyalty       = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/loyalty/Loyalty'),          'StoreLoyalty'));
-const StoreSubscriptions = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/subscriptions/Subscriptions'), 'StoreSubscriptions'));
-const StoreIntegrations  = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/integrations/Integrations'),'StoreIntegrations'));
+import StoreDashboard from '@/features/seller/store/Dashboard/StoreDashboard';
+import StoreNotFound from '@/features/seller/store/Dashboard/StoreNotFound';
+import StoreProductList from '@/features/seller/store/Dashboard/StoreSection/products/StoreProductList';
+import StoreAddProduct from '@/features/seller/store/Dashboard/StoreSection/products/StoreAddProduct';
+import StoreEditProduct from '@/features/seller/store/Dashboard/StoreSection/products/StoreEditProduct';
+import StoreProductDetail from '@/features/seller/store/Dashboard/StoreSection/products/StoreProductDetail';
+import StoreCustomerList from '@/features/seller/store/Dashboard/StoreSection/customer/CustomerList';
+import StoreSettings from '@/features/seller/store/Dashboard/Manage/StoreSettings';
+import StoreCategories from '@/features/seller/store/Dashboard/Manage/StoreCategories';
+import StoreCollections from '@/features/seller/store/Dashboard/Manage/StoreCollections';
+import FilesLibrary from '@/features/seller/store/Dashboard/Manage/FilesLibrary';
+import StorePlanBilling from '@/features/seller/store/Dashboard/Manage/StorePlanBilling';
+import { StoreVerification } from '@/features/seller/store/Dashboard/Manage/StoreVerification';
+import { StoreOrderList } from '@/features/seller/store/Dashboard/StoreSection/orders/OrderList';
+import { StoreOrderDetail } from '@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail';
+import DraftOrdersList from '@/features/seller/store/Dashboard/StoreSection/orders/DraftOrdersList';
+import DraftOrderForm from '@/features/seller/store/Dashboard/StoreSection/orders/DraftOrderForm';
+import { StoreReturnList } from '@/features/seller/store/Dashboard/StoreSection/returns/ReturnList';
+import { StoreAnalytics } from '@/features/seller/store/Dashboard/Analytic/analytics/Analytics';
+import { StoreAIStudio } from '@/features/seller/store/Dashboard/Analytic/ai/AiStudio';
+import { StoreSEO } from '@/features/seller/store/Dashboard/Analytic/seo/StoreSEO';
+import { StoreFinance } from '@/features/seller/store/Dashboard/Operations/finance/Finance';
+import { StoreReviews } from '@/features/seller/store/Dashboard/Operations/reviews/reviews';
+import { StoreInventory } from '@/features/seller/store/Dashboard/Operations/inventory/Inventory';
+import { StoreMarketing } from '@/features/seller/store/Dashboard/Operations/marketing/Marketing';
+import { StoreLoyalty } from '@/features/seller/store/Dashboard/Operations/loyalty/Loyalty';
+import { StoreSubscriptions } from '@/features/seller/store/Dashboard/Operations/subscriptions/Subscriptions';
+import { StoreIntegrations } from '@/features/seller/store/Dashboard/Operations/integrations/Integrations';
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
-const AdminOverview      = lazy(() => named(import('@/features/admin/pages/AdminOverview'),                     'AdminOverview'));
-const AdminAnalytics     = lazy(() => named(import('@/features/admin/pages/AdminAnalytics'),                    'AdminAnalytics'));
-const AdminUsers         = lazy(() => named(import('@/features/admin/pages/AdminUsers'),                        'AdminUsers'));
-const AdminModeration    = lazy(() => named(import('@/features/admin/pages/AdminModeration'),                   'AdminModeration'));
-const AdminActivityLog   = lazy(() => named(import('@/features/admin/pages/AdminActivityLog'),                   'AdminActivityLog'));
-const AdminMessaging     = lazy(() => named(import('@/features/admin/pages/AdminMessaging'),                    'AdminMessaging'));
-const AdminMarketplace   = lazy(() => named(import('@/features/admin/pages/AdminMarketplace'),                  'AdminMarketplace'));
-const AdminLeads         = lazy(() => named(import('@/features/admin/pages/AdminLeads'),                        'AdminLeads'));
-const AdminSubscriptions = lazy(() => named(import('@/features/admin/pages/AdminSubscriptions'),                 'AdminSubscriptions'));
-const AdminPlatformPlans = lazy(() => named(import('@/features/admin/pages/AdminPlatformPlans'),                 'AdminPlatformPlans'));
-const AdminFinance       = lazy(() => named(import('@/features/admin/pages/AdminFinance'),                      'AdminFinance'));
-const AdminAnnouncements = lazy(() => named(import('@/features/admin/pages/AdminAnnouncements'),                'AdminAnnouncements'));
-const AdminBanners       = lazy(() => named(import('@/features/admin/pages/AdminBanners'),                       'AdminBanners'));
-const AdminFaqs          = lazy(() => named(import('@/features/admin/pages/AdminFaqs'),                          'AdminFaqs'));
-const AdminShippingZones = lazy(() => named(import('@/features/admin/pages/AdminShippingZones'),                 'AdminShippingZones'));
-const AdminContactMessages = lazy(() => named(import('@/features/admin/pages/AdminContactMessages'),             'AdminContactMessages'));
-const AdminTestimonials  = lazy(() => named(import('@/features/admin/pages/AdminTestimonials'),                  'AdminTestimonials'));
-const AdminManualPayments = lazy(() => named(import('@/features/admin/pages/AdminManualPayments'),               'AdminManualPayments'));
-const AdminCommissionRules = lazy(() => named(import('@/features/admin/pages/AdminCommissionRules'),             'AdminCommissionRules'));
-const AdminConfig        = lazy(() => named(import('@/features/admin/pages/AdminConfig'),                       'AdminConfig'));
-const AdminFxSettings    = lazy(() => named(import('@/features/admin/pages/AdminFxSettings'),                   'AdminFxSettings'));
-const AdminMarketing     = lazy(() => named(import('@/features/admin/pages/AdminMarketing'),                     'AdminMarketing'));
-const AdminSettings      = lazy(() => named(import('@/features/admin/pages/settings/AdminSettings'),           'AdminSettings'));
-const AdminSEO           = lazy(() => named(import('@/features/admin/pages/AdminSEO'),                          'AdminSEO'));
-const AdminAiStudio      = lazy(() => named(import('@/features/admin/pages/AdminAiStudio'),                     'AdminAiStudio'));
+import { AdminOverview } from '@/features/admin/pages/AdminOverview';
+import { AdminAnalytics } from '@/features/admin/pages/AdminAnalytics';
+import { AdminUsers } from '@/features/admin/pages/AdminUsers';
+import { AdminModeration } from '@/features/admin/pages/AdminModeration';
+import { AdminActivityLog } from '@/features/admin/pages/AdminActivityLog';
+import { AdminMessaging } from '@/features/admin/pages/AdminMessaging';
+import { AdminMarketplace } from '@/features/admin/pages/AdminMarketplace';
+import { AdminLeads } from '@/features/admin/pages/AdminLeads';
+import { AdminSubscriptions } from '@/features/admin/pages/AdminSubscriptions';
+import { AdminPlatformPlans } from '@/features/admin/pages/AdminPlatformPlans';
+import { AdminFinance } from '@/features/admin/pages/AdminFinance';
+import { AdminAnnouncements } from '@/features/admin/pages/AdminAnnouncements';
+import { AdminBanners } from '@/features/admin/pages/AdminBanners';
+import { AdminFaqs } from '@/features/admin/pages/AdminFaqs';
+import { AdminShippingZones } from '@/features/admin/pages/AdminShippingZones';
+import { AdminContactMessages } from '@/features/admin/pages/AdminContactMessages';
+import { AdminTestimonials } from '@/features/admin/pages/AdminTestimonials';
+import { AdminManualPayments } from '@/features/admin/pages/AdminManualPayments';
+import { AdminCommissionRules } from '@/features/admin/pages/AdminCommissionRules';
+import { AdminConfig } from '@/features/admin/pages/AdminConfig';
+import { AdminFxSettings } from '@/features/admin/pages/AdminFxSettings';
+import { AdminMarketing } from '@/features/admin/pages/AdminMarketing';
+import { AdminSettings } from '@/features/admin/pages/settings/AdminSettings';
+import { AdminSEO } from '@/features/admin/pages/AdminSEO';
+import { AdminAiStudio } from '@/features/admin/pages/AdminAiStudio';
 
 // ── Storefront subdomain router ────────────────────────────────────────────────
 // A store's own subdomain (`hello.solvexo.store`) serves ONLY its storefront
@@ -177,6 +165,8 @@ const storefrontRouter = createBrowserRouter([
           { path: 'login', element: <ThemedRoute routeKey="login" /> },
           { path: 'register', element: <ThemedRoute routeKey="register" /> },
           { path: 'verify-otp', element: <ThemedRoute routeKey="verifyOtp" /> },
+          { path: 'forgot-password', element: <ThemedRoute routeKey="forgotPassword" /> },
+          { path: 'new-password', element: <ThemedRoute routeKey="newPassword" /> },
           { path: 'account', element: <ThemedRoute routeKey="account" /> },
           // Must come before the `:pageSlug` catch-all below — 'category'/
           // 'collections'/'checkout' are reserved custom-page slugs precisely
@@ -279,10 +269,6 @@ const mainRouter = createBrowserRouter([
       { path: '/verify-otp',      element: <VerifyOTPPage /> },
       { path: '/new-password',    element: <NewPasswordPage /> },
 
-      // ── POS terminal — standalone (no seller sidebar) ──────────────────
-      { path: '/store/:storeId/pos/register', element: <POSRegister /> },
-      { path: '/store/:storeId/pos/login',    element: <POSEmployeeLogin /> },
-
       // ── Seller pages with dark sidebar ────────────────────────────────
       {
         path: '/seller',
@@ -303,7 +289,6 @@ const mainRouter = createBrowserRouter([
         children: [
           { index: true,                              element: <Navigate to="dashboard" replace /> },
           { path: 'dashboard',                        element: <StoreDashboard /> },
-          { path: 'pos',                               element: <PosLanding /> },
           { path: 'orders',                           element: <StoreOrderList /> },
           { path: 'orders/detail/:orderId',           element: <StoreOrderDetail /> },
           { path: 'draft-orders',                     element: <DraftOrdersList /> },
@@ -323,6 +308,10 @@ const mainRouter = createBrowserRouter([
           { path: 'verification',                     element: <StoreVerification /> },
           { path: 'storebuilder',                     element: <Navigate to="online-store/themes" replace /> },
           { path: 'online-store/themes',               element: <ThemeLibraryPage /> },
+          { path: 'online-store/themes/atelier/customize', element: <AtelierCustomizePage /> },
+          { path: 'online-store/themes/atelier/edit-code', element: <AtelierEditCodePage /> },
+          { path: 'online-store/themes/atelier/header-footer', element: <AtelierHeaderFooterPage /> },
+          { path: 'online-store/themes/atelier/preview', element: <AtelierThemeDemoPreview /> },
           { path: 'online-store/pages',               element: <PagesPage /> },
           { path: 'online-store/blog',                element: <BlogPage /> },
           { path: 'returns',                          element: <StoreReturnList /> },
@@ -337,7 +326,7 @@ const mainRouter = createBrowserRouter([
           { path: 'integrations',                     element: <StoreIntegrations /> },
           { path: 'activity',                         element: <Navigate to="../settings" replace /> },
           { path: 'followers',                        element: <Navigate to="../customer/list" replace /> },
-          { path: 'pos-admin',                        element: <Navigate to="../pos" replace /> },
+          { path: 'pos-admin',                        element: <Navigate to="../dashboard" replace /> },
           { path: 'shipping',                         element: <SellerShipping /> },
           { path: 'messages',                         element: <SellerMessages /> },
           { path: '*',                                element: <StoreNotFound /> },

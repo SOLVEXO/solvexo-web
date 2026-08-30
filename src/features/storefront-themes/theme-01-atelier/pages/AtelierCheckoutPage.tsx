@@ -4,7 +4,7 @@ import {
   MapPin, Truck, CreditCard, Banknote, Loader2, AlertCircle,
   CheckCircle2, PackageCheck, ChevronRight, Plus,
 } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
+import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useCartContext } from '@/contexts/CartContext';
 import { TokenStorage } from '@/api/services/auth';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
@@ -52,7 +52,7 @@ function SectionCard({ step, title, done, children }: { step: number; title: str
  *  shipping zone price was hardcoded to display "PKR" regardless of the
  *  store's actual checkout currency. */
 export function AtelierCheckoutPage() {
-  usePageTitle('Checkout');
+  useStorefrontSeo({ title: 'Checkout', noindex: true });
   const navigate = useNavigate();
   // Computed once per render rather than early-returning before the hooks
   // below — an early return here would violate the Rules of Hooks (every

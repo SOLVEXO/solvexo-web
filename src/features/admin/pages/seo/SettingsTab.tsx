@@ -19,8 +19,6 @@ export function SettingsTab() {
     setForm({
       homepageTitle: data.homepageTitle ?? '',
       homepageDescription: data.homepageDescription ?? '',
-      marketplaceTitle: data.marketplaceTitle ?? '',
-      marketplaceDescription: data.marketplaceDescription ?? '',
       robotsTxtBody: data.robotsTxtBody ?? '',
       aiSeoEnabled: data.aiSeoEnabled,
     });
@@ -47,16 +45,6 @@ export function SettingsTab() {
         </Field>
         <Field label="Homepage Description">
           <Textarea rows={2} value={form.homepageDescription ?? ''} onChange={e => setForm(f => ({ ...f, homepageDescription: e.target.value }))} />
-        </Field>
-      </Card>
-
-      <Card>
-        <p className="text-[13px] font-semibold text-carbon mb-3">Marketplace Meta</p>
-        <Field label="Marketplace Title" className="mb-3">
-          <Input value={form.marketplaceTitle ?? ''} onChange={e => setForm(f => ({ ...f, marketplaceTitle: e.target.value }))} />
-        </Field>
-        <Field label="Marketplace Description">
-          <Textarea rows={2} value={form.marketplaceDescription ?? ''} onChange={e => setForm(f => ({ ...f, marketplaceDescription: e.target.value }))} />
         </Field>
       </Card>
 

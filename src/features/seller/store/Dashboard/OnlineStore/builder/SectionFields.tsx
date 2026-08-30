@@ -3,16 +3,18 @@ import { Field, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import type { SectionType } from '@/api/services/storefrontTypes';
 import { EntityPickerModal } from './EntityPickerModal';
+import { LinkTargetFields } from './LinkTargetFields';
+import type { PageOption } from './BlockFields';
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
 
 /** A section's own settings form (separate from its blocks) — heading is common to most types, the rest is type-specific. */
-export function SectionFields({ type, settings, onChange, storeId }: {
+export function SectionFields({ type, settings, onChange, storeId, pageOptions }: {
   type: SectionType;
   settings: Record<string, any>;
   onChange: (next: Record<string, any>) => void;
   storeId: string;
- 
+  pageOptions?: PageOption[];
 }) {
   const set = (patch: Record<string, any>) => onChange({ ...settings, ...patch });
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
@@ -180,6 +182,31 @@ export function SectionFields({ type, settings, onChange, storeId }: {
             <span className="text-[12px] text-charcoal">Show tag filters</span>
             <Toggle checked={settings.showFilters !== false} onChange={v => set({ showFilters: v })} />
           </div>
+        </>
+      )}
+
+      {type === 'drop_countdown' && (
+        <>
+          <Field label="Subheading (optional)"><input className={inp} value={settings.subheading ?? ''} onChange={e => set({ subheading: e.target.value })} /></Field>
+          <Field label="Target date & time" required hint="The countdown runs live until this moment.">
+            <input
+              type="datetime-local"
+              className={inp}
+              value={settings.targetDate ? new Date(settings.targetDate).toISOString().slice(0, 16) : ''}
+              onChange={e => set({ targetDate: e.target.value ? new Date(e.target.value).toISOString() : '' })}
+            />
+          </Field>
+          <Field label="Button text (optional)"><input className={inp} value={settings.ctaText ?? ''} onChange={e => set({ ctaText: e.target.value })} /></Field>
+          {settings.ctaText && (
+            <Field label="Button link">
+              <LinkTargetFields
+                value={settings.ctaLink ?? { linkType: 'home' }}
+                onChange={next => set({ ctaLink: next })}
+                pageOptions={pageOptions ?? []}
+                storeId={storeId}
+              />
+            </Field>
+          )}
         </>
       )}
 

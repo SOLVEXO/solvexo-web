@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, type KeyboardEvent, type ClipboardEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Check } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
+import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useVerifyOtp } from '@/hooks/auth/useVerifyOtp';
 import { runSchema, otpSchema } from '@/utils/validation/schemas';
-import { AuthContext, apiResendOtp } from '@/api/services/auth';
+import { AuthContext, apiResendOtp, apiForgotPassword, type AppRole } from '@/api/services/auth';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useToast } from '@/contexts/ToastContext';
 import { AtelierButton } from '../components/AtelierButton';
@@ -55,7 +56,7 @@ function AtelierOtpInput({ values, onChange }: { values: string[]; onChange: (i:
   );
 }
 
-function ResendTimer({ email, storeId }: { email: string; storeId?: string }) {
+function ResendTimer({ email, storeId, isForgot }: { email: string; storeId?: string; isForgot: boolean }) {
   const toast = useToast();
   const [seconds, setSeconds] = useState(59);
   const [canResend, setCanResend] = useState(false);
@@ -73,7 +74,13 @@ function ResendTimer({ email, storeId }: { email: string; storeId?: string }) {
   const handleResend = async () => {
     setSending(true); setError('');
     try {
-      await apiResendOtp({ email, role: 'user', storeId });
+      // Registration's resend-otp endpoint 400s with "User already verified"
+      // for a forgot-password OTP — that account is, correctly, already
+      // verified. Forgot-password's own endpoint already regenerates and
+      // re-emails a fresh code, so it doubles as the real "resend" here —
+      // same pattern the apex marketplace's ResendTimer already uses.
+      if (isForgot) await apiForgotPassword({ email, role: 'user' as AppRole, storeId });
+      else await apiResendOtp({ email, role: 'user', storeId });
       setSeconds(59); setCanResend(false); setResendKey(k => k + 1);
       toast.success('Code resent');
     } catch (err) {
@@ -103,8 +110,10 @@ function ResendTimer({ email, storeId }: { email: string; storeId?: string }) {
 }
 
 export function AtelierVerifyOtpPage() {
-  usePageTitle('Verify Email');
+  const isForgot = AuthContext.get()?.flow === 'forgot';
+  useStorefrontSeo({ title: isForgot ? 'Verify Identity' : 'Verify Email', noindex: true });
   const { store } = useStorefront();
+  const navigate = useNavigate();
   const verifyOtp = useVerifyOtp();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
@@ -121,6 +130,18 @@ export function AtelierVerifyOtpPage() {
     const code = otp.join('');
     const errs = runSchema(otpSchema, { otp: code });
     if (errs.otp) { setError(errs.otp); return; }
+
+    if (isForgot) {
+      // No standalone "verify this reset code" endpoint exists — reset-
+      // password only accepts otp+newPassword together in one request (see
+      // `useResetPassword`). Carry the code forward instead of re-verifying
+      // it here; if it's actually wrong/expired, that surfaces on the next
+      // step with a real way back to re-enter it.
+      AuthContext.set({ email: userEmail, role: ctx?.role ?? 'user', flow: 'forgot', storeId: ctx?.storeId, otp: code });
+      navigate('../new-password');
+      return;
+    }
+
     await verifyOtp.execute(code);
     if (verifyOtp.error) setError(verifyOtp.error);
   };
@@ -128,9 +149,11 @@ export function AtelierVerifyOtpPage() {
   return (
     <div className="mx-auto" style={{ maxWidth: '400px', padding: '72px 20px' }}>
       <div className="text-center" style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: t.colors.ink }}>Verify your email</h1>
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '24px', fontWeight: 600, color: t.colors.ink }}>{isForgot ? 'Verify your identity' : 'Verify your email'}</h1>
         <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginTop: '6px' }}>
-          We sent a 6-digit code to <span style={{ fontWeight: 600, color: t.colors.ink }}>{userEmail || '—'}</span> to finish creating your {store.name} account.
+          {isForgot
+            ? <>We sent a 6-digit code to <span style={{ fontWeight: 600, color: t.colors.ink }}>{userEmail || '—'}</span> to confirm it's you before resetting your password.</>
+            : <>We sent a 6-digit code to <span style={{ fontWeight: 600, color: t.colors.ink }}>{userEmail || '—'}</span> to finish creating your {store.name} account.</>}
         </p>
       </div>
 
@@ -162,7 +185,7 @@ export function AtelierVerifyOtpPage() {
 
         <div className="flex items-center justify-center gap-1.5" style={{ marginTop: '20px' }}>
           <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>Didn't receive it?</span>
-          <ResendTimer email={userEmail} storeId={ctx?.storeId} />
+          <ResendTimer email={userEmail} storeId={ctx?.storeId} isForgot={isForgot} />
         </div>
       </div>
     </div>

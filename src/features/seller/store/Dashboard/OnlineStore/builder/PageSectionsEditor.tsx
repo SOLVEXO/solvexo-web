@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronUp, Trash2, Plus, LayoutTemplate, GripVertical } from 'lucide-react';
 import { ActionMenu } from '@/components/comman/ui';
 import type { Section, Block } from '@/api/services/storefrontTypes';
@@ -50,8 +50,14 @@ function BlockRow({ block, sectionType, onChange, onRemove, pageOptions, storeId
   );
 }
 
-function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOptions, storeId }: {
+function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange, onRemove, onPersistBlockRemove, pageOptions, storeId }: {
   section: Section;
+  /** Same id shape `AtelierSectionRenderer` computes (`section._id ?? index`,
+   *  stringified) — lets a click in the live preview and a card here refer
+   *  to "the same section" without either side needing the other's index. */
+  sectionId: string;
+  isSelected?: boolean;
+  onSelectSection?: (sectionId: string) => void;
   onChange: (next: Section) => void;
   onRemove: () => void;
   /** Called (with the section's new `blocks` already applied) specifically
@@ -60,19 +66,30 @@ function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOp
   onPersistBlockRemove: (next: Section) => void;
   pageOptions: PageOption[];
   storeId: string;
- 
+
 }) {
   const [open, setOpen] = useState(true);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const meta = SECTION_META_BY_TYPE[section.type];
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Clicking a section in the live preview should surface its card here —
+  // auto-expand it and scroll it into view, the same "select it and I'll
+  // show you where it lives" behavior the preview side gets from clicking a
+  // card's header (below).
+  useEffect(() => {
+    if (!isSelected) return;
+    setOpen(true);
+    cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [isSelected]);
 
   return (
-    <div className={`border rounded-2xl bg-white overflow-hidden transition-shadow ${open ? 'border-bone shadow-[0_1px_8px_rgba(0,0,0,0.04)]' : 'border-bone'}`}>
+    <div ref={cardRef} className={`border rounded-2xl bg-white overflow-hidden transition-shadow ${isSelected ? 'border-brand-orange ring-2 ring-brand-orange/25' : open ? 'border-bone shadow-[0_1px_8px_rgba(0,0,0,0.04)]' : 'border-bone'}`}>
       <div className="flex items-center gap-3 px-4 py-3.5">
         <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: `${meta?.color ?? '#8C8A82'}18` }}>
           {meta ? <meta.Icon size={16} style={{ color: meta.color }} /> : <LayoutTemplate size={16} className="text-slate" />}
         </div>
-        <button type="button" onClick={() => setOpen(o => !o)} className="flex-1 min-w-0 flex flex-col items-start bg-transparent border-none cursor-pointer text-left p-0">
+        <button type="button" onClick={() => { setOpen(o => !o); onSelectSection?.(sectionId); }} className="flex-1 min-w-0 flex flex-col items-start bg-transparent border-none cursor-pointer text-left p-0">
           <span className="text-[13.5px] font-bold text-charcoal truncate">{meta?.label ?? section.type}</span>
           {section.settings.heading && <span className="text-[11.5px] text-slate truncate">{section.settings.heading}</span>}
         </button>
@@ -94,7 +111,7 @@ function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOp
       )}
       {open && (
         <div className="px-4 pb-4 flex flex-col gap-3 border-t border-bone pt-3.5">
-          <SectionFields type={section.type} settings={section.settings} onChange={settings => onChange({ ...section, settings })} storeId={storeId} />
+          <SectionFields type={section.type} settings={section.settings} onChange={settings => onChange({ ...section, settings })} storeId={storeId} pageOptions={pageOptions} />
 
           {meta && meta.allowedBlockTypes.length > 0 && (
             <div className="flex flex-col gap-2 bg-cream/50 rounded-xl p-3 -mx-1">
@@ -144,7 +161,7 @@ function SectionCard({ section, onChange, onRemove, onPersistBlockRemove, pageOp
   );
 }
 
-export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId }: {
+export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, onSelectSection }: {
   sections: Section[];
   onChange: (next: Section[]) => void;
   /** Called (with the full next `Section[]`) whenever a section or a block
@@ -155,7 +172,11 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
   onPersist: (next: Section[]) => void;
   pageOptions: PageOption[];
   storeId: string;
- 
+  /** Click-to-select sync with the live preview — both optional, so this
+   *  component behaves exactly as before wherever a caller doesn't pass
+   *  them. */
+  selectedSectionId?: string | null;
+  onSelectSection?: (sectionId: string) => void;
 }) {
   const [showAdd, setShowAdd] = useState(false);
 
@@ -181,21 +202,29 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
       {sections.length > 0 && (
         <>
           <SortableList items={sections} keyFor={(s, i) => s._id ?? `new-${i}`} onReorder={onChange}>
-            {(section, i) => (
-              <SectionCard
-                section={section}
-                onChange={next => onChange(sections.map((s, j) => j === i ? next : s))}
-                onRemove={() => {
-                  const next = sections.filter((_, j) => j !== i);
-                  onChange(next);
-                  onPersist(next);
-                }}
-                onPersistBlockRemove={nextSection => onPersist(sections.map((s, j) => j === i ? nextSection : s))}
-                pageOptions={pageOptions}
-                storeId={storeId}
-               
-              />
-            )}
+            {(section, i) => {
+              // Must match `AtelierSectionRenderer`'s own `String(section._id
+              // ?? i)` exactly — same array, same order, same fallback — so a
+              // click in the preview and a card here agree on "which section."
+              const sectionId = String(section._id ?? i);
+              return (
+                <SectionCard
+                  section={section}
+                  sectionId={sectionId}
+                  isSelected={selectedSectionId === sectionId}
+                  onSelectSection={onSelectSection}
+                  onChange={next => onChange(sections.map((s, j) => j === i ? next : s))}
+                  onRemove={() => {
+                    const next = sections.filter((_, j) => j !== i);
+                    onChange(next);
+                    onPersist(next);
+                  }}
+                  onPersistBlockRemove={nextSection => onPersist(sections.map((s, j) => j === i ? nextSection : s))}
+                  pageOptions={pageOptions}
+                  storeId={storeId}
+                />
+              );
+            }}
           </SortableList>
 
           <button

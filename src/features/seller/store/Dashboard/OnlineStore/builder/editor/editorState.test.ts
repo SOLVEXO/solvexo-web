@@ -22,6 +22,46 @@ describe('editorReducer', () => {
       const state = loaded({ title: 'Home', count: 1 }, { title: 'Home Draft', count: 1 });
       expect(hasUnpublishedChanges(state)).toBe(true);
     });
+
+    it('a second LOAD racing in after an in-progress edit must NOT clobber the unsaved working copy — the original data-loss bug', () => {
+      // Reproduces: mount fires an initial fetch, the merchant edits before it
+      // resolves (or a duplicate/slow fetch resolves late — e.g. React 18
+      // StrictMode's double-invoke, or a second real network round trip) —
+      // that late LOAD must never silently overwrite what's on screen.
+      let state = loaded({ title: 'Home', count: 1 });
+      state = editorReducer(state, { type: 'EDIT', updater: { title: 'Home (typed by merchant)', count: 1 } });
+      expect(state.dirty).toBe(true);
+
+      const lateLoad = editorReducer(state, { type: 'LOAD', published: { title: 'Home', count: 1 } });
+      expect(lateLoad.workingCopy).toEqual({ title: 'Home (typed by merchant)', count: 1 });
+      expect(lateLoad.dirty).toBe(true);
+      // The late fetch's server value is still worth capturing as the new
+      // "published" baseline (e.g. for a concurrent-editor conflict banner
+      // later) — it just must never become the working copy.
+      expect(lateLoad.published).toEqual({ title: 'Home', count: 1 });
+    });
+
+    it('a LOAD while clean (no in-progress edit) behaves exactly as a fresh load — re-syncs the working copy normally', () => {
+      let state = loaded({ title: 'Home', count: 1 });
+      expect(state.dirty).toBe(false);
+
+      const state2 = editorReducer(state, { type: 'LOAD', published: { title: 'Home v2', count: 2 } });
+      expect(state2.workingCopy).toEqual({ title: 'Home v2', count: 2 });
+      expect(state2.published).toEqual({ title: 'Home v2', count: 2 });
+      expect(state2.dirty).toBe(false);
+    });
+
+    it('dirty clears on SAVE_SUCCESS and PUBLISH_SUCCESS, so a LOAD after a real save/publish resyncs normally again', () => {
+      let state = loaded({ title: 'Home', count: 1 });
+      state = editorReducer(state, { type: 'EDIT', updater: { title: 'Edited', count: 1 } });
+      expect(state.dirty).toBe(true);
+
+      state = editorReducer(state, { type: 'SAVE_SUCCESS' });
+      expect(state.dirty).toBe(false);
+
+      const afterLoad = editorReducer(state, { type: 'LOAD', published: { title: 'Edited', count: 1 } });
+      expect(afterLoad.workingCopy).toEqual({ title: 'Edited', count: 1 });
+    });
   });
 
   describe('EDIT', () => {

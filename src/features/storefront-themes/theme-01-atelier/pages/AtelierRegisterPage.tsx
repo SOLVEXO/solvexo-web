@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
+import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useRegister } from '@/hooks/auth/useRegister';
 import { safeRedirectPath } from '@/utils/safeRedirect';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -12,7 +12,7 @@ import { atelierTheme as t } from '../theme.config';
 /** Theme 01's own sign-up — creates an account scoped to THIS store
  *  (`Store.storeId`), same real flow as the legacy `StorefrontRegisterPage`. */
 export function AtelierRegisterPage() {
-  usePageTitle('Create Account');
+  useStorefrontSeo({ title: 'Create Account', noindex: true });
   const { store } = useStorefront();
   const [searchParams] = useSearchParams();
   const redirectTo = safeRedirectPath(searchParams.get('redirect')) ?? '/';

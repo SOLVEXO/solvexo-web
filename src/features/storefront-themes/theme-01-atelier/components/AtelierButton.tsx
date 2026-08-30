@@ -12,6 +12,13 @@ interface AtelierButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const AtelierButton = forwardRef<HTMLButtonElement, AtelierButtonProps>(
   ({ variant = 'primary', loading, disabled, children, style, ...rest }, ref) => {
     const isPrimary = variant === 'primary';
+    // A merchant's saved button style (`Theme` scope in Customize) governs
+    // the PRIMARY variant's fill — 'outline' always stays outline (it's
+    // already the theme's secondary/quiet button, no merchant control needed
+    // there). 'solid' fills with ink (today's look), 'soft' fills with a
+    // light accent tint instead of full ink for a gentler primary CTA.
+    const solidBg = t.buttonStyle === 'soft' ? t.colors.accent : t.colors.ink;
+    const outlineStyle = t.buttonStyle === 'outline';
     return (
       <button
         ref={ref}
@@ -23,16 +30,17 @@ export const AtelierButton = forwardRef<HTMLButtonElement, AtelierButtonProps>(
           textTransform: 'uppercase',
           fontWeight: 600,
           padding: '14px 28px',
-          borderRadius: t.radius.none,
-          border: `1px solid ${t.colors.ink}`,
-          background: isPrimary ? t.colors.ink : 'transparent',
-          color: isPrimary ? '#FFFFFF' : t.colors.ink,
+          borderRadius: t.buttonRadiusPx,
+          border: `1px solid ${isPrimary && !outlineStyle ? solidBg : t.colors.ink}`,
+          background: isPrimary && !outlineStyle ? solidBg : 'transparent',
+          color: isPrimary && !outlineStyle ? '#FFFFFF' : t.colors.ink,
           cursor: disabled || loading ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.5 : 1,
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
           gap: '8px',
+          width: isPrimary && t.buttonWidth === 'full' ? '100%' : undefined,
           transition: 'opacity 150ms',
           ...style,
         }}

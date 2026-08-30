@@ -31,6 +31,15 @@ export interface EditorState<T> {
   future: T[];
   phase: EditorPhase;
   errorMessage: string | null;
+  /** True from the merchant's first real interaction (edit, undo, or redo)
+   *  since the last successful load/save/publish/discard, back to false once
+   *  one of those completes. This is the one thing `case 'LOAD'` below
+   *  checks before touching `workingCopy` — see that case's comment for why
+   *  it exists. Not derived from `phase`/history length on purpose: it must
+   *  stay true through a failed save/publish (the edit is still real and
+   *  unsaved) and through undo/redo landing back on a value equal to
+   *  `published` (the merchant is still mid-session and may redo again). */
+  dirty: boolean;
 }
 
 export type EditorAction<T> =
@@ -61,7 +70,22 @@ function phaseAfterHistoryNavigation<T>(workingCopy: T, published: T | null): Ed
 
 export function editorReducer<T>(state: EditorState<T>, action: EditorAction<T>): EditorState<T> {
   switch (action.type) {
-    case 'LOAD':
+    case 'LOAD': {
+      // The root-cause fix for a real, reproduced data-loss bug: a second
+      // LOAD (a duplicate initial fetch — React StrictMode's dev double-
+      // invoke, a slow network response racing a fast typist, or any future
+      // "refresh from server" call) must never silently discard a merchant's
+      // already-started edit. This is a state-machine guarantee keyed off
+      // `dirty`, not a timing workaround — it holds no matter how the two
+      // loads race. While dirty, only `published` (the server-truth
+      // reference `hasUnpublishedChanges` diffs against, and what Discard
+      // Draft/a future "reload" the merchant explicitly asks for would use)
+      // is updated; `workingCopy`/`history`/`future`/`phase` are left
+      // completely untouched. Once the editor is clean again (after a real
+      // save/publish/discard), a LOAD is safe to fully apply as before.
+      if (state.dirty) {
+        return { ...state, published: action.published };
+      }
       return {
         published: action.published,
         workingCopy: action.workingCopy ?? action.published,
@@ -69,7 +93,9 @@ export function editorReducer<T>(state: EditorState<T>, action: EditorAction<T>)
         future: [],
         phase: 'clean',
         errorMessage: null,
+        dirty: false,
       };
+    }
 
     case 'EDIT': {
       if (state.workingCopy === null) return state;
@@ -77,7 +103,7 @@ export function editorReducer<T>(state: EditorState<T>, action: EditorAction<T>)
         ? (action.updater as (prev: T) => T)(state.workingCopy)
         : action.updater;
       const history = [...state.history, state.workingCopy].slice(-MAX_EDITOR_HISTORY);
-      return { ...state, workingCopy: next, history, future: [], phase: 'dirty', errorMessage: null };
+      return { ...state, workingCopy: next, history, future: [], phase: 'dirty', errorMessage: null, dirty: true };
     }
 
     case 'UNDO': {
@@ -92,6 +118,7 @@ export function editorReducer<T>(state: EditorState<T>, action: EditorAction<T>)
         future,
         phase: phaseAfterHistoryNavigation(previous, state.published),
         errorMessage: null,
+        dirty: true,
       };
     }
 
@@ -106,6 +133,7 @@ export function editorReducer<T>(state: EditorState<T>, action: EditorAction<T>)
         future: restFuture,
         phase: phaseAfterHistoryNavigation(next, state.published),
         errorMessage: null,
+        dirty: true,
       };
     }
 
@@ -118,12 +146,13 @@ export function editorReducer<T>(state: EditorState<T>, action: EditorAction<T>)
         workingCopy: action.workingCopy ?? state.workingCopy,
         phase: 'saved',
         errorMessage: null,
+        dirty: false,
       };
 
     case 'SAVE_ERROR':
-      // Deliberately does NOT touch workingCopy — a failed save must never
-      // discard what the seller typed; they keep editing/retrying from
-      // exactly where they were.
+      // Deliberately does NOT touch workingCopy or dirty — a failed save
+      // must never discard what the seller typed, and the edit is still
+      // real and unsaved, so a racing LOAD must keep being blocked.
       return { ...state, phase: 'error', errorMessage: action.message };
 
     case 'PUBLISH_START':
@@ -139,10 +168,12 @@ export function editorReducer<T>(state: EditorState<T>, action: EditorAction<T>)
         future: [],
         phase: 'published',
         errorMessage: null,
+        dirty: false,
       };
     }
 
     case 'PUBLISH_ERROR':
+      // Same reasoning as SAVE_ERROR — the edit is still unsaved/unpublished.
       return { ...state, phase: 'error', errorMessage: action.message };
 
     case 'DISCARD_DRAFT':
@@ -153,6 +184,7 @@ export function editorReducer<T>(state: EditorState<T>, action: EditorAction<T>)
         future: [],
         phase: 'clean',
         errorMessage: null,
+        dirty: false,
       };
 
     default:
@@ -161,7 +193,7 @@ export function editorReducer<T>(state: EditorState<T>, action: EditorAction<T>)
 }
 
 export function initialEditorState<T>(): EditorState<T> {
-  return { published: null, workingCopy: null, history: [], future: [], phase: 'clean', errorMessage: null };
+  return { published: null, workingCopy: null, history: [], future: [], phase: 'clean', errorMessage: null, dirty: false };
 }
 
 /**

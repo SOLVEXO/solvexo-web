@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { FileQuestion, MessageSquare } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   apiGetPublicBlogPost, apiListPublicBlogComments, apiSubmitPublicBlogComment,
   type BlogPostData,
 } from '@/api/services/storeBlog';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
+import type { Section } from '@/api/services/storefrontTypes';
+import { AtelierSectionRenderer } from '../sections';
 import { AtelierContentBlocks } from '../components/AtelierContentBlocks';
 import { AtelierButton } from '../components/AtelierButton';
 import { atelierInput } from '../components/atelierFormStyles';
+import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { atelierTheme as t } from '../theme.config';
 
 function CommentsSection({ storeId, postId }: { storeId: string; postId: string }) {
@@ -80,6 +83,7 @@ export function AtelierBlogPostPage() {
   const [post, setPost] = useState<(BlogPostData & { commentsEnabled: boolean }) | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [templateSections, setTemplateSections] = useState<Section[]>([]);
 
   useEffect(() => {
     if (!postSlug) return;
@@ -90,7 +94,21 @@ export function AtelierBlogPostPage() {
       .finally(() => setLoading(false));
   }, [store.storeId, postSlug]);
 
-  usePageTitle(post ? post.title : 'Journal');
+  // A shared "article" template, same on every post in the blog — matches
+  // real Shopify convention (all articles in a blog share one article.json
+  // template). See `AtelierSearchPage`'s comment on why this uses the
+  // backend's `page` resourceType bucket rather than a dedicated one.
+  useEffect(() => {
+    apiGetPublicCollectionTemplate(store.storeId, 'page', 'blog-article')
+      .then(res => setTemplateSections(res.data.sections ?? []))
+      .catch(() => setTemplateSections([]));
+  }, [store.storeId]);
+
+  useStorefrontSeo({
+    title: post ? post.title : 'Journal',
+    description: post?.excerpt || undefined,
+    image: post?.coverImage || undefined,
+  });
 
   if (loading) {
     return (
@@ -119,6 +137,7 @@ export function AtelierBlogPostPage() {
         <AtelierContentBlocks blocks={post.content} />
       </div>
       {post.commentsEnabled && <CommentsSection storeId={store.storeId} postId={post._id} />}
+      {templateSections.length > 0 && <div style={{ marginTop: '48px' }}><AtelierSectionRenderer sections={templateSections} /></div>}
     </article>
   );
 }

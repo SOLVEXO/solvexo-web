@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { LogOut, Check, Package, ChevronDown, Loader2, Download } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
+import { LogOut, Check, Package, ChevronDown, Loader2, Download, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
 import { useLogout } from '@/hooks/auth/useLogout';
+import { useChangePassword } from '@/hooks/auth/useChangePassword';
 import { apiGetMyOrders, apiGetDownloadLink, type OrderSummary, type OrderStatus } from '@/api/services/orders';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -34,6 +35,71 @@ function DownloadLink({ orderId, productId }: { orderId: string; productId: stri
     <button type="button" onClick={handle} disabled={busy} className="flex items-center gap-1 cursor-pointer bg-transparent border-0" style={{ fontFamily: t.fonts.body, fontSize: '11.5px', fontWeight: 600, color: t.colors.accent }}>
       {busy ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />} Download
     </button>
+  );
+}
+
+/** Real "Change Password" for an already-authenticated buyer — the
+ *  companion to the Forgot Password flow (which is only for a buyer who's
+ *  locked out and can't log in at all). Uses the existing, already-real
+ *  `PUT api/users/change-password` endpoint (current+new password,
+ *  identity taken from the auth token — no OTP needed, the buyer already
+ *  proved who they are by being logged in), the same one the apex buyer
+ *  Account Workspace's Security tab already uses. */
+function PasswordSection() {
+  const changePassword = useChangePassword();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [show, setShow] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const handleSubmit = async () => {
+    setFormError('');
+    if (newPassword.length < 8) { setFormError('New password must be at least 8 characters.'); return; }
+    if (newPassword !== confirmPassword) { setFormError('New passwords do not match.'); return; }
+    const ok = await changePassword.execute({ currentPassword, newPassword });
+    if (ok) { setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); }
+  };
+
+  return (
+    <section style={{ border: `1px solid ${t.colors.border}`, padding: '24px', marginBottom: '36px' }}>
+      <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink, marginBottom: '18px' }}>Password</p>
+      <div className="flex flex-col gap-4 atelier-form">
+        <div>
+          <label htmlFor="atelier-account-currentpw" style={atelierLabel}>Current Password</label>
+          <input id="atelier-account-currentpw" type={show ? 'text' : 'password'} autoComplete="current-password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} style={atelierInput} />
+        </div>
+        <div>
+          <label htmlFor="atelier-account-newpw" style={atelierLabel}>New Password</label>
+          <div className="relative">
+            <input id="atelier-account-newpw" type={show ? 'text' : 'password'} autoComplete="new-password" value={newPassword} onChange={e => setNewPassword(e.target.value)} style={{ ...atelierInput, paddingRight: '40px' }} />
+            <button type="button" onClick={() => setShow(s => !s)} aria-label={show ? 'Hide passwords' : 'Show passwords'}
+              className="absolute cursor-pointer bg-transparent border-0" style={{ right: '12px', top: '50%', transform: 'translateY(-50%)', color: t.colors.inkMuted }}>
+              {show ? <EyeOff size={15} /> : <Eye size={15} />}
+            </button>
+          </div>
+        </div>
+        <div>
+          <label htmlFor="atelier-account-confirmpw" style={atelierLabel}>Confirm New Password</label>
+          <input id="atelier-account-confirmpw" type={show ? 'text' : 'password'} autoComplete="new-password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={atelierInput} />
+        </div>
+        {(formError || changePassword.error) && (
+          <p className="flex items-center gap-1.5" style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger }}>
+            <AlertCircle size={13} /> {formError || changePassword.error}
+          </p>
+        )}
+        <div className="flex items-center gap-3">
+          <AtelierButton onClick={handleSubmit} loading={changePassword.loading} disabled={!currentPassword || !newPassword || !confirmPassword}>
+            Update Password
+          </AtelierButton>
+          {changePassword.success && (
+            <span className="flex items-center gap-1" style={{ fontFamily: t.fonts.body, fontSize: '12px', fontWeight: 600, color: t.colors.success }}>
+              <Check size={13} /> Updated
+            </span>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -84,7 +150,7 @@ function OrderRow({ order }: { order: OrderSummary }) {
  *  legacy `StorefrontAccountPage`'s same disclosed scope (no wishlist/
  *  subscriptions/messages tabs yet — a later phase). */
 export function AtelierAccountPage() {
-  usePageTitle('My Account');
+  useStorefrontSeo({ title: 'My Account', noindex: true });
   const { store } = useStorefront();
   const logout = useLogout();
   const { profile, loading: profileLoading } = useGetProfile();
@@ -159,6 +225,8 @@ export function AtelierAccountPage() {
           </div>
         )}
       </section>
+
+      <PasswordSection />
 
       <section>
         <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink, marginBottom: '18px' }}>Order History</p>

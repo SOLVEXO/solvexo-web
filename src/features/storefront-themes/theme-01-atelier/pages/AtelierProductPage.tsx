@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ImageOff, Minus, Plus, CheckCircle2, Star } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useCartContext } from '@/contexts/CartContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import type { ProductVariant } from '@/api/services/marketplace';
 import { ProductReviewsSection } from '@/features/buyer/pages/ProductReviews';
+import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
+import type { Section } from '@/api/services/storefrontTypes';
+import { AtelierSectionRenderer } from '../sections';
 import { AtelierButton } from '../components/AtelierButton';
+import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
+import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
 import { atelierTheme as t } from '../theme.config';
 
 function Gallery({ images, name }: { images: string[]; name: string }) {
@@ -23,7 +28,16 @@ function Gallery({ images, name }: { images: string[]; name: string }) {
         style={{ aspectRatio: '3/4', background: t.colors.bgAlt }}
       >
         {src && !errored[selected]
-          ? <img src={src} alt={name} className="w-full h-full object-cover" onError={() => setErrored(e => ({ ...e, [selected]: true }))} />
+          ? (
+            <img
+              src={cloudinaryUrl(src, 900)}
+              srcSet={cloudinarySrcSet(src, [640, 900, 1200])}
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              alt={name}
+              className="w-full h-full object-cover"
+              onError={() => setErrored(e => ({ ...e, [selected]: true }))}
+            />
+          )
           : <ImageOff size={36} style={{ color: t.colors.inkMuted }} />}
       </div>
       {images.length > 1 && (
@@ -36,7 +50,7 @@ function Gallery({ images, name }: { images: string[]; name: string }) {
               className="w-16 h-16 shrink-0 cursor-pointer border-0"
               style={{ outline: selected === i ? `2px solid ${t.colors.ink}` : `1px solid ${t.colors.border}`, outlineOffset: '-1px' }}
             >
-              <img src={img} alt="" className="w-full h-full object-cover" />
+              <img src={cloudinaryUrl(img, 128)} alt="" className="w-full h-full object-cover" loading="lazy" />
             </button>
           ))}
         </div>
@@ -112,6 +126,7 @@ function ProductSkeleton() {
 export function AtelierProductPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { store } = useStorefront();
   const { detail, loading, error } = useProductById(slug ?? '');
   const { addToCart, updateQty, adding } = useCartContext();
   const { currency: displayCurrency, convert } = useCurrencyPreference();
@@ -120,9 +135,28 @@ export function AtelierProductPage() {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [qty, setQty] = useState(1);
   const [addedFeedback, setAddedFeedback] = useState(false);
+  const [templateSections, setTemplateSections] = useState<Section[]>([]);
 
   const product = detail?.product ?? null;
-  usePageTitle(product?.name ?? 'Product');
+  useStorefrontSeo({
+    title: product?.name,
+    description: product?.description || undefined,
+    image: product?.images?.[0] || undefined,
+  });
+
+  // Everything above/around this — gallery, variant selection, quantity,
+  // add-to-cart, reviews — is commerce-critical CORE, fixed chrome outside
+  // the section system (same boundary the legacy engine always kept). Only
+  // the SURROUNDING content (below the reviews) is theme/template-driven,
+  // via the store's own real "product" alternate-template document — the
+  // exact same backend `collection-template` infra Product/Collection
+  // Template editing already uses elsewhere in this app.
+  useEffect(() => {
+    if (!product) return;
+    apiGetPublicCollectionTemplate(store.storeId, 'product', product.templateKey || 'default')
+      .then(res => setTemplateSections(res.data.sections ?? []))
+      .catch(() => setTemplateSections([]));
+  }, [store.storeId, product?.templateKey, product?._id]);
 
   useEffect(() => {
     if (product && product.slug && product.slug !== slug) {
@@ -243,6 +277,8 @@ export function AtelierProductPage() {
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `0 ${t.layout.containerPadX} 48px` }}>
         <ProductReviewsSection productId={product._id} />
       </div>
+
+      {templateSections.length > 0 && <AtelierSectionRenderer sections={templateSections} />}
     </main>
   );
 }

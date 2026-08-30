@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Newspaper, ImageOff } from 'lucide-react';
-import { usePageTitle } from '@/hooks/usePageTitle';
+import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { apiListPublicBlogPosts, type BlogPostSummary } from '@/api/services/storeBlog';
+import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
+import type { Section } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { AtelierSectionRenderer } from '../sections';
 import { atelierTheme as t } from '../theme.config';
 
 function PostImage({ src, alt }: { src?: string | null; alt: string }) {
@@ -21,8 +24,9 @@ function PostImage({ src, alt }: { src?: string | null; alt: string }) {
  *  needed at this scale (matches the legacy page's own 20-per-page cap). */
 export function AtelierBlogIndexPage() {
   const { store } = useStorefront();
-  usePageTitle('Journal');
+  useStorefrontSeo({ title: 'Journal' });
   const [posts, setPosts] = useState<BlogPostSummary[] | null>(null);
+  const [sections, setSections] = useState<Section[]>([]);
 
   useEffect(() => {
     apiListPublicBlogPosts(store.storeId, undefined, 1, 20)
@@ -30,9 +34,17 @@ export function AtelierBlogIndexPage() {
       .catch(() => setPosts([]));
   }, [store.storeId]);
 
+  useEffect(() => {
+    apiGetPublicCollectionTemplate(store.storeId, 'page', 'blog-index')
+      .then(res => setSections(res.data.sections ?? []))
+      .catch(() => setSections([]));
+  }, [store.storeId]);
+
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `48px ${t.layout.containerPadX}` }}>
       <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 36px)', fontWeight: 600, color: t.colors.ink, marginBottom: '36px' }}>Journal</h1>
+
+      {sections.length > 0 && <div style={{ marginBottom: '40px' }}><AtelierSectionRenderer sections={sections} /></div>}
 
       {posts === null && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">

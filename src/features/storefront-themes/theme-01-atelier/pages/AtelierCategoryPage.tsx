@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { usePageTitle } from '@/hooks/usePageTitle';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { AtelierProductGrid } from '../components/AtelierProductGrid';
+import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { atelierTheme as t } from '../theme.config';
 
 /** `/category/:slugOrId` — resolves against the store's own subcategory tree
@@ -25,7 +25,7 @@ export function AtelierCategoryPage() {
       .catch(() => setCategory(null));
   }, [store.storeId, slugOrId]);
 
-  usePageTitle(category ? category.name : store.name);
+  useStorefrontSeo({ title: category ? category.name : undefined });
 
   if (category === undefined) {
     return <div style={{ padding: '96px 0', textAlign: 'center', fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted }}>Loading…</div>;
