@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, RefreshCw,
   BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle, Landmark, Percent, Coins, UserPlus, Activity,
-  TrendingUp, ChevronRight, Quote, Truck,
+  TrendingUp, ChevronRight, Quote, Truck, Smartphone,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -33,6 +33,10 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'leads',         Icon: UserPlus,        label: 'Leads',           path: '/admin/leads'         },
   { id: 'marketplace',   Icon: Store,           label: 'Marketplace',     path: '/admin/marketplace'   },
   { id: 'subscriptions', Icon: RefreshCw,       label: 'Subscriptions',   path: '/admin/subscriptions' },
+  // Seller white-label branded-app requests — see MobileApp.tsx (seller
+  // side) and StoreAppRequestsModule (backend) for the full flow. Distinct
+  // from Solvexo's own POS app, which needs no admin review at all.
+  { id: 'store-app-requests', Icon: Smartphone, label: 'Store App Requests', path: '/admin/store-app-requests' },
   { id: 'marketing',     Icon: Tag,             label: 'Marketing',       path: '/admin/marketing'     },
   { id: 'platform-plans',Icon: Layers,          label: 'Platform Plans',  path: '/admin/platform-plans' },
   { id: 'finance',       Icon: DollarSign,      label: 'Finance',         path: '/admin/finance'       },
@@ -99,7 +103,7 @@ interface AdminModule {
 // only the admin-facing management PAGE was removed.
 export const ADMIN_MODULES: AdminModule[] = [
   { id: 'overview',  label: 'Overview',             Icon: LayoutDashboard, ids: ['overview'] },
-  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['subscriptions', 'platform-plans', 'shipping-zones'] },
+  { id: 'commerce',  label: 'Commerce',             Icon: Store,           ids: ['subscriptions', 'platform-plans', 'shipping-zones', 'store-app-requests'] },
   { id: 'people',    label: 'Users & Communication', Icon: Users,          ids: ['users', 'moderation', 'contact'] },
   { id: 'growth',    label: 'Growth',                Icon: TrendingUp,     ids: ['seo', 'ai-studio'] },
   { id: 'finance',   label: 'Finance',               Icon: DollarSign,     ids: ['finance', 'manual-payments', 'commission-rules', 'fx-settings'] },

@@ -10,7 +10,7 @@ import {
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
-  LayoutGrid, Newspaper, Palette, Percent, Gift,
+  LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, type StorePlatformSubscription } from '@/api/services/platformPlans';
@@ -117,6 +117,10 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     group: 'Settings',
     items: [
       { id: 'integrations',  Icon: Plug,        label: 'Integrations', path: 'integrations'  },
+      // Own store's branded app request + Solvexo POS access — two
+      // independent mobile-app products, both applied for from one page
+      // (see MobileApp.tsx's own doc comment for the distinction).
+      { id: 'mobile-app',    Icon: Smartphone,  label: 'Mobile App',   path: 'mobile-app'    },
       // 'verification' and 'account' were removed from here — see the doc
       // comment above `StoreVerificationBanner`'s old call site (deleted
       // below) and `StorePageHeader`'s new account button for why.

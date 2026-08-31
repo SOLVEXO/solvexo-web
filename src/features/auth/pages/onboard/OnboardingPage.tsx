@@ -135,54 +135,6 @@ interface StoreForm {
 // since the rest of the app only ever reads `store.baseCurrency`.
 const DEFAULT_CURRENCY: SupportedCurrency = 'PKR';
 
-// ── Step Progress header — lives inside each step's card, a progress-line +
-// circle treatment (same idea as CheckoutPage's step header). Deliberately no
-// separate "Store Info" / "Step 1 of 3" text row above the circles any more —
-// that used to just repeat the active circle's own label right underneath it
-// (visibly duplicated on screen); the circle row alone already shows the
-// current step's name (in orange) and its position among the total.
-function OnboardingStepHeader({ step, maxReached, onStepClick }: { step: number; maxReached: number; onStepClick: (step: number) => void }) {
-  return (
-    <div className="pb-4 mb-7 border-b border-bone">
-      <div className="relative flex justify-between items-start w-full">
-        <div className="absolute top-3 left-0 right-0 h-[2px] bg-bone rounded-full" />
-        <div
-          className="absolute top-3 left-0 h-[2px] bg-brand-orange rounded-full transition-all duration-300"
-          style={{ width: `${((step - 1) / (STEPS.length - 1)) * 100}%` }}
-        />
-        {STEPS.map((label, i) => {
-          const n = i + 1;
-          const done = n <= maxReached && n !== step;
-          const active = n === step;
-          const clickable = n <= maxReached && n !== step;
-          return (
-            <div
-              key={n}
-              className={clsx('relative z-10 flex flex-col items-center gap-[6px]', clickable ? 'cursor-pointer' : 'cursor-default')}
-              onClick={() => clickable && onStepClick(n)}
-            >
-              <div className={clsx(
-                'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-200',
-                done ? 'bg-success text-white' :
-                  active ? 'bg-brand-orange text-white ring-4 ring-brand-pale-orange' :
-                    'bg-bone text-slate',
-              )}>
-                {done ? <Check size={12} /> : n}
-              </div>
-              <span className={clsx(
-                'hidden sm:block text-[10px] font-semibold whitespace-nowrap',
-                active ? 'text-brand-orange' : done ? 'text-success' : 'text-slate',
-              )}>
-                {label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 // Fades/lifts a step's content in whenever `step` changes, for a smoother
 // transition between onboarding steps without a page-level animation library.
 function StepPane({ step, children }: { step: number; children: ReactNode }) {
@@ -214,9 +166,8 @@ function StepPane({ step, children }: { step: number; children: ReactNode }) {
 }
 
 // ── Step 1 — Store Info ───────────────────────────────────────────────────────
-function Step1StoreInfo({ form, setForm, onNext, step, maxReached, onStepClick }: {
+function Step1StoreInfo({ form, setForm, onNext }: {
   form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void;
-  step: number; maxReached: number; onStepClick: (step: number) => void;
 }) {
   const [preview, setPreview] = useState('');
   const canProceed = form.storeName.trim().length > 0;
@@ -234,7 +185,6 @@ function Step1StoreInfo({ form, setForm, onNext, step, maxReached, onStepClick }
 
   return (
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
-      <OnboardingStepHeader step={step} maxReached={maxReached} onStepClick={onStepClick} />
       <div className={clsx(NARROW_CONTENT, 'text-center mb-9')}>
         <h1 className="text-[28px] font-bold text-carbon mb-2">Set up your store</h1>
         <p className="text-[14px] text-slate">You can always update these details later from Settings.</p>
@@ -290,13 +240,11 @@ function Step1StoreInfo({ form, setForm, onNext, step, maxReached, onStepClick }
 }
 
 // ── Step 2 — Seller Type ──────────────────────────────────────────────────────
-function Step2SellerType({ form, setForm, onNext, onBack, step, maxReached, onStepClick }: {
+function Step2SellerType({ form, setForm, onNext, onBack }: {
   form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void; onBack: () => void;
-  step: number; maxReached: number; onStepClick: (step: number) => void;
 }) {
   return (
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
-      <OnboardingStepHeader step={step} maxReached={maxReached} onStepClick={onStepClick} />
       <div className="text-center mb-9">
         <h1 className="text-[28px] font-bold text-carbon mb-2">What kind of seller are you?</h1>
         <p className="text-[14px] text-slate">We'll personalise your dashboard and tools based on your answer.</p>
@@ -345,10 +293,9 @@ function Step2SellerType({ form, setForm, onNext, onBack, step, maxReached, onSt
 // action itself (matching the approved plan to drop Review as a separate
 // mandatory gate) — same flat, no-boxed-sub-panel treatment the old Review
 // step used for its launch confirmation and error messaging.
-function Step3WhatYouSell({ form, setForm, onBack, step, maxReached, onStepClick, submitting, submitError, onSubmit }: {
+function Step3WhatYouSell({ form, setForm, onBack, submitting, submitError, onSubmit }: {
   form: StoreForm; setForm: (f: StoreForm) => void;
   onBack: () => void;
-  step: number; maxReached: number; onStepClick: (step: number) => void;
   submitting: boolean; submitError: string; onSubmit: () => void;
 }) {
   const toggle = (id: ProductType) =>
@@ -356,7 +303,6 @@ function Step3WhatYouSell({ form, setForm, onBack, step, maxReached, onStepClick
 
   return (
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
-      <OnboardingStepHeader step={step} maxReached={maxReached} onStepClick={onStepClick} />
       <div className="text-center mb-9">
         <h1 className="text-[28px] font-bold text-carbon mb-2">What will you sell?</h1>
         <p className="text-[14px] text-slate">Select all that apply — we'll activate the right tools for you.</p>
@@ -538,7 +484,6 @@ function StoreReadyConfirmation({ store }: { store: StoreData | null }) {
   const navigate = useNavigate();
   return (
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
-      <OnboardingStepHeader step={TOTAL_STEPS} maxReached={TOTAL_STEPS} onStepClick={() => {}} />
       <div className={clsx(NARROW_CONTENT, 'text-center')}>
         <motion.div
           className="size-14 rounded-full bg-success-bg flex items-center justify-center mx-auto mb-4"
@@ -571,8 +516,12 @@ export function OnboardingPage() {
   // (defensive only — the router always routes here via OnboardingEntry).
   const { sessionId: routeSessionId } = useParams<{ sessionId: string }>();
   const [sessionId] = useState(() => routeSessionId || crypto.randomUUID());
-  const [step, setStep]             = useState(1);
-  const [maxReached, setMaxReached] = useState(1);
+  const [step, setStep]         = useState(1);
+  // Only the setter is read directly — the current value still flows into
+  // `saveDraft` (so resuming a reload restores the right furthest-reached
+  // step on the backend), but nothing renders it any more now that the
+  // step-progress indicator (and its click-to-jump-back affordance) is gone.
+  const [, setMaxReached] = useState(1);
   // 'wizard' → the 3-step form; 'payment' → the one-time post-creation
   // payment screen (PostCreatePaymentStep, shown automatically once the
   // store exists, matching Shopify's own placement of its billing screen);
@@ -652,7 +601,6 @@ export function OnboardingPage() {
     });
   };
   const back   = () => setStep(s => { const n = Math.max(s - 1, 1); goToUrlStep(n); return n; });
-  const jumpTo = (target: number) => { setStep(target); goToUrlStep(target); };
 
   // The ONE place the store gets created — right after step 3, the last step
   // now that Payment and Review are gone. Store creation and the automatic
@@ -748,13 +696,12 @@ export function OnboardingPage() {
     >
       <div className="flex-1 flex items-start justify-center px-6 py-6">
         <StepPane step={step}>
-          {step === 1 && <Step1StoreInfo form={form} setForm={setForm} onNext={next} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
-          {step === 2 && <Step2SellerType form={form} setForm={setForm} onNext={next} onBack={back} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
+          {step === 1 && <Step1StoreInfo form={form} setForm={setForm} onNext={next} />}
+          {step === 2 && <Step2SellerType form={form} setForm={setForm} onNext={next} onBack={back} />}
           {step === 3 && (
             <Step3WhatYouSell
               form={form} setForm={setForm} onBack={back}
               submitting={submitting} submitError={submitError} onSubmit={handleFinalSubmit}
-              step={step} maxReached={maxReached} onStepClick={jumpTo}
             />
           )}
         </StepPane>

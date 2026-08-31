@@ -330,17 +330,16 @@ export function PublicMegaNavbar() {
           // top padding on every route except the homepage, whose hero
           // already reaches all the way up to y:0 on purpose.
           'fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 ease-out border-b',
-          // Flat/plain at the very top, then a soft, translucent glass bar
-          // once scrolled — kept genuinely light (70% + blur) rather than a
-          // near-solid repaint, so it still reads as glass over content
-          // scrolling underneath it. On the homepage's dark hero
-          // specifically, the unscrolled state is fully transparent instead
-          // of `bg-white` so the header reads as part of the hero, not a
-          // white bar painted over it.
+          // Flat/plain at the very top, then a solid white bar once scrolled
+          // — kept fully opaque (no translucency/blur) so it reads as a
+          // clean, definite bar rather than a glass panel. On the homepage's
+          // dark hero specifically, the unscrolled state is fully
+          // transparent instead of `bg-white` so the header reads as part
+          // of the hero, not a white bar painted over it.
           overHero
             ? 'bg-transparent border-transparent'
             : scrolled
-              ? 'bg-white/70 backdrop-blur-lg border-bone/60 shadow-[0_1px_2px_rgba(20,15,10,0.04),0_12px_28px_-14px_rgba(20,15,10,0.16)]'
+              ? 'bg-white border-bone/60 shadow-[0_1px_2px_rgba(20,15,10,0.04),0_12px_28px_-14px_rgba(20,15,10,0.16)]'
               : 'bg-white border-transparent',
         )}
         onMouseLeave={closeSoon}
@@ -348,9 +347,12 @@ export function PublicMegaNavbar() {
         <div className={clsx(
           'max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4',
           'transition-[height] duration-300 ease-out',
-          // Grows slightly once scrolled instead of shrinking — the glass
-          // bar reads as a deliberately roomier surface, not a compacted one.
-          scrolled ? 'h-[76px]' : 'h-[64px]',
+          // Grows slightly once scrolled instead of shrinking — the bar
+          // reads as a deliberately roomier surface, not a compacted one.
+          // Trimmed down from the original 76px/64px, but kept tall enough
+          // to leave real breathing room above the logo/nav row rather than
+          // feeling pinned to the very top edge.
+          scrolled ? 'h-[72px]' : 'h-[64px]',
         )}>
           <Link to="/" className="shrink-0" aria-label="Solvexo home">
             <SolvexoLogo size={28} variant={overHero ? 'light' : 'dark'} />
