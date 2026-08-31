@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { AnnouncementBanner, AppOpenPrompt, AppOpenFab } from '@/components/comman/ui';
 
@@ -14,7 +15,11 @@ export function BuyerLayout() {
   return (
     <>
       <AnnouncementBanner audience="buyers" />
-      <Outlet />
+      {/* Local Suspense boundary (same reasoning as PublicLayout) so a
+         first-visit-this-session page under this branch doesn't blank the
+         whole screen via RootLayout's outer big-spinner Suspense — no
+         fallback markup, TopProgressBar already covers the "loading" signal. */}
+      <Suspense fallback={null}><Outlet /></Suspense>
       <AppOpenPrompt />
       <AppOpenFab />
     </>

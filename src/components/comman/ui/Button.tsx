@@ -30,8 +30,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const BASE =
   'inline-flex items-center justify-center gap-[6px] font-medium cursor-pointer ' +
-  'transition-[background-color,border-color,color,opacity,box-shadow,transform] duration-[160ms] ease-out whitespace-nowrap outline-none select-none shrink-0 ' +
-  'no-underline leading-[1.4] active:scale-[0.98] enabled:hover:-translate-y-px active:translate-y-0 ' +
+  'transition-[background-color,border-color,color,opacity,box-shadow,transform] duration-fast ease-out whitespace-nowrap outline-none select-none shrink-0 ' +
+  // Press feedback uses the spring ease + a micro duration so it reads as a
+  // real, slightly bouncy "give" under the cursor rather than a linear scale —
+  // release settles back with the shared ease-out.
+  'no-underline leading-[1.4] active:scale-[0.97] active:duration-micro active:ease-spring enabled:hover:-translate-y-px active:translate-y-0 ' +
   'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-orange/50';
 
 const SIZES: Record<ButtonSize, string> = {
@@ -42,9 +45,12 @@ const SIZES: Record<ButtonSize, string> = {
 };
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  // Orange filled — primary CTA
+  // Orange filled — primary CTA. The signature --shadow-glow bloom on hover
+  // is what separates this from a flat color-swap button — it's the one
+  // place in the whole button system the brand glow is allowed to show up
+  // unprompted, reserved for the single primary action on a screen.
   primary:
-    'bg-brand-orange text-white border-0 hover:bg-brand-deep-orange',
+    'bg-brand-orange text-white border-0 hover:bg-brand-deep-orange hover:shadow-glow',
   // Soft orange fill — secondary CTA on light bg
   secondary:
     'bg-brand-pale-orange text-brand-deep-orange border-0 hover:opacity-[0.88]',

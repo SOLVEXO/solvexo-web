@@ -3,12 +3,11 @@ import { clsx } from 'clsx';
 import {
   Search, ShoppingCart, CreditCard, Wallet, Banknote, Check,
   TrendingUp, TrendingDown, Users, Package, DollarSign, Sparkles,
-  ArrowRight, Bell, PackageCheck, CreditCard as PaymentIcon,
+  ArrowRight, Bell, PackageCheck, Gift, Ticket, Store, MonitorSmartphone, BarChart3,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { motion, useReducedMotion, type MotionValue } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { PhoneShell, StatusBar } from '@/components/comman/ui/AppDownloadBanner';
-import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
 import { unsplashUrl } from '@/assets/stockPhotos';
 
 // ── Shared "browser chrome" strip reused by every desktop-shaped mockup ──────
@@ -312,107 +311,6 @@ export function MobileStorePreview({ className }: { className?: string }) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// HeroWorkspacePreview — the hero centerpiece: a real "Solvexo Commerce
-// Workspace" panel, not a stock lifestyle photo. Revenue counts up once in
-// view, and a small activity feed cycles through real workspace events
-// (order → payment → inventory → AI insight) — illustrative content on a
-// real UI shell, same convention as every other mockup in this file, but
-// alive rather than a frozen screenshot. Accepts the hero's own parallax
-// motion values so it can tilt slightly opposite the floating chips around
-// it, instead of sitting dead flat.
-// ────────────────────────────────────────────────────────────────────────────
-const ACTIVITY_FEED: { Icon: LucideIcon; text: string; tone: 'success' | 'info' | 'violet' }[] = [
-  { Icon: PackageCheck, text: 'New order — Rs 4,200',            tone: 'success' },
-  { Icon: PaymentIcon,  text: 'Payment received — Rs 8,900',     tone: 'info' },
-  { Icon: Sparkles,     text: 'AI: “Nike Air Max” is trending',  tone: 'violet' },
-  { Icon: Users,        text: '+3 new customers this hour',      tone: 'success' },
-];
-
-const ACTIVITY_TONE: Record<string, string> = {
-  success: 'bg-success-bg text-success',
-  info:    'bg-info-bg text-info',
-  violet:  'bg-accent-violet-bg text-accent-violet',
-};
-
-export function HeroWorkspacePreview({
-  className, tiltX, tiltY,
-}: {
-  className?: string;
-  tiltX?: MotionValue<number>;
-  tiltY?: MotionValue<number>;
-}) {
-  const reduceMotion = useReducedMotion();
-  const [feedIndex, setFeedIndex] = useState(0);
-
-  useEffect(() => {
-    if (reduceMotion) return;
-    const id = setInterval(() => setFeedIndex(i => (i + 1) % ACTIVITY_FEED.length), 2600);
-    return () => clearInterval(id);
-  }, [reduceMotion]);
-
-  const activity = ACTIVITY_FEED[feedIndex];
-
-  return (
-    <motion.div
-      className={clsx('w-full rounded-[20px] bg-white/95 backdrop-blur-md overflow-hidden shadow-raised border border-white/60', className)}
-      style={{ perspective: 1200 }}
-    >
-      <motion.div style={{ rotateX: tiltY, rotateY: tiltX }}>
-        <BrowserChrome label="yourstore — commerce workspace" />
-        <div className="p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-[13px] font-bold text-carbon">Today</p>
-            <span className="flex items-center gap-1.5 text-[9.5px] font-semibold text-success">
-              <span className="w-[6px] h-[6px] rounded-full bg-success pos-live-pulse" /> Live
-            </span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-[8px] mb-4">
-            <div className="rounded-lg bg-cream p-2.5 col-span-1">
-              <DollarSign size={12} className="text-slate mb-1" />
-              <AnimatedCounter value={18400} format={n => `$${(n / 1000).toFixed(1)}k`} className="block text-[14px] font-bold text-carbon leading-tight" />
-              <p className="text-[8.5px] text-slate leading-tight">Revenue</p>
-            </div>
-            <div className="rounded-lg bg-cream p-2.5 col-span-1">
-              <Package size={12} className="text-slate mb-1" />
-              <AnimatedCounter value={412} className="block text-[14px] font-bold text-carbon leading-tight" />
-              <p className="text-[8.5px] text-slate leading-tight">Orders</p>
-            </div>
-            <div className="rounded-lg bg-cream p-2.5 col-span-1">
-              <Users size={12} className="text-slate mb-1" />
-              <AnimatedCounter value={182} format={n => `+${Math.round(n)}`} className="block text-[14px] font-bold text-carbon leading-tight" />
-              <p className="text-[8.5px] text-slate leading-tight">Customers</p>
-            </div>
-          </div>
-
-          <div className="flex items-end gap-[3px] h-[46px] mb-4 px-1">
-            {[30, 45, 38, 60, 52, 70, 64, 80, 74, 90, 82, 96].map((h, i) => (
-              <div key={i} className="flex-1 rounded-t-[2px] bg-gradient-to-t from-brand-orange to-brand-deep-orange/60" style={{ height: `${h}%` }} />
-            ))}
-          </div>
-
-          <div className="rounded-xl bg-cream p-2.5 overflow-hidden">
-            <p className="text-[9px] font-bold text-slate uppercase tracking-[0.06em] mb-2">Activity</p>
-            <motion.div
-              key={feedIndex}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="flex items-center gap-2"
-            >
-              <span className={clsx('w-6 h-6 rounded-md flex items-center justify-center shrink-0', ACTIVITY_TONE[activity.tone])}>
-                <activity.Icon size={12} />
-              </span>
-              <span className="text-[10.5px] text-charcoal truncate">{activity.text}</span>
-            </motion.div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────
 // InventoryPreview — stock levels + a real low-stock alert + restock action.
 // Distinct from SellerDashboardPreview (which the Inventory tab previously,
 // wrongly, reused verbatim) — this shows the actual inventory concept: stock
@@ -422,8 +320,13 @@ const STOCK_LEVELS = [
   { name: 'Wireless Earbuds', img: 'headphones' as const, stock: 84, pct: 84 },
   { name: 'Classic Watch',    img: 'watch' as const,      stock: 12, pct: 12 },
   { name: 'Cloud Sneaker',    img: 'sneakers' as const,   stock: 52, pct: 52 },
-  { name: 'Studio Headphones', img: 'headphones' as const, stock: 4,  pct: 4 },
+  { name: 'Camera Lens',      img: 'cameraGear' as const,  stock: 4,  pct: 4 },
 ];
+
+// Derived, not hardcoded — the alert always names whichever item in
+// STOCK_LEVELS actually has the lowest count, so renaming/reordering that
+// list can never leave the banner pointing at the wrong product again.
+const LOWEST_STOCK_ITEM = STOCK_LEVELS.reduce((min, item) => (item.stock < min.stock ? item : min), STOCK_LEVELS[0]);
 
 export function InventoryPreview({ className }: { className?: string }) {
   return (
@@ -457,7 +360,7 @@ export function InventoryPreview({ className }: { className?: string }) {
           <span className="w-6 h-6 rounded-md bg-white flex items-center justify-center shrink-0">
             <PackageCheck size={13} className="text-error" />
           </span>
-          <span className="text-[10.5px] text-error flex-1">"Studio Headphones" is almost out of stock</span>
+          <span className="text-[10.5px] text-error flex-1">"{LOWEST_STOCK_ITEM.name}" is almost out of stock</span>
           <button className="text-[9.5px] font-semibold text-white bg-error rounded-md px-2 py-1 shrink-0">Restock</button>
         </div>
       </div>
@@ -529,4 +432,91 @@ export function OrdersTimelinePreview({ className }: { className?: string }) {
       </div>
     </div>
   );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// LoyaltyPreview — a points balance, a real rewards catalog, and a redeemed
+// voucher code, matching how loyalty actually works (points → a real
+// single-use voucher → applied at checkout like any coupon), not a generic
+// "rewards" badge.
+// ────────────────────────────────────────────────────────────────────────────
+const REWARD_TIERS = [
+  { name: '$5 off your order',   points: 200, icon: Gift },
+  { name: 'Free shipping',       points: 350, icon: Ticket },
+  { name: '$15 off your order',  points: 600, icon: Gift },
+];
+
+export function LoyaltyPreview({ className }: { className?: string }) {
+  return (
+    <div className={clsx('w-full rounded-2xl bg-white overflow-hidden shadow-raised border border-bone', className)}>
+      <BrowserChrome label="yourstore — loyalty" />
+      <div className="p-4 sm:p-5">
+        <div className="rounded-xl bg-gradient-to-r from-brand-orange to-brand-deep-orange p-3.5 mb-3.5 flex items-center justify-between">
+          <div>
+            <p className="text-[9.5px] text-white/70 uppercase tracking-[0.06em]">Sarah M.</p>
+            <p className="text-[18px] font-bold text-white leading-tight">420 pts</p>
+          </div>
+          <span className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center">
+            <Gift size={16} className="text-white" />
+          </span>
+        </div>
+
+        <p className="text-[10px] font-bold text-slate uppercase tracking-[0.06em] mb-2">Rewards catalog</p>
+        <div className="flex flex-col gap-2 mb-3.5">
+          {REWARD_TIERS.map(r => {
+            const affordable = r.points <= 420;
+            return (
+              <div key={r.name} className={clsx('flex items-center gap-2.5 rounded-lg p-2', affordable ? 'bg-cream' : 'bg-cream/50')}>
+                <span className={clsx('w-7 h-7 rounded-md flex items-center justify-center shrink-0', affordable ? 'bg-white' : 'bg-white/60')}>
+                  <r.icon size={13} className={affordable ? 'text-brand-orange' : 'text-slate'} />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className={clsx('block text-[10.5px] font-medium truncate', affordable ? 'text-charcoal' : 'text-slate')}>{r.name}</span>
+                </span>
+                <span className={clsx('text-[9.5px] font-bold shrink-0', affordable ? 'text-brand-orange' : 'text-slate')}>{r.points} pts</span>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="rounded-lg bg-success-bg p-2.5 flex items-center gap-2.5">
+          <span className="w-6 h-6 rounded-md bg-white flex items-center justify-center shrink-0">
+            <Check size={13} className="text-success" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold text-carbon">Redeemed — voucher ready</p>
+            <p className="text-[9px] text-slate font-mono">RWD7F3K9A2</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Single source of truth for "which icon represents this platform-product
+// slug" — previously duplicated identically in Homepage.tsx,
+// PublicMegaNavbar.tsx, SolutionPage.tsx and ProductsOverviewPage.tsx. ──
+export const PRODUCT_ICONS: Record<string, LucideIcon> = {
+  'store-builder': Store,
+  pos: MonitorSmartphone,
+  'ai-commerce': Sparkles,
+  analytics: BarChart3,
+  inventory: PackageCheck,
+  'orders-customers': Users,
+  loyalty: Gift,
+};
+
+// ── Single source of truth for "which mockup represents this platform-
+// product slug" — previously duplicated identically in Homepage.tsx (twice)
+// and PublicMegaNavbar.tsx; every caller now imports this instead. ──
+export function mockupForProductSlug(slug: string) {
+  switch (slug) {
+    case 'store-builder': return <StorefrontPreview />;
+    case 'pos':            return <POSPreview />;
+    case 'ai-commerce':    return <AICommercePreview />;
+    case 'analytics':      return <AnalyticsPreview />;
+    case 'inventory':      return <InventoryPreview />;
+    case 'loyalty':        return <LoyaltyPreview />;
+    default:               return <OrdersTimelinePreview />; // orders-customers
+  }
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { ArrowRight, Sparkles, User, Lock, Star, Receipt, MessageSquare, Check } from 'lucide-react';
+import { ArrowRight, Sparkles, User, Lock, Star, Receipt, MessageSquare, Check, ChevronDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useFaqs } from '@/hooks/useFaqs';
@@ -12,6 +12,7 @@ import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
+import { Marquee } from '@/components/comman/motion/Marquee';
 
 const SERIF = "'Lora', Georgia, serif";
 
@@ -57,6 +58,7 @@ export function PricingPage() {
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   useEffect(() => {
     apiBrowsePlatformPlans()
@@ -229,68 +231,90 @@ export function PricingPage() {
         })}
       </RevealStagger>
 
-      {/* ── Add-ons ───────────────────────────────────────────────────────── */}
-      <div className="px-4 md:px-8 lg:px-12 pb-16 max-w-[1200px] mx-auto">
-        <SectionHeading title="Add-ons & extras" subtitle="Extend your plan with exactly what you need." className="mb-7" />
-        <RevealStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]" step={0.05} y={14}>
+      {/* ── Add-ons — a slow ambient marquee instead of a 6-up card grid,
+         matching the same "supporting content gets quieter motion" pattern
+         used for ForSellersPage's feature strip. ── */}
+      <div className="pb-16 overflow-hidden">
+        <div className="px-4 md:px-8 lg:px-12 max-w-[1200px] mx-auto">
+          <SectionHeading title="Add-ons & extras" subtitle="Extend your plan with exactly what you need." className="mb-7" />
+        </div>
+        <Marquee duration={34}>
           {ADDONS.map(a => (
-            <PremiumCard key={a.name} className="px-5 py-[18px] flex gap-[14px] items-center">
-              <a.Icon size={28} className="text-brand-orange flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-[13px] font-semibold text-carbon mb-[2px]">{a.name}</p>
+            <div key={a.name} className="flex items-center gap-3 rounded-2xl border border-bone bg-white px-5 py-[14px] mx-2.5 w-[270px] shrink-0">
+              <a.Icon size={24} className="text-brand-orange flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[12.5px] font-semibold text-carbon mb-[2px] truncate">{a.name}</p>
                 <p className="text-[11px] text-slate">{a.unit}</p>
               </div>
-              <span className="text-[14px] font-bold text-brand-orange flex-shrink-0">
+              <span className="text-[13px] font-bold text-brand-orange flex-shrink-0">
                 {a.price}
               </span>
-            </PremiumCard>
+            </div>
           ))}
-        </RevealStagger>
+        </Marquee>
       </div>
 
-      {/* ── FAQ ───────────────────────────────────────────────────────────── */}
+      {/* ── FAQ — a real expand/collapse accordion (one open at a time,
+         first one open by default) instead of every answer sitting fully
+         expanded on load, so the section reads as considerably shorter
+         until the visitor actually wants a specific answer. ── */}
       <div className="bg-white px-4 md:px-8 lg:px-12 py-16 border-t border-bone">
         <div className="max-w-[720px] mx-auto">
           <SectionHeading title="Frequently asked questions" align="center" size="lg" className="mb-10" />
           <RevealStagger className="flex flex-col gap-0" step={0.05} y={10}>
-            {faqs.map((faq, i) => (
-              <div
-                key={faq.q}
-                className={clsx('py-5', i < faqs.length - 1 && 'border-b border-bone')}
-              >
-                <p className="text-[14px] font-semibold text-carbon mb-2">
-                  {faq.q}
-                </p>
-                <p className="text-[13px] text-slate leading-[1.7]">
-                  {faq.a}
-                </p>
-              </div>
-            ))}
+            {faqs.map((faq, i) => {
+              const isOpen = openFaq === i;
+              return (
+                <div key={faq.q} className={clsx(i < faqs.length - 1 && 'border-b border-bone')}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(isOpen ? null : i)}
+                    aria-expanded={isOpen}
+                    className="w-full flex items-center justify-between gap-3 py-5 text-left cursor-pointer bg-transparent border-0"
+                  >
+                    <span className="text-[14px] font-semibold text-carbon">{faq.q}</span>
+                    <ChevronDown
+                      size={16}
+                      className={clsx('text-slate shrink-0 transition-transform duration-normal ease-spring', isOpen && 'rotate-180')}
+                    />
+                  </button>
+                  <div className="grid transition-[grid-template-rows] duration-normal ease-out" style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}>
+                    <div className="overflow-hidden">
+                      <p className="text-[13px] text-slate leading-[1.7] pb-5">{faq.a}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </RevealStagger>
         </div>
       </div>
 
       {/* ── Bottom CTA ────────────────────────────────────────────────────── */}
-      <div className="bg-carbon px-4 md:px-8 lg:px-12 py-16 text-center">
-        <SectionHeading title="Start selling today — it's free" subtitle="No credit card required. Cancel or upgrade anytime." tone="dark" align="center" size="lg" className="mb-8" />
-        <Reveal>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <MagneticButton>
+      <div className="relative bg-carbon px-4 md:px-8 lg:px-12 py-16 text-center overflow-hidden">
+        <div className="auth-float absolute rounded-full w-[380px] h-[380px] bg-brand-orange opacity-[0.08] -top-[110px] left-[6%]" aria-hidden />
+        <div className="auth-float-slow absolute rounded-full w-[300px] h-[300px] bg-brand-deep-orange opacity-[0.07] -bottom-[90px] right-[10%]" aria-hidden />
+        <div className="relative z-[1]">
+          <SectionHeading title="Start selling today — it's free" subtitle="No credit card required. Cancel or upgrade anytime." tone="dark" align="center" size="lg" className="mb-8" />
+          <Reveal>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <MagneticButton>
+                <button
+                  onClick={() => sellEntry.go()}
+                  className="px-6 py-[13px] rounded-lg text-[15px] font-medium cursor-pointer bg-brand-orange text-white border-none transition-all duration-[180ms] w-full sm:w-auto"
+                >
+                  Create Free Account <ArrowRight size={14} className="inline align-middle ml-1" />
+                </button>
+              </MagneticButton>
               <button
-                onClick={() => sellEntry.go()}
-                className="px-6 py-[13px] rounded-lg text-[15px] font-medium cursor-pointer bg-brand-orange text-white border-none transition-all duration-[180ms] w-full sm:w-auto"
+                onClick={() => navigate('/sellers')}
+                className="px-6 py-[13px] rounded-lg text-[15px] font-medium cursor-pointer bg-transparent text-white border border-[rgba(255,255,255,0.2)] transition-all duration-[180ms]"
               >
-                Create Free Account <ArrowRight size={14} className="inline align-middle ml-1" />
+                See How It Works
               </button>
-            </MagneticButton>
-            <button
-              onClick={() => navigate('/sellers')}
-              className="px-6 py-[13px] rounded-lg text-[15px] font-medium cursor-pointer bg-transparent text-white border border-[rgba(255,255,255,0.2)] transition-all duration-[180ms]"
-            >
-              See How It Works
-            </button>
-          </div>
-        </Reveal>
+            </div>
+          </Reveal>
+        </div>
       </div>
     </div>
   );

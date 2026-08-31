@@ -104,6 +104,28 @@ export function apiConfirmOnboardingPaymentMethod(setupIntentId: string) {
   return client.post<never, ApiResponse<never>>(`${BASE}/onboarding/confirm-payment-method`, { setupIntentId });
 }
 
+export interface OnboardingDraft {
+  step: number;
+  maxReached: number;
+  form: Record<string, unknown>;
+}
+
+export interface OnboardingProgress {
+  draft: OnboardingDraft | null;
+  hasPlatformPaymentMethod: boolean;
+}
+
+/** Lets the /onboard wizard resume exactly where the seller left off instead
+ *  of restarting from step 1 after a reload/lost connection/different device. */
+export function apiGetOnboardingProgress() {
+  return client.get<never, ApiResponse<OnboardingProgress>>(`${BASE}/onboarding/progress`);
+}
+
+/** Fire-and-forget-friendly — called on every wizard step transition, not every keystroke. */
+export function apiSaveOnboardingDraft(draft: OnboardingDraft) {
+  return client.patch<never, ApiResponse<never>>(`${BASE}/onboarding/draft`, draft);
+}
+
 export function apiGetStorePlatformPlan(storeId: string) {
   return client.get<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/${storeId}`);
 }

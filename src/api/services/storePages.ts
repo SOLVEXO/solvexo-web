@@ -25,19 +25,27 @@ export interface StorePageSeo {
   keywords: string[];
 }
 
+export interface StorePageDraft {
+  sections: Section[];
+}
+
 export interface StorePageData {
-  _id:           string;
-  storeId:       string;
-  type:          StorePageType;
-  slug:          string;
-  title:         string;
-  sections:      Section[];
-  seo:           StorePageSeo;
-  status:        StorePageStatus;
-  showInNav:     boolean;
-  showInFooter:  boolean;
-  createdAt:     string;
-  updatedAt:     string;
+  _id:             string;
+  storeId:         string;
+  type:            StorePageType;
+  slug:            string;
+  title:           string;
+  /** The LIVE/published sections — what buyers currently see. Editing calls target `draft.sections` instead (see `apiUpdateStorePageSections`); nothing here changes until `apiPublishStorePage` is called. */
+  sections:        Section[];
+  /** The seller's working copy — this is what the Page Sections editor should read from and write to. */
+  draft:           StorePageDraft;
+  lastPublishedAt: string | null;
+  seo:             StorePageSeo;
+  status:          StorePageStatus;
+  showInNav:       boolean;
+  showInFooter:    boolean;
+  createdAt:       string;
+  updatedAt:       string;
 }
 
 export interface PublicPageSummary {
@@ -70,12 +78,36 @@ export function apiUpdateStorePageSections(storeId: string, pageId: string, sect
   return client.patch<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.UPDATE_SECTIONS(storeId, pageId), { sections });
 }
 
+/** The seller editor's working copy — `draft.sections` plus `lastPublishedAt`, mirroring `apiGetStoreThemeDraft`'s shape/purpose. Not required for today's Pages tab (which reads `draft` off the normal `apiGetStorePage`/`apiListStorePages` response), but available for anything that wants just the draft without the rest of the page doc. */
+export function apiGetStorePageDraft(storeId: string, pageId: string) {
+  return client.get<never, ApiResponse<{ sections: Section[]; lastPublishedAt: string | null }>>(ENDPOINTS.STORE_PAGES.DRAFT(storeId, pageId));
+}
+
 export function apiPublishStorePage(storeId: string, pageId: string) {
   return client.patch<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.PUBLISH(storeId, pageId));
 }
 
 export function apiUnpublishStorePage(storeId: string, pageId: string) {
   return client.patch<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.UNPUBLISH(storeId, pageId));
+}
+
+/** "Discard unsaved changes" — copies the live `sections` back over `draft.sections`. Mirrors `apiRevertStoreThemeDraft`. */
+export function apiRevertStorePageDraft(storeId: string, pageId: string) {
+  return client.patch<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.REVERT_DRAFT(storeId, pageId));
+}
+
+export interface StorePageVersionData {
+  _id: string;
+  sections: Section[];
+  publishedAt: string;
+}
+
+export function apiListStorePageVersions(storeId: string, pageId: string) {
+  return client.get<never, ApiResponse<StorePageVersionData[]>>(ENDPOINTS.STORE_PAGES.VERSIONS(storeId, pageId));
+}
+
+export function apiRestoreStorePageVersion(storeId: string, pageId: string, versionId: string) {
+  return client.post<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.RESTORE_VERSION(storeId, pageId, versionId));
 }
 
 export function apiDeleteStorePage(storeId: string, pageId: string) {

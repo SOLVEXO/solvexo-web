@@ -36,7 +36,7 @@ export function Modal({ title, onClose, children, footer, width = 440, mobileShe
         <button
           onClick={onClose}
           aria-label="Close dialog"
-          className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border-0 cursor-pointer text-slate hover:bg-fog"
+          className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent border-0 cursor-pointer text-slate hover:bg-fog transition-[background-color,color,transform] duration-fast ease-spring hover:rotate-90 hover:text-carbon"
         >
           <X size={16} />
         </button>

@@ -15,6 +15,14 @@
   --color-bone:     #E8E6DC;
   --color-cream:    #FAF9F5;
 
+  /* Card/panel surfaces are deliberately NOT pure white — a warm "paper" resting
+     tone that turns crisp white + lifts toward --shadow-glow on interaction, so
+     hover/focus reads as "coming into light" rather than a shadow just getting
+     bigger. This directional-light behavior is the core of the Solvexo surface
+     identity — see .surface-panel below. */
+  --color-paper:        #FFFEFC;
+  --color-paper-raised: #FFFFFF;
+
   /* Previously scattered as raw hex in Card/Badge/Modal/BuyerNavbar (same
      values, repeated across files) — named here so they're one shared
      decision instead of copy-pasted magic numbers. No visual change. */
@@ -119,9 +127,27 @@
   --shadow-card: 0 1px 3px rgba(20,15,10,0.06);
   --shadow-card-hover: 0 6px 20px -4px rgba(20,15,10,0.08);
   --shadow-raised: 0 10px 28px rgba(20,15,10,0.07);
+  /* The Solvexo "signature" elevation — a hairline + a tight warm-orange
+     bloom + a soft ambient shadow, layered so the brand color reads as light
+     coming from the surface rather than a colored border. Used only on
+     deliberate lift moments (card hover/focus, primary button hover), never
+     as a default resting shadow — see rule 27, "know when NOT to animate/glow." */
+  --shadow-glow: 0 0 0 1px rgba(217,119,87,0.10), 0 10px 30px -8px rgba(217,119,87,0.28), 0 2px 10px -2px rgba(20,15,10,0.10);
 
-  /* ── Motion ── */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* ── Motion tokens — Tailwind v4 maps --duration-*/--ease-* in @theme
+     directly to duration-*/ease-* utility classes, so these are real,
+     reusable utilities (duration-micro, ease-spring, …), not just arbitrary
+     values repeated ad hoc across files. ── */
+  --ease-out:       cubic-bezier(0.16, 1, 0.3, 1);   /* decelerate — arrivals */
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);      /* strong decelerate — cinematic/large-scale entrances */
+  --ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1); /* slight overshoot — press/pop feedback */
+  --ease-in:        cubic-bezier(0.4, 0, 1, 1);        /* accelerate — exits */
+
+  --duration-micro:      120ms;  /* icon/press feedback */
+  --duration-fast:       180ms;  /* hover, toggle */
+  --duration-normal:     260ms;  /* dropdown, tab switch */
+  --duration-slow:       420ms;  /* card entrance, drawer */
+  --duration-cinematic:  640ms;  /* hero/title reveal */
 }
 
 /* ── Education Marketplace theme — scoped brand-color override.
@@ -489,7 +515,15 @@
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.metric-card-enter { animation: metric-card-enter 320ms var(--ease-out); }
+.metric-card-enter { animation: metric-card-enter 320ms var(--ease-out) backwards; }
+/* Staggers a row of KPI cards purely via sibling position — no index prop
+   needed at any of MetricCard's ~30 call sites. Caps at 6 since a KPI row
+   this long is already an outlier; later cards just share the last delay. */
+.metric-card-enter:nth-child(2) { animation-delay: 40ms; }
+.metric-card-enter:nth-child(3) { animation-delay: 80ms; }
+.metric-card-enter:nth-child(4) { animation-delay: 120ms; }
+.metric-card-enter:nth-child(5) { animation-delay: 160ms; }
+.metric-card-enter:nth-child(n+6) { animation-delay: 200ms; }
 
 @keyframes skeleton-shimmer-light {
   0%   { background-position: 200% 0; }
@@ -507,6 +541,49 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 .dash-section-enter { animation: dash-section-enter 360ms var(--ease-out) both; }
+
+/* ── Solvexo signature surface — replaces "white rounded rectangle + shadow."
+   Resting state is a warm --color-paper tone with a 1px hairline and a
+   faint inset top highlight (simulated directional light). On hover/focus
+   the surface brightens to --color-paper-raised, lifts 3px, and picks up
+   --shadow-glow — the brand orange reads as light the surface is catching,
+   not a colored border. Used by Card and anything that wants the identity
+   (MetricCard, StatCard-style tiles) rather than each re-implementing it. ── */
+.surface-panel {
+  background-color: var(--color-paper);
+  border: 1px solid var(--color-bone);
+  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.6), var(--shadow-card);
+  transition: background-color var(--duration-normal) var(--ease-out),
+              border-color     var(--duration-normal) var(--ease-out),
+              box-shadow        var(--duration-normal) var(--ease-out),
+              transform          var(--duration-normal) var(--ease-spring);
+}
+.surface-panel-interactive:hover,
+.surface-panel-interactive:focus-visible {
+  background-color: var(--color-paper-raised);
+  border-color: rgba(217,119,87,0.22);
+  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.8), var(--shadow-glow);
+  transform: translateY(-3px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .surface-panel-interactive:hover,
+  .surface-panel-interactive:focus-visible { transform: none; }
+}
+
+/* ── Masked title reveal — the page-header text itself clips up from a hard
+   edge and sharpens from a slight blur, instead of the generic
+   fade+translateY every other block on the page already uses (dash-section-
+   enter). Reserved for h1-level titles specifically so it reads as a
+   deliberate, singular moment rather than "everything fades the same way." ── */
+@keyframes solvexo-title-reveal {
+  from { opacity: 0; clip-path: inset(0 0 100% 0); filter: blur(6px); transform: translateY(6px); }
+  to   { opacity: 1; clip-path: inset(0 0 0% 0);   filter: blur(0);   transform: translateY(0); }
+}
+.solvexo-title-reveal { animation: solvexo-title-reveal var(--duration-cinematic) var(--ease-emphasized) both; will-change: filter, clip-path; }
+.solvexo-subtitle-reveal { animation: dash-section-enter var(--duration-slow) var(--ease-out) both; animation-delay: 90ms; }
+@media (prefers-reduced-motion: reduce) {
+  .solvexo-title-reveal { animation: dash-section-enter var(--duration-slow) var(--ease-out) both; filter: none; }
+}
 
 /* Countdown-timer "tick" — replayed each second by remounting the segment via
    a `key` prop (React drops/recreates the node, which restarts the CSS

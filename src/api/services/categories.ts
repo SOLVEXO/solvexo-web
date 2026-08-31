@@ -8,6 +8,8 @@ export interface Category {
   name:          string;
   slug:          string;
   parentId:      string | null;
+  /** null = legacy/global/admin taxonomy. A real value = privately owned by that one store. */
+  storeId:       string | null;
   image:         string | null;
   description:   string | null;
   sortOrder:     number;
@@ -31,6 +33,10 @@ export interface CategoryPayload {
   image?:      string;
   description?: string;
   sortOrder?:  number;
+  /** Present → creates a category owned by this one store, at the seller's
+   *  own discretion (both main categories and subcategories allowed, no
+   *  admin gate). Omitted → the legacy global/admin taxonomy. */
+  storeId?:    string;
 }
 
 interface CategoryTreeListResponse { success: boolean; message: string; data: CategoryNode[] }
@@ -40,8 +46,9 @@ interface CategoryCreateResponse { success: boolean; message: string; data: Cate
 
 // ── API ───────────────────────────────────────────────────────────────────────
 
-// No id → every root (main) category with its nested children.
-// With id → that single category's subtree.
+// No id → every legacy/global root (main) category with its nested children
+// (Marketplace browse, admin curation). With id → that single category's
+// subtree, regardless of scope.
 export function apiGetCategoryTree(): Promise<CategoryTreeListResponse>;
 export function apiGetCategoryTree(id: string): Promise<CategoryTreeNodeResponse>;
 export function apiGetCategoryTree(id?: string) {
@@ -49,11 +56,21 @@ export function apiGetCategoryTree(id?: string) {
   return client.get<never, CategoryTreeListResponse | CategoryTreeNodeResponse>(url);
 }
 
+/** A store's own private category tree — every root category that store has
+ *  created, each with its own nested children. Entirely separate from the
+ *  legacy global tree above; never mixes with another store's categories. */
+export function apiGetStoreCategoryTree(storeId: string) {
+  return client.get<never, CategoryTreeListResponse>(`${ENDPOINTS.CATEGORIES.TREE}?storeId=${storeId}`);
+}
+
 export function apiGetCategoryById(id: string) {
   return client.get<never, CategoryWithChildrenResponse>(ENDPOINTS.CATEGORIES.GET_BY_ID(id));
 }
 
-// Main categories (no parentId) are admin-only server-side; sellers may only add subcategories.
+// Legacy global taxonomy: main categories (no parentId) are admin-only
+// server-side, sellers may only add subcategories. Pass `storeId` in the
+// payload instead to create a category the seller owns for that one store —
+// then both main categories and subcategories are allowed freely.
 export function apiAddCategory(payload: CategoryPayload) {
   return client.post<never, CategoryCreateResponse>(ENDPOINTS.CATEGORIES.ADD, payload);
 }

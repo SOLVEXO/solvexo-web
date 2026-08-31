@@ -1,0 +1,47 @@
+name: CI (solvexo-web)
+on:
+  pull_request:
+  push:
+    branches-ignore: [main, staging]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test
+      # Lint is informational only for now, not a required check — this
+      # codebase has real, pre-existing lint debt (disclosed separately,
+      # not introduced by this workflow) that a blocking gate would flag as
+      # permanently red on every run, which is worse than no gate at all.
+      # Flip this to a normal (non-continue-on-error) step once that debt
+      # is paid down.
+      - run: npm run lint
+        continue-on-error: true
+
+  lighthouse:
+    runs-on: ubuntu-latest
+    # A separate job from `verify` — Lighthouse needs a real Chromium +
+    # served build, and a failure here (a performance/SEO regression) is a
+    # different signal from a broken build/test/lint, so it's reported
+    # independently rather than gating the main job. `categories:accessibility`
+    # is the one hard-blocking assertion (see lighthouserc.json) — every
+    # other category only warns. Scope note: audits only the public,
+    # unauthenticated Homepage (`/`) today — auditing authenticated seller/
+    # storefront pages would need seeded test data and a scripted login,
+    # not done in this pass.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx @lhci/cli autorun
+

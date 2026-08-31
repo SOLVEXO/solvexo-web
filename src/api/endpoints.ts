@@ -171,8 +171,9 @@ export const ENDPOINTS = {
 
     // Customers (staff-facing — only people who ordered from this store)
     CUSTOMERS: {
-      LIST:   (storeId: string) => `/api/store/${storeId}/customers`,
-      UPDATE: (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}`,
+      LIST:        (storeId: string) => `/api/store/${storeId}/customers`,
+      UPDATE:      (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}`,
+      UPDATE_META: (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}/meta`,
     },
   },
 
@@ -194,25 +195,19 @@ export const ENDPOINTS = {
     DRAFT:          (storeId: string) => `/api/store-theme/${storeId}/draft`,
     PUBLISH:        (storeId: string) => `/api/store-theme/${storeId}/publish`,
     REVERT_DRAFT:   (storeId: string) => `/api/store-theme/${storeId}/revert-draft`,
+    VERSIONS:       (storeId: string) => `/api/store-theme/${storeId}/versions`,
+    RESTORE_VERSION: (storeId: string, versionId: string) => `/api/store-theme/${storeId}/versions/${versionId}/restore`,
     UPDATE_THEME:   (storeId: string) => `/api/store-theme/${storeId}/theme`,
     UPDATE_HEADER:  (storeId: string) => `/api/store-theme/${storeId}/header`,
     UPDATE_FOOTER:  (storeId: string) => `/api/store-theme/${storeId}/footer`,
     UPDATE_IDENTITY_BANNER: (storeId: string) => `/api/store-theme/${storeId}/identity-banner`,
-    PUBLIC:         (storeId: string) => `/api/public/store-theme/${storeId}`,
-    APPLY:          (storeId: string, themeDefinitionId: string) => `/api/store-theme/${storeId}/apply/${themeDefinitionId}`,
     UPDATE_CUSTOM_CSS: (storeId: string) => `/api/store-theme/${storeId}/custom-css`,
-  },
-
-  // ── THEME CATALOG (the Theme Marketplace's global, admin-managed themes) ──
-  THEME_CATALOG: {
-    PUBLIC_LIST:    () => `/api/public/theme-catalog`,
-    PUBLIC_GET:     (slug: string) => `/api/public/theme-catalog/${slug}`,
-    ADMIN_LIST:     () => `/api/admin/theme-catalog`,
-    ADMIN_GET:      (id: string) => `/api/admin/theme-catalog/${id}`,
-    ADMIN_CREATE:   () => `/api/admin/theme-catalog`,
-    ADMIN_UPDATE:   (id: string) => `/api/admin/theme-catalog/${id}`,
-    ADMIN_SET_STATUS:   (id: string) => `/api/admin/theme-catalog/${id}/status`,
-    ADMIN_SET_FEATURED: (id: string) => `/api/admin/theme-catalog/${id}/featured`,
+    PUBLIC:         (storeId: string) => `/api/public/store-theme/${storeId}`,
+    // ── Theme Library (installed theme instances) ──
+    LIST_INSTALLED: (storeId: string) => `/api/store-theme/${storeId}/installed`,
+    INSTALL:        (storeId: string) => `/api/store-theme/${storeId}/install`,
+    ACTIVATE:       (storeId: string, installedThemeId: string) => `/api/store-theme/${storeId}/installed/${installedThemeId}/activate`,
+    UNINSTALL:      (storeId: string, installedThemeId: string) => `/api/store-theme/${storeId}/installed/${installedThemeId}`,
   },
 
   // ── STORE PAGES (home + custom pages, each composed of sections/blocks) ────
@@ -222,18 +217,46 @@ export const ENDPOINTS = {
     CREATE:           (storeId: string) => `/api/store-pages/${storeId}`,
     UPDATE:           (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}`,
     UPDATE_SECTIONS:  (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}/sections`,
+    DRAFT:            (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}/draft`,
     PUBLISH:          (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}/publish`,
     UNPUBLISH:        (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}/unpublish`,
+    REVERT_DRAFT:     (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}/revert-draft`,
     DELETE:           (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}`,
+    VERSIONS:         (storeId: string, pageId: string) => `/api/store-pages/${storeId}/${pageId}/versions`,
+    RESTORE_VERSION:  (storeId: string, pageId: string, versionId: string) => `/api/store-pages/${storeId}/${pageId}/versions/${versionId}/restore`,
 
     PUBLIC_HOME: (storeId: string) => `/api/public/store-pages/${storeId}/home`,
     PUBLIC_LIST: (storeId: string) => `/api/public/store-pages/${storeId}/list`,
     PUBLIC_PAGE: (storeId: string, slug: string) => `/api/public/store-pages/${storeId}/page/${slug}`,
   },
 
+  // ── ADMIN SHIPPING ZONES (platform-wide rate table by country/province/city) ──
+  ADMIN_SHIPPING_ZONES: {
+    LIST:   '/api/admin/shipping-zones',
+    CREATE: '/api/admin/shipping-zones',
+    UPDATE: (zoneId: string) => `/api/admin/shipping-zones/${zoneId}`,
+    DELETE: (zoneId: string) => `/api/admin/shipping-zones/${zoneId}`,
+  },
+
+  // ── COLLECTION TEMPLATE (singleton per store — the section-editable layout
+  // every /collections/:slugOrId browse page renders through) ────────────────
+  COLLECTION_TEMPLATE: {
+    GET:             (storeId: string) => `/api/collection-template/${storeId}`,
+    DRAFT:           (storeId: string) => `/api/collection-template/${storeId}/draft`,
+    UPDATE_SECTIONS: (storeId: string) => `/api/collection-template/${storeId}/sections`,
+    PUBLISH:         (storeId: string) => `/api/collection-template/${storeId}/publish`,
+    REVERT_DRAFT:    (storeId: string) => `/api/collection-template/${storeId}/revert-draft`,
+    VERSIONS:        (storeId: string) => `/api/collection-template/${storeId}/versions`,
+    RESTORE_VERSION: (storeId: string, versionId: string) => `/api/collection-template/${storeId}/versions/${versionId}/restore`,
+    LIST_TEMPLATES:  (storeId: string) => `/api/collection-template/${storeId}/templates`,
+    DELETE_TEMPLATE: (storeId: string, templateKey: string) => `/api/collection-template/${storeId}/templates/${templateKey}`,
+
+    PUBLIC: (storeId: string) => `/api/public/collection-template/${storeId}`,
+  },
+
   // ── STORE BLOG ───────────────────────────────────────────────────────────
   STORE_BLOG: {
-    LIST:            (storeId: string) => `/api/store-blog/${storeId}`,
+    LIST:            (storeId: string, blogId?: string) => `/api/store-blog/${storeId}${blogId ? `?blogId=${blogId}` : ''}`,
     GET:             (storeId: string, postId: string) => `/api/store-blog/${storeId}/${postId}`,
     CREATE:          (storeId: string) => `/api/store-blog/${storeId}`,
     UPDATE:          (storeId: string, postId: string) => `/api/store-blog/${storeId}/${postId}`,
@@ -242,8 +265,14 @@ export const ENDPOINTS = {
     UNPUBLISH:       (storeId: string, postId: string) => `/api/store-blog/${storeId}/${postId}/unpublish`,
     DELETE:          (storeId: string, postId: string) => `/api/store-blog/${storeId}/${postId}`,
 
-    PUBLIC_LIST: (storeId: string) => `/api/public/store-blog/${storeId}`,
+    PUBLIC_LIST: (storeId: string, blogSlug?: string) => `/api/public/store-blog/${storeId}${blogSlug ? `?blog=${blogSlug}` : ''}`,
     PUBLIC_POST: (storeId: string, slug: string) => `/api/public/store-blog/${storeId}/${slug}`,
+    PUBLIC_COMMENTS: (storeId: string, postId: string) => `/api/public/store-blog/${storeId}/${postId}/comments`,
+
+    BLOGS_LIST_CREATE: (storeId: string) => `/api/store-blog/${storeId}/blogs`,
+    BLOG_UPDATE_DELETE: (storeId: string, blogId: string) => `/api/store-blog/${storeId}/blogs/${blogId}`,
+    COMMENTS_LIST: (storeId: string, status?: string) => `/api/store-blog/${storeId}/comments${status ? `?status=${status}` : ''}`,
+    COMMENT_MODERATE_DELETE: (storeId: string, commentId: string) => `/api/store-blog/${storeId}/comments/${commentId}`,
   },
 
   // ── ACTIVITY LOG ──────────────────────────────────────────────────────────
@@ -507,6 +536,15 @@ export const ENDPOINTS = {
   SELLER_ACCOUNT: {
     GET_SELLER_ORDERS: (id: string) => `/api/orders/seller-orders/${id}`,
     GET_MY_SELLER_ORDERS: '/api/orders/seller-orders/my',
+    GET_SELLER_ORDER_DETAIL: (storeId: string, orderId: string) => `/api/orders/seller-orders/${storeId}/${orderId}`,
+    EXPORT_ORDERS_CSV: (storeId: string) => `/api/orders/seller-orders/${storeId}/export`,
+  },
+
+  DRAFT_ORDERS: {
+    SEARCH_CUSTOMERS: (storeId: string, q: string) => `/api/draft-orders/${storeId}/customers/search?q=${encodeURIComponent(q)}`,
+    LIST_CREATE: (storeId: string) => `/api/draft-orders/${storeId}`,
+    DETAIL: (storeId: string, id: string) => `/api/draft-orders/${storeId}/${id}`,
+    COMPLETE: (storeId: string, id: string) => `/api/draft-orders/${storeId}/${id}/complete`,
   },
 
   PAYMENT: {
@@ -678,9 +716,14 @@ export const ENDPOINTS = {
     DELETE:   (storeId: string, bannerId: string) => `/api/store-banner/${storeId}/${bannerId}`,
   },
 
-  // ── MEDIA LIBRARY (reusable promotional creatives) ────────────────────────
+  // ── MEDIA LIBRARY (reusable promotional creatives + the per-store Files Library) ─
   MEDIA_LIBRARY: {
     LIST: '/api/media-library',
+    BROWSE: (storeId: string) => `/api/media-library/${storeId}`,
+    UPLOAD: (storeId: string) => `/api/media-library/${storeId}/upload`,
+    UPDATE: (storeId: string, assetId: string) => `/api/media-library/${storeId}/${assetId}`,
+    USAGE: (storeId: string, assetId: string) => `/api/media-library/${storeId}/${assetId}/usage`,
+    DELETE: (storeId: string, assetId: string, force?: boolean) => `/api/media-library/${storeId}/${assetId}${force ? '?force=true' : ''}`,
   },
 
   // ── PROMOTIONS (seller-requested paid platform placements) ────────────────

@@ -19,7 +19,11 @@ import { Button } from './Button';
 export function AuthGateModal() {
   const navigate = useNavigate();
   const { pending, cancel, resolve } = useAuthGate();
-  const social = useSocialLogin();
+  // Buyer-only surface (cart/wishlist/follow/message gate) — matches the
+  // hardcoded role: 'user' in the email/password submit below. useSocialLogin
+  // defaults to 'seller' for the (now seller-only) main LoginPage, so this
+  // needs the buyer role explicitly.
+  const social = useSocialLogin('user');
 
   // Local rather than reusing useLogin()'s loading/error — useLogin() also
   // navigates on success, which is exactly the "lose your position" behavior
@@ -104,7 +108,7 @@ export function AuthGateModal() {
           <span className="text-[10px] text-slate whitespace-nowrap">or continue with</span>
           <div className="flex-1 h-px bg-bone" />
         </div>
-        <SocialLoginRow onSelect={social.notConfigured} disabled={submitting} />
+        <SocialLoginRow mount={social.mount} disabled={submitting} />
         {social.error && (
           <p className="text-[11.5px] text-info flex items-start gap-1">
             <Info size={12} className="shrink-0 mt-[1px]" /> {social.error}

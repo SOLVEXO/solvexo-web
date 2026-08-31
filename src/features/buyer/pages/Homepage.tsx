@@ -10,22 +10,21 @@ import { Footer, SkeletonBox, ClosingCtaBanner } from '@/components/comman/ui';
 import {
   ArrowRight, Store, Sparkles, Check,
   Star, BadgeCheck, Quote, Loader2,
-  MonitorSmartphone, BarChart3, PackageCheck, Users, UserPlus, Link2, Rows3, TrendingUp,
+  BarChart3, UserPlus, Link2, Rows3, TrendingUp,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { apiGetTestimonials, type Testimonial } from '@/api/services/testimonials';
 import { apiGetPlatformStats, type PlatformStats } from '@/api/services/store';
 import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SplitText } from '@/components/comman/motion/SplitText';
+import { useBrandSplashReady } from '@/components/comman/motion/BrandSplashContext';
 import { Marquee } from '@/components/comman/motion/Marquee';
 import { useMouseParallax } from '@/components/comman/motion/useMouseParallax';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
 import { PremiumCard } from '@/components/comman/motion/PremiumCard';
 import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
 import {
-  StorefrontPreview, POSPreview, AICommercePreview, AnalyticsPreview, SellerDashboardPreview,
-  InventoryPreview, OrdersTimelinePreview,
+  StorefrontPreview, POSPreview, SellerDashboardPreview, MobileStorePreview, mockupForProductSlug, PRODUCT_ICONS,
 } from '@/components/comman/mockups/ProductMockups';
 import { PLATFORM_PRODUCTS, getPlatformProduct } from '@/features/buyer/data/platformProducts';
 import { SOLUTIONS } from '@/features/buyer/data/solutions';
@@ -59,7 +58,12 @@ function HeroActivityTicker() {
   }, [reduceMotion]);
   const signal = HERO_SIGNALS[index];
   return (
-    <div className="hidden lg:block absolute top-8 right-8 lg:right-14 text-right z-[2]">
+    // Aligned to the eyebrow line's own top offset (`pt-24` on the hero
+    // text block below), not an arbitrary top-8 — now that the navbar is
+    // `fixed` and the hero reaches all the way to y:0, top-8 used to sit
+    // right underneath/behind the header instead of level with real hero
+    // content.
+    <div className="hidden lg:block absolute top-24 right-8 lg:right-14 text-right z-[2]">
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
@@ -81,15 +85,6 @@ function HeroActivityTicker() {
   );
 }
 
-const PRODUCT_ICONS: Record<string, LucideIcon> = {
-  'store-builder': Store,
-  pos: MonitorSmartphone,
-  'ai-commerce': Sparkles,
-  analytics: BarChart3,
-  inventory: PackageCheck,
-  'orders-customers': Users,
-};
-
 const HOW_IT_WORKS = [
   { Icon: Store,    step: 'Create',  desc: 'Build your storefront from a curated theme, or set up POS to sell in person.' },
   { Icon: Link2,    step: 'Connect', desc: 'Add products, connect a payment method, and your inventory syncs across every channel.' },
@@ -99,13 +94,6 @@ const HOW_IT_WORKS = [
 
 const EXPLORER_SLUGS = ['analytics', 'inventory', 'orders-customers'] as const;
 const POS_STEPS = ['Search', 'Cart', 'Payment', 'Receipt'] as const;
-
-function explorerPreview(slug: string) {
-  if (slug === 'analytics') return <AnalyticsPreview />;
-  if (slug === 'inventory') return <InventoryPreview />;
-  if (slug === 'orders-customers') return <OrdersTimelinePreview />;
-  return <SellerDashboardPreview />;
-}
 
 const SHORT_PRODUCT_LABEL: Record<string, string> = {
   'store-builder': 'Store',
@@ -139,27 +127,28 @@ function ConnectedSystemDiagram({ onNavigate, activeIndex, onHover, onLeave }: {
   });
 
   return (
-    <div ref={ref} className="relative w-full max-w-[640px] mx-auto aspect-[4/3.4]">
+    <div ref={ref} className="relative w-full max-w-[720px] mx-auto aspect-[4/3.4]">
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none">
         {positions.map((pos, i) => (
           <motion.line
             key={i}
             x1={50} y1={50} x2={pos.x} y2={pos.y}
-            stroke="var(--color-brand-orange)" strokeWidth={i === activeIndex ? 0.9 : 0.5} strokeLinecap="round"
+            stroke="var(--color-brand-orange)" strokeWidth={i === activeIndex ? 1 : 0.5} strokeLinecap="round"
             initial={{ pathLength: 0, opacity: 0 }}
-            animate={inView ? { pathLength: 1, opacity: i === activeIndex ? 0.85 : 0.3 } : {}}
+            animate={inView ? { pathLength: 1, opacity: i === activeIndex ? 0.9 : 0.3 } : {}}
             transition={{ duration: 0.5, delay: 0.25 + i * 0.1, ease: EASE_OUT, opacity: { duration: 0.3 } }}
           />
         ))}
       </svg>
 
       <motion.div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2] w-[76px] h-[76px] sm:w-[88px] sm:h-[88px] rounded-full bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center shadow-xl"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2] w-[88px] h-[88px] sm:w-[104px] sm:h-[104px] rounded-full bg-gradient-to-br from-brand-orange to-brand-deep-orange flex items-center justify-center shadow-xl"
         initial={{ scale: 0.5, opacity: 0 }}
         animate={inView ? { scale: 1, opacity: 1 } : {}}
         transition={{ duration: 0.5, ease: EASE_OUT }}
       >
-        <span className="text-white font-bold text-[13px] sm:text-[14px] tracking-tight">Solvexo</span>
+        <span className="absolute inset-0 rounded-full bg-brand-orange/40 blur-lg -z-10" />
+        <span className="text-white font-bold text-[14px] sm:text-[16px] tracking-tight">Solvexo</span>
       </motion.div>
 
       {PLATFORM_PRODUCTS.map((p, i) => {
@@ -172,19 +161,19 @@ function ConnectedSystemDiagram({ onNavigate, activeIndex, onHover, onLeave }: {
             onClick={() => onNavigate(p.slug)}
             onMouseEnter={() => onHover(i)}
             onMouseLeave={onLeave}
-            className="absolute z-[2] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 bg-transparent border-none cursor-pointer group"
+            className="absolute z-[2] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 bg-transparent border-none cursor-pointer group"
             style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
             initial={{ scale: 0.5, opacity: 0 }}
-            animate={inView ? { scale: active ? 1.12 : 1, opacity: 1 } : {}}
+            animate={inView ? { scale: active ? 1.14 : 1, opacity: 1 } : {}}
             transition={{ duration: 0.4, delay: 0.45 + i * 0.1, ease: EASE_OUT }}
           >
             <span className={clsx(
-              'w-11 h-11 sm:w-[52px] sm:h-[52px] rounded-xl border flex items-center justify-center transition-all duration-300',
+              'w-12 h-12 sm:w-[60px] sm:h-[60px] rounded-xl border flex items-center justify-center transition-all duration-300',
               active ? 'bg-brand-orange border-brand-orange shadow-card-hover -translate-y-0.5' : 'bg-white border-bone shadow-card group-hover:border-brand-orange/40',
             )}>
-              <Icon size={18} className={active ? 'text-white' : 'text-brand-orange'} />
+              <Icon size={20} className={active ? 'text-white' : 'text-brand-orange'} />
             </span>
-            <span className="text-[10.5px] sm:text-[11px] font-semibold text-carbon whitespace-nowrap">{SHORT_PRODUCT_LABEL[p.slug] ?? p.name}</span>
+            <span className="text-[11px] sm:text-[12px] font-semibold text-carbon whitespace-nowrap">{SHORT_PRODUCT_LABEL[p.slug] ?? p.name}</span>
           </motion.button>
         );
       })}
@@ -228,14 +217,15 @@ export function Homepage() {
   const navigate = useNavigate();
   const sellEntry = useSellEntry();
   const reduceMotion = useReducedMotion();
+  // Held true immediately when there's no splash to wait for (repeat visit
+  // this session, reduced motion); flips true once the one-time brand
+  // splash actually finishes — see PublicLayout/BrandSplash.
+  const splashReady = useBrandSplashReady();
   const heroSectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress: heroScroll } = useScroll({ target: heroSectionRef, offset: ['start start', 'end start'] });
   const heroTextFade = useTransform(heroScroll, [0, 0.85], [1, 0]);
-  // Editorial hero — each headline line drifts a few px in an alternating
-  // direction as the page scrolls, and the scroll indicator fades out
-  // almost immediately once the visitor actually starts scrolling.
-  const heroLine1X = useTransform(heroScroll, [0, 1], [0, 26]);
-  const heroLine2X = useTransform(heroScroll, [0, 1], [0, -26]);
+  // Scroll indicator fades out almost immediately once the visitor
+  // actually starts scrolling.
   const heroScrollHintOpacity = useTransform(heroScroll, [0, 0.12], [1, 0]);
   // Subtle cursor-driven 3D tilt on the headline itself — desktop-only, a
   // few degrees at most — so the huge type feels alive/responsive instead
@@ -304,15 +294,6 @@ export function Homepage() {
     return () => clearInterval(id);
   }, [reduceMotion]);
 
-  function systemPreviewFor(slug: string) {
-    if (slug === 'store-builder') return <StorefrontPreview />;
-    if (slug === 'pos') return <POSPreview />;
-    if (slug === 'ai-commerce') return <AICommercePreview />;
-    if (slug === 'analytics') return <AnalyticsPreview />;
-    if (slug === 'inventory') return <InventoryPreview />;
-    return <OrdersTimelinePreview />;
-  }
-
   const activeExplorerProduct = getPlatformProduct(EXPLORER_SLUGS[explorerTab])!;
 
   const statItems = stats ? [
@@ -341,6 +322,12 @@ export function Homepage() {
         <HeroActivityTicker />
 
         <div ref={heroTiltRef} className="relative z-[1] flex-1 flex flex-col justify-center px-5 sm:px-8 lg:px-14 pt-24 pb-16">
+          {/* Held back until the one-time brand splash has actually
+             finished (see PublicLayout/useBrandSplashReady) — otherwise
+             this whole entrance sequence plays out invisibly underneath the
+             splash overlay and the curtain lifts onto an already-static
+             headline instead of a still-animating one. */}
+          {splashReady && (
           <motion.div style={reduceMotion ? undefined : { opacity: heroTextFade }}>
             <Reveal delay={0}>
               <p className="flex items-center gap-2 text-[11px] sm:text-[12px] font-semibold uppercase tracking-[0.22em] text-brand-orange mb-6">
@@ -351,26 +338,27 @@ export function Homepage() {
 
             <motion.div style={reduceMotion ? undefined : { rotateX: heroTiltRotateX, rotateY: heroTiltRotateY, transformPerspective: 1000 }}>
               <h1 className="font-sans font-extrabold text-white leading-[0.94] tracking-[-0.03em] pb-[0.05em]">
-                <motion.div style={reduceMotion ? undefined : { x: heroLine1X }}>
-                  <SplitText
-                    as="div"
-                    text="Create. Sell."
-                    delay={0.1}
-                    stagger={0.07}
-                    animateOnMount
-                    className="text-[15vw] sm:text-[12vw] lg:text-[9.5vw] block"
-                  />
-                </motion.div>
-                <motion.div style={reduceMotion ? undefined : { x: heroLine2X }}>
-                  <SplitText
-                    as="div"
-                    text="Manage. Grow."
-                    delay={0.3}
-                    stagger={0.07}
-                    animateOnMount
-                    className="text-[15vw] sm:text-[12vw] lg:text-[9.5vw] block bg-gradient-to-r from-brand-orange to-[#f0a57a] bg-clip-text text-transparent"
-                  />
-                </motion.div>
+                {/* Pure per-word mask-slide reveal (SplitText's own
+                   y:110%→0% + opacity, no outer blur/scale/x-drift layered
+                   on top) — the three lines are spaced ~0.32s apart so line 1
+                   visibly finishes its cascade before line 2 commits, then
+                   line 3, rather than overlapping. */}
+                <SplitText
+                  as="div"
+                  text="Create. Sell."
+                  delay={0.1}
+                  stagger={0.06}
+                  animateOnMount
+                  className="text-[15vw] sm:text-[12vw] lg:text-[9.5vw] block"
+                />
+                <SplitText
+                  as="div"
+                  text="Manage. Grow."
+                  delay={0.42}
+                  stagger={0.06}
+                  animateOnMount
+                  className="text-[15vw] sm:text-[12vw] lg:text-[9.5vw] block bg-gradient-to-r from-brand-orange to-[#f0a57a] bg-clip-text text-transparent"
+                />
                 {/* Third giant line — same masked-reveal treatment as the
                    two lines above it, not a separate small paragraph. Names
                    a real, specific Solvexo differentiator (self-serve
@@ -384,8 +372,8 @@ export function Homepage() {
                 <SplitText
                   as="div"
                   text="Launch Instantly."
-                  delay={0.5}
-                  stagger={0.07}
+                  delay={0.74}
+                  stagger={0.06}
                   animateOnMount
                   className="hero-outline-text text-[13vw] sm:text-[10.5vw] lg:text-[8vw] block"
                 />
@@ -393,20 +381,20 @@ export function Homepage() {
             </motion.div>
 
             <div className="mt-[9vw] sm:mt-[5vw] lg:mt-[3.5vw] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 max-w-[1100px]">
-              <Reveal delay={0.55}>
-                <p className="text-[13.5px] sm:text-[14.5px] text-[#b0aea8] leading-[1.75] max-w-[420px]">
+              <Reveal delay={1.05}>
+                <p className="text-[13.5px] sm:text-[14.5px] text-[#b0aea8] leading-[1.75] max-w-[420px] border-l-2 border-brand-orange/50 pl-4">
                   One connected commerce platform — build your store, sell in person with POS, manage every order, and grow with real analytics and AI.
                 </p>
               </Reveal>
 
-              <Reveal delay={0.68}>
+              <Reveal delay={1.2}>
                 <div className="flex flex-col sm:flex-row items-start gap-3 shrink-0">
                   <MagneticButton className="w-full sm:w-auto">
                     <button
                       onClick={sellEntry.go}
                       disabled={sellEntry.loading}
                       data-cursor="hover"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-[11px] rounded-lg text-[13.5px] font-semibold text-white bg-gradient-to-r from-brand-orange to-brand-deep-orange hover:brightness-105 transition-[filter] cursor-pointer disabled:opacity-60"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-[11px] rounded-lg text-[13.5px] font-semibold text-white bg-gradient-to-r from-brand-orange to-brand-deep-orange cursor-pointer disabled:opacity-60 transition-[filter,box-shadow,transform] duration-normal ease-out hover:brightness-110 hover:shadow-glow hover:-translate-y-[1.5px] active:translate-y-0 active:duration-micro active:ease-spring active:scale-[0.97]"
                     >
                       {sellEntry.loading ? <Loader2 size={14} className="animate-spin" /> : null}
                       Start Selling Free <ArrowRight size={13} className="inline align-middle" />
@@ -415,24 +403,33 @@ export function Homepage() {
                   <MagneticButton className="w-full sm:w-auto">
                     <button
                       onClick={() => navigate('/products')}
-                      className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] hover:border-white/40 transition-all cursor-pointer"
+                      className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-lg text-[13px] font-medium text-white border border-[rgba(255,255,255,0.25)] bg-transparent hover:bg-[rgba(255,255,255,0.08)] hover:border-white/40 transition-all duration-normal ease-out cursor-pointer"
                     >
                       Explore the Platform
-                      <ArrowRight size={13} className="transition-transform duration-300 group-hover:translate-x-1" />
+                      <ArrowRight size={13} className="transition-transform duration-normal ease-spring group-hover:translate-x-1" />
                     </button>
                   </MagneticButton>
                 </div>
               </Reveal>
             </div>
 
-            <Reveal delay={0.8}>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8">
-                {['Self-serve setup — no approval queue', 'One login for store, POS & analytics', 'Real-time inventory sync'].map(label => (
-                  <span key={label} className="text-[11.5px] text-white/35">{label}</span>
-                ))}
-              </div>
-            </Reveal>
+            {/* Trust bullets — individually staggered with a check-dot icon
+               and a hover brighten, instead of three flat, identically-
+               faded text strings that all appeared as one static block. */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2.5 mt-8">
+              {['Self-serve setup — no approval queue', 'One login for store, POS & analytics', 'Real-time inventory sync'].map((label, i) => (
+                <Reveal key={label} delay={1.4 + i * 0.1} y={8}>
+                  <span className="group flex items-center gap-[7px] text-[11.5px] text-white/40 transition-colors duration-normal hover:text-white/75 cursor-default">
+                    <span className="relative flex size-[5px] shrink-0">
+                      <span className="absolute inset-0 rounded-full bg-brand-orange/60 transition-transform duration-normal ease-spring group-hover:scale-[1.8]" />
+                    </span>
+                    {label}
+                  </span>
+                </Reveal>
+              ))}
+            </div>
           </motion.div>
+          )}
         </div>
 
         {/* Scroll indicator — fades out almost as soon as scrolling starts */}
@@ -453,18 +450,18 @@ export function Homepage() {
       {/* ── Industries strip — a continuous marquee instead of a static pill
          row, editorial text links (no pill chrome) with a dot separator,
          real navigation into /solutions on click. ── */}
-      <section className="bg-carbon border-b border-bone/20 py-5 overflow-hidden">
-        <Marquee duration={26}>
+      <section className="bg-carbon border-b border-bone/20 py-8 sm:py-10 overflow-hidden">
+        <Marquee duration={30}>
           {SOLUTIONS.map(s => (
             <span key={s.slug} className="flex items-center shrink-0">
               <button
                 onClick={() => navigate(`/solutions/${s.slug}`)}
                 data-cursor="hover"
-                className="text-[15px] sm:text-[17px] font-semibold uppercase tracking-[0.02em] text-white/50 hover:text-white transition-colors duration-300 bg-transparent border-none cursor-pointer px-5"
+                className="text-2xl sm:text-3xl lg:text-4xl font-bold uppercase tracking-[0.01em] text-white/50 hover:text-white transition-colors duration-300 bg-transparent border-none cursor-pointer px-5"
               >
                 {s.name}
               </button>
-              <span className="w-[5px] h-[5px] rounded-full bg-brand-orange/60 shrink-0" />
+              <span className="w-[7px] h-[7px] sm:w-[8px] sm:h-[8px] rounded-full bg-brand-orange/60 shrink-0" />
             </span>
           ))}
         </Marquee>
@@ -475,27 +472,31 @@ export function Homepage() {
          underneath it, not a flat card grid. Every node is a real,
          clickable link into that product's own page. ── */}
       <section
-        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-12 bg-cream"
+        className="relative overflow-hidden py-20 sm:py-28 lg:py-36 px-4 sm:px-6 lg:px-12 bg-cream"
         onMouseEnter={() => { systemPausedRef.current = true; }}
         onMouseLeave={() => { systemPausedRef.current = false; }}
       >
-        <div className="max-w-[1320px] mx-auto">
-          <div className="text-center max-w-[780px] mx-auto mb-14">
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full bg-[radial-gradient(circle,var(--color-brand-orange)_0%,transparent_65%)] opacity-[0.06] pointer-events-none"
+          aria-hidden="true"
+        />
+        <div className="relative max-w-[1320px] mx-auto">
+          <div className="text-center max-w-[900px] mx-auto mb-16 lg:mb-20">
             <Reveal>
-              <p className="text-[11px] font-semibold text-brand-deep-orange uppercase tracking-[0.12em] mb-4">One platform</p>
+              <p className="text-[11px] font-semibold text-brand-deep-orange uppercase tracking-[0.12em] mb-5">Create · Sell · Manage · Understand · Grow</p>
             </Reveal>
-            <h2 className="font-serif text-[36px] sm:text-[52px] lg:text-[64px] font-bold text-carbon leading-[1.04] tracking-[-0.01em]">
-              <SplitText as="div" text="One business." delay={0.05} />
-              <SplitText as="div" text="One connected system." delay={0.2} />
+            <h2 className="font-serif text-[40px] sm:text-[64px] lg:text-[84px] font-bold text-carbon leading-[1.02] tracking-[-0.015em]">
+              <SplitText as="div" text="Everything you need" delay={0.05} />
+              <SplitText as="div" text="to build, sell and grow." delay={0.2} />
             </h2>
             <Reveal delay={0.4}>
-              <p className="text-[14px] sm:text-[16px] text-slate leading-[1.7] mt-6">
-                Every module reads from the same real data — a sale at the counter updates the same stock your storefront shows.
+              <p className="text-[15px] sm:text-[17px] text-slate leading-[1.7] mt-7 max-w-[660px] mx-auto">
+                Store Builder, Point of Sale, Inventory, Orders &amp; Customers, AI Commerce, Analytics and Loyalty &amp; Rewards — seven real tools reading from the same data, in one commerce platform.
               </p>
             </Reveal>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <ConnectedSystemDiagram
               onNavigate={slug => navigate(`/products/${slug}`)}
               activeIndex={systemActive}
@@ -503,10 +504,10 @@ export function Homepage() {
               onLeave={() => {}}
             />
 
-            <div className="relative">
+            <div className="relative rounded-[24px] bg-white border border-bone shadow-raised p-6 sm:p-8">
               <p className="text-[11px] font-semibold text-brand-orange uppercase tracking-[0.1em] mb-2">{systemActiveProduct.name}</p>
-              <p className="text-[13.5px] text-slate leading-[1.65] mb-4 max-w-[380px]">{systemActiveProduct.heroSubtext}</p>
-              <div className="relative min-h-[220px]">
+              <p className="text-[13.5px] text-slate leading-[1.65] mb-5 max-w-[420px]">{systemActiveProduct.heroSubtext}</p>
+              <div className="relative min-h-[240px]">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={systemActiveProduct.slug}
@@ -515,7 +516,7 @@ export function Homepage() {
                     exit={{ opacity: 0, scale: 0.97 }}
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    {systemPreviewFor(systemActiveProduct.slug)}
+                    {mockupForProductSlug(systemActiveProduct.slug)}
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -559,7 +560,15 @@ export function Homepage() {
               <span className="text-[11px] text-slate">Pick a theme, edit sections, publish</span>
               <ArrowRight size={12} className="text-slate/50" />
             </div>
-            <StorefrontPreview />
+            <div className="relative">
+              <StorefrontPreview />
+              {/* Mobile-preview companion — literally illustrates the "Live
+                 desktop & mobile preview" bullet above instead of leaving it
+                 as an unproven text claim. */}
+              <div className="hidden sm:block absolute -bottom-7 -right-6 w-[110px] xl:w-[122px] drop-shadow-xl">
+                <MobileStorePreview />
+              </div>
+            </div>
           </Reveal>
         </div>
       </section>
@@ -718,7 +727,7 @@ export function Homepage() {
                     </div>
                   </div>
                   <div className="w-full sm:w-[320px] shrink-0">
-                    {explorerPreview(activeExplorerProduct.slug)}
+                    {mockupForProductSlug(activeExplorerProduct.slug)}
                   </div>
                 </motion.div>
               </AnimatePresence>

@@ -1,22 +1,26 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useId, type ReactNode } from 'react';
 import { Outlet, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { TokenStorage, type AppRole } from '@/api/services/auth';
 import { clsx } from 'clsx';
+import { motion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, ChevronLeft, ChevronRight, Store,
+  Settings, Sparkles, ChevronLeft, ChevronRight,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
-  PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers,
+  PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
+  LayoutGrid, Newspaper, Palette, Percent, Gift,
 } from 'lucide-react';
-import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, type StorePlatformSubscription } from '@/api/services/platformPlans';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 import { useLogout } from '@/hooks/auth/useLogout';
-import { NotificationBell, AnnouncementBanner, Modal, Button } from '@/components/comman/ui';
+import { useMyStores } from '@/hooks/store/useMyStores';
+import { useGetProfile } from '@/hooks/auth/useGetProfile';
+import { NotificationBell, AnnouncementBanner, Modal, Button, CopyIconButton } from '@/components/comman/ui';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
+import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
 
 // ── Store Workspace Context ───────────────────────────────────────────────────
 interface StoreWorkspaceValue {
@@ -50,6 +54,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     group: 'Sales',
     items: [
       { id: 'orders',   Icon: Package,  label: 'Orders',       path: 'orders'  },
+      { id: 'draft-orders', Icon: FileText, label: 'Draft Orders', path: 'draft-orders' },
       { id: 'returns',  Icon: Undo2,    label: 'Returns',       path: 'returns' },
       { id: 'shipping', Icon: Truck,    label: 'Shipping',      path: 'shipping' },
     ],
@@ -61,7 +66,15 @@ export const NAV: { group: string; items: NavItem[] }[] = [
       { id: 'inventory',     Icon: ClipboardList, label: 'Inventory',     path: 'inventory'    },
       { id: 'categories',    Icon: FolderTree,    label: 'Categories',    path: 'categories'   },
       { id: 'collections',   Icon: Layers,        label: 'Collections',   path: 'collections'  },
-      { id: 'store-builder', Icon: Store,         label: 'Store Builder', path: 'storebuilder' },
+    ],
+  },
+  {
+    group: 'Online Store',
+    items: [
+      { id: 'online-store-themes',    Icon: Palette,    label: 'Themes',    path: 'online-store/themes'    },
+      { id: 'online-store-pages',     Icon: LayoutGrid, label: 'Pages',     path: 'online-store/pages'     },
+      { id: 'online-store-blog',      Icon: Newspaper,  label: 'Blog',      path: 'online-store/blog'      },
+      { id: 'online-store-files',     Icon: ImageIcon,  label: 'Files',     path: 'files'                  },
     ],
   },
   {
@@ -76,6 +89,8 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     group: 'Growth',
     items: [
       { id: 'marketing',     Icon: Megaphone, label: 'Marketing',     path: 'marketing'     },
+      { id: 'discounts',     Icon: Percent,   label: 'Discounts',     path: 'discounts'     },
+      { id: 'gift-cards',    Icon: Gift,      label: 'Gift Cards',    path: 'gift-cards'    },
       { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty'       },
       { id: 'subscriptions', Icon: RefreshCw, label: 'Subscriptions', path: 'subscriptions' },
       { id: 'seo',           Icon: Search,    label: 'SEO',           path: 'seo'           },
@@ -85,15 +100,27 @@ export const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: 'Finance',
     items: [
-      { id: 'finance',      Icon: Wallet,     label: 'Finance',        path: 'finance'      },
-      { id: 'plan-billing', Icon: CreditCard, label: 'Plan & Billing', path: 'plan-billing' },
+      { id: 'finance',      Icon: Wallet,     label: 'Finance',  path: 'finance'      },
+      // Renamed from "Plan & Billing" — that name read as the same thing as
+      // Growth's "Subscriptions" item above, but they're unrelated: this is
+      // the SELLER's own Solvexo plan/invoices (`StorePlanBilling.tsx`),
+      // "Subscriptions" is a customer-facing recurring-order feature for
+      // THIS store's shoppers (`Operations/subscriptions/Subscriptions.tsx`).
+      // Kept as two separate pages (merging them would combine two
+      // unrelated feature sets into one confusing screen) but renamed so the
+      // two no longer sound like the same page. Route path (`plan-billing`)
+      // is unchanged — only the label a seller sees changed.
+      { id: 'plan-billing', Icon: CreditCard, label: 'Billing',  path: 'plan-billing' },
     ],
   },
   {
     group: 'Settings',
     items: [
-      { id: 'integrations',  Icon: Plug,        label: 'Integrations',          path: 'integrations'  },
-      { id: 'settings',      Icon: Settings,    label: 'Settings',              path: 'settings'      },
+      { id: 'integrations',  Icon: Plug,        label: 'Integrations', path: 'integrations'  },
+      // 'verification' and 'account' were removed from here — see the doc
+      // comment above `StoreVerificationBanner`'s old call site (deleted
+      // below) and `StorePageHeader`'s new account button for why.
+      { id: 'settings',      Icon: Settings,    label: 'Settings',     path: 'settings'      },
     ],
   },
 ];
@@ -229,7 +256,12 @@ interface StoreSidebarProps { open: boolean; onToggle: () => void; }
 function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   const navigate     = useNavigate();
   const { pathname } = useLocation();
+  // Shared layoutId so the active-item background actually travels between
+  // nav entries on navigation instead of one bg instantly disappearing while
+  // another instantly appears — scoped per sidebar instance via useId().
+  const navPillId = useId();
   const { store, storeId, loading } = useStoreWorkspace();
+  const { profile, loading: profileLoading } = useGetProfile();
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
   const paletteItems = buildPaletteItems(navigate, storeId);
   const logout = useLogout();
@@ -238,7 +270,9 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
 
   const handleLogout = async () => {
     setLoggingOut(true);
-    await logout();
+    // Seller-only web login (see LoginPage's SELLER_ONLY_LOGIN) — a signed-out
+    // seller belongs back at /login, not the public homepage default.
+    await logout('/login');
   };
 
   const isActive = (seg: string) =>
@@ -266,21 +300,14 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
       <aside className={clsx(
         'hidden lg:flex bg-carbon flex-col shrink-0',
         'transition-[width] duration-300 ease-in-out',
-        import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen',
+        'h-screen',
         open ? 'w-[220px]' : 'w-[60px]',
       )}>
 
-        {/* Sidebar collapse toggle */}
-        <div className={clsx(
-          'flex items-center justify-end pt-[14px] pb-[10px] shrink-0',
-          open ? 'px-4' : 'flex-col px-[10px]',
-        )}>
-          {toggleBtn}
-        </div>
-
-        <div className="h-px bg-dark-active mx-3" />
-
-        {/* Store identity */}
+        {/* Store identity + collapse toggle — same row, toggle on the right,
+           rather than the toggle sitting alone on its own row above this.
+           (The store SWITCHER itself lives in the top navbar — StorePageHeader
+           below — not here.) */}
         {open ? (
           <div className="px-4 pt-[14px] pb-3 shrink-0">
             <div className="flex items-center gap-[10px]">
@@ -306,20 +333,22 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                   </>
                 )}
               </div>
+              {toggleBtn}
             </div>
           </div>
         ) : (
-          <div className="flex justify-center pt-3 pb-2 shrink-0">
+          <div className="flex flex-col items-center gap-2 pt-3 pb-2 shrink-0">
             <div className="size-8 rounded-[8px] shrink-0 bg-brand-orange overflow-hidden flex items-center justify-center text-[11px] font-bold text-white">
               {loading ? '…' : store?.logo ? <img loading="lazy" decoding="async" src={store.logo} className="w-full h-full object-cover" alt="" /> : initials}
             </div>
+            {toggleBtn}
           </div>
         )}
 
         <div className="h-px bg-dark-active mx-3 mb-[6px]" />
 
         {/* Nav */}
-        <nav className={clsx('flex-1 overflow-y-auto', open ? 'px-[10px] pt-1' : 'px-[10px] pt-2')}>
+        <nav data-lenis-prevent className={clsx('flex-1 overflow-y-auto', open ? 'px-[10px] pt-1' : 'px-[10px] pt-2')}>
           {NAV.map(section => (
             <div key={section.group} className="mb-1">
               {open
@@ -340,23 +369,29 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
                     aria-label={item.label}
                     aria-current={active ? 'page' : undefined}
                     className={clsx(
-                      'flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer',
-                      'transition-colors duration-150',
+                      'relative flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer',
                       !open && 'lg:justify-center lg:px-0',
-                      active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1a1917]',
+                      !active && 'hover:bg-[#1a1917] transition-colors duration-fast',
                     )}
                   >
+                    {active && (
+                      <motion.div
+                        layoutId={`store-nav-pill-${navPillId}`}
+                        className="absolute inset-0 rounded-md bg-dark-active"
+                        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                      />
+                    )}
                     <item.Icon
                       size={15}
-                      className={clsx('shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')}
+                      className={clsx('relative shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')}
                     />
                     {open && (
                       <>
-                        <span className={clsx('text-[13px] flex-1 font-normal text-slate', active && 'font-semibold text-white')}>
+                        <span className={clsx('relative text-[13px] flex-1 font-normal text-slate', active && 'font-semibold text-white')}>
                           {item.label}
                         </span>
                         {active && (
-                          <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />
+                          <div className="relative w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />
                         )}
                       </>
                     )}
@@ -367,7 +402,10 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
           ))}
         </nav>
 
-        {/* Footer: AI credits */}
+        {/* Footer: AI credits + seller identity (email/logout) — the seller's
+           own account, never a separate cross-store "seller dashboard" page,
+           lives right here in this store's sidebar (clicking it opens the
+           per-store Account page). */}
         {open ? (
           <div className="px-4 py-3 border-t border-dark-active shrink-0">
             <div className="bg-dark-active rounded-md px-3 py-[10px] mb-[10px]">
@@ -386,8 +424,26 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <SolvexoIcon size={20} />
-              <p className="text-[11px] text-dark-label flex-1 min-w-0 truncate">Solvexo Store</p>
+              <button
+                onClick={() => navigate(`/store/${storeId}/account`)}
+                title="Account settings"
+                className="flex-1 min-w-0 flex items-center gap-2 bg-transparent border-0 p-0 cursor-pointer text-left"
+              >
+                <div className="size-7 rounded-full shrink-0 bg-charcoal flex items-center justify-center overflow-hidden">
+                  {profileLoading
+                    ? <div className="animate-pulse w-full h-full bg-[#3c3a38]" />
+                    : profile?.profileImage
+                      ? <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                      : <span className="text-[10px] font-bold text-brand-orange">{profile?.name?.slice(0, 2).toUpperCase() ?? '--'}</span>}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-medium text-white leading-[1.3] truncate">{profile?.name ?? '—'}</p>
+                  <p className="text-[10px] text-slate leading-[1.3] truncate">{profile?.email ?? '—'}</p>
+                </div>
+              </button>
+              {profile?.email && (
+                <CopyIconButton value={profile.email} title="Copy email" size={11} className="text-slate hover:text-white shrink-0" />
+              )}
               <button
                 onClick={() => setShowLogoutConfirm(true)}
                 title="Logout"
@@ -400,7 +456,16 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
           </div>
         ) : (
           <div className="py-3 border-t border-dark-active flex flex-col items-center gap-2 shrink-0">
-            <SolvexoIcon size={20} />
+            <button
+              onClick={() => navigate(`/store/${storeId}/account`)}
+              title="Account settings"
+              aria-label="Account settings"
+              className="size-7 rounded-full shrink-0 bg-charcoal flex items-center justify-center overflow-hidden border-0 cursor-pointer p-0"
+            >
+              {profile?.profileImage
+                ? <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+                : <span className="text-[10px] font-bold text-brand-orange">{profile?.name?.slice(0, 2).toUpperCase() ?? '--'}</span>}
+            </button>
             <button
               onClick={() => setShowLogoutConfirm(true)}
               title="Logout"
@@ -440,32 +505,81 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { storeId } = useStoreWorkspace();
+  const { stores: myStores, loading: myStoresLoading } = useMyStores();
+  // Same real photo/initials the sidebar footer's own account button already
+  // shows (and the same profile source public pages' ProfileAvatar reads) —
+  // a fresh, independently-cached call, not a prop drilled down from
+  // StoreWorkspaceProvider, since this header is exported and used on its
+  // own by every store page.
+  const { profile, loading: profileLoading } = useGetProfile();
   const dashboardPath = `/store/${storeId}/dashboard`;
   const isDashboard = pathname === dashboardPath;
 
   return (
     <div className="bg-white/90 backdrop-blur-md border-b border-bone px-4 md:px-7 py-[14px] flex items-center justify-between sticky top-0 z-10 shrink-0">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0">
         {/* Mobile only, and only away from the dashboard "menu" screen —
            real drill-in navigation (back to the menu) instead of a
            hamburger that used to open a copy of the desktop sidebar. */}
         {!isDashboard && (
           <button
-            onClick={() => navigate(dashboardPath)}
-            aria-label="Back to Store Dashboard"
+            onClick={() => {
+              // Prefer real browser back (returns to wherever the seller
+              // actually came from — the Settings hub, a list page, etc.)
+              // over always landing on Dashboard, which used to make
+              // browsing multiple sub-pages back-to-back re-open Dashboard
+              // every time instead of the page just visited.
+              if (window.history.state?.idx > 0) navigate(-1);
+              else navigate(dashboardPath);
+            }}
+            aria-label="Go back"
             className="lg:hidden size-8 -ml-1 rounded-md flex items-center justify-center text-charcoal hover:bg-cream transition-colors cursor-pointer shrink-0"
           >
             <ChevronLeft size={19} />
           </button>
         )}
-        <div>
-          <h1 className="text-[18px] font-bold text-carbon leading-[1.3]">{title}</h1>
-          {subtitle && <p className="text-[12px] text-slate mt-0.5">{subtitle}</p>}
+        <div key={title} className="min-w-0">
+          <h1 className="solvexo-title-reveal text-[18px] font-bold text-carbon leading-[1.3] truncate">{title}</h1>
+          {subtitle && <p className="solvexo-subtitle-reveal text-[12px] text-slate mt-0.5 truncate">{subtitle}</p>}
         </div>
       </div>
-      <div className="flex items-center gap-[10px]">
+      <div className="flex items-center gap-[10px] shrink-0">
         {actions}
+        {/* Shopify-style store switcher — jump to another of this seller's
+           stores right from the navbar, on every store page. */}
+        <StoreSwitcher stores={myStores} loading={myStoresLoading} currentStoreId={storeId} variant="light" compact />
         <NotificationBell />
+        {/* Account moved here from the sidebar NAV list — it's the seller's
+           own personal identity/profile, not a store workspace section, so
+           it belongs beside the store switcher and notifications (matching
+           how public-facing pages put account access in the top nav), not
+           listed alongside Products/Orders/Settings in the sidebar. Styled as
+           a real avatar (photo, falling back to initials) — same visual
+           treatment as the public navbar's ProfileAvatar and this same
+           sidebar's own footer account button — instead of a generic
+           person-icon button, so it actually reads as "your account" at a
+           glance rather than just another chrome icon. Kept as a direct
+           link straight to this store's Account page (not the full
+           public ProfileAvatar dropdown, which is built for logged-in
+           visitors on the public site — its "My Store"/Logout menu has no
+           useful destination once you're already inside a store's own
+           dashboard, and Logout already lives in the sidebar footer). */}
+        <button
+          onClick={() => navigate(`/store/${storeId}/account`)}
+          title="Account settings"
+          aria-label="Account settings"
+          className="size-8 rounded-full shrink-0 overflow-hidden border-2 border-bone bg-brand-pale-orange flex items-center justify-center cursor-pointer hover:border-brand-orange/60 transition-colors"
+        >
+          {profileLoading ? (
+            <div className="w-full h-full bg-bone animate-pulse" />
+          ) : profile?.profileImage ? (
+            <img loading="lazy" decoding="async" src={profile.profileImage} alt={profile.name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-[10px] font-bold text-brand-deep-orange">
+              {profile?.name?.slice(0, 2).toUpperCase() ?? '--'}
+            </span>
+          )}
+        </button>
       </div>
     </div>
   );
@@ -509,57 +623,15 @@ function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// ── Seller business-verification status — workspace-wide so a not-yet-
-// verified store's owner sees it on every page, not just their store list.
-// Reads `verificationStatus` (never `store.status`, which is the separate
-// marketplace-listing lifecycle field — see store.schema.ts). A verified
-// store never renders anything here. ──
-function StoreVerificationBanner() {
-  const navigate = useNavigate();
-  const { store, storeId } = useStoreWorkspace();
-  // A store that's already marketplace-active (including a pre-verification-
-  // tracking legacy approval) never shows a verification nag, even if
-  // `verificationStatus` is stale/missing — `status` is the authoritative
-  // "already approved" signal (see the `verified` comment in StoreSidebar).
-  if (!store || store.status === 'active') return null;
-
-  const goToVerification = () => navigate(`/store/${storeId}/verification`);
-
-  switch (store.verificationStatus) {
-    case 'rejected':
-      return (
-        <button onClick={goToVerification} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer text-center">
-          <XCircle size={14} className="shrink-0" />
-          Your business verification was rejected{store.rejectionReason ? `: ${store.rejectionReason}` : '.'}
-          <span className="underline font-semibold shrink-0">Fix &amp; resubmit</span>
-        </button>
-      );
-    case 'under_review':
-      return (
-        <div className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3]">
-          <Clock size={14} className="shrink-0" />
-          Your store is under review by our team — you'll be notified as soon as a decision is made.
-        </div>
-      );
-    case 'pending':
-      return (
-        <div className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3]">
-          <Clock size={14} className="shrink-0" />
-          Your verification application has been submitted and is waiting to be reviewed.
-        </div>
-      );
-    case 'not_started':
-      return (
-        <button onClick={goToVerification} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#946200] bg-warning-bg border-b border-[#f5dfa6] cursor-pointer text-center">
-          <AlertTriangle size={14} className="shrink-0" />
-          Your store isn't visible on the marketplace yet — complete business verification to submit it for review.
-          <span className="underline font-semibold shrink-0">Complete verification</span>
-        </button>
-      );
-    default:
-      return null;
-  }
-}
+// `StoreVerificationBanner` (the workspace-wide "complete business
+// verification" nag) was removed along with the `verification` sidebar
+// item and route — a banner nagging the seller toward a page that no
+// longer exists in navigation is worse than no banner. The underlying
+// verification feature/data (`useStoreVerification`, `StoreVerification.tsx`,
+// the backend endpoints, the marketplace-visibility gate itself) is
+// untouched — only this page's reachability from the dashboard was cut, at
+// the seller's explicit request, pending a later decision on the feature
+// itself.
 
 // ── Platform-plan billing banner — past-due / scheduled-cancellation / trial-ending,
 // surfaced workspace-wide (not just on the Billing Center page) so a seller can't
@@ -581,6 +653,15 @@ function PlatformBillingBanner() {
   if (!sub) return null;
   const goToBilling = () => navigate(`/store/${storeId}/plan-billing`);
 
+  if (sub.status === 'locked') {
+    return (
+      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer">
+        <AlertTriangle size={14} className="shrink-0" />
+        This store is locked — choose a plan and complete payment to resume selling. Your data is safe.
+        <span className="underline font-semibold">Unlock now</span>
+      </button>
+    );
+  }
   if (sub.status === 'past_due') {
     return (
       <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer">
@@ -661,13 +742,12 @@ export function StoreLayout() {
 
   return (
     <StoreWorkspaceProvider>
-      <div className={clsx('flex bg-cream overflow-hidden', import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen')}>
+      <div className={clsx('flex bg-cream overflow-hidden', 'h-screen')}>
         <StoreSidebar open={sidebarOpen} onToggle={toggle} />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <AnnouncementBanner audience="sellers" />
-          <StoreVerificationBanner />
           <PlatformBillingBanner />
-          <div className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">
+          <div data-lenis-prevent className="flex-1 overflow-y-auto pb-[64px] lg:pb-0">
             <GatedOutlet />
           </div>
         </div>

@@ -34,13 +34,14 @@ interface AuthSplitLayoutProps {
 // if a form's content is ever taller than the viewport, only the form panel
 // scrolls internally — the branding panel never causes page-level scroll either.
 //
-// `fixed inset-x-0 top-[44px] bottom-0` (not `h-full`/`h-screen`/a `calc(100vh - 44px)`
-// height) so this shell is pinned directly to the viewport below the 44px
-// ReferenceNav bar, independent of any ancestor's computed height. A height-based
-// approach (even one meant to be pixel-exact) can still drift by a pixel at some
-// zoom levels or when a mobile browser's chrome shows/hides, which overflows
-// RootLayout's wrapper and puts a scrollbar on the whole page; being taken out
-// of flow via `fixed` makes that structurally impossible.
+// `fixed inset-x-0 top-0 bottom-0` (not `h-full`/`h-screen`/a `calc(100vh)`
+// height) so this shell is pinned directly to the viewport, independent of
+// any ancestor's computed height. A height-based approach (even one meant
+// to be pixel-exact) can still drift by a pixel at some zoom levels or
+// when a mobile browser's chrome shows/hides, which overflows RootLayout's
+// wrapper and puts a scrollbar on the whole page; being taken out of flow
+// via `fixed` makes that structurally impossible. (ReferenceNav, the
+// dev-only bar this used to sit below, is disabled.)
 export function AuthSplitLayout({
   panelGradient = 'from-carbon via-[#241f1b] to-brand-deep-orange',
   brandingHeader,
@@ -55,7 +56,7 @@ export function AuthSplitLayout({
 }: AuthSplitLayoutProps) {
   const reduceMotion = useReducedMotion();
   return (
-    <div className={clsx('fixed inset-x-0 bottom-0 w-full overflow-hidden bg-cream flex flex-col lg:flex-row', import.meta.env.DEV ? 'top-[44px]' : 'top-0')}>
+    <div className="fixed inset-x-0 top-0 bottom-0 w-full overflow-hidden bg-cream flex flex-col lg:flex-row">
       <BrandSplash />
 
       {/* ── Mobile branding strip (below lg only) — centered icon, headline,
@@ -151,7 +152,7 @@ export function AuthSplitLayout({
          screens, and on the rare oversized form only the invisible-scrollbar
          internal scroll (never a visible bar, never the page) kicks in. ── */}
       {bare ? (
-        <div className={clsx(
+        <div data-lenis-prevent className={clsx(
           'flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col',
           'rounded-t-[28px] -mt-6 relative z-10 bg-cream shadow-[0_-6px_20px_rgba(0,0,0,0.06)]',
           'lg:rounded-none lg:mt-0 lg:shadow-none',
@@ -159,7 +160,7 @@ export function AuthSplitLayout({
           {children}
         </div>
       ) : (
-        <div className={clsx(
+        <div data-lenis-prevent className={clsx(
           'flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col items-center px-4 py-[clamp(12px,3vh,32px)]',
           'rounded-t-[28px] -mt-6 relative z-10 bg-cream shadow-[0_-6px_20px_rgba(0,0,0,0.06)]',
           'lg:rounded-none lg:mt-0 lg:shadow-none',

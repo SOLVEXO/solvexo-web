@@ -6,7 +6,10 @@ import { type ReactNode } from 'react';
 type CardPadding = 'none' | 'sm' | 'md' | 'lg';
 
 interface CardProps {
-  children:   ReactNode;
+  // Optional — a loading-skeleton placeholder (e.g. StoreGiftCards.tsx's
+  // `<Card className="h-[180px] animate-pulse" />`) is a real, intentional
+  // empty Card, not a mistake.
+  children?:  ReactNode;
   className?: string;
   padding?:   CardPadding;
   hover?:     boolean;
@@ -45,10 +48,14 @@ export function Card({
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); }
       }) : undefined}
       className={clsx(
-        // No shadow, no hover border-color change — hover reads through a
-        // warm background tint + lift instead.
-        'bg-white rounded-xl border border-bone duration-200 ease-out',
-        (hover || isInteractive) && 'hover:bg-brand-pale-orange/[0.12] hover:-translate-y-[2px] cursor-pointer',
+        // surface-panel = the Solvexo signature depth treatment (warm paper
+        // tone, inset top highlight, --shadow-glow lift on hover/focus) —
+        // see index.css. Replaces the old flat bg-white + tint-on-hover.
+        'surface-panel rounded-xl',
+        (hover || isInteractive) && 'surface-panel-interactive cursor-pointer',
+        // The glow-on-focus above is a visual bonus, not the accessibility
+        // mechanism — a real outline ring still has to be the thing that
+        // actually satisfies keyboard-focus visibility/contrast.
         isInteractive && 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange',
         PADDING[padding],
         className,

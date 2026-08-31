@@ -3,7 +3,10 @@ import { X } from 'lucide-react';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { ImageUpload } from '@/components/comman/ui';
-import { EntityPickerModal } from '@/features/seller/dashboard/storemodule/builder/EntityPickerModal';
+import { EntityPickerModal } from '@/features/seller/store/Dashboard/OnlineStore/builder/EntityPickerModal';
+import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
+import { currencySymbol } from '@/utils/currency';
+import { TemplateKeyPicker } from '@/features/seller/store/Dashboard/OnlineStore/customize/TemplateKeyPicker';
 import { apiGetStoreInventory } from '@/api/services/product';
 import { apiGetCategoryById } from '@/api/services/categories';
 import {
@@ -20,13 +23,14 @@ function slugify(name: string) {
  *  rule resolved fresh at read time). Manual product selection reuses
  *  `EntityPickerModal` (products mode); automatic's category rule reuses it
  *  too (categories mode, single-select). */
-export function CollectionFormModal({ storeId, mainCategoryId, collection, onClose, onSaved }: {
+export function CollectionFormModal({ storeId, collection, onClose, onSaved }: {
   storeId: string;
-  mainCategoryId?: string;
   collection?: CollectionData | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { store } = useStoreWorkspace();
+  const symbol = currencySymbol(store?.baseCurrency);
   const isEdit = !!collection;
   const [name, setName] = useState(collection?.name ?? '');
   const [description, setDescription] = useState(collection?.description ?? '');
@@ -39,6 +43,7 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
   const [categoryLabel, setCategoryLabel] = useState<string>('');
   const [tags, setTags] = useState<string>((collection?.rules?.tags ?? []).join(', '));
   const [matchType, setMatchType] = useState<'all' | 'any'>(collection?.rules?.matchType ?? 'any');
+  const [templateKey, setTemplateKey] = useState(collection?.templateKey ?? 'default');
 
   const [showProductPicker, setShowProductPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
@@ -65,6 +70,15 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
     apiGetCategoryById(categoryId).then(res => setCategoryLabel(res.data.category.name)).catch(() => {});
   }, [categoryId]);
 
+  // Clear the "add a product" warning as soon as its condition is satisfied
+  // (or no longer applies), instead of leaving it on screen describing a
+  // state that's no longer true.
+  useEffect(() => {
+    if (error === 'Add at least one product, or switch to Automatic.' && (type !== 'manual' || productIds.length > 0)) {
+      setError('');
+    }
+  }, [type, productIds, error]);
+
   const handleSave = async () => {
     if (!name.trim()) { setError('Name is required.'); return; }
     if (type === 'manual' && productIds.length === 0) { setError('Add at least one product, or switch to Automatic.'); return; }
@@ -82,10 +96,11 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
           tags: tags.split(',').map(t => t.trim()).filter(Boolean),
           matchType,
         } : undefined,
+        status,
       };
       let saved: CollectionData;
       if (isEdit) {
-        const res = await apiUpdateCollection(storeId, collection!._id, { ...payload, status });
+        const res = await apiUpdateCollection(storeId, collection!._id, { ...payload, templateKey });
         saved = res.data;
         if (type === 'manual') {
           const prodRes = await apiUpdateCollectionProducts(storeId, saved._id, productIds);
@@ -94,7 +109,6 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
       } else {
         const res = await apiCreateCollection(storeId, payload);
         saved = res.data;
-        if (status === 'draft') await apiUpdateCollection(storeId, saved._id, { status: 'draft' });
       }
       onSaved();
     } catch (err) {
@@ -134,7 +148,7 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
 
           <div>
             <label className="text-[12px] font-medium text-charcoal block mb-1.5">Image (optional)</label>
-            <ImageUpload value={image ? [image] : []} onChange={urls => setImage(urls[0] ?? '')} maxFiles={1} />
+            <ImageUpload value={image ? [image] : []} onChange={urls => setImage(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
           </div>
 
           <div>
@@ -180,7 +194,7 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
                     <Button size="sm" variant="outline" onClick={() => { setCategoryId(null); setCategoryLabel(''); }}>Clear</Button>
                   </div>
                 ) : (
-                  <Button size="sm" variant="outline" onClick={() => setShowCategoryPicker(true)} disabled={!mainCategoryId}>Choose Category</Button>
+                  <Button size="sm" variant="outline" onClick={() => setShowCategoryPicker(true)}>Choose Category</Button>
                 )}
               </div>
               <div>
@@ -200,6 +214,10 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
                 </div>
               </div>
             </div>
+          )}
+
+          {isEdit && (
+            <TemplateKeyPicker storeId={storeId} resourceType="collection" value={templateKey} onChange={setTemplateKey} />
           )}
 
           <div>
@@ -227,6 +245,7 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
           multiple
           initialSelectedIds={productIds}
           onConfirm={(ids) => { setProductIds(ids); setShowProductPicker(false); }}
+          currencySymbol={symbol}
         />
       )}
       {showCategoryPicker && (
@@ -235,7 +254,6 @@ export function CollectionFormModal({ storeId, mainCategoryId, collection, onClo
           onClose={() => setShowCategoryPicker(false)}
           mode="categories"
           storeId={storeId}
-          mainCategoryId={mainCategoryId}
           multiple={false}
           initialSelectedIds={categoryId ? [categoryId] : []}
           onConfirm={(ids) => { setCategoryId(ids[0] ?? null); setShowCategoryPicker(false); }}

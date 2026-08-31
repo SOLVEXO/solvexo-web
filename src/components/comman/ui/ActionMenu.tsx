@@ -33,7 +33,7 @@ interface DropdownPos {
 
 // ── Portal dropdown ───────────────────────────────────────────────────────────
 function DropdownPortal({
-  items, pos, portalRef, onClose, menuId, triggerId,
+  items, pos, portalRef, onClose, menuId, triggerId, align,
 }: {
   items:     ActionMenuItem[];
   pos:       DropdownPos;
@@ -41,6 +41,7 @@ function DropdownPortal({
   onClose:   () => void;
   menuId:    string;
   triggerId: string;
+  align:     'left' | 'right';
 }) {
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -68,8 +69,8 @@ function DropdownPortal({
       role="menu"
       aria-labelledby={triggerId}
       onKeyDown={onKeyDown}
-      className="fixed z-[9999] bg-white border border-bone rounded-[10px] py-1 min-w-[160px]"
-      style={pos}
+      className="dropdown-enter fixed z-[9999] bg-white border border-bone rounded-[10px] py-1 min-w-[160px]"
+      style={{ ...pos, transformOrigin: align === 'right' ? 'top right' : 'top left' }}
     >
       {items.map((item, i) => (
         <button
@@ -200,6 +201,7 @@ export function ActionMenu({ items, align = 'right', className, trigger, trigger
           onClose={close}
           menuId={menuId}
           triggerId={triggerId}
+          align={align}
         />
       )}
     </div>

@@ -198,7 +198,13 @@ export function Table<T = Record<string, unknown>>({
                       className={clsx(
                         i < data.length - 1 && 'border-b border-[#f0eee6]',
                         onRowClick && 'cursor-pointer',
-                        'transition-colors duration-150 hover:bg-cream',
+                        // A thin inset left accent (box-shadow, not a real
+                        // border — no layout shift) instead of a flat
+                        // background tint is the row-level version of the
+                        // same "surface catches the light" language as
+                        // surface-panel, scoped to just this one row.
+                        'transition-[background-color,box-shadow] duration-fast ease-out hover:bg-brand-pale-orange/[0.16] hover:shadow-[inset_2px_0_0_0_var(--color-brand-orange)]',
+                        selectable && keys.has(rowKey) && 'bg-brand-pale-orange/[0.10]',
                       )}
                       onClick={() => onRowClick?.(row)}
                     >

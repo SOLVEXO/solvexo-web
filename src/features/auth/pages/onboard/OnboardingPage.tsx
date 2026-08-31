@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useState, useEffect, type ReactNode } from 'react';
+import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCreateStore } from '@/hooks/store/useCreateStore';
@@ -9,15 +9,18 @@ import {
   Camera, Palette, BookOpen, Store, Briefcase, Monitor, Globe,
   Package, Download, Calendar, Repeat, MonitorSmartphone,
   Sparkles, ArrowRight, ArrowLeft, Check, AlertTriangle, Loader2,
-  ShieldCheck, Clock,
+  ShieldCheck, CreditCard,
 } from 'lucide-react';
 import { useUpload } from '@/hooks/upload/useUpload';
 import type { SellerType, ProductType, StoreData, SupportedCurrency } from '@/api/services/store';
-import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
-import { apiCreateOnboardingSetupIntent, apiConfirmOnboardingPaymentMethod } from '@/api/services/platformPlans';
+import { getStorefrontUrl } from '@/utils/storefrontUrl';
+import {
+  apiGetOnboardingProgress, apiSaveOnboardingDraft,
+  apiCreateOnboardingSetupIntent, apiConfirmOnboardingPaymentMethod,
+} from '@/api/services/platformPlans';
+import { StripeCardSetup, isStripeConfigured } from './StripeCardSetup';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { SellerDashboardMockup } from '@/features/auth/components/mockups/AuthMockups';
-import { StripeCardSetup, isStripeConfigured } from './StripeCardSetup';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { motion } from 'motion/react';
 
@@ -27,15 +30,62 @@ const ONBOARDING_HIGHLIGHTS = [
   { Icon: ShieldCheck, text: 'Verified sellers buyers can trust' },
 ];
 
-// One continuous seller-activation journey, Shopify-style — store setup,
-// payment method, seller profile, and what-you-sell are all steps of the
-// SAME wizard, and the store itself only ever gets created once, at the very
-// last step. There is no admin-review queue any more: a seller who's put a
-// real card on file at the Payment step (see StripeCardSetup /
-// confirmOnboardingPaymentMethod) has their store activated immediately on
-// submit — see StoreService.createStore's `selfServeActivation`.
-const STEPS = ['Store Info', 'Payment', 'Seller Type', 'What You Sell', 'Review'];
+// One short seller-activation journey, Shopify-style — collect only what's
+// needed to spin up a real store (name, seller type, what you sell), then
+// create it immediately on the last step. No separate mandatory Payment or
+// Review step gates account creation any more (that used to be a 5-step
+// wizard — Store Info, Payment, Seller Type, What You Sell, Review — with
+// the store only created at the very end of all five). There is no
+// admin-review queue either — the store self-serve-activates immediately on
+// submit (see StoreService.createStore's `selfServeActivation`) and
+// automatically starts a 3-day trial (see `ensureDefaultSubscription`)
+// regardless of whether a payment method was ever added.
+//
+// Payment is real but entirely optional and now lives AFTER the store
+// exists instead of gating its creation, matching Shopify's own real signup
+// flow (confirmed against a live Shopify signup session, not just docs —
+// Shopify shows a skippable billing/card screen right after signup, and
+// skipping never blocks the trial or account creation). Concretely, once
+// this 3-step wizard finishes, `PostCreatePaymentStep` (below) shows
+// automatically — same placement as Shopify's — with the seller's own
+// Solvexo subscription card (Stripe Elements SetupIntent). Deliberately
+// scoped to ONLY that: connecting Stripe so the storefront can accept real
+// customer payments (Stripe Connect) is the seller's own setup to do from
+// Store Settings whenever they're ready, not something pushed during
+// signup — it's still surfaced there and as a Setup Guide task, just not on
+// this screen. Skipping this screen is never a dead end either way — the
+// Solvexo-billing card task also lives permanently afterwards in the
+// dashboard's persistent "Setup Guide" checklist (`SetupGuideCard.tsx`).
+const STEPS = ['Store Info', 'Seller Type', 'What You Sell'];
 const TOTAL_STEPS = STEPS.length;
+
+// URL-facing slug for each step — mirrors Shopify's own onboarding/signup
+// URLs (a per-session id + a real segment identifying where the seller is),
+// instead of one flat static `/onboard`. The bare `/onboard` route (see
+// `OnboardingEntry` below) mints a fresh session id and redirects into this
+// shape immediately. The id itself carries no server-side session state of
+// its own — the real resumable state is still the seller's
+// backend-persisted draft (`onboardingDraft`, see below) — it exists purely
+// so the URL reflects where the seller actually is, the same way Shopify's
+// does.
+//
+// The step lives in the QUERY string (`?step=payment`), not the URL path,
+// deliberately — `RootLayout.tsx` keys its page-level `<ErrorBoundary>` by
+// `pathname` (app-wide, so any route always remounts cleanly past a caught
+// error). `pathname` doesn't include the query string, so putting the step
+// there keeps `/onboard/:sessionId` stable across every step change — the
+// wizard advances without ever remounting or re-fetching. Putting it in the
+// path instead was tried and caused exactly that: every Back/Next/step-click
+// change the pathname, so RootLayout remounted the whole page and re-ran its
+// draft-resume fetch every time, visible as the page "reloading" repeatedly.
+const STEP_SLUGS = ['store-info', 'seller-type', 'what-you-sell'];
+
+/** `/onboard` → `/onboard/:sessionId?step=store-info`. A brand new random id
+ *  every visit (not tied to the seller's own id — never expose that in a URL). */
+export function OnboardingEntry() {
+  const [sessionId] = useState(() => crypto.randomUUID());
+  return <Navigate to={`/onboard/${sessionId}?step=${STEP_SLUGS[0]}`} replace />;
+}
 
 // Every step shares this exact outer width so the progress header (badge +
 // bar + circles) renders at the same size on every tab — only the narrower
@@ -63,8 +113,6 @@ const PRODUCT_TYPES: { id: ProductType; Icon: React.ElementType; title: string; 
 
 interface StoreForm {
   storeName:    string;
-  categoryId:   string;
-  categoryName: string;
   description:  string;
   logo:         string;
   sellerType:   SellerType | '';
@@ -74,6 +122,11 @@ interface StoreForm {
    *  backend as part of store creation. Locked forever once the store has
    *  its first product (see CreateStorePayload.baseCurrency). */
   baseCurrency: SupportedCurrency;
+  // No `platformPlanId` field any more — plan selection isn't collected
+  // during onboarding at all now (see the STEPS comment above); the backend
+  // falls back to the cheapest real plan for the trial automatically
+  // (CreateStorePayload.platformPlanId is optional), and a seller can change
+  // plans any time afterwards from the store's own Billing page.
 }
 
 // Solvexo is Pakistan-origin, so every store defaults to PKR pricing
@@ -82,18 +135,15 @@ interface StoreForm {
 // since the rest of the app only ever reads `store.baseCurrency`.
 const DEFAULT_CURRENCY: SupportedCurrency = 'PKR';
 
-// ── Step Progress header — lives inside each step's card, same badge +
-// progress-line + circle treatment as CheckoutPage's step header, instead of
-// a standalone bar pinned above the card.
+// ── Step Progress header — lives inside each step's card, a progress-line +
+// circle treatment (same idea as CheckoutPage's step header). Deliberately no
+// separate "Store Info" / "Step 1 of 3" text row above the circles any more —
+// that used to just repeat the active circle's own label right underneath it
+// (visibly duplicated on screen); the circle row alone already shows the
+// current step's name (in orange) and its position among the total.
 function OnboardingStepHeader({ step, maxReached, onStepClick }: { step: number; maxReached: number; onStepClick: (step: number) => void }) {
   return (
     <div className="pb-4 mb-7 border-b border-bone">
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-[13px] font-bold text-carbon">{STEPS[step - 1]}</p>
-        <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-brand-pale-orange text-brand-orange">
-          Step {step} of {STEPS.length}
-        </span>
-      </div>
       <div className="relative flex justify-between items-start w-full">
         <div className="absolute top-3 left-0 right-0 h-[2px] bg-bone rounded-full" />
         <div
@@ -169,24 +219,8 @@ function Step1StoreInfo({ form, setForm, onNext, step, maxReached, onStepClick }
   step: number; maxReached: number; onStepClick: (step: number) => void;
 }) {
   const [preview, setPreview] = useState('');
-  const [categories, setCategories] = useState<CategoryNode[]>([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const canProceed = form.storeName.trim().length > 0 && form.categoryId.length > 0;
+  const canProceed = form.storeName.trim().length > 0;
   const { upload: uploadLogo, uploading: logoUploading } = useUpload('public');
-
-  useEffect(() => {
-    let cancelled = false;
-    apiGetCategoryTree()
-      .then(res => { if (!cancelled) setCategories(res.data ?? []); })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setCategoriesLoading(false); });
-    return () => { cancelled = true; };
-  }, []);
-
-  const handleCategoryChange = (id: string) => {
-    const name = categories.find(c => c._id === id)?.name ?? '';
-    setForm({ ...form, categoryId: id, categoryName: name });
-  };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -233,19 +267,11 @@ function Step1StoreInfo({ form, setForm, onNext, step, maxReached, onStepClick }
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
           {form.storeName && (
             <p className="text-[11px] text-slate mt-[5px]">
-              Your store URL will look like: <span className="text-brand-orange">solvexo.store/{form.storeName.toLowerCase().replace(/\s+/g, '-')}</span>
+              Your store URL will look like: <span className="text-brand-orange">
+                {getStorefrontUrl(form.storeName.toLowerCase().replace(/\s+/g, '-')).replace(/^https?:\/\//, '')}
+              </span>
             </p>
           )}
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="onboard-category" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Category <span className="text-brand-orange">*</span></label>
-          <select id="onboard-category" value={form.categoryId} onChange={e => handleCategoryChange(e.target.value)}
-            disabled={categoriesLoading}
-            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white cursor-pointer disabled:opacity-60 transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
-            <option value="">{categoriesLoading ? 'Loading categories...' : 'Select your main category...'}</option>
-            {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-          </select>
         </div>
 
         <div className="mb-6">
@@ -263,93 +289,8 @@ function Step1StoreInfo({ form, setForm, onNext, step, maxReached, onStepClick }
   );
 }
 
-// ── Step 2 — Payment ──────────────────────────────────────────────────────────
-// A card on file (never charged today — the store starts on the free plan,
-// see ensureDefaultSubscription) is what lets the store activate immediately
-// on submit instead of sitting in an admin-review queue, Shopify-style.
-function Step2Payment({ onNext, onBack, step, maxReached, onStepClick }: {
-  onNext: () => void; onBack: () => void;
-  step: number; maxReached: number; onStepClick: (step: number) => void;
-}) {
-  const [clientSecret, setClientSecret] = useState('');
-  const [loadError, setLoadError] = useState('');
-  const [confirming, setConfirming] = useState(false);
-  const [confirmError, setConfirmError] = useState('');
-
-  useEffect(() => {
-    if (!isStripeConfigured()) return;
-    let cancelled = false;
-    apiCreateOnboardingSetupIntent()
-      .then(res => { if (!cancelled) setClientSecret(res.data.clientSecret); })
-      .catch(() => { if (!cancelled) setLoadError('Could not start card setup. Please try again.'); });
-    return () => { cancelled = true; };
-  }, []);
-
-  const handleConfirmed = useCallback(async (setupIntentId: string) => {
-    setConfirming(true);
-    setConfirmError('');
-    try {
-      await apiConfirmOnboardingPaymentMethod(setupIntentId);
-      onNext();
-    } catch (err) {
-      setConfirmError(err instanceof Error ? err.message : 'Could not save your card. Please try again.');
-    } finally {
-      setConfirming(false);
-    }
-  }, [onNext]);
-
-  return (
-    <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
-      <OnboardingStepHeader step={step} maxReached={maxReached} onStepClick={onStepClick} />
-      <div className={clsx(NARROW_CONTENT, 'text-center mb-7')}>
-        <h1 className="text-[28px] font-bold text-carbon mb-2">Add a payment method</h1>
-        <p className="text-[14px] text-slate">Your store starts on the free plan — this just activates your account instantly. You won't be charged today.</p>
-      </div>
-      <div className={NARROW_CONTENT}>
-        {!isStripeConfigured() ? (
-          <div className="flex items-start gap-2 text-[12px] text-charcoal bg-cream border border-bone rounded-[8px] px-3 py-3 mb-4">
-            <Clock size={14} className="mt-[1px] flex-shrink-0 text-slate" />
-            <div>
-              <p className="font-semibold text-carbon mb-[2px]">Card setup is coming soon</p>
-              <p className="text-slate">We're finishing setup for online payments — please check back shortly to continue onboarding.</p>
-            </div>
-          </div>
-        ) : loadError ? (
-          <div className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mb-4 text-[13px] text-error">
-            <AlertTriangle size={14} className="shrink-0" />
-            <span>{loadError}</span>
-          </div>
-        ) : !clientSecret ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 size={24} className="text-brand-orange animate-spin" />
-          </div>
-        ) : (
-          <>
-            <StripeCardSetup clientSecret={clientSecret} onConfirmed={handleConfirmed} />
-            {confirmError && (
-              <div className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] mt-3 text-[13px] text-error">
-                <AlertTriangle size={14} className="shrink-0" />
-                <span>{confirmError}</span>
-              </div>
-            )}
-            {confirming && (
-              <p className="text-[11.5px] text-slate text-center mt-2">Activating your store…</p>
-            )}
-          </>
-        )}
-
-        <div className="flex gap-[10px] mt-4">
-          <Button variant="ghost" size="md" onClick={onBack} className="shrink-0">
-            <ArrowLeft size={14} className="inline align-middle mr-1" /> Back
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Step 3 — Seller Type ──────────────────────────────────────────────────────
-function Step3SellerType({ form, setForm, onNext, onBack, step, maxReached, onStepClick }: {
+// ── Step 2 — Seller Type ──────────────────────────────────────────────────────
+function Step2SellerType({ form, setForm, onNext, onBack, step, maxReached, onStepClick }: {
   form: StoreForm; setForm: (f: StoreForm) => void; onNext: () => void; onBack: () => void;
   step: number; maxReached: number; onStepClick: (step: number) => void;
 }) {
@@ -398,11 +339,17 @@ function Step3SellerType({ form, setForm, onNext, onBack, step, maxReached, onSt
   );
 }
 
-// ── Step 4 — What You Sell ────────────────────────────────────────────────────
-function Step4WhatYouSell({ form, setForm, onNext, onBack, step, maxReached, onStepClick }: {
+// ── Step 3 — What You Sell (final step — launches the store directly) ────────
+// Used to be a "Continue" step that fed into a separate Step5Review screen;
+// now that store creation happens right after this step, it owns the submit
+// action itself (matching the approved plan to drop Review as a separate
+// mandatory gate) — same flat, no-boxed-sub-panel treatment the old Review
+// step used for its launch confirmation and error messaging.
+function Step3WhatYouSell({ form, setForm, onBack, step, maxReached, onStepClick, submitting, submitError, onSubmit }: {
   form: StoreForm; setForm: (f: StoreForm) => void;
-  onNext: () => void; onBack: () => void;
+  onBack: () => void;
   step: number; maxReached: number; onStepClick: (step: number) => void;
+  submitting: boolean; submitError: string; onSubmit: () => void;
 }) {
   const toggle = (id: ProductType) =>
     setForm({ ...form, productTypes: form.productTypes.includes(id) ? form.productTypes.filter(x => x !== id) : [...form.productTypes, id] });
@@ -455,81 +402,138 @@ function Step4WhatYouSell({ form, setForm, onNext, onBack, step, maxReached, onS
         </div>
       )}
 
+      <div className="flex items-start gap-2 text-left mb-5 bg-success-bg rounded-xl px-[14px] py-[12px]">
+        <ShieldCheck size={16} className="text-success shrink-0 mt-[1px]" />
+        <p className="text-[12.5px] text-success leading-[1.6]">Your store goes live immediately — no waiting on review, no card needed. Your free 3-day trial starts the moment you launch.</p>
+      </div>
+
+      {submitError && (
+        <div className="flex items-start gap-2 text-left mb-4">
+          <AlertTriangle size={14} className="text-error shrink-0 mt-[2px]" />
+          <p className="text-[12.5px] text-error leading-[1.6]">{submitError}</p>
+        </div>
+      )}
+
       <div className="flex gap-[10px]">
-        <Button variant="ghost" size="md" onClick={onBack} className="shrink-0">
+        <Button variant="ghost" size="md" onClick={onBack} className="shrink-0" disabled={submitting}>
           <ArrowLeft size={14} className="inline align-middle mr-1" /> Back
         </Button>
-        <Button variant="primary" size="lg" className="flex-1 justify-center"
-          onClick={() => form.productTypes.length > 0 && onNext()}
-          disabled={form.productTypes.length === 0}>
-          {form.productTypes.length > 0 ? <span>Continue <ArrowRight size={14} className="inline align-middle ml-1" /></span> : 'Select at least one'}
-        </Button>
+        <MagneticButton className="flex-1">
+          <Button variant="primary" size="lg" fullWidth
+            onClick={() => form.productTypes.length > 0 && onSubmit()}
+            loading={submitting}
+            disabled={form.productTypes.length === 0}>
+            {form.productTypes.length > 0 ? 'Launch My Store' : 'Select at least one'}
+          </Button>
+        </MagneticButton>
       </div>
     </div>
   );
 }
 
-// ── Step 5 — Review & Submit ──────────────────────────────────────────────────
-// Deliberately flat — plain labeled sections, no boxed/card sub-panels — so
-// this step reads as a continuation of steps 1-4, not a different kind of
-// screen bolted onto the end.
-function Step5Review({ form, submitting, submitError, onSubmit, onBack, step, maxReached, onStepClick }: {
-  form: StoreForm;
-  submitting: boolean; submitError: string;
-  onSubmit: () => void; onBack: () => void;
-  step: number; maxReached: number; onStepClick: (step: number) => void;
-}) {
-  const sellerLabel   = SELLER_TYPES.find(t => t.id === form.sellerType)?.title ?? form.sellerType ?? '—';
-  const productLabels = form.productTypes.map(p => PRODUCT_TYPES.find(t => t.id === p)?.title ?? p).filter((v, i, a) => a.indexOf(v) === i).join(', ');
+// ── Post-creation Payment step — shown ONCE, automatically, right after the
+// store is created and before landing on the dashboard, matching Shopify's
+// own placement of its billing screen (a skippable next screen right after
+// signup, not something the seller has to go find). Skipping — or completing
+// it — never blocks anything: the trial already started the moment the store
+// was created (see handleFinalSubmit), and it also lives permanently
+// afterwards in the dashboard's Setup Guide checklist (SetupGuideCard.tsx),
+// so this screen is never a one-shot lost opportunity.
+//
+// Only ONE payment concern belongs here: the seller's own Solvexo
+// subscription card — real Stripe Elements (SetupIntent, no charge). This is
+// Solvexo BEING PAID BY the store, never the store's own buyer-facing
+// checkout. Accepting real customer payments (Stripe Connect) is deliberately
+// NOT shown here — that's the seller's own setup to do from Store Settings
+// whenever they're ready (it's still surfaced there, and as a task in the
+// dashboard's Setup Guide checklist), not something to push during signup.
+//
+// Test vs. live is controlled entirely by which Stripe keys are configured
+// (VITE_STRIPE_PUBLISHABLE_KEY here, STRIPE_SECRET_KEY on the backend —
+// see PaymentGatewayService) — sk_test_.../pk_test_... today, sk_live_.../
+// pk_live_... once Stripe goes live, with zero code changes either side.
+function PostCreatePaymentStep({ onDone }: { onDone: () => void }) {
+  const [clientSecret, setClientSecret] = useState('');
+  const [intentError, setIntentError] = useState('');
+  const [cardConfirmed, setCardConfirmed] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const stripeReady = isStripeConfigured();
+
+  useEffect(() => {
+    if (!stripeReady) return;
+    let cancelled = false;
+    apiCreateOnboardingSetupIntent()
+      .then(res => { if (!cancelled) setClientSecret(res.data.clientSecret); })
+      .catch(() => { if (!cancelled) setIntentError('Could not load the card form right now — you can add a card later from Billing.'); });
+    return () => { cancelled = true; };
+  }, [stripeReady]);
+
+  const handleConfirmed = async (setupIntentId: string) => {
+    setConfirming(true);
+    try {
+      await apiConfirmOnboardingPaymentMethod(setupIntentId);
+      setCardConfirmed(true);
+    } catch {
+      setIntentError('We saved your card with Stripe, but could not confirm it on our side — you can add it again later from Billing.');
+    } finally {
+      setConfirming(false);
+    }
+  };
 
   return (
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
-      <OnboardingStepHeader step={step} maxReached={maxReached} onStepClick={onStepClick} />
-      <div className={clsx(NARROW_CONTENT, 'text-center mb-7')}>
-        <h1 className="text-[28px] font-bold text-carbon mb-2">Review &amp; launch</h1>
-        <p className="text-[14px] text-slate">Double-check everything, then launch your store.</p>
-      </div>
-
-      <div className={NARROW_CONTENT}>
-        <div className="mb-6">
-          <p className="text-[12px] font-bold text-carbon uppercase tracking-[0.05em] pb-2 mb-3 border-b border-bone">Store</p>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-[10px]">
-            <div><p className="text-[10px] text-slate">Store name</p><p className="text-[12.5px] font-semibold text-carbon">{form.storeName || '—'}</p></div>
-            <div><p className="text-[10px] text-slate">Category</p><p className="text-[12.5px] font-semibold text-carbon">{form.categoryName || '—'}</p></div>
-            <div><p className="text-[10px] text-slate">Seller type</p><p className="text-[12.5px] font-semibold text-carbon">{sellerLabel}</p></div>
-            <div><p className="text-[10px] text-slate">Sells</p><p className="text-[12.5px] font-semibold text-carbon">{productLabels || '—'}</p></div>
+      <div className={clsx(NARROW_CONTENT)}>
+        <div className="flex items-start justify-between mb-9">
+          <div>
+            <h1 className="text-[28px] font-bold text-carbon mb-2">Add a payment method</h1>
+            <p className="text-[14px] text-slate">Optional — your store is already live and your free trial has started.</p>
           </div>
+          <button type="button" onClick={onDone} className="text-[12.5px] font-semibold text-slate hover:text-carbon shrink-0 mt-1">
+            Skip
+          </button>
         </div>
 
-        <div className="flex items-start gap-2 text-left mb-6 bg-success-bg rounded-xl px-[14px] py-[12px]">
-          <ShieldCheck size={16} className="text-success shrink-0 mt-[1px]" />
-          <p className="text-[12.5px] text-success leading-[1.6]">Payment method on file — your store will go live immediately, no waiting on review.</p>
+        <div className="rounded-xl border border-bone px-[18px] py-[16px] mb-6">
+          <p className="text-[13px] font-bold text-carbon mb-1">Add a card for your Solvexo subscription</p>
+          <p className="text-[12px] text-slate mb-3">You won't be charged during your free trial.</p>
+
+          {cardConfirmed ? (
+            <div className="flex items-center gap-2 rounded-lg bg-success-bg px-[14px] py-[12px]">
+              <ShieldCheck size={16} className="text-success shrink-0" />
+              <p className="text-[12.5px] text-success">Payment method added.</p>
+            </div>
+          ) : stripeReady ? (
+            clientSecret ? (
+              <div>
+                <StripeCardSetup clientSecret={clientSecret} onConfirmed={handleConfirmed} />
+                {confirming && <p className="text-[11px] text-slate mt-2">Confirming…</p>}
+              </div>
+            ) : intentError ? (
+              <div className="flex items-center gap-2 rounded-lg bg-error-bg px-[14px] py-[10px] text-[12.5px] text-error">
+                <AlertTriangle size={14} className="shrink-0" /> {intentError}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 size={20} className="text-brand-orange animate-spin" />
+              </div>
+            )
+          ) : (
+            <div className="flex items-center gap-2 rounded-lg bg-cream px-[14px] py-[10px] text-[12.5px] text-slate">
+              <CreditCard size={14} className="shrink-0" /> Card setup isn't available in this environment — add one later from Billing.
+            </div>
+          )}
         </div>
 
-        {submitError && (
-          <div className="flex items-start gap-2 text-left mb-4">
-            <AlertTriangle size={14} className="text-error shrink-0 mt-[2px]" />
-            <p className="text-[12.5px] text-error leading-[1.6]">{submitError}</p>
-          </div>
-        )}
-
-        <div className="flex gap-[10px]">
-          <Button variant="ghost" size="md" onClick={onBack} className="shrink-0" disabled={submitting}>
-            <ArrowLeft size={14} className="inline align-middle mr-1" /> Back
-          </Button>
-          <MagneticButton className="flex-1">
-            <Button variant="primary" size="lg" fullWidth onClick={onSubmit} loading={submitting}>
-              Launch My Store
-            </Button>
-          </MagneticButton>
-        </div>
+        <Button variant="primary" size="lg" fullWidth onClick={onDone}>
+          Continue to My Dashboard <ArrowRight size={14} className="inline align-middle ml-1" />
+        </Button>
       </div>
     </div>
   );
 }
 
 // ── Terminal state — store created and live ───────────────────────────────────
-// Same flat, no-card treatment as Step5Review.
+// Same flat, no-card treatment as the old Review step used to have.
 function StoreReadyConfirmation({ store }: { store: StoreData | null }) {
   const navigate = useNavigate();
   return (
@@ -562,15 +566,58 @@ function StoreReadyConfirmation({ store }: { store: StoreData | null }) {
 export function OnboardingPage() {
   usePageTitle('Onboarding');
   const createStore = useCreateStore();
+  const navigate = useNavigate();
+  // Falls back to a fresh id if this page is ever reached without one
+  // (defensive only — the router always routes here via OnboardingEntry).
+  const { sessionId: routeSessionId } = useParams<{ sessionId: string }>();
+  const [sessionId] = useState(() => routeSessionId || crypto.randomUUID());
   const [step, setStep]             = useState(1);
   const [maxReached, setMaxReached] = useState(1);
-  const [created, setCreated]       = useState(false);
+  // 'wizard' → the 3-step form; 'payment' → the one-time post-creation
+  // payment screen (PostCreatePaymentStep, shown automatically once the
+  // store exists, matching Shopify's own placement of its billing screen);
+  // 'ready' → the final "Your store is live" confirmation.
+  const [phase, setPhase] = useState<'wizard' | 'payment' | 'ready'>('wizard');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [form, setForm] = useState<StoreForm>({
-    storeName: '', categoryId: '', categoryName: '', description: '', logo: '',
+    storeName: '', description: '', logo: '',
     sellerType: '', sellerKey: '', productTypes: [], baseCurrency: DEFAULT_CURRENCY,
   });
+  // Resumability — a reload/lost connection/different device shouldn't send
+  // the seller back to step 1 with everything they've typed gone. Loaded
+  // once on mount from the backend (not localStorage, so it survives a
+  // browser switch too).
+  const [progressLoading, setProgressLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetOnboardingProgress()
+      .then(res => {
+        if (cancelled) return;
+        const { draft } = res.data;
+        if (draft) {
+          // Clamp against a draft saved under the OLD 5-step wizard (Store
+          // Info, Payment, Seller Type, What You Sell, Review) — a seller who
+          // reloads mid-onboarding after this change deploys could otherwise
+          // resume onto a step index (4 or 5) that no longer exists and hit
+          // `STEP_SLUGS[draft.step - 1]` as `undefined` in the URL.
+          const resumeStep = Math.min(draft.step, TOTAL_STEPS);
+          const resumeMax  = Math.min(draft.maxReached, TOTAL_STEPS);
+          setStep(resumeStep);
+          setMaxReached(resumeMax);
+          setForm(prev => ({ ...prev, ...(draft.form as Partial<StoreForm>) }));
+          // Resumed onto a later step than the entry redirect assumed —
+          // correct the URL's step query param to match (e.g. reload mid-wizard).
+          navigate(`/onboard/${sessionId}?step=${STEP_SLUGS[resumeStep - 1]}`, { replace: true });
+        }
+      })
+      // A failed resume-check isn't fatal — the wizard just starts fresh.
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setProgressLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Store setup is a seller-only flow — a logged-out visitor is sent to
   // /login (redirect back here after), and a logged-in buyer is sent to
@@ -585,14 +632,35 @@ export function OnboardingPage() {
     return <Navigate to={getRoleRedirect(user.role)} replace />;
   }
 
-  const next   = () => setStep(s => { const n = Math.min(s + 1, TOTAL_STEPS); setMaxReached(m => Math.max(m, n)); return n; });
-  const back   = () => setStep(s => Math.max(s - 1, 1));
-  const jumpTo = (target: number) => setStep(target);
+  // Saved on every forward step transition (not on every keystroke) — enough
+  // to survive a reload without saving on every field change.
+  const saveDraft = (nextStep: number, nextMaxReached: number) => {
+    apiSaveOnboardingDraft({ step: nextStep, maxReached: nextMaxReached, form: form as unknown as Record<string, unknown> }).catch(() => {});
+  };
+  // Every step change also rewrites the URL's `?step=` query param (replace,
+  // not push — matches Shopify's own behavior of not stacking a browser-
+  // history entry per wizard step) so the URL always reflects where the
+  // seller actually is, WITHOUT touching `pathname` (see the STEP_SLUGS
+  // comment above for why that distinction matters here).
+  const goToUrlStep = (n: number) => navigate(`/onboard/${sessionId}?step=${STEP_SLUGS[n - 1]}`, { replace: true });
+  const next = () => {
+    setStep(s => {
+      const n = Math.min(s + 1, TOTAL_STEPS);
+      setMaxReached(m => { const newMax = Math.max(m, n); saveDraft(n, newMax); return newMax; });
+      goToUrlStep(n);
+      return n;
+    });
+  };
+  const back   = () => setStep(s => { const n = Math.max(s - 1, 1); goToUrlStep(n); return n; });
+  const jumpTo = (target: number) => { setStep(target); goToUrlStep(target); };
 
-  // The ONE place the store gets created — never earlier. By the time this
-  // runs, the Payment step has already confirmed a card on file (see
-  // confirmOnboardingPaymentMethod), which is what lets StoreService.createStore
-  // activate it immediately instead of queuing it for admin review.
+  // The ONE place the store gets created — right after step 3, the last step
+  // now that Payment and Review are gone. Store creation and the automatic
+  // trial are unconditional (see StoreService.createStore's
+  // `selfServeActivation` and `ensureDefaultSubscription`) — no
+  // `platformPlanId` is sent from here at all any more, so the backend
+  // always falls back to the cheapest real plan for the trial; a seller
+  // picks a specific plan later from the store's own Billing page.
   const handleFinalSubmit = async () => {
     setSubmitError('');
     setSubmitting(true);
@@ -601,7 +669,6 @@ export function OnboardingPage() {
       if (!store) {
         store = await createStore.execute({
           name:         form.storeName,
-          categoryId:   form.categoryId,
           description:  form.description,
           sellerType:   form.sellerType as SellerType,
           productTypes: [...new Set(form.productTypes)],
@@ -609,7 +676,7 @@ export function OnboardingPage() {
         });
         if (!store) { setSubmitError(createStore.error || 'Failed to create store. Please try again.'); return; }
       }
-      setCreated(true);
+      setPhase('payment');
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to create store. Please try again.');
     } finally {
@@ -617,7 +684,43 @@ export function OnboardingPage() {
     }
   };
 
-  if (created) {
+  // Brief — just long enough to know whether to resume a draft — but real,
+  // to avoid flashing an empty step 1 before a resumed draft overwrites it.
+  if (progressLoading) {
+    return (
+      <AuthSplitLayout
+        panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
+        heading="Your store, your way."
+        subtext="A few quick steps and your store goes live — no waiting on review."
+        highlights={ONBOARDING_HIGHLIGHTS}
+        visual={<SellerDashboardMockup />}
+        bare
+      >
+        <div className="flex-1 flex items-center justify-center px-6 py-6">
+          <Loader2 size={24} className="text-brand-orange animate-spin" />
+        </div>
+      </AuthSplitLayout>
+    );
+  }
+
+  if (phase === 'payment') {
+    return (
+      <AuthSplitLayout
+        panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
+        heading="You're all set."
+        subtext="Your store is live on Solvexo — start building your storefront right away."
+        highlights={ONBOARDING_HIGHLIGHTS}
+        visual={<SellerDashboardMockup />}
+        bare
+      >
+        <div className="flex-1 flex items-start justify-center px-6 py-6">
+          <PostCreatePaymentStep onDone={() => setPhase('ready')} />
+        </div>
+      </AuthSplitLayout>
+    );
+  }
+
+  if (phase === 'ready') {
     return (
       <AuthSplitLayout
         panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
@@ -646,14 +749,11 @@ export function OnboardingPage() {
       <div className="flex-1 flex items-start justify-center px-6 py-6">
         <StepPane step={step}>
           {step === 1 && <Step1StoreInfo form={form} setForm={setForm} onNext={next} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
-          {step === 2 && <Step2Payment onNext={next} onBack={back} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
-          {step === 3 && <Step3SellerType form={form} setForm={setForm} onNext={next} onBack={back} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
-          {step === 4 && <Step4WhatYouSell form={form} setForm={setForm} onNext={next} onBack={back} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
-          {step === 5 && (
-            <Step5Review
-              form={form}
-              submitting={submitting} submitError={submitError}
-              onSubmit={handleFinalSubmit} onBack={back}
+          {step === 2 && <Step2SellerType form={form} setForm={setForm} onNext={next} onBack={back} step={step} maxReached={maxReached} onStepClick={jumpTo} />}
+          {step === 3 && (
+            <Step3WhatYouSell
+              form={form} setForm={setForm} onBack={back}
+              submitting={submitting} submitError={submitError} onSubmit={handleFinalSubmit}
               step={step} maxReached={maxReached} onStepClick={jumpTo}
             />
           )}

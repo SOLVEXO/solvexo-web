@@ -98,6 +98,8 @@ export interface MarketplaceProduct {
   sellerName?:       string;
   sellerVerified?:   boolean;
   activeCampaign?:   ActiveCampaignBadge | null;
+  /** Which of the store's own Product alternate templates (`collection-template` module, `resourceType:'product'`) this product's detail page renders its surrounding sections through — see `StorefrontProductPage`. Defaults to `'default'` when absent (pre-existing data). */
+  templateKey?:      string;
 }
 
 export interface ProductsByCategoryResponse {

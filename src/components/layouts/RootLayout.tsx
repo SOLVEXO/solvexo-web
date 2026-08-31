@@ -2,9 +2,11 @@ import { Suspense, useEffect } from 'react';
 import { Outlet, useLocation, useNavigation } from 'react-router-dom';
 import { ReferenceNav } from './ReferenceNav';
 import { ErrorBoundary } from '@/components/comman/ErrorBoundary';
-import { scrollRootRef } from '@/utils/scrollRoot';
+import { scrollRootRef, scrollRootToTop, lenisRef } from '@/utils/scrollRoot';
+import { SmoothScroll } from '@/components/comman/motion/SmoothScroll';
 import { AuthGateModal } from '@/components/comman/ui/AuthGateModal';
 import { ToastContainer } from '@/components/comman/ui/ToastContainer';
+import { GoogleOneTapPrompt } from '@/components/comman/ui/GoogleOneTapPrompt';
 
 function PageSpinner() {
   return (
@@ -38,7 +40,20 @@ export function RootLayout() {
   // footer instead of its top, looking like navigation went to the wrong
   // place entirely.
   useEffect(() => {
-    scrollRootRef.current?.scrollTo({ top: 0 });
+    scrollRootToTop();
+    // The outgoing page's DOM is swapped for the new one on every
+    // navigation (ErrorBoundary above the scroll container is keyed by
+    // pathname), which can change the container's scrollHeight without
+    // Lenis's own resize-observer necessarily catching it (that observer
+    // watches the container's own box, which has a fixed height and never
+    // fires from a child's height changing) — force a remeasure so its
+    // scroll bounds match the page that just mounted. A second pass one
+    // frame later covers the common case where the new page's layout
+    // settles slightly after paint (async images, lazy chunks still
+    // resolving behind Suspense).
+    lenisRef.current?.resize();
+    const raf = requestAnimationFrame(() => lenisRef.current?.resize());
+    return () => cancelAnimationFrame(raf);
   }, [pathname]);
 
   return (
@@ -46,18 +61,27 @@ export function RootLayout() {
       <TopProgressBar />
       <AuthGateModal />
       <ToastContainer />
+      <GoogleOneTapPrompt />
       <ReferenceNav />
-      {/* `fixed ... top-[44px] bottom-0` (not paddingTop + height:100vh) so this
-          wrapper IS the scroll container, confined to the area below the fixed
-          44px ReferenceNav — the previous approach had no overflow container of
-          its own, so tall pages fell back to scrolling the whole document, and
-          the native scrollbar then spanned the full viewport behind the fixed
-          top bar instead of starting under it. Anything that used to read
-          window.scrollY / call window.scrollTo now goes through scrollRootRef
-          (see utils/scrollRoot.ts) instead, since window itself no longer scrolls. */}
+      {/* Eases wheel/touch input on the scroll container below instead of
+         jumping the raw delta — the same Lenis smooth-scroll layer the
+         reference design runs site-wide. Mounted once here so it wraps
+         every route, same as the container itself. */}
+      <SmoothScroll />
+      {/* `fixed ... top-0 bottom-0` (not paddingTop + height:100vh) so this
+          wrapper IS the scroll container — the previous approach had no
+          overflow container of its own, so tall pages fell back to
+          scrolling the whole document, and the native scrollbar then
+          spanned the full viewport behind the fixed top bar instead of
+          starting under it. Anything that used to read window.scrollY /
+          call window.scrollTo now goes through scrollRootRef (see
+          utils/scrollRoot.ts) instead, since window itself no longer
+          scrolls. ReferenceNav is disabled (see ReferenceNav.tsx), so this
+          no longer reserves a dev-only 44px strip for it either — that
+          empty space at the top was a leftover once the bar was turned off. */}
       <div
         ref={el => { scrollRootRef.current = el; }}
-        className={`fixed inset-x-0 bottom-0 overflow-y-auto ${import.meta.env.DEV ? 'top-[44px]' : 'top-0'}`}
+        className="fixed inset-x-0 top-0 bottom-0 overflow-y-auto"
       >
         {/* keyed by pathname so navigating to a new route always remounts past a caught error */}
         <ErrorBoundary key={pathname}>

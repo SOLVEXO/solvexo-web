@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
 import { TokenStorage } from '@/api/services/auth';
 import {
@@ -30,6 +30,7 @@ function formatRelativeTime(dateStr: string): string {
 
 export function NotificationBell() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const {
     notifications,
     unreadCount,
@@ -82,6 +83,14 @@ export function NotificationBell() {
 
   const handleViewAll = () => {
     setIsOpen(false);
+    // Inside a store's own dashboard, stay there — a seller's account/
+    // notification settings live at /store/:storeId/account now, never a
+    // separate cross-store "seller dashboard" page.
+    const storeMatch = pathname.match(/^\/store\/([^/]+)/);
+    if (storeMatch) {
+      navigate(`/store/${storeMatch[1]}/account?tab=notifications`);
+      return;
+    }
     const user = TokenStorage.getUser<{ role?: 'user' | 'seller' | 'admin' }>();
     const role = user?.role;
     if (role === 'seller') {
@@ -89,7 +98,13 @@ export function NotificationBell() {
     } else if (role === 'admin') {
       navigate('/admin/settings?tab=notifications');
     } else {
-      navigate('/account/notifications');
+      // `role === 'user'` (a buyer) on the apex domain — `/account/notifications`
+      // no longer exists (see `ProfileAvatar.tsx`'s own `SHOW_BUYER_FEATURES`
+      // comment: the whole apex-domain Account/Marketplace/Cart/Checkout flow
+      // was removed outright, since a real buyer always shops a store's own
+      // themed subdomain now — the branch above already handles that case).
+      // Nothing meaningful to land a bare apex-domain buyer on any more.
+      navigate('/');
     }
   };
 

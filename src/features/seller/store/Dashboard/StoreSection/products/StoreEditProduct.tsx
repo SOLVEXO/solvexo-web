@@ -1,17 +1,21 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Package, Download, GraduationCap, Loader2, CalendarClock, Plus, X } from 'lucide-react';
+import { Package, Download, GraduationCap, Loader2, CalendarClock } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import {
-  apiGetMyProductById, apiEditPhysicalProduct, apiEditDigitalProduct, apiUpdateVariant,
-  EDUCATION_LEVELS, type EducationLevel, type StoreProduct, type ProductVariant, type VariantOption,
+  apiGetMyProductById, apiEditPhysicalProduct, apiEditDigitalProduct,
+  apiListVariants, apiCreateVariant, apiUpdateVariant, apiDeleteVariant,
+  EDUCATION_LEVELS, type EducationLevel, type StoreProduct, type ProductVariant, type VariantInput,
 } from '@/api/services/product';
 import { getCachedProducts, updateCachedProduct, type ProductEntry } from './_cache';
 import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
-import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
+import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal, SkeletonBox } from '@/components/comman/ui';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
+import { VariantMatrixEditor } from './VariantMatrixEditor';
+import { TemplateKeyPicker } from '@/features/seller/store/Dashboard/OnlineStore/customize/TemplateKeyPicker';
+import { combinationKey, MAX_VARIANT_COMBINATIONS, type OptionType, type VariantRow } from './variantMatrix';
 
 type ProductStatus = 'draft' | 'active' | 'scheduled';
 type LicenseType   = 'personal' | 'single_classroom' | 'school' | 'commercial';
@@ -69,73 +73,20 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
   );
 }
 
-const MAX_VARIANT_OPTIONS = 3;
-
-// ── Variant attributes builder — replaces the old fixed Size/Color inputs with
-// any combination of seller-defined attributes (Color, Size, Material…), up to
-// 3, matching what the variant-CRUD backend now accepts. ─────────────────────
-function VariantOptionsField({ options, onChange }: { options: VariantOption[]; onChange: (next: VariantOption[]) => void }) {
-  const [name, setName] = useState('');
-  const [value, setValue] = useState('');
-
-  function add() {
-    if (!name.trim() || !value.trim() || options.length >= MAX_VARIANT_OPTIONS) return;
-    onChange([...options, { name: name.trim(), value: value.trim() }]);
-    setName(''); setValue('');
-  }
-
-  const canAdd = !!name.trim() && !!value.trim();
-
-  return (
-    <div className="flex flex-col gap-2">
-      {options.length > 0 && (
-        <div className="flex flex-col gap-[6px]">
-          {options.map((o, i) => (
-            <div key={i} className="flex items-center gap-2 bg-brand-pale-orange border border-brand-orange/20 rounded-lg pl-3 pr-2 py-[7px]">
-              <span className="flex-1 min-w-0 text-[12px] text-charcoal truncate">
-                <span className="font-semibold text-brand-deep-orange">{o.name}</span>
-                <span className="text-brand-orange/40 mx-[6px]">/</span>
-                {o.value}
-              </span>
-              <button type="button" onClick={() => onChange(options.filter((_, idx) => idx !== i))}
-                aria-label={`Remove ${o.name} ${o.value}`}
-                className="bg-transparent border-none cursor-pointer p-1 rounded-md text-brand-orange/50 shrink-0 flex items-center hover:text-brand-orange hover:bg-white/70 transition-colors">
-                <X size={12} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-      {options.length < MAX_VARIANT_OPTIONS && (
-        <div className="flex flex-col gap-[7px] p-2.5 rounded-lg border border-dashed border-[#d9d6cc] bg-cream/50">
-          <div className="grid grid-cols-2 gap-[7px]">
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Attribute"
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
-              className={`${inp} px-2.5 py-[7px] text-[12px] bg-white`} />
-            <input value={value} onChange={e => setValue(e.target.value)} placeholder="Value"
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
-              className={`${inp} px-2.5 py-[7px] text-[12px] bg-white`} />
-          </div>
-          <button type="button" onClick={add} disabled={!canAdd}
-            className="flex items-center justify-center gap-1.5 py-[7px] rounded-md border-none text-[12px] font-semibold transition-colors"
-            style={{ background: canAdd ? '#D97757' : '#E8E6DC', color: canAdd ? '#fff' : '#A8A6A0', cursor: canAdd ? 'pointer' : 'not-allowed' }}>
-            <Plus size={13} /> Add Attribute
-          </button>
-        </div>
-      )}
-      <p className="text-[11px] text-slate">Optional — leave empty for a single plain variant, or add up to 3 like Color, Size, Material.</p>
-    </div>
-  );
-}
-
 const blankPhys = {
   name: '', description: '', price: '', compareAtPrice: '',
-  stock: '', options: [] as VariantOption[], shippingWeight: '', subCategoryId: '',
+  stock: '', sku: '', barcode: '', shippingWeight: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
+  // Non-empty optionTypes switches Pricing/Inventory over to the real
+  // variant matrix — same convention as StoreAddProduct.tsx. Reconstructed
+  // from the product's REAL variant list on load (see `loadPhysicalVariants`
+  // below), not just the one default variant `physFromEntry` used to see.
+  optionTypes: [] as OptionType[],
+  variantRows: [] as VariantRow[],
 };
 const blankDig = {
-  name: '', description: '', price: '', compareAtPrice: '', subCategoryId: '',
+  name: '', description: '', price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   fileData: null as PrivateUploadData | null,
@@ -147,21 +98,69 @@ const blankDig = {
 type PhysForm = typeof blankPhys;
 type DigForm  = typeof blankDig;
 
+/**
+ * Builds the form's product-level fields plus a first-paint guess at the
+ * variant fields from whichever single variant we already have on hand
+ * (cache/location-state/the product's own default) — replaced by the real,
+ * complete answer once `loadPhysicalVariants` resolves just after. Without
+ * this, the form would flash empty variant fields for a moment on load.
+ */
 function physFromEntry(p: StoreProduct, v: ProductVariant): PhysForm {
   return {
     name: p.name, description: p.description,
     price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
-    stock: String(v.stock), options: [...(v.options ?? [])], shippingWeight: v.shippingWeight ?? '',
+    stock: String(v.stock), sku: v.sku ?? '', barcode: v.barcode ?? '', shippingWeight: v.shippingWeight ?? '',
+    categoryId: p.categoryId ?? '',
     subCategoryId: p.subCategoryId ?? '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
     scheduledAt: '', tags: [...(p.tags ?? [])], tagInput: '', images: [...(p.images ?? [])],
+    optionTypes: [], variantRows: [],
   };
+}
+
+/**
+ * The authoritative variant picture — fetches EVERY real variant on the
+ * product (not just the one default variant the cache/location-state carry)
+ * via the dedicated variant-CRUD list endpoint, and reconstructs the option
+ * TYPES (e.g. "Size" -> ["S","M","L"]) from what's actually stored on them,
+ * so the matrix editor shows a product's real variant set instead of
+ * silently only ever showing/letting the seller edit the default one.
+ */
+async function loadPhysicalVariants(productId: string): Promise<{ optionTypes: OptionType[]; variantRows: VariantRow[]; idByKey: Record<string, string> }> {
+  const res = await apiListVariants(productId);
+  const variants = res.data;
+
+  const idByKey: Record<string, string> = {};
+  const variantRows: VariantRow[] = variants.map(v => {
+    const key = combinationKey(v.options ?? []);
+    idByKey[key] = v._id;
+    return {
+      key, options: [...(v.options ?? [])],
+      price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
+      sku: v.sku ?? '', barcode: v.barcode ?? '',
+      stock: String(v.stock), unlimitedStock: v.unlimitedStock,
+    };
+  });
+
+  const typeOrder: string[] = [];
+  const valuesByType = new Map<string, string[]>();
+  for (const v of variants) {
+    for (const o of v.options ?? []) {
+      if (!valuesByType.has(o.name)) { valuesByType.set(o.name, []); typeOrder.push(o.name); }
+      const values = valuesByType.get(o.name)!;
+      if (!values.includes(o.value)) values.push(o.value);
+    }
+  }
+  const optionTypes: OptionType[] = typeOrder.map(name => ({ name, values: valuesByType.get(name) ?? [] }));
+
+  return { optionTypes, variantRows, idByKey };
 }
 function digFromEntry(p: StoreProduct, v: ProductVariant): DigForm {
   const d = p.digital, f0 = d?.files?.[0];
   return {
     name: p.name, description: p.description,
     price: String(v.price), compareAtPrice: v.compareAtPrice != null ? String(v.compareAtPrice) : '',
+    categoryId: p.categoryId ?? '',
     subCategoryId: p.subCategoryId ?? '',
     status: p.status as ProductStatus, isListedOnSolvexo: p.isListedOnSolvexo,
     scheduledAt: '', tags: [...(p.tags ?? [])], tagInput: '', images: [...(p.images ?? [])],
@@ -187,16 +186,22 @@ export default function StoreEditProduct() {
   // (supports every SupportedCurrency, not just a PKR/USD ternary that
   // mislabeled any other currency as "Rs").
   const currencySymbol = symbolForCurrency(store?.baseCurrency);
-  const { mainCategory, subcategories, loading: catLoading, refetch: refetchCats } = useStoreSubcategories(store?.categoryId);
+  const { tree: categoryTree, loading: catLoading, refetch: refetchCats } = useStoreCategoryTree(storeId);
 
   const [fetching,          setFetching]          = useState(true);
   const [saving,            setSaving]            = useState(false);
   const [error,             setError]             = useState('');
   const [pType,             setPType]             = useState<'physical' | 'digital' | 'educational'>('physical');
   const [variantId,         setVariantId]         = useState<string | null>(null);
+  const [templateKey,       setTemplateKey]       = useState('default');
   const [phys,              setPhys]              = useState<PhysForm>(blankPhys);
   const [dig,               setDig]               = useState<DigForm>(blankDig);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  // Maps a variant's combinationKey -> its real DB _id, populated once
+  // `loadPhysicalVariants` resolves — this is what tells `handleSubmit`
+  // apart an existing variant (update) from a brand-new one the seller just
+  // added in the matrix (create).
+  const [variantIdByKey,    setVariantIdByKey]    = useState<Record<string, string>>({});
 
   const sp = <K extends keyof PhysForm>(k: K, v: PhysForm[K]) => setPhys(f => ({ ...f, [k]: v }));
   const sd = <K extends keyof DigForm> (k: K, v: DigForm[K])  => setDig(f  => ({ ...f, [k]: v }));
@@ -204,8 +209,18 @@ export default function StoreEditProduct() {
   function init(p: StoreProduct, v: ProductVariant) {
     setPType(p.productType);
     setVariantId(v._id || null);
-    if (p.productType === 'physical') setPhys(physFromEntry(p, v));
-    else                              setDig(digFromEntry(p, v));
+    setTemplateKey(p.templateKey ?? 'default');
+    if (p.productType === 'physical') {
+      setPhys(physFromEntry(p, v));
+      // Real variant list arrives slightly after first paint — see the
+      // component doc-comment on `loadPhysicalVariants`.
+      loadPhysicalVariants(p._id).then(({ optionTypes, variantRows, idByKey }) => {
+        setPhys(f => ({ ...f, optionTypes, variantRows }));
+        setVariantIdByKey(idByKey);
+      }).catch(() => { /* keep the single-variant fallback from physFromEntry */ });
+    } else {
+      setDig(digFromEntry(p, v));
+    }
   }
 
   useEffect(() => {
@@ -225,6 +240,7 @@ export default function StoreEditProduct() {
   }, []);
 
   const cur = pType === 'physical' ? phys : dig;
+  const hasVariants = pType === 'physical' && phys.optionTypes.length > 0;
 
   const addTag = () => {
     if (pType === 'physical') { const v = phys.tagInput.replace(',', '').trim(); if (v && !phys.tags.includes(v)) sp('tags', [...phys.tags, v]); sp('tagInput', ''); }
@@ -238,6 +254,13 @@ export default function StoreEditProduct() {
 
   const handleSubmit = async (statusOverride?: ProductStatus) => {
     setError('');
+    if (pType === 'physical' && !hasVariants && (!phys.price || !phys.stock)) { setError('Price and stock are required.'); return; }
+    if (hasVariants) {
+      if (phys.variantRows.length === 0) { setError('Add at least one value to your variant options, or remove them to use a single price/stock instead.'); return; }
+      if (phys.variantRows.length > MAX_VARIANT_COMBINATIONS) { setError(`Too many variants (${phys.variantRows.length}) — Solvexo supports up to ${MAX_VARIANT_COMBINATIONS} per product.`); return; }
+      const incomplete = phys.variantRows.find(r => !r.price || (!r.unlimitedStock && !r.stock));
+      if (incomplete) { setError(`Set a price and stock for the "${incomplete.options.map(o => o.value).join(' / ')}" variant.`); return; }
+    }
     if (pType === 'educational' && !dig.educationLevel) { setError('Education level is required for educational resources.'); return; }
     if (pType === 'educational' && dig.educationLevel === 'other' && !dig.customLevel.trim()) { setError('Please describe the custom education level.'); return; }
     setSaving(true);
@@ -246,24 +269,74 @@ export default function StoreEditProduct() {
       if (pType === 'physical') {
         const res = await apiEditPhysicalProduct(productId, {
           productId, name: phys.name, description: phys.description,
+          categoryId: phys.categoryId || null,
           subCategoryId: phys.subCategoryId || null, images: phys.images, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
+          templateKey,
         });
+
+        // Reconcile the desired variant set (either the real matrix, or a
+        // single implicit "no options" variant) against what's actually in
+        // the database — creates/updates first, deletes after (the backend
+        // refuses to delete a product's last remaining variant, so a
+        // straight "delete everything then recreate" ordering would fail on
+        // a hasVariants -> !hasVariants or option-set-shrink transition).
+        const desired: { key: string; payload: VariantInput }[] = hasVariants
+          ? phys.variantRows.map(r => ({
+              key: r.key,
+              payload: {
+                price: Number(r.price),
+                compareAtPrice: r.compareAtPrice ? Number(r.compareAtPrice) : null,
+                options: r.options,
+                stock: r.unlimitedStock ? 0 : Number(r.stock),
+                unlimitedStock: r.unlimitedStock,
+                shippingWeight: phys.shippingWeight,
+                sku: r.sku.trim() || undefined,
+                barcode: r.barcode.trim() || undefined,
+              },
+            }))
+          : [{
+              key: combinationKey([]),
+              payload: {
+                price: Number(phys.price),
+                compareAtPrice: phys.compareAtPrice ? Number(phys.compareAtPrice) : null,
+                options: [],
+                stock: Number(phys.stock),
+                shippingWeight: phys.shippingWeight,
+                sku: phys.sku.trim() || undefined,
+                barcode: phys.barcode.trim() || undefined,
+              },
+            }];
+
         let variant = res.data.variant;
-        if (variantId) {
-          const vRes = await apiUpdateVariant(productId, variantId, {
-            price: Number(phys.price), compareAtPrice: phys.compareAtPrice ? Number(phys.compareAtPrice) : null,
-            options: phys.options, stock: Number(phys.stock), shippingWeight: phys.shippingWeight,
-          });
-          variant = vRes.data;
+        let representativeVariant: ProductVariant | null = null;
+        for (const d of desired) {
+          // `variantIdByKey` is populated from the product's real variant
+          // list (see `loadPhysicalVariants`); the `variantId` fallback
+          // covers a single-variant product whose combination key is the
+          // same empty key a no-options variant resolves to, in case that
+          // fetch hasn't resolved yet.
+          const existingId = variantIdByKey[d.key] ?? (d.key === '' ? (variantId ?? undefined) : undefined);
+          const vRes = existingId
+            ? await apiUpdateVariant(productId, existingId, d.payload)
+            : await apiCreateVariant(productId, d.payload);
+          if (!representativeVariant) representativeVariant = vRes.data;
         }
+
+        const desiredKeys = new Set(desired.map(d => d.key));
+        for (const [key, id] of Object.entries(variantIdByKey)) {
+          if (!desiredKeys.has(key)) await apiDeleteVariant(productId, id);
+        }
+
+        variant = representativeVariant ?? variant;
         updateCachedProduct(storeId, productId, { product: res.data.product, variant });
       } else {
         const files = dig.fileData ? [{ url: dig.fileData.publicId, name: dig.fileData.fileName, size: dig.fileData.fileSize, mimeType: dig.fileData.mimeType }] : [];
         const res = await apiEditDigitalProduct(productId, {
           productId, variantId,
           name: dig.name, description: dig.description,
+          categoryId: dig.categoryId || null,
           subCategoryId: dig.subCategoryId || null,
           educationLevel: pType === 'educational' ? (dig.educationLevel || null) : undefined,
           customLevel: pType === 'educational' && dig.educationLevel === 'other' ? dig.customLevel : undefined,
@@ -271,6 +344,7 @@ export default function StoreEditProduct() {
           scheduledAt: finalStatus === 'scheduled' ? dig.scheduledAt || null : null,
           price: Number(dig.price),
           compareAtPrice: dig.compareAtPrice ? Number(dig.compareAtPrice) : null,
+          templateKey,
           digital: { files, downloadLimit: dig.downloadLimit, linkExpiryDays: dig.linkExpiryDays ? Number(dig.linkExpiryDays) : null, pdfStampingEnabled: dig.pdfStampingEnabled, licenseType: dig.licenseType, buyerDeliveryMessage: dig.buyerDeliveryMessage, preview: { enabled: dig.previewEnabled, sourceFileIndex: 0 } },
         });
         updateCachedProduct(storeId, productId, { product: res.data.product, variant: res.data.variant });
@@ -387,13 +461,16 @@ export default function StoreEditProduct() {
           {/* Category */}
           <Card title="Category">
             <SubcategoryField
-              mainCategoryName={mainCategory?.name ?? ''}
-              mainCategoryId={store?.categoryId ?? ''}
-              subcategories={subcategories}
+              storeId={storeId}
+              tree={categoryTree}
               loading={catLoading}
-              value={cur.subCategoryId}
-              onChange={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
-              onCreated={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
+              categoryId={cur.categoryId}
+              subCategoryId={cur.subCategoryId}
+              onCategoryChange={id => {
+                if (pType === 'physical') { sp('categoryId', id); sp('subCategoryId', ''); }
+                else { sd('categoryId', id); sd('subCategoryId', ''); }
+              }}
+              onSubCategoryChange={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
               refetch={refetchCats}
             />
           </Card>
@@ -405,6 +482,7 @@ export default function StoreEditProduct() {
               value={cur.images}
               onChange={urls => pType === 'physical' ? sp('images', urls) : sd('images', urls)}
               maxFiles={5}
+              storeId={storeId}
             />
           </Card>
 
@@ -512,41 +590,72 @@ export default function StoreEditProduct() {
         {/* ── Right sidebar ── */}
         <div className="flex flex-col gap-4">
 
-          {/* Pricing */}
-          <Card title="Pricing">
-            <div className="flex flex-col gap-3">
-              <F label={`Price (${currencySymbol})`} req>
-                <input type="number" min="0" value={cur.price}
-                  onChange={e => pType === 'physical' ? sp('price', e.target.value) : sd('price', e.target.value)}
-                  placeholder="0.00" className={inp} />
-              </F>
-              <F label={`Compare-at Price (${currencySymbol})`}>
-                <input type="number" min="0" value={cur.compareAtPrice}
-                  onChange={e => pType === 'physical' ? sp('compareAtPrice', e.target.value) : sd('compareAtPrice', e.target.value)}
-                  placeholder="0.00" className={inp} />
-              </F>
-              {discountPct !== null && (
-                <div className="flex items-center gap-1.5 px-3 py-2 bg-[#e3f4ea] border border-[#b7e2c7] rounded-[7px]">
-                  <span className="text-[12px] font-bold text-[#1e7a3c]">{discountPct}% OFF</span>
-                  <span className="text-[11px] text-success">shown to buyers</span>
-                </div>
-              )}
-            </div>
-          </Card>
+          {/* Pricing — hidden once real variants exist, since each variant
+              then has its own price/compare-at in the matrix below instead
+              of one product-level price. */}
+          {!hasVariants && (
+            <Card title="Pricing">
+              <div className="flex flex-col gap-3">
+                <F label={`Price (${currencySymbol})`} req>
+                  <input type="number" min="0" value={cur.price}
+                    onChange={e => pType === 'physical' ? sp('price', e.target.value) : sd('price', e.target.value)}
+                    placeholder="0.00" className={inp} />
+                </F>
+                <F label={`Compare-at Price (${currencySymbol})`}>
+                  <input type="number" min="0" value={cur.compareAtPrice}
+                    onChange={e => pType === 'physical' ? sp('compareAtPrice', e.target.value) : sd('compareAtPrice', e.target.value)}
+                    placeholder="0.00" className={inp} />
+                </F>
+                {discountPct !== null && (
+                  <div className="flex items-center gap-1.5 px-3 py-2 bg-[#e3f4ea] border border-[#b7e2c7] rounded-[7px]">
+                    <span className="text-[12px] font-bold text-[#1e7a3c]">{discountPct}% OFF</span>
+                    <span className="text-[11px] text-success">shown to buyers</span>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
 
           {/* Inventory & Shipping (physical only) */}
-          {pType === 'physical' && (
+          {pType === 'physical' && !hasVariants && (
             <Card title="Inventory & Shipping">
               <div className="flex flex-col gap-3">
                 <F label="Stock Quantity" req>
                   <input type="number" min="0" value={phys.stock} onChange={e => sp('stock', e.target.value)} placeholder="0" className={inp} />
                 </F>
-                <F label="Variant Attributes">
-                  <VariantOptionsField options={phys.options} onChange={v => sp('options', v)} />
-                </F>
+                <div className="grid grid-cols-2 gap-3">
+                  <F label="SKU">
+                    <input value={phys.sku} onChange={e => sp('sku', e.target.value)} placeholder="Auto-generated if left blank" className={inp} />
+                  </F>
+                  <F label="Barcode">
+                    <input value={phys.barcode} onChange={e => sp('barcode', e.target.value)} placeholder="Optional" className={inp} />
+                  </F>
+                </div>
                 <F label="Shipping Weight">
                   <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg" className={inp} />
                 </F>
+              </div>
+            </Card>
+          )}
+
+          {/* Variants — always available for physical products. Adding an
+              option (Size, Color…) here is what switches Pricing/Inventory
+              above into the per-variant matrix instead. */}
+          {pType === 'physical' && (
+            <Card title="Variants">
+              <div className="flex flex-col gap-3">
+                <VariantMatrixEditor
+                  optionTypes={phys.optionTypes}
+                  onOptionTypesChange={v => sp('optionTypes', v)}
+                  rows={phys.variantRows}
+                  onRowsChange={v => sp('variantRows', v)}
+                  currencySymbol={currencySymbol}
+                />
+                {hasVariants && (
+                  <F label="Shipping Weight">
+                    <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg — applies to every variant" className={inp} />
+                  </F>
+                )}
               </div>
             </Card>
           )}
@@ -598,6 +707,7 @@ export default function StoreEditProduct() {
                   onChange={v => pType === 'physical' ? sp('isListedOnSolvexo', v) : sd('isListedOnSolvexo', v)}
                 />
               </div>
+              <TemplateKeyPicker storeId={storeId} resourceType="product" value={templateKey} onChange={setTemplateKey} label="Product Page Template" />
             </div>
           </Card>
 

@@ -1,6 +1,7 @@
-import { useState, Suspense } from 'react';
+import { useState, useId, Suspense } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
+import { motion } from 'motion/react';
 import {
   LayoutDashboard, ShoppingBag, Heart, Star,
   MessageSquare, Landmark,
@@ -80,6 +81,7 @@ function AccountSidebar({ open, onToggle }: SidebarProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const navGroups = useNavGroups();
+  const navPillId = useId();
 
   const isActive = (path: string) => pathname === `/account/${path}` || pathname.startsWith(`/account/${path}/`);
 
@@ -87,7 +89,7 @@ function AccountSidebar({ open, onToggle }: SidebarProps) {
 
   return (
     <aside className={clsx(
-      'hidden lg:flex bg-carbon flex-col shrink-0 h-[calc(100vh-44px)]',
+      'hidden lg:flex bg-carbon flex-col shrink-0 h-screen',
       'transition-[width] duration-300 ease-in-out',
       open ? 'w-[220px]' : 'w-[60px]',
     )}>
@@ -133,7 +135,7 @@ function AccountSidebar({ open, onToggle }: SidebarProps) {
         <div className="h-px bg-dark-active mx-3 mb-[6px]" />
 
         {/* Nav */}
-        <nav className={clsx('flex-1 overflow-y-auto', open ? 'px-[10px] pt-1' : 'px-[10px] pt-2')}>
+        <nav data-lenis-prevent className={clsx('flex-1 overflow-y-auto', open ? 'px-[10px] pt-1' : 'px-[10px] pt-2')}>
           {navGroups.map(section => (
             <div key={section.group} className="mb-1">
               {open
@@ -153,27 +155,33 @@ function AccountSidebar({ open, onToggle }: SidebarProps) {
                     aria-label={item.label}
                     aria-current={active ? 'page' : undefined}
                     className={clsx(
-                      'flex items-center gap-[10px] min-h-11 py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer',
-                      'transition-colors duration-150',
+                      'relative flex items-center gap-[10px] min-h-11 py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer',
                       !open && 'lg:justify-center lg:px-0',
-                      active ? 'bg-dark-active' : 'bg-transparent hover:bg-[#1a1917]',
+                      !active && 'hover:bg-[#1a1917] transition-colors duration-fast',
                     )}
                   >
-                    <item.Icon size={15} className={clsx('shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')} />
+                    {active && (
+                      <motion.div
+                        layoutId={`account-nav-pill-${navPillId}`}
+                        className="absolute inset-0 rounded-md bg-dark-active"
+                        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                      />
+                    )}
+                    <item.Icon size={15} className={clsx('relative shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')} />
                     {open && (
                       <>
-                        <span className={clsx('text-[13px] flex-1', active ? 'font-semibold text-white' : 'font-normal text-slate')}>
+                        <span className={clsx('relative text-[13px] flex-1', active ? 'font-semibold text-white' : 'font-normal text-slate')}>
                           {item.label}
                         </span>
                         {!!item.badge && item.badge > 0 && (
                           <span className={clsx(
-                            'text-[9px] font-bold px-[6px] py-[1px] rounded-full leading-[14px] shrink-0',
+                            'relative text-[9px] font-bold px-[6px] py-[1px] rounded-full leading-[14px] shrink-0',
                             active ? 'bg-brand-orange text-white' : 'bg-dark-active text-slate',
                           )}>
                             {item.badge > 99 ? '99+' : item.badge}
                           </span>
                         )}
-                        {active && <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
+                        {active && <div className="relative w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
                       </>
                     )}
                   </div>
@@ -251,11 +259,10 @@ export function AccountLayout() {
     <div
       className={clsx(
         'bg-cream flex overflow-hidden',
-        // 108px mobile / 44px desktop = BuyerLayout's fixed bottom tab bar
-        // (64px, mobile-only) plus the dev-only ReferenceNav (44px, top) — that
-        // second bar doesn't exist in production, so only the real bottom tab
-        // bar is ever subtracted there (and nothing on desktop, where it's hidden).
-        import.meta.env.DEV ? 'h-[calc(100vh-108px)] md:h-[calc(100vh-44px)]' : 'h-[calc(100vh-64px)] md:h-screen',
+        // ReferenceNav (the dev-only top bar this used to also subtract) is
+        // disabled, so only BuyerLayout's real fixed bottom tab bar
+        // (64px, mobile-only) is ever subtracted here.
+        'h-[calc(100vh-64px)] md:h-screen',
       )}
       {...swipeHandlers}
     >
@@ -263,7 +270,7 @@ export function AccountLayout() {
 
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
         <MobileTopBar label={currentLabel} isRoot={isRoot} onBack={goHome} />
-        <main className="flex-1 min-h-0 min-w-0 px-4 md:px-7 py-4 md:py-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <main data-lenis-prevent className="flex-1 min-h-0 min-w-0 px-4 md:px-7 py-4 md:py-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Suspense fallback={<AccountContentSkeleton />}>
             <Outlet />
           </Suspense>

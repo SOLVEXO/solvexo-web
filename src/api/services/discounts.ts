@@ -3,7 +3,7 @@ import { ENDPOINTS } from '../endpoints';
 
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
 
-export type DiscountType = 'percentage' | 'fixed';
+export type DiscountType = 'percentage' | 'fixed' | 'bogo' | 'free_shipping';
 export type DiscountTarget = 'store' | 'category' | 'products';
 
 export interface AutomaticDiscount {
@@ -12,6 +12,12 @@ export interface AutomaticDiscount {
   name: string;
   discountType: DiscountType;
   discountValue: number;
+  /** bogo only. */
+  buyQuantity: number | null;
+  /** bogo only. */
+  getQuantity: number | null;
+  /** bogo only — 100 = the "get" units are free. */
+  getDiscountPercent: number;
   currency: string | null;
   target: DiscountTarget;
   categoryIds: string[];
@@ -27,6 +33,9 @@ export interface CreateDiscountPayload {
   name: string;
   discountType: DiscountType;
   discountValue: number;
+  buyQuantity?: number;
+  getQuantity?: number;
+  getDiscountPercent?: number;
   target: DiscountTarget;
   categoryIds?: string[];
   productIds?: string[];

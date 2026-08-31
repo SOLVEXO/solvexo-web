@@ -4,7 +4,7 @@ import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLa
 import { SkeletonBox, EmptyState } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
 import { ActionMenu, type ActionMenuItem } from '@/components/comman/ui/ActionMenu';
-import { ConfirmDialog } from '@/features/seller/dashboard/storemodule/builder/ConfirmDialog';
+import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 import { apiListCollections, apiDeleteCollection, type CollectionData } from '@/api/services/collections';
 import { CollectionFormModal } from './CollectionFormModal';
 
@@ -21,7 +21,7 @@ function StatusBadge({ status }: { status: 'active' | 'draft' }) {
 // `pinnedProductIds` list Marketing.tsx's "Featured & Collections" tab
 // manages (that tab is untouched; a seller can have both today).
 export default function StoreCollections() {
-  const { storeId, store } = useStoreWorkspace();
+  const { storeId } = useStoreWorkspace();
   const [collections, setCollections] = useState<CollectionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -76,7 +76,14 @@ export default function StoreCollections() {
                 { label: 'Delete', danger: true, onClick: () => setPendingDeleteId(c._id) },
               ];
               return (
-                <div key={c._id} className="flex items-center gap-3 px-5 py-3 border-b border-[#f0eee6] last:border-b-0 hover:bg-cream transition-colors">
+                <div
+                  key={c._id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => { setEditing(c); setShowForm(true); }}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditing(c); setShowForm(true); } }}
+                  className="flex items-center gap-3 px-5 py-3 border-b border-[#f0eee6] last:border-b-0 hover:bg-cream transition-colors cursor-pointer"
+                >
                   <div className="w-10 h-10 rounded-lg bg-cream border border-bone shrink-0 overflow-hidden flex items-center justify-center">
                     {c.image ? <img src={c.image} alt="" className="w-full h-full object-cover" /> : <Layers size={16} className="text-slate" />}
                   </div>
@@ -89,7 +96,9 @@ export default function StoreCollections() {
                       {c.type === 'automatic' ? 'Automatic' : `${c.productIds.length} products`} · /{c.slug}
                     </p>
                   </div>
-                  <ActionMenu items={items} />
+                  <div onClick={e => e.stopPropagation()}>
+                    <ActionMenu items={items} />
+                  </div>
                 </div>
               );
             })}
@@ -100,7 +109,6 @@ export default function StoreCollections() {
       {showForm && (
         <CollectionFormModal
           storeId={storeId}
-          mainCategoryId={store?.categoryId}
           collection={editing}
           onClose={() => setShowForm(false)}
           onSaved={() => { setShowForm(false); load(); }}

@@ -84,9 +84,17 @@ export interface IdentityBanner {
   descriptionMaxLines:  number | null;
 }
 
+export type InstalledThemeStatus = 'installed' | 'active';
+
 export interface StoreThemeData {
   _id:            string;
   storeId:        string;
+  // Which code-shipped theme package (`builder/themes/<id>/`) this row is an
+  // installation of, and whether it's the one the public storefront renders.
+  // See the Theme Definition ⟷ Installed Theme Instance split.
+  themeDefinitionId: string | null;
+  status:         InstalledThemeStatus;
+  installedAt:    string;
   // Live/published — read by the public storefront exactly as before the
   // draft/publish split existed.
   theme:          StorefrontColors;
@@ -96,8 +104,7 @@ export interface StoreThemeData {
   // Which curated `themes.ts` definition the `theme`/`header`/`footer`
   // fields were last bulk-applied from — null if never applied one.
   baseThemeId:    string | null;
-  /** Live/published scoped custom CSS (code editor) — mirrors `draft.customCss`. */
-  customCss?:     string | null;
+  customCss:      string | null;
   // The seller's working copy — what every `apiUpdateStoreXxx` call below
   // now writes to. Mirrors the live shape exactly; only `apiPublishStoreTheme`
   // ever copies this over the live fields above.
@@ -107,8 +114,7 @@ export interface StoreThemeData {
     footer:         StorefrontFooter;
     identityBanner: IdentityBanner;
     baseThemeId:    string | null;
-    pendingHomeSections?: Section[] | null;
-    customCss?:     string | null;
+    customCss:      string | null;
   };
   lastPublishedAt: string | null;
 }
@@ -123,49 +129,98 @@ export interface StoreThemeDraftData {
   footer:         StorefrontFooter;
   identityBanner: IdentityBanner;
   baseThemeId:    string | null;
-  /** Set only after a Theme Marketplace "Use Theme" and not yet Published —
-   *  the candidate home-page composition, staged here so Live Preview can
-   *  show it before it ever reaches the live `StorePage.sections`. */
-  pendingHomeSections: Section[] | null;
-  /** Scoped custom CSS (code editor) — staged the same way, live-mirrored on publish. */
-  customCss: string | null;
+  themeDefinitionId: string | null;
+  customCss:      string | null;
   lastPublishedAt: string | null;
 }
 
-export function apiGetStoreTheme(storeId: string) {
-  return client.get<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.GET(storeId));
+/** Appends `?instance=<installedThemeId>` when targeting a non-active installed theme (Theme Library "Customize" on something other than the live theme) — every existing caller omits it and keeps operating on the store's active row, unchanged. */
+function withInstance(path: string, installedThemeId?: string) {
+  return installedThemeId ? `${path}?instance=${installedThemeId}` : path;
 }
 
-export function apiGetStoreThemeDraft(storeId: string) {
-  return client.get<never, ApiResponse<StoreThemeDraftData>>(ENDPOINTS.STORE_THEME.DRAFT(storeId));
+export function apiGetStoreTheme(storeId: string, installedThemeId?: string) {
+  return client.get<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.GET(storeId), installedThemeId));
 }
 
-export function apiPublishStoreTheme(storeId: string) {
-  return client.post<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.PUBLISH(storeId));
+export function apiGetStoreThemeDraft(storeId: string, installedThemeId?: string) {
+  return client.get<never, ApiResponse<StoreThemeDraftData>>(withInstance(ENDPOINTS.STORE_THEME.DRAFT(storeId), installedThemeId));
 }
 
-export function apiRevertStoreThemeDraft(storeId: string) {
-  return client.post<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.REVERT_DRAFT(storeId));
+export function apiPublishStoreTheme(storeId: string, installedThemeId?: string) {
+  return client.post<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.PUBLISH(storeId), installedThemeId));
+}
+
+export function apiRevertStoreThemeDraft(storeId: string, installedThemeId?: string) {
+  return client.post<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.REVERT_DRAFT(storeId), installedThemeId));
+}
+
+// ── Theme Library — installed theme instances ───────────────────────────
+
+export function apiListInstalledThemes(storeId: string) {
+  return client.get<never, ApiResponse<StoreThemeData[]>>(ENDPOINTS.STORE_THEME.LIST_INSTALLED(storeId));
+}
+
+export function apiInstallTheme(storeId: string, payload: { themeDefinitionId: string; theme?: Partial<StorefrontColors>; header?: Partial<StorefrontHeader>; footer?: Partial<StorefrontFooter>; identityBanner?: Partial<IdentityBanner> }) {
+  return client.post<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.INSTALL(storeId), payload);
+}
+
+export function apiActivateTheme(storeId: string, installedThemeId: string) {
+  return client.post<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.ACTIVATE(storeId, installedThemeId));
+}
+
+export function apiUninstallTheme(storeId: string, installedThemeId: string) {
+  return client.delete<never, ApiResponse<null>>(ENDPOINTS.STORE_THEME.UNINSTALL(storeId, installedThemeId));
+}
+
+/** A real, immutable snapshot of the live theme taken at the moment of
+ *  every publish — see `ThemeVersion` on the backend. Newest first. */
+export interface ThemeVersionData {
+  _id:            string;
+  theme:          StorefrontColors;
+  header:         StorefrontHeader;
+  footer:         StorefrontFooter;
+  identityBanner: IdentityBanner;
+  baseThemeId:    string | null;
+  customCss:      string | null;
+  publishedAt:    string;
+}
+
+export function apiListStoreThemeVersions(storeId: string, installedThemeId?: string) {
+  return client.get<never, ApiResponse<ThemeVersionData[]>>(withInstance(ENDPOINTS.STORE_THEME.VERSIONS(storeId), installedThemeId));
+}
+
+/** Restores a past version into the DRAFT slot for review — the seller still
+ *  has to hit Publish afterward, same as any other draft edit. */
+export function apiRestoreStoreThemeVersion(storeId: string, versionId: string, installedThemeId?: string) {
+  return client.post<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.RESTORE_VERSION(storeId, versionId), installedThemeId));
 }
 
 export function apiGetPublicStoreTheme(storeId: string) {
   return client.get<never, ApiResponse<StoreThemeData | null>>(ENDPOINTS.STORE_THEME.PUBLIC(storeId));
 }
 
-export function apiUpdateStoreThemeColors(storeId: string, payload: Partial<StorefrontColors> & { baseThemeId?: string | null }) {
-  return client.patch<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.UPDATE_THEME(storeId), payload);
+export function apiUpdateStoreThemeColors(storeId: string, payload: Partial<StorefrontColors> & { baseThemeId?: string | null }, installedThemeId?: string) {
+  return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_THEME(storeId), installedThemeId), payload);
 }
 
-export function apiUpdateStoreHeader(storeId: string, payload: Partial<Omit<StorefrontHeader, 'blocks'>> & { blocks?: Block[] }) {
-  return client.patch<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.UPDATE_HEADER(storeId), payload);
+export function apiUpdateStoreHeader(storeId: string, payload: Partial<Omit<StorefrontHeader, 'blocks'>> & { blocks?: Block[] }, installedThemeId?: string) {
+  return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_HEADER(storeId), installedThemeId), payload);
 }
 
-export function apiUpdateStoreFooter(storeId: string, blocks: Block[], footerStyle?: ThemeFooterStyle) {
-  return client.patch<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.UPDATE_FOOTER(storeId), { blocks, footerStyle });
+export function apiUpdateStoreFooter(storeId: string, blocks: Block[], footerStyle?: ThemeFooterStyle, installedThemeId?: string) {
+  return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_FOOTER(storeId), installedThemeId), { blocks, footerStyle });
 }
 
-export function apiUpdateIdentityBanner(storeId: string, payload: Partial<IdentityBanner>) {
-  return client.patch<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.UPDATE_IDENTITY_BANNER(storeId), payload);
+export function apiUpdateIdentityBanner(storeId: string, payload: Partial<IdentityBanner>, installedThemeId?: string) {
+  return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_IDENTITY_BANNER(storeId), installedThemeId), payload);
+}
+
+/** Real, bounded "developer/advanced authoring" capability — raw CSS
+ *  injected into the storefront. See the backend `StoreTheme.customCss`
+ *  schema comment for the full safety rationale (CSS-only, no custom JS). */
+export function apiUpdateStoreCustomCss(storeId: string, customCss: string | null, installedThemeId?: string) {
+  return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_CUSTOM_CSS(storeId), installedThemeId), { customCss });
 }
 
 /** Code editor (Phase 5) — server re-sanitizes independently of whatever the client already checked. */

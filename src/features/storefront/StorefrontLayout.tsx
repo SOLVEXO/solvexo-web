@@ -1,15 +1,13 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
-import { SkeletonBox, StoreAnnouncementBar } from '@/components/comman/ui';
-import { Button } from '@/components/comman/ui/Button';
-import { Store, ArrowLeft } from 'lucide-react';
+import { SkeletonBox } from '@/components/comman/ui';
+import { Store } from 'lucide-react';
 import { apiGetPublicStore, apiResolveStoreByDomain, type PublicStoreData } from '@/api/services/store';
 import { apiGetPublicStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
-import { getStoreSlugFromHost, getMainAppUrl } from '@/utils/storefrontUrl';
+import { getStoreSlugFromHost } from '@/utils/storefrontUrl';
 import { CartProvider } from '@/contexts/CartContext';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from './StorefrontContext';
-import { StorefrontNavbar } from './StorefrontNavbar';
-import { StorefrontFooter } from './StorefrontFooter';
+import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 
 const DEFAULT_FAVICON = '/favicon.png';
 
@@ -86,49 +84,35 @@ export function StorefrontLayout() {
   }
 
   if (error || !store || !contextValue) {
-    // `getMainAppUrl()` only makes sense on a real `*.solvexo.store`
-    // subdomain (`slug` truthy) — on a genuine custom domain, that helper
-    // would build a URL on the SELLER'S OWN domain, not Solvexo's, so the
-    // "Back to Marketplace" fallback is only shown when it can actually
-    // point somewhere real.
+    // No "Back to Marketplace" link — the marketplace is being retired as a
+    // buyer-facing surface entirely (standalone stores only), so a broken
+    // storefront domain has nowhere marketplace-shaped to send anyone back to.
     return (
       <div className="min-h-screen bg-cream flex flex-col items-center justify-center gap-4">
         <Store size={48} className="text-bone" />
         <p className="text-[15px] text-slate">{slug ? 'Store not found' : "This domain isn't connected to a store yet"}</p>
-        {slug && (
-          <Button variant="secondary" size="sm" onClick={() => { window.location.href = getMainAppUrl('/marketplace'); }}>
-            <ArrowLeft size={13} className="mr-1" /> Back to Marketplace
-          </Button>
-        )}
       </div>
     );
   }
 
+  // Every store now renders through a genuinely independent theme (see
+  // `storefront-themes/registry.ts`) — the legacy 12-theme shared engine
+  // has been removed. A store whose `themeDefinitionId` doesn't match a
+  // registered theme (e.g. a pre-migration row still pointing at a deleted
+  // legacy theme id) falls back to `DEFAULT_THEME_ID` rather than crashing.
+  // Each theme owns its own chrome entirely — no shared navbar/footer, no
+  // `cfg`-driven inline styles. `store`/`theme`/`cfg` are still provided via
+  // context (real store data + cart are legitimate shared infra) for any
+  // theme that wants them, but nothing about this component's own rendering
+  // reaches the page any more.
+  const themeId = theme?.themeDefinitionId;
+  const Layout = (themeId && NEW_THEME_REGISTRY[themeId]?.Layout) || NEW_THEME_REGISTRY[DEFAULT_THEME_ID].Layout;
   return (
     <StorefrontProvider value={contextValue}>
-      {/* Scopes the buyer's cart to THIS store — shadows the app-wide
-          CartProvider from main.tsx for everything rendered below, since
-          the store's storeId is only known here, after it's resolved. */}
       <CartProvider storeId={store.storeId}>
-        <div data-store-theme={store.storeId} className="min-h-screen" style={{ background: cfg.bgColor, color: cfg.textColor, fontFamily: `${cfg.font}, sans-serif` }}>
-          {/* Code editor (Phase 5) — sanitized server-side before it's ever
-              persisted; scoped to this store's own subtree via the
-              `data-store-theme` attribute above, per the theme ecosystem
-              plan's "no arbitrary JS execution" security model. */}
-          {theme?.customCss && <style>{theme.customCss}</style>}
-          <StorefrontNavbar />
-          {store.announcementBar?.message && (
-            <StoreAnnouncementBar
-              storeId={store.storeId}
-              message={store.announcementBar.message}
-              type={store.announcementBar.type}
-              ctaLabel={store.announcementBar.ctaLabel}
-              ctaLink={store.announcementBar.ctaLink}
-            />
-          )}
+        <Layout>
           <Outlet />
-          <StorefrontFooter />
-        </div>
+        </Layout>
       </CartProvider>
     </StorefrontProvider>
   );

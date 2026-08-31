@@ -1,14 +1,18 @@
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Download, GraduationCap, Loader2, CalendarClock, Plus, X } from 'lucide-react';
+import { clsx } from 'clsx';
+import { Package, Download, GraduationCap, Loader2, CalendarClock } from 'lucide-react';
 import { useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { apiCreatePhysicalProduct, apiCreateDigitalProduct, EDUCATION_LEVELS, type EducationLevel, type VariantOption } from '@/api/services/product';
+import { apiCreatePhysicalProduct, apiCreateDigitalProduct, EDUCATION_LEVELS, type EducationLevel, type VariantInput } from '@/api/services/product';
 import { addCachedProduct } from './_cache';
+import { invalidateMyStoresCache } from '@/hooks/store/useMyStores';
 import { SubcategoryField } from './SubcategoryField';
 import { CustomLevelInput } from './CustomLevelInput';
-import { useStoreSubcategories } from '@/hooks/store/useStoreSubcategories';
+import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal } from '@/components/comman/ui';
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
+import { VariantMatrixEditor } from './VariantMatrixEditor';
+import { MAX_VARIANT_COMBINATIONS, type OptionType, type VariantRow } from './variantMatrix';
 
 type ProductType   = 'physical' | 'digital' | 'educational';
 type ProductStatus = 'draft' | 'active' | 'scheduled';
@@ -24,8 +28,8 @@ function L({ children, req }: { children: ReactNode; req?: boolean }) {
     </label>
   );
 }
-function F({ label, req, children }: { label: string; req?: boolean; children: ReactNode }) {
-  return <div><L req={req}>{label}</L>{children}</div>;
+function F({ label, req, error, children }: { label: string; req?: boolean; error?: string; children: ReactNode }) {
+  return <div><L req={req}>{label}</L>{children}{error && <p className="text-[11.5px] text-error mt-1">{error}</p>}</div>;
 }
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -68,73 +72,20 @@ function TagInput({ tags, input, onInput, onAdd, onRemove }: {
   );
 }
 
-const MAX_VARIANT_OPTIONS = 3;
-
-// ── Variant attributes builder — replaces the old fixed Size/Color inputs with
-// any combination of seller-defined attributes (Color, Size, Material…), up to
-// 3, matching what the variant-CRUD backend now accepts. ─────────────────────
-function VariantOptionsField({ options, onChange }: { options: VariantOption[]; onChange: (next: VariantOption[]) => void }) {
-  const [name, setName] = useState('');
-  const [value, setValue] = useState('');
-
-  function add() {
-    if (!name.trim() || !value.trim() || options.length >= MAX_VARIANT_OPTIONS) return;
-    onChange([...options, { name: name.trim(), value: value.trim() }]);
-    setName(''); setValue('');
-  }
-
-  const canAdd = !!name.trim() && !!value.trim();
-
-  return (
-    <div className="flex flex-col gap-2">
-      {options.length > 0 && (
-        <div className="flex flex-col gap-[6px]">
-          {options.map((o, i) => (
-            <div key={i} className="flex items-center gap-2 bg-brand-pale-orange border border-brand-orange/20 rounded-lg pl-3 pr-2 py-[7px]">
-              <span className="flex-1 min-w-0 text-[12px] text-charcoal truncate">
-                <span className="font-semibold text-brand-deep-orange">{o.name}</span>
-                <span className="text-brand-orange/40 mx-[6px]">/</span>
-                {o.value}
-              </span>
-              <button type="button" onClick={() => onChange(options.filter((_, idx) => idx !== i))}
-                aria-label={`Remove ${o.name} ${o.value}`}
-                className="bg-transparent border-none cursor-pointer p-1 rounded-md text-brand-orange/50 shrink-0 flex items-center hover:text-brand-orange hover:bg-white/70 transition-colors">
-                <X size={12} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-      {options.length < MAX_VARIANT_OPTIONS && (
-        <div className="flex flex-col gap-[7px] p-2.5 rounded-lg border border-dashed border-[#d9d6cc] bg-cream/50">
-          <div className="grid grid-cols-2 gap-[7px]">
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Attribute"
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
-              className={`${inp} px-2.5 py-[7px] text-[12px] bg-white`} />
-            <input value={value} onChange={e => setValue(e.target.value)} placeholder="Value"
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
-              className={`${inp} px-2.5 py-[7px] text-[12px] bg-white`} />
-          </div>
-          <button type="button" onClick={add} disabled={!canAdd}
-            className="flex items-center justify-center gap-1.5 py-[7px] rounded-md border-none text-[12px] font-semibold transition-colors"
-            style={{ background: canAdd ? '#D97757' : '#E8E6DC', color: canAdd ? '#fff' : '#A8A6A0', cursor: canAdd ? 'pointer' : 'not-allowed' }}>
-            <Plus size={13} /> Add Attribute
-          </button>
-        </div>
-      )}
-      <p className="text-[11px] text-slate">Optional — leave empty for a single plain variant, or add up to 3 like Color, Size, Material.</p>
-    </div>
-  );
-}
-
 const initPhys = {
   name: '', description: '', price: '', compareAtPrice: '',
-  stock: '', options: [] as VariantOption[], shippingWeight: '', subCategoryId: '',
+  stock: '', sku: '', barcode: '', shippingWeight: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
+  // Non-empty optionTypes switches the Pricing/Inventory cards over to the
+  // real variant matrix (VariantMatrixEditor) — see the "Variants" card
+  // below. Empty (the common case: most products don't need variants) keeps
+  // the simple single Price/Stock/SKU fields above unchanged.
+  optionTypes: [] as OptionType[],
+  variantRows: [] as VariantRow[],
 };
 const initDig = {
-  name: '', description: '', price: '', compareAtPrice: '', subCategoryId: '',
+  name: '', description: '', price: '', compareAtPrice: '', categoryId: '', subCategoryId: '',
   status: 'draft' as ProductStatus, isListedOnSolvexo: false,
   scheduledAt: '', tagInput: '', tags: [] as string[], images: [] as string[],
   fileData: null as PrivateUploadData | null,
@@ -159,11 +110,12 @@ export default function StoreAddProduct() {
   const supportsDigital     = !store || (store.productTypes ?? []).includes('digital_downloads');
   const supportsEducational = !store || (store.productTypes ?? []).includes('educational_resources');
 
-  const { mainCategory, subcategories, loading: catLoading, refetch: refetchCats } = useStoreSubcategories(store?.categoryId);
+  const { tree: categoryTree, loading: catLoading, refetch: refetchCats } = useStoreCategoryTree(storeId);
 
   const [pType,             setPType]             = useState<ProductType>('physical');
   const [saving,            setSaving]            = useState(false);
   const [error,             setError]             = useState('');
+  const [nameError,         setNameError]         = useState('');
   const [phys,              setPhys]              = useState<PhysForm>(initPhys);
   const [dig,               setDig]               = useState<DigForm>(initDig);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -181,28 +133,54 @@ export default function StoreAddProduct() {
     return p > 0 && c > p ? Math.round((1 - p / c) * 100) : null;
   })();
 
+  const hasVariants = pType === 'physical' && phys.optionTypes.length > 0;
+
   const handleSubmit = async (statusOverride?: ProductStatus) => {
     setError('');
-    if (pType === 'physical' && (!phys.name || !phys.price || !phys.stock)) { setError('Name, price, and stock are required.'); return; }
-    if (pType !== 'physical' && (!dig.name  || !dig.price))                  { setError('Name and price are required.'); return; }
+    setNameError('');
+    if (pType === 'physical' && !phys.name) { setNameError('Product name is required.'); return; }
+    if (pType !== 'physical' && !dig.name) { setNameError('Product name is required.'); return; }
+    if (pType === 'physical' && !hasVariants && (!phys.price || !phys.stock)) { setError('Price and stock are required.'); return; }
+    if (hasVariants) {
+      if (phys.variantRows.length === 0) { setError('Add at least one value to your variant options, or remove them to use a single price/stock instead.'); return; }
+      if (phys.variantRows.length > MAX_VARIANT_COMBINATIONS) { setError(`Too many variants (${phys.variantRows.length}) — Solvexo supports up to ${MAX_VARIANT_COMBINATIONS} per product.`); return; }
+      const incomplete = phys.variantRows.find(r => !r.price || (!r.unlimitedStock && !r.stock));
+      if (incomplete) { setError(`Set a price and stock for the "${incomplete.options.map(o => o.value).join(' / ')}" variant.`); return; }
+    }
+    if (pType !== 'physical' && !dig.price)                                  { setError('Price is required.'); return; }
     if (pType === 'educational' && !dig.educationLevel)                      { setError('Education level is required for educational resources.'); return; }
     if (pType === 'educational' && dig.educationLevel === 'other' && !dig.customLevel.trim()) { setError('Please describe the custom education level.'); return; }
     setSaving(true);
     try {
       const finalStatus = statusOverride ?? (pType === 'physical' ? phys.status : dig.status);
       if (pType === 'physical') {
+        const variants: VariantInput[] = hasVariants
+          ? phys.variantRows.map(r => ({
+              price: Number(r.price),
+              compareAtPrice: r.compareAtPrice ? Number(r.compareAtPrice) : null,
+              options: r.options,
+              stock: r.unlimitedStock ? 0 : Number(r.stock),
+              unlimitedStock: r.unlimitedStock,
+              shippingWeight: phys.shippingWeight,
+              sku: r.sku.trim() || undefined,
+              barcode: r.barcode.trim() || undefined,
+            }))
+          : [{
+              price: Number(phys.price),
+              compareAtPrice: phys.compareAtPrice ? Number(phys.compareAtPrice) : null,
+              options: [],
+              stock: Number(phys.stock),
+              shippingWeight: phys.shippingWeight,
+              sku: phys.sku.trim() || undefined,
+              barcode: phys.barcode.trim() || undefined,
+            }];
         const res = await apiCreatePhysicalProduct({
           storeId, name: phys.name, description: phys.description,
+          categoryId: phys.categoryId || null,
           subCategoryId: phys.subCategoryId || null, images: phys.images, tags: phys.tags,
           isListedOnSolvexo: phys.isListedOnSolvexo, status: finalStatus,
           scheduledAt: finalStatus === 'scheduled' ? phys.scheduledAt || null : null,
-          variants: [{
-            price: Number(phys.price),
-            compareAtPrice: phys.compareAtPrice ? Number(phys.compareAtPrice) : null,
-            options: phys.options,
-            stock: Number(phys.stock),
-            shippingWeight: phys.shippingWeight,
-          }],
+          variants,
         });
         addCachedProduct(storeId, { product: res.data.product, variant: res.data.defaultVariant });
       } else {
@@ -210,6 +188,7 @@ export default function StoreAddProduct() {
         const res = await apiCreateDigitalProduct({
           storeId, name: dig.name, description: dig.description,
           productType: pType === 'educational' ? 'educational' : 'digital',
+          categoryId: dig.categoryId || null,
           subCategoryId: dig.subCategoryId || null, images: dig.images, tags: dig.tags,
           educationLevel: pType === 'educational' ? (dig.educationLevel || null) : null,
           customLevel: pType === 'educational' && dig.educationLevel === 'other' ? dig.customLevel : null,
@@ -220,6 +199,7 @@ export default function StoreAddProduct() {
         });
         addCachedProduct(storeId, { product: res.data.product, variant: res.data.defaultVariant });
       }
+      invalidateMyStoresCache();
       navigate(`/store/${storeId}/products`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
@@ -285,11 +265,11 @@ export default function StoreAddProduct() {
           {/* Basic Information */}
           <Card title="Basic Information">
             <div className="flex flex-col gap-4">
-              <F label="Product Title" req>
+              <F label="Product Title" req error={nameError}>
                 <input value={cur.name}
-                  onChange={e => pType === 'physical' ? sp('name', e.target.value) : sd('name', e.target.value)}
+                  onChange={e => { if (nameError && e.target.value.trim()) setNameError(''); pType === 'physical' ? sp('name', e.target.value) : sd('name', e.target.value); }}
                   placeholder={pType === 'physical' ? 'e.g. Premium Cotton T-Shirt' : 'e.g. Complete Web Design Course'}
-                  className={inp} />
+                  className={clsx(inp, nameError && 'border-error')} />
               </F>
               <F label="Description">
                 <textarea value={cur.description}
@@ -303,13 +283,16 @@ export default function StoreAddProduct() {
           {/* Category */}
           <Card title="Category">
             <SubcategoryField
-              mainCategoryName={mainCategory?.name ?? ''}
-              mainCategoryId={store?.categoryId ?? ''}
-              subcategories={subcategories}
+              storeId={storeId}
+              tree={categoryTree}
               loading={catLoading}
-              value={cur.subCategoryId}
-              onChange={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
-              onCreated={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
+              categoryId={cur.categoryId}
+              subCategoryId={cur.subCategoryId}
+              onCategoryChange={id => {
+                if (pType === 'physical') { sp('categoryId', id); sp('subCategoryId', ''); }
+                else { sd('categoryId', id); sd('subCategoryId', ''); }
+              }}
+              onSubCategoryChange={id => pType === 'physical' ? sp('subCategoryId', id) : sd('subCategoryId', id)}
               refetch={refetchCats}
             />
           </Card>
@@ -321,6 +304,7 @@ export default function StoreAddProduct() {
               value={cur.images}
               onChange={urls => pType === 'physical' ? sp('images', urls) : sd('images', urls)}
               maxFiles={5}
+              storeId={storeId}
             />
           </Card>
 
@@ -428,41 +412,72 @@ export default function StoreAddProduct() {
         {/* ── Right sidebar ── */}
         <div className="flex flex-col gap-4">
 
-          {/* Pricing */}
-          <Card title="Pricing">
-            <div className="flex flex-col gap-3">
-              <F label={`Price (${currencySymbol})`} req>
-                <input type="number" min="0" value={cur.price}
-                  onChange={e => pType === 'physical' ? sp('price', e.target.value) : sd('price', e.target.value)}
-                  placeholder="0.00" className={inp} />
-              </F>
-              <F label={`Compare-at Price (${currencySymbol})`}>
-                <input type="number" min="0" value={cur.compareAtPrice}
-                  onChange={e => pType === 'physical' ? sp('compareAtPrice', e.target.value) : sd('compareAtPrice', e.target.value)}
-                  placeholder="0.00" className={inp} />
-              </F>
-              {discountPct !== null && (
-                <div className="flex items-center gap-1.5 px-3 py-2 bg-[#e3f4ea] border border-[#b7e2c7] rounded-[7px]">
-                  <span className="text-[12px] font-bold text-[#1e7a3c]">{discountPct}% OFF</span>
-                  <span className="text-[11px] text-success">shown to buyers</span>
-                </div>
-              )}
-            </div>
-          </Card>
+          {/* Pricing — hidden once real variants exist, since each variant
+              then has its own price/compare-at in the matrix below instead
+              of one product-level price. */}
+          {!hasVariants && (
+            <Card title="Pricing">
+              <div className="flex flex-col gap-3">
+                <F label={`Price (${currencySymbol})`} req>
+                  <input type="number" min="0" value={cur.price}
+                    onChange={e => { if (Number(e.target.value) < 0) return; const v = e.target.value; pType === 'physical' ? sp('price', v) : sd('price', v); }}
+                    placeholder="0.00" className={inp} />
+                </F>
+                <F label={`Compare-at Price (${currencySymbol})`}>
+                  <input type="number" min="0" value={cur.compareAtPrice}
+                    onChange={e => { if (Number(e.target.value) < 0) return; const v = e.target.value; pType === 'physical' ? sp('compareAtPrice', v) : sd('compareAtPrice', v); }}
+                    placeholder="0.00" className={inp} />
+                </F>
+                {discountPct !== null && (
+                  <div className="flex items-center gap-1.5 px-3 py-2 bg-[#e3f4ea] border border-[#b7e2c7] rounded-[7px]">
+                    <span className="text-[12px] font-bold text-[#1e7a3c]">{discountPct}% OFF</span>
+                    <span className="text-[11px] text-success">shown to buyers</span>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
 
           {/* Inventory & Shipping (physical only) */}
-          {pType === 'physical' && (
+          {pType === 'physical' && !hasVariants && (
             <Card title="Inventory & Shipping">
               <div className="flex flex-col gap-3">
                 <F label="Stock Quantity" req>
-                  <input type="number" min="0" value={phys.stock} onChange={e => sp('stock', e.target.value)} placeholder="0" className={inp} />
+                  <input type="number" min="0" value={phys.stock} onChange={e => { if (Number(e.target.value) < 0) return; sp('stock', e.target.value); }} placeholder="0" className={inp} />
                 </F>
-                <F label="Variant Attributes">
-                  <VariantOptionsField options={phys.options} onChange={v => sp('options', v)} />
-                </F>
+                <div className="grid grid-cols-2 gap-3">
+                  <F label="SKU">
+                    <input value={phys.sku} onChange={e => sp('sku', e.target.value)} placeholder="Auto-generated if left blank" className={inp} />
+                  </F>
+                  <F label="Barcode">
+                    <input value={phys.barcode} onChange={e => sp('barcode', e.target.value)} placeholder="Optional" className={inp} />
+                  </F>
+                </div>
                 <F label="Shipping Weight">
                   <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg" className={inp} />
                 </F>
+              </div>
+            </Card>
+          )}
+
+          {/* Variants — always available for physical products. Adding an
+              option (Size, Color…) here is what switches Pricing/Inventory
+              above into the per-variant matrix instead. */}
+          {pType === 'physical' && (
+            <Card title="Variants">
+              <div className="flex flex-col gap-3">
+                <VariantMatrixEditor
+                  optionTypes={phys.optionTypes}
+                  onOptionTypesChange={v => sp('optionTypes', v)}
+                  rows={phys.variantRows}
+                  onRowsChange={v => sp('variantRows', v)}
+                  currencySymbol={currencySymbol}
+                />
+                {hasVariants && (
+                  <F label="Shipping Weight" >
+                    <input value={phys.shippingWeight} onChange={e => sp('shippingWeight', e.target.value)} placeholder="e.g. 0.5 kg — applies to every variant" className={inp} />
+                  </F>
+                )}
               </div>
             </Card>
           )}

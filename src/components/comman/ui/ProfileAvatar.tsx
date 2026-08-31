@@ -1,13 +1,15 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
-  User, LayoutDashboard, LogOut, ShoppingBag,
+  LayoutDashboard, LogOut, Bell,
   ChevronRight, Shield, type LucideIcon,
 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { TokenStorage, apiLogout } from '@/api/services/auth';
+import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
+import { useNotification } from '@/contexts/NotificationContext';
 import { CopyIconButton } from './CopyIconButton';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -91,9 +93,11 @@ function AvatarTrigger({
 function DropdownHeader({
   profileImage, name, email, initials,
   hasBuyer, hasSeller, hasAdmin,
+  unreadCount, onNotificationsClick,
 }: {
   profileImage?: string | null; name?: string; email?: string; initials: string;
   hasBuyer: boolean; hasSeller: boolean; hasAdmin: boolean;
+  unreadCount: number; onNotificationsClick: () => void;
 }) {
   return (
     <div className="px-4 pt-4 pb-3 border-b border-bone">
@@ -111,6 +115,22 @@ function DropdownHeader({
             {hasAdmin  && <RoleChip role="admin"  />}
           </div>
         </div>
+        {/* Notifications now live inside the avatar dropdown instead of as
+           its own standalone navbar icon — a plain link, not another nested
+           dropdown/panel stacked underneath this one: clicking it closes
+           this menu and goes straight to the notifications page. */}
+        <button
+          onClick={onNotificationsClick}
+          aria-label="Notifications"
+          className="relative shrink-0 -mt-0.5 -mr-0.5 w-9 h-9 rounded-full bg-brand-pale-orange/50 flex items-center justify-center cursor-pointer border-none transition-colors hover:bg-brand-pale-orange"
+        >
+          <Bell size={16} className="text-brand-orange" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-[3px] -right-[3px] min-w-[15px] h-[15px] bg-[#c0392b] text-white text-[8px] font-bold rounded-full flex items-center justify-center px-[3px] border border-white leading-none">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </button>
       </div>
     </div>
   );
@@ -154,36 +174,20 @@ function MenuItem({
 // DropdownMenu
 // ─────────────────────────────────────────────────────────────────────────────
 function DropdownMenu({
-  hasBuyer, hasDash, isAdmin, onNavigate, onLogout,
+  hasDash, isAdmin, onNavigate, onGoToStore, onLogout,
 }: {
-  hasBuyer: boolean; hasDash: boolean; isAdmin: boolean;
-  onNavigate: (path: string) => void; onLogout: () => void;
+  hasDash: boolean; isAdmin: boolean;
+  onNavigate: (path: string) => void; onGoToStore: () => void; onLogout: () => void;
 }) {
   return (
     <>
       <div className="p-[6px]">
-        {hasBuyer && (
-          <MenuItem
-            icon={User}
-            label="My Account"
-            sublabel="Dashboard & settings"
-            onClick={() => onNavigate('/account/dashboard')}
-          />
-        )}
-        {hasBuyer && (
-          <MenuItem
-            icon={ShoppingBag}
-            label="My Orders"
-            sublabel="Track your purchases"
-            onClick={() => onNavigate('/account/orders')}
-          />
-        )}
         {hasDash && (
           <MenuItem
             icon={isAdmin ? Shield : LayoutDashboard}
-            label={isAdmin ? 'Admin Panel' : 'Seller Dashboard'}
-            sublabel={isAdmin ? 'Manage the platform' : 'Manage your store'}
-            onClick={() => onNavigate(isAdmin ? '/admin' : '/seller/stores')}
+            label={isAdmin ? 'Admin Panel' : 'My Store'}
+            sublabel={isAdmin ? 'Manage the platform' : 'Go to your store dashboard'}
+            onClick={() => (isAdmin ? onNavigate('/admin') : onGoToStore())}
           />
         )}
       </div>
@@ -195,21 +199,37 @@ function DropdownMenu({
   );
 }
 
+// Same business rule LoginPage's `SELLER_ONLY_LOGIN` / RegisterPage's
+// `SELLER_ONLY_REGISTER` already encode, now made permanent here too: the
+// apex-domain "Buyer" role chip only (My Account/My Orders were removed
+// outright from `DropdownMenu` below, not just hidden — their destinations,
+// the whole apex-domain Marketplace/Account/Cart/Checkout flow, were
+// deleted from `router/index.tsx`; a real buyer now always shops a store's
+// own themed subdomain instead, which has its own real account/cart/
+// checkout via `ThemedRoute`). Unlike the old comment here, flipping this
+// back to `true` would NOT "restore instantly with no other changes" any
+// more for My Account/My Orders — only the role chip badge itself still
+// works either way, since it doesn't navigate anywhere.
+const SHOW_BUYER_FEATURES = false;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ProfileDropdown
 // ─────────────────────────────────────────────────────────────────────────────
 function ProfileDropdown({
-  profile, initials, onNavigate, onLogout,
+  profile, initials, onNavigate, onGoToStore, onLogout, unreadCount, onNotificationsClick,
 }: {
   profile: ReturnType<typeof useGetProfile>['profile'];
   initials: string;
   onNavigate: (path: string) => void;
+  onGoToStore: () => void;
   onLogout: () => void;
+  unreadCount: number;
+  onNotificationsClick: () => void;
 }) {
   const role      = profile?.role;
   const isSeller  = role === 'seller';
   const isAdmin   = role === 'admin';
-  const hasBuyer  = role === 'user' || isSeller || isAdmin;
+  const hasBuyer  = SHOW_BUYER_FEATURES && (role === 'user' || isSeller || isAdmin);
   const hasSeller = isSeller;
   const hasAdmin  = isAdmin;
   const hasDash   = isSeller || isAdmin;
@@ -228,12 +248,14 @@ function ProfileDropdown({
         hasBuyer={hasBuyer}
         hasSeller={hasSeller}
         hasAdmin={hasAdmin}
+        unreadCount={unreadCount}
+        onNotificationsClick={onNotificationsClick}
       />
       <DropdownMenu
-        hasBuyer={hasBuyer}
         hasDash={hasDash}
         isAdmin={isAdmin}
         onNavigate={onNavigate}
+        onGoToStore={onGoToStore}
         onLogout={onLogout}
       />
       </div>
@@ -250,12 +272,14 @@ const PANEL_HEIGHT_ESTIMATE = 320;
 
 export function ProfileAvatar() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top?: number; bottom?: number; right?: number }>({});
   const triggerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { profile, loading } = useGetProfile();
+  const { unreadCount } = useNotification();
 
   const clearCloseTimer = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } };
   const scheduleClose = () => { clearCloseTimer(); closeTimer.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS); };
@@ -307,12 +331,55 @@ export function ProfileAvatar() {
 
   const initials = profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? '..';
   const handleNavigate = (path: string) => { navigate(path); setOpen(false); };
+  // Same resolver login already uses (useLogin/useVerifyOtp/useSocialLogin) —
+  // lands on THIS seller's own store dashboard (or /onboard if they have none
+  // yet), never a generic "seller dashboard"/store-picker page. Keeps this
+  // avatar's destination identical to where the seller already landed after
+  // signing in, instead of drifting into its own hardcoded route.
+  const handleGoToStore = async () => {
+    setOpen(false);
+    const destination = await resolveSellerDestinationRemote();
+    navigate(destination);
+  };
   const handleLogout   = async () => {
     try { await apiLogout(); } catch { /* best-effort — clear local session regardless */ }
     TokenStorage.clear();
     setOpen(false);
     navigate('/');
     window.location.reload();
+  };
+  // Straight to the notifications page — no nested dropdown/panel stacked
+  // underneath this one. A seller's notification settings live inside
+  // THEIR OWN store's workspace (/store/:storeId/account?tab=notifications,
+  // same as SellerSettings variant="store") — never the orphaned cross-store
+  // /seller/settings route, which nothing else in the app links to any more
+  // (see "Store switcher moved into the top navbar" in CLAUDE.md). If we're
+  // not already inside a store's own pages, resolve which store via the
+  // same resolver login/"My Store" already use.
+  const handleNotificationsClick = async () => {
+    setOpen(false);
+    const storeMatch = pathname.match(/^\/store\/([^/]+)/);
+    if (storeMatch) {
+      navigate(`/store/${storeMatch[1]}/account?tab=notifications`);
+      return;
+    }
+    const role = profile?.role;
+    if (role === 'seller') {
+      const destination = await resolveSellerDestinationRemote();
+      const idMatch = destination.match(/^\/store\/([^/]+)/);
+      navigate(idMatch ? `/store/${idMatch[1]}/account?tab=notifications` : destination);
+    } else if (role === 'admin') {
+      navigate('/admin/settings?tab=notifications');
+    } else {
+      // `role === 'user'` (a buyer) on the apex domain — `/account/notifications`
+      // no longer exists (see `SHOW_BUYER_FEATURES`'s own comment above: the
+      // whole apex-domain Account/Marketplace/Cart/Checkout flow was removed
+      // outright, since a real buyer always shops a store's own themed
+      // subdomain now, which has its own real notifications inside that
+      // store's `/account?tab=notifications`). Nothing meaningful to land a
+      // bare apex-domain buyer on any more, so just go home.
+      navigate('/');
+    }
   };
 
   return (
@@ -352,7 +419,10 @@ export function ProfileAvatar() {
             profile={profile}
             initials={initials}
             onNavigate={handleNavigate}
+            onGoToStore={handleGoToStore}
             onLogout={handleLogout}
+            unreadCount={unreadCount}
+            onNotificationsClick={handleNotificationsClick}
           />
         </div>,
         document.body,

@@ -72,10 +72,3 @@ export function getStorefrontUrl(slug: string, path = ''): string {
   return `${protocol}//${slug}.${baseDomain()}${portSuffix}${cleanPath}`;
 }
 
-/** The reverse direction — from a store's subdomain back to the main app (apex domain), e.g. a storefront's "Back to Marketplace" link. */
-export function getMainAppUrl(path = ''): string {
-  const { protocol, port } = window.location;
-  const portSuffix = port ? `:${port}` : '';
-  const cleanPath = path ? (path.startsWith('/') ? path : `/${path}`) : '';
-  return `${protocol}//${baseDomain()}${portSuffix}${cleanPath}`;
-}

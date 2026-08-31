@@ -123,7 +123,7 @@ const SPACING_SCALE_MAP: Record<ThemeScale, number> = { compact: 0.65, comfortab
 /** Single source of truth for turning a saved `StoreTheme` doc into the
  *  resolved `StorefrontCfg` the storefront actually renders with — used by
  *  both the real storefront (`StorefrontLayout`) and the seller's live
- *  builder preview (`BuilderPreview`), so the two can never drift apart. */
+ *  preview (`LivePreviewPage`), so the two can never drift apart. */
 export function resolveStorefrontCfg(theme: StoreThemeData | null): StorefrontCfg {
   const t = theme?.theme;
   return {
@@ -151,8 +151,8 @@ export function resolveStorefrontCfg(theme: StoreThemeData | null): StorefrontCf
     productGridDensity: t?.productGridDensity ?? STOREFRONT_CFG_DEFAULT.productGridDensity,
     testimonialStyle:   t?.testimonialStyle   ?? STOREFRONT_CFG_DEFAULT.testimonialStyle,
     faqStyle:           t?.faqStyle           ?? STOREFRONT_CFG_DEFAULT.faqStyle,
-    headerStyle:        theme?.header.headerStyle ?? STOREFRONT_CFG_DEFAULT.headerStyle,
-    footerStyle:        theme?.footer.footerStyle  ?? STOREFRONT_CFG_DEFAULT.footerStyle,
+    headerStyle:        theme?.header?.headerStyle ?? STOREFRONT_CFG_DEFAULT.headerStyle,
+    footerStyle:        theme?.footer?.footerStyle  ?? STOREFRONT_CFG_DEFAULT.footerStyle,
     isDarkTheme:        isDarkHex(t?.bgColor ?? STOREFRONT_CFG_DEFAULT.bgColor),
   };
 }

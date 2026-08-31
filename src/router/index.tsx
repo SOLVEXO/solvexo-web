@@ -1,32 +1,29 @@
-import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
 
-// Root wrapper (reference nav + outlet + global Suspense)
+// Root wrapper (reference nav + outlet)
 import { RootLayout }   from '@/components/layouts/RootLayout';
 
-// Layouts — eagerly imported (needed as wrappers immediately)
+// Layouts
 import { BuyerLayout }  from '@/components/layouts/BuyerLayout';
-import { AccountLayout } from '@/components/layouts/AccountLayout';
 import { PublicLayout } from '@/components/layouts/PublicLayout';
 import { SellerLayout } from '@/components/layouts/SellerLayout';
 import { AdminLayout }  from '@/components/layouts/AdminLayout';
 import { StoreLayout }  from '@/components/layouts/StoreLayout';
 import { RequireRole }  from './RequireRole';
 
-// Critical conversion-path pages — eagerly imported so the highest-traffic
-// storefront flow (home → login/register → product → cart → checkout)
-// never shows a route-level Suspense spinner.
-import { ProductDetail } from '@/features/buyer/pages/ProductDetail';
-import { CartPage }     from '@/features/buyer/pages/CartPage';
-import { CheckoutPage } from '@/features/buyer/pages/CheckoutPage';
+// Critical conversion-path pages
 import { LoginPage }    from '@/features/auth/pages/LoginPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
-import { Marketplace }  from '@/features/buyer/pages/Marketplace';
-import { OnboardingPage } from '@/features/auth/pages/onboard/OnboardingPage';
+import { OnboardingPage, OnboardingEntry } from '@/features/auth/pages/onboard/OnboardingPage';
 
-// Public marketing pages — eagerly imported (no lazy/Suspense split) per
-// explicit instruction.
+// Remaining auth pages
+import { AdminLoginPage }     from '@/features/auth/pages/admin/AdminLoginPage';
+import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
+import { VerifyOTPPage }      from '@/features/auth/pages/VerifyOTPPage';
+import { NewPasswordPage }    from '@/features/auth/pages/NewPasswordPage';
+
+// Public marketing pages
 import { Homepage }             from '@/features/buyer/pages/Homepage';
 import { PricingPage }          from '@/features/buyer/pages/PricingPage';
 import { ForSellersPage }       from '@/features/buyer/pages/ForSellersPage';
@@ -36,119 +33,94 @@ import { TermsOfServicePage }   from '@/features/buyer/pages/TermsOfServicePage'
 import { CookiePolicyPage }     from '@/features/buyer/pages/CookiePolicyPage';
 import { ContactUsPage }        from '@/features/buyer/pages/ContactUsPage';
 import { AboutPage }            from '@/features/buyer/pages/AboutPage';
+import { SecurityPage }         from '@/features/buyer/pages/SecurityPage';
 import { ProductsOverviewPage } from '@/features/buyer/pages/products/ProductsOverviewPage';
 import { PlatformProductPage }  from '@/features/buyer/pages/products/PlatformProductPage';
 import { SolutionsOverviewPage } from '@/features/buyer/pages/solutions/SolutionsOverviewPage';
 import { SolutionPage }         from '@/features/buyer/pages/solutions/SolutionPage';
 
-// ── Lazy helpers ──────────────────────────────────────────────────────────────
-const named = <T extends Record<string, unknown>>(
-  p: Promise<T>,
-  key: keyof T,
-): Promise<{ default: T[keyof T] }> =>
-  p.then(m => ({ default: m[key] }));
-
 // ── Public / Buyer ────────────────────────────────────────────────────────────
-const OrderSuccessPage     = lazy(() => named(import('@/features/buyer/pages/OrderSuccessPage'),                'OrderSuccessPage'));
-const SellerStorefront     = lazy(() => named(import('@/features/buyer/pages/SellerStorefront'),                'SellerStorefront'));
-const StorefrontLayout     = lazy(() => named(import('@/features/storefront/StorefrontLayout'),                  'StorefrontLayout'));
-const StorefrontCustomPage = lazy(() => named(import('@/features/buyer/pages/StorefrontCustomPage'),             'StorefrontCustomPage'));
-const CategoryBrowsePage   = lazy(() => named(import('@/features/storefront/pages/CategoryBrowsePage'),           'CategoryBrowsePage'));
-const CollectionDetailPage = lazy(() => named(import('@/features/storefront/pages/CollectionDetailPage'),         'CollectionDetailPage'));
-const SearchResultsPage    = lazy(() => named(import('@/features/storefront/pages/SearchResultsPage'),            'SearchResultsPage'));
-const StorefrontBlogIndex  = lazy(() => named(import('@/features/buyer/pages/StorefrontBlogIndex'),              'StorefrontBlogIndex'));
-const StorefrontBlogPost   = lazy(() => named(import('@/features/buyer/pages/StorefrontBlogPost'),               'StorefrontBlogPost'));
-const StorefrontCartPage   = lazy(() => named(import('@/features/storefront/StorefrontCartPage'),                'StorefrontCartPage'));
-const StorefrontLoginPage  = lazy(() => named(import('@/features/storefront/StorefrontLoginPage'),               'StorefrontLoginPage'));
-const EducationMarketplace = lazy(() => named(import('@/features/buyer/pages/EducationMarketplace'),            'EducationMarketplace'));
-const MaintenancePage      = lazy(() => named(import('@/features/buyer/pages/MaintenancePage'),                 'MaintenancePage'));
-
-// ── Account (buyer) ───────────────────────────────────────────────────────────
-const AccountDashboard     = lazy(() => named(import('@/features/buyer/pages/account/AccountDashboard'),        'AccountDashboard'));
-const AccountOrders        = lazy(() => named(import('@/features/buyer/pages/MyOrdersPage'),                     'OrdersTab'));
-const AccountWishlist      = lazy(() => named(import('@/features/buyer/pages/account/Wishlist'),                 'Wishlist'));
-const AccountReviews       = lazy(() => named(import('@/features/buyer/pages/MyReviewsPage'),                    'ReviewsTab'));
-const AccountPayments      = lazy(() => named(import('@/features/buyer/pages/account/Payments'),                 'Payments'));
-const AccountMessages      = lazy(() => named(import('@/features/buyer/pages/account/Messages'),                 'Messages'));
-// Real routes replacing Settings' old ?tab=<name> query-param switcher.
-const AccountProfile       = lazy(() => named(import('@/features/buyer/pages/account/PersonalInfo'),             'PersonalInfo'));
-const AccountSecurity      = lazy(() => named(import('@/features/buyer/pages/account/Security'),                 'Security'));
-const AccountAddresses     = lazy(() => named(import('@/features/buyer/pages/account/Addresses'),                'Addresses'));
-const AccountNotifications = lazy(() => named(import('@/features/buyer/pages/account/Notifications'),            'Notifications'));
-const AccountSubscriptions = lazy(() => named(import('@/features/buyer/pages/MySubscriptionsPage'),              'SubscriptionsTab'));
-
-// ── Auth ──────────────────────────────────────────────────────────────────────
-const AdminLoginPage       = lazy(() => named(import('@/features/auth/pages/admin/AdminLoginPage'),             'AdminLoginPage'));
-const ForgotPasswordPage   = lazy(() => named(import('@/features/auth/pages/ForgotPasswordPage'),              'ForgotPasswordPage'));
-const VerifyOTPPage        = lazy(() => named(import('@/features/auth/pages/VerifyOTPPage'),                    'VerifyOTPPage'));
-const NewPasswordPage      = lazy(() => named(import('@/features/auth/pages/NewPasswordPage'),                  'NewPasswordPage'));
+import { StorefrontLayout } from '@/features/storefront/StorefrontLayout';
+import { ThemedRoute } from '@/features/storefront-themes/ThemedRoute';
+import { MaintenancePage } from '@/features/buyer/pages/MaintenancePage';
 
 // ── Seller ────────────────────────────────────────────────────────────────────
-const SellerAnalytics      = lazy(() => named(import('@/features/seller/dashboard/SellerAnalytics'),             'SellerAnalytics'));
-const StoreBuilder         = lazy(() => named(import('@/features/seller/dashboard/storemodule/StoreBuilder'),   'StoreBuilder'));
-const StoreBuilderRedirect = lazy(() => named(import('@/features/seller/dashboard/storemodule/StoreBuilderRedirect'), 'StoreBuilderRedirect'));
-const SellerSettings       = lazy(() => named(import('@/features/seller/dashboard/settings/SellerSettings'),   'SellerSettings'));
-const SellerShipping       = lazy(() => named(import('@/features/seller/dashboard/SellerShipping'),             'SellerShipping'));
-const SellerMessages       = lazy(() => named(import('@/features/seller/dashboard/SellerMessages'),             'SellerMessages'));
-const SellerStoreList      = lazy(() => named(import('@/features/seller/dashboard/storemodule/SellerStoreList'),'SellerStoreList'));
-const POSRegister          = lazy(() => named(import('@/features/seller/store/pos/POSRegister'),                'POSRegister'));
-const POSEmployeeLogin     = lazy(() => named(import('@/features/seller/store/pos/POSEmployeeLogin'),           'POSEmployeeLogin'));
-const ThemePreviewPage     = lazy(() => named(import('@/features/seller/dashboard/storemodule/ThemePreviewPage'), 'ThemePreviewPage'));
-const LivePreviewPage      = lazy(() => named(import('@/features/seller/dashboard/storemodule/LivePreviewPage'), 'LivePreviewPage'));
-const PosLanding           = lazy(() => named(import('@/features/seller/store/pos/PosLanding'),                 'PosLanding'));
+import { SellerAnalytics } from '@/features/seller/dashboard/SellerAnalytics';
+import { StoreBuilderRedirect } from '@/features/seller/store/Dashboard/OnlineStore/StoreBuilderRedirect';
+import { PagesPage } from '@/features/seller/store/Dashboard/OnlineStore/pages/PagesPage';
+import { BlogPage } from '@/features/seller/store/Dashboard/OnlineStore/blog/BlogPage';
+import { ThemeLibraryPage } from '@/features/seller/store/Dashboard/OnlineStore/themes/ThemeLibraryPage';
+import { AtelierCustomizePage } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierCustomizePage';
+import { AtelierEditCodePage } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierEditCodePage';
+import { AtelierHeaderFooterPage } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierHeaderFooterPage';
+import { ThemeDemoPreview } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierThemeDemoPreview';
+import { SellerSettings } from '@/features/seller/dashboard/settings/SellerSettings';
+import { SellerShipping } from '@/features/seller/dashboard/SellerShipping';
+import { SellerMessages } from '@/features/seller/dashboard/SellerMessages';
+import { SellerStoreList } from '@/features/seller/store/Dashboard/OnlineStore/SellerStoreList';
 
 // ── Store Workspace ───────────────────────────────────────────────────────────
-const StoreDashboard     = lazy(() => import('@/features/seller/store/Dashboard/StoreDashboard'));
-const StoreProductList   = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreProductList'));
-const StoreAddProduct    = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreAddProduct'));
-const StoreEditProduct   = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreEditProduct'));
-const StoreProductDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreProductDetail'));
-const StoreCustomerList  = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomerList'));
-const StoreSettings      = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreSettings'));
-const StoreCategories    = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCategories'));
-const StoreCollections   = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCollections'));
-const StorePlanBilling   = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
-const StoreVerification  = lazy(() => named(import('@/features/seller/store/Dashboard/Manage/StoreVerification'), 'StoreVerification'));
-const StoreOrderList     = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList'),        'StoreOrderList'));
-const StoreReturnList    = lazy(() => named(import('@/features/seller/store/Dashboard/StoreSection/returns/ReturnList'),      'StoreReturnList'));
-const StoreAnalytics     = lazy(() => named(import('@/features/seller/store/Dashboard/Analytic/analytics/Analytics'),        'StoreAnalytics'));
-const StoreAIStudio      = lazy(() => named(import('@/features/seller/store/Dashboard/Analytic/ai/AiStudio'),                'StoreAIStudio'));
-const StoreSEO           = lazy(() => named(import('@/features/seller/store/Dashboard/Analytic/seo/StoreSEO'),               'StoreSEO'));
-const StoreFinance       = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/finance/Finance'),          'StoreFinance'));
-const StoreReviews       = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/reviews/reviews'),          'StoreReviews'));
-const StoreInventory     = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/inventory/Inventory'),      'StoreInventory'));
-const StoreMarketing     = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/marketing/Marketing'),      'StoreMarketing'));
-const StoreLoyalty       = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/loyalty/Loyalty'),          'StoreLoyalty'));
-const StoreSubscriptions = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/subscriptions/Subscriptions'), 'StoreSubscriptions'));
-const StoreIntegrations  = lazy(() => named(import('@/features/seller/store/Dashboard/Operations/integrations/Integrations'),'StoreIntegrations'));
+import StoreDashboard from '@/features/seller/store/Dashboard/StoreDashboard';
+import StoreNotFound from '@/features/seller/store/Dashboard/StoreNotFound';
+import StoreProductList from '@/features/seller/store/Dashboard/StoreSection/products/StoreProductList';
+import StoreAddProduct from '@/features/seller/store/Dashboard/StoreSection/products/StoreAddProduct';
+import StoreEditProduct from '@/features/seller/store/Dashboard/StoreSection/products/StoreEditProduct';
+import StoreProductDetail from '@/features/seller/store/Dashboard/StoreSection/products/StoreProductDetail';
+import StoreCustomerList from '@/features/seller/store/Dashboard/StoreSection/customer/CustomerList';
+import StoreSettings from '@/features/seller/store/Dashboard/Manage/StoreSettings';
+import StoreCategories from '@/features/seller/store/Dashboard/Manage/StoreCategories';
+import StoreCollections from '@/features/seller/store/Dashboard/Manage/StoreCollections';
+import FilesLibrary from '@/features/seller/store/Dashboard/Manage/FilesLibrary';
+import StorePlanBilling from '@/features/seller/store/Dashboard/Manage/StorePlanBilling';
+import { StoreOrderList } from '@/features/seller/store/Dashboard/StoreSection/orders/OrderList';
+import { StoreOrderDetail } from '@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail';
+import DraftOrdersList from '@/features/seller/store/Dashboard/StoreSection/orders/DraftOrdersList';
+import DraftOrderForm from '@/features/seller/store/Dashboard/StoreSection/orders/DraftOrderForm';
+import { StoreReturnList } from '@/features/seller/store/Dashboard/StoreSection/returns/ReturnList';
+import { StoreAnalytics } from '@/features/seller/store/Dashboard/Analytic/analytics/Analytics';
+import { StoreAIStudio } from '@/features/seller/store/Dashboard/Analytic/ai/AiStudio';
+import { StoreSEO } from '@/features/seller/store/Dashboard/Analytic/seo/StoreSEO';
+import { StoreFinance } from '@/features/seller/store/Dashboard/Operations/finance/Finance';
+import { StoreReviews } from '@/features/seller/store/Dashboard/Operations/reviews/reviews';
+import { StoreInventory } from '@/features/seller/store/Dashboard/Operations/inventory/Inventory';
+import { StoreMarketing } from '@/features/seller/store/Dashboard/Operations/marketing/Marketing';
+import { StoreLoyalty } from '@/features/seller/store/Dashboard/Operations/loyalty/Loyalty';
+import { StoreSubscriptions } from '@/features/seller/store/Dashboard/Operations/subscriptions/Subscriptions';
+import { StoreIntegrations } from '@/features/seller/store/Dashboard/Operations/integrations/Integrations';
+// Seller-facing surfaces for two features whose backend + frontend API
+// clients already existed (automatic discounts, gift cards — both already
+// wired into checkout pricing) but had no dashboard page anywhere to reach
+// them from — the same "built but unreachable" gap as AtelierLivePreview's
+// hardcoded-theme bug, just in a different corner of the app.
+import StoreDiscounts from '@/features/seller/store/Dashboard/Manage/StoreDiscounts';
+import StoreGiftCards from '@/features/seller/store/Dashboard/Manage/StoreGiftCards';
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
-const AdminOverview      = lazy(() => named(import('@/features/admin/pages/AdminOverview'),                     'AdminOverview'));
-const AdminAnalytics     = lazy(() => named(import('@/features/admin/pages/AdminAnalytics'),                    'AdminAnalytics'));
-const AdminUsers         = lazy(() => named(import('@/features/admin/pages/AdminUsers'),                        'AdminUsers'));
-const AdminModeration    = lazy(() => named(import('@/features/admin/pages/AdminModeration'),                   'AdminModeration'));
-const AdminActivityLog   = lazy(() => named(import('@/features/admin/pages/AdminActivityLog'),                   'AdminActivityLog'));
-const AdminMessaging     = lazy(() => named(import('@/features/admin/pages/AdminMessaging'),                    'AdminMessaging'));
-const AdminMarketplace   = lazy(() => named(import('@/features/admin/pages/AdminMarketplace'),                  'AdminMarketplace'));
-const AdminLeads         = lazy(() => named(import('@/features/admin/pages/AdminLeads'),                        'AdminLeads'));
-const AdminCategories    = lazy(() => named(import('@/features/admin/pages/AdminCategories'),                    'AdminCategories'));
-const AdminSubscriptions = lazy(() => named(import('@/features/admin/pages/AdminSubscriptions'),                 'AdminSubscriptions'));
-const AdminPlatformPlans = lazy(() => named(import('@/features/admin/pages/AdminPlatformPlans'),                 'AdminPlatformPlans'));
-const AdminFinance       = lazy(() => named(import('@/features/admin/pages/AdminFinance'),                      'AdminFinance'));
-const AdminAnnouncements = lazy(() => named(import('@/features/admin/pages/AdminAnnouncements'),                'AdminAnnouncements'));
-const AdminBanners       = lazy(() => named(import('@/features/admin/pages/AdminBanners'),                       'AdminBanners'));
-const AdminFaqs          = lazy(() => named(import('@/features/admin/pages/AdminFaqs'),                          'AdminFaqs'));
-const AdminContactMessages = lazy(() => named(import('@/features/admin/pages/AdminContactMessages'),             'AdminContactMessages'));
-const AdminTestimonials  = lazy(() => named(import('@/features/admin/pages/AdminTestimonials'),                  'AdminTestimonials'));
-const AdminManualPayments = lazy(() => named(import('@/features/admin/pages/AdminManualPayments'),               'AdminManualPayments'));
-const AdminCommissionRules = lazy(() => named(import('@/features/admin/pages/AdminCommissionRules'),             'AdminCommissionRules'));
-const AdminThemeCatalog   = lazy(() => named(import('@/features/admin/pages/AdminThemeCatalog'),                  'AdminThemeCatalog'));
-const AdminConfig        = lazy(() => named(import('@/features/admin/pages/AdminConfig'),                       'AdminConfig'));
-const AdminFxSettings    = lazy(() => named(import('@/features/admin/pages/AdminFxSettings'),                   'AdminFxSettings'));
-const AdminMarketing     = lazy(() => named(import('@/features/admin/pages/AdminMarketing'),                     'AdminMarketing'));
-const AdminSettings      = lazy(() => named(import('@/features/admin/pages/settings/AdminSettings'),           'AdminSettings'));
-const AdminSEO           = lazy(() => named(import('@/features/admin/pages/AdminSEO'),                          'AdminSEO'));
-const AdminAiStudio      = lazy(() => named(import('@/features/admin/pages/AdminAiStudio'),                     'AdminAiStudio'));
+import { AdminOverview } from '@/features/admin/pages/AdminOverview';
+import { AdminAnalytics } from '@/features/admin/pages/AdminAnalytics';
+import { AdminUsers } from '@/features/admin/pages/AdminUsers';
+import { AdminModeration } from '@/features/admin/pages/AdminModeration';
+import { AdminActivityLog } from '@/features/admin/pages/AdminActivityLog';
+import { AdminMessaging } from '@/features/admin/pages/AdminMessaging';
+import { AdminMarketplace } from '@/features/admin/pages/AdminMarketplace';
+import { AdminLeads } from '@/features/admin/pages/AdminLeads';
+import { AdminSubscriptions } from '@/features/admin/pages/AdminSubscriptions';
+import { AdminPlatformPlans } from '@/features/admin/pages/AdminPlatformPlans';
+import { AdminFinance } from '@/features/admin/pages/AdminFinance';
+import { AdminAnnouncements } from '@/features/admin/pages/AdminAnnouncements';
+import { AdminBanners } from '@/features/admin/pages/AdminBanners';
+import { AdminFaqs } from '@/features/admin/pages/AdminFaqs';
+import { AdminShippingZones } from '@/features/admin/pages/AdminShippingZones';
+import { AdminContactMessages } from '@/features/admin/pages/AdminContactMessages';
+import { AdminTestimonials } from '@/features/admin/pages/AdminTestimonials';
+import { AdminManualPayments } from '@/features/admin/pages/AdminManualPayments';
+import { AdminCommissionRules } from '@/features/admin/pages/AdminCommissionRules';
+import { AdminConfig } from '@/features/admin/pages/AdminConfig';
+import { AdminFxSettings } from '@/features/admin/pages/AdminFxSettings';
+import { AdminMarketing } from '@/features/admin/pages/AdminMarketing';
+import { AdminSettings } from '@/features/admin/pages/settings/AdminSettings';
+import { AdminSEO } from '@/features/admin/pages/AdminSEO';
+import { AdminAiStudio } from '@/features/admin/pages/AdminAiStudio';
 
 // ── Storefront subdomain router ────────────────────────────────────────────────
 // A store's own subdomain (`hello.solvexo.store`) serves ONLY its storefront
@@ -166,18 +138,29 @@ const storefrontRouter = createBrowserRouter([
         path: '/',
         element: <StorefrontLayout />,
         children: [
-          { index: true, element: <SellerStorefront /> },
-          { path: 'blog', element: <StorefrontBlogIndex /> },
-          { path: 'blog/:postSlug', element: <StorefrontBlogPost /> },
-          { path: 'cart', element: <StorefrontCartPage /> },
-          { path: 'login', element: <StorefrontLoginPage /> },
+          // Every leaf route mounts through `ThemedRoute`, which dispatches
+          // to whichever independent theme is active on the store — see
+          // `ThemedRoute.tsx`. The legacy 12-theme shared engine has been
+          // fully removed (archived under `_legacy-theme-backup/`).
+          { index: true, element: <ThemedRoute routeKey="home" /> },
+          { path: 'blog', element: <ThemedRoute routeKey="blogIndex" /> },
+          { path: 'blog/:postSlug', element: <ThemedRoute routeKey="blogPost" /> },
+          { path: 'cart', element: <ThemedRoute routeKey="cart" /> },
+          { path: 'checkout', element: <ThemedRoute routeKey="checkout" /> },
+          { path: 'login', element: <ThemedRoute routeKey="login" /> },
+          { path: 'register', element: <ThemedRoute routeKey="register" /> },
+          { path: 'verify-otp', element: <ThemedRoute routeKey="verifyOtp" /> },
+          { path: 'forgot-password', element: <ThemedRoute routeKey="forgotPassword" /> },
+          { path: 'new-password', element: <ThemedRoute routeKey="newPassword" /> },
+          { path: 'account', element: <ThemedRoute routeKey="account" /> },
           // Must come before the `:pageSlug` catch-all below — 'category'/
-          // 'collections' are reserved custom-page slugs precisely so they
-          // can never collide with these (see RESERVED_CUSTOM_PAGE_SLUGS).
-          { path: 'category/:slugOrId', element: <CategoryBrowsePage /> },
-          { path: 'collections/:slugOrId', element: <CollectionDetailPage /> },
-          { path: 'search', element: <SearchResultsPage /> },
-          { path: ':pageSlug', element: <StorefrontCustomPage /> },
+          // 'collections'/'checkout' are reserved custom-page slugs precisely
+          // so they can never collide with these (see RESERVED_CUSTOM_PAGE_SLUGS).
+          { path: 'category/:slugOrId', element: <ThemedRoute routeKey="category" /> },
+          { path: 'collections/:slugOrId', element: <ThemedRoute routeKey="collection" /> },
+          { path: 'product/:slug', element: <ThemedRoute routeKey="product" /> },
+          { path: 'search', element: <ThemedRoute routeKey="search" /> },
+          { path: ':pageSlug', element: <ThemedRoute routeKey="customPage" /> },
         ],
       },
       { path: '*', element: <Navigate to="/" replace /> },
@@ -211,49 +194,35 @@ const mainRouter = createBrowserRouter([
               { path: 'contact-us',      element: <ContactUsPage /> },
               { path: 'contact',         element: <Navigate to="/contact-us" replace /> },
               { path: 'about',           element: <AboutPage /> },
+              { path: 'security',        element: <SecurityPage /> },
               { path: 'products',        element: <ProductsOverviewPage /> },
               { path: 'products/:slug',  element: <PlatformProductPage /> },
               { path: 'solutions',       element: <SolutionsOverviewPage /> },
               { path: 'solutions/:slug', element: <SolutionPage /> },
             ],
           },
-          // Account — nested routes, each section is its own deep-linkable page
-          {
-            path: 'account',
-            element: <AccountLayout />,
-            children: [
-              { index: true,          element: <Navigate to="dashboard" replace /> },
-              { path: 'dashboard',     element: <AccountDashboard /> },
-              { path: 'orders',        element: <AccountOrders /> },
-              { path: 'wishlist',      element: <AccountWishlist /> },
-              { path: 'reviews',       element: <AccountReviews /> },
-              { path: 'payments',      element: <AccountPayments /> },
-              { path: 'profile',       element: <AccountProfile /> },
-              { path: 'security',      element: <AccountSecurity /> },
-              { path: 'addresses',     element: <AccountAddresses /> },
-              { path: 'notifications', element: <AccountNotifications /> },
-              { path: 'subscriptions', element: <AccountSubscriptions /> },
-              // Settings merged into Profile — old bookmarks/links still land somewhere real.
-              { path: 'settings',      element: <Navigate to="/account/profile" replace /> },
-              { path: 'messages',      element: <AccountMessages /> },
-            ],
-          },
-          // Pages with their own embedded navbar (no PublicLayout wrapper needed)
-          // `:slugOrId` is optional (bare `/marketplace` browses everything) and
-          // does double duty: a category slug narrows the browse view, while a
-          // 24-hex-char value is treated by Marketplace as a legacy bookmarked
-          // product id (old `/marketplace/:id` product links) and resolved/
-          // redirected to the new canonical `/product/:slug` — see
-          // Marketplace.tsx's handling of `slugOrId`. Can't be two separate
-          // sibling routes since both shapes share the identical path pattern.
-          { path: 'marketplace/:slugOrId?', element: <Marketplace /> },
-          { path: 'cart',            element: <CartPage /> },
-          { path: 'checkout',        element: <CheckoutPage /> },
-          { path: 'order-success',   element: <OrderSuccessPage /> },
-          { path: 'product/:slug',   element: <ProductDetail /> },
-          { path: 'education/:levelSlug?', element: <EducationMarketplace /> },
-          // Old mis-cased path — static alias, same idiom as 'settings' above.
-          { path: 'EducationMarketplace', element: <Navigate to="/education" replace /> },
+          // The apex-domain "Account" section (Dashboard/Orders/Wishlist/
+          // Reviews/Payments/Profile/Security/Addresses/Notifications/
+          // Subscriptions/Messages) and the whole Marketplace/Cart/Checkout/
+          // Order-Success/ProductDetail/Education flow that used to live here
+          // were removed (frontend-only, at the seller's explicit request) —
+          // they were the pre-"store-wise" unified buyer experience, from
+          // before every store got its own themed subdomain
+          // (`storefrontRouter` above, via `ThemedRoute`, already has its own
+          // real `account`/`cart`/`checkout`/`login` etc. that correctly
+          // render in THAT store's active theme). Nothing here was still
+          // reachable: `LoginPage`'s own `SELLER_ONLY_LOGIN = true` and
+          // `ProfileAvatar`'s own `SHOW_BUYER_FEATURES = false` had already
+          // hidden every path that led here. `getRoleRedirect`'s buyer/apex
+          // fallback and `ProfileAvatar`'s buyer menu items were updated in
+          // the same pass so nothing is left pointing at a deleted route —
+          // see those files' own comments. The actual page files under
+          // `features/buyer/pages/{Marketplace,CartPage,CheckoutPage,
+          // OrderSuccessPage,ProductDetail,EducationMarketplace,account/*,
+          // MyOrdersPage,MyReviewsPage,MySubscriptionsPage}` and
+          // `components/layouts/AccountLayout.tsx` are now unreferenced by
+          // any route — kept on disk only because this session couldn't
+          // delete files directly; safe to delete outright.
         ],
       },
 
@@ -264,26 +233,11 @@ const mainRouter = createBrowserRouter([
       { path: '/login',           element: <LoginPage /> },
       { path: '/admin/login',     element: <AdminLoginPage /> },
       { path: '/register',        element: <RegisterPage /> },
-      { path: '/onboard',      element: <OnboardingPage /> },
+      { path: '/onboard',      element: <OnboardingEntry /> },
+      { path: '/onboard/:sessionId', element: <OnboardingPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/verify-otp',      element: <VerifyOTPPage /> },
       { path: '/new-password',    element: <NewPasswordPage /> },
-
-      // ── POS terminal — standalone (no seller sidebar) ──────────────────
-      { path: '/store/:storeId/pos/register', element: <POSRegister /> },
-      { path: '/store/:storeId/pos/login',    element: <POSEmployeeLogin /> },
-
-      // ── Theme Preview — standalone, opened in its own tab from the Theme
-      // Library ("Preview"); resolves the theme purely from :themeId, never
-      // from any Store Builder in-memory state (see ThemePreviewPage.tsx). ──
-      { path: '/store/:storeId/theme-preview/:themeId', element: <ThemePreviewPage /> },
-
-      // ── Live Preview — seller-authenticated only (never public), opened
-      // from the Theme/Header/Footer/Store Info tabs' "Unpublished changes"
-      // banner. Renders the seller's REAL draft against real store data —
-      // distinct from ThemePreviewPage above, which is public precisely
-      // because it has no real seller data to protect (Phase 9). ──
-      { path: '/store/:storeId/live-preview', element: <LivePreviewPage /> },
 
       // ── Seller pages with dark sidebar ────────────────────────────────
       {
@@ -305,8 +259,10 @@ const mainRouter = createBrowserRouter([
         children: [
           { index: true,                              element: <Navigate to="dashboard" replace /> },
           { path: 'dashboard',                        element: <StoreDashboard /> },
-          { path: 'pos',                               element: <PosLanding /> },
           { path: 'orders',                           element: <StoreOrderList /> },
+          { path: 'orders/detail/:orderId',           element: <StoreOrderDetail /> },
+          { path: 'draft-orders',                     element: <DraftOrdersList /> },
+          { path: 'draft-orders/:draftId',             element: <DraftOrderForm /> },
           { path: 'products',                         element: <StoreProductList /> },
           { path: 'products/add',                     element: <StoreAddProduct /> },
           { path: 'products/edit/:productId',         element: <StoreEditProduct /> },
@@ -314,11 +270,35 @@ const mainRouter = createBrowserRouter([
           { path: 'customer/list',                    element: <StoreCustomerList /> },
           { path: 'analytics',                        element: <StoreAnalytics /> },
           { path: 'settings',                         element: <StoreSettings /> },
+          { path: 'account',                          element: <SellerSettings variant="store" /> },
           { path: 'categories',                       element: <StoreCategories /> },
           { path: 'collections',                      element: <StoreCollections /> },
+          { path: 'files',                            element: <FilesLibrary /> },
           { path: 'plan-billing',                     element: <StorePlanBilling /> },
-          { path: 'verification',                     element: <StoreVerification /> },
-          { path: 'storebuilder',                     element: <StoreBuilder /> },
+          // Verification's sidebar NAV item and workspace banner were removed
+          // (dashboard-declutter request) while the underlying feature/page/
+          // backend stay intact — this redirect just keeps the old URL from
+          // 404ing for anyone with it bookmarked or linked, matching the
+          // activity/followers/pos-admin pattern below.
+          { path: 'verification',                     element: <Navigate to="../settings" replace /> },
+          { path: 'storebuilder',                     element: <Navigate to="online-store/themes" replace /> },
+          { path: 'online-store/themes',               element: <ThemeLibraryPage /> },
+          // `:themeId` is carried in the URL for a real reason now — it used
+          // to be the literal word "atelier" unconditionally, even while
+          // editing a Nova (or any other) store's theme, which is exactly
+          // the kind of "as a developer I can't tell what's happening here"
+          // confusion a real URL segment is supposed to prevent (matches
+          // Shopify's own `/admin/themes/<id>/editor` convention). None of
+          // the three pages below actually READ this param — each already
+          // resolves the store's real active theme itself via
+          // `apiGetStoreTheme(storeId)` — so this is purely a legibility fix,
+          // not a functional one; `ThemeLibraryPage.tsx`'s links now build
+          // this segment from the real `entry.id` instead of hardcoding it.
+          { path: 'online-store/themes/:themeId/customize', element: <AtelierCustomizePage /> },
+          { path: 'online-store/themes/:themeId/edit-code', element: <AtelierEditCodePage /> },
+          { path: 'online-store/themes/:themeId/header-footer', element: <AtelierHeaderFooterPage /> },
+          { path: 'online-store/pages',               element: <PagesPage /> },
+          { path: 'online-store/blog',                element: <BlogPage /> },
           { path: 'returns',                          element: <StoreReturnList /> },
           { path: 'seo',                              element: <StoreSEO /> },
           { path: 'ai/studio',                        element: <StoreAIStudio /> },
@@ -326,16 +306,32 @@ const mainRouter = createBrowserRouter([
           { path: 'finance',                          element: <StoreFinance /> },
           { path: 'inventory',                        element: <StoreInventory /> },
           { path: 'marketing',                        element: <StoreMarketing /> },
+          { path: 'discounts',                        element: <StoreDiscounts /> },
+          { path: 'gift-cards',                       element: <StoreGiftCards /> },
           { path: 'loyalty',                          element: <StoreLoyalty /> },
           { path: 'subscriptions',                    element: <StoreSubscriptions /> },
           { path: 'integrations',                     element: <StoreIntegrations /> },
           { path: 'activity',                         element: <Navigate to="../settings" replace /> },
           { path: 'followers',                        element: <Navigate to="../customer/list" replace /> },
-          { path: 'pos-admin',                        element: <Navigate to="../pos" replace /> },
+          { path: 'pos-admin',                        element: <Navigate to="../dashboard" replace /> },
           { path: 'shipping',                         element: <SellerShipping /> },
           { path: 'messages',                         element: <SellerMessages /> },
+          { path: '*',                                element: <StoreNotFound /> },
         ],
       },
+
+      // ── Theme Library preview — deliberately OUTSIDE `StoreLayout` ─────
+      // A storefront preview has to look like the real, finished storefront
+      // a buyer would see — full-bleed, zero admin chrome. Nesting this
+      // under `/store/:storeId`'s `StoreLayout` (as it used to be) wrapped
+      // every preview in the seller's own dashboard sidebar/header, which is
+      // exactly the "why is my dashboard showing inside the theme preview"
+      // bug reported against the previous version of this route. Same
+      // literal path as before (`/store/:storeId/online-store/themes/:themeId/preview`),
+      // so the existing relative `<Link to={`${entry.id}/preview`}>` in
+      // `ThemeLibraryPage.tsx` still resolves to this exact route — only
+      // where it's registered in the tree changed, not the URL.
+      { path: '/store/:storeId/online-store/themes/:themeId/preview', element: <ThemeDemoPreview /> },
 
       // ── Admin pages ───────────────────────────────────────────────────
       {
@@ -350,7 +346,6 @@ const mainRouter = createBrowserRouter([
           { path: 'messages',     element: <AdminMessaging /> },
           { path: 'leads',        element: <RequireRole role="admin"><AdminLeads /></RequireRole> },
           { path: 'marketplace',  element: <RequireRole role="admin"><AdminMarketplace /></RequireRole> },
-          { path: 'categories',   element: <AdminCategories /> },
           { path: 'subscriptions',element: <AdminSubscriptions /> },
           { path: 'platform-plans',element: <AdminPlatformPlans /> },
           { path: 'finance',      element: <RequireRole role="admin"><AdminFinance /></RequireRole> },
@@ -360,6 +355,7 @@ const mainRouter = createBrowserRouter([
           { path: 'announcements',element: <RequireRole role="admin"><AdminAnnouncements /></RequireRole> },
           { path: 'banners',      element: <AdminBanners /> },
           { path: 'faqs',         element: <AdminFaqs /> },
+          { path: 'shipping-zones', element: <AdminShippingZones /> },
           { path: 'contact',      element: <AdminContactMessages /> },
           { path: 'testimonials', element: <AdminTestimonials /> },
           { path: 'config',       element: <RequireRole role="admin"><AdminConfig /></RequireRole> },

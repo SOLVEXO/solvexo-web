@@ -21,11 +21,14 @@ export function useLogin() {
     try {
       const res        = await apiLogin(payload);
       const { token, user } = res.data;
-      TokenStorage.save(token.accessToken, token.refreshToken);
-      TokenStorage.saveUser(user);
+      // A store-scoped account's session must never leak onto another
+      // store's subdomain or the apex — see authCookie.ts's AuthCookieScope.
+      const cookieScope = payload.storeId ? 'host' : 'shared';
+      TokenStorage.save(token.accessToken, token.refreshToken, cookieScope);
+      TokenStorage.saveUser(user, cookieScope);
       const serverRole = (user.role ?? payload.role) as AppRole;
       LastRolePreference.set(serverRole);
-      RememberedAccount.set({ name: user.name, email: user.email, role: serverRole, image: user.image ?? null });
+      RememberedAccount.set({ name: user.name, email: user.email, role: serverRole, image: user.image ?? null, authMethod: 'password' });
       toast.success('Logged in successfully');
       if (redirectTo) {
         navigate(redirectTo, { replace: true });

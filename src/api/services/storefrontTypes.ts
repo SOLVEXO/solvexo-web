@@ -1,9 +1,10 @@
 // Shared shapes for the sections+blocks storefront builder — mirrors the
-// backend's `common/schemas/{block,section}.schema.ts`. `settings` stays a
-// loose `Record<string, any>` here too (not a per-type union) since the
-// section/block registry lives in `SectionRenderer.tsx`'s component map, not
-// in the type system — adding a new type touches one map entry, not a big
-// discriminated-union refactor.
+// backend's `common/store-content/section-settings.types.ts`. `settings`
+// stays a loose `Record<string, any>` here too (not a per-type union) since
+// each theme's own section-render registry (e.g.
+// `storefront-themes/theme-01-atelier/sections/atelierSectionRenderer.tsx`)
+// owns the component map, not the type system — adding a new type touches
+// one registry entry, not a big discriminated-union refactor.
 
 export interface Block {
   _id?:      string;
@@ -25,15 +26,22 @@ export const SECTION_TYPES = [
   'featured_category_grid',
   'trust_badges',
   'newsletter',
-  // Generic, reusable additions (Theme Ecosystem Phase 3) — mirrors
-  // `common/schemas/section.schema.ts` on the backend exactly.
-  'feature_list',
-  'spec_table',
-  'menu_list',
-  'team_grid',
-  'location_info',
-  'stats_counter',
-  'gallery_grid',
+  // Contextual — always renders whichever collection is currently being
+  // browsed. Only ever appears inside the singleton Collection Template, not
+  // the general Pages/Home "Add Section" picker (see `sectionRegistry.ts`).
+  'collection_product_grid',
+  // Real, backend-validated (`section-settings.validator.ts`) section types
+  // that predate any theme actually implementing them — added here as each
+  // theme adopts one. `drop_countdown` is Atelier's first (see
+  // `DropCountdownSection.tsx`); the rest are added only once a real theme
+  // implements them, to keep this list an honest reflection of what's
+  // actually usable, not a speculative wishlist.
+  'editorial_lookbook',
+  'farm_story',
+  'drop_countdown',
+  'craft_process',
+  'tech_specs_compare',
+  'soft_gallery',
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
 

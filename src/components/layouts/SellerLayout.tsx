@@ -1,4 +1,5 @@
-import { type ReactNode, useState, useRef, useEffect } from 'react';
+import { type ReactNode, useState, useId } from 'react';
+import { motion } from 'motion/react';
 import { ActiveStoreProvider, useActiveStore } from '@/contexts/ActiveStoreContext';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useLogout } from '@/hooks/auth/useLogout';
@@ -12,10 +13,11 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Store,
   Settings, BarChart2,
-  ChevronDown, Plus, PanelLeftClose, PanelLeftOpen, LogOut,
+  ChevronDown, PanelLeftClose, PanelLeftOpen, LogOut,
 } from 'lucide-react';
 import { SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { NotificationBell, AnnouncementBanner, CurrencySelector } from '@/components/comman/ui';
+import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface NavItem {
@@ -97,100 +99,6 @@ function buildPaletteItems(navigate: (path: string) => void): CommandPaletteItem
   return result;
 }
 
-// ── Store Switcher ────────────────────────────────────────────────────────────
-function SidebarStoreSwitcher() {
-  const navigate = useNavigate();
-  const { stores, loading } = useActiveStore();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  const displayName = loading ? 'Loading…' : 'My Stores';
-  const displaySub  = loading ? '' : `${stores.length} store${stores.length !== 1 ? 's' : ''}`;
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(p => !p)}
-        className={clsx(
-          'w-full rounded-md py-2 px-[10px] flex items-center gap-2',
-          'cursor-pointer border-0 transition-colors duration-150',
-          open ? 'bg-charcoal' : 'bg-dark-active hover:bg-charcoal',
-        )}
-      >
-        <div className="size-6 rounded-sm bg-brand-orange flex items-center justify-center shrink-0">
-          <Store size={13} className="text-white" />
-        </div>
-        <div className="flex-1 min-w-0 text-left">
-          <p className="text-[11px] font-semibold text-white leading-[1.3] truncate">{displayName}</p>
-          {displaySub && <p className="text-[10px] text-slate leading-[1.3]">{displaySub}</p>}
-        </div>
-        <ChevronDown size={13} className={clsx('text-slate shrink-0 transition-transform duration-200', open && 'rotate-180')} />
-      </button>
-
-      {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-[#1a1917] border border-charcoal rounded-[10px] p-[6px]">
-          <p className="text-[10px] font-semibold text-dark-label uppercase tracking-[0.08em] px-[10px] pt-1 pb-2">
-            Switch Store
-          </p>
-          <div className="max-h-[205px] overflow-y-auto">
-            {stores.map(store => (
-              <SidebarStoreItem
-                key={store._id}
-                label={store.name}
-                sub={`/${store.slug} · ${store.plan}`}
-                logo={store.logo}
-                onClick={() => { navigate(`/store/${store._id}/dashboard`); setOpen(false); }}
-              />
-            ))}
-            {stores.length === 0 && !loading && (
-              <p className="text-[11px] text-dark-label px-[10px] py-[6px]">No stores yet</p>
-            )}
-          </div>
-          <div className="h-px bg-charcoal mx-[6px] my-1" />
-          <button
-            onClick={() => { setOpen(false); navigate('/onboard'); }}
-            className="flex items-center gap-[7px] w-full py-2 px-[10px] rounded-[7px] bg-transparent border-0 cursor-pointer text-[11px] font-semibold text-brand-orange hover:bg-charcoal transition-colors duration-150"
-          >
-            <Plus size={12} /> New Store
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SidebarStoreItem({ label, sub, logo, onClick }: {
-  label:   string;
-  sub:     string;
-  logo?:   string | null;
-  onClick: () => void;
-}) {
-  const initials = label.slice(0, 2).toUpperCase();
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-[9px] w-full py-[7px] px-[10px] rounded-md bg-transparent border-0 cursor-pointer text-left transition-colors duration-[120ms] hover:bg-dark-hover"
-    >
-      <div className="size-[26px] rounded-[7px] shrink-0 bg-charcoal overflow-hidden flex items-center justify-center text-[9px] font-bold text-slate">
-        {logo ? <img loading="lazy" decoding="async" src={logo} alt={label} className="w-full h-full object-cover" /> : initials}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-medium text-dark-text truncate">{label}</p>
-        <p className="text-[10px] text-dark-label">{sub}</p>
-      </div>
-    </button>
-  );
-}
-
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 function isDropdown(item: NavEntry): item is NavDropdown {
   return 'children' in item;
@@ -206,6 +114,7 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
   const { pathname } = useLocation();
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   const { profile, loading: profileLoading } = useGetProfile();
+  const { stores, loading: storesLoading } = useActiveStore();
   const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
   const logout = useLogout();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -213,11 +122,15 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
 
   const handleLogout = async () => {
     setLoggingOut(true);
-    await logout();
+    // Seller-only web login (see LoginPage's SELLER_ONLY_LOGIN) — a signed-out
+    // seller belongs back at /login, not the public homepage default.
+    await logout('/login');
   };
 
   const isActive     = (path: string) => pathname === path || pathname.startsWith(path + '/');
   const toggleDropdown = (id: string) => setOpenDropdowns(prev => ({ ...prev, [id]: !prev[id] }));
+  const topPillId    = useId();
+  const childPillId  = useId();
 
   const paletteItems = buildPaletteItems(navigate);
 
@@ -250,7 +163,7 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
       <aside className={clsx(
         'hidden lg:flex bg-carbon flex-col shrink-0',
         'transition-[width] duration-300 ease-in-out',
-        import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen',
+        'h-screen',
         open ? 'w-[220px]' : 'w-[60px]',
       )}>
 
@@ -275,12 +188,12 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
         {/* Store switcher (only when expanded) */}
         {open && (
           <div className="px-5 pb-4 shrink-0">
-            <SidebarStoreSwitcher />
+            <StoreSwitcher stores={stores} loading={storesLoading} />
           </div>
         )}
 
         {/* Nav sections */}
-        <nav className={clsx('flex-1 overflow-y-auto', open ? 'px-3 pt-1' : 'px-[10px] pt-2')}>
+        <nav data-lenis-prevent className={clsx('flex-1 overflow-y-auto', open ? 'px-3 pt-1' : 'px-[10px] pt-2')}>
           {NAV_SECTIONS.map(section => (
             <div key={section.label} className="mb-1">
               {open
@@ -302,11 +215,18 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
                         title={item.label}
                         aria-label={item.label}
                         className={clsx(
-                          'w-full flex items-center justify-center py-[9px] rounded-md mb-0.5 cursor-pointer border-none transition-colors duration-150',
-                          anyChildActive ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
+                          'relative w-full flex items-center justify-center py-[9px] rounded-md mb-0.5 cursor-pointer border-none',
+                          !anyChildActive && 'hover:bg-dark-active transition-colors duration-fast',
                         )}
                       >
-                        <item.Icon size={15} className={clsx('shrink-0', anyChildActive ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
+                        {anyChildActive && (
+                          <motion.div
+                            layoutId={`seller-nav-top-pill-${topPillId}`}
+                            className="absolute inset-0 rounded-md bg-dark-active"
+                            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                          />
+                        )}
+                        <item.Icon size={15} className={clsx('relative shrink-0', anyChildActive ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
                       </button>
                     );
                   }
@@ -336,16 +256,23 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
                                 onClick={() => navigate(child.path)}
                                 aria-current={active ? 'page' : undefined}
                                 className={clsx(
-                                  'w-full flex items-center gap-[10px] py-2 px-[10px] rounded-md mb-0.5 border-none text-left',
-                                  'cursor-pointer transition-colors duration-150',
-                                  active ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
+                                  'relative w-full flex items-center gap-[10px] py-2 px-[10px] rounded-md mb-0.5 border-none text-left',
+                                  'cursor-pointer',
+                                  !active && 'hover:bg-dark-active transition-colors duration-fast',
                                 )}
                               >
-                                <child.Icon size={13} className={clsx('shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
-                                <span className={clsx('text-[12px] flex-1', active ? 'font-semibold text-white' : 'font-normal text-slate')}>
+                                {active && (
+                                  <motion.div
+                                    layoutId={`seller-nav-child-pill-${childPillId}`}
+                                    className="absolute inset-0 rounded-md bg-dark-active"
+                                    transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                                  />
+                                )}
+                                <child.Icon size={13} className={clsx('relative shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
+                                <span className={clsx('relative text-[12px] flex-1', active ? 'font-semibold text-white' : 'font-normal text-slate')}>
                                   {child.label}
                                 </span>
-                                {active && <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
+                                {active && <div className="relative w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
                               </button>
                             );
                           })}
@@ -365,19 +292,26 @@ function SellerSidebar({ open, onToggle }: SellerSidebarProps) {
                     aria-label={item.label}
                     aria-current={active ? 'page' : undefined}
                     className={clsx(
-                      'w-full flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 border-none text-left',
-                      'cursor-pointer transition-colors duration-150',
+                      'relative w-full flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 border-none text-left',
+                      'cursor-pointer',
                       !open && 'lg:justify-center lg:px-0',
-                      active ? 'bg-dark-active' : 'bg-transparent hover:bg-dark-active',
+                      !active && 'hover:bg-dark-active transition-colors duration-fast',
                     )}
                   >
-                    <item.Icon size={15} className={clsx('shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
+                    {active && (
+                      <motion.div
+                        layoutId={`seller-nav-top-pill-${topPillId}`}
+                        className="absolute inset-0 rounded-md bg-dark-active"
+                        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                      />
+                    )}
+                    <item.Icon size={15} className={clsx('relative shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-45')} />
                     {open && (
                       <>
-                        <span className={clsx('text-[13px] flex-1', active ? 'font-semibold text-white' : 'font-normal text-slate')}>
+                        <span className={clsx('relative text-[13px] flex-1', active ? 'font-semibold text-white' : 'font-normal text-slate')}>
                           {item.label}
                         </span>
-                        {active && <div className="w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
+                        {active && <div className="relative w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />}
                       </>
                     )}
                   </button>
@@ -524,11 +458,11 @@ export function SellerLayout() {
 
   return (
     <ActiveStoreProvider>
-      <div className={clsx('flex bg-cream', import.meta.env.DEV ? 'h-[calc(100vh-44px)]' : 'h-screen')}>
+      <div className={clsx('flex bg-cream', 'h-screen')}>
         <SellerSidebar open={sidebarOpen} onToggle={toggle} />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <AnnouncementBanner audience="sellers" />
-          <div className="flex-1 overflow-y-auto overflow-x-hidden pb-[64px] lg:pb-0">
+          <div data-lenis-prevent className="flex-1 overflow-y-auto overflow-x-hidden pb-[64px] lg:pb-0">
             <Outlet />
           </div>
         </div>

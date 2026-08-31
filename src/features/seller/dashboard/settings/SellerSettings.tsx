@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useGetProfile, invalidateProfileCache } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
@@ -10,10 +10,11 @@ import { apiDeleteAccount } from '@/api/services/users';
 import { TokenStorage } from '@/api/services/auth';
 import { Modal, Button, NotificationsPanel } from '@/components/comman/ui';
 import {
-  User, KeyRound, ShieldCheck, Bell,
+  User, KeyRound,
   Trash2, Camera, Settings, Check, Loader2, Eye, EyeOff, ChevronLeft, ChevronRight, type LucideIcon,
 } from 'lucide-react';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { StorePageHeader } from '@/components/layouts/StoreLayout';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 // Account-level only. Store Info/Domain/Payments/Shipping/Billing/Payouts/
@@ -23,7 +24,25 @@ import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 // (StoreSettings/StoreSEO/StoreFinance/StorePlanBilling), not duplicated here.
 // Staff/Permissions/Tax have no backend implementation anywhere yet either
 // (no RBAC system, no tax module) — building them is a separate product decision.
-type SettingSection = 'profile' | 'email-password' | 'two-factor' | 'notifications' | 'delete-account';
+//
+// 'notifications' is deliberately kept in this union, in `validTabs` below,
+// and still fully rendered (`active === 'notifications'` → <NotificationsPanel/>)
+// even though it's no longer a browsable item in SETTINGS_NAV — both
+// NotificationBell's "View All" and the store navbar's own bell already
+// hard-navigate to this exact page's `?tab=notifications` (see
+// NotificationBell.tsx / ProfileAvatar.tsx), so deleting the tab itself
+// would silently break those two live links. Only its standalone entry in
+// the Account sidebar/mobile menu was removed, at the seller's request —
+// real notifications now live in the store dashboard's own navbar bell, so
+// browsing to a second, separate "Notifications" page from inside Account
+// was pure duplication of the same data.
+//
+// 'two-factor' was removed outright (not just hidden) — unlike the section
+// above, nothing else in the app links to `?tab=two-factor`, and its content
+// was never more than a "Settings for this section are coming soon"
+// placeholder (no 2FA backend exists yet), so there was nothing live left
+// to preserve.
+type SettingSection = 'profile' | 'email-password' | 'notifications' | 'delete-account';
 
 const SETTINGS_NAV: { group: string; isDanger?: boolean; items: { id: SettingSection; label: string; Icon: LucideIcon }[] }[] = [
   {
@@ -31,8 +50,6 @@ const SETTINGS_NAV: { group: string; isDanger?: boolean; items: { id: SettingSec
     items: [
       { id: 'profile',         label: 'Profile',          Icon: User           },
       { id: 'email-password',  label: 'Email & Password', Icon: KeyRound       },
-      { id: 'two-factor',      label: 'Two-Factor Auth',  Icon: ShieldCheck    },
-      { id: 'notifications',   label: 'Notifications',    Icon: Bell           },
     ],
   },
   {
@@ -153,15 +170,30 @@ function MobileSellerMenu({ active, onSelect }: { active: SettingSection; onSele
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function SellerSettings() {
+// `variant="store"` renders this same account-settings content inside a
+// specific store's dashboard (via StorePageHeader, with that workspace's
+// back-nav/notification bell) — used at /store/:storeId/account. There's no
+// separate cross-store "seller dashboard" page any more, so a seller's own
+// profile/security/notifications must be reachable from inside whichever
+// store they're currently working in, not just from the legacy /seller/settings
+// page (kept reachable by direct URL only, matching this project's established
+// "disconnect, don't delete" convention — nothing links to it any more).
+export function SellerSettings({ variant = 'seller' }: { variant?: 'seller' | 'store' } = {}) {
   usePageTitle('Settings');
   const navigate = useNavigate();
-  const [active,    setActive]    = useState<SettingSection>('profile');
+  const [searchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab') as SettingSection | null;
+  const validTabs: SettingSection[] = ['profile', 'email-password', 'notifications', 'delete-account'];
+  const [active, setActive] = useState<SettingSection>(
+    requestedTab && validTabs.includes(requestedTab) ? requestedTab : 'profile',
+  );
   // Mobile-only: whether we've drilled into a section from the account-hub
   // menu below (mirrors the buyer AccountLayout's back-arrow drill-in, done
   // via local state instead of real routes since this page has none).
   // Desktop ignores this entirely — content + sidebar are always shown there.
-  const [mobileDrilledIn, setMobileDrilledIn] = useState(false);
+  const [mobileDrilledIn, setMobileDrilledIn] = useState(
+    !!(requestedTab && validTabs.includes(requestedTab)),
+  );
   const { summary: storesSummary, loading: storesLoading } = useMyStores();
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
@@ -225,13 +257,18 @@ export function SellerSettings() {
 
   const allItems = SETTINGS_NAV.flatMap(g => g.items);
   const activeItem = allItems.find(i => i.id === active);
+  // `activeItem` is undefined for 'notifications' now that it's not a
+  // SETTINGS_NAV entry any more (see the comment above SettingSection) — this
+  // covers just the mobile back-bar title, the one place that still needs a
+  // human label for a tab that can be reached without ever appearing in the
+  // menu (a deep link from NotificationBell/ProfileAvatar's own bell).
+  const activeSectionLabel = activeItem?.label ?? (active === 'notifications' ? 'Notifications' : 'Settings');
 
   return (
     <>
-      <SellerPageHeader
-        title="Settings"
-        subtitle="Manage your account preferences."
-      />
+      {variant === 'store'
+        ? <StorePageHeader title="Account" subtitle="Manage your personal profile and login details." />
+        : <SellerPageHeader title="Settings" subtitle="Manage your account preferences." />}
 
       <div className="px-4 lg:px-7 pt-5 pb-8">
         {/* Mobile-only account hub — hero (avatar/name/email/role + real
@@ -267,7 +304,7 @@ export function SellerSettings() {
             >
               <ChevronLeft size={19} />
             </button>
-            <p className="text-[15px] font-bold text-carbon">{activeItem?.label ?? 'Settings'}</p>
+            <p className="text-[15px] font-bold text-carbon">{activeSectionLabel}</p>
           </div>
         )}
 

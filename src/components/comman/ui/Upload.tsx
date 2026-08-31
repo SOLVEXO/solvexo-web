@@ -1,10 +1,18 @@
-import { type ChangeEvent } from 'react';
-import { Camera, Plus, Upload, Loader2, X, File as FileIcon } from 'lucide-react';
+import { type ChangeEvent, useState, lazy, Suspense } from 'react';
+import { Camera, Plus, Upload, Loader2, X, File as FileIcon, FolderOpen } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useUpload } from '@/hooks/upload/useUpload';
 import type { PrivateUploadData } from '@/api/upload';
+import { apiUploadMediaAsset } from '@/api/services/mediaLibrary';
 
 export type { PrivateUploadData };
+
+// Lazy — most `ImageUpload` call sites never pass `storeId`, so the Files
+// Library picker (and its own API calls) shouldn't be in every bundle chunk
+// that happens to render a plain logo/product-image uploader.
+const MediaLibraryPickerModal = lazy(() =>
+  import('@/features/seller/store/Dashboard/OnlineStore/builder/MediaLibraryPickerModal').then(m => ({ default: m.MediaLibraryPickerModal })),
+);
 
 // ── ImageUpload ───────────────────────────────────────────────────────────────
 
@@ -14,78 +22,122 @@ interface ImageUploadProps {
   maxFiles?:  number;
   accept?:    string;
   className?: string;
+  /** When set, uploads through this widget are tracked into that store's
+   *  Files Library, and a "Browse Library" option lets the seller reuse a
+   *  previously-uploaded file instead of uploading a duplicate. Omit for
+   *  call sites with no store context (e.g. a buyer review photo) — nothing
+   *  changes for them. */
+  storeId?: string;
 }
 
 export function ImageUpload({
-  value, onChange, maxFiles = 1, accept = 'image/png,image/jpeg,image/webp', className,
+  value, onChange, maxFiles = 1, accept = 'image/png,image/jpeg,image/webp', className, storeId,
 }: ImageUploadProps) {
-  const { upload, uploading, error } = useUpload('public');
+  const { upload, uploading: plainUploading, error } = useUpload('public');
+  const [libraryUploading, setLibraryUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const uploading = plainUploading || libraryUploading;
+
+  const addUrl = (url: string) => {
+    if (maxFiles === 1) onChange([url]);
+    else onChange([...value, url].slice(0, maxFiles));
+  };
 
   const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
-    upload(file)
-      .then(data => {
-        if (maxFiles === 1) onChange([data.url]);
-        else onChange([...value, data.url].slice(0, maxFiles));
-      })
-      .catch(() => {});
+    if (storeId) {
+      setLibraryUploading(true);
+      apiUploadMediaAsset(storeId, file)
+        .then(res => addUrl(res.data.url))
+        .catch(() => {})
+        .finally(() => setLibraryUploading(false));
+    } else {
+      upload(file).then(data => addUrl(data.url)).catch(() => {});
+    }
   };
 
   const remove = (i: number) => onChange(value.filter((_, idx) => idx !== i));
   const canAdd = value.length < maxFiles;
 
+  const libraryPicker = storeId && pickerOpen && (
+    <Suspense fallback={null}>
+      <MediaLibraryPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        storeId={storeId}
+        onSelect={url => { addUrl(url); setPickerOpen(false); }}
+      />
+    </Suspense>
+  );
+
   // ── Single image (logo style) ─────────────────────────────────────────────
   if (maxFiles === 1) {
     const url = value[0] ?? null;
     return (
-      <div className={clsx('flex flex-col items-start', className)}>
-        <label className={clsx(
-          'size-[72px] rounded-2xl bg-brand-pale-orange border-2 border-dashed border-brand-orange',
-          'flex items-center justify-center shrink-0 overflow-hidden',
-          uploading ? 'cursor-wait opacity-60' : 'cursor-pointer',
-        )}>
-          {uploading
-            ? <Loader2 size={22} className="text-brand-orange animate-spin" />
-            : url
-              ? <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
-              : <Camera size={22} className="text-brand-orange" />}
-          <input type="file" accept={accept} className="hidden" onChange={handleFile} disabled={uploading} />
-        </label>
+      <div className={clsx('flex flex-col items-start gap-1.5', className)}>
+        <div className="flex items-end gap-2">
+          <label className={clsx(
+            'size-[72px] rounded-2xl bg-brand-pale-orange border-2 border-dashed border-brand-orange',
+            'flex items-center justify-center shrink-0 overflow-hidden',
+            uploading ? 'cursor-wait opacity-60' : 'cursor-pointer',
+          )}>
+            {uploading
+              ? <Loader2 size={22} className="text-brand-orange animate-spin" />
+              : url
+                ? <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
+                : <Camera size={22} className="text-brand-orange" />}
+            <input type="file" accept={accept} className="hidden" onChange={handleFile} disabled={uploading} />
+          </label>
+        </div>
+        {storeId && (
+          <button type="button" onClick={() => setPickerOpen(true)} className="text-[11px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer flex items-center gap-1">
+            <FolderOpen size={11} /> Browse Library
+          </button>
+        )}
         {error && <p className="text-[11px] text-error mt-1">{error}</p>}
+        {libraryPicker}
       </div>
     );
   }
 
   // ── Multi image (product images) ──────────────────────────────────────────
   return (
-    <div className={clsx('flex flex-wrap gap-2', className)}>
-      {value.map((url, i) => (
-        <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-bone group">
-          <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
-          <button
-            type="button"
-            onClick={() => remove(i)}
-            className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <X size={10} />
-          </button>
-        </div>
-      ))}
-      {canAdd && (
-        <label className={clsx(
-          'w-16 h-16 rounded-lg border-2 border-dashed border-bone flex items-center justify-center',
-          'hover:border-brand-orange hover:bg-brand-pale-orange transition-colors',
-          uploading ? 'cursor-wait opacity-60' : 'cursor-pointer',
-        )}>
-          {uploading
-            ? <Loader2 size={16} className="text-brand-orange animate-spin" />
-            : <Plus size={18} className="text-slate" />}
-          <input type="file" accept={accept} className="hidden" onChange={handleFile} disabled={uploading} />
-        </label>
+    <div className={clsx('flex flex-col gap-1.5', className)}>
+      <div className="flex flex-wrap gap-2">
+        {value.map((url, i) => (
+          <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-bone group">
+            <img loading="lazy" decoding="async" src={url} alt="" className="w-full h-full object-cover" />
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X size={10} />
+            </button>
+          </div>
+        ))}
+        {canAdd && (
+          <label className={clsx(
+            'w-16 h-16 rounded-lg border-2 border-dashed border-bone flex items-center justify-center',
+            'hover:border-brand-orange hover:bg-brand-pale-orange transition-colors',
+            uploading ? 'cursor-wait opacity-60' : 'cursor-pointer',
+          )}>
+            {uploading
+              ? <Loader2 size={16} className="text-brand-orange animate-spin" />
+              : <Plus size={18} className="text-slate" />}
+            <input type="file" accept={accept} className="hidden" onChange={handleFile} disabled={uploading} />
+          </label>
+        )}
+      </div>
+      {storeId && canAdd && (
+        <button type="button" onClick={() => setPickerOpen(true)} className="text-[11px] font-semibold text-brand-orange bg-transparent border-none cursor-pointer flex items-center gap-1 self-start">
+          <FolderOpen size={11} /> Browse Library
+        </button>
       )}
       {error && <p className="text-[11px] text-error w-full">{error}</p>}
+      {libraryPicker}
     </div>
   );
 }

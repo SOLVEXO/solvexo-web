@@ -124,6 +124,24 @@ export const PLATFORM_PRODUCTS: PlatformProduct[] = [
       { q: 'Do POS sales show up in the same order list as online orders?', a: 'Yes — both channels share one order workspace.' },
     ],
   },
+  {
+    slug: 'loyalty',
+    name: 'Loyalty & Rewards',
+    tagline: 'Turn one-time buyers into repeat customers',
+    heroHeadline: 'Reward loyalty. Bring buyers back.',
+    heroSubtext: 'A real points-and-rewards program — buyers earn points on purchases and redeem them for a real voucher code that works right in your checkout\'s coupon field.',
+    benefits: [
+      { title: 'Points & tiers, not just a discount code', desc: 'Buyers earn points as they spend and redeem them against a rewards catalog you define — a real program, not a one-off promo.' },
+      { title: 'Real, single-use voucher codes', desc: 'Redeeming a reward issues an actual voucher code, usable once, that a buyer applies at checkout the same way they\'d use any coupon.' },
+      { title: 'Runs per store', desc: 'Each store sets its own point values and rewards catalog — there\'s no shared program across sellers.' },
+    ],
+    features: ['Points earned per purchase', 'Seller-defined rewards catalog', 'Single-use voucher codes at redemption', 'Redeemed through the existing checkout coupon field'],
+    useCases: ['Encouraging repeat purchases with a real rewards catalog', 'Rewarding your best customers with a voucher instead of a blanket discount', 'Running a tiered loyalty program without a separate app'],
+    faq: [
+      { q: 'Is loyalty a separate app buyers have to download?', a: 'No — it\'s built into your store\'s checkout. A redeemed reward becomes a voucher code, used like any coupon.' },
+      { q: 'Can I set my own rewards and point values?', a: 'Yes — you define what points cost and what they redeem for from your store dashboard.' },
+    ],
+  },
 ];
 
 export function getPlatformProduct(slug: string): PlatformProduct | undefined {

@@ -29,7 +29,12 @@ export function ForgotPasswordPage() {
     { email: '' },
     {
       onSubmit: async (data: ForgotPasswordFormData) => {
-        await forgotPassword.execute(data.email);
+        // Seller-only web login (see LoginPage's SELLER_ONLY_LOGIN) — every
+        // real account reaching this page is a seller, so this must query
+        // the Seller collection, not useForgotPassword's buyer-oriented
+        // 'user' default (which would silently check the wrong collection
+        // and never actually send a real seller their reset code).
+        await forgotPassword.execute(data.email, 'seller');
       },
     },
   );

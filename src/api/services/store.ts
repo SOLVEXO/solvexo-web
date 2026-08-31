@@ -10,7 +10,10 @@ export type SupportedCurrency = 'PKR' | 'USD';
 export interface CreateStorePayload {
   name:         string;
   logo?:        string;
-  categoryId:   string;
+  /** Legacy global/admin root category — optional. Categories are now
+   *  store-owned (see StoreCategories.tsx): a seller builds their own
+   *  category tree AFTER the store exists, never chosen at onboarding. */
+  categoryId?:  string;
   description?: string;
   sellerType:   SellerType;
   productTypes: ProductType[];
@@ -18,6 +21,9 @@ export interface CreateStorePayload {
    *  required, and locked forever the moment the store has its first
    *  product (see backend StoreService.createStore's comment). */
   baseCurrency: SupportedCurrency;
+  /** Which PlatformPlan to trial for 3 days — omitted falls back to the
+   *  cheapest real paid plan (see backend ensureDefaultSubscription). */
+  platformPlanId?: string;
 }
 
 export interface UpdateStorePayload {
@@ -32,6 +38,11 @@ export interface UpdateStorePayload {
   contactPhone?: string;
   productTypes?: ProductType[];
   codEnabled?:  boolean;
+  lowStockThreshold?: number;
+  taxRate?: number;
+  /** "Markets" — which of the platform's supported currencies buyers may
+   *  check out in on this store. Must include the store's own baseCurrency. */
+  enabledCurrencies?: SupportedCurrency[];
 }
 
 export interface StoreData {
@@ -47,9 +58,18 @@ export interface StoreData {
   tagline:      string | null;
   contactEmail: string | null;
   contactPhone: string | null;
+  /** Store-configurable "low stock" cutoff used by InventoryService's stats/alerts — was previously a fixed 10 for every store. */
+  lowStockThreshold: number;
+  /** A flat percentage charged on top of the subtotal at checkout — 0 = no tax. Deliberately simple (no jurisdiction rules), see CheckoutService's comment. */
+  taxRate: number;
   sellerType:   SellerType;
   productTypes: ProductType[];
   baseCurrency: SupportedCurrency;
+  /** "Markets" — real, seller-configurable subset of `SUPPORTED_CURRENCIES`
+   *  a buyer may check out in on this store. Null/absent (a pre-existing
+   *  store that never touched this setting) means every supported currency
+   *  is accepted — treat a null/empty value as "all", never as "none". */
+  enabledCurrencies: SupportedCurrency[] | null;
   /** Per-seller Cash-on-Delivery opt-out — defaults to true. Not yet enforced
    *  by checkout (a multi-vendor cart's COD eligibility isn't scoped per
    *  seller there yet); this only persists the seller's preference so far. */
@@ -224,6 +244,8 @@ export interface PublicStoreData {
    *  per store) — use this to convert listed prices to the buyer's chosen
    *  display currency. */
   baseCurrency:   SupportedCurrency;
+  /** "Markets" — null means every supported currency is accepted. */
+  enabledCurrencies: SupportedCurrency[] | null;
   sellerType:     string | null;
   badges:         string[];
   createdAt:      string;
@@ -406,6 +428,8 @@ export function apiGetStoreFollowers(storeId: string, page = 1, limit = 20) {
 
 // ── Customers (staff-facing) ──────────────────────────────────────────────────
 
+export type StoreCustomerSegment = 'new' | 'returning' | 'vip' | 'at_risk';
+
 export interface StoreCustomer {
   _id:         string;
   name:        string;
@@ -415,12 +439,22 @@ export interface StoreCustomer {
   orderCount:  number;
   totalSpent:  number;
   lastOrderAt: string | null;
+  /** Computed at read time from order stats — never stored, see backend StoreCustomerMeta's doc comment. */
+  segment:     StoreCustomerSegment;
+  /** Seller-private, scoped to this store only. */
+  tags:        string[];
+  notes:       string;
 }
 
 export interface UpdateStoreCustomerPayload {
   name?:  string;
   phone?: string;
   email?: string;
+}
+
+export interface UpdateStoreCustomerMetaPayload {
+  tags?:  string[];
+  notes?: string;
 }
 
 interface PaginatedCustomers {
@@ -440,5 +474,12 @@ export function apiGetStoreCustomers(storeId: string, page = 1, limit = 20) {
 export function apiUpdateStoreCustomer(storeId: string, customerId: string, payload: UpdateStoreCustomerPayload) {
   return client.patch<never, ApiResponse<StoreCustomer>>(
     ENDPOINTS.STORE.CUSTOMERS.UPDATE(storeId, customerId), payload,
+  );
+}
+
+/** PATCH /api/store/:storeId/customers/:customerId/meta  (seller only) — tags/notes, private to this store. */
+export function apiUpdateStoreCustomerMeta(storeId: string, customerId: string, payload: UpdateStoreCustomerMetaPayload) {
+  return client.patch<never, ApiResponse<{ tags: string[]; notes: string }>>(
+    ENDPOINTS.STORE.CUSTOMERS.UPDATE_META(storeId, customerId), payload,
   );
 }

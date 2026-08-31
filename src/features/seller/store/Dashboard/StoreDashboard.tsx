@@ -4,7 +4,7 @@ import {
   TrendingUp, TrendingDown, ShoppingBag, Package, Users,
   CheckCircle, Clock, Globe, Copy, ExternalLink,
   ArrowRight, Settings, Sparkles, BarChart2,
-  ClipboardList, Megaphone,
+  ClipboardList, Megaphone, AlertTriangle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
@@ -14,16 +14,21 @@ import {
   apiSellerAnalyticsOverview, apiSellerAnalyticsRevenueOverTime, apiSellerAnalyticsToday,
   type SellerOverviewData, type RevenuePoint, type SellerTodaySummaryData,
 } from '@/api/services/analytics/analytics';
-import { apiGetStoreInventory } from '@/api/services/product';
+import { apiGetStoreInventory, apiGetLowStockSummary, apiGetSellerOrders } from '@/api/services/product';
+import { apiGetSellerReturns } from '@/api/services/orders';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
 import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
+import { SetupGuideCard } from './SetupGuideCard';
 
 interface StoreMetrics {
   overview:      SellerOverviewData;
   revenueSeries: RevenuePoint[];
   totalProducts: number;
   today:         SellerTodaySummaryData;
+  lowStockCount: number;
+  pendingOrdersCount: number;
+  openReturnsCount: number;
 }
 
 function useStoreDashboardMetrics(storeId: string) {
@@ -44,14 +49,20 @@ function useStoreDashboardMetrics(storeId: string) {
       apiSellerAnalyticsRevenueOverTime({ storeId, range: '6m', granularity: 'month' }),
       apiGetStoreInventory(storeId, 1, 1),
       apiSellerAnalyticsToday(storeId),
+      apiGetLowStockSummary(storeId),
+      apiGetSellerOrders(storeId, 1, 1),
+      apiGetSellerReturns({ storeId }),
     ])
-      .then(([overviewRes, revenueRes, inventoryRes, todayRes]) => {
+      .then(([overviewRes, revenueRes, inventoryRes, todayRes, lowStockRes, ordersRes, returnsRes]) => {
         if (cancelled) return;
         setMetrics({
           overview: overviewRes.data,
           revenueSeries: revenueRes.data.series,
           totalProducts: inventoryRes.data.stats.totalProducts,
           today: todayRes.data,
+          lowStockCount: lowStockRes.data.count,
+          pendingOrdersCount: ordersRes.data.stats.pending,
+          openReturnsCount: returnsRes.data.stats.openRequests,
         });
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store metrics.'); })
@@ -316,6 +327,58 @@ function QuickActionsRow({ storeId }: { storeId: string }) {
   );
 }
 
+// ── Needs Attention ───────────────────────────────────────────────────────────
+// Real, actionable signals already computed by existing endpoints (low-stock
+// threshold from Phase 5, order stats, return stats) — surfaced as one glance
+// list instead of a seller having to separately check Inventory/Orders/
+// Returns to notice something needs action. Renders nothing extra when
+// everything's caught up, rather than an empty placeholder card.
+interface AttentionItem { label: string; count: number; path: string; Icon: LucideIcon; color: string }
+
+function NeedsAttentionCard({ storeId, lowStockCount, pendingOrdersCount, openReturnsCount }: {
+  storeId: string; lowStockCount: number; pendingOrdersCount: number; openReturnsCount: number;
+}) {
+  const navigate = useNavigate();
+  const items: AttentionItem[] = [
+    { label: 'Order(s) awaiting fulfillment', count: pendingOrdersCount, path: 'orders', Icon: Package, color: '#8B5CF6' },
+    { label: 'Product(s) low on stock', count: lowStockCount, path: 'inventory', Icon: ClipboardList, color: '#F59E0B' },
+    { label: 'Return request(s) awaiting review', count: openReturnsCount, path: 'returns', Icon: AlertTriangle, color: '#EF4444' },
+  ].filter(i => i.count > 0);
+
+  if (items.length === 0) {
+    return (
+      <div className="dash-section-enter bg-white border border-bone rounded-2xl px-5 py-4 flex items-center gap-2.5">
+        <CheckCircle size={16} className="text-success shrink-0" />
+        <p className="text-[13px] font-medium text-charcoal">All caught up — nothing needs your attention right now.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dash-section-enter bg-white border border-bone rounded-2xl overflow-hidden">
+      <div className="px-5 pt-4 pb-3 border-b border-[#f3f2ec] flex items-center gap-2">
+        <AlertTriangle size={14} className="text-brand-orange" />
+        <p className="text-sm font-bold text-charcoal">Needs Attention</p>
+      </div>
+      <div className="flex flex-col divide-y divide-[#f3f2ec]">
+        {items.map(item => (
+          <button
+            key={item.label}
+            onClick={() => navigate(`/store/${storeId}/${item.path}`)}
+            className="flex items-center gap-3 px-5 py-3 bg-transparent border-none cursor-pointer text-left w-full transition-colors duration-150 hover:bg-[#f7f6f1]"
+          >
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: item.color + '18', color: item.color }}>
+              <item.Icon size={14} />
+            </div>
+            <span className="flex-1 text-[13px] font-medium text-charcoal">{item.count} {item.label}</span>
+            <ArrowRight size={14} className="text-slate shrink-0" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Today Snapshot ────────────────────────────────────────────────────────────
 function TodaySnapshot({ today, currency }: { today: SellerTodaySummaryData; currency?: string | null }) {
   const up = today.revenueChangePercent >= 0;
@@ -412,6 +475,13 @@ export default function StoreDashboard() {
 
           <StoreHero store={store} />
 
+          {/* Persistent Setup Guide — replaces the old mandatory onboarding
+             Payment/Review steps (see OnboardingPage.tsx). Auto-hides itself
+             once every task is genuinely done; `totalProducts` is passed in
+             from the metrics this page already fetches, so it doesn't
+             trigger a second inventory request just to check completion. */}
+          {metrics && <SetupGuideCard storeId={storeId} totalProducts={metrics.totalProducts} />}
+
           {metricsError && (
             <div className="dash-section-enter flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-error-bg text-error text-[12.5px] border border-error/10">
               <span>{metricsError}</span>
@@ -422,6 +492,15 @@ export default function StoreDashboard() {
           )}
 
           {metrics?.today && <TodaySnapshot today={metrics.today} currency={store?.baseCurrency} />}
+
+          {metrics && (
+            <NeedsAttentionCard
+              storeId={storeId}
+              lowStockCount={metrics.lowStockCount}
+              pendingOrdersCount={metrics.pendingOrdersCount}
+              openReturnsCount={metrics.openReturnsCount}
+            />
+          )}
 
           {/* Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

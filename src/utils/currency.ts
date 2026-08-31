@@ -20,6 +20,15 @@ export function currencySymbol(code?: string | null): string {
   return CURRENCY_SYMBOLS[code.toUpperCase()] ?? code;
 }
 
+/** Formats a plain number to always show exactly 2 decimals with thousands
+ *  separators (e.g. `2999.9` → `2,999.90`, `134.1` → `134.10`) — pairs with
+ *  `currencySymbol()` at call sites that build their own `{symbol}{amount}`
+ *  string rather than using `formatMoney`. Fixes the inconsistency where a
+ *  bare `.toLocaleString()` silently drops a trailing zero. */
+export function fmt2(amount: number): string {
+  return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 /** Formats an amount with the correct symbol for a given currency code. */
 export function formatMoney(amount: number, code?: string | null): string {
   return `${currencySymbol(code)} ${amount.toLocaleString()}`;
