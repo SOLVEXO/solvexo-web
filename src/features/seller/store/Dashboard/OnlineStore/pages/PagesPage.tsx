@@ -60,7 +60,7 @@ export function PagesPage() {
   // call in the app) while this hasn't loaded yet, so the picker never sits
   // empty.
   const [themeDefinitionId, setThemeDefinitionId] = useState<string | undefined>(undefined);
-  useEffect(() => { apiGetStoreTheme(storeId).then(res => setThemeDefinitionId(res.data.themeDefinitionId)).catch(() => {}); }, [storeId]);
+  useEffect(() => { apiGetStoreTheme(storeId).then(res => setThemeDefinitionId(res.data.themeDefinitionId ?? undefined)).catch(() => {}); }, [storeId]);
   const supportedSectionTypes = getThemePreviewComponents(themeDefinitionId, DEFAULT_THEME_ID).supportedSectionTypes;
 
   const loadPages = useCallback(() => {

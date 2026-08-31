@@ -6,7 +6,10 @@ import { type ReactNode } from 'react';
 type CardPadding = 'none' | 'sm' | 'md' | 'lg';
 
 interface CardProps {
-  children:   ReactNode;
+  // Optional — a loading-skeleton placeholder (e.g. StoreGiftCards.tsx's
+  // `<Card className="h-[180px] animate-pulse" />`) is a real, intentional
+  // empty Card, not a mistake.
+  children?:  ReactNode;
   className?: string;
   padding?:   CardPadding;
   hover?:     boolean;
