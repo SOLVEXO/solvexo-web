@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { SellerPageHeader } from '@/components/layouts/SellerLayout';
+import { StorePageHeader } from '@/components/layouts/StoreLayout';
 import { MapPin, Truck, Tag, Home, AlertCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
@@ -22,7 +22,7 @@ export function SellerShipping() {
 
   return (
     <>
-      <SellerPageHeader
+      <StorePageHeader
         title="Shipping"
         subtitle="Platform-wide shipping zones and rates used at checkout."
         actions={

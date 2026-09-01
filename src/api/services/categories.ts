@@ -39,6 +39,13 @@ export interface CategoryPayload {
   storeId?:    string;
 }
 
+export interface UpdateCategoryPayload {
+  name?:        string;
+  description?: string;
+  image?:       string;
+  isActive?:    boolean;
+}
+
 interface CategoryTreeListResponse { success: boolean; message: string; data: CategoryNode[] }
 interface CategoryTreeNodeResponse { success: boolean; message: string; data: CategoryNode }
 interface CategoryWithChildrenResponse { success: boolean; message: string; data: { category: Category; children: Category[] } }
@@ -73,4 +80,15 @@ export function apiGetCategoryById(id: string) {
 // then both main categories and subcategories are allowed freely.
 export function apiAddCategory(payload: CategoryPayload) {
   return client.post<never, CategoryCreateResponse>(ENDPOINTS.CATEGORIES.ADD, payload);
+}
+
+// Store-owned categories only — the legacy/global admin taxonomy has no
+// rename/delete path. `storeId` is sent as a query param to match the
+// backend route (`PUT/DELETE api/categories/category/:id?storeId=...`).
+export function apiUpdateCategory(id: string, storeId: string, payload: UpdateCategoryPayload) {
+  return client.put<never, CategoryCreateResponse>(`${ENDPOINTS.CATEGORIES.UPDATE(id)}?storeId=${storeId}`, payload);
+}
+
+export function apiDeleteCategory(id: string, storeId: string) {
+  return client.delete<never, { success: boolean; message: string }>(`${ENDPOINTS.CATEGORIES.DELETE(id)}?storeId=${storeId}`);
 }

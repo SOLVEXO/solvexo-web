@@ -129,6 +129,8 @@ export const ENDPOINTS = {
     ADD:       '/api/categories/add-category',
     TREE:      '/api/categories/category-tree',
     GET_BY_ID: (id: string) => `/api/categories/category/${id}`,
+    UPDATE:    (id: string) => `/api/categories/category/${id}`,
+    DELETE:    (id: string) => `/api/categories/category/${id}`,
   },
 
   // ── STORE ─────────────────────────────────────────────────────────────────
@@ -407,6 +409,7 @@ export const ENDPOINTS = {
     },
     MY_BALANCE: (storeId: string) => `/api/loyalty/${storeId}/my-balance`,
     REDEEM:     (storeId: string) => `/api/loyalty/${storeId}/redeem`,
+    VOUCHERS:   (storeId: string) => `/api/loyalty/${storeId}/vouchers`,
   },
 
   // ── GIFT CARDS ────────────────────────────────────────────────────────────

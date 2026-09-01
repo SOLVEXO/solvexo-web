@@ -19,6 +19,7 @@ import {
   type FinanceDashboard, type Transaction, type TransactionType, type PayoutMethod,
   type PayoutMethodType, type PayoutSchedule, type TaxReport, type Payout, type PayoutStatus,
 } from '@/api/services/finance';
+import { apiGetStripeConnectStatus } from '@/api/services/stripeConnect';
 
 const TYPE_STYLE: Record<TransactionType, { color: BadgeColor; label: string }> = {
   sale:             { color: 'green',  label: 'Sale' },
@@ -305,6 +306,14 @@ export function StoreFinance() {
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
   const [generatingTax, setGeneratingTax] = useState(false);
+  // Per-SELLER (not per-store — see Settings' own Payment Gateway card),
+  // fetched once here too so a Connect-active seller sees why this page's
+  // ledger/wallet numbers look low: `PaymentService.initiatePayment` routes
+  // a single-store, pay-in-full-online sale straight to the seller's own
+  // Stripe account when this is true, and `FinanceService.recordSale` is
+  // deliberately skipped for that sale (see `SellerOrder.settledViaConnect`)
+  // since that money never touches Solvexo's ledger at all.
+  const [stripeConnectActive, setStripeConnectActive] = useState(false);
 
   const transactionColumns: TableColumn<Transaction>[] = [
     { key: 'createdAt', header: 'Date', render: t => <span className="text-slate whitespace-nowrap">{new Date(t.createdAt).toLocaleDateString()}</span> },
@@ -372,6 +381,9 @@ export function StoreFinance() {
   useEffect(loadCore, [loadCore]);
   useEffect(loadWalletScoped, [loadWalletScoped]);
   useEffect(loadTransactions, [loadTransactions]);
+  useEffect(() => {
+    apiGetStripeConnectStatus().then(res => setStripeConnectActive(res.data.status === 'active')).catch(() => {});
+  }, []);
 
   async function handleExport() {
     setExporting(true);
@@ -479,6 +491,22 @@ export function StoreFinance() {
       />
 
       <div className="px-4 lg:px-7 pt-5 pb-8 flex flex-col gap-5">
+
+        {stripeConnectActive && (
+          <div className="flex items-start gap-3 bg-info-bg border border-[#BFDCF2] rounded-[10px] px-4 py-3">
+            <AlertTriangle size={16} className="text-info shrink-0 mt-[1px]" />
+            <p className="text-[12.5px] text-[#124469] leading-[1.5]">
+              <strong>Stripe Connect is active on your account.</strong> Eligible sales settle directly to your
+              own connected bank account and never pass through Solvexo's ledger — so the wallet balance below
+              can look low or zero even while you're making real sales. Check your{' '}
+              <a href="https://dashboard.stripe.com" target="_blank" rel="noreferrer" className="font-semibold underline">
+                Stripe Dashboard
+              </a>{' '}
+              for those payouts; this page only tracks money that settled into Solvexo's own ledger (e.g. Cash on
+              Delivery, split payments, or sales from before Connect was active).
+            </p>
+          </div>
+        )}
 
         {/* Wallet selector — a seller can hold more than one currency
             (e.g. a PKR wallet from bank-transfer/COD sales and a USD wallet

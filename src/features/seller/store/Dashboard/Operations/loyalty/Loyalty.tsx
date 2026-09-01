@@ -3,22 +3,23 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Modal } from '@/components/comman/ui/Modal';
 import { EmptyState, SkeletonBox, Table, type TableColumn } from '@/components/comman/ui';
-import { Star, Trophy, Gift, Users, Settings, Award, Gem, Trash2, Plus } from 'lucide-react';
+import { Star, Trophy, Gift, Users, Settings, Award, Gem, Trash2, Plus, Ticket } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
   apiGetLoyaltyOverview, apiGetLoyaltyProgram, apiUpdateLoyaltyProgram, apiUpdateEarningRules,
   apiUpdateTiers, apiGetLoyaltyMembers, apiGetMemberTransactions, apiAwardPoints,
-  apiCreateReward, apiGetRewardsForManagement, apiUpdateReward, apiDeleteReward,
+  apiCreateReward, apiGetRewardsForManagement, apiUpdateReward, apiDeleteReward, apiGetLoyaltyVouchers,
   type LoyaltyProgram, type LoyaltyOverview, type LoyaltyMember, type LoyaltyTransaction,
-  type Reward, type RewardType, type LoyaltyTier,
+  type Reward, type RewardType, type LoyaltyTier, type RewardVoucher, type VoucherStatus,
 } from '@/api/services/loyalty';
 
-type TabId = 'overview' | 'tiers' | 'rewards' | 'members' | 'earning-rules';
+type TabId = 'overview' | 'tiers' | 'rewards' | 'vouchers' | 'members' | 'earning-rules';
 
 const TABS: { id: TabId; Icon: LucideIcon; label: string }[] = [
   { id: 'overview',      Icon: Star,     label: 'Overview'        },
   { id: 'tiers',         Icon: Trophy,   label: 'Tiers'           },
   { id: 'rewards',       Icon: Gift,     label: 'Rewards Catalog' },
+  { id: 'vouchers',      Icon: Ticket,   label: 'Vouchers'        },
   { id: 'members',       Icon: Users,    label: 'Member Activity' },
   { id: 'earning-rules', Icon: Settings, label: 'Earning Rules'   },
 ];
@@ -104,6 +105,7 @@ export function StoreLoyalty() {
         {activeTab === 'overview' && <OverviewTab storeId={storeId} />}
         {activeTab === 'tiers' && program && <TiersTab storeId={storeId} program={program} onSaved={setProgram} />}
         {activeTab === 'rewards' && <RewardsTab storeId={storeId} showCreate={showCreateReward} onCloseCreate={() => setShowCreateReward(false)} />}
+        {activeTab === 'vouchers' && <VouchersTab storeId={storeId} />}
         {activeTab === 'members' && <MembersTab storeId={storeId} onAward={setAwardingMember} />}
         {activeTab === 'earning-rules' && program && <EarningRulesTab storeId={storeId} program={program} onSaved={setProgram} />}
       </div>
@@ -403,6 +405,131 @@ function RewardsTab({ storeId, showCreate, onCloseCreate }: { storeId: string; s
             </div>
           </div>
         </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── Vouchers ──────────────────────────────────────────────────────────────────
+
+// Real, redeemed reward codes — the actual claimable benefit `RewardsTab`'s
+// point-cost/stock only sets the PRICE of. Without this tab a seller could
+// see a reward get redeemed (stock/points decrement) with no way to ever
+// see the resulting code again, or tell an outstanding voucher apart from
+// one already spent at checkout or quietly gone stale.
+const VOUCHER_FILTERS: { id: VoucherStatus | 'all'; label: string }[] = [
+  { id: 'all',     label: 'All'     },
+  { id: 'active',  label: 'Active'  },
+  { id: 'used',    label: 'Used'    },
+  { id: 'expired', label: 'Expired' },
+];
+
+function VoucherStatusBadge({ voucher }: { voucher: RewardVoucher }) {
+  if (voucher.status === 'used') {
+    return <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#F0EEE6] text-[#5A5852]">Used</span>;
+  }
+  if (voucher.status === 'expired' || voucher.isExpired) {
+    return <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold bg-error-bg text-error">Expired</span>;
+  }
+  return <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold bg-[#E3F4EA] text-[#1E7A3C]">Active</span>;
+}
+
+function VouchersTab({ storeId }: { storeId: string }) {
+  const [vouchers, setVouchers] = useState<RewardVoucher[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<VoucherStatus | 'all'>('all');
+  const [page, setPage] = useState(1);
+  const limit = 20;
+
+  useEffect(() => {
+    if (!storeId) return;
+    setLoading(true);
+    apiGetLoyaltyVouchers(storeId, page, limit, filter === 'all' ? undefined : filter)
+      .then(res => { setVouchers(res.data.vouchers ?? []); setTotal(res.data.pagination.total); })
+      .finally(() => setLoading(false));
+  }, [storeId, page, filter]);
+
+  const columns: TableColumn<RewardVoucher>[] = [
+    {
+      key: 'code', header: 'Voucher Code',
+      render: v => <span className="font-mono font-semibold text-charcoal">{v.code}</span>,
+    },
+    {
+      key: 'reward', header: 'Reward',
+      render: v => <span className="text-charcoal">{v.reward?.name ?? '—'}</span>,
+    },
+    {
+      key: 'user', header: 'Redeemed By',
+      render: v => (
+        <div>
+          <p className="text-charcoal">{v.user?.name ?? 'Unknown'}</p>
+          <p className="text-[11px] text-slate">{v.user?.email}</p>
+        </div>
+      ),
+    },
+    { key: 'status', header: 'Status', render: v => <VoucherStatusBadge voucher={v} /> },
+    { key: 'createdAt', header: 'Redeemed', render: v => <span className="text-slate">{new Date(v.createdAt).toLocaleDateString()}</span> },
+    {
+      key: 'expiresAt', header: 'Expires',
+      render: v => <span className="text-slate">{new Date(v.expiresAt).toLocaleDateString()}</span>,
+    },
+    {
+      key: 'orderId', header: 'Order',
+      render: v => v.orderId ? <span className="text-slate">#{v.orderId.slice(-6).toUpperCase()}</span> : <span className="text-slate">—</span>,
+    },
+  ];
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-1.5">
+        {VOUCHER_FILTERS.map(f => (
+          <button
+            key={f.id}
+            onClick={() => { setFilter(f.id); setPage(1); }}
+            className="px-3 py-[6px] rounded-full text-xs font-medium cursor-pointer border transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+            style={{
+              background: filter === f.id ? '#141413' : '#fff',
+              color: filter === f.id ? '#fff' : '#4A4945',
+              borderColor: filter === f.id ? '#141413' : '#E8E6DC',
+            }}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-bone">
+          <p className="text-[13px] font-semibold text-carbon">{loading ? 'Loading vouchers…' : `${total} Voucher${total === 1 ? '' : 's'}`}</p>
+        </div>
+        <Table
+          columns={columns}
+          data={vouchers}
+          keyExtractor={v => v._id}
+          loading={loading}
+          emptyState={{
+            icon: <Ticket size={28} className="text-brand-orange opacity-55" />,
+            title: 'No vouchers issued yet',
+            description: 'A voucher code appears here every time a customer redeems a reward — track which ones are still outstanding vs. already used.',
+          }}
+        />
+      </div>
+
+      {total > limit && (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-[11px] text-slate">Page {page} of {Math.max(1, Math.ceil(total / limit))}</p>
+          <div className="flex gap-2">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+              className="px-3 py-[6px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
+              Previous
+            </button>
+            <button onClick={() => setPage(p => p + 1)} disabled={page >= Math.ceil(total / limit)}
+              className="px-3 py-[6px] bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50">
+              Next
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

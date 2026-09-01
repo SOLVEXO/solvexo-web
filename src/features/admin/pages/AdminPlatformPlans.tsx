@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, Pencil, Archive, TrendingUp, Users, DollarSign, Eye, Check, Package, Layers } from 'lucide-react';
+import { Plus, Pencil, Archive, TrendingUp, Users, DollarSign, Eye, Check, Package, Layers, RotateCcw } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
@@ -106,13 +106,31 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
         <div>
           <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Pricing &amp; trial</p>
           <div className="flex flex-col gap-3">
-            <label className="flex items-center gap-2 text-[12.5px] font-medium text-charcoal">
-              <input type="checkbox" checked={isFree} onChange={e => setIsFree(e.target.checked)} /> Free plan (no charge)
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Input label="Monthly $" type="number" min={0} value={monthlyPrice} onChange={e => setMonthlyPrice(e.target.value)} disabled={isFree} />
-              <Input label="Yearly $ (optional)" type="number" min={0} value={yearlyPrice} onChange={e => setYearlyPrice(e.target.value)} disabled={isFree} />
+            <div>
+              <label className="flex items-center gap-2 text-[12.5px] font-medium text-charcoal">
+                <input type="checkbox" checked={isFree} onChange={e => setIsFree(e.target.checked)} /> Free plan (no charge)
+              </label>
+              <p className="text-[11px] text-slate mt-1 leading-[1.5]">
+                Only check this if you want a permanent $0 tier. It's a one-way door — a free plan can't be archived later
+                (the platform always needs a fallback), so leave it unchecked for a normal paid plan with a free trial.
+              </p>
+            </div>
+            {isFree ? (
+              <div className="text-[12px] text-slate bg-cream/60 border border-bone rounded-lg px-3 py-2.5">
+                This plan is free — sellers on it are never billed, so pricing fields are hidden.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input label="Monthly $" type="number" min={0} value={monthlyPrice} onChange={e => setMonthlyPrice(e.target.value)} />
+                <Input label="Yearly $ (optional)" type="number" min={0} value={yearlyPrice} onChange={e => setYearlyPrice(e.target.value)} />
+              </div>
+            )}
+            <div>
               <Input label="Trial Days" type="number" min={0} value={trialDays} onChange={e => setTrialDays(e.target.value)} />
+              <p className="text-[11px] text-slate mt-1 leading-[1.5]">
+                How many days a new seller gets full access to this plan before they must pay. Leave at 0 to use the
+                platform default (3 days) — set a number to override it just for this plan.
+              </p>
             </div>
           </div>
         </div>
@@ -120,16 +138,20 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
         <div>
           <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Display &amp; visibility</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              label="Sort order (lower = shown first)" type="number" value={sortOrder}
-              onChange={e => setSortOrder(e.target.value)}
-            />
+            <div>
+              <Input
+                label="Sort order (lower = shown first)" type="number" value={sortOrder}
+                onChange={e => setSortOrder(e.target.value)}
+              />
+              <p className="text-[11px] text-slate mt-1">Controls left-to-right order on the pricing page and plan cards here.</p>
+            </div>
             <div>
               <p className="block text-[12px] font-medium text-charcoal mb-1.5">Visibility</p>
               <label className="flex items-center gap-2 text-[12.5px] text-charcoal h-[38px] px-3 rounded-lg border border-bone bg-cream/60">
                 <input type="checkbox" checked={isPubliclyVisible} onChange={e => setIsPubliclyVisible(e.target.checked)} />
                 Show on public pricing page
               </label>
+              <p className="text-[11px] text-slate mt-1">Turn off to keep a plan usable (e.g. for one seller) without listing it publicly.</p>
             </div>
           </div>
         </div>
@@ -137,7 +159,8 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
         <Textarea label="Feature bullets (one per line)" rows={3} value={featuresText} onChange={e => setFeaturesText(e.target.value)} />
 
         <div>
-          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Limits &amp; feature access</p>
+          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-1">Limits &amp; feature access</p>
+          <p className="text-[11px] text-slate mb-2.5">Enter <span className="font-semibold text-charcoal">-1</span> in any limit field for unlimited.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
             <Input label="Max products (-1=∞)" type="number" value={limits.maxProducts ?? ''} onChange={e => setLimit('maxProducts', Number(e.target.value))} />
             <Input label="Max staff (-1=∞)" type="number" value={limits.maxStaffAccounts ?? ''} onChange={e => setLimit('maxStaffAccounts', Number(e.target.value))} />
@@ -148,6 +171,7 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
             <Input label="Max store banners (-1=∞)" type="number" value={limits.maxActiveStoreBanners ?? ''} onChange={e => setLimit('maxActiveStoreBanners', Number(e.target.value))} />
             <Input label="Max active promotions (-1=∞)" type="number" value={limits.maxActivePromotions ?? ''} onChange={e => setLimit('maxActivePromotions', Number(e.target.value))} />
           </div>
+          <p className="text-[11px] text-slate mb-1.5">Tap a feature below to turn it on (orange) or off for this plan:</p>
           <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-bone bg-cream/50">
             {BOOL_FLAGS.map(f => {
               const active = !!limits[f.key];
@@ -309,6 +333,7 @@ export function AdminPlatformPlans() {
   const [archiveError, setArchiveError] = useState('');
   const [archiveForceNeeded, setArchiveForceNeeded] = useState(false);
   const [archiveBusy, setArchiveBusy] = useState(false);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
 
   async function handleArchive(force = false) {
     if (!archiving) return;
@@ -324,6 +349,20 @@ export function AdminPlatformPlans() {
       setArchiveForceNeeded(true);
     } finally {
       setArchiveBusy(false);
+    }
+  }
+
+  /** Un-archives a plan — makes it active (and, if isPubliclyVisible, listed) again. There's no separate "restore" endpoint: archiving only ever flips `status`, so reversing it is the same admin-update call with `status: 'active'`. */
+  async function handleRestore(plan: PlatformPlan) {
+    setRestoringId(plan._id);
+    setError('');
+    try {
+      await apiAdminUpdatePlatformPlan(plan._id, { status: 'active' });
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to restore plan.');
+    } finally {
+      setRestoringId(null);
     }
   }
 
@@ -415,6 +454,7 @@ export function AdminPlatformPlans() {
                         <p className="text-[15px] font-bold text-carbon">{plan.name}</p>
                         <div className="flex items-center gap-1.5 shrink-0">
                           {plan.isPubliclyVisible === false && <Badge color="gray" size="sm">Hidden</Badge>}
+                          {plan.isFree && <Badge color="blue" size="sm">Always available</Badge>}
                           {plan.badge && <Badge color="orange" size="sm">{plan.badge}</Badge>}
                         </div>
                       </div>
@@ -453,7 +493,14 @@ export function AdminPlatformPlans() {
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" fullWidth icon={<Pencil size={12} />} onClick={() => setEditing(plan)}>Edit</Button>
                         <Button variant="outline" size="sm" fullWidth icon={<Eye size={12} />} onClick={() => setViewingSubscribersFor(plan)}>Subscribers</Button>
-                        {plan.status !== 'archived' && (
+                        {plan.status === 'archived' ? (
+                          <Button
+                            variant="outline" size="sm" icon={<RotateCcw size={12} />}
+                            loading={restoringId === plan._id}
+                            aria-label="Restore plan"
+                            onClick={() => handleRestore(plan)}
+                          />
+                        ) : !plan.isFree && (
                           <Button
                             variant="outline" size="sm" icon={<Archive size={12} />}
                             aria-label="Archive plan"
@@ -461,6 +508,11 @@ export function AdminPlatformPlans() {
                           />
                         )}
                       </div>
+                      {plan.status === 'archived' && (
+                        <p className="text-[10.5px] text-slate mt-2 text-center">
+                          Archived — hidden from new sellers. Existing subscribers on it are unaffected.
+                        </p>
+                      )}
                     </div>
                   </Card>
                 );

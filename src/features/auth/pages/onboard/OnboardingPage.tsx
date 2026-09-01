@@ -617,6 +617,7 @@ export function OnboardingPage() {
       if (!store) {
         store = await createStore.execute({
           name:         form.storeName,
+          logo:         form.logo || undefined,
           description:  form.description,
           sellerType:   form.sellerType as SellerType,
           productTypes: [...new Set(form.productTypes)],

@@ -40,8 +40,27 @@ export function SmoothScroll() {
         touchMultiplier: 1.4,
       });
       lenisRef.current = instance;
+      // `wrapper`'s own box is pinned by `fixed ... top-0 bottom-0` (see
+      // RootLayout.tsx), so it never changes size — Lenis's internal
+      // resize-detection (and the one-off `.resize()` calls RootLayout makes
+      // on route change) can never catch a CHILD growing later, which is the
+      // normal case here: every storefront/marketplace page fetches its real
+      // content (products, images, category lists) asynchronously after
+      // first paint. Left unhandled, Lenis keeps clamping to the small
+      // scroll limit it measured at that first paint forever after — the
+      // page visibly has content below the fold but scrolling is stuck. Since
+      // this loop already runs every frame for `instance.raf`, piggyback a
+      // cheap `scrollHeight` comparison on it instead of adding a separate
+      // observer/timer — catches any async content change (API data, image
+      // decode, hero rotation, an expanded dropdown) within one frame,
+      // regardless of how long it took to arrive.
+      let lastScrollHeight = wrapper.scrollHeight;
       const loop = (time: number) => {
         instance.raf(time);
+        if (wrapper.scrollHeight !== lastScrollHeight) {
+          lastScrollHeight = wrapper.scrollHeight;
+          instance.resize();
+        }
         raf = requestAnimationFrame(loop);
       };
       raf = requestAnimationFrame(loop);

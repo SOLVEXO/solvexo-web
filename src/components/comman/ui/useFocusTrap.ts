@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -19,6 +19,14 @@ export function useFocusTrap(
   onClose: () => void,
   enabled: boolean = true,
 ) {
+  // Read through a ref instead of putting `onClose` in the effect's deps —
+  // callers routinely pass a fresh inline arrow function on every render
+  // (e.g. `onClose={() => setOpen(false)}`), which would otherwise tear
+  // down and re-run this whole effect on every keystroke inside the dialog,
+  // re-stealing focus away from whatever the user is actively typing into.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!enabled) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -29,7 +37,7 @@ export function useFocusTrap(
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'Escape') { onCloseRef.current(); return; }
       if (e.key !== 'Tab' || !containerRef.current) return;
 
       const focusable = getFocusable(containerRef.current);
@@ -53,5 +61,5 @@ export function useFocusTrap(
       previouslyFocused?.focus?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onClose, enabled]);
+  }, [enabled]);
 }

@@ -82,9 +82,33 @@ export interface EarningRules {
   birthdayBonusPoints?: number;
 }
 
+export type VoucherStatus = 'active' | 'used' | 'expired';
+
+export interface RewardVoucher {
+  _id: string;
+  storeId: string;
+  userId: string;
+  rewardId: string;
+  code: string;
+  type: RewardType;
+  discountValue: number | null;
+  productId: string | null;
+  status: VoucherStatus;
+  /** True when `status` is still `'active'` in the DB but `expiresAt` has already passed — nothing has redeemed/rejected it yet to flip the stored status. */
+  isExpired: boolean;
+  checkoutId: string | null;
+  orderId: string | null;
+  usedAt: string | null;
+  expiresAt: string;
+  createdAt: string;
+  reward: { _id: string; name: string } | null;
+  user: { name: string; email: string } | null;
+}
+
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
 interface PaginatedMembers { pagination: { page: number; limit: number; total: number; totalPages: number }; members: LoyaltyMember[] }
 interface PaginatedTransactions { pagination: { page: number; limit: number; total: number; totalPages: number }; transactions: LoyaltyTransaction[] }
+interface PaginatedVouchers { pagination: { page: number; limit: number; total: number; totalPages: number }; vouchers: RewardVoucher[] }
 
 /** GET /api/loyalty/:storeId/overview */
 export function apiGetLoyaltyOverview(storeId: string) {
@@ -149,6 +173,12 @@ export function apiUpdateReward(storeId: string, rewardId: string, payload: Upda
 /** DELETE /api/loyalty/:storeId/rewards/:rewardId */
 export function apiDeleteReward(storeId: string, rewardId: string) {
   return client.delete<never, ApiResponse<null>>(ENDPOINTS.LOYALTY.REWARDS.DELETE(storeId, rewardId));
+}
+
+/** GET /api/loyalty/:storeId/vouchers — seller-only, every RewardVoucher issued for this store's rewards */
+export function apiGetLoyaltyVouchers(storeId: string, page = 1, limit = 20, status?: VoucherStatus) {
+  const statusParam = status ? `&status=${status}` : '';
+  return client.get<never, ApiResponse<PaginatedVouchers>>(`${ENDPOINTS.LOYALTY.VOUCHERS(storeId)}?page=${page}&limit=${limit}${statusParam}`);
 }
 
 // ── Buyer-facing ──────────────────────────────────────────────────────────────

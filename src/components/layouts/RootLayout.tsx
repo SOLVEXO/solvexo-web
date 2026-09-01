@@ -83,8 +83,14 @@ export function RootLayout() {
         ref={el => { scrollRootRef.current = el; }}
         className="fixed inset-x-0 top-0 bottom-0 overflow-y-auto"
       >
-        {/* keyed by pathname so navigating to a new route always remounts past a caught error */}
-        <ErrorBoundary key={pathname}>
+        {/* `resetKey` (not `key`) — clears a caught error on navigation without
+            force-remounting this boundary's whole subtree (and every
+            persistent nested layout inside it, e.g. StoreLayout/SellerLayout/
+            AdminLayout's own sidebar) on every single navigation. A `key`
+            here was a real, previously-unnoticed bug: it tore down and
+            rebuilt the sidebar chrome of every dashboard on EVERY page
+            change, not just after an actual error. */}
+        <ErrorBoundary resetKey={pathname}>
           <Suspense fallback={<PageSpinner />}>
             <Outlet />
           </Suspense>

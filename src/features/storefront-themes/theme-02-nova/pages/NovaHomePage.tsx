@@ -145,9 +145,16 @@ export function NovaHomePage() {
     el?.scrollIntoView({ behavior: 'smooth' });
   }, [hash, sections]);
 
+  // Once the seller adds their own `hero`-type Section to Home (Online
+  // Store → Pages → Home), it's meant to REPLACE this fixed identity hero,
+  // not stack below it — rendering both was the exact cause of a real
+  // "duplicate hero" bug found in QA. Stays showing during the initial
+  // load (`sections === null`) since we don't yet know either way.
+  const hasCustomHero = sections?.some(s => s.type === 'hero') ?? false;
+
   return (
     <main>
-      <IdentityHero />
+      {!hasCustomHero && <IdentityHero />}
       <div id="shop">
         {sections === null ? null : sections.length > 0 ? <NovaSectionRenderer sections={sections} /> : <DefaultHomeContent />}
       </div>

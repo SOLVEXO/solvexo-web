@@ -4,6 +4,13 @@ import { Button } from '@/components/comman/ui/Button';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
+  /** When this value changes WHILE an error is being shown, the boundary
+   *  clears its own error state so navigating away from a broken page
+   *  recovers it — without needing a `key` prop that would force React to
+   *  unmount/remount this boundary's entire subtree (and everything
+   *  persistent inside it, e.g. a dashboard's sidebar layout) on every
+   *  single navigation, error or not. No effect while there's no error. */
+  resetKey?: unknown;
 }
 
 interface ErrorBoundaryState {
@@ -21,6 +28,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[ErrorBoundary] Uncaught error:', error, info.componentStack);
+  }
+
+  componentDidUpdate(prevProps: ErrorBoundaryProps) {
+    if (this.state.error && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ error: null });
+    }
   }
 
   handleReset = () => this.setState({ error: null });

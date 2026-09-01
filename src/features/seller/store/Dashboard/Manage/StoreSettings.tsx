@@ -830,6 +830,7 @@ export default function StoreSettings() {
                         </div>
                         <Toggle
                           checked={checked}
+                          disabled={isBase}
                           ariaLabel={`Accept ${c} at checkout`}
                           onChange={v => {
                             if (isBase && !v) return; // can never disable your own store currency

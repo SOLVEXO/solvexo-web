@@ -57,7 +57,18 @@ export function AdminActivityLog() {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
 
-  const from = dateRange === 'last7' ? daysAgo(7) : dateRange === 'last30' ? daysAgo(30) : dateRange === 'last90' ? daysAgo(90) : undefined;
+  // Memoized on `dateRange` alone — `daysAgo()` calls `new Date()` internally,
+  // so recomputing it inline on every render (as this used to) produced a
+  // freshly different millisecond-precision ISO string each time, even
+  // though `dateRange` itself hadn't changed. `useAdminActivityLog` keys its
+  // re-fetch on this query's JSON shape, so that constantly-"new" value was
+  // a genuine infinite fetch loop: every completed fetch triggered a
+  // re-render, which recomputed a new `from`, which triggered another fetch
+  // — reproducing the "keeps loading every fraction of a second" symptom.
+  const from = useMemo(
+    () => dateRange === 'last7' ? daysAgo(7) : dateRange === 'last30' ? daysAgo(30) : dateRange === 'last90' ? daysAgo(90) : undefined,
+    [dateRange],
+  );
 
   const query = useMemo(
     () => ({
