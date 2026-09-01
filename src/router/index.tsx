@@ -94,6 +94,7 @@ import { StoreIntegrations } from '@/features/seller/store/Dashboard/Operations/
 // hardcoded-theme bug, just in a different corner of the app.
 import StoreDiscounts from '@/features/seller/store/Dashboard/Manage/StoreDiscounts';
 import StoreGiftCards from '@/features/seller/store/Dashboard/Manage/StoreGiftCards';
+import StoreMobileApp from '@/features/seller/store/Dashboard/Manage/MobileApp';
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 import { AdminOverview } from '@/features/admin/pages/AdminOverview';
@@ -122,6 +123,7 @@ import { AdminMarketing } from '@/features/admin/pages/AdminMarketing';
 import { AdminSettings } from '@/features/admin/pages/settings/AdminSettings';
 import { AdminSEO } from '@/features/admin/pages/AdminSEO';
 import { AdminAiStudio } from '@/features/admin/pages/AdminAiStudio';
+import { AdminStoreAppRequests } from '@/features/admin/pages/AdminStoreAppRequests';
 
 // ── Storefront subdomain router ────────────────────────────────────────────────
 // A store's own subdomain (`hello.solvexo.store`) serves ONLY its storefront
@@ -312,6 +314,7 @@ const mainRouter = createBrowserRouter([
           { path: 'loyalty',                          element: <StoreLoyalty /> },
           { path: 'subscriptions',                    element: <StoreSubscriptions /> },
           { path: 'integrations',                     element: <StoreIntegrations /> },
+          { path: 'mobile-app',                       element: <StoreMobileApp /> },
           { path: 'activity',                         element: <Navigate to="../settings" replace /> },
           { path: 'followers',                        element: <Navigate to="../customer/list" replace /> },
           { path: 'pos-admin',                        element: <Navigate to="../dashboard" replace /> },
@@ -365,6 +368,7 @@ const mainRouter = createBrowserRouter([
           { path: 'seo',          element: <RequireRole role="admin"><AdminSEO /></RequireRole> },
           { path: 'ai-studio',    element: <RequireRole role="admin"><AdminAiStudio /></RequireRole> },
           { path: 'theme-catalog', element: <RequireRole role="admin"><AdminThemeCatalog /></RequireRole> },
+          { path: 'store-app-requests', element: <RequireRole role="admin"><AdminStoreAppRequests /></RequireRole> },
         ],
       },
 

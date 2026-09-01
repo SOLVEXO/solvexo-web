@@ -141,6 +141,13 @@ export const ENDPOINTS = {
     CUSTOM_DOMAIN_VERIFY: (storeId: string) => `/api/store/${storeId}/custom-domain/verify`,
     RESOLVE_DOMAIN: '/api/store/public/resolve-domain',
     WHITE_LABEL:   (storeId: string) => `/api/store/${storeId}/white-label`,
+    // Solvexo's own single POS app — a single, already-published, PAID
+    // Google Play listing. Google Play collects payment directly from the
+    // merchant on install, so there's nothing to buy/gate on our side: this
+    // just returns the listing URL (Android only for now) to render as a
+    // QR code/link. No Stripe here — distinct from STORE_APP_REQUESTS below,
+    // which is the white-label per-store app and does use Stripe.
+    POS_APP_INFO: '/api/store/pos-app-info',
     PINNED_PRODUCTS: (storeId: string) => `/api/store/${storeId}/pinned-products`,
     ANNOUNCEMENT:    (storeId: string) => `/api/store/${storeId}/announcement`,
     VERIFICATION:              (storeId: string) => `/api/store/${storeId}/verification`,
@@ -759,6 +766,23 @@ export const ENDPOINTS = {
       CONFLICTS: '/api/admin/marketing/promotions/conflicts',
       APPROVE:   (id: string) => `/api/admin/marketing/promotions/${id}/approve`,
       REJECT:    (id: string) => `/api/admin/marketing/promotions/${id}/reject`,
+    },
+  },
+
+  // ── STORE APP REQUESTS (seller's own white-label branded app) ─────────────
+  STORE_APP_REQUESTS: {
+    CREATE:         (storeId: string) => `/api/store-app-requests/${storeId}`,
+    GET_FOR_STORE:  (storeId: string) => `/api/store-app-requests/${storeId}`,
+    // Each platform (Android/iOS) is its own paid build — pay starts a
+    // Stripe PaymentIntent for that platform, confirm verifies it before the
+    // platform actually becomes requested — see
+    // StoreAppRequestsService.createPlatformPaymentIntent/confirmPlatformPayment.
+    PLATFORM_PAY:     (storeId: string, platform: 'android' | 'ios') => `/api/store-app-requests/${storeId}/platforms/${platform}/pay`,
+    PLATFORM_CONFIRM: (storeId: string, platform: 'android' | 'ios') => `/api/store-app-requests/${storeId}/platforms/${platform}/confirm`,
+    ADMIN: {
+      LIST:                   '/api/admin/store-app-requests',
+      GET_ONE:                (id: string) => `/api/admin/store-app-requests/${id}`,
+      UPDATE_PLATFORM_STATUS: (id: string) => `/api/admin/store-app-requests/${id}/platform-status`,
     },
   },
 

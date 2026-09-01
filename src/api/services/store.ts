@@ -168,6 +168,21 @@ export function apiSetWhiteLabel(storeId: string, enabled: boolean) {
   return client.patch<never, ApiResponse<{ whiteLabelEnabled: boolean }>>(ENDPOINTS.STORE.WHITE_LABEL(storeId), { enabled });
 }
 
+export interface PosAppInfo {
+  /** Google Play listing URL for Solvexo POS — null until an admin sets
+   *  POS_APP_ANDROID_URL. iOS isn't offered yet (no App Store listing). */
+  android: string | null;
+}
+
+/** GET /api/store/pos-app-info — store-independent, no auth-side effect.
+ *  Solvexo POS is a single, already-published, PAID Google Play listing:
+ *  Google Play collects payment directly from the merchant on install, so
+ *  there's no Stripe flow, no PaymentIntent, and nothing to "enable" here —
+ *  the dashboard just renders this URL as a QR code/link. */
+export function apiGetPosAppInfo() {
+  return client.get<never, ApiResponse<PosAppInfo>>(ENDPOINTS.STORE.POS_APP_INFO);
+}
+
 export type StoreAnnouncementType = 'info' | 'sale' | 'coupon' | 'warning' | 'shipping' | 'holiday';
 
 export interface StoreAnnouncementBar {

@@ -102,6 +102,11 @@ export const STATUS_COLORS: Record<string, 'green' | 'yellow' | 'blue' | 'gray' 
   partially_shipped:    'blue',
   partially_cancelled:  'red',
   partially_refunded:   'gray',
+  // Store App Request per-platform lifecycle — see store-app-request.schema.ts
+  not_requested:        'gray',
+  in_review:            'blue',
+  building:             'blue',
+  submitted:            'blue',
 };
 
 // ── Seller Onboarding Steps ──────────────────────────────────────────────────

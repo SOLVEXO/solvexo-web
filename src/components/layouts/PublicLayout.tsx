@@ -43,7 +43,7 @@ export function PublicLayout() {
          fallback markup is rendered (TopProgressBar already signals
          "loading" via its thin bar) instead of flashing a second, heavier
          loading treatment on top of that. */}
-      <main className={clsx(!overDarkHero && 'pt-[76px]')}>
+      <main className={clsx(!overDarkHero && 'pt-[72px]')}>
         <Suspense fallback={null}>
           <BrandSplashReadyProvider value={splashReady}>
             <Outlet />

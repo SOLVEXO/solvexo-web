@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, Pencil, Archive, TrendingUp, Users, DollarSign, Eye } from 'lucide-react';
+import { Plus, Pencil, Archive, TrendingUp, Users, DollarSign, Eye, Check, Package, Layers } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { Input, Textarea } from '@/components/comman/ui/Input';
-import { SkeletonBox, Table, MetricCard, type TableColumn } from '@/components/comman/ui';
+import { SkeletonBox, Table, MetricCard, Card, Badge, AdminPageHeader, EmptyState, type TableColumn } from '@/components/comman/ui';
 import {
   apiAdminListPlatformPlans, apiAdminCreatePlatformPlan, apiAdminUpdatePlatformPlan, apiAdminArchivePlatformPlan,
   apiAdminGetPlatformPlanRevenue, apiAdminGetPlatformPlanSubscribers, apiAdminListAddonPurchases,
@@ -91,37 +91,53 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
   return (
     <Modal mobileSheet title={isEdit ? 'Edit Platform Plan' : 'Create Platform Plan'} width={640} onClose={onClose}
       footer={<><Button variant="outline" onClick={onClose}>Cancel</Button><Button onClick={submit} loading={saving}>{isEdit ? 'Save Changes' : 'Create Plan'}</Button></>}>
-      <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input label="Plan Name" value={name} onChange={e => setName(e.target.value)} />
-          <Input label="Badge (optional)" placeholder="Popular" value={badge} onChange={e => setBadge(e.target.value)} />
-        </div>
-        <Textarea label="Description" rows={2} value={description} onChange={e => setDescription(e.target.value)} />
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Input label="Monthly $" type="number" min={0} value={monthlyPrice} onChange={e => setMonthlyPrice(e.target.value)} disabled={isFree} />
-          <Input label="Yearly $ (optional)" type="number" min={0} value={yearlyPrice} onChange={e => setYearlyPrice(e.target.value)} disabled={isFree} />
-          <Input label="Trial Days" type="number" min={0} value={trialDays} onChange={e => setTrialDays(e.target.value)} />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input
-            label="Sort order (lower = shown first)" type="number" value={sortOrder}
-            onChange={e => setSortOrder(e.target.value)}
-          />
-          <div>
-            <p className="block text-[12px] font-medium text-charcoal mb-1.5">Visibility</p>
-            <label className="flex items-center gap-2 text-[12.5px] text-charcoal h-[38px]">
-              <input type="checkbox" checked={isPubliclyVisible} onChange={e => setIsPubliclyVisible(e.target.checked)} />
-              Show on public pricing page
-            </label>
+      <div className="flex flex-col gap-5">
+        <div>
+          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Basics</p>
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input label="Plan Name" value={name} onChange={e => setName(e.target.value)} />
+              <Input label="Badge (optional)" placeholder="Popular" value={badge} onChange={e => setBadge(e.target.value)} />
+            </div>
+            <Textarea label="Description" rows={2} value={description} onChange={e => setDescription(e.target.value)} />
           </div>
         </div>
-        <label className="flex items-center gap-2 text-[12.5px] text-charcoal">
-          <input type="checkbox" checked={isFree} onChange={e => setIsFree(e.target.checked)} /> Free plan (no charge)
-        </label>
+
+        <div>
+          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Pricing &amp; trial</p>
+          <div className="flex flex-col gap-3">
+            <label className="flex items-center gap-2 text-[12.5px] font-medium text-charcoal">
+              <input type="checkbox" checked={isFree} onChange={e => setIsFree(e.target.checked)} /> Free plan (no charge)
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Input label="Monthly $" type="number" min={0} value={monthlyPrice} onChange={e => setMonthlyPrice(e.target.value)} disabled={isFree} />
+              <Input label="Yearly $ (optional)" type="number" min={0} value={yearlyPrice} onChange={e => setYearlyPrice(e.target.value)} disabled={isFree} />
+              <Input label="Trial Days" type="number" min={0} value={trialDays} onChange={e => setTrialDays(e.target.value)} />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Display &amp; visibility</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Sort order (lower = shown first)" type="number" value={sortOrder}
+              onChange={e => setSortOrder(e.target.value)}
+            />
+            <div>
+              <p className="block text-[12px] font-medium text-charcoal mb-1.5">Visibility</p>
+              <label className="flex items-center gap-2 text-[12.5px] text-charcoal h-[38px] px-3 rounded-lg border border-bone bg-cream/60">
+                <input type="checkbox" checked={isPubliclyVisible} onChange={e => setIsPubliclyVisible(e.target.checked)} />
+                Show on public pricing page
+              </label>
+            </div>
+          </div>
+        </div>
+
         <Textarea label="Feature bullets (one per line)" rows={3} value={featuresText} onChange={e => setFeaturesText(e.target.value)} />
 
         <div>
-          <p className="text-[12px] font-semibold text-charcoal mb-2">Limits</p>
+          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Limits &amp; feature access</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
             <Input label="Max products (-1=∞)" type="number" value={limits.maxProducts ?? ''} onChange={e => setLimit('maxProducts', Number(e.target.value))} />
             <Input label="Max staff (-1=∞)" type="number" value={limits.maxStaffAccounts ?? ''} onChange={e => setLimit('maxStaffAccounts', Number(e.target.value))} />
@@ -132,20 +148,21 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
             <Input label="Max store banners (-1=∞)" type="number" value={limits.maxActiveStoreBanners ?? ''} onChange={e => setLimit('maxActiveStoreBanners', Number(e.target.value))} />
             <Input label="Max active promotions (-1=∞)" type="number" value={limits.maxActivePromotions ?? ''} onChange={e => setLimit('maxActivePromotions', Number(e.target.value))} />
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-bone bg-cream/50">
             {BOOL_FLAGS.map(f => {
               const active = !!limits[f.key];
               return (
                 <button key={f.key} type="button" onClick={() => setLimit(f.key, !active)}
-                  className="px-2.5 py-1 rounded-full text-[11px] font-medium border cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border cursor-pointer transition-colors duration-fast"
                   style={{ background: active ? '#D97757' : '#fff', color: active ? '#fff' : '#5A5852', borderColor: active ? '#D97757' : '#E8E6DC' }}>
+                  {active && <Check size={11} className="shrink-0" />}
                   {f.label}
                 </button>
               );
             })}
           </div>
         </div>
-        {error && <p className="text-[12px] text-error">{error}</p>}
+        {error && <p className="text-[12px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">{error}</p>}
       </div>
     </Modal>
   );
@@ -249,8 +266,8 @@ function AddonsPanel() {
     { key: 'storeId', header: 'Store', render: a => <span className="text-charcoal">{a.storeId.slice(-6).toUpperCase()}</span> },
     { key: 'addonType', header: 'Add-on', render: a => <span className="text-graphite">{ADDON_LABELS[a.addonType] ?? a.addonType}</span> },
     { key: 'quantity', header: 'Qty', render: a => <span className="text-graphite">{a.quantity}</span> },
-    { key: 'amountUSD', header: 'Amount', render: a => <span className="font-semibold text-success">${a.amountUSD.toFixed(2)}</span> },
-    { key: 'status', header: 'Status', render: a => <span className="text-slate capitalize">{a.status}</span> },
+    { key: 'amountUSD', header: 'Amount', render: a => <span className="font-semibold text-success">${(a.amountUSD ?? 0).toFixed(2)}</span> },
+    { key: 'status', header: 'Status', render: a => <Badge color={a.status === 'active' ? 'green' : a.status === 'canceled' ? 'gray' : 'orange'} size="sm" className="capitalize">{a.status}</Badge> },
     { key: 'createdAt', header: 'Date', render: a => <span className="text-slate whitespace-nowrap">{new Date(a.createdAt).toLocaleDateString()}</span> },
   ];
 
@@ -260,7 +277,11 @@ function AddonsPanel() {
       data={addons}
       keyExtractor={a => a._id}
       loading={loading}
-      emptyState={{ title: 'No add-on purchases yet.' }}
+      emptyState={{
+        icon: <Package size={28} className="text-slate/50" />,
+        title: 'No add-on purchases yet.',
+        description: 'When a seller buys extra AI credits, staff seats, or other add-ons, they’ll show up here.',
+      }}
     />
   );
 }
@@ -314,30 +335,33 @@ export function AdminPlatformPlans() {
 
   return (
     <div>
-      <div className="bg-white border-b border-bone px-4 sm:px-7 py-[14px] sticky top-0 z-10 flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-[18px] font-bold text-charcoal leading-[1.3]">Platform Plans</h1>
-          <p className="text-[12px] text-slate mt-[2px]">Seller-to-Solvexo billing tiers, limits, and add-ons.</p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" onClick={() => setShowAddons(s => !s)}>{showAddons ? 'Hide Add-ons' : 'View Add-on Purchases'}</Button>
-          <Button icon={<Plus size={14} />} onClick={() => setEditing('new')}>Create Plan</Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Platform Plans"
+        subtitle="Seller-to-Solvexo billing tiers, limits, and add-ons."
+        actions={
+          <>
+            <Button variant="outline" size="sm" icon={<Package size={13} />} onClick={() => setShowAddons(s => !s)}>
+              {showAddons ? 'Hide Add-ons' : 'Add-on Purchases'}
+            </Button>
+            <Button size="sm" icon={<Plus size={14} />} onClick={() => setEditing('new')}>Create Plan</Button>
+          </>
+        }
+      />
 
       <div className="px-4 sm:px-7 pt-5 pb-8 flex flex-col gap-5">
-        {error && <p className="text-[13px] text-error">{error}</p>}
+        {error && <p className="text-[13px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">{error}</p>}
 
         {showAddons && (
-          <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
-            <div className="px-5 py-[14px] border-b border-bone">
+          <Card padding="none" className="overflow-hidden">
+            <div className="px-5 py-[14px] border-b border-bone flex items-center gap-2">
+              <Package size={15} className="text-brand-orange shrink-0" />
               <p className="text-[14px] font-bold text-charcoal">Add-on Purchases</p>
             </div>
             <AddonsPanel />
-          </div>
+          </Card>
         )}
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {(loading && !revenue)
             ? Array.from({ length: 3 }).map((_, i) => <MetricCard key={i} label="" value="" loading />)
             : metrics.map(m => (
@@ -345,53 +369,105 @@ export function AdminPlatformPlans() {
             ))}
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-white border border-bone rounded-[10px] px-5 py-4 flex flex-col gap-3">
-                <SkeletonBox width="60%" height={16} rounded="4px" />
-                <SkeletonBox width="40%" height={20} rounded="4px" />
-                <div className="flex flex-col gap-1.5">
-                  <SkeletonBox width="90%" height={11} rounded="4px" />
-                  <SkeletonBox width="80%" height={11} rounded="4px" />
-                  <SkeletonBox width="70%" height={11} rounded="4px" />
-                </div>
-                <SkeletonBox width="100%" height={34} rounded="8px" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {plans.map(plan => (
-              <div key={plan._id} className="bg-white border border-bone rounded-[10px] px-5 py-4 flex flex-col">
-                <div className="flex items-start justify-between mb-1">
-                  <p className="text-[15px] font-bold text-carbon">{plan.name}</p>
-                  <div className="flex items-center gap-1.5">
-                    {plan.isPubliclyVisible === false && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-bone text-slate">Hidden</span>}
-                    {plan.badge && <span className="text-[10px] font-bold px-2 py-[2px] rounded-full bg-brand-pale-orange text-brand-deep-orange">{plan.badge}</span>}
+        <div>
+          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-3 flex items-center gap-1.5">
+            <Layers size={13} /> Plans{!loading && plans.length > 0 && <span className="text-slate/70 font-medium normal-case tracking-normal">({plans.length})</span>}
+          </p>
+
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="flex flex-col gap-3">
+                  <SkeletonBox width="60%" height={16} rounded="4px" />
+                  <SkeletonBox width="40%" height={20} rounded="4px" />
+                  <div className="flex flex-col gap-1.5">
+                    <SkeletonBox width="90%" height={11} rounded="4px" />
+                    <SkeletonBox width="80%" height={11} rounded="4px" />
+                    <SkeletonBox width="70%" height={11} rounded="4px" />
                   </div>
-                </div>
-                <p className="text-[18px] font-bold text-brand-orange mb-2">
-                  {plan.isFree ? 'Free' : plan.isCustomPricing ? 'Custom' : `$${plan.monthlyPriceUSD}/mo`}
-                </p>
-                <ul className="flex flex-col gap-1 mb-3 p-0 list-none">
-                  {(plan.featureBullets ?? []).slice(0, 4).map(f => <li key={f} className="text-[12px] text-graphite">• {f}</li>)}
-                </ul>
-                <div className="flex items-center justify-between py-2 border-t border-[#f0eee6] mb-3 mt-auto text-[11px] text-slate">
-                  <span>{plan.subscriberCount ?? 0} sellers</span>
-                  <span className="font-semibold text-success">${(plan.mrrUSD ?? 0).toFixed(2)}/mo</span>
-                  <span className="capitalize">{plan.status}</span>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => setEditing(plan)} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer"><Pencil size={12} /> Edit</button>
-                  <button onClick={() => setViewingSubscribersFor(plan)} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer"><Eye size={12} /> Subscribers</button>
-                  {plan.status !== 'archived' && <button onClick={() => { setArchiving(plan); setArchiveError(''); setArchiveForceNeeded(false); }} className="flex-1 flex items-center justify-center gap-1 py-2 bg-white border border-bone rounded-lg text-xs font-medium text-graphite cursor-pointer"><Archive size={12} /> Archive</button>}
-                </div>
-              </div>
-            ))}
-            {plans.length === 0 && <div className="col-span-full text-center py-10 text-[13px] text-slate">No platform plans yet.</div>}
-          </div>
-        )}
+                  <SkeletonBox width="100%" height={34} rounded="8px" />
+                </Card>
+              ))}
+            </div>
+          ) : plans.length === 0 ? (
+            <Card padding="none">
+              <EmptyState
+                icon={<Layers size={28} className="text-slate/50" />}
+                title="No platform plans yet."
+                description="Create your first plan — sellers pick one during onboarding and it drives every product, staff and feature limit."
+                action={{ label: 'Create Plan', icon: <Plus size={14} />, onClick: () => setEditing('new') }}
+              />
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {plans.map(plan => {
+                const isHighlighted = !!plan.badge && plan.status !== 'archived';
+                return (
+                  <Card
+                    key={plan._id}
+                    padding="none"
+                    hover
+                    className={`relative flex flex-col overflow-hidden ${isHighlighted ? 'ring-2 ring-brand-orange' : ''}`}
+                  >
+                    {isHighlighted && <div className="h-[3px] w-full bg-gradient-to-r from-brand-orange to-brand-deep-orange shrink-0" />}
+                    <div className="px-5 pt-4 pb-4 flex flex-col grow">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <p className="text-[15px] font-bold text-carbon">{plan.name}</p>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {plan.isPubliclyVisible === false && <Badge color="gray" size="sm">Hidden</Badge>}
+                          {plan.badge && <Badge color="orange" size="sm">{plan.badge}</Badge>}
+                        </div>
+                      </div>
+
+                      <p className="flex items-baseline gap-1 mb-3">
+                        {plan.isFree ? (
+                          <span className="text-[22px] font-bold text-brand-orange">Free</span>
+                        ) : plan.isCustomPricing ? (
+                          <span className="text-[22px] font-bold text-brand-orange">Custom</span>
+                        ) : (
+                          <>
+                            <span className="text-[22px] font-bold text-brand-orange">${plan.monthlyPriceUSD}</span>
+                            <span className="text-[12px] font-medium text-slate">/mo</span>
+                          </>
+                        )}
+                      </p>
+
+                      <ul className="flex flex-col gap-1.5 mb-4 p-0 list-none">
+                        {(plan.featureBullets ?? []).slice(0, 4).map(f => (
+                          <li key={f} className="flex items-start gap-1.5 text-[12px] text-graphite leading-[1.4]">
+                            <Check size={13} className="text-success shrink-0 mt-[2px]" />
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                        {(plan.featureBullets ?? []).length === 0 && (
+                          <li className="text-[12px] text-slate/70 italic">No feature bullets added yet.</li>
+                        )}
+                      </ul>
+
+                      <div className="flex items-center justify-between py-2.5 border-t border-[#f0eee6] mb-3 mt-auto text-[11px] text-slate">
+                        <span className="flex items-center gap-1"><Users size={11} /> {plan.subscriberCount ?? 0} sellers</span>
+                        <span className="font-semibold text-success">${(plan.mrrUSD ?? 0).toFixed(2)}/mo</span>
+                        <Badge color={plan.status === 'active' ? 'green' : 'gray'} size="sm" dot className="capitalize">{plan.status}</Badge>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" fullWidth icon={<Pencil size={12} />} onClick={() => setEditing(plan)}>Edit</Button>
+                        <Button variant="outline" size="sm" fullWidth icon={<Eye size={12} />} onClick={() => setViewingSubscribersFor(plan)}>Subscribers</Button>
+                        {plan.status !== 'archived' && (
+                          <Button
+                            variant="outline" size="sm" icon={<Archive size={12} />}
+                            aria-label="Archive plan"
+                            onClick={() => { setArchiving(plan); setArchiveError(''); setArchiveForceNeeded(false); }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {editing && <PlanFormModal plan={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
