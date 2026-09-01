@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
-import { AnnouncementBanner, AppOpenPrompt, AppOpenFab } from '@/components/comman/ui';
+import { AnnouncementBanner } from '@/components/comman/ui';
 
 // ── BuyerLayout ───────────────────────────────────────────────────────────────
 // Thin shell for buyer-facing pages. Used to also render a fixed mobile
@@ -20,8 +20,6 @@ export function BuyerLayout() {
          whole screen via RootLayout's outer big-spinner Suspense — no
          fallback markup, TopProgressBar already covers the "loading" signal. */}
       <Suspense fallback={null}><Outlet /></Suspense>
-      <AppOpenPrompt />
-      <AppOpenFab />
     </>
   );
 }

@@ -222,3 +222,8 @@ export function apiUpdateIdentityBanner(storeId: string, payload: Partial<Identi
 export function apiUpdateStoreCustomCss(storeId: string, customCss: string | null, installedThemeId?: string) {
   return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_CUSTOM_CSS(storeId), installedThemeId), { customCss });
 }
+
+/** Code editor (Phase 5) — server re-sanitizes independently of whatever the client already checked. */
+export function apiUpdateCustomCss(storeId: string, customCss: string | null) {
+  return client.patch<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.UPDATE_CUSTOM_CSS(storeId), { customCss });
+}

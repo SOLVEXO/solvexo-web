@@ -109,6 +109,7 @@ import { AdminSubscriptions } from '@/features/admin/pages/AdminSubscriptions';
 import { AdminPlatformPlans } from '@/features/admin/pages/AdminPlatformPlans';
 import { AdminFinance } from '@/features/admin/pages/AdminFinance';
 import { AdminAnnouncements } from '@/features/admin/pages/AdminAnnouncements';
+import { AdminThemeCatalog } from '@/features/admin/pages/AdminThemeCatalog';
 import { AdminBanners } from '@/features/admin/pages/AdminBanners';
 import { AdminFaqs } from '@/features/admin/pages/AdminFaqs';
 import { AdminShippingZones } from '@/features/admin/pages/AdminShippingZones';
@@ -366,6 +367,7 @@ const mainRouter = createBrowserRouter([
           { path: 'settings',     element: <AdminSettings /> },
           { path: 'seo',          element: <RequireRole role="admin"><AdminSEO /></RequireRole> },
           { path: 'ai-studio',    element: <RequireRole role="admin"><AdminAiStudio /></RequireRole> },
+          { path: 'theme-catalog', element: <RequireRole role="admin"><AdminThemeCatalog /></RequireRole> },
           { path: 'store-app-requests', element: <RequireRole role="admin"><AdminStoreAppRequests /></RequireRole> },
         ],
       },

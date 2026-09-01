@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Shield, Store, DollarSign, Bell, Settings, UserCog,
   PanelLeftClose, PanelLeftOpen, MessageSquare, Image as ImageIcon, HelpCircle, RefreshCw,
   BarChart3, Layers, Search, Sparkles, Tag, LogOut, MessageCircle, Landmark, Percent, Coins, UserPlus, Activity,
-  TrendingUp, ChevronRight, Quote, Truck, Smartphone,
+  TrendingUp, ChevronRight, Quote, Truck, Palette, Smartphone,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
@@ -33,6 +33,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'leads',         Icon: UserPlus,        label: 'Leads',           path: '/admin/leads'         },
   { id: 'marketplace',   Icon: Store,           label: 'Marketplace',     path: '/admin/marketplace'   },
   { id: 'subscriptions', Icon: RefreshCw,       label: 'Subscriptions',   path: '/admin/subscriptions' },
+  { id: 'theme-catalog', Icon: Palette,         label: 'Theme Catalog',   path: '/admin/theme-catalog' },
   // Seller white-label branded-app requests — see MobileApp.tsx (seller
   // side) and StoreAppRequestsModule (backend) for the full flow. Distinct
   // from Solvexo's own POS app, which needs no admin review at all.
