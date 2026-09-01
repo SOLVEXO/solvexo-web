@@ -14,6 +14,7 @@ import {
   type Checkout, type CheckoutSummary,
 } from '@/api/services/checkout';
 import { apiPlaceCodOrder, apiInitiatePayment, apiGetPaymentStatus, type PlacedOrder } from '@/api/services/payment';
+import { apiGetCheckoutPaymentMethods, apiInitiateCheckoutPaymentMethod, type PublicPaymentMethod } from '@/api/services/integrations';
 import { StripeCardPayment, isStripeConfigured } from '@/features/buyer/components/StripeCardPayment';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
@@ -88,7 +89,17 @@ export function AtelierCheckoutPage() {
   const [giftCardBusy, setGiftCardBusy] = useState(false);
   const [giftCardMsg, setGiftCardMsg] = useState('');
 
-  const [selectedMethod, setSelectedMethod] = useState<'stripe' | 'cash_on_delivery' | null>(null);
+  // Store-connected gateways (Safepay et al, see the `src/integrations`
+  // module) — a distinct list from `allowedMethods` above, fetched
+  // separately since it's keyed by `checkout._id` alone (no `isDigital`
+  // filtering the backend applies here; a connected gateway covers the
+  // WHOLE checkout amount regardless of physical/digital mix). Always `[]`
+  // for a checkout spanning more than one store, which can't happen on a
+  // store's own storefront subdomain anyway.
+  const [extraMethods, setExtraMethods] = useState<PublicPaymentMethod[]>([]);
+  const [selectedMethod, setSelectedMethod] = useState<'stripe' | 'cash_on_delivery' | string | null>(null);
+  const [initiatingExtra, setInitiatingExtra] = useState(false);
+  const [extraInitiateErr, setExtraInitiateErr] = useState('');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [chargeAmount, setChargeAmount] = useState<number | null>(null);
   const [initiating, setInitiating] = useState(false);
@@ -149,13 +160,23 @@ export function AtelierCheckoutPage() {
   }, [readyToCreateCheckout, selectedAddrId, selectedZoneId]);
 
   useEffect(() => {
-    if (checkout) { setCheckout(null); setSummary(null); setSelectedMethod(null); setClientSecret(null); }
+    if (checkout) { setCheckout(null); setSummary(null); setSelectedMethod(null); setClientSecret(null); setExtraMethods([]); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAddrId, selectedZoneId]);
 
   useEffect(() => {
-    if (allowedMethods.length === 1) setSelectedMethod(allowedMethods[0]);
-  }, [allowedMethods]);
+    if (!checkout) return;
+    let cancelled = false;
+    apiGetCheckoutPaymentMethods(checkout._id)
+      .then(res => { if (!cancelled) setExtraMethods(res.data ?? []); })
+      .catch(() => { if (!cancelled) setExtraMethods([]); });
+    return () => { cancelled = true; };
+  }, [checkout]);
+
+  useEffect(() => {
+    if (allowedMethods.length === 1 && extraMethods.length === 0) setSelectedMethod(allowedMethods[0]);
+    else if (allowedMethods.length === 0 && extraMethods.length === 1) setSelectedMethod(extraMethods[0].provider);
+  }, [allowedMethods, extraMethods]);
 
   useEffect(() => {
     if (selectedMethod !== 'stripe' || !checkout || !isStripeConfigured() || clientSecret) return;
@@ -277,6 +298,32 @@ export function AtelierCheckoutPage() {
     } catch (err) {
       setPlaceError(err instanceof Error ? err.message : 'Failed to place order.');
     } finally { setPlacing(false); }
+  };
+
+  /** Hands off to the gateway's own hosted checkout page — this is a real
+   *  full-page navigation away from the store, not an in-page confirm like
+   *  Stripe's. The buyer comes back to `AtelierCheckoutReturnPage` (Safepay
+   *  success) or straight back here (Safepay cancel), and the real order
+   *  only ever gets created server-side once that gateway's webhook fires
+   *  (see `PaymentService.finalizeGatewayPayment`) — nothing client-side
+   *  here is trusted as proof of payment. */
+  const handleInitiateExtraMethod = async (provider: string) => {
+    if (!checkout) return;
+    setInitiatingExtra(true); setExtraInitiateErr('');
+    try {
+      const returnUrl = `${window.location.origin}/checkout/${checkout._id}/return`;
+      const cancelUrl = `${window.location.origin}/checkout`;
+      const res = await apiInitiateCheckoutPaymentMethod(checkout._id, provider as any, returnUrl, cancelUrl);
+      if (res.data.redirectUrl) {
+        window.location.href = res.data.redirectUrl;
+        return;
+      }
+      setExtraInitiateErr('This payment method could not be started.');
+    } catch (err) {
+      setExtraInitiateErr(err instanceof Error ? err.message : 'Failed to start payment.');
+    } finally {
+      setInitiatingExtra(false);
+    }
   };
 
   const orderSubtotal = checkout ? checkout.items.reduce((s, i) => s + i.totalPrice, 0) : cartItems.reduce((s, i) => s + (i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity), 0);
@@ -409,11 +456,11 @@ export function AtelierCheckoutPage() {
               </div>
             ) : creatingCheckout || !checkout ? (
               <Loader2 size={16} className="animate-spin" style={{ color: t.colors.inkMuted }} />
-            ) : allowedMethods.length === 0 ? (
+            ) : allowedMethods.length === 0 && extraMethods.length === 0 ? (
               <p style={{ fontFamily: t.fonts.body, fontSize: '12.5px', color: t.colors.inkMuted }}>No payment methods are available for this order yet.</p>
             ) : (
               <div className="flex flex-col gap-3">
-                {allowedMethods.length > 1 && (
+                {(allowedMethods.length + extraMethods.length) > 1 && (
                   <div className="flex flex-col gap-2.5">
                     {allowedMethods.map(m => (
                       <label
@@ -424,6 +471,17 @@ export function AtelierCheckoutPage() {
                         <input type="radio" checked={selectedMethod === m} onChange={() => setSelectedMethod(m)} />
                         {m === 'stripe' ? <CreditCard size={15} style={{ color: t.colors.inkMuted }} /> : <Banknote size={15} style={{ color: t.colors.inkMuted }} />}
                         <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 500, color: t.colors.ink }}>{m === 'stripe' ? 'Credit / Debit Card' : 'Cash on Delivery'}</span>
+                      </label>
+                    ))}
+                    {extraMethods.map(m => (
+                      <label
+                        key={m.provider}
+                        className="flex items-center gap-2.5 cursor-pointer"
+                        style={{ padding: '12px 14px', border: `1px solid ${selectedMethod === m.provider ? t.colors.ink : t.colors.border}` }}
+                      >
+                        <input type="radio" checked={selectedMethod === m.provider} onChange={() => setSelectedMethod(m.provider)} />
+                        <CreditCard size={15} style={{ color: t.colors.inkMuted }} />
+                        <span style={{ fontFamily: t.fonts.body, fontSize: '12.5px', fontWeight: 500, color: t.colors.ink }}>{m.displayName}</span>
                       </label>
                     ))}
                   </div>
@@ -458,6 +516,23 @@ export function AtelierCheckoutPage() {
                     {placing ? 'Placing order…' : 'Place Order'}
                   </AtelierButton>
                 )}
+
+                {extraMethods.some(m => m.provider === selectedMethod) && (() => {
+                  const method = extraMethods.find(m => m.provider === selectedMethod)!;
+                  return (
+                    <div className="flex flex-col gap-2.5">
+                      <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted }}>
+                        You'll be taken to {method.displayName} to complete your payment securely, then brought back here.
+                      </p>
+                      {extraInitiateErr && (
+                        <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.danger }}>{extraInitiateErr}</p>
+                      )}
+                      <AtelierButton style={{ width: '100%', justifyContent: 'center' }} loading={initiatingExtra} onClick={() => handleInitiateExtraMethod(method.provider)}>
+                        Continue to {method.displayName}
+                      </AtelierButton>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </SectionCard>

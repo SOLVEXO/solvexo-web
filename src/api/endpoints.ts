@@ -544,6 +544,19 @@ export const ENDPOINTS = {
     REMOVE_COUPON: (checkoutId: string) => `/api/checkout/remove-coupon/${checkoutId}`,
     APPLY_GIFT_CARD: '/api/checkout/apply-gift-card',
     REMOVE_GIFT_CARD: (checkoutId: string) => `/api/checkout/remove-gift-card/${checkoutId}`,
+    // New per-store connected gateways (Safepay et al) — only ever
+    // non-empty for a single-store checkout, see CheckoutPaymentMethodsService.
+    PAYMENT_METHODS: (checkoutId: string) => `/api/checkout/${checkoutId}/payment-methods`,
+    INITIATE_PAYMENT_METHOD: (checkoutId: string, provider: string) => `/api/checkout/${checkoutId}/payment-methods/${provider}/initiate`,
+  },
+
+  // ── STORE INTEGRATIONS (seller-facing: payment gateways + WhatsApp) ────────
+  STORE_INTEGRATIONS: {
+    LIST:    (storeId: string) => `/api/store/${storeId}/integrations`,
+    CONNECT: (storeId: string, type: string, provider: string) => `/api/store/${storeId}/integrations/${type}/${provider}/connect`,
+    TEST:    (storeId: string, id: string) => `/api/store/${storeId}/integrations/${id}/test`,
+    UPDATE:  (storeId: string, id: string) => `/api/store/${storeId}/integrations/${id}`,
+    DELETE:  (storeId: string, id: string) => `/api/store/${storeId}/integrations/${id}`,
   },
 
   UPLOAD: {

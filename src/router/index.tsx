@@ -150,6 +150,7 @@ const storefrontRouter = createBrowserRouter([
           { path: 'blog/:postSlug', element: <ThemedRoute routeKey="blogPost" /> },
           { path: 'cart', element: <ThemedRoute routeKey="cart" /> },
           { path: 'checkout', element: <ThemedRoute routeKey="checkout" /> },
+          { path: 'checkout/:checkoutId/return', element: <ThemedRoute routeKey="checkoutReturn" /> },
           { path: 'login', element: <ThemedRoute routeKey="login" /> },
           { path: 'register', element: <ThemedRoute routeKey="register" /> },
           { path: 'verify-otp', element: <ThemedRoute routeKey="verifyOtp" /> },

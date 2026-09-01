@@ -4,6 +4,7 @@ import { AtelierHomePage } from './theme-01-atelier/pages/AtelierHomePage';
 import { AtelierProductPage } from './theme-01-atelier/pages/AtelierProductPage';
 import { AtelierCartPage } from './theme-01-atelier/pages/AtelierCartPage';
 import { AtelierCheckoutPage } from './theme-01-atelier/pages/AtelierCheckoutPage';
+import { AtelierCheckoutReturnPage } from './theme-01-atelier/pages/AtelierCheckoutReturnPage';
 import { AtelierLoginPage } from './theme-01-atelier/pages/AtelierLoginPage';
 import { AtelierRegisterPage } from './theme-01-atelier/pages/AtelierRegisterPage';
 import { AtelierVerifyOtpPage } from './theme-01-atelier/pages/AtelierVerifyOtpPage';
@@ -71,7 +72,7 @@ import './theme-02-nova/theme.demoPreview';
  *  being able to sign in at all, not a later nice-to-have. */
 export type StorefrontRouteKey =
   | 'home' | 'product' | 'category' | 'collection' | 'search'
-  | 'cart' | 'checkout' | 'login' | 'register' | 'verifyOtp' | 'account'
+  | 'cart' | 'checkout' | 'checkoutReturn' | 'login' | 'register' | 'verifyOtp' | 'account'
   | 'blogIndex' | 'blogPost' | 'customPage'
   | 'forgotPassword' | 'newPassword';
 
@@ -156,6 +157,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       product: AtelierProductPage,
       cart: AtelierCartPage,
       checkout: AtelierCheckoutPage,
+      checkoutReturn: AtelierCheckoutReturnPage,
       login: AtelierLoginPage,
       register: AtelierRegisterPage,
       verifyOtp: AtelierVerifyOtpPage,
@@ -172,8 +174,8 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
     display: {
       name: 'Atelier',
       description: 'Premium editorial fashion & lifestyle — asymmetric layouts, large photography, and a quiet, confident typographic voice. Its own independent storefront implementation, not a re-skin.',
-      builtRouteCount: 16,
-      totalRouteCount: 16,
+      builtRouteCount: 17,
+      totalRouteCount: 17,
     },
     // Matches `theme-01-atelier/theme.config.ts`'s own `STATIC_DEFAULTS`
     // exactly (brass accent, warm ivory ground, near-black ink, Inter body
@@ -208,7 +210,7 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       name: 'Nova',
       description: 'Bold, energetic, commerce-first — vivid color, confident geometric type, and punchy pill buttons. Its own independent storefront implementation, not a re-skin.',
       builtRouteCount: 7,
-      totalRouteCount: 16,
+      totalRouteCount: 17,
     },
     // Matches `theme-02-nova/theme.config.ts`'s own `STATIC_DEFAULTS`
     // exactly (vivid indigo accent, white ground, cool near-black ink,
