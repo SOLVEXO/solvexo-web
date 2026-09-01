@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Send, Check, ChevronDown, ChevronRight, ArrowUp, Mail } from 'lucide-react';
 import { SolvexoLogo, SolvexoIcon } from './SolvexoLogo';
-import { AppleGlyph, GooglePlayGlyph } from './AppPromoParts';
 import { apiSubscribeNewsletter } from '../../../api/services/newsletter';
 import { scrollRootToTop } from '@/utils/scrollRoot';
 import { useSellEntry } from '@/hooks/auth/useSellEntry';
@@ -110,27 +109,6 @@ const SOCIALS = [
   { label: 'X',         Glyph: XGlyph },
   { label: 'LinkedIn',  Glyph: LinkedinGlyph },
 ];
-
-// Decorative only — no real store listing to link to yet. `role="img"` (not
-// a button) so screen readers don't announce a control that does nothing.
-function AppBadge({ platform }: { platform: 'ios' | 'android' }) {
-  const isIos = platform === 'ios';
-  return (
-    <div
-      role="img"
-      aria-label={isIos ? 'Download on the App Store' : 'Get it on Google Play'}
-      className="flex items-center gap-2.5 h-11 px-3.5 rounded-[9px] border border-white/[0.12] bg-white/[0.03] select-none"
-    >
-      {isIos
-        ? <AppleGlyph size={18} />
-        : <GooglePlayGlyph size={16} />}
-      <span className="leading-none">
-        <span className="block text-[8px] text-[#8b8985] tracking-[0.04em]">{isIos ? 'Download on the' : 'GET IT ON'}</span>
-        <span className="block text-[12.5px] font-bold text-white mt-[2px]">{isIos ? 'App Store' : 'Google Play'}</span>
-      </span>
-    </div>
-  );
-}
 
 function Newsletter() {
   const [email, setEmail]     = useState('');
@@ -287,7 +265,7 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
 
       {/* ── Link columns ─────────────────────────────────────────────────────── */}
       <Reveal className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-8 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr_1fr_1fr] gap-8 lg:gap-6">
 
           <div className="sm:col-span-2 lg:col-span-1 pb-2 sm:pb-0">
             <SolvexoLogo size={26} variant="light" />
@@ -316,17 +294,6 @@ export function Footer({ showNewsletter = true }: { showNewsletter?: boolean }) 
           {FOOTER_COLUMNS.map(col => (
             <FooterColumn key={col.heading} heading={col.heading} links={col.links} navigate={footerNavigate} />
           ))}
-
-          <div className="pb-2 sm:pb-0">
-            <p className="relative inline-block text-[11px] font-bold text-white uppercase tracking-[0.08em] pb-2 sm:mb-4">
-              Get the App
-              <span className="absolute left-0 bottom-0 w-5 h-[2px] rounded-full bg-brand-orange" />
-            </p>
-            <div className="flex flex-col gap-2.5">
-              <AppBadge platform="ios" />
-              <AppBadge platform="android" />
-            </div>
-          </div>
         </div>
       </Reveal>
 

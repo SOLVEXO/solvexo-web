@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Field, Toggle } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
-import { LocationPickerMap } from '@/components/comman/ui/LocationPickerMap';
 import type { SectionType } from '@/api/services/storefrontTypes';
 import { EntityPickerModal } from './EntityPickerModal';
 import { LinkTargetFields } from './LinkTargetFields';

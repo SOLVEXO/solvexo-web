@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, Trash2, Plus, LayoutTemplate, GripVertical } from 'lucide-react';
+import { ChevronDown, ChevronUp, Trash2, Plus, LayoutTemplate, GripVertical, Eye, EyeOff, Copy } from 'lucide-react';
 import { ActionMenu } from '@/components/comman/ui';
 import type { Section, Block, SectionType } from '@/api/services/storefrontTypes';
 import { SECTION_META_BY_TYPE } from './sectionRegistry';
@@ -9,7 +9,15 @@ import { SortableList } from './Sortable';
 import { AddSectionModal } from './AddSectionModal';
 import { ConfirmDialog } from './ConfirmDialog';
 
-function BlockRow({ block, sectionType, onChange, onRemove, pageOptions, storeId }: {
+/** Strips `_id` so a duplicated block/section is persisted as a genuinely
+ *  new document rather than colliding with the original's id. */
+function cloneWithoutId<T extends { _id?: string }>(item: T): T {
+  const { _id, ...rest } = item;
+  void _id;
+  return { ...rest } as T;
+}
+
+function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOptions, storeId }: {
   block: Block;
   sectionType: string;
   onChange: (next: Block) => void;
@@ -61,7 +69,7 @@ function BlockRow({ block, sectionType, onChange, onRemove, pageOptions, storeId
   );
 }
 
-function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange, onRemove, onPersistBlockRemove, pageOptions, storeId }: {
+function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange, onRemove, onDuplicate, onPersistBlockRemove, pageOptions, storeId }: {
   section: Section;
   /** Same id shape `AtelierSectionRenderer` computes (`section._id ?? index`,
    *  stringified) — lets a click in the live preview and a card here refer
@@ -84,6 +92,7 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const meta = SECTION_META_BY_TYPE[section.type];
   const cardRef = useRef<HTMLDivElement>(null);
+  const hidden = section.enabled === false;
 
   // Clicking a section in the live preview should surface its card here —
   // auto-expand it and scroll it into view, the same "select it and I'll
@@ -250,6 +259,12 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
                     const next = sections.filter((_, j) => j !== i);
                     onChange(next);
                     onPersist(next);
+                  }}
+                  onDuplicate={() => {
+                    const copy = cloneWithoutId(section);
+                    const next = [...sections];
+                    next.splice(i + 1, 0, copy);
+                    onChange(next);
                   }}
                   onPersistBlockRemove={nextSection => onPersist(sections.map((s, j) => j === i ? nextSection : s))}
                   pageOptions={pageOptions}

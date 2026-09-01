@@ -108,6 +108,7 @@ import { AdminSubscriptions } from '@/features/admin/pages/AdminSubscriptions';
 import { AdminPlatformPlans } from '@/features/admin/pages/AdminPlatformPlans';
 import { AdminFinance } from '@/features/admin/pages/AdminFinance';
 import { AdminAnnouncements } from '@/features/admin/pages/AdminAnnouncements';
+import { AdminThemeCatalog } from '@/features/admin/pages/AdminThemeCatalog';
 import { AdminBanners } from '@/features/admin/pages/AdminBanners';
 import { AdminFaqs } from '@/features/admin/pages/AdminFaqs';
 import { AdminShippingZones } from '@/features/admin/pages/AdminShippingZones';

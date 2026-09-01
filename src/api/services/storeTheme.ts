@@ -1,6 +1,6 @@
 import client from '../client';
 import { ENDPOINTS } from '../endpoints';
-import type { Block, Section } from './storefrontTypes';
+import type { Block } from './storefrontTypes';
 
 interface ApiResponse<T> {
   success: boolean;
