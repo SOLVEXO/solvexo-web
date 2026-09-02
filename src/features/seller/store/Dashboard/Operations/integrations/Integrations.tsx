@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MessageCircle, AlertTriangle, RefreshCw, ShieldCheck, Copy, Check, CreditCard } from 'lucide-react';
+import { MessageCircle, AlertTriangle, RefreshCw, ShieldCheck, Copy, Check } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button, Modal, Toggle, SkeletonBox, Field, Input } from '@/components/comman/ui';
@@ -54,20 +54,27 @@ function SafepayMark({ size }: { size: number }) {
 
 function ProviderMonogram({ provider, size = 42 }: { provider: PaymentProviderKey; size?: number }) {
   const brand = PROVIDER_BRAND[provider];
+  // Stripe's real app/brand icon genuinely IS just a bold white "S" on a
+  // solid indigo (#635BFF) rounded square — unlike the other providers, a
+  // plain letterform here is the accurate real icon, not a generic
+  // placeholder, so it gets solid brand-color fill + white text instead of
+  // everyone else's tinted-background + brand-color text treatment.
+  if (provider === 'stripe') {
+    return (
+      <div
+        className="rounded-[10px] flex items-center justify-center shrink-0 font-bold text-white"
+        style={{ width: size, height: size, background: brand.color, fontSize: size * 0.48 }}
+      >
+        S
+      </div>
+    );
+  }
   return (
     <div
       className="rounded-[10px] flex items-center justify-center shrink-0 font-bold"
       style={{ width: size, height: size, background: brand.bg, color: brand.color, fontSize: size * 0.42 }}
     >
-      {provider === 'safepay' ? (
-        <SafepayMark size={size} />
-      ) : provider === 'stripe' ? (
-        // A plain "S" monogram here would be indistinguishable from
-        // Safepay's — Stripe gets its real-world icon (card processor) instead.
-        <CreditCard size={size * 0.46} />
-      ) : (
-        brand.name.charAt(0)
-      )}
+      {provider === 'safepay' ? <SafepayMark size={size} /> : brand.name.charAt(0)}
     </div>
   );
 }
@@ -139,6 +146,24 @@ function StatusPill({ status }: { status: StoreIntegrationView['status'] }) {
       {s.label}
     </span>
   );
+}
+
+// Only the payment-card header needs this override: Stripe's synthesized
+// row (see `StoreIntegrationsService.list`) reports `status: 'error'` for a
+// perfectly normal, expected in-progress state — the seller already has a
+// Stripe Connect account but hasn't finished Stripe's own KYC/bank-details
+// step yet — not an actual failure. The shared red "Error" pill (correct for
+// Safepay/WhatsApp, where `error` really does mean something broke) reads as
+// alarming and wrong here, so this one combination gets its own honest label.
+function PaymentStatusPill({ integration }: { integration: StoreIntegrationView }) {
+  if (integration.provider === 'stripe' && integration.status === 'error') {
+    return (
+      <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold shrink-0" style={{ background: '#FDF3E7', color: '#9A6A17' }}>
+        Setup Incomplete
+      </span>
+    );
+  }
+  return <StatusPill status={integration.status} />;
 }
 
 // ── Safepay connect form ─────────────────────────────────────────────────────
@@ -253,7 +278,9 @@ function StripeConnectSection({ integration, onChanged }: { integration: StoreIn
         Connect your own Stripe account to receive buyer payments directly — Solvexo's commission is deducted automatically, and the rest lands in your bank account via Stripe's own payout schedule, instead of a manual payout request.
       </p>
       {integration.lastError && (
-        <p className="flex items-center gap-1.5 text-[12px] text-error"><AlertTriangle size={12} className="shrink-0" /> {integration.lastError}</p>
+        // Amber, not red — this just means "not finished yet," not "broken"
+        // (see `PaymentStatusPill`'s doc comment on the badge above).
+        <p className="flex items-center gap-1.5 text-[12px]" style={{ color: '#9A6A17' }}><AlertTriangle size={12} className="shrink-0" /> {integration.lastError}</p>
       )}
       {error && <p className="text-[12px] text-error">{error}</p>}
       {!isActive && (
@@ -367,7 +394,7 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
             </div>
           </div>
         </div>
-        <StatusPill status={integration.status} />
+        <PaymentStatusPill integration={integration} />
       </div>
 
       {isStripe ? (
