@@ -176,11 +176,17 @@ export function ClosingCtaBanner({ className }: { className?: string }) {
               <Button variant="dark" size="md" pill onClick={sellEntry.go} loading={sellEntry.loading}>
                 Create Your Account <ArrowRight size={13} className="inline align-middle ml-1" />
               </Button>
+              {/* Was "Explore Marketplace" -> /marketplace — a buyer-facing
+                 central-browse page that's been unlinked from nav platform-
+                 wide since the marketplace-to-standalone-store pivot (see
+                 CLAUDE.md). Homepage is now purely a seller-acquisition
+                 surface, so the second CTA here matches the one this same
+                 page's own final section already uses for that. */}
               <button
-                onClick={() => navigate('/marketplace')}
+                onClick={() => navigate('/products')}
                 className="inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-full text-[13px] font-medium text-carbon bg-white hover:bg-white/90 transition-colors cursor-pointer"
               >
-                Explore Marketplace
+                Explore the Platform
               </button>
             </div>
           </div>

@@ -9,7 +9,7 @@ const SECTIONS: LegalSection[] = [
     id: 'acceptance',
     title: 'Acceptance of Terms',
     body: [
-      'These Terms of Service ("Terms") govern your access to and use of Solvexo. By creating an account, browsing the marketplace, or making a purchase, you agree to be bound by these Terms.',
+      'These Terms of Service ("Terms") govern your access to and use of Solvexo. By creating an account, browsing a store on Solvexo, or making a purchase, you agree to be bound by these Terms.',
       'If you do not agree to these Terms, please do not use Solvexo.',
     ],
   },
@@ -60,7 +60,7 @@ const SECTIONS: LegalSection[] = [
     title: 'Intellectual Property',
     body: [
       'The Solvexo name, logo, and platform design are the property of Solvexo and may not be used without permission.',
-      'Sellers retain ownership of their own product content (images, descriptions, digital files) but grant Solvexo a license to display and distribute it for the purpose of operating the marketplace.',
+      'Sellers retain ownership of their own product content (images, descriptions, digital files) but grant Solvexo a license to display and distribute it for the purpose of operating their store on the Solvexo platform.',
     ],
   },
   {
@@ -75,9 +75,9 @@ const SECTIONS: LegalSection[] = [
     id: 'liability',
     title: 'Limitation of Liability',
     body: [
-      'Solvexo provides the marketplace platform "as is." To the fullest extent permitted by law, Solvexo is not liable for indirect, incidental, or consequential damages arising from your use of the platform, or from transactions between buyers and sellers.',
+      'Solvexo provides the platform "as is." To the fullest extent permitted by law, Solvexo is not liable for indirect, incidental, or consequential damages arising from your use of the platform, or from transactions between buyers and sellers.',
     ],
-    callout: { type: 'warning', text: 'Solvexo provides the marketplace platform "as is." To the fullest extent permitted by law, Solvexo is not liable for indirect, incidental, or consequential damages arising from your use of the platform, or from transactions between buyers and sellers.' },
+    callout: { type: 'warning', text: 'Solvexo provides the platform "as is." To the fullest extent permitted by law, Solvexo is not liable for indirect, incidental, or consequential damages arising from your use of the platform, or from transactions between buyers and sellers.' },
   },
   {
     id: 'termination',

@@ -99,7 +99,9 @@ function WelcomeHero({ name, image, memberSince }: { name?: string; image?: stri
         <Button variant="outline" size="sm" className="!bg-white/10 !border-white/20 !text-white hover:!bg-white/20" onClick={() => navigate('/account/orders')}>
           Track Orders
         </Button>
-        <Button variant="dark" size="sm" icon={<Store size={14} />} onClick={() => navigate('/marketplace')}>
+        {/* Was /marketplace — that central-catalog route no longer exists
+           post marketplace-to-standalone-store pivot. */}
+        <Button variant="dark" size="sm" icon={<Store size={14} />} onClick={() => navigate('/')}>
           Continue Shopping
         </Button>
       </div>
@@ -361,11 +363,13 @@ export function AccountDashboard() {
                 {[1, 2, 3].map(i => <SkeletonBox key={i} height={56} rounded="10px" />)}
               </div>
             ) : orders.length === 0 ? (
+              // Was "Browse Marketplace" -> /marketplace, a route that no
+              // longer exists post marketplace-to-standalone-store pivot.
               <EmptyState
                 icon={<ShoppingBag size={26} className="text-brand-orange opacity-55" />}
                 title="No orders yet"
                 description="Your recent purchases will show up here."
-                action={{ label: 'Browse Marketplace', onClick: () => navigate('/marketplace'), icon: <Store size={13} /> }}
+                action={{ label: 'Go to Homepage', onClick: () => navigate('/'), icon: <Store size={13} /> }}
                 className="py-9"
               />
             ) : (
@@ -471,7 +475,10 @@ export function AccountDashboard() {
                 { label: 'Add New Address',   path: '/account/addresses',    Icon: MapPin },
                 { label: 'Track Orders',      path: '/account/orders',       Icon: Package },
                 { label: 'Notification Settings', path: '/account/notifications', Icon: Bell },
-                { label: 'Browse Marketplace', path: '/marketplace',         Icon: Store },
+                // "Browse Marketplace" -> /marketplace removed — that route
+                // no longer exists post marketplace-to-standalone-store
+                // pivot, and a generic "go home" link doesn't fit this list
+                // of account-management shortcuts the way the others do.
               ].map(a => (
                 <button
                   key={a.path}

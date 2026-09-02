@@ -6,7 +6,7 @@ import { useSellEntry } from '@/hooks/auth/useSellEntry';
 import { Button } from '@/components/comman/ui/Button';
 import { Card } from '@/components/comman/ui/Card';
 import { Avatar } from '@/components/comman/ui/Avatar';
-import { Footer, SkeletonBox, ClosingCtaBanner } from '@/components/comman/ui';
+import { Footer, SkeletonBox } from '@/components/comman/ui';
 import {
   ArrowRight, Store, Sparkles, Check,
   Star, BadgeCheck, Quote, Loader2,
@@ -799,7 +799,14 @@ export function Homepage() {
         </section>
       )}
 
-      <ClosingCtaBanner />
+      {/* ClosingCtaBanner (stats row + phone-mockup showing a fabricated
+         central-marketplace "search products, stores..." + "My Orders"
+         app screen) removed — that app/browsing experience no longer exists
+         post marketplace-to-standalone-store pivot. The page's own later
+         closing section ("Start Selling Free" / "Explore the Platform")
+         already covers the final CTA, so nothing is missing here. Component
+         itself is untouched, just unlinked from this page (same convention
+         as the rest of the pivot's disconnected marketplace surfaces). */}
 
       {/* ── Social Proof — real reviews only; section hides itself until there's enough real content ── */}
       {(testimonialsLoading || testimonials.length > 0) && (

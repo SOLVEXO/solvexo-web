@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { ArrowRight, Sparkles, User, Lock, Star, Receipt, MessageSquare, Check, ChevronDown } from 'lucide-react';
+import { ArrowRight, Sparkles, User, Lock, Receipt, MessageSquare, Check, ChevronDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useFaqs } from '@/hooks/useFaqs';
@@ -17,11 +17,20 @@ import { Marquee } from '@/components/comman/motion/Marquee';
 const SERIF = "'Lora', Georgia, serif";
 
 // ── Add-ons exact from reference ──────────────────────────────────────────────
+// "Priority Marketplace Placement" ($29/mo, `priority_marketplace_placement`
+// in platform-addons.service.ts) removed from this sellable list — its only
+// real effect is setting `Store.badges: ['featured']`, which is read solely
+// by the Admin Marketplace module's featured-listing curation — one of the 5
+// admin modules already unlinked from nav in the marketplace-to-standalone-
+// store pivot (see CLAUDE.md). It's a real, still-billable feature that no
+// longer does anything visible to anyone; stopped selling it here rather
+// than leave sellers paying for it unknowingly. Existing active purchases of
+// it are untouched — canceling/refunding those is a billing decision, not a
+// UI fix, and wasn't done here.
 const ADDONS: { Icon: LucideIcon; name: string; price: string; unit: string }[] = [
   { Icon: Sparkles,       name: 'Extra AI Credits',              price: '$10',   unit: 'per 500 credits'       },
   { Icon: User,           name: 'Additional Staff Seats',         price: '$5',    unit: 'per seat / month'      },
   { Icon: Lock,           name: 'Custom Domain SSL',              price: 'Free',  unit: 'included on Pro+'      },
-  { Icon: Star,           name: 'Priority Marketplace Placement', price: '$29',   unit: 'per month'             },
   { Icon: Receipt,        name: 'Advanced Tax Compliance',        price: '$15',   unit: 'per month'             },
   { Icon: MessageSquare,  name: 'SMS Notifications',              price: '$0.05', unit: 'per message'           },
 ];
@@ -34,7 +43,7 @@ const FALLBACK_FAQS = [
   },
   {
     q: 'What counts as a transaction fee?',
-    a: 'Transaction fees apply to each sale made through your Solvexo store or marketplace listing. Digital product sales, physical sales, and POS sales all count.',
+    a: 'Transaction fees apply to each sale made through your Solvexo store. Digital product sales, physical sales, and POS sales all count.',
   },
   {
     q: 'Do you offer discounts for educators or non-profits?',

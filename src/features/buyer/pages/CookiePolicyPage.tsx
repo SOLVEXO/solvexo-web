@@ -9,7 +9,7 @@ const SECTIONS: LegalSection[] = [
     id: 'introduction',
     title: 'Introduction',
     body: [
-      'This Cookie Policy explains how Solvexo uses cookies and similar tracking technologies when you visit or use our marketplace, and the choices available to you.',
+      'This Cookie Policy explains how Solvexo uses cookies and similar tracking technologies when you visit or use a store on Solvexo, and the choices available to you.',
       'It should be read alongside our Privacy Policy, which explains more broadly how we handle your personal information.',
     ],
   },
@@ -24,18 +24,18 @@ const SECTIONS: LegalSection[] = [
     id: 'types-of-cookies',
     title: 'Types of Cookies We Use',
     body: [
-      'Essential cookies: required for core functionality like staying signed in, keeping items in your cart, and completing checkout. The marketplace cannot function properly without these.',
-      'Performance & analytics cookies: help us understand how the marketplace is used, so we can find and fix issues and improve the experience.',
+      'Essential cookies: required for core functionality like staying signed in, keeping items in your cart, and completing checkout. Checkout cannot function properly without these.',
+      'Performance & analytics cookies: help us understand how Solvexo is used, so we can find and fix issues and improve the experience.',
       'Functional cookies: remember your preferences, such as language, currency, or recently viewed items.',
       'Advertising cookies: used to show you more relevant offers on Solvexo and, where applicable, on other sites.',
     ],
-    callout: { type: 'info', text: 'Essential cookies: required for core functionality like staying signed in, keeping items in your cart, and completing checkout. The marketplace cannot function properly without these.' },
+    callout: { type: 'info', text: 'Essential cookies: required for core functionality like staying signed in, keeping items in your cart, and completing checkout. Checkout cannot function properly without these.' },
   },
   {
     id: 'how-we-use',
     title: 'How We Use Cookies',
     body: [
-      'We use the cookie categories above to keep the marketplace secure, remember your session and preferences, measure performance, and personalize product recommendations.',
+      'We use the cookie categories above to keep the platform secure, remember your session and preferences, measure performance, and personalize product recommendations.',
     ],
   },
   {

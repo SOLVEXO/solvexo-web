@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
-  CheckCircle2, MapPin, Package, ShoppingBag, Download,
+  CheckCircle2, MapPin, Package, Download,
   Loader2, ArrowRight, Home, Truck, Box, BadgeCheck,
 } from 'lucide-react';
 import type { PlacedOrder, OrderItem, OrderDeliveryAddress } from '@/api/services/payment';
@@ -353,17 +353,13 @@ function SummaryPanel({ orders, navigate }: { orders: PlacedOrder[]; navigate: (
         <span className="text-[15px] font-bold text-carbon">{currencySymbol(orders[0]?.currency)}{grandTotal.toLocaleString()}</span>
       </div>
 
+      {/* "Continue Shopping" -> /marketplace removed — that central-catalog
+         route no longer exists post marketplace-to-standalone-store pivot,
+         and it would've been a plain duplicate of "Back to Home" below once
+         repointed at the same real destination. */}
       <div className="px-5 py-4 flex flex-col gap-2">
         <Button
           variant="primary" fullWidth
-          className="justify-center! px-4! py-[11px]! rounded-[10px]!"
-          icon={<ShoppingBag size={14} />}
-          onClick={() => navigate('/marketplace')}
-        >
-          Continue Shopping
-        </Button>
-        <Button
-          variant="outline" fullWidth
           className="justify-center! px-4! py-[11px]! rounded-[10px]!"
           iconRight={<ArrowRight size={13} />}
           onClick={() => navigate('/')}
@@ -386,7 +382,9 @@ export function OrderSuccessPage() {
   const orders   = (location.state as { orders: PlacedOrder[] } | null)?.orders ?? [];
 
   useEffect(() => {
-    if (orders.length === 0) navigate('/marketplace', { replace: true });
+    // Was /marketplace — that route no longer exists post
+    // marketplace-to-standalone-store pivot.
+    if (orders.length === 0) navigate('/', { replace: true });
   }, [orders.length, navigate]);
 
   if (orders.length === 0) {

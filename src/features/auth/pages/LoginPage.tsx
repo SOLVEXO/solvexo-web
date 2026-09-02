@@ -136,10 +136,14 @@ export function LoginPage() {
     }, { replace: true });
   }, [showChooser, freshEmailEntered, onPasswordStep, setSearchParams]);
 
-  if (TokenStorage.isLoggedIn()) return null;
-
+  // Every hook must run above this point — a conditional `return` between
+  // hooks violates the Rules of Hooks (React throws "Rendered fewer hooks
+  // than expected" the instant this flips true mid-session, e.g. the moment
+  // login succeeds and `TokenStorage.isLoggedIn()` goes from false to true
+  // without a full page reload) — found live via a real login-flow run,
+  // where `switchRole`/`selectAccount`/`backToPicker`/`useDifferentAccountHandler`
+  // used to sit AFTER this check and so were skipped on that render.
   const otherRole: AppRole = role === 'user' ? 'seller' : 'user';
-  const roleLabel = (r: AppRole) => (r === 'seller' ? 'seller' : 'buyer');
   const switchRole = useCallback(() => setRole(otherRole), [otherRole]);
 
   const selectAccount = useCallback(() => {
@@ -159,6 +163,10 @@ export function LoginPage() {
     });
     setValue('email', '');
   }, [setSearchParams, setValue]);
+
+  if (TokenStorage.isLoggedIn()) return null;
+
+  const roleLabel = (r: AppRole) => (r === 'seller' ? 'seller' : 'buyer');
 
   return (
     <AuthSplitLayout

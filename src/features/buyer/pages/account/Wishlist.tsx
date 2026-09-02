@@ -85,11 +85,14 @@ export function Wishlist() {
         <div className="hidden lg:block px-5 pt-5 pb-4 border-b border-bone">
           <PageHeader eyebrow="Account" title="Wishlist" />
         </div>
+        {/* Empty-state action used to be "Browse Marketplace" -> /marketplace,
+           a route that no longer exists post marketplace-to-standalone-store
+           pivot — there's no more central catalog to browse to from here. */}
         <EmptyState
           icon={<Heart size={28} className="text-brand-orange opacity-55" />}
           title="Wishlist is empty"
           description="Save products you love and find them here anytime."
-          action={{ label: 'Browse Marketplace', onClick: () => navigate('/marketplace') }}
+          action={{ label: 'Go to Homepage', onClick: () => navigate('/') }}
           className="py-12"
         />
       </Card>

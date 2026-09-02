@@ -9,7 +9,7 @@ const SECTIONS: LegalSection[] = [
     id: 'introduction',
     title: 'Introduction',
     body: [
-      'Solvexo ("we", "us", or "our") operates a marketplace connecting buyers with independent sellers, creators, and educators. This Privacy Policy explains what information we collect, how we use it, and the choices you have.',
+      'Solvexo ("we", "us", or "our") is a commerce platform that powers independent sellers\', creators\', and educators\' own online stores. This Privacy Policy explains what information we collect, how we use it, and the choices you have.',
       'By using Solvexo, you agree to the collection and use of information in accordance with this policy.',
     ],
   },
@@ -27,8 +27,8 @@ const SECTIONS: LegalSection[] = [
     title: 'How We Use Your Information',
     body: [
       'To process orders, payments, refunds, and deliveries, and to communicate with you about them.',
-      'To personalize your experience — recommended products, saved preferences, and marketplace search results.',
-      'To detect fraud, enforce our Terms of Service, and keep the marketplace safe for buyers and sellers.',
+      'To personalize your experience — recommended products, saved preferences, and search results.',
+      'To detect fraud, enforce our Terms of Service, and keep Solvexo safe for buyers and sellers.',
       'To send you updates, offers, or newsletters you\'ve opted into — you can unsubscribe at any time.',
     ],
   },
@@ -36,7 +36,7 @@ const SECTIONS: LegalSection[] = [
     id: 'cookies',
     title: 'Cookies & Tracking Technologies',
     body: [
-      'We use cookies and similar technologies to keep you signed in, remember your cart and preferences, and understand how the marketplace is used.',
+      'We use cookies and similar technologies to keep you signed in, remember your cart and preferences, and understand how Solvexo is used.',
       'You can control cookies through your browser settings; disabling them may limit some features, such as staying logged in.',
     ],
     callout: { type: 'info', text: 'You can control cookies through your browser settings; disabling them may limit some features, such as staying logged in.' },

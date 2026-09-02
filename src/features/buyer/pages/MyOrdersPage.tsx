@@ -548,11 +548,13 @@ export function OrdersTab() {
           <Button variant="outline" size="sm" onClick={refetch}>Try again</Button>
         </div>
       ) : orders.length === 0 ? (
+        // Was "Browse Marketplace" -> /marketplace, a route that no longer
+        // exists post marketplace-to-standalone-store pivot.
         <EmptyState
           icon={<ShoppingBag size={28} className="text-brand-orange opacity-55" />}
           title="No orders yet"
           description="Your order history will appear here once you make your first purchase."
-          action={{ label: 'Browse Marketplace', onClick: () => navigate('/marketplace'), icon: <ShoppingBag size={14} /> }}
+          action={{ label: 'Go to Homepage', onClick: () => navigate('/'), icon: <ShoppingBag size={14} /> }}
           className="py-12"
         />
       ) : filtered.length === 0 ? (

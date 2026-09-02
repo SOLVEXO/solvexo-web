@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Star, ImageOff, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import {
   Card, EmptyState, StarRating, SkeletonBox,
@@ -13,7 +13,6 @@ import { useToast } from '@/contexts/ToastContext';
 const PER_PAGE = 10;
 
 export function ReviewsTab() {
-  const navigate = useNavigate();
   const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [reviews, setReviews] = useState<MyReviewEntry[]>([]);
@@ -70,11 +69,13 @@ export function ReviewsTab() {
   const columns: TableColumn<MyReviewEntry>[] = [
     {
       key: 'product', header: 'Product', width: '240px',
+      // Used to link to /marketplace/:productId — that central-catalog route
+      // no longer exists (marketplace-to-standalone-store pivot). This
+      // entry has no store slug to build a real per-store storefront link
+      // from (MyReviewEntry.product is just {productId, name, image}), so
+      // it's shown plain instead of linking somewhere broken.
       render: r => (
-        <button
-          onClick={() => r.product && navigate(`/marketplace/${r.product.productId}`)}
-          className="flex items-center gap-[10px] bg-transparent border-0 cursor-pointer text-left p-0"
-        >
+        <div className="flex items-center gap-[10px]">
           <div className="w-10 h-10 rounded-lg bg-cream border border-bone overflow-hidden shrink-0">
             {r.product?.image ? (
               <img loading="lazy" decoding="async" src={r.product.image} alt="" className="w-full h-full object-cover" />
@@ -83,7 +84,7 @@ export function ReviewsTab() {
             )}
           </div>
           <span className="text-[13px] font-semibold text-charcoal truncate max-w-[160px]">{r.product?.name ?? 'Product'}</span>
-        </button>
+        </div>
       ),
     },
     {
