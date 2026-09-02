@@ -19,6 +19,10 @@ export interface StoreIntegrationView {
   lastError: string | null;
   config: Record<string, any>;
   maskedHints: Record<string, string>;
+  /** Opaque routing token embedded in this integration's public webhook URL
+   *  (`{apiBaseUrl}/api/webhooks/payments/{provider}/{webhookToken}`) — not a
+   *  secret. Null for types (e.g. WhatsApp) with no per-store webhook URL. */
+  webhookToken: string | null;
   /** Stripe only — it has no `StoreIntegration` row of its own; manage it
    *  via the existing Stripe Connect endpoints instead of this module. */
   manageVia?: { statusUrl: string; connectUrl: string };
@@ -39,11 +43,15 @@ export function apiListStoreIntegrations(storeId: string) {
   return client.get<never, ApiResponse<StoreIntegrationsList>>(ENDPOINTS.STORE_INTEGRATIONS.LIST(storeId));
 }
 
+// Only `secretKey`/`clientId` are ever collected up front — Safepay only
+// issues a webhookSecret once its webhook URL (built from the connected
+// row's own `webhookToken`) has been registered in the Safepay dashboard,
+// which is only possible AFTER this call returns. See `apiUpdateIntegration`
+// for step 2, which adds the secret once the seller has it. Matches the
+// backend's `StoreIntegrationsService.connectPayment` sequencing exactly.
 export interface ConnectSafepayPayload {
   secretKey: string;
   clientId: string;
-  webhookSecret: string;
-  displayName?: string;
 }
 
 /** POST /api/store/:storeId/integrations/payment/safepay/connect */
@@ -79,8 +87,11 @@ export function apiTestIntegration(storeId: string, id: string) {
 }
 
 /** PATCH /api/store/:storeId/integrations/:id — refuses to enable checkout
- *  on a `mode: 'live'` integration until `/test` has succeeded at least once. */
-export function apiUpdateIntegration(storeId: string, id: string, payload: { isEnabledForCheckout?: boolean; displayName?: string }) {
+ *  on a `mode: 'live'` integration until `/test` has succeeded at least once.
+ *  `webhookSecret` is step 2 of the Safepay connect flow (see
+ *  `ConnectSafepayPayload`) — merged into the existing stored credentials,
+ *  never replaces `secretKey`/`clientId`. */
+export function apiUpdateIntegration(storeId: string, id: string, payload: { isEnabledForCheckout?: boolean; displayName?: string; webhookSecret?: string }) {
   return client.patch<never, ApiResponse<StoreIntegrationView>>(ENDPOINTS.STORE_INTEGRATIONS.UPDATE(storeId, id), payload);
 }
 

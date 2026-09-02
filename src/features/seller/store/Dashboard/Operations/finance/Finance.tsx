@@ -306,7 +306,7 @@ export function StoreFinance() {
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
   const [generatingTax, setGeneratingTax] = useState(false);
-  // Per-SELLER (not per-store — see Settings' own Payment Gateway card),
+  // Per-SELLER (not per-store — see the Integrations page's Stripe card),
   // fetched once here too so a Connect-active seller sees why this page's
   // ledger/wallet numbers look low: `PaymentService.initiatePayment` routes
   // a single-store, pay-in-full-online sale straight to the seller's own

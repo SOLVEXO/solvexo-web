@@ -31,7 +31,7 @@ const AUTH_ATTEMPT_PATHS = [
 // destructure downstream throws on the resulting string. This exact failure
 // mode shipped once already (baseURL came out as `void 0` in a production
 // bundle) — fail loudly here instead of letting it recur silently.
-const API_BASE_URL = import.meta.env.VITE_API_URL as string | undefined;
+export const API_BASE_URL = import.meta.env.VITE_API_URL as string | undefined;
 if (!API_BASE_URL) {
   // eslint-disable-next-line no-console
   console.error(

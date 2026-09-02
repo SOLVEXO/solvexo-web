@@ -18,6 +18,11 @@ export type StoreAppPlatformStatus = (typeof STORE_APP_PLATFORM_STATUSES)[number
 export const STORE_APP_PLATFORM_PAYMENT_STATUSES = ['unpaid', 'pending', 'paid'] as const;
 export type StoreAppPlatformPaymentStatus = (typeof STORE_APP_PLATFORM_PAYMENT_STATUSES)[number];
 
+export interface StoreAppStatusHistoryEntry {
+  status:    StoreAppPlatformStatus;
+  changedAt: string;
+}
+
 export interface StoreAppPlatformState {
   requested:          boolean;
   status:             StoreAppPlatformStatus;
@@ -26,6 +31,10 @@ export interface StoreAppPlatformState {
   publishedAt:        string | null;
   paymentStatus:      StoreAppPlatformPaymentStatus;
   stripePaymentIntentId: string | null;
+  /** One real, recorded entry per status this platform has actually passed
+   *  through — never estimated. Powers the "reached on <date>" timestamp
+   *  shown per stage in the seller's pipeline view. */
+  statusHistory:      StoreAppStatusHistoryEntry[];
 }
 
 export interface StoreAppRequest {

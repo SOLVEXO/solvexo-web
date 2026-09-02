@@ -1,10 +1,13 @@
+import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefrontUrl';
 
 // Root wrapper (reference nav + outlet)
 import { RootLayout }   from '@/components/layouts/RootLayout';
 
-// Layouts
+// Layouts — kept EAGER (not lazy): each one is the persistent chrome for its
+// whole section (sidebar/nav), small relative to the feature pages it wraps,
+// and needed the instant a seller/admin/buyer enters that section anyway.
 import { BuyerLayout }  from '@/components/layouts/BuyerLayout';
 import { PublicLayout } from '@/components/layouts/PublicLayout';
 import { SellerLayout } from '@/components/layouts/SellerLayout';
@@ -12,118 +15,131 @@ import { AdminLayout }  from '@/components/layouts/AdminLayout';
 import { StoreLayout }  from '@/components/layouts/StoreLayout';
 import { RequireRole }  from './RequireRole';
 
+// ── Every route below is code-split via React.lazy() — this used to be ~100
+// EAGER imports, meaning literally every seller/admin/buyer/storefront page
+// (analytics charts, the theme builder, AI Studio, POS, every admin screen)
+// shipped in ONE ~3.2MB JS bundle that had to fully download+parse before
+// the very first pixel could paint, regardless of which single page was
+// actually being visited — the real cause of a long white-screen on load.
+// `RootLayout` already wraps its one top-level `<Outlet/>` in a single
+// `<Suspense fallback={<PageSpinner/>}>` (see RootLayout.tsx), so every
+// lazy component below suspends into that ONE boundary — no per-route
+// `<Suspense>` wrapping needed here, and the route-tree JSX below is
+// completely unchanged from before; only how each name is IMPORTED changed. ──
+
 // Critical conversion-path pages
-import { LoginPage }    from '@/features/auth/pages/LoginPage';
-import { RegisterPage } from '@/features/auth/pages/RegisterPage';
-import { OnboardingPage, OnboardingEntry } from '@/features/auth/pages/onboard/OnboardingPage';
+const LoginPage    = lazy(() => import('@/features/auth/pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const OnboardingPage  = lazy(() => import('@/features/auth/pages/onboard/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
+const OnboardingEntry = lazy(() => import('@/features/auth/pages/onboard/OnboardingPage').then(m => ({ default: m.OnboardingEntry })));
 
 // Remaining auth pages
-import { AdminLoginPage }     from '@/features/auth/pages/admin/AdminLoginPage';
-import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
-import { VerifyOTPPage }      from '@/features/auth/pages/VerifyOTPPage';
-import { NewPasswordPage }    from '@/features/auth/pages/NewPasswordPage';
+const AdminLoginPage     = lazy(() => import('@/features/auth/pages/admin/AdminLoginPage').then(m => ({ default: m.AdminLoginPage })));
+const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const VerifyOTPPage      = lazy(() => import('@/features/auth/pages/VerifyOTPPage').then(m => ({ default: m.VerifyOTPPage })));
+const NewPasswordPage    = lazy(() => import('@/features/auth/pages/NewPasswordPage').then(m => ({ default: m.NewPasswordPage })));
 
 // Public marketing pages
-import { Homepage }             from '@/features/buyer/pages/Homepage';
-import { PricingPage }          from '@/features/buyer/pages/PricingPage';
-import { ForSellersPage }       from '@/features/buyer/pages/ForSellersPage';
-import { FaqPage }              from '@/features/buyer/pages/FaqPage';
-import { PrivacyPolicyPage }    from '@/features/buyer/pages/PrivacyPolicyPage';
-import { TermsOfServicePage }   from '@/features/buyer/pages/TermsOfServicePage';
-import { CookiePolicyPage }     from '@/features/buyer/pages/CookiePolicyPage';
-import { ContactUsPage }        from '@/features/buyer/pages/ContactUsPage';
-import { AboutPage }            from '@/features/buyer/pages/AboutPage';
-import { SecurityPage }         from '@/features/buyer/pages/SecurityPage';
-import { ProductsOverviewPage } from '@/features/buyer/pages/products/ProductsOverviewPage';
-import { PlatformProductPage }  from '@/features/buyer/pages/products/PlatformProductPage';
-import { SolutionsOverviewPage } from '@/features/buyer/pages/solutions/SolutionsOverviewPage';
-import { SolutionPage }         from '@/features/buyer/pages/solutions/SolutionPage';
+const Homepage             = lazy(() => import('@/features/buyer/pages/Homepage').then(m => ({ default: m.Homepage })));
+const PricingPage          = lazy(() => import('@/features/buyer/pages/PricingPage').then(m => ({ default: m.PricingPage })));
+const ForSellersPage       = lazy(() => import('@/features/buyer/pages/ForSellersPage').then(m => ({ default: m.ForSellersPage })));
+const FaqPage              = lazy(() => import('@/features/buyer/pages/FaqPage').then(m => ({ default: m.FaqPage })));
+const PrivacyPolicyPage    = lazy(() => import('@/features/buyer/pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
+const TermsOfServicePage   = lazy(() => import('@/features/buyer/pages/TermsOfServicePage').then(m => ({ default: m.TermsOfServicePage })));
+const CookiePolicyPage     = lazy(() => import('@/features/buyer/pages/CookiePolicyPage').then(m => ({ default: m.CookiePolicyPage })));
+const ContactUsPage        = lazy(() => import('@/features/buyer/pages/ContactUsPage').then(m => ({ default: m.ContactUsPage })));
+const AboutPage            = lazy(() => import('@/features/buyer/pages/AboutPage').then(m => ({ default: m.AboutPage })));
+const SecurityPage         = lazy(() => import('@/features/buyer/pages/SecurityPage').then(m => ({ default: m.SecurityPage })));
+const ProductsOverviewPage = lazy(() => import('@/features/buyer/pages/products/ProductsOverviewPage').then(m => ({ default: m.ProductsOverviewPage })));
+const PlatformProductPage  = lazy(() => import('@/features/buyer/pages/products/PlatformProductPage').then(m => ({ default: m.PlatformProductPage })));
+const SolutionsOverviewPage = lazy(() => import('@/features/buyer/pages/solutions/SolutionsOverviewPage').then(m => ({ default: m.SolutionsOverviewPage })));
+const SolutionPage         = lazy(() => import('@/features/buyer/pages/solutions/SolutionPage').then(m => ({ default: m.SolutionPage })));
 
 // ── Public / Buyer ────────────────────────────────────────────────────────────
-import { StorefrontLayout } from '@/features/storefront/StorefrontLayout';
-import { ThemedRoute } from '@/features/storefront-themes/ThemedRoute';
-import { MaintenancePage } from '@/features/buyer/pages/MaintenancePage';
+const StorefrontLayout = lazy(() => import('@/features/storefront/StorefrontLayout').then(m => ({ default: m.StorefrontLayout })));
+const ThemedRoute = lazy(() => import('@/features/storefront-themes/ThemedRoute').then(m => ({ default: m.ThemedRoute })));
+const MaintenancePage = lazy(() => import('@/features/buyer/pages/MaintenancePage').then(m => ({ default: m.MaintenancePage })));
 
 // ── Seller ────────────────────────────────────────────────────────────────────
-import { SellerAnalytics } from '@/features/seller/dashboard/SellerAnalytics';
-import { StoreBuilderRedirect } from '@/features/seller/store/Dashboard/OnlineStore/StoreBuilderRedirect';
-import { PagesPage } from '@/features/seller/store/Dashboard/OnlineStore/pages/PagesPage';
-import { BlogPage } from '@/features/seller/store/Dashboard/OnlineStore/blog/BlogPage';
-import { ThemeLibraryPage } from '@/features/seller/store/Dashboard/OnlineStore/themes/ThemeLibraryPage';
-import { AtelierCustomizePage } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierCustomizePage';
-import { AtelierEditCodePage } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierEditCodePage';
-import { AtelierHeaderFooterPage } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierHeaderFooterPage';
-import { ThemeDemoPreview } from '@/features/seller/store/Dashboard/OnlineStore/themes/AtelierThemeDemoPreview';
-import { SellerSettings } from '@/features/seller/dashboard/settings/SellerSettings';
-import { SellerShipping } from '@/features/seller/dashboard/SellerShipping';
-import { SellerMessages } from '@/features/seller/dashboard/SellerMessages';
-import { SellerStoreList } from '@/features/seller/store/Dashboard/OnlineStore/SellerStoreList';
+const SellerAnalytics = lazy(() => import('@/features/seller/dashboard/SellerAnalytics').then(m => ({ default: m.SellerAnalytics })));
+const StoreBuilderRedirect = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/StoreBuilderRedirect').then(m => ({ default: m.StoreBuilderRedirect })));
+const PagesPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/pages/PagesPage').then(m => ({ default: m.PagesPage })));
+const BlogPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/blog/BlogPage').then(m => ({ default: m.BlogPage })));
+const ThemeLibraryPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeLibraryPage').then(m => ({ default: m.ThemeLibraryPage })));
+const AtelierCustomizePage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierCustomizePage').then(m => ({ default: m.AtelierCustomizePage })));
+const AtelierEditCodePage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierEditCodePage').then(m => ({ default: m.AtelierEditCodePage })));
+const AtelierHeaderFooterPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierHeaderFooterPage').then(m => ({ default: m.AtelierHeaderFooterPage })));
+const ThemeDemoPreview = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierThemeDemoPreview').then(m => ({ default: m.ThemeDemoPreview })));
+const SellerSettings = lazy(() => import('@/features/seller/dashboard/settings/SellerSettings').then(m => ({ default: m.SellerSettings })));
+const SellerShipping = lazy(() => import('@/features/seller/dashboard/SellerShipping').then(m => ({ default: m.SellerShipping })));
+const SellerMessages = lazy(() => import('@/features/seller/dashboard/SellerMessages').then(m => ({ default: m.SellerMessages })));
+const SellerStoreList = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/SellerStoreList').then(m => ({ default: m.SellerStoreList })));
 
 // ── Store Workspace ───────────────────────────────────────────────────────────
-import StoreDashboard from '@/features/seller/store/Dashboard/StoreDashboard';
-import StoreNotFound from '@/features/seller/store/Dashboard/StoreNotFound';
-import StoreProductList from '@/features/seller/store/Dashboard/StoreSection/products/StoreProductList';
-import StoreAddProduct from '@/features/seller/store/Dashboard/StoreSection/products/StoreAddProduct';
-import StoreEditProduct from '@/features/seller/store/Dashboard/StoreSection/products/StoreEditProduct';
-import StoreProductDetail from '@/features/seller/store/Dashboard/StoreSection/products/StoreProductDetail';
-import StoreCustomerList from '@/features/seller/store/Dashboard/StoreSection/customer/CustomerList';
-import StoreSettings from '@/features/seller/store/Dashboard/Manage/StoreSettings';
-import StoreCategories from '@/features/seller/store/Dashboard/Manage/StoreCategories';
-import StoreCollections from '@/features/seller/store/Dashboard/Manage/StoreCollections';
-import FilesLibrary from '@/features/seller/store/Dashboard/Manage/FilesLibrary';
-import StorePlanBilling from '@/features/seller/store/Dashboard/Manage/StorePlanBilling';
-import { StoreOrderList } from '@/features/seller/store/Dashboard/StoreSection/orders/OrderList';
-import { StoreOrderDetail } from '@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail';
-import DraftOrdersList from '@/features/seller/store/Dashboard/StoreSection/orders/DraftOrdersList';
-import DraftOrderForm from '@/features/seller/store/Dashboard/StoreSection/orders/DraftOrderForm';
-import { StoreReturnList } from '@/features/seller/store/Dashboard/StoreSection/returns/ReturnList';
-import { StoreAnalytics } from '@/features/seller/store/Dashboard/Analytic/analytics/Analytics';
-import { StoreAIStudio } from '@/features/seller/store/Dashboard/Analytic/ai/AiStudio';
-import { StoreSEO } from '@/features/seller/store/Dashboard/Analytic/seo/StoreSEO';
-import { StoreFinance } from '@/features/seller/store/Dashboard/Operations/finance/Finance';
-import { StoreReviews } from '@/features/seller/store/Dashboard/Operations/reviews/reviews';
-import { StoreInventory } from '@/features/seller/store/Dashboard/Operations/inventory/Inventory';
-import { StoreMarketing } from '@/features/seller/store/Dashboard/Operations/marketing/Marketing';
-import { StoreLoyalty } from '@/features/seller/store/Dashboard/Operations/loyalty/Loyalty';
-import { StoreSubscriptions } from '@/features/seller/store/Dashboard/Operations/subscriptions/Subscriptions';
-import { StoreIntegrations } from '@/features/seller/store/Dashboard/Operations/integrations/Integrations';
+const StoreDashboard = lazy(() => import('@/features/seller/store/Dashboard/StoreDashboard'));
+const StoreNotFound = lazy(() => import('@/features/seller/store/Dashboard/StoreNotFound'));
+const StoreProductList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreProductList'));
+const StoreAddProduct = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreAddProduct'));
+const StoreEditProduct = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreEditProduct'));
+const StoreProductDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/products/StoreProductDetail'));
+const StoreCustomerList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/customer/CustomerList'));
+const StoreSettings = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreSettings'));
+const StoreCategories = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCategories'));
+const StoreCollections = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreCollections'));
+const FilesLibrary = lazy(() => import('@/features/seller/store/Dashboard/Manage/FilesLibrary'));
+const StorePlanBilling = lazy(() => import('@/features/seller/store/Dashboard/Manage/StorePlanBilling'));
+const StoreOrderList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderList').then(m => ({ default: m.StoreOrderList })));
+const StoreOrderDetail = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/OrderDetail').then(m => ({ default: m.StoreOrderDetail })));
+const DraftOrdersList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DraftOrdersList'));
+const DraftOrderForm = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/orders/DraftOrderForm'));
+const StoreReturnList = lazy(() => import('@/features/seller/store/Dashboard/StoreSection/returns/ReturnList').then(m => ({ default: m.StoreReturnList })));
+const StoreAnalytics = lazy(() => import('@/features/seller/store/Dashboard/Analytic/analytics/Analytics').then(m => ({ default: m.StoreAnalytics })));
+const StoreAIStudio = lazy(() => import('@/features/seller/store/Dashboard/Analytic/ai/AiStudio').then(m => ({ default: m.StoreAIStudio })));
+const StoreSEO = lazy(() => import('@/features/seller/store/Dashboard/Analytic/seo/StoreSEO').then(m => ({ default: m.StoreSEO })));
+const StoreFinance = lazy(() => import('@/features/seller/store/Dashboard/Operations/finance/Finance').then(m => ({ default: m.StoreFinance })));
+const StoreReviews = lazy(() => import('@/features/seller/store/Dashboard/Operations/reviews/reviews').then(m => ({ default: m.StoreReviews })));
+const StoreInventory = lazy(() => import('@/features/seller/store/Dashboard/Operations/inventory/Inventory').then(m => ({ default: m.StoreInventory })));
+const StoreMarketing = lazy(() => import('@/features/seller/store/Dashboard/Operations/marketing/Marketing').then(m => ({ default: m.StoreMarketing })));
+const StoreLoyalty = lazy(() => import('@/features/seller/store/Dashboard/Operations/loyalty/Loyalty').then(m => ({ default: m.StoreLoyalty })));
+const StoreSubscriptions = lazy(() => import('@/features/seller/store/Dashboard/Operations/subscriptions/Subscriptions').then(m => ({ default: m.StoreSubscriptions })));
+const StoreIntegrations = lazy(() => import('@/features/seller/store/Dashboard/Operations/integrations/Integrations').then(m => ({ default: m.StoreIntegrations })));
 // Seller-facing surfaces for two features whose backend + frontend API
 // clients already existed (automatic discounts, gift cards — both already
 // wired into checkout pricing) but had no dashboard page anywhere to reach
 // them from — the same "built but unreachable" gap as AtelierLivePreview's
 // hardcoded-theme bug, just in a different corner of the app.
-import StoreDiscounts from '@/features/seller/store/Dashboard/Manage/StoreDiscounts';
-import StoreGiftCards from '@/features/seller/store/Dashboard/Manage/StoreGiftCards';
-import StoreMobileApp from '@/features/seller/store/Dashboard/Manage/MobileApp';
+const StoreDiscounts = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreDiscounts'));
+const StoreGiftCards = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreGiftCards'));
+const StoreMobileApp = lazy(() => import('@/features/seller/store/Dashboard/Manage/MobileApp'));
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
-import { AdminOverview } from '@/features/admin/pages/AdminOverview';
-import { AdminAnalytics } from '@/features/admin/pages/AdminAnalytics';
-import { AdminUsers } from '@/features/admin/pages/AdminUsers';
-import { AdminModeration } from '@/features/admin/pages/AdminModeration';
-import { AdminActivityLog } from '@/features/admin/pages/AdminActivityLog';
-import { AdminMessaging } from '@/features/admin/pages/AdminMessaging';
-import { AdminMarketplace } from '@/features/admin/pages/AdminMarketplace';
-import { AdminLeads } from '@/features/admin/pages/AdminLeads';
-import { AdminSubscriptions } from '@/features/admin/pages/AdminSubscriptions';
-import { AdminPlatformPlans } from '@/features/admin/pages/AdminPlatformPlans';
-import { AdminFinance } from '@/features/admin/pages/AdminFinance';
-import { AdminAnnouncements } from '@/features/admin/pages/AdminAnnouncements';
-import { AdminThemeCatalog } from '@/features/admin/pages/AdminThemeCatalog';
-import { AdminBanners } from '@/features/admin/pages/AdminBanners';
-import { AdminFaqs } from '@/features/admin/pages/AdminFaqs';
-import { AdminShippingZones } from '@/features/admin/pages/AdminShippingZones';
-import { AdminContactMessages } from '@/features/admin/pages/AdminContactMessages';
-import { AdminTestimonials } from '@/features/admin/pages/AdminTestimonials';
-import { AdminManualPayments } from '@/features/admin/pages/AdminManualPayments';
-import { AdminCommissionRules } from '@/features/admin/pages/AdminCommissionRules';
-import { AdminConfig } from '@/features/admin/pages/AdminConfig';
-import { AdminFxSettings } from '@/features/admin/pages/AdminFxSettings';
-import { AdminMarketing } from '@/features/admin/pages/AdminMarketing';
-import { AdminSettings } from '@/features/admin/pages/settings/AdminSettings';
-import { AdminSEO } from '@/features/admin/pages/AdminSEO';
-import { AdminAiStudio } from '@/features/admin/pages/AdminAiStudio';
-import { AdminStoreAppRequests } from '@/features/admin/pages/AdminStoreAppRequests';
+const AdminOverview = lazy(() => import('@/features/admin/pages/AdminOverview').then(m => ({ default: m.AdminOverview })));
+const AdminAnalytics = lazy(() => import('@/features/admin/pages/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })));
+const AdminUsers = lazy(() => import('@/features/admin/pages/AdminUsers').then(m => ({ default: m.AdminUsers })));
+const AdminModeration = lazy(() => import('@/features/admin/pages/AdminModeration').then(m => ({ default: m.AdminModeration })));
+const AdminActivityLog = lazy(() => import('@/features/admin/pages/AdminActivityLog').then(m => ({ default: m.AdminActivityLog })));
+const AdminMessaging = lazy(() => import('@/features/admin/pages/AdminMessaging').then(m => ({ default: m.AdminMessaging })));
+const AdminMarketplace = lazy(() => import('@/features/admin/pages/AdminMarketplace').then(m => ({ default: m.AdminMarketplace })));
+const AdminLeads = lazy(() => import('@/features/admin/pages/AdminLeads').then(m => ({ default: m.AdminLeads })));
+const AdminSubscriptions = lazy(() => import('@/features/admin/pages/AdminSubscriptions').then(m => ({ default: m.AdminSubscriptions })));
+const AdminPlatformPlans = lazy(() => import('@/features/admin/pages/AdminPlatformPlans').then(m => ({ default: m.AdminPlatformPlans })));
+const AdminFinance = lazy(() => import('@/features/admin/pages/AdminFinance').then(m => ({ default: m.AdminFinance })));
+const AdminAnnouncements = lazy(() => import('@/features/admin/pages/AdminAnnouncements').then(m => ({ default: m.AdminAnnouncements })));
+const AdminThemeCatalog = lazy(() => import('@/features/admin/pages/AdminThemeCatalog').then(m => ({ default: m.AdminThemeCatalog })));
+const AdminBanners = lazy(() => import('@/features/admin/pages/AdminBanners').then(m => ({ default: m.AdminBanners })));
+const AdminFaqs = lazy(() => import('@/features/admin/pages/AdminFaqs').then(m => ({ default: m.AdminFaqs })));
+const AdminShippingZones = lazy(() => import('@/features/admin/pages/AdminShippingZones').then(m => ({ default: m.AdminShippingZones })));
+const AdminContactMessages = lazy(() => import('@/features/admin/pages/AdminContactMessages').then(m => ({ default: m.AdminContactMessages })));
+const AdminTestimonials = lazy(() => import('@/features/admin/pages/AdminTestimonials').then(m => ({ default: m.AdminTestimonials })));
+const AdminManualPayments = lazy(() => import('@/features/admin/pages/AdminManualPayments').then(m => ({ default: m.AdminManualPayments })));
+const AdminCommissionRules = lazy(() => import('@/features/admin/pages/AdminCommissionRules').then(m => ({ default: m.AdminCommissionRules })));
+const AdminConfig = lazy(() => import('@/features/admin/pages/AdminConfig').then(m => ({ default: m.AdminConfig })));
+const AdminFxSettings = lazy(() => import('@/features/admin/pages/AdminFxSettings').then(m => ({ default: m.AdminFxSettings })));
+const AdminMarketing = lazy(() => import('@/features/admin/pages/AdminMarketing').then(m => ({ default: m.AdminMarketing })));
+const AdminSettings = lazy(() => import('@/features/admin/pages/settings/AdminSettings').then(m => ({ default: m.AdminSettings })));
+const AdminSEO = lazy(() => import('@/features/admin/pages/AdminSEO').then(m => ({ default: m.AdminSEO })));
+const AdminAiStudio = lazy(() => import('@/features/admin/pages/AdminAiStudio').then(m => ({ default: m.AdminAiStudio })));
+const AdminStoreAppRequests = lazy(() => import('@/features/admin/pages/AdminStoreAppRequests').then(m => ({ default: m.AdminStoreAppRequests })));
 
 // ── Storefront subdomain router ────────────────────────────────────────────────
 // A store's own subdomain (`hello.solvexo.store`) serves ONLY its storefront

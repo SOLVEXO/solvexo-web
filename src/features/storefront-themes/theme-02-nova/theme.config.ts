@@ -74,8 +74,10 @@ const STATIC_DEFAULTS = {
  *  fields in place (rather than replacing the object reference) makes a
  *  merchant's saved customization show up everywhere, with zero changes to
  *  any of those files. Exact same pattern as `atelierTheme` — see that
- *  file's own doc comment. */
-export const novaTheme: typeof STATIC_DEFAULTS = STATIC_DEFAULTS;
+ *  file's own doc comment, including why this must be a deep clone of
+ *  `STATIC_DEFAULTS` rather than the same object reference (otherwise the
+ *  `d = STATIC_DEFAULTS` fallback below drifts and "reset" stops working). */
+export const novaTheme: typeof STATIC_DEFAULTS = JSON.parse(JSON.stringify(STATIC_DEFAULTS));
 
 export type NovaTheme = typeof novaTheme;
 

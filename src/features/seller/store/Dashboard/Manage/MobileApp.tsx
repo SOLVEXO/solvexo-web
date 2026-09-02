@@ -3,7 +3,8 @@ import { clsx } from 'clsx';
 import QRCode from 'qrcode';
 import {
   Smartphone, Apple, Bot, CheckCircle2, ExternalLink, CreditCard,
-  Send, Search, Hammer, UploadCloud, Rocket, XCircle, Check, Sparkles, Wrench, Zap,
+  Send, Search, Hammer, UploadCloud, Rocket, XCircle, Check, Sparkles, Wrench, Zap, Clock,
+  Barcode, Users, Wallet, RotateCcw, BarChart2, ShieldCheck, Play,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { Card, Button, Field, Input, Textarea, FileDropSelect, EmptyState } from '@/components/comman/ui';
@@ -13,6 +14,7 @@ import {
   type StoreAppRequest, type StoreAppPlatformState, type StoreAppPlatformStatus,
 } from '@/api/services/storeAppRequests';
 import { apiGetPosAppInfo } from '@/api/services/store';
+import { GOOGLE_PLAY_URL } from '@/components/comman/ui/AppPromoParts';
 
 // ── Two completely separate mobile-app products a seller can get, both
 // reachable only from this page — deliberately NOT sharing any
@@ -27,6 +29,15 @@ import { apiGetPosAppInfo } from '@/api/services/store';
 //     published by the Solvexo team, paid for per platform via Stripe
 //     (StoreAppRequest, below).
 // ──────────────────────────────────────────────────────────────────────────
+
+// Real recorded stage timestamps (see StoreAppPlatformState.statusHistory)
+// are shown as "Reached: 12 Feb, 3:45 PM" — date + time, since a seller
+// checking mid-review genuinely cares which exact moment a stage started,
+// not just the day.
+function formatStageTimestamp(iso: string): string {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}, ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+}
 
 const RESOLVED_STATUSES = new Set(['not_requested', 'published', 'rejected']);
 
@@ -108,18 +119,49 @@ function PlatformPayFlow({ label, priceLabel, onCreateIntent, onConfirm }: {
   );
 }
 
-// ── Per-platform review pipeline — a small horizontal stepper so a seller
-// can see at a glance where their build actually sits, instead of a single
-// flat status word. Rejected is a terminal branch shown on its own.
-const PLATFORM_STEPS: { key: StoreAppPlatformStatus; label: string; Icon: typeof Send }[] = [
-  { key: 'pending', label: 'Requested', Icon: Send },
-  { key: 'in_review', label: 'In review', Icon: Search },
-  { key: 'building', label: 'Building', Icon: Hammer },
-  { key: 'submitted', label: 'Submitted', Icon: UploadCloud },
-  { key: 'published', label: 'Live', Icon: Rocket },
-];
+// ── Per-platform review pipeline — a vertical stepper with a full
+// explanation + expected duration for each stage, so a seller always knows
+// exactly what's happening right now and roughly how long it'll take, not
+// just a single flat status word. Rejected is a terminal branch shown on
+// its own. The "Live" step's copy differs by platform: Android specifically
+// carries Google Play's mandatory 14-day closed-testing requirement for a
+// store's very first app on a new developer account (real Play Console
+// policy, not a Solvexo-imposed delay) — iOS has no equivalent requirement.
+function platformSteps(platform: 'android' | 'ios'): { key: StoreAppPlatformStatus; label: string; Icon: typeof Send; description: string; duration: string }[] {
+  return [
+    {
+      key: 'pending', label: 'Requested', Icon: Send,
+      description: 'Your app request has been received by the Solvexo team and is waiting to be picked up.',
+      duration: 'Usually reviewed within 1–2 business days.',
+    },
+    {
+      key: 'in_review', label: 'In review', Icon: Search,
+      description: "We're checking your app's name, description, icon, and graphics to make sure everything meets Google Play / App Store guidelines before any work starts.",
+      duration: 'Typically takes 1–3 days.',
+    },
+    {
+      key: 'building', label: 'Building', Icon: Hammer,
+      description: 'Our team is building your real, branded app from your store\'s own live data and design.',
+      duration: 'Usually takes 3–5 days.',
+    },
+    {
+      key: 'submitted', label: 'Submitted', Icon: UploadCloud,
+      description: platform === 'android'
+        ? "Your app has been submitted to Google Play and is now in Google's own review queue."
+        : "Your app has been submitted to the App Store and is now in Apple's own review queue.",
+      duration: platform === 'android' ? 'Google Play review: usually a few hours up to 2 days.' : 'App Store review: typically 1–3 days.',
+    },
+    {
+      key: 'published', label: 'Live', Icon: Rocket,
+      description: platform === 'android'
+        ? "Once Google approves your app, Play Store policy requires a mandatory 14-day closed testing period (with real testers) before a NEW developer account's first app can go fully live — this is Google's own one-time rule, not something Solvexo can skip or speed up."
+        : 'Once Apple approves your app, it goes live on the App Store automatically — no extra waiting period.',
+      duration: platform === 'android' ? "This stage alone can take 14–16 days after approval, one time only for your store's first Android app." : 'Usually live within 24–48 hours of approval.',
+    },
+  ];
+}
 
-function PlatformPipeline({ state }: { state: StoreAppPlatformState }) {
+function PlatformPipeline({ state, platform }: { state: StoreAppPlatformState; platform: 'android' | 'ios' }) {
   if (state.status === 'rejected') {
     return (
       <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-error-bg">
@@ -134,40 +176,65 @@ function PlatformPipeline({ state }: { state: StoreAppPlatformState }) {
     );
   }
 
-  const currentIndex = PLATFORM_STEPS.findIndex(s => s.key === state.status);
+  const steps = platformSteps(platform);
+  const currentIndex = steps.findIndex(s => s.key === state.status);
 
   return (
-    <div className="flex items-start px-1 pt-1">
-      {PLATFORM_STEPS.map((step, i) => {
+    <div className="flex flex-col px-1 pt-1">
+      {steps.map((step, i) => {
         const isDone = i < currentIndex;
         const isCurrent = i === currentIndex;
-        const lineActive = i > 0 && i <= currentIndex;
+        const lineActive = i < currentIndex;
+        const isLast = i === steps.length - 1;
+        // Only ever a REAL, recorded timestamp (see StoreAppRequestsService
+        // — one history entry per actual status transition) — never
+        // estimated or backfilled client-side. Absent for a step the
+        // platform hasn't reached yet, and for any row on data saved before
+        // this field existed.
+        const reachedAt = state.statusHistory?.find(h => h.status === step.key)?.changedAt;
         return (
-          <div key={step.key} className="flex-1 flex flex-col items-center relative">
-            {i > 0 && (
+          <div key={step.key} className="flex items-stretch gap-3">
+            <div className="flex flex-col items-center shrink-0">
               <div
-                className={clsx('absolute top-[13px] h-[2px]', lineActive ? 'bg-success' : 'bg-bone')}
-                style={{ left: '-50%', width: '100%' }}
-              />
-            )}
-            <div
-              className={clsx(
-                'relative z-10 w-[26px] h-[26px] rounded-full flex items-center justify-center border-2 shrink-0 transition-colors duration-200',
-                isDone && 'bg-success border-success text-white',
-                isCurrent && 'bg-brand-orange border-brand-orange text-white shadow-[0_0_0_4px_rgba(217,119,87,0.15)]',
-                !isDone && !isCurrent && 'bg-white border-bone text-slate',
+                className={clsx(
+                  'w-[26px] h-[26px] rounded-full flex items-center justify-center border-2 shrink-0 transition-colors duration-200',
+                  isDone && 'bg-success border-success text-white',
+                  isCurrent && 'bg-brand-orange border-brand-orange text-white shadow-[0_0_0_4px_rgba(217,119,87,0.15)]',
+                  !isDone && !isCurrent && 'bg-white border-bone text-slate',
+                )}
+              >
+                {isDone ? <Check size={13} /> : <step.Icon size={12} />}
+              </div>
+              {!isLast && (
+                <div className={clsx('w-[2px] flex-1 my-1', lineActive ? 'bg-success' : 'bg-bone')} style={{ minHeight: '28px' }} />
               )}
-            >
-              {isDone ? <Check size={13} /> : <step.Icon size={12} />}
             </div>
-            <span
-              className={clsx(
-                'mt-1.5 text-[10px] font-semibold text-center leading-tight',
-                (isDone || isCurrent) ? 'text-charcoal' : 'text-slate',
+            <div className={clsx('min-w-0 flex-1 pb-5', isLast && 'pb-1')}>
+              <div className="flex items-start justify-between gap-2 flex-wrap">
+                <span
+                  className={clsx(
+                    'text-[12.5px] font-bold',
+                    (isDone || isCurrent) ? 'text-charcoal' : 'text-slate',
+                  )}
+                >
+                  {step.label}
+                </span>
+                {isCurrent && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-white bg-brand-orange px-2 py-[3px] rounded-full shrink-0">
+                    <Clock size={10} className="shrink-0" /> Current stage
+                  </span>
+                )}
+              </div>
+              <p className={clsx('text-[12px] leading-[1.55] mt-1', (isDone || isCurrent) ? 'text-graphite' : 'text-slate')}>
+                {step.description}
+              </p>
+              <p className="text-[11px] text-slate mt-1 italic">{step.duration}</p>
+              {reachedAt && (
+                <p className="text-[11px] font-semibold text-charcoal mt-1.5">
+                  Reached: {formatStageTimestamp(reachedAt)}
+                </p>
               )}
-            >
-              {step.label}
-            </span>
+            </div>
           </div>
         );
       })}
@@ -176,8 +243,8 @@ function PlatformPipeline({ state }: { state: StoreAppPlatformState }) {
 }
 
 // ── Per-platform status card ─────────────────────────────────────────────
-function PlatformStatusCard({ label, Icon, state, payFlow }: {
-  label: string; Icon: typeof Apple; state: StoreAppPlatformState;
+function PlatformStatusCard({ label, platform, Icon, state, payFlow }: {
+  label: string; platform: 'android' | 'ios'; Icon: typeof Apple; state: StoreAppPlatformState;
   // Present only when this platform hasn't been paid for/requested yet —
   // renders the shared pay-flow so a seller who already bought Android can
   // come back and buy iOS later (or vice versa) without resubmitting anything.
@@ -185,7 +252,7 @@ function PlatformStatusCard({ label, Icon, state, payFlow }: {
 }) {
   if (!state.requested) {
     return (
-      <div className="flex flex-col gap-2.5 px-3.5 py-3 rounded-xl border border-dashed border-bone bg-[#faf9f5]">
+      <div className="flex-1 min-w-0 flex flex-col gap-2.5 px-3.5 py-3 rounded-xl border border-dashed border-bone bg-[#faf9f5]">
         <div className="flex items-center gap-2.5">
           <Icon size={15} className="text-slate shrink-0" />
           <span className="flex-1 text-[12.5px] font-medium text-slate">{label} not requested</span>
@@ -195,7 +262,7 @@ function PlatformStatusCard({ label, Icon, state, payFlow }: {
     );
   }
   return (
-    <div className="flex flex-col gap-3 px-3.5 py-3.5 rounded-xl border border-bone bg-white">
+    <div className="flex-1 min-w-0 flex flex-col gap-3 px-3.5 py-3.5 rounded-xl border border-bone bg-white">
       <div className="flex items-center gap-2">
         <Icon size={15} className="text-charcoal shrink-0" />
         <span className="flex-1 text-[13px] font-bold text-charcoal">{label}</span>
@@ -206,7 +273,7 @@ function PlatformStatusCard({ label, Icon, state, payFlow }: {
         )}
       </div>
 
-      <PlatformPipeline state={state} />
+      <PlatformPipeline state={state} platform={platform} />
 
       {state.status === 'published' && state.storeUrl && (
         <a
@@ -320,24 +387,18 @@ function BrandedAppSection({ storeId }: { storeId: string }) {
 
   return (
     <Card>
-      <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-2xl bg-brand-pale-orange flex items-center justify-center shrink-0">
-          <Smartphone size={20} className="text-brand-deep-orange" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-[15px] font-bold text-charcoal">Your branded app</p>
-            {inProgress && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-deep-orange bg-brand-pale-orange px-2 py-[3px] rounded-full">
-                In progress
-              </span>
-            )}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          <div className="w-11 h-11 rounded-2xl bg-brand-pale-orange flex items-center justify-center shrink-0">
+            <Smartphone size={20} className="text-brand-deep-orange" />
           </div>
-          <p className="text-[12.5px] text-slate mt-0.5 leading-[1.5]">
-            A dedicated app for your store, published under your own name on Google Play and the App Store.
-            The Solvexo team builds and publishes it manually once you submit and pay for a platform.
-          </p>
-          {!latest && (
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-bold text-charcoal">Your branded app</p>
+            <p className="text-[12.5px] text-slate mt-0.5 leading-[1.5]">
+              A dedicated app for your store, published under your own name on Google Play and the App Store.
+              The Solvexo team builds and publishes it manually once you submit and pay for a platform.
+            </p>
+            {!latest && (
             <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
               <span className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-slate">
                 <Sparkles size={12} className="text-brand-orange shrink-0" /> Your own brand
@@ -350,15 +411,21 @@ function BrandedAppSection({ storeId }: { storeId: string }) {
               </span>
             </div>
           )}
+          </div>
         </div>
+        {inProgress && (
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand-deep-orange bg-brand-pale-orange px-2.5 py-1 rounded-full shrink-0">
+            <Clock size={11} className="shrink-0" /> In progress
+          </span>
+        )}
       </div>
 
       {latest && (
         <div className="mt-5 flex flex-col gap-3">
           <p className="text-[13px] font-bold text-carbon">{latest.appName}</p>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col lg:flex-row gap-4 items-start">
             <PlatformStatusCard
-              label="Android" Icon={Bot} state={latest.android}
+              label="Android" platform="android" Icon={Bot} state={latest.android}
               payFlow={!latest.android.requested ? (
                 <PlatformPayFlow
                   label="Android"
@@ -372,7 +439,7 @@ function BrandedAppSection({ storeId }: { storeId: string }) {
               ) : undefined}
             />
             <PlatformStatusCard
-              label="iOS" Icon={Apple} state={latest.ios}
+              label="iOS" platform="ios" Icon={Apple} state={latest.ios}
               payFlow={!latest.ios.requested ? (
                 <PlatformPayFlow
                   label="iOS"
@@ -415,23 +482,43 @@ function BrandedAppSection({ storeId }: { storeId: string }) {
   );
 }
 
-// ── App-store-style download badge (dark pill, platform icon, two-line label) ──
-function StoreBadge({ href, Icon, iconColor, eyebrow, label }: {
+// ── Real store-badge proportions/wording, not a generic icon+text pill —
+// matches each platform's ACTUAL badge convention: Google Play really says
+// "GET IT ON" / uses a solid play-triangle glyph; Apple really says
+// "Download on the" / uses its own logo mark, never "Get it on". A caller
+// passing the wrong `eyebrow`/`Icon` for a platform is the exact bug this
+// was built to stop happening again. ──────────────────────────────────────
+function StoreBadge({ href, Icon, iconColor, eyebrow, label, filled }: {
   href: string; Icon: typeof Bot; iconColor: string; eyebrow: string; label: string;
+  /** Play Store's glyph is a solid triangle — Apple's logo mark is already
+   *  solid by nature, so this only needs to be true for the Play icon. */
+  filled?: boolean;
 }) {
   return (
     <a
       href={href} target="_blank" rel="noopener noreferrer"
-      className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-carbon text-white no-underline transition-transform duration-150 hover:-translate-y-px"
+      className="inline-flex items-center gap-2.5 px-3.5 h-[44px] rounded-[10px] bg-black text-white no-underline border border-white/15 transition-transform duration-150 hover:-translate-y-px"
     >
-      <Icon size={20} className={clsx('shrink-0', iconColor)} />
+      <Icon size={20} className={clsx('shrink-0', iconColor)} fill={filled ? 'currentColor' : 'none'} />
       <span className="flex flex-col leading-tight">
-        <span className="text-[9.5px] text-white/70 uppercase tracking-[0.04em]">{eyebrow}</span>
-        <span className="text-[13px] font-bold">{label}</span>
+        <span className="text-[8.5px] text-white/85 tracking-[0.02em]">{eyebrow}</span>
+        <span className="text-[15px] font-semibold -mt-[1px]" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>{label}</span>
       </span>
     </a>
   );
 }
+
+// Real, shipped capabilities of the Solvexo POS app — matches its actual
+// backend routes (registers/shifts/sessions/sales/reports/audit-logs) one
+// for one, not marketing copy for something that doesn't exist yet.
+const POS_FEATURES: { Icon: typeof Barcode; label: string; desc: string }[] = [
+  { Icon: Barcode, label: 'Barcode & product search', desc: "Look up any item instantly — synced with your store's real catalog and stock." },
+  { Icon: Users, label: 'Per-staff PIN login', desc: 'Every employee signs in with their own PIN — never a shared password.' },
+  { Icon: Wallet, label: 'Cash drawer & shifts', desc: 'Open/close registers, track cash in and out, reconcile at the end of every shift.' },
+  { Icon: RotateCcw, label: 'Manager-approved refunds', desc: "Refunds, voids, and discounts need a manager's own PIN — a real check, not just a setting." },
+  { Icon: BarChart2, label: 'Sales reports', desc: 'Daily and date-range reports per register or per employee, exportable anytime.' },
+  { Icon: ShieldCheck, label: 'Full audit log', desc: 'Every register action — login, sale, refund, cash adjustment — is recorded.' },
+];
 
 // ── Section 2: Solvexo POS ───────────────────────────────────────────────
 // Completely separate from the branded-app flow above: NOT paid through our
@@ -442,75 +529,176 @@ function StoreBadge({ href, Icon, iconColor, eyebrow, label }: {
 // separate Solvexo products (iOS isn't offered yet — see StoreService.getPosAppInfo).
 function PosAccessSection() {
   const [androidUrl, setAndroidUrl] = useState<string | null>(null);
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  // Real — null until an admin sets POS_APP_IOS_URL once an actual iOS
+  // build/App Store listing exists (see StoreService.getPosAppInfo's own
+  // doc comment). No fallback URL for this one: unlike Android, there is no
+  // existing real iOS listing anywhere in the app to safely reuse, so this
+  // honestly renders "not published yet" rather than inventing a link.
+  const [iosUrl, setIosUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     setLoading(true);
-    setError('');
     apiGetPosAppInfo()
-      .then(res => setAndroidUrl(res.data.android))
-      .catch(() => setError('Failed to load Solvexo POS info — please refresh and try again.'))
+      .then(res => {
+        // Backend reads `POS_APP_ANDROID_URL` (configurable without a
+        // frontend deploy — see StoreService.getPosAppInfo) — but that env
+        // var isn't set on every environment yet, and a merchant scanning
+        // this should never see "not configured" when a real, working link
+        // already exists. `GOOGLE_PLAY_URL` (AppPromoParts.tsx) is that same
+        // real internal-test listing, already used elsewhere in the app
+        // with zero backend dependency — a safe fallback, not a fake one.
+        setAndroidUrl(res.data.android ?? GOOGLE_PLAY_URL);
+        setIosUrl(res.data.ios ?? null);
+      })
+      .catch(() => setAndroidUrl(GOOGLE_PLAY_URL))
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (!androidUrl) { setQrDataUrl(null); return; }
-    let cancelled = false;
-    QRCode.toDataURL(androidUrl, { width: 220, margin: 1 })
-      .then(dataUrl => { if (!cancelled) setQrDataUrl(dataUrl); })
-      .catch(() => { if (!cancelled) setQrDataUrl(null); });
-    return () => { cancelled = true; };
-  }, [androidUrl]);
-
-  if (loading) return <Card className="h-[180px] animate-pulse" />;
+  if (loading) return <Card className="h-[360px] animate-pulse" />;
 
   return (
     <Card>
-      <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-2xl bg-info-bg flex items-center justify-center shrink-0">
-          <Zap size={20} className="text-info" />
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          <div className="w-11 h-11 rounded-2xl bg-info-bg flex items-center justify-center shrink-0">
+            <Zap size={20} className="text-info" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-bold text-charcoal">Solvexo POS</p>
+            <p className="text-[12.5px] text-slate mt-0.5 leading-[1.5] max-w-[560px]">
+              Already built, already published — a real, full point-of-sale app for selling in person: at a counter,
+              a market stall, or an event. Scan the QR code to open its Google Play listing; Google handles payment
+              directly when you install it.
+            </p>
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-bold text-charcoal">Solvexo POS</p>
-          <p className="text-[12.5px] text-slate mt-0.5 leading-[1.5]">
-            Already built, already published — a ready-to-use point-of-sale app for in-person selling.
-            Scan the QR code to open its Google Play listing; Google handles payment directly when you install it.
-          </p>
-        </div>
+        {/* Honest, not aspirational — the actual link behind this page today
+            is an internal-testing Play Console track (see GOOGLE_PLAY_URL's
+            own doc comment), not a public production listing. Only real
+            testers Google has whitelisted can install from it; anyone else
+            hits an access-denied screen. Claiming "Live on Google Play" here
+            would be false until the app is actually publicly published —
+            flagged, not silently badged over. */}
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#9A6A17] bg-[#fdf3e7] px-2.5 py-1 rounded-full shrink-0">
+          <Clock size={11} className="shrink-0" /> Closed testing (not public yet)
+        </span>
       </div>
 
-      {error && <p className="text-[12.5px] text-error mt-4">{error}</p>}
+      <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3.5">
+        {POS_FEATURES.map(f => (
+          <div key={f.label} className="flex items-start gap-2">
+            <div className="w-6 h-6 rounded-md bg-[#faf9f5] flex items-center justify-center shrink-0 mt-0.5">
+              <f.Icon size={12.5} className="text-brand-deep-orange" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[12px] font-semibold text-charcoal leading-tight">{f.label}</p>
+              <p className="text-[11px] text-slate leading-[1.4] mt-0.5">{f.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
 
-      {!error && (
-        androidUrl ? (
-          <div className="mt-5 flex flex-col sm:flex-row items-start gap-4">
-            <div className="w-[132px] h-[132px] rounded-xl border border-bone bg-white flex items-center justify-center shrink-0 p-2">
-              {qrDataUrl ? (
-                <img src={qrDataUrl} alt="Scan to open Solvexo POS on Google Play" className="w-full h-full" />
-              ) : (
-                <div className="w-full h-full animate-pulse bg-[#faf9f5] rounded-lg" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0 flex flex-col gap-2.5">
-              <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-charcoal">
-                <Bot size={13} className="text-slate shrink-0" /> Android — Google Play
-              </span>
-              <StoreBadge href={androidUrl} Icon={Bot} iconColor="text-[#3DDC84]" eyebrow="Get it on" label="Google Play" />
-              <p className="text-[11.5px] text-slate leading-[1.5]">
-                Scan with your phone's camera, or tap the badge above. Payment happens on Google Play — nothing to pay here.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-5 flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-dashed border-bone bg-[#faf9f5]">
-            <Bot size={15} className="text-slate shrink-0" />
-            <span className="text-[12.5px] font-medium text-slate">Google Play listing isn't configured yet — please check back soon.</span>
-          </div>
-        )
-      )}
+      <div className="mt-5 flex flex-col sm:flex-row gap-4">
+        <PosPlatformPanel
+          label="Android" Icon={Play} iconColor="text-[#00D46A]" iconFilled
+          storeName="Google Play" badgeLabel="Google Play" badgeEyebrow="GET IT ON"
+          url={androidUrl}
+          notPublishedText="Google Play listing isn't configured yet — please check back soon."
+          altText="Scan to open Solvexo POS on Google Play"
+        />
+        <PosPlatformPanel
+          label="iOS" Icon={Apple} iconColor="text-charcoal"
+          storeName="the App Store" badgeLabel="App Store" badgeEyebrow="Download on the"
+          // No real App Store listing exists yet (see StoreService.
+          // getPosAppInfo) — POS_APP_IOS_URL is genuinely unset. This QR is
+          // a DEMO placeholder only, requested explicitly to preview the
+          // layout with both cards filled in — it points at Solvexo's real
+          // site, never a fabricated apps.apple.com id, and is clearly
+          // marked "Demo" (isDemo) so it can never be mistaken for a real
+          // listing. Swap to the real flow the instant POS_APP_IOS_URL is set.
+          url={iosUrl ?? 'https://solvexo.store'}
+          isDemo={!iosUrl}
+          notPublishedText="Not published on the App Store yet — this card lights up the moment it is, no app update needed."
+          altText="Scan to open Solvexo POS on the App Store"
+        />
+      </div>
     </Card>
+  );
+}
+
+// ── One platform's real QR/download panel, or an honest "not published
+// yet" state — reused for both Android and iOS so neither is a special
+// case. Only ever renders a REAL scannable code for a URL that actually
+// exists; never a placeholder QR pointing nowhere. ──────────────────────
+function PosPlatformPanel({ label, Icon, iconColor, iconFilled, storeName, badgeLabel, badgeEyebrow, url, notPublishedText, altText, isDemo }: {
+  label: string; Icon: typeof Bot; iconColor: string;
+  /** Used in the descriptive sentence, which needs the article — "on the App Store". */
+  storeName: string;
+  /** The badge's own bold text, WITHOUT the article — real badges say
+   *  "App Store" / "Google Play", never "the App Store". */
+  badgeLabel: string;
+  /** Play Store's glyph is a solid triangle; Apple's logo mark is already solid by nature. */
+  iconFilled?: boolean;
+  /** Each platform's OWN real badge wording — "GET IT ON" for Google Play,
+   *  "Download on the" for the App Store. Never share one string across
+   *  both; that's exactly how the old badge ended up saying "Get it on the
+   *  App Store", which Apple's real badge never says. */
+  badgeEyebrow: string;
+  url: string | null; notPublishedText: string; altText: string;
+  /** True only when `url` is a stand-in for a real listing that doesn't
+   *  exist yet (see the iOS call site) — shows a clear "Demo" pill so this
+   *  can never be mistaken for a real, working store listing. */
+  isDemo?: boolean;
+}) {
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!url) { setQrDataUrl(null); return; }
+    let cancelled = false;
+    QRCode.toDataURL(url, { width: 220, margin: 1 })
+      .then(dataUrl => { if (!cancelled) setQrDataUrl(dataUrl); })
+      .catch(() => { if (!cancelled) setQrDataUrl(null); });
+    return () => { cancelled = true; };
+  }, [url]);
+
+  if (!url) {
+    return (
+      <div className="flex-1 min-w-0 rounded-2xl border border-dashed border-bone bg-white px-4 py-5 flex items-center gap-2.5">
+        <Icon size={16} className="text-slate shrink-0" />
+        <span className="text-[12px] font-medium text-slate leading-[1.5]">{notPublishedText}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 min-w-0 rounded-2xl border border-bone bg-[#faf9f5] px-4 sm:px-5 py-5 relative">
+      {isDemo && (
+        <span className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold text-white bg-charcoal/80 px-2 py-[3px] rounded-full">
+          Demo — not a real listing
+        </span>
+      )}
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+        <div className="w-[120px] h-[120px] rounded-xl border border-bone bg-white flex items-center justify-center shrink-0 p-2 shadow-sm">
+          {qrDataUrl ? (
+            <img src={qrDataUrl} alt={altText} className="w-full h-full" />
+          ) : (
+            <div className="w-full h-full animate-pulse bg-[#faf9f5] rounded-lg" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0 flex flex-col items-center sm:items-start gap-2 text-center sm:text-left">
+          <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-charcoal">
+            <Icon size={13} className={clsx(iconColor, 'shrink-0')} fill={iconFilled ? 'currentColor' : 'none'} /> Get it for {label}
+          </span>
+          <p className="text-[11px] text-slate leading-[1.5]">
+            {isDemo
+              ? "Preview only — this QR/badge doesn't point to a real App Store listing yet."
+              : `Scan with your phone's camera, or tap the badge. Payment for the app itself happens on ${storeName} — nothing to pay here in your Solvexo dashboard.`}
+          </p>
+          <StoreBadge href={url} Icon={Icon} iconColor={iconColor} filled={iconFilled} eyebrow={badgeEyebrow} label={badgeLabel} />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -521,11 +709,9 @@ export default function StoreMobileApp() {
   return (
     <div>
       <StorePageHeader title="Mobile App" subtitle="Your branded app, and Solvexo's ready-made POS app" />
-      <div className="px-4 lg:px-7 py-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">
-          <BrandedAppSection storeId={storeId} />
-          <PosAccessSection />
-        </div>
+      <div className="px-4 lg:px-7 py-6 flex flex-col gap-5">
+        <BrandedAppSection storeId={storeId} />
+        <PosAccessSection />
       </div>
     </div>
   );

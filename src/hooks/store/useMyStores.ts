@@ -11,8 +11,12 @@ const EMPTY_SUMMARY: MyStoresSummary = { storeCount: 0, totalProducts: 0, totalR
 // Shared across every component that calls useMyStores() — SellerDashboard,
 // SellerStoreList, and ActiveStoreContext all need "my stores" and previously
 // each fired an independent request for the same data on every mount.
-const myStoresResource = createSharedResource<MyStoresData>(() =>
-  apiGetMyStores().then(res => ({ stores: res.data ?? [], summary: res.summary ?? EMPTY_SUMMARY })),
+const myStoresResource = createSharedResource<MyStoresData>(
+  () => apiGetMyStores().then(res => ({ stores: res.data ?? [], summary: res.summary ?? EMPTY_SUMMARY })),
+  // Survives a hard reload — see createSharedResource's own doc comment.
+  // Cleared on logout (useLogout) so a different account signing in on the
+  // same browser never briefly shows the previous seller's stores.
+  { storageKey: 'solvexo:myStores' },
 );
 
 export const invalidateMyStoresCache = myStoresResource.invalidate;

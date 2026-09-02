@@ -68,8 +68,13 @@ const STATIC_DEFAULTS = {
  *  place (rather than replacing the object reference) makes a merchant's
  *  saved customization show up everywhere the static default used to,
  *  with zero changes to any of those 38 files. See
- *  `applyMerchantThemeOverrides` for the one place this is ever mutated. */
-export const atelierTheme: typeof STATIC_DEFAULTS = STATIC_DEFAULTS;
+ *  `applyMerchantThemeOverrides` for the one place this is ever mutated.
+ *
+ *  A deep clone of `STATIC_DEFAULTS`, NOT the same object reference — the
+ *  fallback below (`d = STATIC_DEFAULTS`) must stay the untouched literal
+ *  defaults forever, otherwise clearing a customized field just re-applies
+ *  whatever was last mutated in here instead of actually resetting. */
+export const atelierTheme: typeof STATIC_DEFAULTS = JSON.parse(JSON.stringify(STATIC_DEFAULTS));
 
 export type AtelierTheme = typeof atelierTheme;
 

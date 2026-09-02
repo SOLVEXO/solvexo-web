@@ -1,15 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { CreditCard, MessageCircle, AlertTriangle, ExternalLink, RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { MessageCircle, AlertTriangle, RefreshCw, ShieldCheck, Copy, Check, CreditCard } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
-import { Button, Modal, Toggle, SkeletonBox } from '@/components/comman/ui';
+import { Button, Modal, Toggle, SkeletonBox, Field, Input } from '@/components/comman/ui';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
+import { useToast } from '@/contexts/ToastContext';
+import { API_BASE_URL } from '@/api/client';
 import {
   apiListStoreIntegrations, apiConnectSafepay, apiConnectWhatsApp, apiTestIntegration,
   apiUpdateIntegration, apiDisconnectIntegration,
-  type StoreIntegrationsList, type StoreIntegrationView,
+  type StoreIntegrationsList, type StoreIntegrationView, type PaymentProviderKey,
 } from '@/api/services/integrations';
+import { apiCreateStripeConnectOnboardingLink, apiSyncStripeConnectStatus } from '@/api/services/stripeConnect';
 import { isMetaConfigured, useWhatsAppEmbeddedSignup } from '@/hooks/integrations/useWhatsAppEmbeddedSignup';
 
 const STATUS_STYLE: Record<StoreIntegrationView['status'], { label: string; bg: string; color: string }> = {
@@ -20,10 +22,120 @@ const STATUS_STYLE: Record<StoreIntegrationView['status'], { label: string; bg: 
   needs_reauth:  { label: 'Needs Reconnect', bg: '#FDF3E7', color: '#9A6A17' },
 };
 
+// Real display name per provider — the backend only ever fills
+// `config.displayName` in AFTER a seller connects one (see
+// StoreIntegrationsService.connectPayment), so the "not connected" row for
+// a provider the seller has never set up yet previously fell back to the
+// raw `provider` enum value verbatim ("safepay", lowercase) instead of its
+// real brand name. One small lookup fixes every provider at once, not just
+// Safepay — the same map also drives the card's own brand color/monogram.
+const PROVIDER_BRAND: Record<PaymentProviderKey, { name: string; color: string; bg: string }> = {
+  safepay:   { name: 'Safepay',   color: '#6B3FA0', bg: '#F1EBFA' },
+  stripe:    { name: 'Stripe',    color: '#635BFF', bg: '#EEEDFF' },
+  jazzcash:  { name: 'JazzCash',  color: '#D2232A', bg: '#FBE9EA' },
+  easypaisa: { name: 'Easypaisa', color: '#0A8043', bg: '#E7F5EE' },
+  payfast:   { name: 'PayFast',   color: '#0B5FFF', bg: '#E8F0FF' },
+};
+
+// Safepay gets its own drawn logomark (a shield + checkmark, in Safepay's
+// real brand purple) instead of a plain letter — this is what "generic
+// placeholder" was actually about. The other providers aren't connectable
+// yet (see connectPayment's backend comment), so they keep the plain
+// monogram until they're real.
+function SafepayMark({ size }: { size: number }) {
+  const brand = PROVIDER_BRAND.safepay;
+  return (
+    <svg width={size * 0.56} height={size * 0.56} viewBox="0 0 24 24" fill="none">
+      <path d="M12 2.3 4 5.2v6.1c0 5.3 3.4 9.1 8 10.2 4.6-1.1 8-4.9 8-10.2V5.2L12 2.3Z" fill={brand.color} />
+      <path d="m8.3 12.1 2.5 2.5 4.9-5.2" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ProviderMonogram({ provider, size = 42 }: { provider: PaymentProviderKey; size?: number }) {
+  const brand = PROVIDER_BRAND[provider];
+  return (
+    <div
+      className="rounded-[10px] flex items-center justify-center shrink-0 font-bold"
+      style={{ width: size, height: size, background: brand.bg, color: brand.color, fontSize: size * 0.42 }}
+    >
+      {provider === 'safepay' ? (
+        <SafepayMark size={size} />
+      ) : provider === 'stripe' ? (
+        // A plain "S" monogram here would be indistinguishable from
+        // Safepay's — Stripe gets its real-world icon (card processor) instead.
+        <CreditCard size={size * 0.46} />
+      ) : (
+        brand.name.charAt(0)
+      )}
+    </div>
+  );
+}
+
+/** A `CopyableRow`-style single-line value with a copy button — same pattern
+ *  as `StoreSettings.tsx`'s custom-domain DNS rows, kept local here since
+ *  it's a 15-line self-contained primitive, not worth sharing across features. */
+function CopyableValue({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard?.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+  return (
+    <div className="flex items-center gap-2">
+      <code className="flex-1 min-w-0 text-[11.5px] text-charcoal bg-white border border-bone rounded-md px-2 py-1.5 truncate">{value}</code>
+      <button type="button" onClick={copy} title="Copy" className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md border-none bg-white border border-bone text-slate hover:text-charcoal cursor-pointer">
+        {copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
+      </button>
+    </div>
+  );
+}
+
+/** Step 2 of the real Safepay connect flow (see `ConnectSafepayPayload`'s doc
+ *  comment) — shown only while `maskedHints.webhookSecret` is still unset. */
+function WebhookSetupPanel({ storeId, integration, onSaved }: { storeId: string; integration: StoreIntegrationView; onSaved: () => void }) {
+  const [webhookSecret, setWebhookSecret] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const webhookUrl = `${API_BASE_URL ?? ''}/api/webhooks/payments/${integration.provider}/${integration.webhookToken ?? ''}`;
+
+  async function save() {
+    if (!integration.id || !webhookSecret) return;
+    setSaving(true); setError('');
+    try {
+      await apiUpdateIntegration(storeId, integration.id, { webhookSecret });
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save the webhook secret.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="rounded-[10px] bg-[#FDF3E7] border border-[#F0DCB8] px-3.5 py-3 flex flex-col gap-2.5">
+      <p className="text-[12px] font-semibold" style={{ color: '#9A6A17' }}>One step left — register this webhook URL with Safepay</p>
+      <p className="text-[11.5px] leading-[1.5] text-slate">
+        Paste this into your Safepay Merchant Dashboard → Webhooks, then paste the secret Safepay gives you back below.
+      </p>
+      <CopyableValue value={webhookUrl} />
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
+          <Input value={webhookSecret} onChange={e => setWebhookSecret(e.target.value)} placeholder="whsec_..." className="font-mono" />
+        </div>
+        <Button size="sm" onClick={save} loading={saving} disabled={!webhookSecret}>Save</Button>
+      </div>
+      {error && <p className="text-[11.5px] text-error">{error}</p>}
+    </div>
+  );
+}
+
 function StatusPill({ status }: { status: StoreIntegrationView['status'] }) {
   const s = STATUS_STYLE[status];
   return (
-    <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold" style={{ background: s.bg, color: s.color }}>
+    <span className="px-2.5 py-[3px] rounded-[5px] text-[11px] font-semibold shrink-0" style={{ background: s.bg, color: s.color }}>
       {s.label}
     </span>
   );
@@ -33,16 +145,19 @@ function StatusPill({ status }: { status: StoreIntegrationView['status'] }) {
 function SafepayConnectModal({ storeId, onClose, onSaved }: { storeId: string; onClose: () => void; onSaved: (v: StoreIntegrationView) => void }) {
   const [secretKey, setSecretKey] = useState('');
   const [clientId, setClientId] = useState('');
-  const [webhookSecret, setWebhookSecret] = useState('');
-  const [displayName, setDisplayName] = useState('Safepay');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Webhook Secret and Display Name are deliberately not asked here — Safepay
+  // only issues a webhook secret once its webhook URL is registered in their
+  // dashboard, which needs THIS connection to exist first (see the
+  // `WebhookSetupPanel` step shown right after connecting), and Display Name
+  // just defaults to "Safepay" server-side if never set.
   async function submit() {
-    if (!secretKey || !clientId || !webhookSecret) { setError('Secret key, client id, and webhook secret are all required.'); return; }
+    if (!secretKey || !clientId) { setError('Secret key and client ID are both required.'); return; }
     setSaving(true); setError('');
     try {
-      const res = await apiConnectSafepay(storeId, { secretKey, clientId, webhookSecret, displayName: displayName || undefined });
+      const res = await apiConnectSafepay(storeId, { secretKey, clientId });
       onSaved(res.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect Safepay.');
@@ -54,7 +169,7 @@ function SafepayConnectModal({ storeId, onClose, onSaved }: { storeId: string; o
   return (
     <Modal
       title="Connect Safepay"
-      width={460}
+      width={440}
       onClose={onClose}
       mobileSheet
       footer={<>
@@ -62,31 +177,98 @@ function SafepayConnectModal({ storeId, onClose, onSaved }: { storeId: string; o
         <Button onClick={submit} loading={saving}>Connect</Button>
       </>}
     >
-      <div className="flex flex-col gap-3">
-        <p className="text-[12px] text-slate">Get these from your Safepay Merchant Dashboard → API Keys. Sandbox keys (containing <code>_test_</code>) connect in sandbox mode; a <code>_live_</code> key switches this to live automatically.</p>
-        <div>
-          <label className="text-[12px] font-medium text-charcoal block mb-1.5">Secret Key</label>
-          <input value={secretKey} onChange={e => setSecretKey(e.target.value)} placeholder="sk_test_..."
-            className="w-full px-3 py-2 text-[13px] font-mono border border-bone rounded-lg outline-none text-charcoal bg-white focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
-        </div>
-        <div>
-          <label className="text-[12px] font-medium text-charcoal block mb-1.5">Client ID</label>
-          <input value={clientId} onChange={e => setClientId(e.target.value)}
-            className="w-full px-3 py-2 text-[13px] font-mono border border-bone rounded-lg outline-none text-charcoal bg-white focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
-        </div>
-        <div>
-          <label className="text-[12px] font-medium text-charcoal block mb-1.5">Webhook Secret</label>
-          <input value={webhookSecret} onChange={e => setWebhookSecret(e.target.value)}
-            className="w-full px-3 py-2 text-[13px] font-mono border border-bone rounded-lg outline-none text-charcoal bg-white focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
-        </div>
-        <div>
-          <label className="text-[12px] font-medium text-charcoal block mb-1.5">Display Name (optional)</label>
-          <input value={displayName} onChange={e => setDisplayName(e.target.value)}
-            className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white focus:ring-2 focus:ring-brand-orange/40 focus:border-brand-orange/50" />
-        </div>
-        {error && <p className="text-[12px] text-error">{error}</p>}
+      <div className="flex items-start gap-2 rounded-[10px] bg-[#F1EBFA] px-3.5 py-3 mb-4">
+        <ShieldCheck size={15} className="shrink-0 mt-[1px]" style={{ color: '#6B3FA0' }} />
+        <p className="text-[11.5px] leading-[1.5]" style={{ color: '#5A3D80' }}>
+          Get these from your Safepay Merchant Dashboard → API Keys. A sandbox key (containing <code>_test_</code>)
+          connects in sandbox mode; a <code>_live_</code> key switches this to live automatically.
+        </p>
       </div>
+      <Field label="Secret Key" required>
+        <Input value={secretKey} onChange={e => setSecretKey(e.target.value)} placeholder="sk_test_..." className="font-mono" />
+      </Field>
+      <Field label="Client ID" required>
+        <Input value={clientId} onChange={e => setClientId(e.target.value)} placeholder="cl_test_..." className="font-mono" />
+      </Field>
+      {error && <p className="text-[12px] text-error -mt-1">{error}</p>}
     </Modal>
+  );
+}
+
+// ── Stripe Connect (moved in from the old StoreSettings "Payment Gateway"
+// card — same real onboarding flow, now living in the one place a seller
+// actually manages every payment gateway). Unlike Safepay, this provider has
+// no `StoreIntegration` row of its own — `integration` here is the backend's
+// live-synthesized view of the seller's Stripe Connect status (see
+// `StoreIntegrationsService.list`), so status/mode/currency are already
+// correct in the shared card header above this; this section only owns the
+// actual connect/continue-setup action and the post-onboarding-return sync. ──
+function StripeConnectSection({ integration, onChanged }: { integration: StoreIntegrationView; onChanged: () => void }) {
+  const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [error, setError] = useState('');
+
+  // Stripe's hosted onboarding redirects back here with `?connect=done` —
+  // that's the one moment the DB-cached status can be stale, so this is the
+  // only place that calls the real `sync` (a live Stripe API round-trip),
+  // then asks the parent to reload the (now-correct) synthesized row.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('connect') !== 'done') return;
+    setSyncing(true);
+    apiSyncStripeConnectStatus()
+      .then(() => onChanged())
+      .catch(() => {})
+      .finally(() => {
+        setSyncing(false);
+        url.searchParams.delete('connect');
+        window.history.replaceState({}, '', url.toString());
+      });
+    // Runs once, on the return-from-onboarding mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function startConnect() {
+    setConnecting(true); setError('');
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('connect');
+      const refreshUrl = url.toString();
+      url.searchParams.set('connect', 'done');
+      const returnUrl = url.toString();
+      const res = await apiCreateStripeConnectOnboardingLink(refreshUrl, returnUrl);
+      window.location.href = res.data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start Stripe onboarding.');
+      setConnecting(false);
+    }
+  }
+
+  const isActive = integration.status === 'connected';
+  const hasStarted = integration.status !== 'not_connected';
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-[12.5px] text-slate">
+        Connect your own Stripe account to receive buyer payments directly — Solvexo's commission is deducted automatically, and the rest lands in your bank account via Stripe's own payout schedule, instead of a manual payout request.
+      </p>
+      {integration.lastError && (
+        <p className="flex items-center gap-1.5 text-[12px] text-error"><AlertTriangle size={12} className="shrink-0" /> {integration.lastError}</p>
+      )}
+      {error && <p className="text-[12px] text-error">{error}</p>}
+      {!isActive && (
+        <div>
+          <Button size="sm" loading={connecting || syncing} onClick={startConnect}>
+            {hasStarted ? 'Continue Setup' : 'Connect with Stripe'}
+          </Button>
+        </div>
+      )}
+      {isActive && (
+        <p className="text-[11px] text-slate">
+          Not seeing a store you expect here? Stripe Connect is tied to your seller account as a whole, not one specific store.
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -94,15 +276,29 @@ function SafepayConnectModal({ storeId, onClose, onSaved }: { storeId: string; o
 function PaymentIntegrationCard({ integration, storeId, onChanged }: {
   integration: StoreIntegrationView; storeId: string; onChanged: () => void;
 }) {
+  const toast = useToast();
   const [showConnect, setShowConnect] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [togglingCheckout, setTogglingCheckout] = useState(false);
   const [pendingDisconnect, setPendingDisconnect] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  // Optimistic flip — same feel as the Notifications toggle — instead of
+  // waiting on the PATCH + a full refetch before the switch visibly moves.
+  // Cleared once the server-confirmed value (from the next `onChanged`
+  // refresh) actually catches up to it; reset to null on failure so the
+  // switch snaps back to the real, unchanged server state.
+  const [checkedOverride, setCheckedOverride] = useState<boolean | null>(null);
+  const isCheckoutEnabled = checkedOverride ?? integration.isEnabledForCheckout;
+  useEffect(() => {
+    if (checkedOverride !== null && integration.isEnabledForCheckout === checkedOverride) {
+      setCheckedOverride(null);
+    }
+  }, [integration.isEnabledForCheckout, checkedOverride]);
 
   const isStripe = integration.provider === 'stripe';
-  const displayName = integration.config?.displayName ?? (isStripe ? 'Card payment (Stripe)' : integration.provider);
+  const brand = PROVIDER_BRAND[integration.provider as PaymentProviderKey];
+  const displayName = integration.config?.displayName ?? (isStripe ? 'Card payment (Stripe)' : brand.name);
 
   async function runTest() {
     if (!integration.id) return;
@@ -118,12 +314,20 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
     }
   }
 
+  // Previously had no catch at all — a rejected request (e.g. the backend's
+  // "run a successful test before enabling a live-mode integration" 400)
+  // silently reset the toggle with zero feedback, reading as "the button
+  // doesn't do anything." Now surfaces the real reason via a toast.
   async function toggleCheckout(next: boolean) {
     if (!integration.id) return;
+    setCheckedOverride(next);
     setTogglingCheckout(true);
     try {
       await apiUpdateIntegration(storeId, integration.id, { isEnabledForCheckout: next });
       onChanged();
+    } catch (err) {
+      setCheckedOverride(null);
+      toast.error(err instanceof Error ? err.message : 'Failed to update checkout setting.');
     } finally {
       setTogglingCheckout(false);
     }
@@ -136,6 +340,8 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
       await apiDisconnectIntegration(storeId, integration.id);
       setPendingDisconnect(false);
       onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to disconnect.');
     } finally {
       setDisconnecting(false);
     }
@@ -143,28 +349,29 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
 
   return (
     <div className="bg-white border border-bone rounded-[10px] px-4 sm:px-[22px] py-5">
-      <div className="flex items-start justify-between gap-3 mb-3">
+      <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-[42px] h-[42px] rounded-[10px] bg-brand-pale-orange flex items-center justify-center shrink-0">
-            <CreditCard size={19} style={{ color: '#D97757' }} />
-          </div>
+          <ProviderMonogram provider={integration.provider as PaymentProviderKey} />
           <div className="min-w-0">
-            <p className="text-[14px] font-bold text-carbon truncate">{displayName}</p>
-            <p className="text-[11px] text-slate">{integration.config?.currency ?? 'PKR'} · {integration.mode === 'live' ? 'Live' : 'Sandbox'}</p>
+            <p className="text-[14.5px] font-bold text-carbon truncate">{displayName}</p>
+            <div className="flex items-center gap-1.5 mt-[3px]">
+              <span className="text-[10px] font-semibold px-[7px] py-[1.5px] rounded-full bg-cream text-slate">
+                {integration.config?.currency ?? 'PKR'}
+              </span>
+              <span
+                className="text-[10px] font-semibold px-[7px] py-[1.5px] rounded-full"
+                style={integration.mode === 'live' ? { background: '#E3F4EA', color: '#1E7A3C' } : { background: '#F0EEE6', color: '#5A5852' }}
+              >
+                {integration.mode === 'live' ? 'Live' : 'Sandbox'}
+              </span>
+            </div>
           </div>
         </div>
         <StatusPill status={integration.status} />
       </div>
 
       {isStripe ? (
-        <>
-          <p className="text-[12.5px] text-slate mb-3">Stripe is managed from your store's Payment Gateway settings, not here.</p>
-          <Link to={`/store/${storeId}/settings`}>
-            <Button size="sm" variant="outline" icon={<ExternalLink size={13} />}>
-              {integration.status === 'connected' ? 'Manage in Settings' : 'Connect in Settings'}
-            </Button>
-          </Link>
-        </>
+        <StripeConnectSection integration={integration} onChanged={onChanged} />
       ) : integration.status === 'not_connected' || integration.status === 'disabled' ? (
         <>
           <p className="text-[12.5px] text-slate mb-3">Accept real customer payments through {displayName} on your storefront checkout.</p>
@@ -172,6 +379,9 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
         </>
       ) : (
         <div className="flex flex-col gap-3">
+          {!integration.maskedHints?.webhookSecret && (
+            <WebhookSetupPanel storeId={storeId} integration={integration} onSaved={onChanged} />
+          )}
           {Object.keys(integration.maskedHints).length > 0 && (
             <div className="flex flex-wrap gap-x-5 gap-y-1">
               {Object.entries(integration.maskedHints).map(([k, v]) => (
@@ -187,7 +397,7 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
           )}
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <label className="flex items-center gap-2 cursor-pointer">
-              <Toggle checked={integration.isEnabledForCheckout} disabled={togglingCheckout} onChange={toggleCheckout} ariaLabel={`Enable ${displayName} at checkout`} />
+              <Toggle checked={isCheckoutEnabled} disabled={togglingCheckout} onChange={toggleCheckout} ariaLabel={`Enable ${displayName} at checkout`} />
               <span className="text-[12.5px] text-graphite">Enabled at checkout</span>
             </label>
             <div className="flex items-center gap-2">
@@ -220,6 +430,7 @@ function PaymentIntegrationCard({ integration, storeId, onChanged }: {
 
 // ── WhatsApp card ─────────────────────────────────────────────────────────────
 function WhatsAppCard({ integration, storeId, onChanged }: { integration: StoreIntegrationView; storeId: string; onChanged: () => void }) {
+  const toast = useToast();
   const { connect, connecting, error: signupError } = useWhatsAppEmbeddedSignup();
   const [saveError, setSaveError] = useState('');
   const [testing, setTesting] = useState(false);
@@ -260,6 +471,8 @@ function WhatsAppCard({ integration, storeId, onChanged }: { integration: StoreI
       await apiDisconnectIntegration(storeId, integration.id);
       setPendingDisconnect(false);
       onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to disconnect.');
     } finally {
       setDisconnecting(false);
     }
@@ -336,12 +549,20 @@ export function StoreIntegrations() {
   const [data, setData] = useState<StoreIntegrationsList | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Every card's Connect/Test/Toggle/Disconnect calls `onChanged` -> `load()`
+  // to pick up the fresh row afterward. `load` used to always flip `loading`
+  // back to true first, which blanked the ENTIRE page to the skeleton state
+  // (and re-mounted every card, closing whichever one you'd just touched) for
+  // what should have been a silent, in-place refresh. Only the very first
+  // load — before any data exists yet — should show the skeleton.
+  const hasLoadedOnce = useRef(false);
 
   const load = useCallback(() => {
     if (!storeId) return;
-    setLoading(true); setError('');
+    if (!hasLoadedOnce.current) setLoading(true);
+    setError('');
     apiListStoreIntegrations(storeId)
-      .then(res => setData(res.data))
+      .then(res => { setData(res.data); hasLoadedOnce.current = true; })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load integrations.'))
       .finally(() => setLoading(false));
   }, [storeId]);

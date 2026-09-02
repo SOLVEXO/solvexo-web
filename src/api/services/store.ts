@@ -170,8 +170,11 @@ export function apiSetWhiteLabel(storeId: string, enabled: boolean) {
 
 export interface PosAppInfo {
   /** Google Play listing URL for Solvexo POS — null until an admin sets
-   *  POS_APP_ANDROID_URL. iOS isn't offered yet (no App Store listing). */
+   *  POS_APP_ANDROID_URL. */
   android: string | null;
+  /** App Store listing URL — null until a real iOS build exists and an
+   *  admin sets POS_APP_IOS_URL (see StoreService.getPosAppInfo). */
+  ios: string | null;
 }
 
 /** GET /api/store/pos-app-info — store-independent, no auth-side effect.

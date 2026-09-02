@@ -589,11 +589,26 @@ export function StorePageHeader({ title, subtitle, actions }: StorePageHeaderPro
   );
 }
 
+// Reads a hard-refresh-surviving snapshot of this one store's data —
+// synchronous, so it can seed `useState`'s initial value directly (no flash
+// of "loading" for a store we've already shown before in this browser).
+// Same stale-while-revalidate idea as createSharedResource's storageKey,
+// just keyed per-storeId here since a seller can have more than one store.
+function readCachedStore(storeId: string): StoreData | null {
+  if (!storeId || typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(`solvexo:store:${storeId}`);
+    return raw ? (JSON.parse(raw) as StoreData) : null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Provider ──────────────────────────────────────────────────────────────────
 function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   const { storeId = '' } = useParams<{ storeId: string }>();
-  const [store,   setStore]   = useState<StoreData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [store,   setStore]   = useState<StoreData | null>(() => readCachedStore(storeId));
+  const [loading, setLoading] = useState(() => readCachedStore(storeId) === null);
   const [error,   setError]   = useState('');
   const [tick,    setTick]    = useState(0);
 
@@ -602,11 +617,17 @@ function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function load() {
-      setLoading(true);
+      // Only show a blocking spinner when there's genuinely nothing cached
+      // to display yet — a background refresh over an already-shown store
+      // should never blank the workspace back to a loading state.
+      if (!cancelled) setLoading(readCachedStore(storeId) === null);
       setError('');
       try {
         const res = await apiGetStoreById(storeId);
-        if (!cancelled) setStore(res.data);
+        if (!cancelled) {
+          setStore(res.data);
+          try { window.localStorage.setItem(`solvexo:store:${storeId}`, JSON.stringify(res.data)); } catch { /* non-critical */ }
+        }
       } catch (err: unknown) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load store.');
       } finally {
