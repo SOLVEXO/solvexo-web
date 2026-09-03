@@ -143,6 +143,9 @@ export const ENDPOINTS = {
     CUSTOM_DOMAIN_VERIFY: (storeId: string) => `/api/store/${storeId}/custom-domain/verify`,
     RESOLVE_DOMAIN: '/api/store/public/resolve-domain',
     WHITE_LABEL:   (storeId: string) => `/api/store/${storeId}/white-label`,
+    PRIVACY:       (storeId: string) => `/api/store/${storeId}/privacy`,
+    VERIFY_PASSWORD: (storeId: string) => `/api/store/public/${storeId}/verify-password`,
+    ROBOTS_TXT:    (storeId: string) => `/api/store/${storeId}/robots-txt`,
     // Solvexo's own single POS app — a single, already-published, PAID
     // Google Play listing. Google Play collects payment directly from the
     // merchant on install, so there's nothing to buy/gate on our side: this
@@ -211,6 +214,9 @@ export const ENDPOINTS = {
     UPDATE_FOOTER:  (storeId: string) => `/api/store-theme/${storeId}/footer`,
     UPDATE_IDENTITY_BANNER: (storeId: string) => `/api/store-theme/${storeId}/identity-banner`,
     UPDATE_CUSTOM_CSS: (storeId: string) => `/api/store-theme/${storeId}/custom-css`,
+    COLOR_SCHEMES:       (storeId: string) => `/api/store-theme/${storeId}/color-schemes`,
+    DELETE_COLOR_SCHEME: (storeId: string, schemeId: string) => `/api/store-theme/${storeId}/color-schemes/${schemeId}`,
+    APPLY_COLOR_SCHEME:  (storeId: string, schemeId: string) => `/api/store-theme/${storeId}/color-schemes/${schemeId}/apply`,
     PUBLIC:         (storeId: string) => `/api/public/store-theme/${storeId}`,
     // ── Theme Library (installed theme instances) ──
     LIST_INSTALLED: (storeId: string) => `/api/store-theme/${storeId}/installed`,
@@ -218,6 +224,10 @@ export const ENDPOINTS = {
     ACTIVATE:       (storeId: string, installedThemeId: string) => `/api/store-theme/${storeId}/installed/${installedThemeId}/activate`,
     UNINSTALL:      (storeId: string, installedThemeId: string) => `/api/store-theme/${storeId}/installed/${installedThemeId}`,
     APPLY:          (storeId: string, themeDefinitionId: string) => `/api/store-theme/${storeId}/apply/${themeDefinitionId}`,
+    DUPLICATE:      (storeId: string, installedThemeId: string) => `/api/store-theme/${storeId}/installed/${installedThemeId}/duplicate`,
+    RENAME:         (storeId: string, installedThemeId: string) => `/api/store-theme/${storeId}/installed/${installedThemeId}/name`,
+    PREVIEW_LINK:      (storeId: string) => `/api/store-theme/${storeId}/preview-link`,
+    PREVIEW_BY_TOKEN:  (storeId: string, token: string) => `/api/public/store-theme/${storeId}/preview/${token}`,
   },
 
   // ── THEME CATALOG (admin-curated marketplace of theme definitions) ─────────
@@ -829,6 +839,10 @@ export const ENDPOINTS = {
     UPDATE:    (id: string) => `/api/testimonials/${id}`,
     TOGGLE:    (id: string) => `/api/testimonials/${id}/toggle`,
     DELETE:    (id: string) => `/api/testimonials/${id}`,
+    MINE:      '/api/testimonials/mine',
+    SUBMIT:    '/api/testimonials/submit',
+    APPROVE:   (id: string) => `/api/testimonials/${id}/approve`,
+    REJECT:    (id: string) => `/api/testimonials/${id}/reject`,
   },
 
   // ── RATING / REVIEWS ──────────────────────────────────────────────────────
@@ -1088,6 +1102,17 @@ export const ENDPOINTS = {
     UNFLAG:          (reviewId: string) => `/api/rating/unflag/${reviewId}`,
     MODERATE_DELETE: (reviewId: string) => `/api/rating/admin/${reviewId}`,
     TOGGLE_HELPFUL:  (reviewId: string) => `/api/rating/${reviewId}/helpful`,
+  },
+
+  MENUS: {
+    LIST: (storeId: string) => `/api/menus/${storeId}`,
+    ITEM: (storeId: string, menuId: string) => `/api/menus/${storeId}/${menuId}`,
+  },
+
+  METAFIELDS: {
+    DEFINITIONS:       (storeId: string) => `/api/metafields/${storeId}/definitions`,
+    DEFINITION:        (storeId: string, definitionId: string) => `/api/metafields/${storeId}/definitions/${definitionId}`,
+    VALUES:            (storeId: string, ownerResource: string, ownerId: string) => `/api/metafields/${storeId}/values/${ownerResource}/${ownerId}`,
   },
 
 } as const;

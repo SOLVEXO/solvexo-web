@@ -31,6 +31,7 @@ export interface UpdateStorePayload {
   name?:        string;
   logo?:        string;
   coverImage?:  string | null;
+  faviconUrl?:  string | null;
   categoryId?:  string;
   description?: string;
   tagline?:      string;
@@ -52,6 +53,7 @@ export interface StoreData {
   slug:         string;
   logo:         string | null;
   coverImage:   string | null;
+  faviconUrl:   string | null;
   categoryId:   string;
   description:  string;
   /** Short marketing line — distinct from `description`, shown alongside the store name. */
@@ -80,6 +82,9 @@ export interface StoreData {
   customDomain: string | null;
   customDomainStatus: 'unverified' | 'verified';
   whiteLabelEnabled: boolean;
+  /** Real storefront access gate — see `apiUpdateStorePrivacy`. Never
+   *  includes the password itself (bcrypt hash, `select:false` server-side). */
+  privacyMode: 'public' | 'password' | 'coming_soon';
   /** Marketplace listing lifecycle — independent of `verificationStatus`
    *  below (see store.schema.ts). Only `'active'` unlocks product creation
    *  and public storefront/marketplace visibility. */
@@ -161,6 +166,28 @@ export function apiVerifyCustomDomain(storeId: string) {
  *  domain. */
 export function apiResolveStoreByDomain(host: string) {
   return client.get<never, ApiResponse<PublicStoreData>>(ENDPOINTS.STORE.RESOLVE_DOMAIN, { params: { host } });
+}
+
+export type StorePrivacyMode = 'public' | 'password' | 'coming_soon';
+
+/** PATCH /api/store/:storeId/privacy — seller-facing storefront gate control
+ *  (Settings). `password` is only read when switching into 'password' mode
+ *  with a NEW password typed — see the backend's own doc comment. */
+export function apiUpdateStorePrivacy(storeId: string, payload: { privacyMode: StorePrivacyMode; password?: string }) {
+  return client.patch<never, ApiResponse<{ privacyMode: StorePrivacyMode }>>(ENDPOINTS.STORE.PRIVACY(storeId), payload);
+}
+
+/** POST /api/store/public/:storeId/verify-password — the storefront gate's
+ *  own submit call (`AtelierStorefrontGate`/`NovaStorefrontGate`). */
+export function apiVerifyStorePassword(storeId: string, password: string) {
+  return client.post<never, ApiResponse<{ valid: boolean }>>(ENDPOINTS.STORE.VERIFY_PASSWORD(storeId), { password });
+}
+
+/** PATCH /api/store/:storeId/robots-txt — seller-facing custom robots.txt
+ *  editor (SEO → Store tab). `robotsTxtOverride: null` (or blank) resets to
+ *  the generated default. */
+export function apiUpdateStoreRobotsTxt(storeId: string, robotsTxtOverride: string | null) {
+  return client.patch<never, ApiResponse<{ robotsTxtOverride: string | null }>>(ENDPOINTS.STORE.ROBOTS_TXT(storeId), { robotsTxtOverride });
 }
 
 /** PATCH /api/store/:storeId/white-label */
@@ -247,6 +274,9 @@ export interface PublicStoreData {
   slug:           string;
   logo:           string | null;
   coverImage:     string | null;
+  /** Dedicated browser-tab icon override — falls back to `logo`, then the
+   *  platform default, when null. See `StorefrontLayout.tsx`'s `useStorefrontFavicon`. */
+  faviconUrl:     string | null;
   description:    string | null;
   tagline:        string | null;
   contactEmail:   string | null;
@@ -269,6 +299,10 @@ export interface PublicStoreData {
   createdAt:      string;
   activeCampaign: ActiveCampaignBadge | null;
   announcementBar: { message: string | null; type: StoreAnnouncementType; ctaLabel: string | null; ctaLink: string | null } | null;
+  /** Real storefront access gate — 'public' (default) means every visitor
+   *  sees the real site, same as before this field existed. See
+   *  `StorefrontLayout.tsx` for where this is enforced. */
+  privacyMode: 'public' | 'password' | 'coming_soon';
 }
 
 export interface PublicStoreProductsParams {

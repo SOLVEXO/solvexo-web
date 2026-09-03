@@ -10,7 +10,7 @@ import {
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
-  LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone,
+  LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, SlidersHorizontal, ListTree,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, type StorePlatformSubscription } from '@/api/services/platformPlans';
@@ -66,6 +66,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
       { id: 'inventory',     Icon: ClipboardList, label: 'Inventory',     path: 'inventory'    },
       { id: 'categories',    Icon: FolderTree,    label: 'Categories',    path: 'categories'   },
       { id: 'collections',   Icon: Layers,        label: 'Collections',   path: 'collections'  },
+      { id: 'metafields',    Icon: SlidersHorizontal, label: 'Custom Fields', path: 'metafields' },
     ],
   },
   {
@@ -73,6 +74,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { id: 'online-store-themes',    Icon: Palette,    label: 'Themes',    path: 'online-store/themes'    },
       { id: 'online-store-pages',     Icon: LayoutGrid, label: 'Pages',     path: 'online-store/pages'     },
+      { id: 'online-store-menus',     Icon: ListTree,   label: 'Menus',     path: 'online-store/menus'     },
       { id: 'online-store-blog',      Icon: Newspaper,  label: 'Blog',      path: 'online-store/blog'      },
       { id: 'online-store-files',     Icon: ImageIcon,  label: 'Files',     path: 'files'                  },
     ],

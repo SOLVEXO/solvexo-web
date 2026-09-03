@@ -34,7 +34,18 @@ function wKey(productId: string, variantId: string) {
   return `${productId}::${variantId}`;
 }
 
-export function WishlistProvider({ children }: { children: ReactNode }) {
+// `storeId` scopes the server-side wishlist to one store — same pattern as
+// `CartProvider`. The app-wide instance mounted in `main.tsx` has no
+// `storeId` (seller/admin dashboards, and the apex marketplace, have no
+// single store in scope) and simply never fetches — a second
+// `<WishlistProvider storeId={...}>` nested inside `StorefrontLayout` shadows
+// it for every consumer under a store's storefront. Without this, every
+// logged-in page load anywhere in the app called `GET /cart/get-wishlist`
+// with no `storeId`, which the backend now hard-requires — a real,
+// previously-silent 400 on every page (swallowed by the `.catch(() => {})`
+// below, so it never surfaced as a visible error, just a wasted request and
+// a wishlist that could never actually populate).
+export function WishlistProvider({ storeId, children }: { storeId?: string; children: ReactNode }) {
   const { requireAuth } = useAuthGate();
   const toast = useToast();
   const [wishlistItems, setWishlistItems] = useState<WishlistListItem[]>([]);
@@ -46,12 +57,13 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   // Maps "productId::variantId" → wishlistId (needed for removal)
   const idMap = useRef(new Map<string, string>());
 
-  // Initial fetch — silently skip if not authenticated
+  // Initial fetch — silently skip if not authenticated, or if this provider
+  // isn't scoped to a store (the app-wide instance in `main.tsx`).
   useEffect(() => {
-    if (!TokenStorage.isLoggedIn()) { setLoading(false); return; }
+    if (!TokenStorage.isLoggedIn() || !storeId) { setLoading(false); return; }
     let cancelled = false;
     setLoading(true);
-    apiGetWishlist()
+    apiGetWishlist(storeId)
       .then(res => {
         if (cancelled) return;
         const items = res.data ?? [];
@@ -65,7 +77,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [storeId]);
 
   const isWishlisted = useCallback(
     (productId: string, variantId: string) => wishlistedKeys.has(wKey(productId, variantId)),
@@ -78,12 +90,13 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     // hard-redirect to /login never fires; requireAuth re-runs this call
     // once they sign in via the prompt.
     requireAuth(async () => {
+      if (!storeId) return;
       const k = wKey(productId, variantId);
       setWishlisting(variantId);
       // Optimistic
       setWishlistedKeys(prev => new Set(prev).add(k));
       try {
-        const res = await apiAddToWishlist(productId, variantId);
+        const res = await apiAddToWishlist(productId, variantId, storeId);
         idMap.current.set(k, res.data.wishlist._id);
         // The "already in wishlist" branch of this endpoint re-fetches the
         // product/variant by id and can come back null if either was since
@@ -105,9 +118,10 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         setWishlisting(null);
       }
     }, 'Sign in to save items to your wishlist.');
-  }, [requireAuth, toast]);
+  }, [requireAuth, toast, storeId]);
 
   const removeFromWishlist = useCallback(async (productId: string, variantId: string) => {
+    if (!storeId) return;
     const k = wKey(productId, variantId);
     setWishlisting(variantId);
 
@@ -132,7 +146,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     try {
       let wishlistId = idMap.current.get(k);
       if (!wishlistId) {
-        const r = await apiGetWishlistItem(productId, variantId);
+        const r = await apiGetWishlistItem(productId, variantId, storeId);
         wishlistId = r.data?.wishlist?._id;
         // Backend found no matching wishlist entry — it's already not
         // wishlisted server-side, so the optimistic removal above was
@@ -140,7 +154,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         if (!wishlistId) return;
         idMap.current.set(k, wishlistId);
       }
-      await apiRemoveFromWishlist(wishlistId);
+      await apiRemoveFromWishlist(wishlistId, storeId);
       toast.success('Removed from wishlist');
     } catch (err) {
       // Roll back both pieces of state together, restoring the item as
@@ -159,7 +173,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     } finally {
       setWishlisting(null);
     }
-  }, [toast]);
+  }, [toast, storeId]);
 
   const toggleWishlist = useCallback(async (productId: string, variantId: string) => {
     if (wishlistedKeys.has(wKey(productId, variantId))) {
@@ -170,6 +184,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   }, [wishlistedKeys, addToWishlist, removeFromWishlist]);
 
   const clearWishlist = useCallback(async () => {
+    if (!storeId) return;
     const prevItems = wishlistItems;
     const prevKeys  = wishlistedKeys;
     setClearing(true);
@@ -178,7 +193,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     setWishlistedKeys(new Set());
     idMap.current.clear();
     try {
-      await apiClearWishlist();
+      await apiClearWishlist(storeId);
       toast.success('Wishlist cleared');
     } catch (err) {
       // Rollback
@@ -189,7 +204,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     } finally {
       setClearing(false);
     }
-  }, [wishlistItems, wishlistedKeys, toast]);
+  }, [wishlistItems, wishlistedKeys, toast, storeId]);
 
   const value = useMemo<WishlistContextValue>(() => ({
     wishlistItems,

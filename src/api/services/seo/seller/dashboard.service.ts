@@ -31,6 +31,10 @@ export interface StoreSeoMeta {
   aiGenerated?: boolean;
   updatedAt?: string;
   checklist?: { key: string; done: boolean; completedAt: string | null }[];
+  /** Read-only here — edited via `apiUpdateStoreRobotsTxt` (`api/services/store.ts`),
+   *  a dedicated endpoint since it isn't part of the shared product/store/page
+   *  `UpdateSeoMetaDto` shape. */
+  robotsTxtOverride?: string | null;
 }
 
 export interface UpdateSeoMetaPayload {

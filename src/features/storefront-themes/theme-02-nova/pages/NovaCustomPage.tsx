@@ -2,21 +2,20 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { apiGetPublicStorePage, type StorePageData } from '@/api/services/storePages';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { AtelierContentBlocks } from '../components/AtelierContentBlocks';
-import { AtelierNotFoundPage } from './AtelierNotFoundPage';
+import { NovaContentBlocks } from '../components/NovaContentBlocks';
+import { NovaNotFoundPage } from './NovaNotFoundPage';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
-import { atelierTheme as t } from '../theme.config';
+import { novaTheme as t } from '../theme.config';
 
-/** Theme 01's own leaf page for any seller-created custom page (About Us,
- *  Shipping Policy, ...). Every store-builder starter template is a single
- *  `rich_text` section (see `PagesList.tsx`'s "New Page" templates), so this
- *  renders every section's blocks through the same real `ContentBlocks`
- *  content-model renderer the Journal article uses, one after another —
- *  the honest, real-data-backed common case. A page built from other
- *  section types (hero/testimonials/etc, a legacy-engine-only authoring
- *  surface) only shows its rich-text portions here — a disclosed scope
- *  boundary, not a silent drop. */
-export function AtelierCustomPage() {
+/** Theme 02's own leaf page for any seller-created custom page (About Us,
+ *  Shipping Policy, ...) — same real data source and `rich_text`-only scope
+ *  boundary as `AtelierCustomPage` (every store-builder starter template is
+ *  a single `rich_text` section; a page built from other section types only
+ *  shows its rich-text portions here, a disclosed scope boundary, not a
+ *  silent drop). A genuinely unmatched slug renders Nova's own real 404
+ *  (`NovaNotFoundPage`), mirroring `AtelierCustomPage`'s use of
+ *  `AtelierNotFoundPage` for the same case. */
+export function NovaCustomPage() {
   const { pageSlug } = useParams<{ pageSlug: string }>();
   const { store } = useStorefront();
   const [page, setPage] = useState<StorePageData | null>(null);
@@ -42,29 +41,29 @@ export function AtelierCustomPage() {
     return (
       <div className="flex flex-col gap-4" style={{ padding: `48px ${t.layout.containerPadX}` }}>
         <div className="animate-pulse h-7 w-2/5" style={{ background: t.colors.bgAlt }} />
-        <div className="animate-pulse" style={{ height: '200px', background: t.colors.bgAlt }} />
+        <div className="animate-pulse" style={{ height: '200px', background: t.colors.bgAlt, borderRadius: t.radius.md }} />
       </div>
     );
   }
 
   if (notFound || !page) {
-    return <AtelierNotFoundPage />;
+    return <NovaNotFoundPage />;
   }
 
   const richTextSections = page.sections.filter(s => s.type === 'rich_text' && s.enabled !== false);
 
   return (
     <main className="mx-auto" style={{ maxWidth: '760px', padding: `48px ${t.layout.containerPadX}` }}>
-      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink, marginBottom: '28px' }}>{page.title}</h1>
+      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 34px)', fontWeight: 700, color: t.colors.ink, marginBottom: '28px' }}>{page.title}</h1>
       <div className="flex flex-col gap-8" style={{ fontFamily: t.fonts.body, color: t.colors.ink, fontSize: '14.5px', lineHeight: 1.75 }}>
         {richTextSections.map((section, i) => (
           <div key={section._id ?? i}>
             {section.settings?.heading && (
-              <h2 style={{ fontFamily: t.fonts.display, fontSize: '19px', fontWeight: 600, color: t.colors.ink, marginBottom: '10px' }}>
+              <h2 style={{ fontFamily: t.fonts.display, fontSize: '19px', fontWeight: 700, color: t.colors.ink, marginBottom: '10px' }}>
                 {section.settings.heading}
               </h2>
             )}
-            <AtelierContentBlocks blocks={section.blocks.map(b => ({ type: b.type, settings: b.settings }))} />
+            <NovaContentBlocks blocks={section.blocks.map(b => ({ type: b.type, settings: b.settings }))} />
           </div>
         ))}
         {richTextSections.length === 0 && (

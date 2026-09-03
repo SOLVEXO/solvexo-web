@@ -6,20 +6,21 @@ import { apiGetPublicStore, apiResolveStoreByDomain, type PublicStoreData } from
 import { apiGetPublicStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
 import { getStoreSlugFromHost } from '@/utils/storefrontUrl';
 import { CartProvider } from '@/contexts/CartContext';
+import { WishlistProvider } from '@/contexts/WishlistContext';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from './StorefrontContext';
 import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 
 const DEFAULT_FAVICON = '/favicon.png';
 
-/** Swaps the browser tab icon to the store's own logo while on any `/:slug*` route, restoring Solvexo's default on unmount — same "zero Solvexo branding on the storefront" principle as the navbar/footer, just for the one piece of chrome that lives outside React's render tree. */
-function useStorefrontFavicon(logo: string | null | undefined) {
+/** Swaps the browser tab icon while on any `/:slug*` route, restoring Solvexo's default on unmount — same "zero Solvexo branding on the storefront" principle as the navbar/footer, just for the one piece of chrome that lives outside React's render tree. Prefers the store's dedicated `faviconUrl` (a real tab-icon-shaped asset) over its `logo` (often a wide wordmark that renders poorly shrunk to 16-32px) — falls back to `logo` for a store that never set one, unchanged from before this field existed. */
+function useStorefrontFavicon(faviconUrl: string | null | undefined, logo: string | null | undefined) {
   useEffect(() => {
     const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
     if (!link) return;
     const previousHref = link.href;
-    link.href = logo || DEFAULT_FAVICON;
+    link.href = faviconUrl || logo || DEFAULT_FAVICON;
     return () => { link.href = previousHref; };
-  }, [logo]);
+  }, [faviconUrl, logo]);
 }
 
 // Root layout for a store's own subdomain (`hello.solvexo.store`) OR a
@@ -41,6 +42,11 @@ export function StorefrontLayout() {
   const [theme, setTheme] = useState<StoreThemeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Real Shopify-style storefront gate (`Store.privacyMode`) — a per-tab
+  // unlock, checked the instant the store loads so a password-protected
+  // store never flashes its real content first. See `AtelierStorefrontGate`/
+  // `NovaStorefrontGate`'s own doc comments for the full rationale.
+  const [unlocked, setUnlocked] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,6 +57,7 @@ export function StorefrontLayout() {
       .then(res => {
         if (cancelled) return;
         setStore(res.data);
+        setUnlocked(sessionStorage.getItem(`storefront_unlock_${res.data.storeId}`) === '1');
         return apiGetPublicStoreTheme(res.data.storeId).then(r => { if (!cancelled) setTheme(r.data); });
       })
       .catch(() => { if (!cancelled) setError('Store not found'); })
@@ -58,7 +65,7 @@ export function StorefrontLayout() {
     return () => { cancelled = true; };
   }, [slug]);
 
-  useStorefrontFavicon(store?.logo);
+  useStorefrontFavicon(store?.faviconUrl, store?.logo);
 
   const cfg = useMemo(() => resolveStorefrontCfg(theme), [theme]);
 
@@ -106,13 +113,28 @@ export function StorefrontLayout() {
   // theme that wants them, but nothing about this component's own rendering
   // reaches the page any more.
   const themeId = theme?.themeDefinitionId;
-  const Layout = (themeId && NEW_THEME_REGISTRY[themeId]?.Layout) || NEW_THEME_REGISTRY[DEFAULT_THEME_ID].Layout;
+  const impl = (themeId && NEW_THEME_REGISTRY[themeId]) || NEW_THEME_REGISTRY[DEFAULT_THEME_ID];
+  const Layout = impl.Layout;
+
+  // The gate replaces the ENTIRE tree (no navbar/cart/footer/Outlet) — every
+  // real route, including `notFound`, is meaningless on a store nobody but
+  // the seller should be browsing yet.
+  if (store.privacyMode !== 'public' && !unlocked) {
+    const Gate = impl.GatePage;
+    return (
+      <StorefrontProvider value={contextValue}>
+        <Gate store={store} onUnlocked={() => setUnlocked(true)} />
+      </StorefrontProvider>
+    );
+  }
   return (
     <StorefrontProvider value={contextValue}>
       <CartProvider storeId={store.storeId}>
-        <Layout>
-          <Outlet />
-        </Layout>
+        <WishlistProvider storeId={store.storeId}>
+          <Layout>
+            <Outlet />
+          </Layout>
+        </WishlistProvider>
       </CartProvider>
     </StorefrontProvider>
   );

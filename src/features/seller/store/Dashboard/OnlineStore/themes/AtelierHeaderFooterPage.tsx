@@ -17,6 +17,7 @@ import { VersionHistoryModal, type VersionRow } from '../builder/VersionHistoryM
 import { useEditorState } from '../builder/editor/useEditorState';
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
 import { apiListStorePages } from '@/api/services/storePages';
+import { apiListMenus, type Menu } from '@/api/services/menus';
 import { AtelierLivePreview } from './AtelierLivePreview';
 import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
 import { getThemeManifest } from '@/features/storefront-themes/themeManifest';
@@ -207,6 +208,7 @@ export function AtelierHeaderFooterPage() {
   const [discarding, setDiscarding] = useState(false);
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [pageOptions, setPageOptions] = useState<PageOption[]>([]);
+  const [menus, setMenus] = useState<Menu[]>([]);
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [versions, setVersions] = useState<VersionRow[]>([]);
@@ -253,6 +255,7 @@ export function AtelierHeaderFooterPage() {
       })
       .finally(() => setLoading(false));
     apiListStorePages(storeId).then(res => setPageOptions(res.data.filter(p => p.type === 'custom').map(p => ({ slug: p.slug, title: p.title })))).catch(() => {});
+    apiListMenus(storeId).then(res => setMenus(res.data)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
@@ -268,7 +271,7 @@ export function AtelierHeaderFooterPage() {
     try {
       const [hRes, fRes] = await Promise.all([
         apiUpdateStoreHeader(storeId, headerDraft),
-        apiUpdateStoreFooter(storeId, footerDraft.blocks, footerDraft.footerStyle),
+        apiUpdateStoreFooter(storeId, footerDraft.blocks, footerDraft.footerStyle, undefined, footerDraft.menuId),
       ]);
       editor.markSaved({ header: hRes.data.draft.header, footer: fRes.data.draft.footer });
       flash(true, 'Draft saved — Publish to make it live.');
@@ -281,7 +284,7 @@ export function AtelierHeaderFooterPage() {
   const handlePersistRemoval = async (kind: 'header' | 'footer', next: HeaderFooterDraft) => {
     try {
       if (kind === 'header') await apiUpdateStoreHeader(storeId, next.header);
-      else await apiUpdateStoreFooter(storeId, next.footer.blocks, next.footer.footerStyle);
+      else await apiUpdateStoreFooter(storeId, next.footer.blocks, next.footer.footerStyle, undefined, next.footer.menuId);
       editor.markSaved(next);
     } catch (err) {
       flash(false, err instanceof Error ? err.message : 'Failed to save.');
@@ -297,7 +300,7 @@ export function AtelierHeaderFooterPage() {
       if (editor.dirty && headerDraft && footerDraft) {
         await Promise.all([
           apiUpdateStoreHeader(storeId, headerDraft),
-          apiUpdateStoreFooter(storeId, footerDraft.blocks, footerDraft.footerStyle),
+          apiUpdateStoreFooter(storeId, footerDraft.blocks, footerDraft.footerStyle, undefined, footerDraft.menuId),
         ]);
       }
       const res = await apiPublishStoreTheme(storeId);
@@ -446,6 +449,22 @@ export function AtelierHeaderFooterPage() {
 
           {tab === 'header' ? (
             <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5 pb-3 mb-1 border-b border-bone">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-slate">Navigation source</label>
+                <select
+                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none"
+                  value={headerDraft.menuId ?? ''}
+                  onChange={e => editor.edit(prev => ({ ...prev!, header: { ...headerDraft, menuId: e.target.value || null } }))}
+                >
+                  <option value="">Custom Links (below)</option>
+                  {menus.map(m => <option key={m._id} value={m._id}>{m.name}</option>)}
+                </select>
+                <p className="text-[11px] text-slate">
+                  {headerDraft.menuId
+                    ? 'Your storefront uses this menu\'s items. The links below are kept as a fallback if you detach it.'
+                    : `Manage reusable menus under Online Store → Menus, then pick one here.`}
+                </p>
+              </div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Navigation Links</p>
               <SortableList items={headerDraft.blocks} keyFor={(b, i) => b._id ?? `new-${i}`} onReorder={blocks => editor.edit(prev => ({ ...prev!, header: { ...headerDraft, blocks } }))}>
                 {(block, i) => (
@@ -472,6 +491,22 @@ export function AtelierHeaderFooterPage() {
             </div>
           ) : tab === 'footer' ? (
             <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5 pb-3 mb-1 border-b border-bone">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-slate">Quick Links menu</label>
+                <select
+                  className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none"
+                  value={footerDraft.menuId ?? ''}
+                  onChange={e => editor.edit(prev => ({ ...prev!, footer: { ...footerDraft, menuId: e.target.value || null } }))}
+                >
+                  <option value="">None — use the link columns below only</option>
+                  {menus.map(m => <option key={m._id} value={m._id}>{m.name}</option>)}
+                </select>
+                <p className="text-[11px] text-slate">
+                  {footerDraft.menuId
+                    ? 'This menu appears as one extra link column on your storefront, alongside the columns below. Social links / copyright text below still render normally.'
+                    : `Manage reusable menus under Online Store → Menus, then pick one here to add it as a footer column.`}
+                </p>
+              </div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate">Footer Content</p>
               {footerDraft.blocks.length === 0 && (
                 <p className="text-[12.5px] text-slate leading-relaxed bg-white border border-bone rounded-lg px-3 py-2.5 mb-1">

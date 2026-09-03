@@ -15,6 +15,7 @@ import { ImageUpload, FileUpload, type PrivateUploadData, DateTimePickerModal, S
 import { currencySymbol as symbolForCurrency } from '@/utils/currency';
 import { VariantMatrixEditor } from './VariantMatrixEditor';
 import { TemplateKeyPicker } from '@/features/seller/store/Dashboard/OnlineStore/customize/TemplateKeyPicker';
+import { MetafieldsEditor } from '@/features/seller/store/Dashboard/OnlineStore/customize/MetafieldsEditor';
 import { combinationKey, MAX_VARIANT_COMBINATIONS, type OptionType, type VariantRow } from './variantMatrix';
 
 type ProductStatus = 'draft' | 'active' | 'scheduled';
@@ -710,6 +711,8 @@ export default function StoreEditProduct() {
               <TemplateKeyPicker storeId={storeId} resourceType="product" value={templateKey} onChange={setTemplateKey} label="Product Page Template" />
             </div>
           </Card>
+
+          <MetafieldsEditor storeId={storeId} ownerResource="product" ownerId={productId} />
 
           {/* Action buttons */}
           <div className="flex flex-col gap-2">

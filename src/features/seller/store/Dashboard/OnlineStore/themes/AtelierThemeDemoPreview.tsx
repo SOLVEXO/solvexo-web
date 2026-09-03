@@ -15,7 +15,7 @@ function buildDemoContextValue(demoStore: ThemeDemoPreviewData['demoStore']): St
     logo: null, coverImage: null, description: demoStore.description, tagline: demoStore.tagline,
     contactEmail: null, contactPhone: null, categoryId: null, followersCount: 0, averageRating: 0, reviewCount: 0,
     builderConfig: null, baseCurrency: 'USD', enabledCurrencies: null, sellerType: null, badges: [], createdAt: new Date().toISOString(),
-    activeCampaign: null, announcementBar: null,
+    activeCampaign: null, announcementBar: null, privacyMode: 'public', faviconUrl: null,
   };
   return {
     store: demoStoreData,

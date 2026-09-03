@@ -5,6 +5,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { AtelierButton } from '../components/AtelierButton';
 import { atelierTheme as t } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
+import { renderRichText } from '@/utils/richText';
 
 function Pair({ block }: { block: Block }) {
   const { resolveLink } = useStorefront();
@@ -20,7 +21,7 @@ function Pair({ block }: { block: Block }) {
       </div>
       <div className={imageFirst ? 'order-2' : 'order-2 lg:order-1'}>
         {s.heading && <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 32px)', fontWeight: 600, color: t.colors.ink, marginBottom: '16px' }}>{s.heading}</h2>}
-        {s.body && <p style={{ fontFamily: t.fonts.body, fontSize: '14.5px', color: t.colors.inkMuted, lineHeight: 1.75, marginBottom: '24px' }}>{s.body}</p>}
+        {s.body && <p style={{ fontFamily: t.fonts.body, fontSize: '14.5px', color: t.colors.inkMuted, lineHeight: 1.75, marginBottom: '24px' }}>{renderRichText(s.body)}</p>}
         {s.ctaText && link && (
           link.to ? <Link to={link.to} className="no-underline"><AtelierButton variant="outline">{s.ctaText}</AtelierButton></Link>
             : <a href={link.href} className="no-underline"><AtelierButton variant="outline">{s.ctaText}</AtelierButton></a>

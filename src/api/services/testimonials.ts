@@ -15,11 +15,17 @@ export interface Testimonial {
   isVerifiedSeller: boolean;
 }
 
+export type TestimonialStatus = 'pending' | 'approved' | 'rejected';
+
 /** Admin-managed record — the raw schema, edited via the Testimonials admin page. */
 export interface AdminTestimonial {
   _id:              string;
   sellerName:       string;
   storeName:        string | null;
+  sellerId:         string | null;
+  storeId:          string | null;
+  status:           TestimonialStatus;
+  submittedBy:      'admin' | 'seller';
   rating:           number;
   text:             string;
   isVerifiedSeller: boolean;
@@ -28,6 +34,10 @@ export interface AdminTestimonial {
   createdAt:        string;
   updatedAt:        string;
 }
+
+/** A seller's own submission — same shape, used by their dashboard's "my
+ *  story" card to show its current status instead of the submission form. */
+export type MyTestimonialSubmission = AdminTestimonial;
 
 export interface TestimonialStats { active: number; inactive: number }
 
@@ -83,4 +93,39 @@ export function apiToggleTestimonial(id: string) {
 
 export function apiDeleteTestimonial(id: string) {
   return client.delete<never, { success: boolean; message: string }>(ENDPOINTS.TESTIMONIALS.DELETE(id));
+}
+
+export function apiApproveTestimonial(id: string) {
+  return client.patch<never, { success: boolean; message: string; data: AdminTestimonial }>(
+    ENDPOINTS.TESTIMONIALS.APPROVE(id), null,
+  );
+}
+
+export function apiRejectTestimonial(id: string) {
+  return client.patch<never, { success: boolean; message: string; data: AdminTestimonial }>(
+    ENDPOINTS.TESTIMONIALS.REJECT(id), null,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SELLER — self-submit a story about Solvexo (goes to a pending queue for
+// admin review; sellerName/storeName are derived server-side, never sent
+// from here — see SubmitTestimonialDto's own doc comment on the backend).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** GET /api/testimonials/mine — this seller's own latest submission, if any. */
+export function apiGetMyTestimonialSubmission() {
+  return client.get<never, { success: boolean; data: MyTestimonialSubmission | null }>(ENDPOINTS.TESTIMONIALS.MINE);
+}
+
+export interface SubmitTestimonialPayload {
+  rating: number;
+  text:   string;
+}
+
+/** POST /api/testimonials/submit — refuses a second submission while one is pending/approved. */
+export function apiSubmitTestimonial(payload: SubmitTestimonialPayload) {
+  return client.post<never, { success: boolean; message: string; data: MyTestimonialSubmission }>(
+    ENDPOINTS.TESTIMONIALS.SUBMIT, payload,
+  );
 }

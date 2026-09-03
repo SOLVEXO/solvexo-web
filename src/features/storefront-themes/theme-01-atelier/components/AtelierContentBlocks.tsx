@@ -1,4 +1,5 @@
 import { atelierTheme as t } from '../theme.config';
+import { renderRichText } from '@/utils/richText';
 
 export interface ContentBlock {
   type: string;
@@ -26,7 +27,7 @@ export function AtelierContentBlocks({ blocks }: { blocks: ContentBlock[] }) {
           case 'paragraph':
             return (
               <p key={i} style={{ fontFamily: t.fonts.body, fontSize: '14.5px', lineHeight: 1.75, color: t.colors.ink, whiteSpace: 'pre-wrap' }}>
-                {block.settings.text}
+                {renderRichText(block.settings.text)}
               </p>
             );
           case 'image':

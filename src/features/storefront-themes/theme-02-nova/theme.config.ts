@@ -157,7 +157,7 @@ export function applyMerchantThemeOverrides(colors: {
 }
 
 /**
- * README — what Theme B (Nova) proves, and its disclosed scope.
+ * README — what Theme B (Nova) proves, and its (former) disclosed scope.
  *
  * This is the reusability-proof second theme required by the platform's
  * theme-agnostic architecture requirement: it registers itself in
@@ -166,19 +166,21 @@ export function applyMerchantThemeOverrides(colors: {
  * through the exact same generic contracts — zero new editor-page code was
  * written to support it.
  *
- * DISCLOSED SCOPE: Nova implements Home, Product, Collection, Category,
- * Search, Blog Index, and Blog Article (7 of 16 `StorefrontRouteKey`s) —
- * the routes that are actually exercised by the Customize page's scope
- * switcher and the section-editor/manifest system, which is what this proof
- * is about. Cart/Checkout/Login/Register/VerifyOtp/ForgotPassword/
- * NewPassword/Account/CustomPage are NOT implemented for Nova; `ThemedRoute`
- * already has a real, intentional fallback for exactly this ("a future
- * theme that's mid-build and hasn't reached this route yet" — see that
- * file's own comment) that renders Atelier's real, fully-functional page
- * for those routes instead of a blank screen or a crash. A Nova store is
- * therefore fully usable end-to-end today; its own visual identity simply
- * doesn't yet extend to checkout/auth/account. `display.builtRouteCount`/
- * `totalRouteCount` on this theme's `NEW_THEME_REGISTRY` entry states this
- * honestly on its Theme Library card, matching the exact mechanism that
- * field exists for.
+ * Nova originally shipped with only Home/Product/Collection/Category/Search/
+ * Blog Index/Blog Article implemented (7 of 18 `StorefrontRouteKey`s) — the
+ * routes exercised by the Customize page's scope switcher and the
+ * section-editor/manifest system, which is what the reusability proof above
+ * is actually about. Cart/Checkout/Login/Register/VerifyOtp/ForgotPassword/
+ * NewPassword/Account/CustomPage fell back to Atelier's real page via
+ * `ThemedRoute`'s intentional cross-theme fallback in the meantime, so a
+ * Nova store was always fully usable end-to-end — just without its own
+ * visual identity on those 10 routes.
+ *
+ * Nova now implements all 18 routes itself (see `registry.ts`'s
+ * `'theme-02-nova'` entry, `builtRouteCount: 18` / `totalRouteCount: 18`) —
+ * each of the 10 ported functionally 1:1 from its Atelier counterpart (same
+ * API calls/hooks/validation/navigation), restyled into Nova's own
+ * rounded/pill/accent-forward vocabulary. `ThemedRoute`'s fallback is
+ * unchanged and stays in place as a safety net for any future theme that's
+ * still mid-build — Nova simply no longer needs it for any route.
  */

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, History, ChevronLeft, ChevronRight, Copy, Check } from 'lucide-react';
+import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, History, ChevronLeft, ChevronRight, Copy, Check, Clock, EyeOff } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, StoreNavMenu } from '@/components/layouts/StoreLayout';
-import { apiUpdateStore, apiSetCustomDomain, apiVerifyCustomDomain, apiSetWhiteLabel, type ProductType, type CustomDomainStatus, type SupportedCurrency } from '@/api/services/store';
+import { apiUpdateStore, apiSetCustomDomain, apiVerifyCustomDomain, apiSetWhiteLabel, apiUpdateStorePrivacy, type ProductType, type CustomDomainStatus, type SupportedCurrency, type StorePrivacyMode } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { useMyStores } from '@/hooks/store/useMyStores';
@@ -351,6 +351,92 @@ function DomainWhiteLabelCard({ storeId, store, refetch }: {
   );
 }
 
+// ── Store Privacy (real Shopify-style password/coming-soon gate) ───────────────
+function StorePrivacyCard({ storeId, store, refetch }: {
+  storeId: string;
+  store: { privacyMode: StorePrivacyMode } | null;
+  refetch: () => void;
+}) {
+  const [mode, setMode] = useState<StorePrivacyMode>('public');
+  const [password, setPassword] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => { setMode(store?.privacyMode ?? 'public'); setPassword(''); setMsg(null); }, [store?.privacyMode]);
+
+  async function save() {
+    setSaving(true); setMsg(null);
+    try {
+      await apiUpdateStorePrivacy(storeId, { privacyMode: mode, password: password.trim() || undefined });
+      setPassword('');
+      refetch();
+      setMsg({ ok: true, text: 'Storefront visibility updated.' });
+    } catch (err) {
+      setMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to update storefront visibility.' });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const isDirty = mode !== (store?.privacyMode ?? 'public') || password.trim().length > 0;
+
+  const OPTIONS: { value: StorePrivacyMode; label: string; description: string; icon: typeof Globe }[] = [
+    { value: 'public', label: 'Public', description: 'Anyone can view this store.', icon: Globe },
+    { value: 'password', label: 'Password protected', description: 'Visitors must enter a password to view the store.', icon: Lock },
+    { value: 'coming_soon', label: 'Coming soon', description: 'Show a "coming soon" page — no password needed.', icon: Clock },
+  ];
+
+  return (
+    <div className="bg-white rounded-xl p-4 sm:p-6 border border-bone">
+      <div className="flex items-center gap-2 mb-5">
+        <div className="w-[30px] h-[30px] rounded-lg bg-brand-pale-orange flex items-center justify-center">
+          <EyeOff size={15} className="text-brand-orange" />
+        </div>
+        <p className="text-[14px] font-semibold text-charcoal">Store Privacy</p>
+      </div>
+
+      {msg && (
+        <p className={`text-[12px] mb-3 ${msg.ok ? 'text-success' : 'text-error'}`}>{msg.text}</p>
+      )}
+
+      <div className="flex flex-col gap-2">
+        {OPTIONS.map(opt => (
+          <label
+            key={opt.value}
+            className="flex items-start gap-3 rounded-lg border px-3 py-2.5 cursor-pointer"
+            style={{ borderColor: mode === opt.value ? '#D97757' : '#EFEDE6', background: mode === opt.value ? '#FDF6F1' : 'transparent' }}
+          >
+            <input type="radio" name="store-privacy-mode" className="mt-1" checked={mode === opt.value} onChange={() => setMode(opt.value)} />
+            <opt.icon size={15} className="mt-0.5 text-slate shrink-0" />
+            <div>
+              <p className="text-[12.5px] font-semibold text-charcoal">{opt.label}</p>
+              <p className="text-[11.5px] text-slate">{opt.description}</p>
+            </div>
+          </label>
+        ))}
+      </div>
+
+      {mode === 'password' && (
+        <div className="mt-3">
+          <Field label="Password">
+            <input
+              type="text"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder={store?.privacyMode === 'password' ? 'Leave blank to keep current password' : 'Set a password'}
+              className={inputCls}
+            />
+          </Field>
+        </div>
+      )}
+
+      <div className="mt-4">
+        <Button size="sm" loading={saving} disabled={!isDirty} onClick={save}>Save</Button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function StoreSettings() {
   const { store, storeId, loading, refetch } = useStoreWorkspace();
@@ -371,6 +457,7 @@ export default function StoreSettings() {
   const [productTypes, setProductTypes] = useState<ProductType[]>([]);
   const [logo,         setLogo]         = useState('');
   const [coverImage,   setCoverImage]   = useState('');
+  const [faviconUrl,   setFaviconUrl]   = useState('');
   const [categoryId,   setCategoryId]   = useState('');
   const [codEnabled,   setCodEnabled]   = useState(true);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
@@ -392,6 +479,7 @@ export default function StoreSettings() {
     setProductTypes(store.productTypes ?? []);
     setLogo(store.logo ?? '');
     setCoverImage(store.coverImage ?? '');
+    setFaviconUrl(store.faviconUrl ?? '');
     setCategoryId(store.categoryId ?? '');
     setCodEnabled(store.codEnabled !== false);
     setLowStockThreshold(store.lowStockThreshold ?? 10);
@@ -414,7 +502,7 @@ export default function StoreSettings() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, categoryId, codEnabled, lowStockThreshold, taxRate, enabledCurrencies });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, faviconUrl: faviconUrl || null, categoryId, codEnabled, lowStockThreshold, taxRate, enabledCurrencies });
       refetch();
       setSaveMsg({ ok: true, text: 'Store updated successfully.' });
     } catch (err) {
@@ -433,6 +521,7 @@ export default function StoreSettings() {
       contactPhone !== (store.contactPhone ?? '') ||
       logo !== (store.logo ?? '') ||
       coverImage !== (store.coverImage ?? '') ||
+      faviconUrl !== (store.faviconUrl ?? '') ||
       categoryId !== (store.categoryId ?? '') ||
       JSON.stringify(productTypes.slice().sort()) !==
         JSON.stringify((store.productTypes ?? []).slice().sort()) ||
@@ -570,6 +659,18 @@ export default function StoreSettings() {
                       storeId={storeId}
                     />
                     <p className="text-[11px] text-slate">PNG, JPG or WebP</p>
+                  </div>
+                </Field>
+
+                <Field label="Favicon (browser tab icon)">
+                  <div className="flex items-center gap-3">
+                    <ImageUpload
+                      value={faviconUrl ? [faviconUrl] : []}
+                      onChange={urls => setFaviconUrl(urls[0] ?? '')}
+                      maxFiles={1}
+                      storeId={storeId}
+                    />
+                    <p className="text-[11px] text-slate">Square image works best. Falls back to your logo if not set.</p>
                   </div>
                 </Field>
               </div>
@@ -772,6 +873,8 @@ export default function StoreSettings() {
             </div>
 
             {storeId && <DomainWhiteLabelCard storeId={storeId} store={store ? { customDomain: store.customDomain, customDomainStatus: store.customDomainStatus, whiteLabelEnabled: store.whiteLabelEnabled } : null} refetch={refetch} />}
+
+            {storeId && <StorePrivacyCard storeId={storeId} store={store ? { privacyMode: store.privacyMode } : null} refetch={refetch} />}
           </div>
         </div>
       )}

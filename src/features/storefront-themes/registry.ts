@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
+import type { PublicStoreData } from '@/api/services/store';
 import { AtelierLayout } from './theme-01-atelier/layout/AtelierLayout';
 import { AtelierHomePage } from './theme-01-atelier/pages/AtelierHomePage';
 import { AtelierProductPage } from './theme-01-atelier/pages/AtelierProductPage';
@@ -17,6 +18,8 @@ import { AtelierSearchPage } from './theme-01-atelier/pages/AtelierSearchPage';
 import { AtelierBlogIndexPage } from './theme-01-atelier/pages/AtelierBlogIndexPage';
 import { AtelierBlogPostPage } from './theme-01-atelier/pages/AtelierBlogPostPage';
 import { AtelierCustomPage } from './theme-01-atelier/pages/AtelierCustomPage';
+import { AtelierNotFoundPage } from './theme-01-atelier/pages/AtelierNotFoundPage';
+import { AtelierStorefrontGate } from './theme-01-atelier/pages/AtelierStorefrontGate';
 // Registers this theme's `ThemeManifest` (see `themeManifest.ts`) as a side
 // effect of importing this module — pure addition, nothing reads
 // `THEME_MANIFESTS` yet, so this cannot change any existing behavior. It's
@@ -42,16 +45,30 @@ import './theme-01-atelier/theme.demoPreview';
 // Theme 02 — "Nova": the reusability-proof second theme. Its own real,
 // independent implementation (own components/sections/pages), registered
 // through the exact same three generic contracts Atelier uses above — see
-// `theme-02-nova/theme.config.ts`'s README for its disclosed 7/16-route
-// scope and why that's safe (this file's own `ThemedRoute` fallback, below).
+// `theme-02-nova/theme.config.ts`'s README (now dated: written when Nova
+// was still an 8/18-route proof-of-concept) for the "why" of the original
+// design. Nova has since reached full 18/18 route parity with Atelier —
+// see the `pages` map's own comment below.
 import { NovaLayout } from './theme-02-nova/layout/NovaLayout';
 import { NovaHomePage } from './theme-02-nova/pages/NovaHomePage';
 import { NovaProductPage } from './theme-02-nova/pages/NovaProductPage';
+import { NovaCartPage } from './theme-02-nova/pages/NovaCartPage';
+import { NovaCheckoutPage } from './theme-02-nova/pages/NovaCheckoutPage';
+import { NovaCheckoutReturnPage } from './theme-02-nova/pages/NovaCheckoutReturnPage';
+import { NovaLoginPage } from './theme-02-nova/pages/NovaLoginPage';
+import { NovaRegisterPage } from './theme-02-nova/pages/NovaRegisterPage';
+import { NovaVerifyOtpPage } from './theme-02-nova/pages/NovaVerifyOtpPage';
+import { NovaForgotPasswordPage } from './theme-02-nova/pages/NovaForgotPasswordPage';
+import { NovaNewPasswordPage } from './theme-02-nova/pages/NovaNewPasswordPage';
+import { NovaAccountPage } from './theme-02-nova/pages/NovaAccountPage';
 import { NovaCategoryPage } from './theme-02-nova/pages/NovaCategoryPage';
 import { NovaCollectionPage } from './theme-02-nova/pages/NovaCollectionPage';
 import { NovaSearchPage } from './theme-02-nova/pages/NovaSearchPage';
 import { NovaBlogIndexPage } from './theme-02-nova/pages/NovaBlogIndexPage';
 import { NovaBlogPostPage } from './theme-02-nova/pages/NovaBlogPostPage';
+import { NovaCustomPage } from './theme-02-nova/pages/NovaCustomPage';
+import { NovaNotFoundPage } from './theme-02-nova/pages/NovaNotFoundPage';
+import { NovaStorefrontGate } from './theme-02-nova/pages/NovaStorefrontGate';
 import './theme-02-nova/theme.manifest';
 import './theme-02-nova/theme.devFiles';
 import './theme-02-nova/theme.preview';
@@ -74,7 +91,7 @@ export type StorefrontRouteKey =
   | 'home' | 'product' | 'category' | 'collection' | 'search'
   | 'cart' | 'checkout' | 'checkoutReturn' | 'login' | 'register' | 'verifyOtp' | 'account'
   | 'blogIndex' | 'blogPost' | 'customPage'
-  | 'forgotPassword' | 'newPassword';
+  | 'forgotPassword' | 'newPassword' | 'notFound';
 
 /** The subset of `StorefrontColors` (see `api/services/storeTheme.ts`) that
  *  actually varies between themes and is worth sending at install time —
@@ -98,6 +115,13 @@ export interface ThemeInstallColorDefaults {
 interface NewThemeImpl {
   Layout: ComponentType<{ children: ReactNode }>;
   pages: Partial<Record<StorefrontRouteKey, ComponentType>>;
+  /** Real storefront access gate ('password'/'coming_soon' — see
+   *  `Store.privacyMode`) — rendered by `StorefrontLayout.tsx` INSTEAD of
+   *  `Layout`/`pages` while the store is gated and this tab hasn't unlocked
+   *  it yet. Every registered theme must implement this (unlike `pages`,
+   *  there is no cross-theme fallback need since it's simple enough for
+   *  every theme to own outright). */
+  GatePage: ComponentType<{ store: PublicStoreData; onUnlocked: () => void }>;
   /** Seller-facing Theme Library card metadata — deliberately separate from
    *  the legacy `ThemeDefinition` shape (no `colors`/`headerStyle` fields
    *  the new theme doesn't use for rendering), and deliberately NOT run
@@ -152,6 +176,7 @@ export const DEFAULT_THEME_ID = 'theme-01-atelier';
 export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
   'theme-01-atelier': {
     Layout: AtelierLayout,
+    GatePage: AtelierStorefrontGate,
     pages: {
       home: AtelierHomePage,
       product: AtelierProductPage,
@@ -170,12 +195,13 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       blogIndex: AtelierBlogIndexPage,
       blogPost: AtelierBlogPostPage,
       customPage: AtelierCustomPage,
+      notFound: AtelierNotFoundPage,
     },
     display: {
       name: 'Atelier',
       description: 'Premium editorial fashion & lifestyle — asymmetric layouts, large photography, and a quiet, confident typographic voice. Its own independent storefront implementation, not a re-skin.',
-      builtRouteCount: 17,
-      totalRouteCount: 17,
+      builtRouteCount: 18,
+      totalRouteCount: 18,
     },
     // Matches `theme-01-atelier/theme.config.ts`'s own `STATIC_DEFAULTS`
     // exactly (brass accent, warm ivory ground, near-black ink, Inter body
@@ -192,25 +218,41 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
   },
   'theme-02-nova': {
     Layout: NovaLayout,
+    GatePage: NovaStorefrontGate,
     pages: {
       home: NovaHomePage,
       product: NovaProductPage,
+      cart: NovaCartPage,
+      checkout: NovaCheckoutPage,
+      checkoutReturn: NovaCheckoutReturnPage,
+      login: NovaLoginPage,
+      register: NovaRegisterPage,
+      verifyOtp: NovaVerifyOtpPage,
+      forgotPassword: NovaForgotPasswordPage,
+      newPassword: NovaNewPasswordPage,
+      account: NovaAccountPage,
       category: NovaCategoryPage,
       collection: NovaCollectionPage,
       search: NovaSearchPage,
       blogIndex: NovaBlogIndexPage,
       blogPost: NovaBlogPostPage,
-      // cart/checkout/login/register/verifyOtp/forgotPassword/newPassword/
-      // account/customPage are deliberately NOT implemented yet — see
-      // `theme-02-nova/theme.config.ts`'s README. `ThemedRoute` falls back
-      // to Atelier's real page for each of those, so a Nova store is fully
-      // usable end-to-end today.
+      customPage: NovaCustomPage,
+      notFound: NovaNotFoundPage,
+      // Nova reached full 18/18 route parity with Atelier in this pass —
+      // cart/checkout/checkoutReturn/login/register/verifyOtp/
+      // forgotPassword/newPassword/account/customPage (the 10 that used to
+      // fall back to Atelier's page via `ThemedRoute`) are now real,
+      // independent Nova implementations, ported functionally 1:1 from
+      // their Atelier counterparts with Nova's own rounded/pill/
+      // accent-forward presentation. `ThemedRoute`'s cross-theme fallback
+      // stays in place as a safety net for any FUTURE theme that's still
+      // mid-build, not because Nova needs it any more.
     },
     display: {
       name: 'Nova',
       description: 'Bold, energetic, commerce-first — vivid color, confident geometric type, and punchy pill buttons. Its own independent storefront implementation, not a re-skin.',
-      builtRouteCount: 7,
-      totalRouteCount: 17,
+      builtRouteCount: 18,
+      totalRouteCount: 18,
     },
     // Matches `theme-02-nova/theme.config.ts`'s own `STATIC_DEFAULTS`
     // exactly (vivid indigo accent, white ground, cool near-black ink,

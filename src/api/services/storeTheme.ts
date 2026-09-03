@@ -54,19 +54,39 @@ export interface StorefrontColors {
   testimonialCardStyle:  ThemeCardStyle;
   testimonialCardRadius: ThemeBorderRadius;
   faqStyle:           ThemeFaqStyle;
+  /** Named, reusable saved palettes — "Apply" copies one's 3 colors onto
+   *  bgColor/textColor/primaryColor above (draft), same fields the color
+   *  pickers edit directly. Not per-section scheme assignment — see the
+   *  backend schema's own comment on `ColorScheme`. */
+  colorSchemes: ColorScheme[];
+}
+
+export interface ColorScheme {
+  id:           string;
+  name:         string;
+  bgColor:      string;
+  textColor:    string;
+  primaryColor: string;
 }
 
 export interface StorefrontHeader {
   logoSource:    'store' | 'custom';
   customLogoUrl: string | null;
-  blocks:        Block[]; // nav_link blocks
+  blocks:        Block[]; // nav_link blocks — the fallback content when no menu is attached
   navAlignment:  'left' | 'center' | 'right';
   headerStyle:   ThemeHeaderStyle;
+  /** A Menu id to render instead of `blocks` on the real storefront — `blocks` stays as the fallback, untouched. */
+  menuId:        string | null;
 }
 
 export interface StorefrontFooter {
   blocks:      Block[]; // footer_column / social_link / copyright_text blocks
   footerStyle: ThemeFooterStyle;
+  /** A Menu id whose items become one synthetic footer_column block on the
+   *  real storefront, alongside the footer's own social_link/copyright_text
+   *  blocks — `blocks`' own footer_column content stays as the fallback,
+   *  untouched. See the backend's `StoreThemeService.resolveFooterMenu`. */
+  menuId:      string | null;
 }
 
 export type IdentityBannerLayout = 'standard' | 'compact' | 'immersive';
@@ -95,6 +115,8 @@ export interface StoreThemeData {
   themeDefinitionId: string | null;
   status:         InstalledThemeStatus;
   installedAt:    string;
+  /** Merchant override for this row's display name (e.g. "Copy of Atelier") — null means "just show the theme package's own name". */
+  name:           string | null;
   // Live/published — read by the public storefront exactly as before the
   // draft/publish split existed.
   theme:          StorefrontColors;
@@ -173,6 +195,37 @@ export function apiUninstallTheme(storeId: string, installedThemeId: string) {
   return client.delete<never, ApiResponse<null>>(ENDPOINTS.STORE_THEME.UNINSTALL(storeId, installedThemeId));
 }
 
+export function apiDuplicateTheme(storeId: string, installedThemeId: string, name?: string) {
+  return client.post<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.DUPLICATE(storeId, installedThemeId), { name });
+}
+
+export function apiRenameTheme(storeId: string, installedThemeId: string, name: string) {
+  return client.patch<never, ApiResponse<StoreThemeData>>(ENDPOINTS.STORE_THEME.RENAME(storeId, installedThemeId), { name });
+}
+
+export interface PreviewLinkData { token: string; expiresAt: string; themeDefinitionId: string | null }
+
+export function apiCreatePreviewLink(storeId: string, installedThemeId?: string) {
+  return client.post<never, ApiResponse<PreviewLinkData>>(withInstance(ENDPOINTS.STORE_THEME.PREVIEW_LINK(storeId), installedThemeId));
+}
+
+export function apiRevokePreviewLink(storeId: string, installedThemeId?: string) {
+  return client.delete<never, ApiResponse<null>>(withInstance(ENDPOINTS.STORE_THEME.PREVIEW_LINK(storeId), installedThemeId));
+}
+
+export interface PreviewByTokenData {
+  theme: StorefrontColors;
+  header: StorefrontHeader;
+  footer: StorefrontFooter;
+  identityBanner: IdentityBanner;
+  themeDefinitionId: string | null;
+  customCss: string | null;
+}
+
+export function apiGetPreviewByToken(storeId: string, token: string) {
+  return client.get<never, ApiResponse<PreviewByTokenData>>(ENDPOINTS.STORE_THEME.PREVIEW_BY_TOKEN(storeId, token));
+}
+
 /** A real, immutable snapshot of the live theme taken at the moment of
  *  every publish — see `ThemeVersion` on the backend. Newest first. */
 export interface ThemeVersionData {
@@ -208,12 +261,23 @@ export function apiUpdateStoreHeader(storeId: string, payload: Partial<Omit<Stor
   return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_HEADER(storeId), installedThemeId), payload);
 }
 
-export function apiUpdateStoreFooter(storeId: string, blocks: Block[], footerStyle?: ThemeFooterStyle, installedThemeId?: string) {
-  return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_FOOTER(storeId), installedThemeId), { blocks, footerStyle });
+export function apiUpdateStoreFooter(storeId: string, blocks: Block[], footerStyle?: ThemeFooterStyle, installedThemeId?: string, menuId?: string | null) {
+  return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_FOOTER(storeId), installedThemeId), { blocks, footerStyle, ...(menuId !== undefined ? { menuId } : {}) });
 }
 
 export function apiUpdateIdentityBanner(storeId: string, payload: Partial<IdentityBanner>, installedThemeId?: string) {
   return client.patch<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.UPDATE_IDENTITY_BANNER(storeId), installedThemeId), payload);
+}
+
+// ── Color Schemes — named, reusable saved palettes ──────────────────────
+export function apiCreateColorScheme(storeId: string, payload: { name: string; bgColor: string; textColor: string; primaryColor: string }, installedThemeId?: string) {
+  return client.post<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.COLOR_SCHEMES(storeId), installedThemeId), payload);
+}
+export function apiDeleteColorScheme(storeId: string, schemeId: string, installedThemeId?: string) {
+  return client.delete<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.DELETE_COLOR_SCHEME(storeId, schemeId), installedThemeId));
+}
+export function apiApplyColorScheme(storeId: string, schemeId: string, installedThemeId?: string) {
+  return client.post<never, ApiResponse<StoreThemeData>>(withInstance(ENDPOINTS.STORE_THEME.APPLY_COLOR_SCHEME(storeId, schemeId), installedThemeId));
 }
 
 /** Real, bounded "developer/advanced authoring" capability — raw CSS

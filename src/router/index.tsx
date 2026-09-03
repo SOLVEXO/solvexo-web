@@ -64,12 +64,14 @@ const MaintenancePage = lazy(() => import('@/features/buyer/pages/MaintenancePag
 const SellerAnalytics = lazy(() => import('@/features/seller/dashboard/SellerAnalytics').then(m => ({ default: m.SellerAnalytics })));
 const StoreBuilderRedirect = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/StoreBuilderRedirect').then(m => ({ default: m.StoreBuilderRedirect })));
 const PagesPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/pages/PagesPage').then(m => ({ default: m.PagesPage })));
+const MenuManagerPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/MenuManagerPage').then(m => ({ default: m.MenuManagerPage })));
 const BlogPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/blog/BlogPage').then(m => ({ default: m.BlogPage })));
 const ThemeLibraryPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeLibraryPage').then(m => ({ default: m.ThemeLibraryPage })));
 const AtelierCustomizePage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierCustomizePage').then(m => ({ default: m.AtelierCustomizePage })));
 const AtelierEditCodePage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierEditCodePage').then(m => ({ default: m.AtelierEditCodePage })));
 const AtelierHeaderFooterPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierHeaderFooterPage').then(m => ({ default: m.AtelierHeaderFooterPage })));
 const ThemeDemoPreview = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/AtelierThemeDemoPreview').then(m => ({ default: m.ThemeDemoPreview })));
+const ThemeSharePreviewPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/themes/ThemeSharePreviewPage').then(m => ({ default: m.ThemeSharePreviewPage })));
 const SellerSettings = lazy(() => import('@/features/seller/dashboard/settings/SellerSettings').then(m => ({ default: m.SellerSettings })));
 const SellerShipping = lazy(() => import('@/features/seller/dashboard/SellerShipping').then(m => ({ default: m.SellerShipping })));
 const SellerMessages = lazy(() => import('@/features/seller/dashboard/SellerMessages').then(m => ({ default: m.SellerMessages })));
@@ -111,6 +113,7 @@ const StoreIntegrations = lazy(() => import('@/features/seller/store/Dashboard/O
 const StoreDiscounts = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreDiscounts'));
 const StoreGiftCards = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreGiftCards'));
 const StoreMobileApp = lazy(() => import('@/features/seller/store/Dashboard/Manage/MobileApp'));
+const MetafieldDefinitionsPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/MetafieldDefinitionsPage').then(m => ({ default: m.MetafieldDefinitionsPage })));
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 const AdminOverview = lazy(() => import('@/features/admin/pages/AdminOverview').then(m => ({ default: m.AdminOverview })));
@@ -183,7 +186,7 @@ const storefrontRouter = createBrowserRouter([
           { path: ':pageSlug', element: <ThemedRoute routeKey="customPage" /> },
         ],
       },
-      { path: '*', element: <Navigate to="/" replace /> },
+      { path: '*', element: <ThemedRoute routeKey="notFound" /> },
     ],
   },
 ]);
@@ -318,6 +321,7 @@ const mainRouter = createBrowserRouter([
           { path: 'online-store/themes/:themeId/edit-code', element: <AtelierEditCodePage /> },
           { path: 'online-store/themes/:themeId/header-footer', element: <AtelierHeaderFooterPage /> },
           { path: 'online-store/pages',               element: <PagesPage /> },
+          { path: 'online-store/menus',                element: <MenuManagerPage /> },
           { path: 'online-store/blog',                element: <BlogPage /> },
           { path: 'returns',                          element: <StoreReturnList /> },
           { path: 'seo',                              element: <StoreSEO /> },
@@ -327,6 +331,7 @@ const mainRouter = createBrowserRouter([
           { path: 'inventory',                        element: <StoreInventory /> },
           { path: 'marketing',                        element: <StoreMarketing /> },
           { path: 'discounts',                        element: <StoreDiscounts /> },
+          { path: 'metafields',                       element: <MetafieldDefinitionsPage /> },
           { path: 'gift-cards',                       element: <StoreGiftCards /> },
           { path: 'loyalty',                          element: <StoreLoyalty /> },
           { path: 'subscriptions',                    element: <StoreSubscriptions /> },
@@ -353,6 +358,11 @@ const mainRouter = createBrowserRouter([
       // `ThemeLibraryPage.tsx` still resolves to this exact route — only
       // where it's registered in the tree changed, not the URL.
       { path: '/store/:storeId/online-store/themes/:themeId/preview', element: <ThemeDemoPreview /> },
+
+      // Real, shareable "see this before it's live" link — public, no auth,
+      // no dashboard chrome (same reasoning as the Theme Demo Preview route
+      // right above). See `ThemeSharePreviewPage`'s own doc comment.
+      { path: '/theme-preview/:storeId/:token', element: <ThemeSharePreviewPage /> },
 
       // ── Admin pages ───────────────────────────────────────────────────
       {

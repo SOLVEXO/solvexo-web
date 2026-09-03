@@ -10,7 +10,7 @@ import { Footer, SkeletonBox } from '@/components/comman/ui';
 import {
   ArrowRight, Store, Sparkles, Check,
   Star, BadgeCheck, Quote, Loader2,
-  BarChart3, UserPlus, Link2, Rows3, TrendingUp,
+  BarChart3, UserPlus, Link2, Rows3, TrendingUp, Smartphone,
 } from 'lucide-react';
 import { apiGetTestimonials, type Testimonial } from '@/api/services/testimonials';
 import { apiGetPlatformStats, type PlatformStats } from '@/api/services/store';
@@ -34,51 +34,43 @@ import { motion, useReducedMotion, useTransform, useInView, useScroll, AnimatePr
 const compactNumber   = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const compactCurrency = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1, style: 'currency', currency: 'USD' });
 
-// A single live-signal ticker instead of four scattered absolutely-
-// positioned labels — those kept landing on top of the centered headline/
-// copy at different viewport heights since their position was guessed as a
-// % of the section rather than anchored to anything real. One ticker,
-// pinned to the true top-right corner (never inside the centered content
-// flow), cycling through real commerce signals with a fade+slide, reads as
-// "this is a live system" without risking a collision.
-const HERO_SIGNALS = [
-  { label: 'New order',        detail: 'Nike Air Max — Rs 12,900' },
-  { label: 'AI insight',       detail: 'This product is trending' },
-  { label: 'Payment received', detail: '+ Rs 8,900' },
-  { label: 'New customer',     detail: 'Sarah joined your store' },
+// Real, actually-built platform capabilities — distinct from the stats-strip
+// (numbers) and the testimonials section (quotes) further down this same
+// page, so the hero corner isn't just repeating one of those in miniature.
+const HERO_FEATURES = [
+  { Icon: Store,      label: 'Store Builder',        detail: 'Launch a themed storefront in minutes' },
+  { Icon: Smartphone, label: 'POS — Android & iOS',  detail: 'Sell online and in person, one shared inventory' },
+  { Icon: Sparkles,   label: 'AI Studio',             detail: 'AI-generated product copy and pricing insights' },
+  { Icon: BarChart3,  label: 'Multi-Store Analytics', detail: 'Real-time sales across every store you run' },
 ] as const;
 
-function HeroActivityTicker() {
+/** Hero-corner ticker — cycles the real capabilities above, same fade+slide
+ *  the old fake `HERO_SIGNALS` ticker used. Static/always-on (no API call,
+ *  no loading state) since this is fixed product copy, not fetched data. */
+function HeroFeatureTicker() {
   const [index, setIndex] = useState(0);
   const reduceMotion = useReducedMotion();
   useEffect(() => {
     if (reduceMotion) return;
-    const id = setInterval(() => setIndex(i => (i + 1) % HERO_SIGNALS.length), 2400);
+    const id = setInterval(() => setIndex(i => (i + 1) % HERO_FEATURES.length), 2800);
     return () => clearInterval(id);
   }, [reduceMotion]);
-  const signal = HERO_SIGNALS[index];
+  const feature = HERO_FEATURES[index];
   return (
-    // Aligned to the eyebrow line's own top offset (`pt-24` on the hero
-    // text block below), not an arbitrary top-8 — now that the navbar is
-    // `fixed` and the hero reaches all the way to y:0, top-8 used to sit
-    // right underneath/behind the header instead of level with real hero
-    // content.
-    <div className="hidden lg:block absolute top-24 right-8 lg:right-14 text-right z-[2]">
+    <div className="hidden lg:block absolute top-24 right-8 lg:right-14 text-right z-[2] max-w-[210px]">
       <AnimatePresence mode="wait">
         <motion.div
-          key={index}
+          key={feature.label}
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 6 }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className="flex items-center gap-2 justify-end">
-            <span className="relative flex h-[5px] w-[5px]">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-brand-orange pos-live-pulse" />
-            </span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">{signal.label}</span>
+            <feature.Icon size={13} className="text-brand-orange shrink-0" />
+            <span className="text-[11.5px] font-semibold text-white/50">{feature.label}</span>
           </div>
-          <p className="text-[11.5px] text-white/30 mt-1">{signal.detail}</p>
+          <p className="text-[10.5px] text-white/30 mt-1 leading-[1.5]">{feature.detail}</p>
         </motion.div>
       </AnimatePresence>
     </div>
@@ -319,7 +311,7 @@ export function Homepage() {
         <div className="hero-grid-drift absolute inset-0 pointer-events-none opacity-60" />
         <div className="hero-breath absolute top-[38%] left-[8%] w-[420px] h-[420px] rounded-full bg-[radial-gradient(circle,var(--color-brand-orange)_0%,transparent_70%)] blur-3xl pointer-events-none" />
 
-        <HeroActivityTicker />
+        <HeroFeatureTicker />
 
         <div ref={heroTiltRef} className="relative z-[1] flex-1 flex flex-col justify-center px-5 sm:px-8 lg:px-14 pt-24 pb-16">
           {/* Held back until the one-time brand splash has actually

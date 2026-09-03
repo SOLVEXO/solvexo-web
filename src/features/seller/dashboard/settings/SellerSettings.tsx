@@ -8,13 +8,16 @@ import { useUpload } from '@/hooks/upload/useUpload';
 import { useMyStores } from '@/hooks/store/useMyStores';
 import { apiDeleteAccount } from '@/api/services/users';
 import { TokenStorage } from '@/api/services/auth';
-import { Modal, Button, NotificationsPanel } from '@/components/comman/ui';
+import { Modal, Button, NotificationsPanel, StarRating } from '@/components/comman/ui';
 import {
   User, KeyRound,
-  Trash2, Camera, Settings, Check, Loader2, Eye, EyeOff, ChevronLeft, ChevronRight, type LucideIcon,
+  Trash2, Camera, Settings, Check, Loader2, Eye, EyeOff, ChevronLeft, ChevronRight, Quote, type LucideIcon,
 } from 'lucide-react';
 import { SellerPageHeader } from '@/components/layouts/SellerLayout';
 import { StorePageHeader } from '@/components/layouts/StoreLayout';
+import {
+  apiGetMyTestimonialSubmission, apiSubmitTestimonial, type MyTestimonialSubmission,
+} from '@/api/services/testimonials';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 // Account-level only. Store Info/Domain/Payments/Shipping/Billing/Payouts/
@@ -169,6 +172,105 @@ function MobileSellerMenu({ active, onSelect }: { active: SettingSection; onSele
   );
 }
 
+// Self-serve testimonial submission — a seller's own quote about Solvexo
+// (not their store), reviewed by admin before it can show up on the
+// homepage. See `PlatformTestimonial` schema's own doc comment on why
+// sellerName/storeName are never sent from here. `undefined` = still
+// loading (renders nothing, rather than flashing the form then swapping to
+// an already-submitted state); `null` = no submission yet.
+function ShareStoryCard() {
+  const [submission, setSubmission] = useState<MyTestimonialSubmission | null | undefined>(undefined);
+  const [rating, setRating] = useState(0);
+  const [text, setText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetMyTestimonialSubmission()
+      .then(res => { if (!cancelled) setSubmission(res.data); })
+      .catch(() => { if (!cancelled) setSubmission(null); });
+    return () => { cancelled = true; };
+  }, []);
+
+  async function handleSubmit() {
+    if (!rating || !text.trim()) { setError('Please add a rating and a short story.'); return; }
+    setSubmitting(true); setError('');
+    try {
+      const res = await apiSubmitTestimonial({ rating, text: text.trim() });
+      setSubmission(res.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit your story.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (submission === undefined) return null;
+  // A prior rejected submission is treated the same as "none yet" — the
+  // seller can submit again rather than being permanently locked out.
+  const hasSubmission = !!submission && submission.status !== 'rejected';
+
+  return (
+    <div className="bg-white border border-bone rounded-[10px] overflow-hidden mt-5">
+      <div className="px-4 sm:px-[26px] py-5 bg-gradient-to-br from-brand-pale-orange/50 to-cream border-b border-bone flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-white border border-bone flex items-center justify-center shrink-0">
+          <Quote size={18} className="text-brand-orange" />
+        </div>
+        <div>
+          <p className="text-[14px] font-bold text-charcoal">Share Your Solvexo Story</p>
+          <p className="text-[12px] text-slate mt-[2px]">Your quote could be featured on our homepage.</p>
+        </div>
+      </div>
+
+      <div className="px-4 sm:px-[26px] py-6">
+        {hasSubmission ? (
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-success-bg flex items-center justify-center shrink-0 mt-[1px]">
+              <Check size={16} className="text-success" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[13.5px] font-bold text-charcoal">
+                Submitted! {submission!.status === 'approved' ? "It's live on our homepage." : "It's pending review."}
+              </p>
+              <StarRating value={submission!.rating} size={13} className="mt-[6px] mb-2" />
+              <p className="text-[13px] text-charcoal italic leading-[1.6]">"{submission!.text}"</p>
+              <span
+                className="inline-flex items-center mt-3 px-[10px] py-[3px] rounded-full text-[11px] font-semibold"
+                style={submission!.status === 'approved' ? { background: '#E3F4EA', color: '#1E7A3C' } : { background: '#FDF3E7', color: '#9A6A17' }}
+              >
+                {submission!.status === 'approved' ? 'Published' : 'Pending Review'}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <>
+            <label className="text-[12px] font-medium text-slate mb-2 block">Your rating</label>
+            <StarRating value={rating} onChange={setRating} size={22} className="mb-4" />
+            <label className="text-[12px] font-medium text-slate mb-[5px] block">Your story</label>
+            <textarea
+              value={text}
+              onChange={e => setText(e.target.value)}
+              rows={3}
+              placeholder="What has Solvexo helped you do?"
+              className="w-full px-3 py-[10px] text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white box-border focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 transition-colors resize-none"
+            />
+            {error && <p className="text-[11.5px] text-error mt-2">{error}</p>}
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className={`mt-4 px-6 py-[10px] bg-brand-orange border-none rounded-lg text-[13px] font-semibold text-white flex items-center gap-2 ${submitting ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+            >
+              {submitting && <Loader2 size={13} className="animate-spin" />}
+              {submitting ? 'Submitting…' : 'Submit Your Story'}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 // `variant="store"` renders this same account-settings content inside a
 // specific store's dashboard (via StorePageHeader, with that workspace's
@@ -318,6 +420,7 @@ export function SellerSettings({ variant = 'seller' }: { variant?: 'seller' | 's
                page, instead of a plain "Profile Photo" form row plus
                separate read-only Role/Status input boxes further down. */}
             {active === 'profile' && (
+              <>
               <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
                 {profileLoading ? (
                   <div className="px-4 sm:px-[26px] py-6">
@@ -447,6 +550,8 @@ export function SellerSettings({ variant = 'seller' }: { variant?: 'seller' | 's
                   </>
                 )}
               </div>
+              <ShareStoryCard />
+              </>
             )}
 
             {/* Email & Password section */}

@@ -105,26 +105,26 @@ interface ClearWishlistResponse { message: string }
 
 // ── API ───────────────────────────────────────────────────────────────────────
 
-export function apiAddToWishlist(productId: string, productVariantId: string) {
+export function apiAddToWishlist(productId: string, productVariantId: string, storeId: string) {
   return client.post<never, AddWishlistResponse>(ENDPOINTS.WISHLIST.ADD, {
-    productId, productVariantId,
+    productId, productVariantId, storeId,
   });
 }
 
-export function apiGetWishlist() {
-  return client.get<never, GetWishlistResponse>(ENDPOINTS.WISHLIST.GET);
+export function apiGetWishlist(storeId: string) {
+  return client.get<never, GetWishlistResponse>(ENDPOINTS.WISHLIST.GET, { params: { storeId } });
 }
 
-export function apiGetWishlistItem(productId: string, productVariantId: string) {
-  return client.get<never, GetWishlistItemResponse>(
-    `${ENDPOINTS.WISHLIST.GET_ITEM}?productId=${productId}&productVariantId=${productVariantId}`,
-  );
+export function apiGetWishlistItem(productId: string, productVariantId: string, storeId: string) {
+  return client.get<never, GetWishlistItemResponse>(ENDPOINTS.WISHLIST.GET_ITEM, {
+    params: { productId, productVariantId, storeId },
+  });
 }
 
-export function apiRemoveFromWishlist(wishlistId: string) {
-  return client.post<never, RemoveWishlistResponse>(ENDPOINTS.WISHLIST.REMOVE, { wishlistId });
+export function apiRemoveFromWishlist(wishlistId: string, storeId: string) {
+  return client.post<never, RemoveWishlistResponse>(ENDPOINTS.WISHLIST.REMOVE, { wishlistId, storeId });
 }
 
-export function apiClearWishlist() {
-  return client.post<never, ClearWishlistResponse>(ENDPOINTS.WISHLIST.CLEAR);
+export function apiClearWishlist(storeId: string) {
+  return client.post<never, ClearWishlistResponse>(ENDPOINTS.WISHLIST.CLEAR, { storeId });
 }

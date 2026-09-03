@@ -82,13 +82,20 @@ export function ForSellersPage() {
            text block with nothing to look at beside it. */}
         <div className="max-w-[1180px] mx-auto relative z-[1] grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center">
           <div className="text-center lg:text-left">
-            <Reveal delay={0}>
-              <div className="inline-flex items-center gap-2 bg-[rgba(217,119,87,0.15)] border border-[rgba(217,119,87,0.3)] rounded-[20px] px-[14px] py-[5px] mb-6">
-                <span className="text-[12px] text-brand-orange font-medium">
-                  Trusted by {stats ? `${compactNumber.format(stats.sellersCount)}+` : '50,000+'} sellers worldwide
-                </span>
-              </div>
-            </Reveal>
+            {/* Was `stats ? real : '50,000+'` — a fabricated, specific-
+               looking fallback number shown as real on every first paint
+               (stats loads async) and on any API failure. Hidden instead
+               until the real count actually loads, matching this same
+               page's own stats-strip further down. */}
+            {stats && (
+              <Reveal delay={0}>
+                <div className="inline-flex items-center gap-2 bg-[rgba(217,119,87,0.15)] border border-[rgba(217,119,87,0.3)] rounded-[20px] px-[14px] py-[5px] mb-6">
+                  <span className="text-[12px] text-brand-orange font-medium">
+                    Trusted by {compactNumber.format(stats.sellersCount)}+ sellers worldwide
+                  </span>
+                </div>
+              </Reveal>
+            )}
 
             <h1 className="block text-3xl md:text-5xl lg:text-[46px] font-bold text-white leading-[1.15] mb-5" style={{ fontFamily: SERIF }}>
               <ClipReveal as="div" delay={0.06}>Sell more. Do less.</ClipReveal>

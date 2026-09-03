@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Trash2, Sparkles, ExternalLink, Settings2, Code2, PanelTop, Eye } from 'lucide-react';
+import { Loader2, Trash2, Sparkles, ExternalLink, Settings2, Code2, PanelTop, Eye, Copy, Link2, Pencil, Check } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
-import { SkeletonBox } from '@/components/comman/ui';
+import { SkeletonBox, Modal, Button } from '@/components/comman/ui';
 import {
   apiListInstalledThemes, apiInstallTheme, apiActivateTheme, apiUninstallTheme,
+  apiDuplicateTheme, apiRenameTheme, apiCreatePreviewLink, apiRevokePreviewLink,
   type StoreThemeData,
 } from '@/api/services/storeTheme';
 import { ConfirmDialog } from '../builder/ConfirmDialog';
@@ -44,6 +45,78 @@ import { ThemeThumbnail } from './AtelierThemeDemoPreview';
  * looks like a complete, finished theme — for any theme, with zero
  * per-theme code on this page.
  */
+/** Mints (or reuses) a real, shareable "see this before it's live" link —
+ *  the merchant-facing half of the preview-token backend (see
+ *  `PreviewToken`'s schema comment for the scope boundary: theme tokens
+ *  only, rendered over demo content, not the seller's real product
+ *  catalog). No expiry countdown shown here — the 2-day TTL is documented
+ *  inline instead, since re-generating is one click either way. */
+function SharePreviewModal({ storeId, row, onClose }: { storeId: string; row: StoreThemeData; onClose: () => void }) {
+  const toast = useToast();
+  const [link, setLink] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [revoking, setRevoking] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const mint = useCallback(() => {
+    setLoading(true);
+    apiCreatePreviewLink(storeId, row._id)
+      .then(res => setLink(`${window.location.origin}/theme-preview/${storeId}/${res.data.token}`))
+      .catch(() => toast.error('Could not create a preview link.'))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId, row._id]);
+
+  useEffect(() => { mint(); }, [mint]);
+
+  const handleCopy = async () => {
+    if (!link) return;
+    await navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleRevoke = async () => {
+    setRevoking(true);
+    try {
+      await apiRevokePreviewLink(storeId, row._id);
+      toast.success('Preview link revoked.');
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to revoke link.');
+    } finally {
+      setRevoking(false);
+    }
+  };
+
+  return (
+    <Modal onClose={onClose} title="Share Preview">
+      <div className="flex flex-col gap-3">
+        <p className="text-[12.5px] text-slate">
+          Anyone with this link can see your draft colors, header, and footer — no login needed. Expires in 2 days.
+          Shows your real branding over sample content, not your live product catalog.
+        </p>
+        {loading ? (
+          <div className="h-10 bg-cream animate-pulse rounded-lg" />
+        ) : link ? (
+          <div className="flex items-center gap-2">
+            <input readOnly value={link} className="flex-1 px-3 py-2 text-[12.5px] border border-bone rounded-lg text-charcoal bg-cream/40 outline-none" />
+            <button type="button" onClick={handleCopy} className="p-2 rounded-lg border border-bone bg-white text-charcoal cursor-pointer">
+              {copied ? <Check size={15} className="text-success" /> : <Copy size={15} />}
+            </button>
+          </div>
+        ) : null}
+        <div className="flex justify-between items-center mt-2">
+          <button type="button" onClick={handleRevoke} disabled={revoking} className="text-[12px] font-semibold text-error bg-transparent border-none cursor-pointer disabled:opacity-60">
+            Revoke link
+          </button>
+          <Button variant="ghost" onClick={onClose}>Close</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export function ThemeLibraryPage() {
   const { store, storeId, loading: storeLoading } = useStoreWorkspace();
   const toast = useToast();
@@ -54,6 +127,9 @@ export function ThemeLibraryPage() {
   const [pendingActivate, setPendingActivate] = useState<StoreThemeData | null>(null);
   const [pendingUninstall, setPendingUninstall] = useState<StoreThemeData | null>(null);
   const [busyRowId, setBusyRowId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [sharePreviewRow, setSharePreviewRow] = useState<StoreThemeData | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -117,6 +193,37 @@ export function ThemeLibraryPage() {
       load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to remove theme.');
+    } finally {
+      setBusyRowId(null);
+    }
+  };
+
+  const handleDuplicate = async (row: StoreThemeData) => {
+    setBusyRowId(row._id);
+    try {
+      await apiDuplicateTheme(storeId, row._id);
+      toast.success('Theme duplicated — find the copy in Installed Themes below.');
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to duplicate theme.');
+    } finally {
+      setBusyRowId(null);
+    }
+  };
+
+  const handleStartRename = (row: StoreThemeData) => {
+    setRenamingId(row._id);
+    setRenameValue(row.name ?? newThemeEntries.find(t => t.id === row.themeDefinitionId)?.name ?? '');
+  };
+
+  const handleSaveRename = async (row: StoreThemeData) => {
+    setBusyRowId(row._id);
+    try {
+      await apiRenameTheme(storeId, row._id, renameValue);
+      setRenamingId(null);
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to rename theme.');
     } finally {
       setBusyRowId(null);
     }
@@ -274,7 +381,66 @@ export function ThemeLibraryPage() {
             })}
           </div>
         </section>
+
+        {/* Every INSTALLED ROW, not one card per theme package — this is
+            the only place a duplicate (two rows of the same
+            `themeDefinitionId`, see `duplicateTheme`) is actually visible;
+            the gallery above keys off `themeDefinitionId` alone and would
+            silently collapse duplicates into one card. */}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-[14px] font-bold text-charcoal">Installed Themes</h2>
+          <div className="flex flex-col gap-2">
+            {installed.map(row => {
+              const defName = newThemeEntries.find(t => t.id === row.themeDefinitionId)?.name ?? 'Theme';
+              const displayName = row.name || defName;
+              const isRenaming = renamingId === row._id;
+              return (
+                <div key={row._id} className="flex items-center gap-3 bg-white border border-bone rounded-lg px-4 py-3">
+                  {isRenaming ? (
+                    <input
+                      autoFocus value={renameValue} onChange={e => setRenameValue(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleSaveRename(row); if (e.key === 'Escape') setRenamingId(null); }}
+                      className="flex-1 px-2 py-1 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none"
+                    />
+                  ) : (
+                    <span className="text-[13px] font-semibold text-charcoal flex-1 truncate">{displayName}</span>
+                  )}
+                  {row.status === 'active' && <span className="px-2 py-[3px] rounded-full bg-brand-pale-orange text-brand-deep-orange text-[10px] font-bold shrink-0">ACTIVE</span>}
+                  {isRenaming ? (
+                    <button type="button" onClick={() => handleSaveRename(row)} disabled={busyRowId === row._id}
+                      className="text-[12px] font-semibold px-3 py-1.5 rounded-lg border-none bg-brand-orange text-white cursor-pointer disabled:opacity-60">
+                      Save
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => handleStartRename(row)} title="Rename"
+                      className="p-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer shrink-0">
+                      <Pencil size={13} />
+                    </button>
+                  )}
+                  <button type="button" onClick={() => handleDuplicate(row)} disabled={busyRowId === row._id} title="Duplicate"
+                    className="p-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer shrink-0 disabled:opacity-60">
+                    {busyRowId === row._id ? <Loader2 size={13} className="animate-spin" /> : <Copy size={13} />}
+                  </button>
+                  <button type="button" onClick={() => setSharePreviewRow(row)} title="Share Preview"
+                    className="p-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer shrink-0">
+                    <Link2 size={13} />
+                  </button>
+                  {row.status !== 'active' && (
+                    <button type="button" onClick={() => setPendingUninstall(row)} title="Delete"
+                      className="p-1.5 rounded-lg border-none bg-transparent text-error cursor-pointer shrink-0">
+                      <Trash2 size={13} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
       </div>
+
+      {sharePreviewRow && (
+        <SharePreviewModal storeId={storeId} row={sharePreviewRow} onClose={() => setSharePreviewRow(null)} />
+      )}
 
       {pendingActivate && (
         <ConfirmDialog

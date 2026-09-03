@@ -4,8 +4,8 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
 
-/** Generic drag-to-reorder list — array index IS the order (matches the backend's embedded-array model), so `onReorder` just receives the whole reordered array to persist. */
-export function SortableList<T extends { _id?: string }>({
+/** Generic drag-to-reorder list — array index IS the order (matches the backend's embedded-array model), so `onReorder` just receives the whole reordered array to persist. Identity for drag tracking always comes from `keyFor`, never a hardcoded field — `_id` was never actually read anywhere in this file; the old `T extends { _id?: string }` constraint was vestigial and tripped TypeScript's "weak type" check for any item shape that doesn't itself declare an `_id` field (e.g. `MenuItem`, keyed by its own `id`). */
+export function SortableList<T>({
   items, keyFor, onReorder, children,
 }: {
   items: T[];

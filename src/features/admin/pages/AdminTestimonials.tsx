@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Quote } from 'lucide-react';
+import { Plus, Pencil, Trash2, Quote, Check, X, User } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAdminTestimonials } from '@/hooks/admin/useAdminTestimonials';
 import {
   apiCreateTestimonial, apiUpdateTestimonial, apiToggleTestimonial, apiDeleteTestimonial,
+  apiApproveTestimonial, apiRejectTestimonial,
   type AdminTestimonial,
 } from '@/api/services/testimonials';
 import { Button } from '@/components/comman/ui/Button';
@@ -84,10 +85,60 @@ function TestimonialFormModal({ testimonial, onClose, onSaved }: { testimonial: 
   );
 }
 
+// ── Pending seller submissions — approve/reject only, no retyping needed ──────
+function PendingReviewList({ items, onChanged }: { items: AdminTestimonial[]; onChanged: () => void }) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState('');
+
+  async function handle(id: string, action: 'approve' | 'reject') {
+    setBusyId(id); setError('');
+    try {
+      await (action === 'approve' ? apiApproveTestimonial(id) : apiRejectTestimonial(id));
+      onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to ${action}.`);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="bg-white border border-[#F0DCB8] rounded-[10px] overflow-hidden">
+      <div className="px-4 sm:px-5 py-3 bg-[#FDF3E7] border-b border-[#F0DCB8]">
+        <p className="text-[13px] font-bold" style={{ color: '#9A6A17' }}>
+          Pending Review — {items.length} seller{items.length > 1 ? 's' : ''} submitted their own story
+        </p>
+      </div>
+      {error && <p className="px-4 sm:px-5 pt-3 text-[12px] text-error">{error}</p>}
+      <div className="divide-y divide-[#f5f4ef]">
+        {items.map(t => (
+          <div key={t._id} className="px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+            <div className="w-8 h-8 rounded-full bg-cream border border-bone flex items-center justify-center shrink-0">
+              <User size={14} className="text-slate" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-charcoal">{t.sellerName}{t.storeName ? ` · ${t.storeName}` : ''}</p>
+              <StarRating value={t.rating} size={12} className="mt-[3px] mb-1.5" />
+              <p className="text-[13px] text-charcoal italic leading-[1.6]">"{t.text}"</p>
+            </div>
+            <div className="flex gap-[6px] shrink-0">
+              <Button size="xs" variant="outline" icon={<Check size={12} />} loading={busyId === t._id} onClick={() => handle(t._id, 'approve')}>Approve</Button>
+              <Button size="xs" variant="danger" icon={<X size={12} />} loading={busyId === t._id} onClick={() => handle(t._id, 'reject')}>Reject</Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export function AdminTestimonials() {
   usePageTitle('Testimonials');
   const { testimonials, stats, loading, error, refetch } = useAdminTestimonials();
+  const pending = testimonials.filter(t => t.status === 'pending');
   const [editing, setEditing] = useState<AdminTestimonial | 'new' | null>(null);
   const [deleting, setDeleting] = useState<AdminTestimonial | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -168,6 +219,7 @@ export function AdminTestimonials() {
             {actionError}
           </div>
         )}
+        <PendingReviewList items={pending} onChanged={refetch} />
         <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
           {error ? (
             <p className="px-4 py-6 text-center text-[13px] text-error">{error}</p>

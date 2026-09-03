@@ -5,6 +5,7 @@ import {
   apiGetStoreTheme, apiUpdateStoreThemeColors, apiUpdateStoreCustomCss,
   apiPublishStoreTheme, apiRevertStoreThemeDraft,
   apiListStoreThemeVersions, apiRestoreStoreThemeVersion,
+  apiCreateColorScheme, apiApplyColorScheme, apiDeleteColorScheme,
   type StorefrontColors, type StoreThemeData,
 } from '@/api/services/storeTheme';
 import { useEditorState } from '../builder/editor/useEditorState';
@@ -100,6 +101,114 @@ function ThemeSettingsField({ field, colors, onChange }: {
         </select>
       </Field>
       {field.helpText && <p className="text-[11.5px] text-slate">{field.helpText}</p>}
+    </div>
+  );
+}
+
+/** Named, reusable saved palettes — a seller can save the current 3 colors
+ *  (bg/text/accent) under a name, then one-click "Apply" any saved palette
+ *  back onto the live color pickers. Deliberately store-wide (not a
+ *  per-section assignment like Shopify's real `color_scheme_group`) — see
+ *  the backend `ColorScheme` schema's own comment for that boundary.
+ *
+ *  Two distinct callbacks on purpose: saving/deleting a palette never
+ *  touches `bgColor`/`textColor`/`primaryColor` at all (only the
+ *  `colorSchemes` list changes), so `onSchemesChanged` just refreshes
+ *  `doc` for the list — it must NOT resync the editor's working copy, or it
+ *  would silently discard any unsaved edit the seller has in progress on an
+ *  unrelated field (font, button style, …). `onApplied` is the one case that
+ *  really does change the 3 color fields server-side, so the parent merges
+ *  just those 3 into the current working copy — preserving everything else
+ *  still unsaved, rather than overwriting the whole colors object from the
+ *  server's last-saved state. */
+function SavedPalettes({ storeId, schemes, current, onSchemesChanged, onApplied }: {
+  storeId: string;
+  schemes: { id: string; name: string; bgColor: string; textColor: string; primaryColor: string }[];
+  current: { bgColor: string; textColor: string; primaryColor: string };
+  onSchemesChanged: (doc: StoreThemeData) => void;
+  onApplied: (doc: StoreThemeData) => void;
+}) {
+  const toast = useToast();
+  const [newName, setNewName] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const handleSaveCurrent = async () => {
+    if (!newName.trim()) return;
+    setSaving(true);
+    try {
+      const res = await apiCreateColorScheme(storeId, { name: newName.trim(), ...current });
+      onSchemesChanged(res.data);
+      setNewName('');
+      toast.success('Palette saved.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save this palette.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleApply = async (schemeId: string) => {
+    setBusyId(schemeId);
+    try {
+      const res = await apiApplyColorScheme(storeId, schemeId);
+      onApplied(res.data);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not apply this palette.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleDelete = async (schemeId: string) => {
+    setBusyId(schemeId);
+    try {
+      const res = await apiDeleteColorScheme(storeId, schemeId);
+      onSchemesChanged(res.data);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not delete this palette.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-3 bg-white border border-bone rounded-2xl p-4">
+      <div>
+        <p className="text-[13px] font-bold text-charcoal">Saved Palettes</p>
+        <p className="text-[11.5px] text-slate mt-0.5">Save the colors above under a name, and switch between them any time.</p>
+      </div>
+
+      {schemes.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {schemes.map(s => (
+            <div key={s.id} className="flex items-center gap-3 border border-bone rounded-lg px-3 py-2">
+              <div className="flex shrink-0" style={{ width: 40, height: 24, borderRadius: 6, overflow: 'hidden', border: '1px solid #E4DFD3' }}>
+                <div style={{ flex: 1, background: s.bgColor }} />
+                <div style={{ flex: 1, background: s.primaryColor }} />
+                <div style={{ flex: 1, background: s.textColor }} />
+              </div>
+              <span className="text-[13px] text-charcoal flex-1 truncate">{s.name}</span>
+              <button onClick={() => handleApply(s.id)} disabled={busyId === s.id}
+                className="text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-bone bg-white text-charcoal cursor-pointer disabled:opacity-60">
+                Apply
+              </button>
+              <button onClick={() => handleDelete(s.id)} disabled={busyId === s.id}
+                className="text-[12px] font-semibold text-error bg-transparent border-none cursor-pointer p-1 disabled:opacity-60">
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2">
+        <input
+          className={inp} placeholder="Palette name, e.g. Holiday Sale"
+          value={newName} onChange={e => setNewName(e.target.value)}
+        />
+        <SaveButton onClick={handleSaveCurrent} saving={saving} label="Save Current" />
+      </div>
     </div>
   );
 }
@@ -310,6 +419,26 @@ export function AtelierThemeSettingsPanel({ storeId, onDraftChange }: {
           </div>
         );
       })}
+
+      <SavedPalettes
+        storeId={storeId}
+        schemes={doc?.draft.theme.colorSchemes ?? []}
+        current={{ bgColor: c.bgColor, textColor: c.textColor, primaryColor: c.primaryColor }}
+        onSchemesChanged={setDoc}
+        onApplied={updated => {
+          setDoc(updated);
+          if (!editor.workingCopy) return;
+          editor.edit({
+            ...editor.workingCopy,
+            colors: {
+              ...editor.workingCopy.colors,
+              bgColor: updated.draft.theme.bgColor,
+              textColor: updated.draft.theme.textColor,
+              primaryColor: updated.draft.theme.primaryColor,
+            },
+          });
+        }}
+      />
 
       <div className="flex flex-col gap-3 bg-white border border-bone rounded-2xl p-4">
         <div>
