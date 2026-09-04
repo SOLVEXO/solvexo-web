@@ -8,6 +8,7 @@ import { currencySymbol, fmt2 } from '@/utils/currency';
 import type { ProductVariant } from '@/api/services/marketplace';
 import { ProductReviewsSection } from '@/features/buyer/pages/ProductReviews';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
+import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import type { Section } from '@/api/services/storefrontTypes';
 import { AtelierSectionRenderer } from '../sections';
@@ -136,6 +137,10 @@ export function AtelierProductPage() {
   const [qty, setQty] = useState(1);
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [templateSections, setTemplateSections] = useState<Section[]>([]);
+  // Dynamic Sources — this product's own real metafield values, keyed
+  // `"namespace:key"` for O(1) lookup by `RichTextSection`'s `paragraph`
+  // block. See `atelierSectionRenderer.tsx`'s `SectionRenderFn` doc comment.
+  const [dynamicSourceValues, setDynamicSourceValues] = useState<Record<string, string>>({});
 
   const product = detail?.product ?? null;
   useStorefrontSeo({
@@ -157,6 +162,13 @@ export function AtelierProductPage() {
       .then(res => setTemplateSections(res.data.sections ?? []))
       .catch(() => setTemplateSections([]));
   }, [store.storeId, product?.templateKey, product?._id]);
+
+  useEffect(() => {
+    if (!product) return;
+    apiGetPublicMetafieldValues(store.storeId, 'product', product._id)
+      .then(res => setDynamicSourceValues(Object.fromEntries(res.data.map(v => [`${v.namespace}:${v.key}`, v.value]))))
+      .catch(() => setDynamicSourceValues({}));
+  }, [store.storeId, product?._id]);
 
   useEffect(() => {
     if (product && product.slug && product.slug !== slug) {
@@ -278,7 +290,7 @@ export function AtelierProductPage() {
         <ProductReviewsSection productId={product._id} />
       </div>
 
-      {templateSections.length > 0 && <AtelierSectionRenderer sections={templateSections} />}
+      {templateSections.length > 0 && <AtelierSectionRenderer sections={templateSections} dynamicSourceValues={dynamicSourceValues} />}
     </main>
   );
 }

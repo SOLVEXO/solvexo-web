@@ -20,6 +20,8 @@ import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { formatNumber, formatBucketLabel } from '@/components/comman/analytics/format';
 import { formatMoneyCompact, currencySymbol } from '@/utils/currency';
 import { SetupGuideCard } from './SetupGuideCard';
+import { useTestimonialPrompt } from '@/hooks/seller/useTestimonialPrompt';
+import { TestimonialPromptCard } from '@/features/seller/components/TestimonialPromptCard';
 
 interface StoreMetrics {
   overview:      SellerOverviewData;
@@ -458,6 +460,7 @@ function DashSkeleton() {
 export default function StoreDashboard() {
   const { store, storeId, loading } = useStoreWorkspace();
   const { metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useStoreDashboardMetrics(storeId);
+  const testimonialPrompt = useTestimonialPrompt();
 
   const chartData = (metrics?.revenueSeries ?? []).map(p => ({
     month: formatBucketLabel(p.date, 'month'),
@@ -469,6 +472,13 @@ export default function StoreDashboard() {
   return (
     <div>
       <StorePageHeader title="Dashboard" subtitle="" />
+
+      {/* One-time nudge on first dashboard landing — see useTestimonialPrompt's
+         own doc comment for exactly when this can and can't show. Always also
+         reachable from Settings' "Share Your Story" tab regardless. */}
+      {testimonialPrompt.show && (
+        <TestimonialPromptCard onClose={testimonialPrompt.dismiss} onSubmitted={testimonialPrompt.dismiss} />
+      )}
 
       {loading || metricsLoading ? <DashSkeleton /> : (
         <div className="px-4 lg:px-7 py-6 flex flex-col gap-5">

@@ -54,10 +54,13 @@ export interface StorefrontColors {
   testimonialCardStyle:  ThemeCardStyle;
   testimonialCardRadius: ThemeBorderRadius;
   faqStyle:           ThemeFaqStyle;
-  /** Named, reusable saved palettes — "Apply" copies one's 3 colors onto
-   *  bgColor/textColor/primaryColor above (draft), same fields the color
-   *  pickers edit directly. Not per-section scheme assignment — see the
-   *  backend schema's own comment on `ColorScheme`. */
+  /** Named, reusable saved palettes. "Apply" still copies one's 3 colors
+   *  onto bgColor/textColor/primaryColor above (draft), same fields the
+   *  color pickers edit directly — theme-wide, unchanged. A scheme can ALSO
+   *  be assigned to one individual `Section` via `Section.colorSchemeId`
+   *  (e.g. a single Newsletter section rendered dark while the rest of the
+   *  page stays light) — resolved per-section by each theme's own
+   *  `resolveSectionColors()` in `theme.config.ts`, not here. */
   colorSchemes: ColorScheme[];
 }
 

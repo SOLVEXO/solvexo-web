@@ -4,12 +4,12 @@ import type { Section, Block } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { AtelierButton } from '../components/AtelierButton';
 import { cloudinaryUrl, cloudinarySrcSet } from '@/utils/cloudinaryImage';
-import { atelierTheme as t } from '../theme.config';
+import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
 
 const HEIGHT_PX: Record<string, string> = { small: '360px', medium: '560px', large: '760px' };
 
-function HeroSlide({ block }: { block: Block }) {
+function HeroSlide({ block, colors }: { block: Block; colors: AtelierSectionColors }) {
   const { resolveLink } = useStorefront();
   const s = block.settings;
   const [errored, setErrored] = useState(false);
@@ -25,12 +25,12 @@ function HeroSlide({ block }: { block: Block }) {
         style={{ padding: `48px ${t.layout.containerPadX}` }}
       >
         {s.subheading && (
-          <p style={{ fontFamily: t.fonts.body, fontSize: '12px', letterSpacing: '0.14em', textTransform: 'uppercase', color: t.colors.accent }}>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '12px', letterSpacing: '0.14em', textTransform: 'uppercase', color: colors.accent }}>
             {s.subheading}
           </p>
         )}
         {s.heading && (
-          <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(32px, 4.5vw, 54px)', fontWeight: 600, color: t.colors.ink, lineHeight: 1.08, maxWidth: '560px' }}>
+          <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(32px, 4.5vw, 54px)', fontWeight: 600, color: colors.ink, lineHeight: 1.08, maxWidth: '560px' }}>
             {s.heading}
           </h1>
         )}
@@ -44,7 +44,7 @@ function HeroSlide({ block }: { block: Block }) {
           </div>
         )}
       </div>
-      <div className="order-1 lg:order-2" style={{ background: t.colors.bgAlt, minHeight: '320px' }}>
+      <div className="order-1 lg:order-2" style={{ background: colors.bgAlt, minHeight: '320px' }}>
         {s.imageUrl && !errored ? (
           <img
             src={cloudinaryUrl(s.imageUrl, 1200)}
@@ -63,14 +63,14 @@ function HeroSlide({ block }: { block: Block }) {
   );
 }
 
-function HeroSection({ blocks }: { blocks: Block[] }) {
+function HeroSection({ blocks, colors }: { blocks: Block[]; colors: AtelierSectionColors }) {
   const [active, setActive] = useState(0);
   if (blocks.length === 0) return null;
   const slide = blocks[Math.min(active, blocks.length - 1)];
 
   return (
     <div className="relative">
-      <HeroSlide block={slide} />
+      <HeroSlide block={slide} colors={colors} />
       {blocks.length > 1 && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
           {blocks.map((_, i) => (
@@ -80,7 +80,7 @@ function HeroSection({ blocks }: { blocks: Block[] }) {
               onClick={() => setActive(i)}
               aria-label={`Slide ${i + 1}`}
               className="cursor-pointer border-0 p-0"
-              style={{ width: '8px', height: '8px', borderRadius: '50%', background: i === active ? t.colors.ink : t.colors.border }}
+              style={{ width: '8px', height: '8px', borderRadius: '50%', background: i === active ? colors.ink : colors.border }}
             />
           ))}
         </div>
@@ -89,4 +89,4 @@ function HeroSection({ blocks }: { blocks: Block[] }) {
   );
 }
 
-registerAtelierSection('hero', (_section: Section, blocks: Block[]) => <HeroSection blocks={blocks} />);
+registerAtelierSection('hero', (_section: Section, blocks: Block[], colors: AtelierSectionColors) => <HeroSection blocks={blocks} colors={colors} />);

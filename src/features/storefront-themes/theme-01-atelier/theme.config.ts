@@ -103,7 +103,7 @@ const BUTTON_RADIUS_PRESET: Record<'none' | 'small' | 'medium' | 'large' | 'full
  *  editor's mental model). `bgAlt`/`inkMuted`/`border`/`accentInk` are
  *  derived from those 3 so the whole palette stays visually coherent
  *  instead of asking a merchant to individually tune 9 swatches. */
-function mixHex(hex: string, target: 'black' | 'white', amount: number): string {
+export function mixHex(hex: string, target: 'black' | 'white', amount: number): string {
   const h = hex.replace('#', '');
   const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
   const r = parseInt(full.substring(0, 2), 16), g = parseInt(full.substring(2, 4), 16), b = parseInt(full.substring(4, 6), 16);
@@ -112,7 +112,7 @@ function mixHex(hex: string, target: 'black' | 'white', amount: number): string 
   const mix = (c: number) => Math.round(c + (t - c) * amount);
   return `#${[mix(r), mix(g), mix(b)].map(c => c.toString(16).padStart(2, '0')).join('')}`;
 }
-function relativeLuminance(hex: string): number {
+export function relativeLuminance(hex: string): number {
   const h = hex.replace('#', '');
   const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
   const r = parseInt(full.substring(0, 2), 16), g = parseInt(full.substring(2, 4), 16), b = parseInt(full.substring(4, 6), 16);
@@ -157,4 +157,42 @@ export function applyMerchantThemeOverrides(colors: {
 
   atelierTheme.layout.sectionPadY = SECTION_PAD_Y_PRESET[colors?.sectionSpacing ?? 'comfortable'];
   atelierTheme.layout.maxWidth = MAX_WIDTH_PRESET[colors?.containerWidth ?? 'standard'];
+}
+
+export type AtelierSectionColors = typeof ATELIER_STATIC_DEFAULTS.colors;
+
+/** Real per-section color override — a section referencing one of the
+ *  store's own saved `ColorScheme`s (see `Section.colorSchemeId`'s schema
+ *  doc comment) renders with THIS resolved palette instead of
+ *  `atelierTheme.colors`, so e.g. one Hero section can be dark while the
+ *  rest of the page stays light. Uses the exact same 3-color-in,
+ *  full-palette-out derivation `applyMerchantThemeOverrides` uses for the
+ *  theme-wide colors, so a section's scheme looks like a first-class part
+ *  of the theme, not a bolted-on flat-color patch. Falls back to the
+ *  theme's own current colors (unchanged rendering) when `colorSchemeId` is
+ *  null/undefined, or references a scheme that's been renamed/deleted since
+ *  the section was saved — never throws, never a blank/broken section. */
+export function resolveSectionColors(
+  colorSchemeId: string | null | undefined,
+  colorSchemes: { id: string; bgColor: string; textColor: string; primaryColor: string }[] | undefined,
+): AtelierSectionColors {
+  const scheme = colorSchemeId ? colorSchemes?.find(s => s.id === colorSchemeId) : undefined;
+  if (!scheme) return atelierTheme.colors;
+
+  const bg = scheme.bgColor;
+  const ink = scheme.textColor;
+  const accent = scheme.primaryColor;
+  const isDarkBg = relativeLuminance(bg) < 0.5;
+
+  return {
+    bg,
+    ink,
+    accent,
+    bgAlt: mixHex(bg, isDarkBg ? 'white' : 'black', 0.05),
+    inkMuted: mixHex(ink, isDarkBg ? 'black' : 'white', 0.42),
+    border: mixHex(bg, isDarkBg ? 'white' : 'black', 0.12),
+    accentInk: relativeLuminance(accent) < 0.5 ? '#FFFFFF' : ATELIER_STATIC_DEFAULTS.colors.ink,
+    danger: atelierTheme.colors.danger,
+    success: atelierTheme.colors.success,
+  };
 }

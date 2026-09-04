@@ -11,7 +11,9 @@ export interface ContentBlock {
  *  same shape). Independently implemented from `AtelierContentBlocks` — same
  *  reasoning: this theme's own `novaTheme` colors/fonts, not the legacy
  *  shared engine's tokens. */
-export function NovaContentBlocks({ blocks }: { blocks: ContentBlock[] }) {
+/** `dynamicSourceValues` — see `AtelierContentBlocks.tsx`'s identical doc
+ *  comment for the full "Dynamic Sources" rationale. */
+export function NovaContentBlocks({ blocks, dynamicSourceValues }: { blocks: ContentBlock[]; dynamicSourceValues?: Record<string, string> }) {
   return (
     <>
       {blocks.map((block, i) => {
@@ -22,12 +24,16 @@ export function NovaContentBlocks({ blocks }: { blocks: ContentBlock[] }) {
                 {block.settings.text}
               </p>
             );
-          case 'paragraph':
+          case 'paragraph': {
+            const { dynamicSourceNamespace: ns, dynamicSourceKey: key } = block.settings;
+            const boundText = ns && key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
+            const text = boundText !== undefined ? boundText : block.settings.text;
             return (
               <p key={i} style={{ fontFamily: t.fonts.body, fontSize: '15px', lineHeight: 1.75, color: t.colors.ink, whiteSpace: 'pre-wrap' }}>
-                {renderRichText(block.settings.text)}
+                {renderRichText(text)}
               </p>
             );
+          }
           case 'image':
             return (
               <figure key={i} className="m-0">

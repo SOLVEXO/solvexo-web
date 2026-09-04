@@ -22,5 +22,6 @@ import './FaqSection';
 import './TrustBadgesSection';
 import './FeaturedCategoryGridSection';
 import './NewsletterSection';
+import './MetaobjectListSection';
 
 export { NovaSectionRenderer, getRegisteredNovaSectionTypes } from './novaSectionRenderer';

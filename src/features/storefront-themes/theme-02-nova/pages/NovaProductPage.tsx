@@ -8,6 +8,7 @@ import { currencySymbol, fmt2 } from '@/utils/currency';
 import type { ProductVariant } from '@/api/services/marketplace';
 import { ProductReviewsSection } from '@/features/buyer/pages/ProductReviews';
 import { apiGetPublicCollectionTemplate } from '@/api/services/collectionTemplate';
+import { apiGetPublicMetafieldValues } from '@/api/services/metafields';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import type { Section } from '@/api/services/storefrontTypes';
 import { NovaSectionRenderer } from '../sections';
@@ -141,6 +142,9 @@ export function NovaProductPage() {
   const [qty, setQty] = useState(1);
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [templateSections, setTemplateSections] = useState<Section[]>([]);
+  // Dynamic Sources — see `AtelierProductPage.tsx`'s identical addition for
+  // the full rationale.
+  const [dynamicSourceValues, setDynamicSourceValues] = useState<Record<string, string>>({});
 
   const product = detail?.product ?? null;
   useStorefrontSeo({
@@ -155,6 +159,13 @@ export function NovaProductPage() {
       .then(res => setTemplateSections(res.data.sections ?? []))
       .catch(() => setTemplateSections([]));
   }, [store.storeId, product?.templateKey, product?._id]);
+
+  useEffect(() => {
+    if (!product) return;
+    apiGetPublicMetafieldValues(store.storeId, 'product', product._id)
+      .then(res => setDynamicSourceValues(Object.fromEntries(res.data.map(v => [`${v.namespace}:${v.key}`, v.value]))))
+      .catch(() => setDynamicSourceValues({}));
+  }, [store.storeId, product?._id]);
 
   useEffect(() => {
     if (product && product.slug && product.slug !== slug) {
@@ -272,7 +283,7 @@ export function NovaProductPage() {
         <ProductReviewsSection productId={product._id} />
       </div>
 
-      {templateSections.length > 0 && <NovaSectionRenderer sections={templateSections} />}
+      {templateSections.length > 0 && <NovaSectionRenderer sections={templateSections} dynamicSourceValues={dynamicSourceValues} />}
     </main>
   );
 }

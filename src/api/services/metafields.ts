@@ -78,3 +78,11 @@ export function apiGetMetafieldValues(storeId: string, ownerResource: MetafieldO
 export function apiSetMetafieldValues(storeId: string, ownerResource: MetafieldOwnerResource, ownerId: string, values: { namespace: string; key: string; value: string }[]) {
   return client.put<never, ApiResponse<MetafieldValueEntry[]>>(ENDPOINTS.METAFIELDS.VALUES(storeId, ownerResource, ownerId), { values });
 }
+
+/** Public, no auth — "Dynamic Sources" (a storefront `paragraph` block bound
+ *  to a real metafield instead of static text) resolves against this. Same
+ *  shape/backend method as `apiGetMetafieldValues`, just the unauthenticated
+ *  route — see `PublicMetafieldsController`'s own doc comment. */
+export function apiGetPublicMetafieldValues(storeId: string, ownerResource: MetafieldOwnerResource, ownerId: string) {
+  return client.get<never, ApiResponse<MetafieldValueEntry[]>>(ENDPOINTS.METAFIELDS.PUBLIC_VALUES(storeId, ownerResource, ownerId));
+}

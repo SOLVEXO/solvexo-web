@@ -16,5 +16,6 @@ import './FeaturedCategoryGridSection';
 import './TrustBadgesSection';
 import './NewsletterSection';
 import './DropCountdownSection';
+import './MetaobjectListSection';
 
 export { AtelierSectionRenderer, getRegisteredAtelierSectionTypes } from './atelierSectionRenderer';

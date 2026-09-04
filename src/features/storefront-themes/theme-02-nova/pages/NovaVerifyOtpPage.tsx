@@ -124,6 +124,27 @@ export function NovaVerifyOtpPage() {
   const userEmail = ctx?.email ?? '';
   const filled = otp[0] !== '' && otp.every(v => v !== '');
 
+  // Same real gap `AtelierVerifyOtpPage` fixes — see that file's doc
+  // comment. `AuthContext` survives a normal same-tab refresh, but a cold
+  // visit (shared/bookmarked link, fresh incognito tab) has no email, and
+  // both verification and "Resend code" silently can't work without one.
+  if (!userEmail) {
+    return (
+      <div className="mx-auto text-center" style={{ maxWidth: '400px', padding: '96px 20px' }}>
+        <AlertCircle size={28} style={{ color: t.colors.inkMuted, margin: '0 auto 16px' }} />
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 700, color: t.colors.ink, marginBottom: '8px' }}>
+          We couldn't find your verification details
+        </h1>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginBottom: '24px' }}>
+          This can happen if the link was opened on its own. Please {isForgot ? 'restart the password reset' : 'register or sign in'} again.
+        </p>
+        <NovaButton onClick={() => navigate(isForgot ? '../forgot-password' : '../register')}>
+          {isForgot ? 'Reset Password' : 'Create Account'}
+        </NovaButton>
+      </div>
+    );
+  }
+
   const handleChange = (i: number, val: string) => {
     const next = [...otp]; next[i] = val; setOtp(next); setError('');
   };

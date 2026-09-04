@@ -17,7 +17,7 @@ import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { VersionHistoryModal } from '../builder/VersionHistoryModal';
 import { useEditorState } from '../builder/editor/useEditorState';
 import { useUndoRedoShortcuts } from '../builder/editor/useUndoRedoShortcuts';
-import { apiGetStoreTheme } from '@/api/services/storeTheme';
+import { apiGetStoreTheme, type ColorScheme } from '@/api/services/storeTheme';
 import { getThemePreviewComponents } from '@/features/storefront-themes/themePreviewComponents';
 import { DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 
@@ -60,7 +60,15 @@ export function PagesPage() {
   // call in the app) while this hasn't loaded yet, so the picker never sits
   // empty.
   const [themeDefinitionId, setThemeDefinitionId] = useState<string | undefined>(undefined);
-  useEffect(() => { apiGetStoreTheme(storeId).then(res => setThemeDefinitionId(res.data.themeDefinitionId ?? undefined)).catch(() => {}); }, [storeId]);
+  // The store's saved named palettes — for the Color Scheme picker
+  // `PageSectionsEditor` renders per section (same fetch as above, just also
+  // keeping `theme.colorSchemes` this time).
+  const [colorSchemes, setColorSchemes] = useState<ColorScheme[]>([]);
+  useEffect(() => {
+    apiGetStoreTheme(storeId)
+      .then(res => { setThemeDefinitionId(res.data.themeDefinitionId ?? undefined); setColorSchemes(res.data.theme.colorSchemes ?? []); })
+      .catch(() => {});
+  }, [storeId]);
   const supportedSectionTypes = getThemePreviewComponents(themeDefinitionId, DEFAULT_THEME_ID).supportedSectionTypes;
 
   const loadPages = useCallback(() => {
@@ -363,7 +371,7 @@ export function PagesPage() {
                   )}
                 </div>
               </div>
-              <PageSectionsEditor sections={pagesEditor.workingCopy ?? []} onChange={pagesEditor.edit} onPersist={persistSections} pageOptions={pageOptions} storeId={storeId} supportedSectionTypes={supportedSectionTypes} />
+              <PageSectionsEditor sections={pagesEditor.workingCopy ?? []} onChange={pagesEditor.edit} onPersist={persistSections} pageOptions={pageOptions} storeId={storeId} supportedSectionTypes={supportedSectionTypes} colorSchemes={colorSchemes} />
             </>
           ) : (
             <div className="bg-white border border-bone rounded-2xl p-10 text-center">

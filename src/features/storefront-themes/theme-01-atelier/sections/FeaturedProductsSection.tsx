@@ -4,7 +4,7 @@ import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { apiGetPublicStoreProducts, type PublicStoreProduct, type PublicStoreProductsParams } from '@/api/services/store';
 import { AtelierProductCard } from '../components/AtelierProductCard';
-import { atelierTheme as t } from '../theme.config';
+import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
 
 /** Maps the section's merchant-facing `source` to the real public products
@@ -27,7 +27,7 @@ function paramsForSource(settings: Section['settings']): PublicStoreProductsPara
   }
 }
 
-function FeaturedProductsSection({ section }: { section: Section }) {
+function FeaturedProductsSection({ section, colors }: { section: Section; colors: AtelierSectionColors }) {
   const { store } = useStorefront();
   const { currency } = useCurrencyPreference();
   // The Theme Library's static demo preview (`themeDemoPreview.ts`) has no
@@ -54,7 +54,7 @@ function FeaturedProductsSection({ section }: { section: Section }) {
     <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
         {section.settings.heading && (
-          <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 600, color: t.colors.ink, marginBottom: '36px' }}>
+          <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 600, color: colors.ink, marginBottom: '36px' }}>
             {section.settings.heading}
           </h2>
         )}
@@ -62,8 +62,8 @@ function FeaturedProductsSection({ section }: { section: Section }) {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex flex-col gap-3">
-                <div className="animate-pulse" style={{ aspectRatio: '3/4', background: t.colors.bgAlt }} />
-                <div className="animate-pulse h-3 w-3/4" style={{ background: t.colors.bgAlt }} />
+                <div className="animate-pulse" style={{ aspectRatio: '3/4', background: colors.bgAlt }} />
+                <div className="animate-pulse h-3 w-3/4" style={{ background: colors.bgAlt }} />
               </div>
             ))}
           </div>
@@ -77,4 +77,4 @@ function FeaturedProductsSection({ section }: { section: Section }) {
   );
 }
 
-registerAtelierSection('featured_products', (section: Section) => <FeaturedProductsSection section={section} />);
+registerAtelierSection('featured_products', (section: Section, _blocks, colors: AtelierSectionColors) => <FeaturedProductsSection section={section} colors={colors} />);

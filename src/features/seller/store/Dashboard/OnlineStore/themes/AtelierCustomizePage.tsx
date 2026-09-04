@@ -458,6 +458,7 @@ export function AtelierCustomizePage() {
               selectedSectionId={selectedSectionId}
               onSelectSection={setSelectedSectionId}
               supportedSectionTypes={supportedSectionTypes}
+              colorSchemes={draftTheme?.theme.colorSchemes ?? []}
             />
           </div>
 

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { Section, Block } from '@/api/services/storefrontTypes';
-import { novaTheme as t } from '../theme.config';
+import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
 
-function FaqRow({ block }: { block: Block }) {
+function FaqRow({ block, colors }: { block: Block; colors: NovaSectionColors }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ borderBottom: `1.5px solid ${t.colors.border}` }}>
+    <div style={{ borderBottom: `1.5px solid ${colors.border}` }}>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
@@ -15,11 +15,11 @@ function FaqRow({ block }: { block: Block }) {
         className="w-full flex items-center justify-between gap-3 text-left cursor-pointer bg-transparent border-0"
         style={{ padding: '20px 0' }}
       >
-        <span style={{ fontFamily: t.fonts.display, fontSize: '15.5px', fontWeight: 700, color: t.colors.ink }}>{block.settings.question}</span>
-        <ChevronDown size={16} style={{ color: t.colors.accent, flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }} />
+        <span style={{ fontFamily: t.fonts.display, fontSize: '15.5px', fontWeight: 700, color: colors.ink }}>{block.settings.question}</span>
+        <ChevronDown size={16} style={{ color: colors.accent, flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }} />
       </button>
       {open && (
-        <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.inkMuted, lineHeight: 1.7, paddingBottom: '20px' }}>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '13.5px', color: colors.inkMuted, lineHeight: 1.7, paddingBottom: '20px' }}>
           {block.settings.answer}
         </p>
       )}
@@ -27,17 +27,17 @@ function FaqRow({ block }: { block: Block }) {
   );
 }
 
-registerNovaSection('faq', (section: Section, blocks: Block[]) => {
+registerNovaSection('faq', (section: Section, blocks: Block[], colors: NovaSectionColors) => {
   if (blocks.length === 0) return null;
   return (
     <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto" style={{ maxWidth: '720px' }}>
         {section.settings.heading && (
-          <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 700, color: t.colors.ink, marginBottom: '20px' }}>
+          <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 700, color: colors.ink, marginBottom: '20px' }}>
             {section.settings.heading}
           </h2>
         )}
-        {blocks.map((b, i) => <FaqRow key={b._id ?? i} block={b} />)}
+        {blocks.map((b, i) => <FaqRow key={b._id ?? i} block={b} colors={colors} />)}
       </div>
     </div>
   );

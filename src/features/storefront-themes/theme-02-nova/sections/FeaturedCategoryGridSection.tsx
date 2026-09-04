@@ -4,7 +4,7 @@ import { ImageOff } from 'lucide-react';
 import type { Section } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
-import { novaTheme as t } from '../theme.config';
+import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
 
 /** Theme 02's port of Atelier's `FeaturedCategoryGridSection` — same real
@@ -18,7 +18,7 @@ import { registerNovaSection } from './novaSectionRenderer';
  *  real store/category tree to fetch, so it supplies a fixed fictional
  *  list here instead of every theme's preview disclosing away every
  *  section that needs real data. A real store's sections never set this. */
-function FeaturedCategoryGridSection({ section }: { section: Section }) {
+function FeaturedCategoryGridSection({ section, colors }: { section: Section; colors: NovaSectionColors }) {
   const { store } = useStorefront();
   const demoCategories = section.settings.demoCategories as CategoryNode[] | undefined;
   const [all, setAll] = useState<CategoryNode[] | null>(demoCategories ?? null);
@@ -37,27 +37,27 @@ function FeaturedCategoryGridSection({ section }: { section: Section }) {
     <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
         {section.settings.heading && (
-          <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 700, color: t.colors.ink, marginBottom: '36px', textAlign: 'center' }}>
+          <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 700, color: colors.ink, marginBottom: '36px', textAlign: 'center' }}>
             {section.settings.heading}
           </h2>
         )}
         {all === null ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="animate-pulse" style={{ aspectRatio: '1/1', background: t.colors.bgAlt, borderRadius: t.radius.md }} />)}
+            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="animate-pulse" style={{ aspectRatio: '1/1', background: colors.bgAlt, borderRadius: t.radius.md }} />)}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
             {selected.map(c => {
               const tile = (
                 <>
-                  <div className="relative flex items-center justify-center" style={{ aspectRatio: '1/1', background: t.colors.bgAlt, overflow: 'hidden', borderRadius: t.radius.md }}>
+                  <div className="relative flex items-center justify-center" style={{ aspectRatio: '1/1', background: colors.bgAlt, overflow: 'hidden', borderRadius: t.radius.md }}>
                     {c.image ? (
                       <img src={c.image} alt={c.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                     ) : (
-                      <ImageOff size={24} style={{ color: t.colors.inkMuted }} />
+                      <ImageOff size={24} style={{ color: colors.inkMuted }} />
                     )}
                   </div>
-                  <p className="text-center" style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 700, color: t.colors.ink }}>{c.name}</p>
+                  <p className="text-center" style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 700, color: colors.ink }}>{c.name}</p>
                 </>
               );
               return demoCategories ? (
@@ -73,4 +73,4 @@ function FeaturedCategoryGridSection({ section }: { section: Section }) {
   );
 }
 
-registerNovaSection('featured_category_grid', (section: Section) => <FeaturedCategoryGridSection section={section} />);
+registerNovaSection('featured_category_grid', (section: Section, _blocks, colors: NovaSectionColors) => <FeaturedCategoryGridSection section={section} colors={colors} />);

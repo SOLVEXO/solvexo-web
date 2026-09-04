@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import type { Section } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { AtelierButton } from '../components/AtelierButton';
-import { atelierTheme as t } from '../theme.config';
+import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
 
 function timeLeft(targetIso?: string) {
@@ -41,7 +41,7 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
  *  (see `sections/index.ts` and `builder/sectionRegistry.ts`) is the entire
  *  "developer creates a section" side; no backend change was needed since
  *  the type/settings contract already existed and was already deployed. */
-function DropCountdownSection({ section }: { section: Section }) {
+function DropCountdownSection({ section, colors }: { section: Section; colors: AtelierSectionColors }) {
   const { resolveLink } = useStorefront();
   const [now, setNow] = useState(() => timeLeft(section.settings.targetDate));
 
@@ -54,7 +54,7 @@ function DropCountdownSection({ section }: { section: Section }) {
   const link = section.settings.ctaLink ? resolveLink(section.settings.ctaLink) : null;
 
   return (
-    <div style={{ background: t.colors.ink, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
+    <div style={{ background: colors.ink, padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
       <div className="mx-auto flex flex-col items-center text-center gap-6" style={{ maxWidth: '640px' }}>
         {section.settings.heading && (
           <h2 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 600, color: '#FFFFFF' }}>
@@ -77,12 +77,12 @@ function DropCountdownSection({ section }: { section: Section }) {
           </div>
         )}
         {section.settings.ctaText && link && (
-          link.to ? <Link to={link.to} className="no-underline"><AtelierButton style={{ background: '#FFFFFF', color: t.colors.ink, border: '1px solid #FFFFFF' }}>{section.settings.ctaText}</AtelierButton></Link>
-            : <a href={link.href} className="no-underline"><AtelierButton style={{ background: '#FFFFFF', color: t.colors.ink, border: '1px solid #FFFFFF' }}>{section.settings.ctaText}</AtelierButton></a>
+          link.to ? <Link to={link.to} className="no-underline"><AtelierButton style={{ background: '#FFFFFF', color: colors.ink, border: '1px solid #FFFFFF' }}>{section.settings.ctaText}</AtelierButton></Link>
+            : <a href={link.href} className="no-underline"><AtelierButton style={{ background: '#FFFFFF', color: colors.ink, border: '1px solid #FFFFFF' }}>{section.settings.ctaText}</AtelierButton></a>
         )}
       </div>
     </div>
   );
 }
 
-registerAtelierSection('drop_countdown', (section: Section) => <DropCountdownSection section={section} />);
+registerAtelierSection('drop_countdown', (section: Section, _blocks, colors: AtelierSectionColors) => <DropCountdownSection section={section} colors={colors} />);

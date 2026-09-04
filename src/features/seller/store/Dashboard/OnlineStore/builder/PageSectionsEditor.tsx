@@ -69,7 +69,7 @@ function BlockRow({ block, sectionType, onChange, onRemove, onDuplicate, pageOpt
   );
 }
 
-function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange, onRemove, onDuplicate, onPersistBlockRemove, pageOptions, storeId }: {
+function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange, onRemove, onDuplicate, onPersistBlockRemove, pageOptions, storeId, colorSchemes }: {
   section: Section;
   /** Same id shape `AtelierSectionRenderer` computes (`section._id ?? index`,
    *  stringified) — lets a click in the live preview and a card here refer
@@ -86,6 +86,11 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
   onPersistBlockRemove: (next: Section) => void;
   pageOptions: PageOption[];
   storeId: string;
+  /** The store's saved named palettes (`StorefrontColors.colorSchemes`) —
+   *  lets this one section render with a different scheme than the rest of
+   *  the theme (see `Section.colorSchemeId` / each theme's own
+   *  `resolveSectionColors`). Empty array renders just the "Theme default" option. */
+  colorSchemes: { id: string; name: string; bgColor: string; textColor: string; primaryColor: string }[];
 
 }) {
   const [open, setOpen] = useState(true);
@@ -112,7 +117,7 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
         </div>
         <button type="button" onClick={() => { setOpen(o => !o); onSelectSection?.(sectionId); }} className="flex-1 min-w-0 flex flex-col items-start bg-transparent border-none cursor-pointer text-left p-0">
           <span className="text-[13.5px] font-bold text-charcoal truncate">{meta?.label ?? section.type}</span>
-          {section.settings.heading && <span className="text-[11.5px] text-slate truncate">{section.settings.heading}</span>}
+          {section.settings?.heading && <span className="text-[11.5px] text-slate truncate">{section.settings.heading}</span>}
         </button>
         <button type="button" onClick={() => setOpen(o => !o)} aria-label={open ? 'Collapse' : 'Expand'}
           className="w-7 h-7 flex items-center justify-center text-slate rounded-md hover:bg-cream bg-transparent border-none cursor-pointer shrink-0">
@@ -140,7 +145,19 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
       )}
       {open && (
         <div className="px-4 pb-4 flex flex-col gap-3 border-t border-bone pt-3.5">
-          <SectionFields type={section.type} settings={section.settings} onChange={settings => onChange({ ...section, settings })} storeId={storeId} pageOptions={pageOptions} />
+          <SectionFields type={section.type} settings={section.settings ?? {}} onChange={settings => onChange({ ...section, settings })} storeId={storeId} pageOptions={pageOptions} />
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10.5px] font-bold uppercase tracking-wide text-slate px-1">Color Scheme</label>
+            <select
+              className="w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none"
+              value={section.colorSchemeId ?? ''}
+              onChange={e => onChange({ ...section, colorSchemeId: e.target.value || null })}
+            >
+              <option value="">Theme default</option>
+              {colorSchemes.map(cs => <option key={cs.id} value={cs.id}>{cs.name}</option>)}
+            </select>
+          </div>
 
           {meta && meta.allowedBlockTypes.length > 0 && (
             <div className="flex flex-col gap-2 bg-cream/50 rounded-xl p-3 -mx-1">
@@ -196,7 +213,7 @@ function SectionCard({ section, sectionId, isSelected, onSelectSection, onChange
   );
 }
 
-export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, onSelectSection, supportedSectionTypes }: {
+export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions, storeId, selectedSectionId, onSelectSection, supportedSectionTypes, colorSchemes = [] }: {
   sections: Section[];
   onChange: (next: Section[]) => void;
   /** Called (with the full next `Section[]`) whenever a section or a block
@@ -218,6 +235,10 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
    *  to "show everything," same as before this existed, for any caller that
    *  hasn't resolved a theme yet. */
   supportedSectionTypes?: SectionType[];
+  /** The store's saved named palettes — passed straight through to every
+   *  `SectionCard`'s Color Scheme picker. Optional, defaults to empty (just
+   *  the "Theme default" option) for any caller that hasn't loaded them. */
+  colorSchemes?: { id: string; name: string; bgColor: string; textColor: string; primaryColor: string }[];
 }) {
   const [showAdd, setShowAdd] = useState(false);
 
@@ -269,6 +290,7 @@ export function PageSectionsEditor({ sections, onChange, onPersist, pageOptions,
                   onPersistBlockRemove={nextSection => onPersist(sections.map((s, j) => j === i ? nextSection : s))}
                   pageOptions={pageOptions}
                   storeId={storeId}
+                  colorSchemes={colorSchemes}
                 />
               );
             }}

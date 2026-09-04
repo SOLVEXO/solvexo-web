@@ -13,7 +13,13 @@ export interface ContentBlock {
  *  to an independent theme's own config, so reusing it as-is would have
  *  rendered blog/page body copy in the wrong (default/legacy) colors
  *  instead of Atelier's own ink/accent palette. */
-export function AtelierContentBlocks({ blocks }: { blocks: ContentBlock[] }) {
+/** `dynamicSourceValues` — "Dynamic Sources": the current resource's real
+ *  metafield values (keyed `"namespace:key"`), only ever non-empty when this
+ *  is called from a Product Template's `RichTextSection` (see
+ *  `AtelierProductPage.tsx`) — `AtelierCustomPage`/blog callers pass nothing,
+ *  which is correct, since a custom page/blog post has no single "current
+ *  resource" a paragraph could bind to. */
+export function AtelierContentBlocks({ blocks, dynamicSourceValues }: { blocks: ContentBlock[]; dynamicSourceValues?: Record<string, string> }) {
   return (
     <>
       {blocks.map((block, i) => {
@@ -24,12 +30,16 @@ export function AtelierContentBlocks({ blocks }: { blocks: ContentBlock[] }) {
                 {block.settings.text}
               </p>
             );
-          case 'paragraph':
+          case 'paragraph': {
+            const { dynamicSourceNamespace: ns, dynamicSourceKey: key } = block.settings;
+            const boundText = ns && key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
+            const text = boundText !== undefined ? boundText : block.settings.text;
             return (
               <p key={i} style={{ fontFamily: t.fonts.body, fontSize: '14.5px', lineHeight: 1.75, color: t.colors.ink, whiteSpace: 'pre-wrap' }}>
-                {renderRichText(block.settings.text)}
+                {renderRichText(text)}
               </p>
             );
+          }
           case 'image':
             return (
               <figure key={i} className="m-0">

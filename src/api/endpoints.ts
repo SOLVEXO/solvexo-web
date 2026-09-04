@@ -1113,6 +1113,17 @@ export const ENDPOINTS = {
     DEFINITIONS:       (storeId: string) => `/api/metafields/${storeId}/definitions`,
     DEFINITION:        (storeId: string, definitionId: string) => `/api/metafields/${storeId}/definitions/${definitionId}`,
     VALUES:            (storeId: string, ownerResource: string, ownerId: string) => `/api/metafields/${storeId}/values/${ownerResource}/${ownerId}`,
+    PUBLIC_VALUES:     (storeId: string, ownerResource: string, ownerId: string) => `/api/public/metafields/${storeId}/${ownerResource}/${ownerId}`,
+  },
+
+  METAOBJECTS: {
+    DEFINITIONS:        (storeId: string) => `/api/metaobjects/${storeId}/definitions`,
+    DEFINITION:         (storeId: string, definitionId: string) => `/api/metaobjects/${storeId}/definitions/${definitionId}`,
+    ENTRIES:            (storeId: string, definitionId: string) => `/api/metaobjects/${storeId}/definitions/${definitionId}/entries`,
+    ENTRY:              (storeId: string, entryId: string) => `/api/metaobjects/${storeId}/entries/${entryId}`,
+    PUBLIC_DEFINITIONS: (storeId: string) => `/api/public/metaobjects/${storeId}/definitions`,
+    PUBLIC_ENTRIES_BY_TYPE: (storeId: string, type: string) => `/api/public/metaobjects/${storeId}/${type}`,
+    PUBLIC_ENTRY:       (storeId: string, entryId: string) => `/api/public/metaobjects/${storeId}/entry/${entryId}`,
   },
 
 } as const;

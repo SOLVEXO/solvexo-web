@@ -96,14 +96,18 @@ export function apiDeleteTestimonial(id: string) {
 }
 
 export function apiApproveTestimonial(id: string) {
+  // `{}` not `null` — an explicit empty object always serializes to a clean
+  // JSON body regardless of axios/browser version; `null` is ambiguous
+  // (some environments send no body at all, which can confuse a proxy or
+  // body-parser expecting `Content-Type: application/json`).
   return client.patch<never, { success: boolean; message: string; data: AdminTestimonial }>(
-    ENDPOINTS.TESTIMONIALS.APPROVE(id), null,
+    ENDPOINTS.TESTIMONIALS.APPROVE(id), {},
   );
 }
 
 export function apiRejectTestimonial(id: string) {
   return client.patch<never, { success: boolean; message: string; data: AdminTestimonial }>(
-    ENDPOINTS.TESTIMONIALS.REJECT(id), null,
+    ENDPOINTS.TESTIMONIALS.REJECT(id), {},
   );
 }
 

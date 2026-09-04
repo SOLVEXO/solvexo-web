@@ -1,10 +1,14 @@
 import type { Section } from '@/api/services/storefrontTypes';
 import { AtelierProductGrid } from '../components/AtelierProductGrid';
-import { atelierTheme as t } from '../theme.config';
+import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
 import { useAtelierCollectionScope } from './collectionScope';
 
-registerAtelierSection('product_catalog', (section: Section) => (
+// No section-root color reads here — `AtelierProductGrid` is a shared
+// component (also used by the collection-scoped grid below) that stays on
+// theme-wide `t.colors`, so `colors` is accepted for signature consistency
+// but otherwise unused.
+registerAtelierSection('product_catalog', (section: Section, _blocks, _colors: AtelierSectionColors) => (
   <div style={{ padding: `${t.layout.sectionPadY} ${t.layout.containerPadX}` }}>
     <div className="mx-auto" style={{ maxWidth: t.layout.maxWidth }}>
       <AtelierProductGrid heading={section.settings.heading} categoryId={section.settings.categoryId} collectionId={section.settings.collectionId} />
@@ -31,4 +35,4 @@ function CollectionProductGrid() {
   );
 }
 
-registerAtelierSection('collection_product_grid', () => <CollectionProductGrid />);
+registerAtelierSection('collection_product_grid', (_section, _blocks, _colors: AtelierSectionColors) => <CollectionProductGrid />);

@@ -270,7 +270,9 @@ export function ThemeLibraryPage() {
                   </div>
                   <p className="text-[12px] text-slate leading-snug">{entry.description}</p>
                   <p className="text-[11px] text-slate">
-                    In progress — {entry.builtRouteCount} of {entry.totalRouteCount} storefront pages built so far.
+                    {entry.builtRouteCount >= entry.totalRouteCount
+                      ? `Complete — all ${entry.totalRouteCount} storefront pages built.`
+                      : `In progress — ${entry.builtRouteCount} of ${entry.totalRouteCount} storefront pages built so far.`}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
                     {!isInstalled ? (

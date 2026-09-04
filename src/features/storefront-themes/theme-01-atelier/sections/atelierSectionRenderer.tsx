@@ -1,7 +1,23 @@
 import type { ReactNode } from 'react';
 import type { Section, Block } from '@/api/services/storefrontTypes';
+import { useStorefront } from '@/features/storefront/StorefrontContext';
+import { resolveSectionColors, type AtelierSectionColors } from '../theme.config';
 
-type SectionRenderFn = (section: Section, blocks: Block[]) => ReactNode;
+/** Third argument is this section's resolved color palette — the theme's
+ *  own colors by default, or a saved `ColorScheme`'s derived palette when
+ *  `section.colorSchemeId` is set (see `resolveSectionColors`). Every
+ *  section render function's signature includes it (even ones that don't
+ *  read it yet) so a section can opt into per-section coloring without a
+ *  signature change later.
+ *
+ *  Fourth argument is "Dynamic Sources" — a lookup of the CURRENT resource's
+ *  (e.g. the product a Product Template is rendering for) real metafield
+ *  values, keyed by `"namespace:key"`. Only ever non-empty when this
+ *  renderer is invoked from a resource-scoped template (`AtelierProductPage`
+ *  passes it; the general Home/Pages editor doesn't, since there's no single
+ *  "current resource" there) — see `RichTextSection.tsx`'s `paragraph` block,
+ *  the one consumer today. */
+type SectionRenderFn = (section: Section, blocks: Block[], colors: AtelierSectionColors, dynamicSourceValues: Record<string, string>) => ReactNode;
 
 /** Atelier's own open section registry — mirrors the app's established
  *  self-registration pattern (each section file calls `registerAtelierSection`
@@ -44,13 +60,20 @@ interface AtelierSectionRendererProps {
   selectable?: boolean;
   selectedSectionId?: string | null;
   onSelectSection?: (sectionId: string) => void;
+  /** Dynamic Sources lookup — see `SectionRenderFn`'s own doc comment.
+   *  Omitted/empty everywhere except a resource-scoped template render. */
+  dynamicSourceValues?: Record<string, string>;
 }
 
 /** Renders a real `Section[]` (as authored via the seller's Pages editor)
  *  through Atelier's own section components. Unknown/unregistered types and
  *  `enabled: false` sections are skipped silently — matches the legacy
  *  engine's own established convention (missing `enabled` behaves like `true`). */
-export function AtelierSectionRenderer({ sections, selectable, selectedSectionId, onSelectSection }: AtelierSectionRendererProps) {
+export function AtelierSectionRenderer({ sections, selectable, selectedSectionId, onSelectSection, dynamicSourceValues }: AtelierSectionRendererProps) {
+  const { theme } = useStorefront();
+  const colorSchemes = theme?.theme.colorSchemes;
+  const dynamicValues = dynamicSourceValues ?? {};
+
   if (!selectable) {
     return (
       <>
@@ -59,7 +82,8 @@ export function AtelierSectionRenderer({ sections, selectable, selectedSectionId
           const render = getAtelierSectionRender(section.type);
           if (!render) return null;
           const blocks = (section.blocks ?? []).filter(b => b.enabled !== false);
-          return <div key={section._id ?? i}>{render(section, blocks)}</div>;
+          const colors = resolveSectionColors(section.colorSchemeId, colorSchemes);
+          return <div key={section._id ?? i} style={{ background: colors.bg }}>{render(section, blocks, colors, dynamicValues)}</div>;
         })}
       </>
     );
@@ -79,6 +103,7 @@ export function AtelierSectionRenderer({ sections, selectable, selectedSectionId
         const render = getAtelierSectionRender(section.type);
         if (!render) return null;
         const blocks = (section.blocks ?? []).filter(b => b.enabled !== false);
+        const colors = resolveSectionColors(section.colorSchemeId, colorSchemes);
         const sectionId = String(section._id ?? i);
         const isSelected = selectedSectionId === sectionId;
         return (
@@ -86,13 +111,14 @@ export function AtelierSectionRenderer({ sections, selectable, selectedSectionId
             key={section._id ?? i}
             data-atelier-section-id={sectionId}
             className={isSelected ? 'atelier-section-selected' : 'atelier-section-selectable'}
+            style={{ background: colors.bg }}
             onClickCapture={e => {
               e.preventDefault();
               e.stopPropagation();
               onSelectSection?.(sectionId);
             }}
           >
-            {render(section, blocks)}
+            {render(section, blocks, colors, dynamicValues)}
           </div>
         );
       })}

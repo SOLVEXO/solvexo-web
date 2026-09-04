@@ -122,6 +122,31 @@ export function AtelierVerifyOtpPage() {
   const userEmail = ctx?.email ?? '';
   const filled = otp[0] !== '' && otp.every(v => v !== '');
 
+  // `AuthContext` is sessionStorage-backed transient flow state — it
+  // survives a normal same-tab refresh, but a visitor who opens this URL
+  // cold (a shared/bookmarked link, or a fresh incognito tab) has none. The
+  // form itself still rendered fine in that case (real digit boxes, real
+  // "Verify Code" button) but was silently unusable — the email shown as a
+  // bare "—" placeholder, and both verification AND "Resend code" need a
+  // real email to call their APIs with. A clear way back is better than a
+  // form that quietly can't work.
+  if (!userEmail) {
+    return (
+      <div className="mx-auto text-center" style={{ maxWidth: '400px', padding: '96px 20px' }}>
+        <AlertCircle size={28} style={{ color: t.colors.inkMuted, margin: '0 auto 16px' }} />
+        <h1 style={{ fontFamily: t.fonts.display, fontSize: '20px', fontWeight: 600, color: t.colors.ink, marginBottom: '8px' }}>
+          We couldn't find your verification details
+        </h1>
+        <p style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted, marginBottom: '24px' }}>
+          This can happen if the link was opened on its own. Please {isForgot ? 'restart the password reset' : 'register or sign in'} again.
+        </p>
+        <AtelierButton onClick={() => navigate(isForgot ? '../forgot-password' : '../register')}>
+          {isForgot ? 'Reset Password' : 'Create Account'}
+        </AtelierButton>
+      </div>
+    );
+  }
+
   const handleChange = (i: number, val: string) => {
     const next = [...otp]; next[i] = val; setOtp(next); setError('');
   };

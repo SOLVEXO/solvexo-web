@@ -26,6 +26,10 @@ export const SECTION_TYPES = [
   'featured_category_grid',
   'trust_badges',
   'newsletter',
+  // Lists real entries of a seller-defined Metaobject type (see
+  // `api/services/metaobjects.ts`) — `settings.metaobjectType` names which
+  // one, resolved against the store's own live entries at render time.
+  'metaobject_list',
   // Contextual — always renders whichever collection is currently being
   // browsed. Only ever appears inside the singleton Collection Template, not
   // the general Pages/Home "Add Section" picker (see `sectionRegistry.ts`).
@@ -52,4 +56,9 @@ export interface Section {
   blocks:    Block[];
   /** Missing/undefined behaves exactly like `true` — see SectionRenderer.tsx. */
   enabled?:  boolean;
+  /** References a saved `ColorScheme.id` (see `StorefrontColors.colorSchemes`
+   *  in `api/services/storeTheme.ts`) — null/undefined means "use the
+   *  theme's own colors" (default, byte-identical to before this field
+   *  existed). See `resolveSectionColors()`. */
+  colorSchemeId?: string | null;
 }

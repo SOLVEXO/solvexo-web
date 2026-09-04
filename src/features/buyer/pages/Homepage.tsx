@@ -802,64 +802,73 @@ export function Homepage() {
 
       {/* ── Social Proof — real reviews only; section hides itself until there's enough real content ── */}
       {(testimonialsLoading || testimonials.length > 0) && (
-        <section className="bg-cream border-t border-bone py-10 sm:py-12 lg:py-14">
+        <section className="bg-cream border-t border-bone py-10 sm:py-12 lg:py-14 overflow-hidden">
           <div className="px-4 sm:px-6 lg:px-12">
             <SectionHeading kicker="Trusted by creators worldwide" title="Real stories from real sellers" align="center" className="mb-10" />
-            {/* flex-wrap + centered, not a fixed 3-column grid — real
-               testimonial count varies, and a rigid grid left fewer-than-3
-               cards stranded on the left with a lopsided empty gap instead of
-               sitting centered as a deliberate row. */}
-            <RevealStagger className="flex flex-wrap justify-center gap-4" step={0.1} y={16}>
-              {testimonialsLoading
-                ? Array.from({ length: 3 }).map((_, i) => (
-                    <Card key={i} padding="none" className="w-full sm:w-[340px]">
-                      <div className="p-5">
-                        <div className="flex items-center justify-between mb-3">
-                          <SkeletonBox width={70} height={12} />
-                          <SkeletonBox width={22} height={22} rounded="6px" />
-                        </div>
-                        <SkeletonBox width="100%" height={13} className="mb-2" />
-                        <SkeletonBox width="80%" height={13} className="mb-4" />
-                        <div className="flex items-center gap-[10px] pt-3 border-t border-bone">
-                          <SkeletonBox width={30} height={30} rounded="999px" />
-                          <div>
-                            <SkeletonBox width={90} height={13} className="mb-1" />
-                            <SkeletonBox width={70} height={11} />
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  ))
-                : testimonials.map(t => (
-                    <Card key={t.id} padding="none" hover className="group relative overflow-hidden w-full sm:w-[340px]">
-                      <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
-                      <div className="p-5">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-[2px]">
-                            {[1, 2, 3, 4, 5].map(i => (
-                              <Star key={i} size={12} className={i <= Math.round(t.rating) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone'} />
-                            ))}
-                          </div>
-                          <Quote size={20} className="text-brand-orange/20 fill-brand-orange/20 shrink-0" />
-                        </div>
-                        <p className="text-[13px] text-charcoal leading-[1.75] mb-4 italic">
-                          "{t.text}"
-                        </p>
-                        <div className="flex items-center gap-[10px] pt-3 border-t border-bone">
-                          <Avatar name={t.name} size={30} />
-                          <div>
-                            <div className="flex items-center gap-[6px]">
-                              <p className="text-[13px] font-semibold text-carbon">{t.name}</p>
-                              {t.isVerifiedSeller && <BadgeCheck size={13} className="text-info fill-info/15 shrink-0" />}
-                            </div>
-                            <p className="text-[11px] text-slate">{t.storeName ? `Owner, ${t.storeName}` : 'Verified Seller'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-            </RevealStagger>
           </div>
+          {testimonialsLoading ? (
+            // A still skeleton row, not a moving one — nothing to imply
+            // motion over placeholder content.
+            <div className="px-4 sm:px-6 lg:px-12 flex flex-wrap justify-center gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} padding="none" className="w-full sm:w-[340px]">
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <SkeletonBox width={70} height={12} />
+                      <SkeletonBox width={22} height={22} rounded="6px" />
+                    </div>
+                    <SkeletonBox width="100%" height={13} className="mb-2" />
+                    <SkeletonBox width="80%" height={13} className="mb-4" />
+                    <div className="flex items-center gap-[10px] pt-3 border-t border-bone">
+                      <SkeletonBox width={30} height={30} rounded="999px" />
+                      <div>
+                        <SkeletonBox width={90} height={13} className="mb-1" />
+                        <SkeletonBox width={70} height={11} />
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            // A continuous marquee (same primitive already driving the
+            // industries strip above) instead of a static wrapped grid —
+            // matches this page's established "things gently move on their
+            // own" rhythm (hero ticker, system diagram, POS steps). Pauses
+            // on hover so a visitor can actually stop and read one card.
+            // Bleeds full-width (no side padding) for the loop to feel
+            // truly edge-to-edge, same as the industries strip.
+            <Marquee duration={Math.max(28, testimonials.length * 9)} className="[mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)]">
+              {testimonials.map(t => (
+                <Card key={t.id} padding="none" hover className="group relative overflow-hidden w-[300px] sm:w-[340px] mx-2 shrink-0">
+                  <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-[2px]">
+                        {[1, 2, 3, 4, 5].map(i => (
+                          <Star key={i} size={12} className={i <= Math.round(t.rating) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone'} />
+                        ))}
+                      </div>
+                      <Quote size={20} className="text-brand-orange/20 fill-brand-orange/20 shrink-0" />
+                    </div>
+                    <p className="text-[13px] text-charcoal leading-[1.75] mb-4 italic">
+                      "{t.text}"
+                    </p>
+                    <div className="flex items-center gap-[10px] pt-3 border-t border-bone">
+                      <Avatar name={t.name} size={30} />
+                      <div>
+                        <div className="flex items-center gap-[6px]">
+                          <p className="text-[13px] font-semibold text-carbon">{t.name}</p>
+                          {t.isVerifiedSeller && <BadgeCheck size={13} className="text-info fill-info/15 shrink-0" />}
+                        </div>
+                        <p className="text-[11px] text-slate">{t.storeName ? `Owner, ${t.storeName}` : 'Verified Seller'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </Marquee>
+          )}
         </section>
       )}
 

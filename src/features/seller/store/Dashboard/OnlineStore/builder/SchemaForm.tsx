@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Field, ImageUpload, Toggle } from '@/components/comman/ui';
 import { EntityPickerModal, type EntityPickerMode } from './EntityPickerModal';
 import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
 import type { PageOption } from './BlockFields';
+import { apiGetPublicMetaobjectDefinitions, type PublicMetaobjectDefinition } from '@/api/services/metaobjects';
 
 /**
  * The schema-driven settings engine — this is the piece that was entirely
@@ -32,6 +33,7 @@ export type FieldKind =
   | 'text' | 'textarea' | 'number' | 'select' | 'checkbox'
   | 'image' | 'url' | 'link' | 'datetime'
   | 'categoryPicker' | 'collectionPicker' | 'categoryMultiPicker' | 'productMultiPicker'
+  | 'metaobjectTypePicker'
   | 'itemList';
 
 export interface FieldOption { value: string; label: string }
@@ -93,6 +95,32 @@ function EntityPickerField({ mode, multiple, value, onPick, label, storeId }: {
         />
       )}
     </>
+  );
+}
+
+// Metaobject types are entirely seller-created and open-ended (unlike
+// categories/collections/products, which already have `EntityPickerModal`'s
+// searchable-modal infrastructure) — but the value this field actually
+// stores is the definition's stable `type` slug, not a Mongo `_id`, so
+// routing it through that id-shaped picker would need translating between
+// the two on every read/write. A plain dynamically-populated `<select>` is
+// simpler and matches what's normally a short, hand-curated list of content
+// types (Team Member, Size Guide, …), not something that needs search/paging.
+function MetaobjectTypePickerField({ value, storeId, onChange }: { value: string | undefined; storeId: string; onChange: (type: string) => void }) {
+  const [defs, setDefs] = useState<PublicMetaobjectDefinition[] | null>(null);
+
+  useEffect(() => {
+    apiGetPublicMetaobjectDefinitions(storeId).then(res => setDefs(res.data)).catch(() => setDefs([]));
+  }, [storeId]);
+
+  if (defs === null) return <div className={inp}>Loading content types…</div>;
+  if (defs.length === 0) return <div className={`${inp} text-slate`}>No content types yet — create one under "Content Types" in the sidebar first.</div>;
+
+  return (
+    <select className={inp} value={value ?? ''} onChange={e => onChange(e.target.value)}>
+      <option value="" disabled>Choose a content type…</option>
+      {defs.map(d => <option key={d._id} value={d.type}>{d.name}</option>)}
+    </select>
   );
 }
 
@@ -195,6 +223,9 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
 
     case 'productMultiPicker':
       return <EntityPickerField mode="products" multiple value={value} storeId={storeId} label="Choose products" onPick={ids => set({ [field.key]: ids })} />;
+
+    case 'metaobjectTypePicker':
+      return <MetaobjectTypePickerField value={value} storeId={storeId} onChange={type => set({ [field.key]: type })} />;
 
     case 'itemList':
       return <ItemListField items={Array.isArray(value) ? value : []} onChange={next => set({ [field.key]: next })} max={field.max} />;

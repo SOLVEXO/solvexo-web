@@ -100,7 +100,7 @@ const BUTTON_RADIUS_PRESET: Record<'none' | 'small' | 'medium' | 'large' | 'full
 // Identical color-relationship math to `theme.config.ts` in `theme-01-atelier`
 // — see that file's doc comment for why derived roles (bgAlt/inkMuted/
 // border/accentInk) aren't separately merchant-editable fields.
-function mixHex(hex: string, target: 'black' | 'white', amount: number): string {
+export function mixHex(hex: string, target: 'black' | 'white', amount: number): string {
   const h = hex.replace('#', '');
   const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
   const r = parseInt(full.substring(0, 2), 16), g = parseInt(full.substring(2, 4), 16), b = parseInt(full.substring(4, 6), 16);
@@ -109,7 +109,7 @@ function mixHex(hex: string, target: 'black' | 'white', amount: number): string 
   const mix = (c: number) => Math.round(c + (t - c) * amount);
   return `#${[mix(r), mix(g), mix(b)].map(c => c.toString(16).padStart(2, '0')).join('')}`;
 }
-function relativeLuminance(hex: string): number {
+export function relativeLuminance(hex: string): number {
   const h = hex.replace('#', '');
   const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
   const r = parseInt(full.substring(0, 2), 16), g = parseInt(full.substring(2, 4), 16), b = parseInt(full.substring(4, 6), 16);
@@ -154,6 +154,40 @@ export function applyMerchantThemeOverrides(colors: {
 
   novaTheme.layout.sectionPadY = SECTION_PAD_Y_PRESET[colors?.sectionSpacing ?? 'comfortable'];
   novaTheme.layout.maxWidth = MAX_WIDTH_PRESET[colors?.containerWidth ?? 'standard'];
+}
+
+export type NovaSectionColors = typeof NOVA_STATIC_DEFAULTS.colors;
+
+/** Real per-section color override — identical mechanism to Atelier's own
+ *  `resolveSectionColors` (see that file's doc comment for the full
+ *  rationale). A section referencing one of the store's own saved
+ *  `ColorScheme`s (`Section.colorSchemeId`) renders with this resolved
+ *  palette instead of `novaTheme.colors`. Falls back to the theme's own
+ *  current colors when `colorSchemeId` is null/undefined or the referenced
+ *  scheme no longer exists. */
+export function resolveSectionColors(
+  colorSchemeId: string | null | undefined,
+  colorSchemes: { id: string; bgColor: string; textColor: string; primaryColor: string }[] | undefined,
+): NovaSectionColors {
+  const scheme = colorSchemeId ? colorSchemes?.find(s => s.id === colorSchemeId) : undefined;
+  if (!scheme) return novaTheme.colors;
+
+  const bg = scheme.bgColor;
+  const ink = scheme.textColor;
+  const accent = scheme.primaryColor;
+  const isDarkBg = relativeLuminance(bg) < 0.5;
+
+  return {
+    bg,
+    ink,
+    accent,
+    bgAlt: mixHex(bg, isDarkBg ? 'white' : 'black', 0.05),
+    inkMuted: mixHex(ink, isDarkBg ? 'black' : 'white', 0.42),
+    border: mixHex(bg, isDarkBg ? 'white' : 'black', 0.12),
+    accentInk: relativeLuminance(accent) < 0.5 ? '#FFFFFF' : NOVA_STATIC_DEFAULTS.colors.ink,
+    danger: novaTheme.colors.danger,
+    success: novaTheme.colors.success,
+  };
 }
 
 /**

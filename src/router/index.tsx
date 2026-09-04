@@ -114,6 +114,8 @@ const StoreDiscounts = lazy(() => import('@/features/seller/store/Dashboard/Mana
 const StoreGiftCards = lazy(() => import('@/features/seller/store/Dashboard/Manage/StoreGiftCards'));
 const StoreMobileApp = lazy(() => import('@/features/seller/store/Dashboard/Manage/MobileApp'));
 const MetafieldDefinitionsPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/MetafieldDefinitionsPage').then(m => ({ default: m.MetafieldDefinitionsPage })));
+const MetaobjectTypesPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/Metaobjects/MetaobjectTypesPage').then(m => ({ default: m.MetaobjectTypesPage })));
+const MetaobjectEntriesPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/Metaobjects/MetaobjectEntriesPage').then(m => ({ default: m.MetaobjectEntriesPage })));
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 const AdminOverview = lazy(() => import('@/features/admin/pages/AdminOverview').then(m => ({ default: m.AdminOverview })));
@@ -332,6 +334,8 @@ const mainRouter = createBrowserRouter([
           { path: 'marketing',                        element: <StoreMarketing /> },
           { path: 'discounts',                        element: <StoreDiscounts /> },
           { path: 'metafields',                       element: <MetafieldDefinitionsPage /> },
+          { path: 'metaobjects',                      element: <MetaobjectTypesPage /> },
+          { path: 'metaobjects/:definitionId',        element: <MetaobjectEntriesPage /> },
           { path: 'gift-cards',                       element: <StoreGiftCards /> },
           { path: 'loyalty',                          element: <StoreLoyalty /> },
           { path: 'subscriptions',                    element: <StoreSubscriptions /> },

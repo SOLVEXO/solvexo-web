@@ -1,4 +1,4 @@
-import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, type LucideIcon } from 'lucide-react';
+import { Image, Type, Star, LayoutGrid, LayoutList, Columns, Quote, HelpCircle, Video, Grid3x3, ShieldCheck, Mail, Timer, Boxes, type LucideIcon } from 'lucide-react';
 import type { SectionType } from '@/api/services/storefrontTypes';
 import type { FieldSchema } from './SchemaForm';
 
@@ -161,6 +161,16 @@ export const SECTION_META: SectionMeta[] = [
     ]),
   },
   {
+    type: 'metaobject_list', label: 'Metaobject List', description: 'Lists real entries of one of your custom content types — e.g. every Team Member or Size Guide row.',
+    Icon: Boxes, color: '#4F46E5',
+    defaultSettings: { heading: '', metaobjectType: '' },
+    allowedBlockTypes: [], blockLabel: '',
+    defaultBlockSettings: {},
+    settingsSchema: withHeading([
+      { key: 'metaobjectType', kind: 'metaobjectTypePicker', label: 'Content type', required: true, hint: 'One of your store\'s own custom content types — see Custom Fields → Content Types.' },
+    ]),
+  },
+  {
     type: 'collection_product_grid', label: 'Collection Product Grid', description: 'The paginated product grid for whichever collection a buyer is currently browsing.',
     Icon: LayoutList, color: '#0EA5E9',
     defaultSettings: { defaultSort: 'newest', columns: 3, showFilters: true },
@@ -228,8 +238,19 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
       { value: 'h2', label: 'Large (H2)' }, { value: 'h3', label: 'Medium (H3)' }, { value: 'h4', label: 'Small (H4)' },
     ] },
   ],
+  // "Dynamic Sources" — dynamicSourceNamespace/Key are optional and, when
+  // both are set, bind this paragraph to a real product metafield instead
+  // of static `text` (resolved at render time — see `AtelierProductPage.tsx`/
+  // `RichTextSection.tsx`). Two flat fields, not one nested object, to match
+  // this engine's flat settings model — see the backend type's own doc
+  // comment. Only meaningful inside a Product Template's sections; a plain
+  // Home-page paragraph has no single "current resource" to bind to, so a
+  // seller who fills these in on a Home section just gets an empty paragraph
+  // there — not validated against page context, a disclosed v1 limitation.
   paragraph: [
-    { key: 'text', kind: 'textarea', label: 'Paragraph text', required: true, maxLength: 2000, hint: 'Formatting: **bold**, *italic*, [link text](https://…)' },
+    { key: 'text', kind: 'textarea', label: 'Paragraph text', maxLength: 2000, hint: 'Formatting: **bold**, *italic*, [link text](https://…). Leave blank if binding to a product field below.' },
+    { key: 'dynamicSourceNamespace', kind: 'text', label: 'Metafield namespace (optional)', hint: 'On a Product Template only: shows that product’s own custom field instead of the text above.', half: true },
+    { key: 'dynamicSourceKey', kind: 'text', label: 'Metafield key (optional)', half: true },
   ],
   image: [
     { key: 'imageUrl', kind: 'image', label: 'Image' },
