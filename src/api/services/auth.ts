@@ -13,13 +13,35 @@ import { getStoreSlugFromHost, isCustomDomainCandidate } from '@/utils/storefron
 // call site (`TokenStorage.isLoggedIn()` etc., all over the app) keeps
 // working synchronously with zero changes. See `utils/authCookie.ts`.
 // ─────────────────────────────────────────────────────────────────────────────
+// The real, previously-missing fix: cookie scope must be decided by WHICH
+// HOSTNAME a login is actually happening on, never by what a payload
+// happens to contain. Every real login path used to compute its own ad-hoc
+// `storeId ? 'host' : 'shared'` guess (or, for `useSocialLogin`, no scope
+// logic at all — always 'shared') — correct for the one flow each was
+// written for, but genuinely wrong the moment a SELLER (or admin) logs in
+// on the apex domain: that session always got the domain-wide 'shared'
+// cookie, which — being domain-wide — is JS-readable on the seller's OWN
+// store's subdomain too. The real, reported symptom: a seller opening their
+// own storefront appeared already logged in there as if they were a
+// buyer (reading their own seller session cookie), and logging out from
+// THAT storefront cleared the shared cookie their apex seller session also
+// depended on, silently logging them out of Solvexo entirely. Basing scope
+// on the current hostname instead fixes every call site at once — an apex
+// (seller/admin) login now genuinely never sets a cookie subdomains can
+// read, and a storefront (buyer) login stays exactly as isolated as before.
+function autoCookieScope(): AuthCookieScope {
+  return (getStoreSlugFromHost() || isCustomDomainCandidate()) ? 'host' : 'shared';
+}
+
 export const TokenStorage = {
-  // `scope: 'host'` — used only by a per-store buyer session (storefront
-  // register/login) — see `authCookie.ts`'s `AuthCookieScope`. Always clears
-  // any pre-existing SHARED cookie of the same name first, so a buyer who
-  // previously held an apex-wide (or another store's) session doesn't end
-  // up with two ambiguous same-named cookies visible on this one origin.
-  save(accessToken: string, refreshToken: string, scope: AuthCookieScope = 'shared') {
+  // `scope` defaults to the CURRENT hostname's real scope (see
+  // `autoCookieScope`) — pass it explicitly only if a caller genuinely needs
+  // to override that (no real call site does today). Always clears any
+  // pre-existing SHARED cookie of the same name first when scoping to
+  // 'host', so a buyer who previously held an apex-wide (or another store's)
+  // session doesn't end up with two ambiguous same-named cookies visible on
+  // this one origin.
+  save(accessToken: string, refreshToken: string, scope: AuthCookieScope = autoCookieScope()) {
     if (scope === 'host') {
       deleteAuthCookie('accessToken', 'shared');
       deleteAuthCookie('refreshToken', 'shared');
@@ -33,7 +55,7 @@ export const TokenStorage = {
     // any of them succeeds.
     window.dispatchEvent(new Event('solvexo:auth-login'));
   },
-  saveUser(user: object, scope: AuthCookieScope = 'shared') {
+  saveUser(user: object, scope: AuthCookieScope = autoCookieScope()) {
     if (scope === 'host') deleteAuthCookie('user', 'shared');
     setAuthCookie('user', JSON.stringify(user), scope);
   },

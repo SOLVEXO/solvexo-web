@@ -77,6 +77,115 @@ function HeroFeatureTicker() {
   );
 }
 
+function TestimonialCardBody({ t }: { t: Testimonial }) {
+  return (
+    <div className="p-5 sm:p-6">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-[2px]">
+          {[1, 2, 3, 4, 5].map(i => (
+            <Star key={i} size={13} className={i <= Math.round(t.rating) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone'} />
+          ))}
+        </div>
+        <Quote size={22} className="text-brand-orange/20 fill-brand-orange/20 shrink-0" />
+      </div>
+      <p className="text-[13.5px] text-charcoal leading-[1.75] mb-4 italic">"{t.text}"</p>
+      <div className="flex items-center gap-[10px] pt-3 border-t border-bone">
+        <Avatar name={t.name} size={32} />
+        <div>
+          <div className="flex items-center gap-[6px]">
+            <p className="text-[13.5px] font-semibold text-carbon">{t.name}</p>
+            {t.isVerifiedSeller && <BadgeCheck size={13} className="text-info fill-info/15 shrink-0" />}
+          </div>
+          <p className="text-[11px] text-slate">{t.storeName ? `Owner, ${t.storeName}` : 'Verified Seller'}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * "Spotlight carousel with side peek" — one focused testimonial in the
+ * center (the new one dropping in from above each cycle, via
+ * AnimatePresence), the previous/next ones dimmed and peeking at the edges.
+ * Auto-advances every 4s, same pause-on-hover-ref pattern this page's other
+ * auto-cyclers (explorer tabs, system diagram, POS steps) already use.
+ * Replaces the earlier marquee treatment — a deliberately calmer, more
+ * "curated" feel than a continuously-scrolling strip.
+ */
+function TestimonialSpotlight({ testimonials }: { testimonials: Testimonial[] }) {
+  const [index, setIndex] = useState(0);
+  const pausedRef = useRef(false);
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (reduceMotion || testimonials.length <= 1) return;
+    const id = setInterval(() => {
+      if (!pausedRef.current) setIndex(i => (i + 1) % testimonials.length);
+    }, 4200);
+    return () => clearInterval(id);
+  }, [reduceMotion, testimonials.length]);
+
+  const n = testimonials.length;
+  const active = testimonials[index];
+  const prev = n > 1 ? testimonials[(index - 1 + n) % n] : null;
+  const next = n > 1 ? testimonials[(index + 1) % n] : null;
+
+  return (
+    <div
+      className="relative h-[300px] sm:h-[320px] flex items-center justify-center"
+      onMouseEnter={() => { pausedRef.current = true; }}
+      onMouseLeave={() => { pausedRef.current = false; }}
+    >
+      {/* Left peek — the one that just left the spotlight */}
+      {prev && (
+        <div className="hidden sm:block absolute left-1/2 -translate-x-[calc(50%+250px)] w-[300px] opacity-30 blur-[1.5px] scale-[0.82] pointer-events-none transition-[opacity,filter] duration-500">
+          <Card padding="none" className="overflow-hidden"><TestimonialCardBody t={prev} /></Card>
+        </div>
+      )}
+      {/* Right peek — the one coming up next */}
+      {next && (
+        <div className="hidden sm:block absolute left-1/2 translate-x-[calc(-50%+250px)] w-[300px] opacity-30 blur-[1.5px] scale-[0.82] pointer-events-none transition-[opacity,filter] duration-500">
+          <Card padding="none" className="overflow-hidden"><TestimonialCardBody t={next} /></Card>
+        </div>
+      )}
+      {/* Center spotlight — the active card genuinely mounts fresh each
+         cycle (key={t.id}), so it always plays its own top-drop-in entrance
+         rather than sliding over from a side. */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={active.id}
+          className="relative z-10 w-[300px] sm:w-[360px]"
+          initial={{ opacity: 0, y: -46, scale: 0.94 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 24, scale: 0.94 }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <Card padding="none" className="overflow-hidden shadow-[0_20px_45px_rgba(28,25,23,0.14)]">
+            <div className="h-[3px] bg-gradient-to-r from-brand-orange to-[#f0a57a]" />
+            <TestimonialCardBody t={active} />
+          </Card>
+        </motion.div>
+      </AnimatePresence>
+      {/* Progress dots — real position indicator, not just decoration. */}
+      {n > 1 && (
+        <div className="absolute -bottom-2 sm:bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-[6px]">
+          {testimonials.map((t, i) => (
+            <button
+              key={t.id}
+              onClick={() => setIndex(i)}
+              aria-label={`Show testimonial from ${t.name}`}
+              className={clsx(
+                'h-[6px] rounded-full border-none cursor-pointer transition-all duration-300 p-0',
+                i === index ? 'w-5 bg-brand-orange' : 'w-[6px] bg-bone hover:bg-brand-orange/40',
+              )}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const HOW_IT_WORKS = [
   { Icon: Store,    step: 'Create',  desc: 'Build your storefront from a curated theme, or set up POS to sell in person.' },
   { Icon: Link2,    step: 'Connect', desc: 'Add products, connect a payment method, and your inventory syncs across every channel.' },
@@ -831,43 +940,7 @@ export function Homepage() {
               ))}
             </div>
           ) : (
-            // A continuous marquee (same primitive already driving the
-            // industries strip above) instead of a static wrapped grid —
-            // matches this page's established "things gently move on their
-            // own" rhythm (hero ticker, system diagram, POS steps). Pauses
-            // on hover so a visitor can actually stop and read one card.
-            // Bleeds full-width (no side padding) for the loop to feel
-            // truly edge-to-edge, same as the industries strip.
-            <Marquee duration={Math.max(28, testimonials.length * 9)} className="[mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)]">
-              {testimonials.map(t => (
-                <Card key={t.id} padding="none" hover className="group relative overflow-hidden w-[300px] sm:w-[340px] mx-2 shrink-0">
-                  <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-orange to-[#f0a57a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
-                  <div className="p-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-[2px]">
-                        {[1, 2, 3, 4, 5].map(i => (
-                          <Star key={i} size={12} className={i <= Math.round(t.rating) ? 'text-brand-orange fill-brand-orange' : 'text-bone fill-bone'} />
-                        ))}
-                      </div>
-                      <Quote size={20} className="text-brand-orange/20 fill-brand-orange/20 shrink-0" />
-                    </div>
-                    <p className="text-[13px] text-charcoal leading-[1.75] mb-4 italic">
-                      "{t.text}"
-                    </p>
-                    <div className="flex items-center gap-[10px] pt-3 border-t border-bone">
-                      <Avatar name={t.name} size={30} />
-                      <div>
-                        <div className="flex items-center gap-[6px]">
-                          <p className="text-[13px] font-semibold text-carbon">{t.name}</p>
-                          {t.isVerifiedSeller && <BadgeCheck size={13} className="text-info fill-info/15 shrink-0" />}
-                        </div>
-                        <p className="text-[11px] text-slate">{t.storeName ? `Owner, ${t.storeName}` : 'Verified Seller'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </Marquee>
+            <TestimonialSpotlight testimonials={testimonials} />
           )}
         </section>
       )}
