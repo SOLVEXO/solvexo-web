@@ -12,6 +12,13 @@ import { AtelierVerifyOtpPage } from './theme-01-atelier/pages/AtelierVerifyOtpP
 import { AtelierForgotPasswordPage } from './theme-01-atelier/pages/AtelierForgotPasswordPage';
 import { AtelierNewPasswordPage } from './theme-01-atelier/pages/AtelierNewPasswordPage';
 import { AtelierAccountPage } from './theme-01-atelier/pages/AtelierAccountPage';
+import { AtelierWishlistPage } from './theme-01-atelier/pages/AtelierWishlistPage';
+import { AtelierLoyaltyPage } from './theme-01-atelier/pages/AtelierLoyaltyPage';
+import { AtelierNotificationsPage } from './theme-01-atelier/pages/AtelierNotificationsPage';
+import { AtelierMessagesPage } from './theme-01-atelier/pages/AtelierMessagesPage';
+import { AtelierReturnsPage } from './theme-01-atelier/pages/AtelierReturnsPage';
+import { AtelierGiftCardsPage } from './theme-01-atelier/pages/AtelierGiftCardsPage';
+import { AtelierSubscriptionsPage } from './theme-01-atelier/pages/AtelierSubscriptionsPage';
 import { AtelierCategoryPage } from './theme-01-atelier/pages/AtelierCategoryPage';
 import { AtelierCollectionPage } from './theme-01-atelier/pages/AtelierCollectionPage';
 import { AtelierSearchPage } from './theme-01-atelier/pages/AtelierSearchPage';
@@ -61,6 +68,13 @@ import { NovaVerifyOtpPage } from './theme-02-nova/pages/NovaVerifyOtpPage';
 import { NovaForgotPasswordPage } from './theme-02-nova/pages/NovaForgotPasswordPage';
 import { NovaNewPasswordPage } from './theme-02-nova/pages/NovaNewPasswordPage';
 import { NovaAccountPage } from './theme-02-nova/pages/NovaAccountPage';
+import { NovaWishlistPage } from './theme-02-nova/pages/NovaWishlistPage';
+import { NovaLoyaltyPage } from './theme-02-nova/pages/NovaLoyaltyPage';
+import { NovaNotificationsPage } from './theme-02-nova/pages/NovaNotificationsPage';
+import { NovaMessagesPage } from './theme-02-nova/pages/NovaMessagesPage';
+import { NovaReturnsPage } from './theme-02-nova/pages/NovaReturnsPage';
+import { NovaGiftCardsPage } from './theme-02-nova/pages/NovaGiftCardsPage';
+import { NovaSubscriptionsPage } from './theme-02-nova/pages/NovaSubscriptionsPage';
 import { NovaCategoryPage } from './theme-02-nova/pages/NovaCategoryPage';
 import { NovaCollectionPage } from './theme-02-nova/pages/NovaCollectionPage';
 import { NovaSearchPage } from './theme-02-nova/pages/NovaSearchPage';
@@ -89,7 +103,8 @@ import './theme-02-nova/theme.demoPreview';
  *  being able to sign in at all, not a later nice-to-have. */
 export type StorefrontRouteKey =
   | 'home' | 'product' | 'category' | 'collection' | 'search'
-  | 'cart' | 'checkout' | 'checkoutReturn' | 'login' | 'register' | 'verifyOtp' | 'account'
+  | 'cart' | 'checkout' | 'checkoutReturn' | 'login' | 'register' | 'verifyOtp' | 'account' | 'wishlist'
+  | 'loyalty' | 'messages' | 'notifications' | 'returns' | 'giftCards' | 'subscriptions'
   | 'blogIndex' | 'blogPost' | 'customPage'
   | 'forgotPassword' | 'newPassword' | 'notFound';
 
@@ -189,6 +204,13 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       forgotPassword: AtelierForgotPasswordPage,
       newPassword: AtelierNewPasswordPage,
       account: AtelierAccountPage,
+      wishlist: AtelierWishlistPage,
+      loyalty: AtelierLoyaltyPage,
+      notifications: AtelierNotificationsPage,
+      messages: AtelierMessagesPage,
+      returns: AtelierReturnsPage,
+      giftCards: AtelierGiftCardsPage,
+      subscriptions: AtelierSubscriptionsPage,
       category: AtelierCategoryPage,
       collection: AtelierCollectionPage,
       search: AtelierSearchPage,
@@ -200,8 +222,8 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
     display: {
       name: 'Atelier',
       description: 'Premium editorial fashion & lifestyle — asymmetric layouts, large photography, and a quiet, confident typographic voice. Its own independent storefront implementation, not a re-skin.',
-      builtRouteCount: 18,
-      totalRouteCount: 18,
+      builtRouteCount: 25,
+      totalRouteCount: 25,
     },
     // Matches `theme-01-atelier/theme.config.ts`'s own `STATIC_DEFAULTS`
     // exactly (brass accent, warm ivory ground, near-black ink, Inter body
@@ -231,6 +253,13 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
       forgotPassword: NovaForgotPasswordPage,
       newPassword: NovaNewPasswordPage,
       account: NovaAccountPage,
+      wishlist: NovaWishlistPage,
+      loyalty: NovaLoyaltyPage,
+      notifications: NovaNotificationsPage,
+      messages: NovaMessagesPage,
+      returns: NovaReturnsPage,
+      giftCards: NovaGiftCardsPage,
+      subscriptions: NovaSubscriptionsPage,
       category: NovaCategoryPage,
       collection: NovaCollectionPage,
       search: NovaSearchPage,
@@ -251,8 +280,8 @@ export const NEW_THEME_REGISTRY: Record<string, NewThemeImpl> = {
     display: {
       name: 'Nova',
       description: 'Bold, energetic, commerce-first — vivid color, confident geometric type, and punchy pill buttons. Its own independent storefront implementation, not a re-skin.',
-      builtRouteCount: 18,
-      totalRouteCount: 18,
+      builtRouteCount: 25,
+      totalRouteCount: 25,
     },
     // Matches `theme-02-nova/theme.config.ts`'s own `STATIC_DEFAULTS`
     // exactly (vivid indigo accent, white ground, cool near-black ink,

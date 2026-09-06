@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ImageOff, Minus, Plus, CheckCircle2, Star } from 'lucide-react';
+import { ImageOff, Minus, Plus, CheckCircle2, Star, Eye, Loader2 } from 'lucide-react';
 import { useProductById } from '@/hooks/marketplace/useProductById';
+import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 import { useCartContext } from '@/contexts/CartContext';
+import { Modal } from '@/components/comman/ui';
 import { useCurrencyPreference } from '@/contexts/CurrencyPreferenceContext';
 import { currencySymbol, fmt2 } from '@/utils/currency';
 import type { ProductVariant } from '@/api/services/marketplace';
@@ -141,6 +143,8 @@ export function NovaProductPage() {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [qty, setQty] = useState(1);
   const [addedFeedback, setAddedFeedback] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const { data: previewData, loading: previewLoading, error: previewError, load: loadPreview, reset: resetPreview } = useProductPreview(slug ?? '');
   const [templateSections, setTemplateSections] = useState<Section[]>([]);
   // Dynamic Sources — see `AtelierProductPage.tsx`'s identical addition for
   // the full rationale.
@@ -261,6 +265,17 @@ export function NovaProductPage() {
             </div>
           )}
 
+          {isDigital && product.digital?.previewAvailable && (
+            <button
+              type="button"
+              onClick={() => { setPreviewOpen(true); loadPreview(); }}
+              className="w-full flex items-center justify-center gap-2 cursor-pointer bg-transparent"
+              style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 700, color: t.colors.ink, border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.sm, padding: '11px 0', marginBottom: '12px' }}
+            >
+              <Eye size={14} /> Preview before you buy
+            </button>
+          )}
+
           <NovaButton
             disabled={stock <= 0}
             loading={adding === activeVariant?._id}
@@ -284,6 +299,33 @@ export function NovaProductPage() {
       </div>
 
       {templateSections.length > 0 && <NovaSectionRenderer sections={templateSections} dynamicSourceValues={dynamicSourceValues} />}
+
+      {previewOpen && (
+        <Modal title="Preview" onClose={() => { setPreviewOpen(false); resetPreview(); }} width={560} mobileSheet>
+          {previewLoading && (
+            <div className="flex items-center justify-center gap-2 py-10" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.inkMuted }}>
+              <Loader2 size={16} className="animate-spin" /> Loading preview…
+            </div>
+          )}
+          {!previewLoading && previewError && (
+            <p className="text-center py-10" style={{ fontFamily: t.fonts.body, fontSize: '13px', color: t.colors.danger }}>{previewError}</p>
+          )}
+          {!previewLoading && !previewError && previewData?.type === 'pdf' && (
+            <div className="flex flex-col gap-3">
+              {previewData.pages.map((url, i) => <img key={i} src={url} alt={`Preview page ${i + 1}`} className="w-full" />)}
+            </div>
+          )}
+          {!previewLoading && !previewError && previewData?.type === 'image' && (
+            <img src={previewData.url} alt="Preview" className="w-full" />
+          )}
+          {!previewLoading && !previewError && previewData?.type === 'video' && (
+            <video src={previewData.url} controls className="w-full" />
+          )}
+          {!previewLoading && !previewError && previewData?.type === 'audio' && (
+            <audio src={previewData.url} controls className="w-full" />
+          )}
+        </Modal>
+      )}
     </main>
   );
 }

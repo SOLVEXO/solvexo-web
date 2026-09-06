@@ -43,7 +43,7 @@ export interface RecentlyViewedItem {
   name: string;
   image: string | null;
   price: number | null;
-  currency?: 'PKR' | 'USD' | null;
+  currency?: string | null;
 }
 export function getRecentlyViewed(): RecentlyViewedItem[] {
   try { return JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) ?? '[]'); } catch { return []; }

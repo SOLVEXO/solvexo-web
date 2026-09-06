@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { LogOut, Check, Package, ChevronDown, Loader2, Download, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { LogOut, Check, Package, ChevronDown, Loader2, Download, Eye, EyeOff, AlertCircle, Award, MessageCircle, Bell, RotateCcw, Gift, Star, ChevronRight } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { useEditProfile } from '@/hooks/auth/useEditProfile';
@@ -190,6 +191,33 @@ export function AtelierAccountPage() {
         >
           <LogOut size={13} /> Log out
         </button>
+      </div>
+
+      {/* Quick Links — real e-commerce account pages (Amazon/Shopify) surface
+         these as a hub of links rather than crowding the navbar with icons
+         for every buyer feature; Wishlist/Cart already have navbar icons
+         since they're the highest-frequency actions. */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" style={{ marginBottom: '36px' }}>
+        {[
+          { to: '/loyalty', icon: Award, label: 'Loyalty & Rewards' },
+          { to: '/messages', icon: MessageCircle, label: 'Messages' },
+          { to: '/notifications', icon: Bell, label: 'Notifications' },
+          { to: '/returns', icon: RotateCcw, label: 'Returns' },
+          { to: '/gift-cards', icon: Gift, label: 'Gift Cards' },
+          { to: '/subscriptions', icon: Star, label: 'Membership' },
+        ].map(link => (
+          <Link
+            key={link.to} to={link.to}
+            className="flex items-center justify-between gap-2 no-underline"
+            style={{ border: `1px solid ${t.colors.border}`, padding: '14px 16px' }}
+          >
+            <span className="flex items-center gap-2.5">
+              <link.icon size={15} style={{ color: t.colors.accent }} />
+              <span style={{ fontFamily: t.fonts.body, fontSize: '13px', fontWeight: 500, color: t.colors.ink }}>{link.label}</span>
+            </span>
+            <ChevronRight size={14} style={{ color: t.colors.inkMuted }} />
+          </Link>
+        ))}
       </div>
 
       <section style={{ border: `1px solid ${t.colors.border}`, padding: '24px', marginBottom: '36px' }}>

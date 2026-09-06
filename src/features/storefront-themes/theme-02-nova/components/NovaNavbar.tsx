@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingBag, User, Menu, X, ChevronDown } from 'lucide-react';
+import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from 'lucide-react';
 import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
+import { useWishlistContext } from '@/contexts/WishlistContext';
 import { TokenStorage } from '@/api/services/auth';
+import { CurrencySelector } from '@/components/comman/ui';
 import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
 import { novaTheme as t } from '../theme.config';
@@ -20,6 +22,7 @@ import { novaTheme as t } from '../theme.config';
 export function NovaNavbar() {
   const { store, theme, resolveLink } = useStorefront();
   const { cartCount } = useCartContext();
+  const { wishlistCount } = useWishlistContext();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
@@ -145,6 +148,7 @@ export function NovaNavbar() {
         </div>
 
         <div className="flex items-center gap-3">
+          <CurrencySelector allowed={store.enabledCurrencies ?? undefined} />
           <button
             type="button"
             onClick={() => setSearchOpen(o => !o)}
@@ -163,6 +167,25 @@ export function NovaNavbar() {
           >
             <User size={17} />
           </Link>
+          {isLoggedIn && (
+            <Link
+              to="/wishlist"
+              aria-label={`Wishlist, ${wishlistCount} item${wishlistCount !== 1 ? 's' : ''}`}
+              className="relative flex items-center justify-center"
+              style={{ color: t.colors.ink, width: '38px', height: '38px', borderRadius: '9999px', background: t.colors.bgAlt }}
+            >
+              <Heart size={17} />
+              {wishlistCount > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-1.5 -right-1.5 flex items-center justify-center rounded-full"
+                  style={{ background: t.colors.ink, color: '#FFFFFF', fontSize: '10px', width: '17px', height: '17px' }}
+                >
+                  {wishlistCount > 9 ? '9+' : wishlistCount}
+                </span>
+              )}
+            </Link>
+          )}
           <Link
             to="/cart"
             aria-label={`Cart, ${cartCount} item${cartCount !== 1 ? 's' : ''}`}

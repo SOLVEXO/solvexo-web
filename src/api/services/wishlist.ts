@@ -10,7 +10,7 @@ export interface WishlistVariant {
   sku:            string;
   options:        VariantOption[];
   price:          number;
-  currency?:      'PKR' | 'USD' | null;
+  currency?:      string | null;
   stock:          number;
   images:         string[];
   compareAtPrice: number | null;

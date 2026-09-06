@@ -3,7 +3,7 @@ import { ENDPOINTS } from '../endpoints';
 
 // ── Types — mirror solvexo-api's `src/integrations` module exactly ─────────
 
-export type IntegrationType = 'payment' | 'whatsapp';
+export type IntegrationType = 'payment' | 'whatsapp' | 'tax' | 'shipping';
 export type PaymentProviderKey = 'safepay' | 'jazzcash' | 'easypaisa' | 'payfast' | 'stripe';
 export type IntegrationMode = 'sandbox' | 'live';
 export type IntegrationStatus = 'not_connected' | 'connected' | 'disabled' | 'error' | 'needs_reauth';
@@ -11,7 +11,7 @@ export type IntegrationStatus = 'not_connected' | 'connected' | 'disabled' | 'er
 export interface StoreIntegrationView {
   id: string | null;
   type: IntegrationType;
-  provider: PaymentProviderKey | 'whatsapp_cloud';
+  provider: PaymentProviderKey | 'whatsapp_cloud' | 'taxjar' | 'shippo';
   mode: IntegrationMode;
   status: IntegrationStatus;
   isEnabledForCheckout: boolean;
@@ -31,6 +31,16 @@ export interface StoreIntegrationView {
 export interface StoreIntegrationsList {
   payment: StoreIntegrationView[];
   whatsapp: StoreIntegrationView;
+  /** Real, live per-order tax calculation (TaxJar) — see TaxService's own
+   *  doc comment. `not_connected` is the normal default; the store's
+   *  existing flat Store.taxRate % keeps working exactly as before. */
+  tax: StoreIntegrationView;
+  /** Real, live multi-carrier shipping rates (Shippo) — see
+   *  ShippingRatesService's own doc comment. `not_connected` is the normal
+   *  default; the store's existing flat per-zone shipping price keeps
+   *  working exactly as before. `config.originAddress` is set once at
+   *  connect time (see `ShippingOriginAddress`). */
+  shipping: StoreIntegrationView;
 }
 
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
@@ -79,6 +89,35 @@ export function apiConnectWhatsApp(storeId: string, payload: ConnectWhatsAppPayl
   );
 }
 
+/** POST /api/store/:storeId/integrations/tax/taxjar/connect — verifies the
+ *  token against TaxJar's own API before saving (see TaxService.connect). */
+export function apiConnectTax(storeId: string, apiToken: string) {
+  return client.post<never, ApiResponse<{ status: string }>>(
+    ENDPOINTS.STORE_INTEGRATIONS.CONNECT(storeId, 'tax', 'taxjar'),
+    { apiToken },
+  );
+}
+
+export interface ShippingOriginAddress {
+  name: string;
+  street1: string;
+  street2?: string | null;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+  phone?: string | null;
+}
+
+/** POST /api/store/:storeId/integrations/shipping/shippo/connect — the
+ *  store's real ship-from address is required (see ShippingRatesService.connect). */
+export function apiConnectShipping(storeId: string, apiToken: string, originAddress: ShippingOriginAddress) {
+  return client.post<never, ApiResponse<{ status: string }>>(
+    ENDPOINTS.STORE_INTEGRATIONS.CONNECT(storeId, 'shipping', 'shippo'),
+    { apiToken, originAddress },
+  );
+}
+
 /** POST /api/store/:storeId/integrations/:id/test — re-verifies stored
  *  credentials still work (not a live sandbox transaction for payment
  *  gateways — see the backend's own doc comment on why). */
@@ -106,7 +145,9 @@ export function apiDisconnectIntegration(storeId: string, id: string) {
 export interface PublicPaymentMethod {
   provider: PaymentProviderKey;
   displayName: string;
-  currency: 'PKR' | 'USD';
+  /** Real, dynamic currency code (see the Markets architecture) — a store's
+   *  real `baseCurrency`, not a fixed literal union. */
+  currency: string;
   logo?: string;
 }
 

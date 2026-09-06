@@ -203,8 +203,14 @@ export function apiBrowseStorePlans(storeId: string) {
   return client.get<never, ApiResponse<BuyerPlan[]>>(ENDPOINTS.SUBSCRIPTIONS.BROWSE_PLANS(storeId));
 }
 
+// Real shape confirmed against `SubscriptionsService.subscribe` — the
+// previous `{ subscription, invoice }` here didn't match what the backend
+// actually returns and had no real caller yet to surface the mismatch.
+// Stripe-driven billing starts the subscription `default_incomplete`:
+// `requiresAction`/`clientSecret` are only present in that case (`false`/
+// `null` for the manual/dev gateway, which charges synchronously instead).
 export function apiSubscribeToPlan(planId: string, billingInterval: BillingInterval) {
-  return client.post<never, ApiResponse<{ subscription: Subscription; invoice: SubscriptionInvoice }>>(
+  return client.post<never, ApiResponse<{ subscription: Subscription; requiresAction: boolean; clientSecret: string | null }>>(
     ENDPOINTS.SUBSCRIPTIONS.SUBSCRIBE, { planId, billingInterval },
   );
 }

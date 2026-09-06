@@ -8,9 +8,10 @@ import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useCartContext } from '@/contexts/CartContext';
 import { TokenStorage } from '@/api/services/auth';
 import { useShippingZones } from '@/hooks/shipping/useShippingZones';
+import { apiGetLiveShippingRates, type LiveShippingRate } from '@/api/services/shipping';
 import { apiGetMyAddresses, apiAddAddress, type Address, type AddressPayload } from '@/api/services/address';
 import {
-  apiCreateCheckout, apiApplyCoupon, apiRemoveCoupon, apiApplyGiftCard, apiRemoveGiftCard,
+  apiCreateCheckout, apiAddShippingToCheckout, apiApplyCoupon, apiRemoveCoupon, apiApplyGiftCard, apiRemoveGiftCard,
   type Checkout, type CheckoutSummary,
 } from '@/api/services/checkout';
 import { apiPlaceCodOrder, apiInitiatePayment, apiGetPaymentStatus, type PlacedOrder } from '@/api/services/payment';
@@ -79,8 +80,36 @@ export function AtelierCheckoutPage() {
   // order-history/summary rows) — once one exists, its resolved `.currency`
   // takes over, keeping the picker's numbers in sync with what's actually
   // charged even if that ends up differing from the store's own currency.
-  const { zones, loading: zonesLoading } = useShippingZones(cart?.storeId, checkout?.currency ?? store.baseCurrency ?? 'USD');
+  const { zones: flatZones, loading: zonesLoading } = useShippingZones(cart?.storeId, checkout?.currency ?? store.baseCurrency ?? 'USD');
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
+
+  // Real live carrier rates (Shippo) — only present when this store has
+  // connected one (see the seller-facing Integrations page). Mapped into
+  // the same shape `ShippingZone` already has (city/province/shippingPrice/
+  // estimatedDeliveryTime) so the existing zone picker below needs no
+  // structural change — `isLiveRate` is the one extra field that tells
+  // `handleContinueToPayment`'s submit which real endpoint field to use.
+  const [liveRates, setLiveRates] = useState<LiveShippingRate[]>([]);
+  useEffect(() => {
+    if (!cart?.storeId || isDigital) { setLiveRates([]); return; }
+    let cancelled = false;
+    apiGetLiveShippingRates(cart.storeId)
+      .then(res => { if (!cancelled) setLiveRates(res.data ?? []); })
+      .catch(() => { if (!cancelled) setLiveRates([]); });
+    return () => { cancelled = true; };
+  }, [cart?.storeId, isDigital]);
+
+  const zones = [
+    ...liveRates.map(r => ({
+      _id: r.rateId, storeId: cart?.storeId ?? null, zoneType: 'shipping' as const,
+      country: '', province: r.service, city: r.carrier,
+      shippingPrice: r.amount,
+      estimatedDeliveryTime: r.estimatedDays ? `${r.estimatedDays} business day${r.estimatedDays === 1 ? '' : 's'}` : 'Varies',
+      status: 'active' as const, isDelete: false, createdAt: '', updatedAt: '', __v: 0,
+      isLiveRate: true as const,
+    })),
+    ...flatZones.map(z => ({ ...z, isLiveRate: false as const })),
+  ];
 
   const [summary, setSummary] = useState<CheckoutSummary | null>(null);
   const [allowedMethods, setAllowedMethods] = useState<('stripe' | 'cash_on_delivery')[]>([]);
@@ -133,10 +162,15 @@ export function AtelierCheckoutPage() {
   }, [isDigital, loggedIn]);
 
   const selectedAddr = addresses.find(a => a._id === selectedAddrId) ?? null;
-  const matchingZones = selectedAddr
-    ? zones.filter(z => z.city.toLowerCase() === selectedAddr.city.toLowerCase() || z.province.toLowerCase() === selectedAddr.state.toLowerCase())
-    : zones;
-  const effectiveZones = matchingZones.length > 0 ? matchingZones : zones;
+  // Live rates are carrier options, not city/state-matched zones — the
+  // existing city/state filter below only ever applies to the store's flat
+  // zones, so a live rate always shows regardless of address.
+  const liveZoneEntries = zones.filter(z => z.isLiveRate);
+  const flatZoneEntries = zones.filter(z => !z.isLiveRate);
+  const matchingFlatZones = selectedAddr
+    ? flatZoneEntries.filter(z => z.city.toLowerCase() === selectedAddr.city.toLowerCase() || z.province.toLowerCase() === selectedAddr.state.toLowerCase())
+    : flatZoneEntries;
+  const effectiveZones = [...liveZoneEntries, ...(matchingFlatZones.length > 0 ? matchingFlatZones : flatZoneEntries)];
   useEffect(() => {
     if (!selectedZoneId && effectiveZones.length > 0) setSelectedZoneId(effectiveZones[0]._id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -153,11 +187,31 @@ export function AtelierCheckoutPage() {
       shippingZoneId: isDigital ? undefined : (selectedZoneId ?? undefined),
       storeId: cart?.storeId,
     })
-      .then(res => {
+      .then(async res => {
         setCheckout(res.data.checkout);
         setSummary(res.data.summary);
         const methods = (res.data.allowedPaymentMethods ?? []).filter((m): m is 'stripe' | 'cash_on_delivery' => m === 'stripe' || m === 'cash_on_delivery');
         setAllowedMethods(isDigital ? methods.filter(m => m === 'stripe') : methods);
+
+        // createCheckout itself always creates with a zero shipping fee —
+        // the real fee (flat zone OR a real live carrier rate, re-verified
+        // server-side) is only ever registered by this separate call. Found
+        // and fixed while wiring live carrier rates in: this call was never
+        // actually being made anywhere in the app before, so every physical
+        // order's shipping fee was silently 0 regardless of which zone the
+        // buyer picked.
+        if (!isDigital && selectedZoneId) {
+          const chosen = zones.find(z => z._id === selectedZoneId);
+          try {
+            const shipRes = await apiAddShippingToCheckout({
+              checkoutId: res.data.checkout._id,
+              ...(chosen?.isLiveRate ? { liveRateId: selectedZoneId } : { shippingZoneId: selectedZoneId }),
+            });
+            setSummary(s => s ? { ...s, shippingFee: shipRes.data.shippingFee, totalAmount: shipRes.data.totalAmount } : s);
+          } catch (err) {
+            setCheckoutError(err instanceof Error ? err.message : 'Failed to apply shipping to this checkout.');
+          }
+        }
       })
       .catch(err => setCheckoutError(err instanceof Error ? err.message : 'Failed to initialize checkout.'))
       .finally(() => setCreatingCheckout(false));

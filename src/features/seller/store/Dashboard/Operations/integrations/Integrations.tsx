@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MessageCircle, AlertTriangle, RefreshCw, ShieldCheck, Copy, Check } from 'lucide-react';
+import { MessageCircle, AlertTriangle, RefreshCw, ShieldCheck, Copy, Check, Percent, Truck } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { StorePageHeader, useStoreWorkspace } from '@/components/layouts/StoreLayout';
 import { Button, Modal, Toggle, SkeletonBox, Field, Input } from '@/components/comman/ui';
@@ -8,8 +8,8 @@ import { useToast } from '@/contexts/ToastContext';
 import { API_BASE_URL } from '@/api/client';
 import {
   apiListStoreIntegrations, apiConnectSafepay, apiConnectWhatsApp, apiTestIntegration,
-  apiUpdateIntegration, apiDisconnectIntegration,
-  type StoreIntegrationsList, type StoreIntegrationView, type PaymentProviderKey,
+  apiUpdateIntegration, apiDisconnectIntegration, apiConnectTax, apiConnectShipping,
+  type StoreIntegrationsList, type StoreIntegrationView, type PaymentProviderKey, type ShippingOriginAddress,
 } from '@/api/services/integrations';
 import { apiCreateStripeConnectOnboardingLink, apiSyncStripeConnectStatus } from '@/api/services/stripeConnect';
 import { isMetaConfigured, useWhatsAppEmbeddedSignup } from '@/hooks/integrations/useWhatsAppEmbeddedSignup';
@@ -570,6 +570,262 @@ function WhatsAppCard({ integration, storeId, onChanged }: { integration: StoreI
   );
 }
 
+// ── Tax card (TaxJar) — real, live, per-country tax calculation. Simpler
+// connect flow than Safepay/WhatsApp: a single API token, verified against
+// TaxJar's own API before saving (see TaxService.connect). ──────────────────
+function TaxConnectModal({ storeId, onClose, onSaved }: { storeId: string; onClose: () => void; onSaved: () => void }) {
+  const [apiToken, setApiToken] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit() {
+    if (!apiToken.trim()) { setError('API token is required.'); return; }
+    setSaving(true); setError('');
+    try {
+      await apiConnectTax(storeId, apiToken.trim());
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to connect TaxJar.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal
+      title="Connect TaxJar"
+      width={440}
+      onClose={onClose}
+      mobileSheet
+      footer={<>
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <Button onClick={submit} loading={saving}>Connect</Button>
+      </>}
+    >
+      <div className="flex items-start gap-2 rounded-[10px] bg-[#EEF4FF] px-3.5 py-3 mb-4">
+        <ShieldCheck size={15} className="shrink-0 mt-[1px]" style={{ color: '#0B5FFF' }} />
+        <p className="text-[11.5px] leading-[1.5]" style={{ color: '#1D3E7A' }}>
+          From your TaxJar account → Account → SmartCalcs API. Real US state/local sales tax, EU/UK/Canada/Australia
+          VAT/GST — calculated live at checkout from your buyer's real address, instead of one flat percentage.
+        </p>
+      </div>
+      <Field label="TaxJar API Token" required>
+        <Input value={apiToken} onChange={e => setApiToken(e.target.value)} placeholder="tj_..." className="font-mono" />
+      </Field>
+      {error && <p className="text-[12px] text-error -mt-1">{error}</p>}
+    </Modal>
+  );
+}
+
+function TaxIntegrationCard({ integration, storeId, onChanged }: { integration: StoreIntegrationView; storeId: string; onChanged: () => void }) {
+  const toast = useToast();
+  const [showConnect, setShowConnect] = useState(false);
+  const [pendingDisconnect, setPendingDisconnect] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const isConnected = integration.status === 'connected';
+
+  async function confirmDisconnect() {
+    if (!integration.id) return;
+    setDisconnecting(true);
+    try {
+      await apiDisconnectIntegration(storeId, integration.id);
+      setPendingDisconnect(false);
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to disconnect.');
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  return (
+    <div className="bg-white border border-bone rounded-[10px] px-4 sm:px-[22px] py-5">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-[42px] h-[42px] rounded-[10px] bg-[#EEF4FF] flex items-center justify-center shrink-0">
+            <Percent size={19} style={{ color: '#0B5FFF' }} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[14px] font-bold text-carbon truncate">TaxJar</p>
+            <p className="text-[11px] text-slate">Real live per-country tax, instead of one flat rate</p>
+          </div>
+        </div>
+        <StatusPill status={integration.status} />
+      </div>
+
+      {!isConnected ? (
+        <>
+          <p className="text-[12.5px] text-slate mb-3">Not connected — this store still uses its flat Tax Rate (Store Settings) for every order.</p>
+          <Button size="sm" onClick={() => setShowConnect(true)}>Connect TaxJar</Button>
+        </>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {integration.lastError && (
+            <p className="flex items-center gap-1.5 text-[12px] text-error"><AlertTriangle size={12} className="shrink-0" /> {integration.lastError}</p>
+          )}
+          <p className="text-[12px] text-slate">Live tax is now calculated at checkout for every order from this store.</p>
+          <div>
+            <Button size="sm" variant="outline" onClick={() => setPendingDisconnect(true)}>Disconnect</Button>
+          </div>
+        </div>
+      )}
+
+      {showConnect && (
+        <TaxConnectModal storeId={storeId} onClose={() => setShowConnect(false)} onSaved={() => { setShowConnect(false); onChanged(); }} />
+      )}
+      {pendingDisconnect && (
+        <ConfirmDialog
+          title="Disconnect TaxJar"
+          message="This store will go back to its flat Tax Rate for every order. You can reconnect any time."
+          confirmLabel="Disconnect"
+          loading={disconnecting}
+          onCancel={() => setPendingDisconnect(false)}
+          onConfirm={confirmDisconnect}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Shipping card (Shippo) — real, live multi-carrier rates. Needs the
+// store's real ship-from address in addition to the API token, since a
+// carrier can't quote a rate without knowing where the package ships from. ──
+function ShippingConnectModal({ storeId, onClose, onSaved }: { storeId: string; onClose: () => void; onSaved: () => void }) {
+  const [apiToken, setApiToken] = useState('');
+  const [address, setAddress] = useState<ShippingOriginAddress>({
+    name: '', street1: '', street2: '', city: '', state: '', zip: '', country: '', phone: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  function set<K extends keyof ShippingOriginAddress>(key: K, value: ShippingOriginAddress[K]) {
+    setAddress(a => ({ ...a, [key]: value }));
+  }
+
+  async function submit() {
+    if (!apiToken.trim()) { setError('API token is required.'); return; }
+    if (!address.street1 || !address.city || !address.state || !address.zip || !address.country) {
+      setError('A complete ship-from address (street, city, state, zip, country) is required.');
+      return;
+    }
+    setSaving(true); setError('');
+    try {
+      await apiConnectShipping(storeId, apiToken.trim(), address);
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to connect Shippo.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal
+      title="Connect Shippo"
+      width={480}
+      onClose={onClose}
+      mobileSheet
+      footer={<>
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <Button onClick={submit} loading={saving}>Connect</Button>
+      </>}
+    >
+      <div className="flex items-start gap-2 rounded-[10px] bg-[#EEF9F1] px-3.5 py-3 mb-4">
+        <ShieldCheck size={15} className="shrink-0 mt-[1px]" style={{ color: '#1E7A3C' }} />
+        <p className="text-[11.5px] leading-[1.5]" style={{ color: '#1E5A32' }}>
+          From your Shippo account → API. Real live rates from DHL/FedEx/UPS/USPS (and more, via your connected carrier
+          accounts) shown to buyers at checkout, and real label + tracking-number generation at fulfillment.
+        </p>
+      </div>
+      <Field label="Shippo API Token" required>
+        <Input value={apiToken} onChange={e => setApiToken(e.target.value)} placeholder="shippo_live_..." className="font-mono" />
+      </Field>
+      <p className="text-[11.5px] font-semibold text-charcoal mt-3 mb-2">Ship-from address</p>
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="col-span-2"><Field label="Name" required><Input value={address.name} onChange={e => set('name', e.target.value)} /></Field></div>
+        <div className="col-span-2"><Field label="Street" required><Input value={address.street1} onChange={e => set('street1', e.target.value)} /></Field></div>
+        <div className="col-span-2"><Field label="Street 2"><Input value={address.street2 ?? ''} onChange={e => set('street2', e.target.value)} /></Field></div>
+        <Field label="City" required><Input value={address.city} onChange={e => set('city', e.target.value)} /></Field>
+        <Field label="State" required><Input value={address.state} onChange={e => set('state', e.target.value)} /></Field>
+        <Field label="Zip" required><Input value={address.zip} onChange={e => set('zip', e.target.value)} /></Field>
+        <Field label="Country" required><Input value={address.country} onChange={e => set('country', e.target.value)} placeholder="US" /></Field>
+        <div className="col-span-2"><Field label="Phone"><Input value={address.phone ?? ''} onChange={e => set('phone', e.target.value)} /></Field></div>
+      </div>
+      {error && <p className="text-[12px] text-error mt-2">{error}</p>}
+    </Modal>
+  );
+}
+
+function ShippingIntegrationCard({ integration, storeId, onChanged }: { integration: StoreIntegrationView; storeId: string; onChanged: () => void }) {
+  const toast = useToast();
+  const [showConnect, setShowConnect] = useState(false);
+  const [pendingDisconnect, setPendingDisconnect] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const isConnected = integration.status === 'connected';
+
+  async function confirmDisconnect() {
+    if (!integration.id) return;
+    setDisconnecting(true);
+    try {
+      await apiDisconnectIntegration(storeId, integration.id);
+      setPendingDisconnect(false);
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to disconnect.');
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  return (
+    <div className="bg-white border border-bone rounded-[10px] px-4 sm:px-[22px] py-5">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-[42px] h-[42px] rounded-[10px] bg-[#EEF9F1] flex items-center justify-center shrink-0">
+            <Truck size={19} style={{ color: '#1E7A3C' }} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[14px] font-bold text-carbon truncate">Shippo</p>
+            <p className="text-[11px] text-slate">Real live carrier rates + labels, instead of flat per-zone pricing</p>
+          </div>
+        </div>
+        <StatusPill status={integration.status} />
+      </div>
+
+      {!isConnected ? (
+        <>
+          <p className="text-[12.5px] text-slate mb-3">Not connected — this store still uses its flat per-zone shipping rates (Shipping) for every order.</p>
+          <Button size="sm" onClick={() => setShowConnect(true)}>Connect Shippo</Button>
+        </>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {integration.lastError && (
+            <p className="flex items-center gap-1.5 text-[12px] text-error"><AlertTriangle size={12} className="shrink-0" /> {integration.lastError}</p>
+          )}
+          <p className="text-[12px] text-slate">Buyers now see real live carrier rates at checkout alongside your flat zones.</p>
+          <div>
+            <Button size="sm" variant="outline" onClick={() => setPendingDisconnect(true)}>Disconnect</Button>
+          </div>
+        </div>
+      )}
+
+      {showConnect && (
+        <ShippingConnectModal storeId={storeId} onClose={() => setShowConnect(false)} onSaved={() => { setShowConnect(false); onChanged(); }} />
+      )}
+      {pendingDisconnect && (
+        <ConfirmDialog
+          title="Disconnect Shippo"
+          message="Buyers will stop seeing live carrier rates and go back to your flat per-zone pricing. You can reconnect any time."
+          confirmLabel="Disconnect"
+          loading={disconnecting}
+          onCancel={() => setPendingDisconnect(false)}
+          onConfirm={confirmDisconnect}
+        />
+      )}
+    </div>
+  );
+}
+
 export function StoreIntegrations() {
   usePageTitle('Integrations');
   const { storeId } = useStoreWorkspace();
@@ -627,6 +883,15 @@ export function StoreIntegrations() {
               <p className="text-[12px] text-slate mb-3">Automatic order-status updates for your buyers.</p>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <WhatsAppCard integration={data.whatsapp} storeId={storeId} onChanged={load} />
+              </div>
+            </div>
+
+            <div>
+              <p className="text-[13px] font-bold text-carbon mb-1">Tax &amp; Shipping</p>
+              <p className="text-[12px] text-slate mb-3">Optional, real live calculation instead of your store's flat rate/zone pricing — connect either whenever you're ready.</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <TaxIntegrationCard integration={data.tax} storeId={storeId} onChanged={load} />
+                <ShippingIntegrationCard integration={data.shipping} storeId={storeId} onChanged={load} />
               </div>
             </div>
           </>

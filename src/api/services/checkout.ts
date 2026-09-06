@@ -153,13 +153,18 @@ interface CreateCheckoutResponse {
 }
 
 export interface AddShippingPayload {
-  checkoutId:    string;
-  shippingZoneId: string;
+  checkoutId:     string;
+  /** Exactly one of `shippingZoneId` (the store's own flat per-zone rate)
+   *  or `liveRateId` (a real live carrier rate — see the Shippo
+   *  integration) must be set, never both. */
+  shippingZoneId?: string;
+  liveRateId?:     string;
 }
 
 export interface AddShippingData {
   checkoutId:    string;
-  shippingZoneId: string;
+  shippingZoneId: string | null;
+  liveShippingRateId?: string | null;
   shippingFee:   number;
   subtotal:      number;
   totalAmount:   number;

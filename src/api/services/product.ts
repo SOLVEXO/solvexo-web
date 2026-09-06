@@ -57,8 +57,10 @@ export interface ProductVariant {
   barcode?:       string | null;
   price:          number;
   /** The currency `price`/`compareAtPrice` are denominated in — the owning
-   *  store's own Store.baseCurrency, stamped server-side at creation. */
-  currency?:      'PKR' | 'USD' | null;
+   *  store's own Store.baseCurrency, stamped server-side at creation. Real,
+   *  dynamic currency code (see the Markets architecture), not a fixed
+   *  literal union. */
+  currency?:      string | null;
   compareAtPrice: number | null;
   options:        VariantOption[];
   stock:          number;

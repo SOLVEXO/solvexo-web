@@ -573,6 +573,9 @@ export const ENDPOINTS = {
     // non-empty for a single-store checkout, see CheckoutPaymentMethodsService.
     PAYMENT_METHODS: (checkoutId: string) => `/api/checkout/${checkoutId}/payment-methods`,
     INITIATE_PAYMENT_METHOD: (checkoutId: string, provider: string) => `/api/checkout/${checkoutId}/payment-methods/${provider}/initiate`,
+    // Real live carrier rates (Shippo) — additional option next to the flat
+    // getShippingZones list, see CheckoutService.getLiveShippingRates.
+    LIVE_SHIPPING_RATES: '/api/checkout/live-shipping-rates',
   },
 
   // ── STORE INTEGRATIONS (seller-facing: payment gateways + WhatsApp) ────────

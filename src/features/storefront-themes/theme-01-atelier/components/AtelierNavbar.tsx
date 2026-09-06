@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingBag, User, Menu, X, ChevronDown } from 'lucide-react';
+import { Search, ShoppingBag, Heart, User, Menu, X, ChevronDown } from 'lucide-react';
 import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 import { useCartContext } from '@/contexts/CartContext';
+import { useWishlistContext } from '@/contexts/WishlistContext';
 import { TokenStorage } from '@/api/services/auth';
+import { CurrencySelector } from '@/components/comman/ui';
 import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { apiGetPublicCollections, type PublicCollectionSummary } from '@/api/services/collections';
 import { atelierTheme as t } from '../theme.config';
@@ -21,6 +23,7 @@ import { atelierTheme as t } from '../theme.config';
 export function AtelierNavbar() {
   const { store, theme, resolveLink } = useStorefront();
   const { cartCount } = useCartContext();
+  const { wishlistCount } = useWishlistContext();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
@@ -153,6 +156,7 @@ export function AtelierNavbar() {
 
         {/* Right icon cluster */}
         <div className="flex items-center gap-4">
+          <CurrencySelector allowed={store.enabledCurrencies ?? undefined} />
           <button
             type="button"
             onClick={() => setSearchOpen(o => !o)}
@@ -166,6 +170,20 @@ export function AtelierNavbar() {
           <Link to={isLoggedIn ? '/account' : '/login'} aria-label="Account" style={{ color: t.colors.ink }}>
             <User size={18} />
           </Link>
+          {isLoggedIn && (
+            <Link to="/wishlist" aria-label={`Wishlist, ${wishlistCount} item${wishlistCount !== 1 ? 's' : ''}`} className="relative" style={{ color: t.colors.ink }}>
+              <Heart size={18} />
+              {wishlistCount > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-2 -right-2 flex items-center justify-center rounded-full text-white"
+                  style={{ background: t.colors.ink, fontSize: '10px', width: '16px', height: '16px' }}
+                >
+                  {wishlistCount > 9 ? '9+' : wishlistCount}
+                </span>
+              )}
+            </Link>
+          )}
           <Link to="/cart" aria-label={`Cart, ${cartCount} item${cartCount !== 1 ? 's' : ''}`} className="relative" style={{ color: t.colors.ink }}>
             <ShoppingBag size={18} />
             {cartCount > 0 && (

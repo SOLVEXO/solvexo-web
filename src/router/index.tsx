@@ -178,6 +178,13 @@ const storefrontRouter = createBrowserRouter([
           { path: 'forgot-password', element: <ThemedRoute routeKey="forgotPassword" /> },
           { path: 'new-password', element: <ThemedRoute routeKey="newPassword" /> },
           { path: 'account', element: <ThemedRoute routeKey="account" /> },
+          { path: 'wishlist', element: <ThemedRoute routeKey="wishlist" /> },
+          { path: 'loyalty', element: <ThemedRoute routeKey="loyalty" /> },
+          { path: 'messages', element: <ThemedRoute routeKey="messages" /> },
+          { path: 'notifications', element: <ThemedRoute routeKey="notifications" /> },
+          { path: 'returns', element: <ThemedRoute routeKey="returns" /> },
+          { path: 'gift-cards', element: <ThemedRoute routeKey="giftCards" /> },
+          { path: 'subscriptions', element: <ThemedRoute routeKey="subscriptions" /> },
           // Must come before the `:pageSlug` catch-all below — 'category'/
           // 'collections'/'checkout' are reserved custom-page slugs precisely
           // so they can never collide with these (see RESERVED_CUSTOM_PAGE_SLUGS).

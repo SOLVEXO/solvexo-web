@@ -129,3 +129,25 @@ export function buildTrackingUrl(template: string | null | undefined, trackingNu
   if (!template || !trackingNumber) return '';
   return template.replace('{tracking}', encodeURIComponent(trackingNumber));
 }
+
+// ── Real live carrier rates (Shippo) — an additional option next to the
+// flat `apiGetShippingZones` list above, never a replacement. `data` is
+// `null` (not an error) whenever a live quote isn't available for this store
+// (Shippo not connected, buyer has no saved address, cart empty, or the
+// provider is unreachable) — checkout simply shows only the flat zone list
+// in that case, exactly today's behavior for every store that never
+// connects Shippo. See CheckoutService.getLiveShippingRates. ──────────────
+export interface LiveShippingRate {
+  rateId: string;
+  carrier: string;
+  service: string;
+  amount: number;
+  currency: string;
+  estimatedDays: number | null;
+}
+
+export function apiGetLiveShippingRates(storeId: string) {
+  return client.get<never, { success: boolean; data: LiveShippingRate[] | null }>(
+    `${ENDPOINTS.CHECKOUT.LIVE_SHIPPING_RATES}?storeId=${storeId}`,
+  );
+}
