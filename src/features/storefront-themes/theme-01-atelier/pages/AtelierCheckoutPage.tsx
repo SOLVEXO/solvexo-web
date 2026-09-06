@@ -73,10 +73,15 @@ export function AtelierCheckoutPage() {
   const [savingAddr, setSavingAddr] = useState(false);
   const [addrError, setAddrError] = useState('');
 
-  const { zones, loading: zonesLoading } = useShippingZones();
+  const [checkout, setCheckout] = useState<Checkout | null>(null);
+  // Before a real Checkout exists, the zone picker displays in the store's
+  // own currency (matches this page's own later `currency` derivation for
+  // order-history/summary rows) — once one exists, its resolved `.currency`
+  // takes over, keeping the picker's numbers in sync with what's actually
+  // charged even if that ends up differing from the store's own currency.
+  const { zones, loading: zonesLoading } = useShippingZones(cart?.storeId, checkout?.currency ?? store.baseCurrency ?? 'USD');
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
 
-  const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [summary, setSummary] = useState<CheckoutSummary | null>(null);
   const [allowedMethods, setAllowedMethods] = useState<('stripe' | 'cash_on_delivery')[]>([]);
   const [creatingCheckout, setCreatingCheckout] = useState(false);

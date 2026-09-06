@@ -8,11 +8,8 @@ import { useProductById } from '@/hooks/marketplace/useProductById';
 import { useProductPreview } from '@/hooks/marketplace/useProductPreview';
 import { useCartContext } from '@/contexts/CartContext';
 import { useWishlistContext } from '@/contexts/WishlistContext';
-import { useAuthGate } from '@/contexts/AuthGateContext';
-import { useToast } from '@/contexts/ToastContext';
-import { TokenStorage } from '@/api/services/auth';
 import { apiGetAllProducts, type MarketplaceProduct, type ProductVariant } from '@/api/services/marketplace';
-import { apiGetPublicStoreProducts, apiGetPublicStore, apiFollowStore, apiGetFollowStatus, type PublicStoreProduct, type PublicStoreData } from '@/api/services/store';
+import { apiGetPublicStoreProducts, apiGetPublicStore, type PublicStoreProduct, type PublicStoreData } from '@/api/services/store';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import { Button } from '@/components/comman/ui/Button';
 import { Badge } from '@/components/comman/ui/Badge';
@@ -24,7 +21,7 @@ import { BuyerNavbar, Breadcrumb, AppDownloadBanner, Footer, CoverImage, pushRec
 import {
   ArrowRight, Package, Download, ClipboardList, CheckCircle, Minus, Plus,
   ShoppingCart, Star, Link2, Share2, ImageOff, Heart, ShieldCheck, Truck,
-  UserPlus, UserCheck, Tag, ZoomIn, Users, Calendar, Award, Sparkles, Flame,
+  Tag, ZoomIn, Users, Calendar, Award, Sparkles, Flame,
   FileText, Store as StoreIcon, Eye, Loader2, Zap,
 } from 'lucide-react';
 import { ProductReviewsSection } from './ProductReviews';
@@ -339,16 +336,11 @@ export function ProductDetail() {
   const { detail, loading, error, refetch } = useProductById(slug);
   const { addToCart, updateQty, adding } = useCartContext();
   const { isWishlisted, wishlisting, toggleWishlist } = useWishlistContext();
-  const { requireAuth } = useAuthGate();
-  const toast = useToast();
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [qty, setQty] = useState(1);
   const [shareCopied, setShareCopied] = useState(false);
-
-  const [following, setFollowing] = useState(false);
-  const [followBusy, setFollowBusy] = useState(false);
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const { data: previewData, loading: previewLoading, error: previewError, load: loadPreview, reset: resetPreview } = useProductPreview(slug);
@@ -375,7 +367,6 @@ export function ProductDetail() {
   const activeVariant = selectedVariant ?? detail?.defaultVariant ?? null;
   const allImages = [...(product?.images ?? []), ...(activeVariant?.images ?? [])].filter((v, i, a) => a.indexOf(v) === i);
 
-  const isLoggedIn = TokenStorage.isLoggedIn();
   const storeId = product?.storeId;
   const pType = product?.productType ?? product?.type ?? 'physical';
   const isPhysical = pType === 'physical';
@@ -416,11 +407,6 @@ export function ProductDetail() {
   }, [product?._id]);
 
   useEffect(() => {
-    if (!storeId || !isLoggedIn) return;
-    apiGetFollowStatus(storeId).then(res => setFollowing(res.data.following)).catch(() => {});
-  }, [storeId, isLoggedIn]);
-
-  useEffect(() => {
     if (!storeId) return;
     let cancelled = false;
     apiGetPublicStoreProducts(storeId, { limit: 8 })
@@ -449,19 +435,6 @@ export function ProductDetail() {
       .catch(() => {});
     return () => { cancelled = true; };
   }, [product?.categoryId, product?._id]);
-
-  function handleFollow() {
-    if (!storeId || followBusy) return;
-    requireAuth(async () => {
-      setFollowBusy(true);
-      try {
-        const res = await apiFollowStore(storeId);
-        setFollowing(res.data.following);
-        toast.success(res.data.following ? 'Following store' : 'Unfollowed store');
-      } catch (err) { toast.error(err instanceof Error ? err.message : 'Could not update follow status.'); }
-      finally { setFollowBusy(false); }
-    }, 'Sign in to follow this store.');
-  }
 
   async function handleAddToCart(navigateToCart: boolean) {
     if (!product || !activeVariant) return;
@@ -768,14 +741,6 @@ export function ProductDetail() {
                         <Button variant="secondary" size="sm" disabled={!product.storeSlug} onClick={() => product.storeSlug && (window.location.href = getStorefrontUrl(product.storeSlug))}>
                           Visit Store <ArrowRight size={13} className="inline align-middle ml-1" />
                         </Button>
-                        {storeId && (
-                          <Button
-                            variant={following ? 'ghost' : 'outline'} size="sm"
-                            loading={followBusy} onClick={handleFollow}
-                          >
-                            {following ? <><UserCheck size={13} /> Following</> : <><UserPlus size={13} /> Follow</>}
-                          </Button>
-                        )}
                       </div>
                     </div>
 

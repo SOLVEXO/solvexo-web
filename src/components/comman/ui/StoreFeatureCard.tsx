@@ -1,34 +1,16 @@
-import { useState } from 'react';
 import { clsx } from 'clsx';
-import { Star, Users, Store, TrendingUp, BadgeCheck, PackageCheck, UserPlus, UserCheck } from 'lucide-react';
-import { apiFollowStore, type PublicStoreListItem } from '@/api/services/store';
-import { useAuthGate } from '@/contexts/AuthGateContext';
+import { Star, Users, Store, TrendingUp, BadgeCheck, PackageCheck } from 'lucide-react';
+import { type PublicStoreListItem } from '@/api/services/store';
 import { CoverImage } from './CoverImage';
 
-// ── Featured seller card — cover, avatar, badges, rating/followers/products, follow ──
+// ── Featured seller card — cover, avatar, badges, rating/followers/products ──
 export function StoreFeatureCard({ store, onClick, className }: {
   store: PublicStoreListItem;
   onClick: (slug: string) => void;
   className?: string;
 }) {
-  const [following, setFollowing] = useState(false);
-  const [followBusy, setFollowBusy] = useState(false);
-  const { requireAuth } = useAuthGate();
   const isVerified = store.badges?.includes('verified');
   const isTopSeller = store.badges?.includes('top_seller');
-
-  const handleFollow = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (followBusy) return;
-    requireAuth(async () => {
-      setFollowBusy(true);
-      try {
-        const res = await apiFollowStore(store.storeId);
-        setFollowing(res.data.following);
-      } catch { /* non-critical — button just stays in prior state */ }
-      finally { setFollowBusy(false); }
-    }, 'Sign in to follow this store.');
-  };
 
   return (
     <div
@@ -56,7 +38,7 @@ export function StoreFeatureCard({ store, onClick, className }: {
 
       {/* Body */}
       <div className="relative px-4 pb-4 -mt-7">
-        <div className="flex items-end justify-between mb-2">
+        <div className="flex items-end mb-2">
           <div className="w-14 h-14 rounded-2xl bg-white border border-bone p-[3px]">
             <div className="w-full h-full rounded-[13px] bg-brand-pale-orange flex items-center justify-center overflow-hidden">
               {store.logo
@@ -64,20 +46,6 @@ export function StoreFeatureCard({ store, onClick, className }: {
                 : <Store size={22} className="text-brand-orange" />}
             </div>
           </div>
-          <button
-            onClick={handleFollow}
-            disabled={followBusy}
-            className={clsx(
-              'inline-flex items-center gap-[5px] px-[11px] py-[6px] rounded-full text-[11px] font-semibold border cursor-pointer transition-all duration-150 mb-[2px]',
-              following
-                ? 'bg-carbon/5 border-bone text-charcoal'
-                : 'bg-brand-orange border-brand-orange text-white hover:bg-brand-deep-orange',
-              followBusy && 'opacity-60 cursor-wait',
-            )}
-          >
-            {following ? <UserCheck size={11} /> : <UserPlus size={11} />}
-            {following ? 'Following' : 'Follow'}
-          </button>
         </div>
 
         <div className="flex items-center gap-[5px] mb-[3px]">

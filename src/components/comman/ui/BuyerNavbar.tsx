@@ -842,32 +842,42 @@ function FlagUS({ className }: { className?: string }) {
   );
 }
 
-const CURRENCY_OPTIONS: { code: SupportedCurrency; Flag: typeof FlagPK; label: string }[] = [
-  { code: 'PKR', Flag: FlagPK, label: 'Pakistani Rupee' },
-  { code: 'USD', Flag: FlagUS, label: 'US Dollar' },
-];
+// Hand-drawn flags exist only for these two — the platform's real, dynamic
+// Markets list (useCurrencyPreference().enabledCurrencies) can include any
+// admin-enabled currency, and drawing an accurate flag SVG for each one by
+// hand isn't something to fabricate; every other currency renders as a
+// clean text-only row (code + name) instead — an honest simplification, not
+// a missing feature. `CURRENCY_NAMES` covers the common set; anything
+// outside it falls back to just the code.
+const CURRENCY_FLAGS: Record<string, typeof FlagPK> = { PKR: FlagPK, USD: FlagUS };
+const CURRENCY_NAMES: Record<string, string> = {
+  PKR: 'Pakistani Rupee', USD: 'US Dollar', GBP: 'British Pound', EUR: 'Euro',
+  AED: 'UAE Dirham', INR: 'Indian Rupee', CAD: 'Canadian Dollar', AUD: 'Australian Dollar',
+};
 
-// PKR/USD dropdown, country flag + code in the trigger — built on the
-// shared ActionMenu (same portal/positioning/keyboard-nav/click-outside
-// mechanics used by every other dropdown in the app, e.g. admin table row
-// actions) rather than a one-off implementation. Manual selection here
-// always wins and persists — location detection only ever sets the
-// initial default, never overrides an explicit choice.
+// Currency dropdown, country flag (when a real one exists) + code in the
+// trigger — built on the shared ActionMenu (same portal/positioning/
+// keyboard-nav/click-outside mechanics used by every other dropdown in the
+// app, e.g. admin table row actions) rather than a one-off implementation.
+// Manual selection here always wins and persists — location detection only
+// ever sets the initial default, never overrides an explicit choice.
 export function CurrencySelector({ allowed }: { allowed?: SupportedCurrency[] } = {}) {
-  const { currency, setCurrency } = useCurrencyPreference();
+  const { currency, setCurrency, enabledCurrencies } = useCurrencyPreference();
   // `allowed` scopes this to one store's own "Markets" selection (see
   // Store.enabledCurrencies) — omitted on the marketplace, which has no
-  // single store's currency restriction to respect.
-  const options = allowed ? CURRENCY_OPTIONS.filter(c => allowed.includes(c.code)) : CURRENCY_OPTIONS;
+  // single store's currency restriction to respect. Both cases now derive
+  // from the platform's real, dynamic currency list, never a hardcoded pair.
+  const codes = allowed ? enabledCurrencies.filter(c => allowed.includes(c)) : enabledCurrencies;
+  const options = codes.map(code => ({ code, Flag: CURRENCY_FLAGS[code], label: CURRENCY_NAMES[code] ?? code }));
   const active = options.find(c => c.code === currency) ?? options[0];
-  if (options.length <= 1) return null;
+  if (options.length <= 1 || !active) return null;
 
   return (
     <ActionMenu
       ariaLabel={`Currency: ${active.code}. Change currency`}
       trigger={
         <>
-          <active.Flag className="w-4 h-3 rounded-[2px] shrink-0 object-cover" />
+          {active.Flag ? <active.Flag className="w-4 h-3 rounded-[2px] shrink-0 object-cover" /> : null}
           <span className="hidden md:inline">{active.code}</span>
           <ChevronDown size={12} className="hidden md:inline text-slate" />
         </>
@@ -881,7 +891,7 @@ export function CurrencySelector({ allowed }: { allowed?: SupportedCurrency[] } 
           </span>
         ),
         onClick: () => setCurrency(c.code),
-        icon: <c.Flag className="w-4 h-3 rounded-[2px] shrink-0 object-cover" />,
+        icon: c.Flag ? <c.Flag className="w-4 h-3 rounded-[2px] shrink-0 object-cover" /> : undefined,
       }))}
     />
   );

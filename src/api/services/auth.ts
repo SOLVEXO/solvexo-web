@@ -291,8 +291,9 @@ export interface ProfileData {
   role:         AppRole;
   /** Explicit buyer currency choice — null until the buyer picks one, in
    *  which case it's the cross-device source of truth for checkout/display
-   *  currency (see CurrencyPreferenceContext). */
-  currencyPreference: 'PKR' | 'USD' | null;
+   *  currency (see CurrencyPreferenceContext). Real, dynamic currency code —
+   *  not a fixed literal union (see the Markets architecture). */
+  currencyPreference: string | null;
   createdAt:    string;
   updatedAt:    string;
 }
@@ -307,7 +308,7 @@ export interface EditProfilePayload {
   phone?:  string;
   address?: string;
   profileImage?: string;
-  currencyPreference?: 'PKR' | 'USD';
+  currencyPreference?: string;
 }
 
 export function apiEditProfile(payload: EditProfilePayload) {

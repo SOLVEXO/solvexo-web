@@ -17,8 +17,11 @@ import {
   Modal,
   Field,
   Input,
+  Select,
   Button,
 } from '@/components/comman/ui';
+import { useShippingCarriers } from '@/hooks/shipping/useShippingCarriers';
+import { buildTrackingUrl } from '@/api/services/shipping';
 import {
   apiGetSellerOrders,
   apiExportOrdersCsv,
@@ -68,6 +71,10 @@ export function StoreOrderList() {
   const [trackingForm, setTrackingForm] = useState({ carrier: '', trackingNumber: '', trackingUrl: '' });
   const [trackingErrors, setTrackingErrors] = useState<{ carrier?: string; trackingNumber?: string }>({});
   const [submittingTracking, setSubmittingTracking] = useState(false);
+  // Quick-pick from the seller's own saved Carriers list (Shipping page) — ''
+  // means "type it manually", the original free-text behavior.
+  const { carriers } = useShippingCarriers(storeId);
+  const [selectedCarrierId, setSelectedCarrierId] = useState('');
 
   const LIMIT = 10;
   // No server-side order search endpoint exists — when searching, fetch a
@@ -305,6 +312,7 @@ export function StoreOrderList() {
                   if (busy) return;
                   setTrackingForm({ carrier: '', trackingNumber: '', trackingUrl: '' });
                   setTrackingErrors({});
+                  setSelectedCarrierId('');
                   setShippingOrder(o);
                 },
               }, {
@@ -469,19 +477,52 @@ export function StoreOrderList() {
           <p className="text-[12.5px] text-slate mb-4">
             Add the shipment's tracking details so the customer can follow their delivery.
           </p>
-          <Field label="Carrier" required error={trackingErrors.carrier}>
-            <Input
-              placeholder="e.g. DHL, FedEx, Local Courier"
-              value={trackingForm.carrier}
-              onChange={e => setTrackingForm(f => ({ ...f, carrier: e.target.value }))}
-              disabled={submittingTracking}
-            />
-          </Field>
+          {carriers.length > 0 && (
+            <Field label="Carrier" hint="Pick a saved carrier to auto-build the tracking link, or choose Other to type it manually.">
+              <Select
+                value={selectedCarrierId}
+                disabled={submittingTracking}
+                onChange={e => {
+                  const id = e.target.value;
+                  setSelectedCarrierId(id);
+                  const picked = carriers.find(c => c._id === id);
+                  setTrackingForm(f => ({
+                    ...f,
+                    carrier: picked ? picked.name : '',
+                    trackingUrl: picked ? buildTrackingUrl(picked.trackingUrlTemplate, f.trackingNumber) : f.trackingUrl,
+                  }));
+                }}
+              >
+                <option value="">Other (type manually)</option>
+                {carriers.filter(c => c.isActive).map(c => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </Select>
+            </Field>
+          )}
+          {(carriers.length === 0 || selectedCarrierId === '') && (
+            <Field label={carriers.length > 0 ? 'Carrier name' : 'Carrier'} required error={trackingErrors.carrier}>
+              <Input
+                placeholder="e.g. DHL, FedEx, Local Courier"
+                value={trackingForm.carrier}
+                onChange={e => setTrackingForm(f => ({ ...f, carrier: e.target.value }))}
+                disabled={submittingTracking}
+              />
+            </Field>
+          )}
           <Field label="Tracking Number" required error={trackingErrors.trackingNumber}>
             <Input
               placeholder="e.g. 1Z999AA10123456784"
               value={trackingForm.trackingNumber}
-              onChange={e => setTrackingForm(f => ({ ...f, trackingNumber: e.target.value }))}
+              onChange={e => {
+                const trackingNumber = e.target.value;
+                const picked = carriers.find(c => c._id === selectedCarrierId);
+                setTrackingForm(f => ({
+                  ...f,
+                  trackingNumber,
+                  trackingUrl: picked?.trackingUrlTemplate ? buildTrackingUrl(picked.trackingUrlTemplate, trackingNumber) : f.trackingUrl,
+                }));
+              }}
               disabled={submittingTracking}
             />
           </Field>

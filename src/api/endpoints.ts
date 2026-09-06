@@ -139,6 +139,8 @@ export const ENDPOINTS = {
     UPDATE: '/api/store/update-store',
     GET_BY_ID: (id: string) => `/api/store/getStoreById/${id}`,
     MY_STORES: '/api/store/my-stores',
+    ENABLED_CURRENCIES: '/api/store/public/enabled-currencies',
+    SUGGEST_LOCATION: '/api/store/suggest-location',
     CUSTOM_DOMAIN: (storeId: string) => `/api/store/${storeId}/custom-domain`,
     CUSTOM_DOMAIN_VERIFY: (storeId: string) => `/api/store/${storeId}/custom-domain/verify`,
     RESOLVE_DOMAIN: '/api/store/public/resolve-domain',
@@ -177,9 +179,6 @@ export const ENDPOINTS = {
     PUBLIC_PLATFORM_STATS: '/api/store/public/platform-stats',
 
     // Follow
-    FOLLOW: (storeId: string) => `/api/store/${storeId}/follow`,
-    FOLLOW_STATUS: (storeId: string) => `/api/store/${storeId}/follow-status`,
-    FOLLOWERS: (storeId: string) => `/api/store/${storeId}/followers`,
 
     // Customers (staff-facing — only people who ordered from this store)
     CUSTOMERS: {
@@ -268,6 +267,22 @@ export const ENDPOINTS = {
     CREATE: '/api/admin/shipping-zones',
     UPDATE: (zoneId: string) => `/api/admin/shipping-zones/${zoneId}`,
     DELETE: (zoneId: string) => `/api/admin/shipping-zones/${zoneId}`,
+  },
+
+  // ── STORE SHIPPING ZONES (a seller's own zones/local-delivery rates) ──────
+  STORE_SHIPPING_ZONES: {
+    LIST:   (storeId: string) => `/api/shipping-zones/store/${storeId}`,
+    CREATE: (storeId: string) => `/api/shipping-zones/store/${storeId}`,
+    UPDATE: (storeId: string, zoneId: string) => `/api/shipping-zones/store/${storeId}/${zoneId}`,
+    DELETE: (storeId: string, zoneId: string) => `/api/shipping-zones/store/${storeId}/${zoneId}`,
+  },
+
+  // ── STORE SHIPPING CARRIERS (a seller's own named carrier list) ───────────
+  STORE_SHIPPING_CARRIERS: {
+    LIST:   (storeId: string) => `/api/shipping-carriers/${storeId}`,
+    CREATE: (storeId: string) => `/api/shipping-carriers/${storeId}`,
+    UPDATE: (storeId: string, carrierId: string) => `/api/shipping-carriers/${storeId}/${carrierId}`,
+    DELETE: (storeId: string, carrierId: string) => `/api/shipping-carriers/${storeId}/${carrierId}`,
   },
 
   // ── COLLECTION TEMPLATE (singleton per store — the section-editable layout

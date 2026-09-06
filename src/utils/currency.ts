@@ -20,6 +20,26 @@ export function currencySymbol(code?: string | null): string {
   return CURRENCY_SYMBOLS[code.toUpperCase()] ?? code;
 }
 
+// Zero-decimal currencies — mirrors the backend's ISO-4217 metadata table
+// (solvexo-api/src/common/currency-metadata.const.ts). PKR is a deliberate
+// Solvexo pricing-convention override (real ISO-4217 says 2 decimals, but
+// Pakistani retail never prices in paisas) — kept exactly as this app has
+// always priced it, not a regression. Small, static reference data, safe to
+// mirror on both sides without a shared package.
+const ZERO_DECIMAL_CURRENCIES = new Set([
+  'PKR', 'JPY', 'KRW', 'VND', 'CLP', 'ISK', 'HUF', 'BIF', 'DJF', 'GNF',
+  'KMF', 'PYG', 'RWF', 'UGX', 'VUV', 'XAF', 'XOF', 'XPF',
+]);
+
+/** How many decimal places a given currency actually prices in on this
+ *  platform — used anywhere a display conversion rounds an amount, so a
+ *  real zero-decimal currency (or PKR, by this platform's own convention)
+ *  never shows a fake ".00". */
+export function getCurrencyDecimals(code?: string | null): number {
+  if (!code) return 2;
+  return ZERO_DECIMAL_CURRENCIES.has(code.toUpperCase()) ? 0 : 2;
+}
+
 /** Formats a plain number to always show exactly 2 decimals with thousands
  *  separators (e.g. `2999.9` → `2,999.90`, `134.1` → `134.10`) — pairs with
  *  `currencySymbol()` at call sites that build their own `{symbol}{amount}`

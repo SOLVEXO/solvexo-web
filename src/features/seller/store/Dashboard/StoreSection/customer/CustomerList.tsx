@@ -5,18 +5,11 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { apiGetStoreCustomers, apiUpdateStoreCustomer, apiUpdateStoreCustomerMeta, type StoreCustomer, type StoreCustomerSegment } from '@/api/services/store';
 import { apiGetSellerOrders, type SellerOrder } from '@/api/services/product';
-import { TabBar, type Tab } from '@/components/comman/ui/TabBar';
 import { MetricCard } from '@/components/comman/ui/MetricCard';
 import { Table, type TableColumn } from '@/components/comman/ui/Table';
 import { Badge, StatusBadge } from '@/components/comman/ui/Badge';
 import { SearchInput } from '@/components/comman/ui/SearchInput';
 import { formatMoneyCompact, currencySymbol, fmt2 } from '@/utils/currency';
-import { FollowersTab } from './tabs/FollowersTab';
-
-const TABS: Tab[] = [
-  { id: 'customers', label: 'Customers' },
-  { id: 'followers', label: 'Followers' },
-];
 
 const PER_PAGE = 20;
 
@@ -40,7 +33,6 @@ export default function StoreCustomerList() {
   const navigate = useNavigate();
   const { storeId, store } = useStoreWorkspace();
 
-  const [activeTab, setActiveTab] = useState('customers');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
@@ -64,7 +56,7 @@ export default function StoreCustomerList() {
   const [ordersError, setOrdersError] = useState('');
 
   useEffect(() => {
-    if (!storeId || activeTab !== 'customers') return;
+    if (!storeId) return;
     setLoading(true);
     apiGetStoreCustomers(storeId, page, PER_PAGE)
       .then(res => {
@@ -74,7 +66,7 @@ export default function StoreCustomerList() {
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to load customers.'))
       .finally(() => setLoading(false));
-  }, [storeId, page, activeTab]);
+  }, [storeId, page]);
 
   // The customer detail panel's own order-history list — reuses the same
   // seller-orders endpoint the Orders page uses, just scoped to this one
@@ -184,15 +176,6 @@ export default function StoreCustomerList() {
         subtitle="Manage buyer relationships and followers for this store."
       />
 
-      <div className="px-4 md:px-7 pt-3">
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
-      </div>
-
-      {activeTab === 'followers' ? (
-        <div className="px-4 md:px-7 pt-5 pb-8">
-          <FollowersTab />
-        </div>
-      ) : (
       <div className="px-4 md:px-7 pt-5 pb-8 flex flex-col gap-5">
 
         <div className="flex flex-wrap gap-3">
@@ -344,7 +327,6 @@ export default function StoreCustomerList() {
           )}
         </div>
       </div>
-      )}
     </>
   );
 }

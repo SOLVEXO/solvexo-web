@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -12,7 +12,7 @@ import {
   ShieldCheck, CreditCard,
 } from 'lucide-react';
 import { useUpload } from '@/hooks/upload/useUpload';
-import type { SellerType, ProductType, StoreData, SupportedCurrency } from '@/api/services/store';
+import { apiGetEnabledCurrencies, apiSuggestLocation, type SellerType, type ProductType, type StoreData, type SupportedCurrency } from '@/api/services/store';
 import { getStorefrontUrl } from '@/utils/storefrontUrl';
 import {
   apiGetOnboardingProgress, apiSaveOnboardingDraft,
@@ -129,10 +129,10 @@ interface StoreForm {
   // plans any time afterwards from the store's own Billing page.
 }
 
-// Solvexo is Pakistan-origin, so every store defaults to PKR pricing
-// automatically — no picker shown during onboarding. A real IP/locale-based
-// default can replace this constant later without touching anything else,
-// since the rest of the app only ever reads `store.baseCurrency`.
+// Fallback only — Step1StoreInfo now shows a real picker (populated from the
+// platform's dynamic Markets list, apiGetEnabledCurrencies) pre-selected from
+// the seller's IP-detected country (apiSuggestLocation), so this constant
+// only matters for the brief window before either call resolves.
 const DEFAULT_CURRENCY: SupportedCurrency = 'PKR';
 
 // Fades/lifts a step's content in whenever `step` changes, for a smoother
@@ -172,6 +172,46 @@ function Step1StoreInfo({ form, setForm, onNext }: {
   const [preview, setPreview] = useState('');
   const canProceed = form.storeName.trim().length > 0;
   const { upload: uploadLogo, uploading: logoUploading } = useUpload('public');
+  const [currencyOptions, setCurrencyOptions] = useState<string[]>([]);
+  // Tracks whether the seller has manually touched the currency picker —
+  // the IP-detected suggestion below is only ever applied as a pre-fill, and
+  // must stop overwriting the field the instant a real choice is made.
+  const [currencyTouched, setCurrencyTouched] = useState(false);
+  // Mirrors the latest `form`/`currencyTouched` for the async fetches below —
+  // both fire once on mount and may resolve after the seller has already
+  // started typing other fields, so they must never merge against a stale
+  // closure of `form` and clobber it.
+  const latestRef = useRef({ form, currencyTouched });
+  latestRef.current.form = form;
+  latestRef.current.currencyTouched = currencyTouched;
+
+  useEffect(() => {
+    apiGetEnabledCurrencies()
+      .then(res => {
+        const codes = res.data.map(c => c.code);
+        setCurrencyOptions(codes);
+        // Default to the first real platform currency if the current value
+        // (DEFAULT_CURRENCY) isn't actually enabled — never leave the form
+        // pointed at a currency the platform doesn't support.
+        const { form: f, currencyTouched: touched } = latestRef.current;
+        if (!touched && codes.length > 0 && !codes.includes(f.baseCurrency)) {
+          setForm({ ...f, baseCurrency: codes[0] });
+        }
+      })
+      .catch(() => {}); // fail open — keeps the built-in default, still changeable manually
+    // Suggestion only, never enforced — pre-fills the picker from the
+    // seller's IP-detected country if that currency is genuinely enabled.
+    apiSuggestLocation()
+      .then(res => {
+        const suggested = res.data.suggestedCurrency;
+        const { form: f, currencyTouched: touched } = latestRef.current;
+        if (suggested && !touched) {
+          setForm({ ...f, baseCurrency: suggested });
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -229,6 +269,21 @@ function Step1StoreInfo({ form, setForm, onNext }: {
           <textarea id="onboard-description" placeholder="Tell buyers what makes your store special..."
             rows={4} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
             className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white resize-y transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10" />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="onboard-currency" className="block text-[12px] font-medium text-charcoal mb-[6px]">Store Currency <span className="text-brand-orange">*</span></label>
+          <select id="onboard-currency" value={form.baseCurrency}
+            onChange={e => { setCurrencyTouched(true); setForm({ ...form, baseCurrency: e.target.value }); }}
+            className="w-full px-3 py-[10px] rounded-lg border border-bone text-[13px] text-charcoal outline-none bg-white transition-[border-color,box-shadow] duration-150 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
+            {!currencyOptions.includes(form.baseCurrency) && (
+              <option value={form.baseCurrency}>{form.baseCurrency}</option>
+            )}
+            {currencyOptions.map(code => <option key={code} value={code}>{code}</option>)}
+          </select>
+          <p className="text-[11px] text-slate mt-[5px]">
+            All your product prices will be set in this currency. It's locked once your store has its first product.
+          </p>
         </div>
 
         <Button variant="primary" size="lg" fullWidth onClick={() => canProceed && onNext()} disabled={!canProceed}>

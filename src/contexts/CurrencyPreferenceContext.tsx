@@ -2,8 +2,15 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo, t
 import { TokenStorage } from '@/api/services/auth';
 import { apiEditProfile } from '@/api/services/auth';
 import { apiGetCurrentRates, type CurrentRatesMap } from '@/api/services/exchangeRate';
+import { apiGetEnabledCurrencies, type SupportedCurrency } from '@/api/services/store';
+import { getCurrencyDecimals } from '@/utils/currency';
 
-export type SupportedCurrency = 'PKR' | 'USD';
+// Re-exported so existing importers of this file's own `SupportedCurrency`
+// don't need updating — the real type now lives in api/services/store.ts
+// (the single source of truth, since it's a real, admin-configurable
+// Markets list now, not a fixed 'PKR'|'USD' union — see that file's own doc
+// comment).
+export type { SupportedCurrency };
 
 const STORAGE_KEY = 'solvexo_currency_preference';
 
@@ -23,17 +30,18 @@ function convertAmount(amount: number, fromCurrency: string, toCurrency: string,
   if (!fromRate || !toRate) return amount; // rates not loaded yet — show native rather than guess
   const usd = amount / fromRate;
   const converted = usd * toRate;
-  return toCurrency === 'PKR' ? Math.round(converted) : Math.round(converted * 100) / 100;
+  const decimals = getCurrencyDecimals(toCurrency);
+  const factor = Math.pow(10, decimals);
+  return Math.round(converted * factor) / factor;
 }
 
 // Location detection only ever sets the INITIAL default for a guest with no
-// saved preference yet — it never re-runs or overrides an explicit choice
-// (see CLAUDE.md's location-detection principle). No real geo-IP lookup is
-// wired up yet, so this is deliberately just the Pakistan-origin default —
-// swapping in a real IP/locale-based guess later only touches this function.
-function detectDefaultCurrency(): SupportedCurrency {
-  return 'PKR';
-}
+// saved preference yet — it never re-runs or overrides an explicit choice.
+// Deliberately out of scope for this pass (see the currency-architecture
+// plan's disclosed exclusions): a real IP-detected suggestion exists only at
+// seller Onboarding's currency step, not here — this stays the fixed
+// Pakistan-origin default, unchanged.
+const FALLBACK_CURRENCY = 'PKR';
 
 interface CurrencyPreferenceContextValue {
   currency: SupportedCurrency;
@@ -44,20 +52,23 @@ interface CurrencyPreferenceContextValue {
    *  this instead of showing a product/cart item's raw stored amount. */
   convert: (amount: number, fromCurrency?: string | null) => number;
   ratesLoaded: boolean;
+  /** The platform's real, dynamic Markets currency list — the navbar
+   *  switcher renders from this, never a hardcoded 2-entry array. */
+  enabledCurrencies: string[];
 }
 
 const Ctx = createContext<CurrencyPreferenceContextValue | null>(null);
 
 export function CurrencyPreferenceProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrencyState] = useState<SupportedCurrency>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved === 'PKR' || saved === 'USD' ? saved : detectDefaultCurrency();
+    return localStorage.getItem(STORAGE_KEY) || FALLBACK_CURRENCY;
   });
   const [rates, setRates] = useState<CurrentRatesMap>({});
   const [ratesLoaded, setRatesLoaded] = useState(false);
+  const [enabledCurrencies, setEnabledCurrencies] = useState<string[]>(['USD', 'PKR']);
 
   // Fetched once, globally — the same current-rate lookup every price
-  // display on the site shares, so switching PKR/USD in the navbar updates
+  // display on the site shares, so switching currency in the navbar updates
   // every price on screen without each component making its own API call.
   useEffect(() => {
     apiGetCurrentRates()
@@ -65,15 +76,29 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
       .catch(() => { setRatesLoaded(true); }); // fail open — display falls back to native currency, never blocks the page
   }, []);
 
+  // Real, dynamic Markets list — replaces the old hardcoded ['PKR','USD'].
+  // Once loaded, a currently-selected currency that's no longer platform-
+  // enabled (e.g. an admin disabled it since this browser last saved a
+  // preference) silently falls back rather than leaving the UI on a dead
+  // selection.
+  useEffect(() => {
+    apiGetEnabledCurrencies()
+      .then(res => {
+        const codes = res.data.map(c => c.code);
+        setEnabledCurrencies(codes);
+        setCurrencyState(prev => (codes.includes(prev) ? prev : FALLBACK_CURRENCY));
+      })
+      .catch(() => {}); // fail open — keeps the built-in USD/PKR fallback list
+  }, []);
+
   // On login (or first mount while already logged in), the account's own
   // saved preference is the cross-device source of truth and wins over
   // whatever's in this browser's localStorage — but only if the account
-  // actually has one set yet; otherwise the guest/local value carries over
-  // (see CLAUDE.md: "guest becomes authenticated" carry-over rule).
+  // actually has one set yet; otherwise the guest/local value carries over.
   useEffect(() => {
     if (!TokenStorage.isLoggedIn()) return;
-    const user = TokenStorage.getUser<{ currencyPreference?: SupportedCurrency | null }>();
-    if (user?.currencyPreference === 'PKR' || user?.currencyPreference === 'USD') {
+    const user = TokenStorage.getUser<{ currencyPreference?: string | null }>();
+    if (user?.currencyPreference) {
       setCurrencyState(user.currencyPreference);
       localStorage.setItem(STORAGE_KEY, user.currencyPreference);
     }
@@ -96,8 +121,8 @@ export function CurrencyPreferenceProvider({ children }: { children: ReactNode }
   );
 
   const value = useMemo<CurrencyPreferenceContextValue>(
-    () => ({ currency, setCurrency, convert, ratesLoaded }),
-    [currency, setCurrency, convert, ratesLoaded],
+    () => ({ currency, setCurrency, convert, ratesLoaded, enabledCurrencies }),
+    [currency, setCurrency, convert, ratesLoaded, enabledCurrencies],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

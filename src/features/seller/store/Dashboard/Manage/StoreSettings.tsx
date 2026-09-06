@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, History, ChevronLeft, ChevronRight, Copy, Check, Clock, EyeOff } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader, StoreNavMenu } from '@/components/layouts/StoreLayout';
-import { apiUpdateStore, apiSetCustomDomain, apiVerifyCustomDomain, apiSetWhiteLabel, apiUpdateStorePrivacy, type ProductType, type CustomDomainStatus, type SupportedCurrency, type StorePrivacyMode } from '@/api/services/store';
+import { apiUpdateStore, apiSetCustomDomain, apiVerifyCustomDomain, apiSetWhiteLabel, apiUpdateStorePrivacy, apiGetEnabledCurrencies, type ProductType, type CustomDomainStatus, type SupportedCurrency, type StorePrivacyMode } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
 import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { useMyStores } from '@/hooks/store/useMyStores';
@@ -462,7 +462,15 @@ export default function StoreSettings() {
   const [codEnabled,   setCodEnabled]   = useState(true);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [taxRate, setTaxRate] = useState(0);
-  const [enabledCurrencies, setEnabledCurrencies] = useState<SupportedCurrency[]>(['PKR', 'USD']);
+  const [enabledCurrencies, setEnabledCurrencies] = useState<SupportedCurrency[]>([]);
+  // The platform's real, dynamic Markets currency list (AdminConfigService.
+  // getEnabledCurrencies) — replaces the old hardcoded ['PKR','USD'] this
+  // card used to render, both as the checklist itself and as the "nothing
+  // set yet" default (see the sync effect below).
+  const [platformCurrencies, setPlatformCurrencies] = useState<string[]>([]);
+  useEffect(() => {
+    apiGetEnabledCurrencies().then(res => setPlatformCurrencies(res.data.map(c => c.code))).catch(() => {});
+  }, []);
   const [categories,   setCategories]   = useState<CategoryNode[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [saving,       setSaving]       = useState(false);
@@ -484,7 +492,10 @@ export default function StoreSettings() {
     setCodEnabled(store.codEnabled !== false);
     setLowStockThreshold(store.lowStockThreshold ?? 10);
     setTaxRate(store.taxRate ?? 0);
-    setEnabledCurrencies(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies : ['PKR', 'USD']);
+    // "Nothing set yet" used to default to a hardcoded ['PKR','USD'] guess —
+    // now defaults to just this store's own real currency, always valid
+    // regardless of which platform currencies exist.
+    setEnabledCurrencies(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies : (store.baseCurrency ? [store.baseCurrency] : []));
   }, [store]);
 
   useEffect(() => {
@@ -529,7 +540,7 @@ export default function StoreSettings() {
       lowStockThreshold !== (store.lowStockThreshold ?? 10) ||
       taxRate !== (store.taxRate ?? 0) ||
       JSON.stringify(enabledCurrencies.slice().sort()) !==
-        JSON.stringify((store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies : ['PKR', 'USD']).slice().sort()));
+        JSON.stringify((store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies : (store.baseCurrency ? [store.baseCurrency] : [])).slice().sort()));
 
   return (
     <div>
@@ -833,7 +844,7 @@ export default function StoreSettings() {
                 <p className="text-[12px] font-semibold text-charcoal mb-1">Markets</p>
                 <p className="text-[11px] text-slate mb-3">Which currencies can buyers pay in at checkout on your store?</p>
                 <div className="flex flex-col gap-2">
-                  {(['PKR', 'USD'] as SupportedCurrency[]).map(c => {
+                  {platformCurrencies.map(c => {
                     const isBase = c === store?.baseCurrency;
                     const checked = enabledCurrencies.includes(c);
                     return (

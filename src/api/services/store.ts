@@ -5,7 +5,33 @@ import type { ActiveCampaignBadge } from './marketplace';
 export type SellerType  = 'creator' | 'educator' | 'retailer' | 'brand_business' | 'freelancer' | 'mix';
 export type ProductType = 'physical_products' | 'digital_downloads' | 'educational_resources' | 'services_bookings' | 'subscriptions' | 'in_person_pos';
 
-export type SupportedCurrency = 'PKR' | 'USD';
+// Was a literal `'PKR' | 'USD'` union — now a real, admin-configurable
+// Markets list (see AdminConfigService.getEnabledCurrencies on the backend),
+// so it's a plain string validated at runtime against the fetched enabled-
+// currency list (apiGetEnabledCurrencies below), never a fixed compile-time set.
+export type SupportedCurrency = string;
+
+export interface EnabledCurrency {
+  code: string;
+  sanityBandMin: number | null;
+  sanityBandMax: number | null;
+}
+
+/** GET /api/store/public/enabled-currencies — the platform's real, dynamic
+ *  Markets currency list (always includes 'USD' first). Public/no-auth —
+ *  used by Onboarding's currency step, a store's "Markets" card, and the
+ *  buyer currency switcher, none of which can assume a seller session. */
+export function apiGetEnabledCurrencies() {
+  return client.get<never, { success: boolean; data: EnabledCurrency[] }>(ENDPOINTS.STORE.ENABLED_CURRENCIES);
+}
+
+/** GET /api/store/suggest-location — seller-authenticated. IP-detected
+ *  country + a suggested currency (null if the country's natural currency
+ *  isn't currently platform-enabled) — a pre-fill suggestion only, never
+ *  enforced. Used by Onboarding's currency step. */
+export function apiSuggestLocation() {
+  return client.get<never, { success: boolean; data: { country: string | null; suggestedCurrency: string | null } }>(ENDPOINTS.STORE.SUGGEST_LOCATION);
+}
 
 export interface CreateStorePayload {
   name:         string;
@@ -440,42 +466,6 @@ export interface PlatformStats {
 /** GET /api/store/public/platform-stats — real, cached homepage stat strip. */
 export function apiGetPlatformStats() {
   return client.get<never, ApiResponse<PlatformStats>>(ENDPOINTS.STORE.PUBLIC_PLATFORM_STATS);
-}
-
-// ── Follow ────────────────────────────────────────────────────────────────────
-
-export interface FollowStatusData {
-  following: boolean;
-}
-
-export interface FollowerUser {
-  _id:          string;
-  name:         string;
-  email?:       string;
-  profileImage?: string;
-}
-
-export interface FollowersData {
-  total:      number;
-  pagination: { page: number; limit: number; totalPages: number };
-  followers:  Array<{ followedAt: string; user: FollowerUser }>;
-}
-
-/** POST /api/store/:storeId/follow  (toggle follow/unfollow) */
-export function apiFollowStore(storeId: string) {
-  return client.post<never, ApiResponse<{ following: boolean }>>(ENDPOINTS.STORE.FOLLOW(storeId));
-}
-
-/** GET /api/store/:storeId/follow-status */
-export function apiGetFollowStatus(storeId: string) {
-  return client.get<never, ApiResponse<FollowStatusData>>(ENDPOINTS.STORE.FOLLOW_STATUS(storeId));
-}
-
-/** GET /api/store/:storeId/followers  (seller only) */
-export function apiGetStoreFollowers(storeId: string, page = 1, limit = 20) {
-  return client.get<never, ApiResponse<FollowersData>>(
-    `${ENDPOINTS.STORE.FOLLOWERS(storeId)}?page=${page}&limit=${limit}`,
-  );
 }
 
 // ── Customers (staff-facing) ──────────────────────────────────────────────────
