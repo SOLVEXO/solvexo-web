@@ -131,7 +131,7 @@ export function VerifyOTPPage() {
 
   return (
     <AuthSplitLayout
-      pageContext="login"
+      pageContext="otp"
       heading={isIdentity ? 'Confirm it\'s you.' : 'One last step.'}
       subtext={isIdentity
         ? "Enter the code we sent to confirm your identity before resetting your password."

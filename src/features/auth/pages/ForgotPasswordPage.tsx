@@ -40,8 +40,12 @@ export function ForgotPasswordPage() {
   );
 
   return (
+    // Forgot/OTP/New-Password used to all share pageContext="login" — the
+    // exact same photo as the Login page itself, on 3 different screens in
+    // a row. Each now has its own dedicated, curated context/photo set (see
+    // auth-visual-region.const.ts) instead of borrowing from Register/Login.
     <AuthSplitLayout
-      pageContext="login"
+      pageContext="forgot_password"
       heading="Forgot your way in? No problem."
       subtext="We'll email you a secure code to get you straight back into your account."
       highlights={HIGHLIGHTS}

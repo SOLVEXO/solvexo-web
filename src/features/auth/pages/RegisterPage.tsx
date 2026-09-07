@@ -9,7 +9,7 @@ import { PhoneInput }  from '@/components/comman/ui/PhoneInput';
 import { Avatar }      from '@/components/comman/ui/Avatar';
 import { useDetectedCountry } from '@/hooks/auth/useDetectedCountry';
 import { SocialLoginRow } from '@/components/comman/ui/SocialIcons';
-import { Eye, EyeOff, ArrowRight, ShoppingBag, Store, TrendingUp, AlertTriangle, Info } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Store, Sparkles, ShieldCheck, AlertTriangle, Info } from 'lucide-react';
 import { useForm }     from '@/hooks/useForm';
 import { registerSchema, type RegisterFormData } from '@/utils/validation/schemas';
 import { TokenStorage, getRoleRedirect, RememberedAccount, type AppRole } from '@/api/services/auth';
@@ -21,10 +21,14 @@ import { motion } from 'motion/react';
 
 const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } };
 
+// Same 3 lines Login and the onboarding wizard use (OnboardingPage.tsx) —
+// one consistent voice across the seller funnel. "Shop from thousands of
+// independent sellers" was real BUYER-marketplace language, stale here
+// since Register is seller-only now (see SELLER_ONLY_REGISTER below).
 const HIGHLIGHTS = [
-  { Icon: ShoppingBag, text: 'Shop from thousands of independent sellers' },
-  { Icon: Store,       text: 'Launch your own store in minutes' },
-  { Icon: TrendingUp,  text: 'Grow your business with built-in analytics' },
+  { Icon: Store,       text: 'A store built around how you sell' },
+  { Icon: Sparkles,    text: 'AI Studio and analytics from day one' },
+  { Icon: ShieldCheck, text: 'Verified sellers buyers can trust' },
 ];
 
 // One screen, not three — the account type is decided by HOW someone got
@@ -140,7 +144,7 @@ export function RegisterPage() {
       heading={isSeller
         ? <>Launch your <span className="text-brand-orange">store</span> today</>
         : <>Start <span className="text-brand-orange">selling</span> or shopping today</>}
-      subtext="Create your free Solvexo account and join a growing community of buyers and creators."
+      subtext="Create your free Solvexo account and launch a store built around how you sell."
       highlights={HIGHLIGHTS}
       maxWidth="max-w-[520px]"
       visual={isSeller ? <DashboardMockup /> : <MarketplaceMockup />}

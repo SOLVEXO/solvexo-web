@@ -279,7 +279,7 @@ export function apiLogout() {
 }
 
 /** GET /auth/detect-country — real IP-based country guess (ISO-3166 alpha-2), used to auto-select the Register form's phone dial code. Also returns `region` + `imageUrl` — a real, region-appropriate background photo for the shared auth-screen panel (`AuthSplitLayout`), resolved from a small curated region map, never a per-country lookup. The optional `context` param picks WHICH of that region's 3 curated photos comes back (`register`/`login`/`onboarding`) — so the same visitor sees a different, but same-region, photo depending on which auth screen they're on. `country` is null when it can't be resolved (local dev, unrecognized IP); `region`/`imageUrl` still resolve to a valid `'default'` in that case — callers must fail open on `country` but can always trust `imageUrl` to be a real, loadable photo. */
-export type AuthPageContext = 'register' | 'login' | 'onboarding';
+export type AuthPageContext = 'register' | 'login' | 'onboarding' | 'forgot_password' | 'otp' | 'new_password';
 export interface DetectCountryData {
   country: string | null;
   region: string;

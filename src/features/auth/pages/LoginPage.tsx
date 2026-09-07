@@ -8,7 +8,7 @@ import { Button } from '@/components/comman/ui/Button';
 import { Input } from '@/components/comman/ui/Input';
 import { Avatar } from '@/components/comman/ui/Avatar';
 import { SocialLoginRow } from '@/components/comman/ui/SocialIcons';
-import { Eye, EyeOff, ShieldCheck, Sparkles, Zap, AlertTriangle, Info, ArrowLeft, ChevronRight, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, Sparkles, Store, AlertTriangle, Info, ArrowLeft, ChevronRight, UserPlus } from 'lucide-react';
 import { useForm } from '@/hooks/useForm';
 import { loginSchema, type LoginFormData } from '@/utils/validation/schemas';
 import { TokenStorage, LastRolePreference, RememberedAccount, getRoleRedirect, type AppRole } from '@/api/services/auth';
@@ -20,10 +20,16 @@ import { motion } from 'motion/react';
 
 const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } };
 
+// Same 3 lines the onboarding wizard opens with (OnboardingPage.tsx) — one
+// consistent voice across the whole seller funnel, not a fresh (and
+// previously stale, buyer/marketplace-flavored) set per screen. Login is
+// seller-only now (see SELLER_ONLY_LOGIN below), so "curated marketplace of
+// independent creators" / "secure payments on every purchase" — both real
+// BUYER-checkout language — no longer described what this page is for.
 const HIGHLIGHTS = [
-  { Icon: Sparkles,    text: 'Curated marketplace of independent creators' },
-  { Icon: Zap,         text: 'Fast checkout, real-time order tracking' },
-  { Icon: ShieldCheck, text: 'Secure payments on every purchase' },
+  { Icon: Store,       text: 'A store built around how you sell' },
+  { Icon: Sparkles,    text: 'AI Studio and analytics from day one' },
+  { Icon: ShieldCheck, text: 'Verified sellers buyers can trust' },
 ];
 
 // Three possible openings, exactly mirroring Google's real account-chooser
@@ -171,8 +177,8 @@ export function LoginPage() {
   return (
     <AuthSplitLayout
       pageContext="login"
-      heading={<>Commerce. <span className="text-brand-orange">Solved</span></>}
-      subtext="Join thousands of buyers and sellers building their business on Solvexo's marketplace."
+      heading={<>Back to your <span className="text-brand-orange">store</span></>}
+      subtext="Sign in to manage your products, orders, and storefront — all in one place."
       highlights={HIGHLIGHTS}
       visual={<MarketplaceMockup />}
     >
