@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ImageOff } from 'lucide-react';
 import type { Section } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
+import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { novaTheme as t, type NovaSectionColors } from '../theme.config';
 import { registerNovaSection } from './novaSectionRenderer';
 
@@ -25,9 +25,12 @@ function FeaturedCategoryGridSection({ section, colors }: { section: Section; co
 
   useEffect(() => {
     if (demoCategories) return;
-    if (!store.categoryId) { setAll([]); return; }
-    apiGetCategoryTree(store.categoryId).then(res => setAll(res.data.children ?? [])).catch(() => setAll([]));
-  }, [store.categoryId, demoCategories]);
+    // The store's OWN real categories — see AtelierContentBlocks/
+    // FeaturedCategoryGridSection.tsx's identical fix comment: this
+    // previously read the legacy `Store.categoryId` global-marketplace
+    // classification field instead of the seller's own category tree.
+    apiGetStoreCategoryTree(store.storeId).then(res => setAll(res.data ?? [])).catch(() => setAll([]));
+  }, [store.storeId, demoCategories]);
 
   const ids: string[] = section.settings.categoryIds ?? [];
   const selected = demoCategories ?? (ids.length > 0 ? (all ?? []).filter(c => ids.includes(c._id)) : (all ?? []));

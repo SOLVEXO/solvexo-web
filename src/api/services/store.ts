@@ -47,10 +47,6 @@ export function apiSuggestLocationForStore(storeId: string) {
 export interface CreateStorePayload {
   name:         string;
   logo?:        string;
-  /** Legacy global/admin root category — optional. Categories are now
-   *  store-owned (see StoreCategories.tsx): a seller builds their own
-   *  category tree AFTER the store exists, never chosen at onboarding. */
-  categoryId?:  string;
   description?: string;
   sellerType:   SellerType;
   productTypes: ProductType[];
@@ -69,7 +65,6 @@ export interface UpdateStorePayload {
   logo?:        string;
   coverImage?:  string | null;
   faviconUrl?:  string | null;
-  categoryId?:  string;
   description?: string;
   tagline?:      string;
   contactEmail?: string;

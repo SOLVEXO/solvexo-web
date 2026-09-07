@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ImageOff } from 'lucide-react';
 import type { Section } from '@/api/services/storefrontTypes';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
-import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
+import { apiGetStoreCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { atelierTheme as t, type AtelierSectionColors } from '../theme.config';
 import { registerAtelierSection } from './atelierSectionRenderer';
 
@@ -18,9 +18,14 @@ function FeaturedCategoryGridSection({ section, colors }: { section: Section; co
 
   useEffect(() => {
     if (demoCategories) return;
-    if (!store.categoryId) { setAll([]); return; }
-    apiGetCategoryTree(store.categoryId).then(res => setAll(res.data.children ?? [])).catch(() => setAll([]));
-  }, [store.categoryId, demoCategories]);
+    // The store's OWN real categories (every root category this seller has
+    // created, e.g. "sdsg"/"xccc…") — was previously fetching via the
+    // legacy `Store.categoryId` (a leftover global/admin-marketplace
+    // classification field, unrelated to a seller's own category tree),
+    // which meant this section either showed nothing or the wrong
+    // (unrelated, admin-curated) categories for every real store.
+    apiGetStoreCategoryTree(store.storeId).then(res => setAll(res.data ?? [])).catch(() => setAll([]));
+  }, [store.storeId, demoCategories]);
 
   const ids: string[] = section.settings.categoryIds ?? [];
   const selected = demoCategories ?? (ids.length > 0 ? (all ?? []).filter(c => ids.includes(c._id)) : (all ?? []));

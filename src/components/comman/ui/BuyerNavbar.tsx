@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { ArrowLeft, ArrowRight, Search, Clock, LayoutGrid, X, TrendingUp, Tag, Star, Sparkles, ChevronDown, Check, Store as StoreIcon, Lightbulb, Trash2, Eye, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Search, Clock, LayoutGrid, X, TrendingUp, Tag, Star, Sparkles, ChevronDown, Check, Store as StoreIcon, Lightbulb, Trash2, Eye, Loader2, Globe } from 'lucide-react';
 import { TokenStorage } from '@/api/services/auth';
 import { apiGetRecentSearches, apiSearchStores } from '@/api/services/search';
 import { apiGetAllProducts, type MarketplaceProduct } from '@/api/services/marketplace';
@@ -877,12 +877,12 @@ export function CurrencySelector({ allowed }: { allowed?: SupportedCurrency[] } 
       ariaLabel={`Currency: ${active.code}. Change currency`}
       trigger={
         <>
-          {active.Flag ? <active.Flag className="w-4 h-3 rounded-[2px] shrink-0 object-cover" /> : null}
+          <Globe size={14} className="shrink-0" />
           <span className="hidden md:inline">{active.code}</span>
-          <ChevronDown size={12} className="hidden md:inline text-slate" />
+          <ChevronDown size={12} className="hidden md:inline" />
         </>
       }
-      triggerClassName="flex items-center gap-1.5 text-[12px] font-semibold text-charcoal border border-bone rounded-md pl-2 pr-2 md:pr-[7px] py-1 bg-white hover:bg-cream transition-colors cursor-pointer shrink-0"
+      triggerClassName="flex items-center gap-1.5 text-[12px] font-semibold text-charcoal px-1 py-1 bg-transparent hover:text-brand-orange transition-colors cursor-pointer shrink-0"
       items={options.map(c => ({
         label: (
           <span className="flex items-center gap-2 flex-1">

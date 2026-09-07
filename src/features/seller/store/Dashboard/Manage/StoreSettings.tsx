@@ -3,7 +3,6 @@ import { Save, Store, Loader2, CheckCircle, AlertCircle, Globe, Lock, History, C
 import { useStoreWorkspace, StorePageHeader, StoreNavMenu } from '@/components/layouts/StoreLayout';
 import { apiUpdateStore, apiSetCustomDomain, apiVerifyCustomDomain, apiSetWhiteLabel, apiUpdateStorePrivacy, apiGetEnabledCurrencies, type ProductType, type CustomDomainStatus, type SupportedCurrency, type StorePrivacyMode } from '@/api/services/store';
 import { apiGetStoreEntitlements, type EntitlementsSummary } from '@/api/services/platformPlans';
-import { apiGetCategoryTree, type CategoryNode } from '@/api/services/categories';
 import { useMyStores } from '@/hooks/store/useMyStores';
 import { currencySymbol } from '@/utils/currency';
 import { ImageUpload, Toggle } from '@/components/comman/ui';
@@ -458,7 +457,6 @@ export default function StoreSettings() {
   const [logo,         setLogo]         = useState('');
   const [coverImage,   setCoverImage]   = useState('');
   const [faviconUrl,   setFaviconUrl]   = useState('');
-  const [categoryId,   setCategoryId]   = useState('');
   const [codEnabled,   setCodEnabled]   = useState(true);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [taxRate, setTaxRate] = useState(0);
@@ -471,8 +469,6 @@ export default function StoreSettings() {
   useEffect(() => {
     apiGetEnabledCurrencies().then(res => setPlatformCurrencies(res.data.map(c => c.code))).catch(() => {});
   }, []);
-  const [categories,   setCategories]   = useState<CategoryNode[]>([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [saving,       setSaving]       = useState(false);
   const [saveMsg,      setSaveMsg]      = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -488,7 +484,6 @@ export default function StoreSettings() {
     setLogo(store.logo ?? '');
     setCoverImage(store.coverImage ?? '');
     setFaviconUrl(store.faviconUrl ?? '');
-    setCategoryId(store.categoryId ?? '');
     setCodEnabled(store.codEnabled !== false);
     setLowStockThreshold(store.lowStockThreshold ?? 10);
     setTaxRate(store.taxRate ?? 0);
@@ -498,13 +493,6 @@ export default function StoreSettings() {
     setEnabledCurrencies(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies : (store.baseCurrency ? [store.baseCurrency] : []));
   }, [store]);
 
-  useEffect(() => {
-    apiGetCategoryTree()
-      .then(res => setCategories(res.data ?? []))
-      .catch(() => {})
-      .finally(() => setCategoriesLoading(false));
-  }, []);
-
   const toggleType = (t: ProductType) =>
     setProductTypes(prev => prev.includes(t) ? prev.filter(p => p !== t) : [...prev, t]);
 
@@ -513,7 +501,7 @@ export default function StoreSettings() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, faviconUrl: faviconUrl || null, categoryId, codEnabled, lowStockThreshold, taxRate, enabledCurrencies });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, faviconUrl: faviconUrl || null, codEnabled, lowStockThreshold, taxRate, enabledCurrencies });
       refetch();
       setSaveMsg({ ok: true, text: 'Store updated successfully.' });
     } catch (err) {
@@ -533,7 +521,6 @@ export default function StoreSettings() {
       logo !== (store.logo ?? '') ||
       coverImage !== (store.coverImage ?? '') ||
       faviconUrl !== (store.faviconUrl ?? '') ||
-      categoryId !== (store.categoryId ?? '') ||
       JSON.stringify(productTypes.slice().sort()) !==
         JSON.stringify((store.productTypes ?? []).slice().sort()) ||
       codEnabled !== (store.codEnabled !== false) ||
@@ -693,17 +680,6 @@ export default function StoreSettings() {
                   placeholder="Your store name"
                   className={inputCls}
                 />
-              </Field>
-
-              <Field label="Category">
-                <select
-                  value={categoryId}
-                  onChange={e => setCategoryId(e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="">{categoriesLoading ? 'Loading categories…' : 'Select a category…'}</option>
-                  {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                </select>
               </Field>
 
               <Field label="Description">

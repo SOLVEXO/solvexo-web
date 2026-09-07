@@ -129,23 +129,22 @@ export function AuthSplitLayout({
 
         <div className={clsx('relative flex-1 min-h-0 overflow-hidden rounded-3xl bg-gradient-to-br', panelGradient)}>
           {/* Real, region-appropriate background photo — sits below
-             everything else in this card. A raw stock photo with a plain
-             translucent black scrim looks exactly like a raw stock photo
-             with a plain translucent black scrim ("cheap"); a genuine
-             DUOTONE color-grade (the same technique Stripe/Linear-style
-             premium products use for photography) instead blends the
-             panel's own brand gradient into the photo via `mix-blend-
-             multiply` — darkening and pulling every tone toward Solvexo's
-             carbon/orange palette while keeping real photographic detail —
-             so it reads as "branded photography," not "photo plus filter."
-             A light bottom-only black vignette (normal blend, not mixed)
-             sits on top purely for text legibility where the headline/
-             highlights/copyright actually are. */}
+             everything else in this card. `mix-blend-soft-light` at low
+             opacity nudges the photo's color mood toward Solvexo's own
+             brand gradient WITHOUT crushing dark photos to near-black the
+             way a strong `multiply` blend does (a real, visually-confirmed
+             regression from an earlier pass — several of the curated
+             region photos are already moody/night shots, and multiplying a
+             dark gradient onto an already-dark photo compounds toward pure
+             black, making the photo unrecognizable). A light bottom-only
+             vignette (normal blend) sits on top purely for text legibility
+             where the headline/highlights/copyright actually are — every
+             photo, bright or dark, must stay genuinely visible. */}
           {visualImageUrl && (
             <>
               <img src={visualImageUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover" />
-              <div className={clsx('absolute inset-0 bg-gradient-to-br opacity-80 mix-blend-multiply', panelGradient)} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+              <div className={clsx('absolute inset-0 bg-gradient-to-br opacity-30 mix-blend-soft-light', panelGradient)} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
             </>
           )}
           {/* Dot-grid texture */}

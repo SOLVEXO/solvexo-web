@@ -601,6 +601,19 @@ export const ENDPOINTS = {
     GET_STORE_INVENTORY: (id: string) => `/api/inventory/getStoreInventory/${id}`,
     LOW_STOCK_SUMMARY: (storeId: string) => `/api/inventory/low-stock-summary/${storeId}`,
     EXPORT_CSV: (storeId: string) => `/api/inventory/export/${storeId}`,
+    STOCK_LINES: (storeId: string) => `/api/inventory/${storeId}/stock-lines`,
+    ADJUST_STOCK: (storeId: string, variantId: string) => `/api/inventory/${storeId}/variant/${variantId}/adjust`,
+    STOCK_HISTORY: (storeId: string, variantId: string) => `/api/inventory/${storeId}/variant/${variantId}/history`,
+    LOCATIONS: (storeId: string) => `/api/inventory/${storeId}/locations`,
+    VARIANT_LOCATIONS: (storeId: string, variantId: string) => `/api/inventory/${storeId}/variant/${variantId}/locations`,
+    TRANSFER_STOCK: (storeId: string, variantId: string) => `/api/inventory/${storeId}/variant/${variantId}/transfer`,
+  },
+
+  POS_LOCATIONS: {
+    LIST: (storeId: string) => `/api/pos/locations/${storeId}`,
+    CREATE: (storeId: string) => `/api/pos/locations/${storeId}`,
+    UPDATE: (storeId: string, locationId: string) => `/api/pos/locations/${storeId}/${locationId}`,
+    ARCHIVE: (storeId: string, locationId: string) => `/api/pos/locations/${storeId}/${locationId}`,
   },
 
   SELLER_ACCOUNT: {

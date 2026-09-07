@@ -384,6 +384,164 @@ export function apiExportInventoryCsv(storeId: string) {
   });
 }
 
+// ── Real, variant-level Inventory management ────────────────────────────────
+// The Inventory page previously just re-showed the Products list's own
+// aggregated-per-product data (found during the Catalog deep-audit) — no
+// per-SKU rows, no way to adjust stock without opening the full Edit
+// Product form, no audit trail. This is the real, dedicated stock-line API.
+
+export type StockAdjustmentReason = 'restocked' | 'damaged' | 'return' | 'correction' | 'other';
+
+export interface StockLine {
+  variantId:      string;
+  productId:      string;
+  productName:    string;
+  image:          string | null;
+  sku:            string;
+  options:        { name: string; value: string }[];
+  price:          number;
+  stock:          number;
+  committedStock: number;
+  available:      number;
+  unlimitedStock: boolean;
+  status:         'in_stock' | 'low_stock' | 'out_of_stock' | 'unlimited';
+}
+
+export interface StockLinesData {
+  stats: { totalLines: number; inStock: number; lowStock: number; outOfStock: number };
+  pagination: { page: number; limit: number; total: number };
+  lines: StockLine[];
+}
+
+/** GET /api/inventory/:storeId/stock-lines — one row per SKU, not one row
+ *  per product summed across its variants. */
+export function apiGetStockLines(storeId: string, page = 1, limit = 20, search = '') {
+  return client.get<never, ApiResponse<StockLinesData>>(
+    `${ENDPOINTS.INVENTORY.STOCK_LINES(storeId)}?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
+  );
+}
+
+export interface StockAdjustment {
+  _id:            string;
+  storeId:        string;
+  productId:      string;
+  variantId:      string;
+  productName:    string;
+  sku:            string | null;
+  previousStock:  number;
+  newStock:       number;
+  delta:          number;
+  reason:         StockAdjustmentReason;
+  note:           string | null;
+  adjustedBy:     string;
+  adjustedByName: string | null;
+  createdAt:      string;
+}
+
+export interface AdjustStockResult {
+  variantId:     string;
+  previousStock: number;
+  newStock:      number;
+  adjustment:    StockAdjustment;
+}
+
+/** PATCH /api/inventory/:storeId/variant/:variantId/adjust — real,
+ *  reason-coded stock adjustment directly from the Inventory table (no
+ *  more opening Edit Product just to fix a stock count). `locationId` is
+ *  only passed once a store has 2+ real locations. */
+export function apiAdjustStock(storeId: string, variantId: string, delta: number, reason: StockAdjustmentReason, note?: string, locationId?: string) {
+  return client.patch<never, ApiResponse<AdjustStockResult>>(
+    ENDPOINTS.INVENTORY.ADJUST_STOCK(storeId, variantId),
+    { delta, reason, note, locationId },
+  );
+}
+
+export interface StockHistoryData {
+  pagination: { page: number; limit: number; total: number };
+  items: StockAdjustment[];
+}
+
+/** GET /api/inventory/:storeId/variant/:variantId/history — the real,
+ *  permanent per-SKU audit trail (who changed stock, when, why) that
+ *  never existed before this pass. */
+export function apiGetStockHistory(storeId: string, variantId: string, page = 1, limit = 20) {
+  return client.get<never, ApiResponse<StockHistoryData>>(
+    `${ENDPOINTS.INVENTORY.STOCK_HISTORY(storeId, variantId)}?page=${page}&limit=${limit}`,
+  );
+}
+
+// ── Multi-location stock (only relevant once a store has 2+ real
+// StoreLocations — location CRUD reuses the existing POS endpoints
+// as-is, not duplicated). ─────────────────────────────────────────────────
+
+export interface StoreLocation {
+  _id:          string;
+  storeId:      string;
+  name:         string;
+  addressLine1: string | null;
+  city:         string | null;
+  phone:        string | null;
+  isDefault:    boolean;
+  status:       'active' | 'archived';
+}
+
+/** GET /api/inventory/:storeId/locations — active locations, used to decide
+ *  whether to show any location-aware UI at all (0/1 = stay simple). */
+export function apiListActiveLocations(storeId: string) {
+  return client.get<never, ApiResponse<StoreLocation[]>>(ENDPOINTS.INVENTORY.LOCATIONS(storeId));
+}
+
+/** GET /api/pos/locations/:storeId — real location CRUD (built for POS,
+ *  reused here as-is for Inventory's own "Manage Locations"). */
+export function apiListLocations(storeId: string) {
+  return client.get<never, ApiResponse<StoreLocation[]>>(ENDPOINTS.POS_LOCATIONS.LIST(storeId));
+}
+
+export function apiCreateLocation(storeId: string, payload: { name: string; addressLine1?: string; city?: string; phone?: string }) {
+  return client.post<never, ApiResponse<StoreLocation>>(ENDPOINTS.POS_LOCATIONS.CREATE(storeId), payload);
+}
+
+export function apiUpdateLocation(storeId: string, locationId: string, payload: Partial<{ name: string; addressLine1: string; city: string; phone: string; status: 'active' | 'archived' }>) {
+  return client.patch<never, ApiResponse<StoreLocation>>(ENDPOINTS.POS_LOCATIONS.UPDATE(storeId, locationId), payload);
+}
+
+export function apiArchiveLocation(storeId: string, locationId: string, force = false) {
+  return client.delete<never, ApiResponse<null>>(`${ENDPOINTS.POS_LOCATIONS.ARCHIVE(storeId, locationId)}?force=${force}`);
+}
+
+export interface VariantLocationBreakdown {
+  variantId:  string;
+  totalStock: number;
+  locations: { locationId: string; locationName: string; isDefault: boolean; stock: number }[];
+}
+
+/** GET /api/inventory/:storeId/variant/:variantId/locations — real
+ *  per-branch stock breakdown for one SKU. */
+export function apiGetVariantLocations(storeId: string, variantId: string) {
+  return client.get<never, ApiResponse<VariantLocationBreakdown>>(
+    ENDPOINTS.INVENTORY.VARIANT_LOCATIONS(storeId, variantId),
+  );
+}
+
+export interface StockTransfer {
+  _id: string;
+  fromLocationName: string;
+  toLocationName: string;
+  quantity: number;
+  note: string | null;
+  transferredByName: string | null;
+  createdAt: string;
+}
+
+/** POST /api/inventory/:storeId/variant/:variantId/transfer — real
+ *  branch-to-branch stock move (Shopify's own "Transfer" equivalent). */
+export function apiTransferStock(storeId: string, variantId: string, fromLocationId: string, toLocationId: string, quantity: number, note?: string) {
+  return client.post<never, ApiResponse<StockTransfer>>(
+    ENDPOINTS.INVENTORY.TRANSFER_STOCK(storeId, variantId),
+    { fromLocationId, toLocationId, quantity, note },
+  );
+}
+
 // ── Seller Orders types ───────────────────────────────────────────────────────
 
 export interface SellerOrderCustomer {
