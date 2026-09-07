@@ -170,6 +170,7 @@ export function LoginPage() {
 
   return (
     <AuthSplitLayout
+      pageContext="login"
       heading={<>Commerce. <span className="text-brand-orange">Solved</span></>}
       subtext="Join thousands of buyers and sellers building their business on Solvexo's marketplace."
       highlights={HIGHLIGHTS}

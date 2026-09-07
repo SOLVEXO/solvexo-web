@@ -41,6 +41,7 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthSplitLayout
+      pageContext="login"
       heading="Forgot your way in? No problem."
       subtext="We'll email you a secure code to get you straight back into your account."
       highlights={HIGHLIGHTS}

@@ -694,6 +694,7 @@ export function OnboardingPage() {
     return (
       <AuthSplitLayout
         panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
+        pageContext="onboarding"
         heading="Your store, your way."
         subtext="A few quick steps and your store goes live — no waiting on review."
         highlights={ONBOARDING_HIGHLIGHTS}
@@ -711,6 +712,7 @@ export function OnboardingPage() {
     return (
       <AuthSplitLayout
         panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
+        pageContext="onboarding"
         heading="You're all set."
         subtext="Your store is live on Solvexo — start building your storefront right away."
         highlights={ONBOARDING_HIGHLIGHTS}
@@ -728,6 +730,7 @@ export function OnboardingPage() {
     return (
       <AuthSplitLayout
         panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
+        pageContext="onboarding"
         heading="You're all set."
         subtext="Your store is live on Solvexo — start building your storefront right away."
         highlights={ONBOARDING_HIGHLIGHTS}
@@ -744,6 +747,7 @@ export function OnboardingPage() {
   return (
     <AuthSplitLayout
       panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
+      pageContext="onboarding"
       heading="Your store, your way."
       subtext="A few quick steps and your store goes live — no waiting on review."
       highlights={ONBOARDING_HIGHLIGHTS}

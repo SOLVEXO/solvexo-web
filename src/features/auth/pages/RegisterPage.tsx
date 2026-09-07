@@ -136,6 +136,7 @@ export function RegisterPage() {
   return (
     <AuthSplitLayout
       panelGradient="from-carbon via-[#241f1b] to-brand-deep-orange"
+      pageContext="register"
       heading={isSeller
         ? <>Launch your <span className="text-brand-orange">store</span> today</>
         : <>Start <span className="text-brand-orange">selling</span> or shopping today</>}

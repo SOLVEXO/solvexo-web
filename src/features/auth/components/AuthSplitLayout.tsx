@@ -5,6 +5,7 @@ import { SolvexoLogo, SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { BrandSplash } from '@/components/comman/motion/BrandSplash';
 import { useAuthVisual } from '@/hooks/auth/useAuthVisual';
+import type { AuthPageContext } from '@/api/services/auth';
 import { motion, useReducedMotion } from 'motion/react';
 
 interface AuthHighlight {
@@ -20,12 +21,21 @@ interface AuthSplitLayoutProps {
   highlights?:     AuthHighlight[];
   accentIconClass?: string;
   maxWidth?:       string;
-  /** Unique per-screen branding illustration (marketplace grid, dashboard preview, security badge, etc). */
+  /** @deprecated No longer rendered — the branding panel's own real
+   *  background photo (region-detected, see `useAuthVisual`) replaced the
+   *  per-screen abstract mockup illustration this used to show. Kept in the
+   *  prop type only so existing callers (`visual={<DashboardMockup/>}` etc.)
+   *  don't need touching; the value is now simply ignored. */
   visual?:         ReactNode;
   /** Skips the centered maxWidth/white-card wrapper — for screens (like the seller
    *  onboarding wizard) that need the full 65% panel and manage their own inner
    *  layout/scroll (e.g. a sticky sub-header above scrolling step content). */
   bare?:           boolean;
+  /** Which of the region's 3 curated background photos to show — a real,
+   *  distinct (but same-region) photo per screen instead of one identical
+   *  image everywhere. Defaults to `'register'` for any caller that hasn't
+   *  been updated to pass this explicitly yet. */
+  pageContext?:    AuthPageContext;
   children:        ReactNode;
 }
 
@@ -51,16 +61,17 @@ export function AuthSplitLayout({
   highlights = [],
   accentIconClass = 'text-white',
   maxWidth = 'max-w-[420px]',
-  visual,
   bare = false,
+  pageContext = 'register',
   children,
 }: AuthSplitLayoutProps) {
   const reduceMotion = useReducedMotion();
   // Real, region-appropriate background photo (IP-detected country → one of
-  // a handful of curated regions) — starts `null` (renders nothing extra
-  // until resolved), so a slow/failed lookup never shows a broken image,
-  // just the panel's existing gradient as before this feature existed.
-  const visualImageUrl = useAuthVisual();
+  // a handful of curated regions, then `pageContext` picks which of that
+  // region's 3 photos) — starts `null` (renders nothing extra until
+  // resolved), so a slow/failed lookup never shows a broken image, just the
+  // panel's existing gradient as before this feature existed.
+  const visualImageUrl = useAuthVisual(pageContext);
   return (
     <div className="fixed inset-x-0 top-0 bottom-0 w-full overflow-hidden bg-cream flex flex-col lg:flex-row">
       <BrandSplash />
@@ -77,7 +88,8 @@ export function AuthSplitLayout({
         {visualImageUrl && (
           <>
             <img src={visualImageUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover" />
-            <div className={clsx('absolute inset-0 bg-gradient-to-br opacity-90', panelGradient)} />
+            <div className={clsx('absolute inset-0 bg-gradient-to-br opacity-45', panelGradient)} />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
           </>
         )}
         <div className="absolute inset-0 opacity-[0.07]" style={{
@@ -100,72 +112,90 @@ export function AuthSplitLayout({
         </div>
       </div>
 
-      {/* ── Branding panel (desktop only, fixed 35%) ───────────────────────── */}
-      <div className={clsx('hidden lg:flex lg:w-[35%] h-full min-w-0 relative overflow-hidden bg-gradient-to-br', panelGradient)}>
-        {/* Real, region-appropriate background photo — sits below everything
-           else in this panel; a dark tint (reusing the panel's own gradient,
-           at higher opacity) keeps every existing text element just as
-           readable as it was against the flat gradient alone. */}
-        {visualImageUrl && (
-          <>
-            <img src={visualImageUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover" />
-            <div className={clsx('absolute inset-0 bg-gradient-to-br opacity-90', panelGradient)} />
-          </>
-        )}
-        {/* Dot-grid texture */}
-        <div className="absolute inset-0 opacity-[0.07]" style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
-          backgroundSize: '28px 28px',
-        }} />
-        {/* Ambient glow — subtle enterprise polish, consistent across every auth screen */}
-        <div className="absolute -bottom-24 -left-16 w-72 h-72 rounded-full bg-brand-orange/20 blur-3xl auth-glow-pulse pointer-events-none" />
-        <div className="absolute -top-20 -right-10 w-56 h-56 rounded-full bg-white/[0.06] blur-3xl pointer-events-none" />
-
-        {/* `overflow-hidden` (not `overflow-y-auto`) + clamp()-based, viewport-height-
-           relative sizing below — this content must always fit, never scroll, on any
-           screen height, so every gap/font-size (and each mockup's own padding, see
-           AuthMockups.tsx) shrinks together as the panel shrinks rather than
-           overflowing and needing a scrollbar. */}
-        <div className="relative z-10 flex flex-col justify-between h-full w-full overflow-hidden p-[clamp(16px,3vh,40px)]">
-          {brandingHeader ?? <SolvexoLogo size={38} variant="light" />}
-
-          <div className="min-h-0 overflow-hidden">
-            <Reveal delay={0}>
-              <h2 className="font-serif text-[clamp(20px,3vh,34px)] font-bold text-white leading-[1.15] mb-[clamp(10px,1.4vh,14px)]">
-                {heading}
-              </h2>
-            </Reveal>
-            <Reveal delay={0.08}>
-              <p className="text-[clamp(11px,1.4vh,13px)] text-white/70 leading-[1.6] max-w-[360px] mb-[clamp(14px,2.2vh,24px)]">
-                {subtext}
-              </p>
-            </Reveal>
-            {highlights.length > 0 && (
-              <RevealStagger className="flex flex-col gap-[clamp(8px,1.4vh,14px)] mb-2" step={0.06} y={8}>
-                {highlights.map(({ Icon, text }) => (
-                  <div key={text} className="group flex items-center gap-3 transition-transform duration-200 ease-out hover:translate-x-0.5">
-                    <div className="size-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 transition-colors duration-200 group-hover:bg-brand-orange/20">
-                      <Icon size={16} className={clsx(accentIconClass, 'transition-colors duration-200 group-hover:text-brand-orange')} />
-                    </div>
-                    <span className="text-[12.5px] text-white/85 leading-[1.4]">{text}</span>
-                  </div>
-                ))}
-              </RevealStagger>
-            )}
-
-            {visual && (
-              <motion.div
-                className="mt-[clamp(8px,2vh,24px)]"
-                initial={reduceMotion ? undefined : { opacity: 0, y: 14, scale: 0.97 }}
-                animate={reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {visual}
-              </motion.div>
-            )}
+      {/* ── Branding column (desktop only, 60%) — Alibaba-style: the photo
+         is a rounded, padded CARD floating on the page's own cream
+         background, not a full-bleed panel — logo sits in that plain cream
+         space above the card (dark-on-light), never overlaid on the photo.
+         A custom `brandingHeader` (e.g. AdminLoginPage's Shield badge,
+         styled white for a dark background) is the one exception — it
+         keeps its original slot INSIDE the card, unchanged, since it isn't
+         designed to sit on a light background. ───────────────────────── */}
+      <div className="hidden lg:flex lg:w-[60%] h-full min-w-0 flex-col p-6 gap-3">
+        {!brandingHeader && (
+          <div className="shrink-0">
+            <SolvexoLogo size={40} variant="dark" />
           </div>
+        )}
 
-          <p className="text-[11px] text-white/40 shrink-0">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
+        <div className={clsx('relative flex-1 min-h-0 overflow-hidden rounded-3xl bg-gradient-to-br', panelGradient)}>
+          {/* Real, region-appropriate background photo — sits below
+             everything else in this card. A raw stock photo with a plain
+             translucent black scrim looks exactly like a raw stock photo
+             with a plain translucent black scrim ("cheap"); a genuine
+             DUOTONE color-grade (the same technique Stripe/Linear-style
+             premium products use for photography) instead blends the
+             panel's own brand gradient into the photo via `mix-blend-
+             multiply` — darkening and pulling every tone toward Solvexo's
+             carbon/orange palette while keeping real photographic detail —
+             so it reads as "branded photography," not "photo plus filter."
+             A light bottom-only black vignette (normal blend, not mixed)
+             sits on top purely for text legibility where the headline/
+             highlights/copyright actually are. */}
+          {visualImageUrl && (
+            <>
+              <img src={visualImageUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover" />
+              <div className={clsx('absolute inset-0 bg-gradient-to-br opacity-80 mix-blend-multiply', panelGradient)} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+            </>
+          )}
+          {/* Dot-grid texture */}
+          <div className="absolute inset-0 opacity-[0.07]" style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
+            backgroundSize: '28px 28px',
+          }} />
+          {/* Ambient glow — subtle enterprise polish, consistent across every auth screen */}
+          <div className="absolute -bottom-24 -left-16 w-72 h-72 rounded-full bg-brand-orange/20 blur-3xl auth-glow-pulse pointer-events-none" />
+          <div className="absolute -top-20 -right-10 w-56 h-56 rounded-full bg-white/[0.06] blur-3xl pointer-events-none" />
+
+          {/* `overflow-hidden` (not `overflow-y-auto`) + clamp()-based, viewport-height-
+             relative sizing below — this content must always fit, never scroll, on any
+             screen height, so every gap/font-size (and each mockup's own padding, see
+             AuthMockups.tsx) shrinks together as the panel shrinks rather than
+             overflowing and needing a scrollbar. */}
+          <div className="relative z-10 flex flex-col justify-between h-full w-full overflow-hidden p-[clamp(16px,3vh,40px)]">
+            {brandingHeader ?? <div />}
+
+            <div className="min-h-0 overflow-hidden">
+              <Reveal delay={0}>
+                <div className="w-10 h-[3px] rounded-full bg-brand-orange mb-[clamp(12px,2vh,18px)]" />
+              </Reveal>
+              <Reveal delay={0.03}>
+                <h2 className="font-serif text-[clamp(24px,3.6vh,40px)] font-bold text-white leading-[1.1] tracking-tight mb-[clamp(12px,1.8vh,18px)]" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.25)' }}>
+                  {heading}
+                </h2>
+              </Reveal>
+              <Reveal delay={0.08}>
+                <p className="text-[clamp(12px,1.5vh,14.5px)] text-white/80 leading-[1.65] max-w-[380px] mb-[clamp(18px,2.6vh,28px)]">
+                  {subtext}
+                </p>
+              </Reveal>
+              {highlights.length > 0 && (
+                <RevealStagger className="flex flex-col gap-[clamp(12px,1.8vh,18px)] mb-2" step={0.06} y={8}>
+                  {highlights.map(({ Icon, text }) => (
+                    <div key={text} className="group flex items-center gap-3.5 transition-transform duration-200 hover:translate-x-1">
+                      <div className="size-[30px] rounded-full ring-1 ring-white/25 flex items-center justify-center shrink-0 transition-all duration-200 group-hover:ring-brand-orange/60 group-hover:bg-brand-orange/15">
+                        <Icon size={14} className={clsx(accentIconClass, 'transition-colors duration-200')} />
+                      </div>
+                      <span className="text-[13px] font-medium text-white/90 leading-[1.4]">{text}</span>
+                    </div>
+                  ))}
+                </RevealStagger>
+              )}
+
+            </div>
+
+            <p className="text-[11px] text-white/40 shrink-0">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
+          </div>
         </div>
       </div>
 
