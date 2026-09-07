@@ -184,9 +184,12 @@ export const ENDPOINTS = {
 
     // Customers (staff-facing — only people who ordered from this store)
     CUSTOMERS: {
-      LIST:        (storeId: string) => `/api/store/${storeId}/customers`,
-      UPDATE:      (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}`,
-      UPDATE_META: (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}/meta`,
+      LIST:          (storeId: string) => `/api/store/${storeId}/customers`,
+      EXPORT:        (storeId: string) => `/api/store/${storeId}/customers/export`,
+      BULK_TAG:      (storeId: string) => `/api/store/${storeId}/customers/bulk-tag`,
+      BULK_ARCHIVE:  (storeId: string) => `/api/store/${storeId}/customers/bulk-archive`,
+      UPDATE:        (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}`,
+      UPDATE_META:   (storeId: string, customerId: string) => `/api/store/${storeId}/customers/${customerId}/meta`,
     },
   },
 
@@ -672,6 +675,7 @@ export const ENDPOINTS = {
       LIST_CONVERSATIONS:     '/api/messaging/admin/conversations',
       GET_CONVERSATION_BY_ID: (id: string) => `/api/messaging/admin/conversations/${id}`,
       GET_REPORTS:            '/api/messaging/admin/reports',
+      RESOLVE_REPORT:         (id: string) => `/api/messaging/admin/reports/${id}/resolve`,
     },
   },
 
@@ -1123,6 +1127,8 @@ export const ENDPOINTS = {
     STORE_REVIEWS:   (storeId: string) => `/api/rating/store-reviews/${storeId}`,
     REPLY:           (reviewId: string) => `/api/rating/reply/${reviewId}`,
     EDIT_REPLY:      (reviewId: string) => `/api/rating/edit-reply/${reviewId}`,
+    MODERATE_APPROVE: (reviewId: string) => `/api/rating/moderate/${reviewId}/approve`,
+    MODERATE_REJECT:  (reviewId: string) => `/api/rating/moderate/${reviewId}/reject`,
     FLAG:            (reviewId: string) => `/api/rating/flag/${reviewId}`,
     UNFLAG:          (reviewId: string) => `/api/rating/unflag/${reviewId}`,
     MODERATE_DELETE: (reviewId: string) => `/api/rating/admin/${reviewId}`,

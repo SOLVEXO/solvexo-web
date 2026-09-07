@@ -31,8 +31,11 @@ interface ChatWindowProps {
 
   sending:         boolean;
   uploading:       boolean;
+  /** 0-100 while `uploading` — omit to fall back to an indeterminate spinner only. */
+  uploadProgress?: number;
   onSend:          (payload: SendMessagePayload) => void;
   onUpload:        (file: File) => void;
+  onFileTooLarge?: (file: File, maxSizeBytes: number) => void;
   onEditMessage:   (id: string, text: string) => void;
   onDeleteMessage: (id: string) => void;
   onRetry:         (message: OptimisticMessage, payload: SendMessagePayload) => void;
@@ -66,7 +69,7 @@ function payloadFromMessage(m: OptimisticMessage): SendMessagePayload | null {
 export function ChatWindow({
   open, headerName, headerImage, headerVerified, subtitleOverride, menuItems, onBack, shortcuts,
   messages, msgLoading, currentUserId, otherPartyId, hasMore, loadingMore, onLoadMore,
-  sending, uploading, onSend, onUpload, onEditMessage, onDeleteMessage, onRetry,
+  sending, uploading, uploadProgress, onSend, onUpload, onFileTooLarge, onEditMessage, onDeleteMessage, onRetry,
   otherOnline, otherTyping, onTyping, conversationId, storeId, error,
 }: ChatWindowProps) {
   const [text,      setText]      = useState('');
@@ -216,7 +219,9 @@ export function ChatWindow({
         onChange={handleChangeText}
         onSend={handleSend}
         onFileSelect={onUpload}
+        onFileTooLarge={onFileTooLarge}
         uploading={uploading}
+        uploadProgress={uploadProgress}
         sending={sending}
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}

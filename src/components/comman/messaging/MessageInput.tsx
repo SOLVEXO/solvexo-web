@@ -10,7 +10,10 @@ interface MessageInputProps {
   onChange:       (v: string) => void;
   onSend:         () => void;
   onFileSelect:   (file: File) => void;
+  onFileTooLarge?: (file: File, maxSizeBytes: number) => void;
   uploading:      boolean;
+  /** 0-100 while `uploading` — omit to fall back to an indeterminate spinner only. */
+  uploadProgress?: number;
   sending:        boolean;
   replyTo?:       Message | null;
   onCancelReply?: () => void;
@@ -81,7 +84,7 @@ function useVoiceRecorder(onReady: (file: File) => void) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function MessageInput({
-  value, onChange, onSend, onFileSelect, uploading, sending, replyTo, onCancelReply, onShareProduct,
+  value, onChange, onSend, onFileSelect, onFileTooLarge, uploading, uploadProgress, sending, replyTo, onCancelReply, onShareProduct,
 }: MessageInputProps) {
   const canSend = value.trim().length > 0 && !sending;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -160,6 +163,20 @@ export function MessageInput({
         </div>
       )}
 
+      {uploading && (
+        <div className="mb-[8px] px-1">
+          <div className="h-[3px] rounded-full bg-bone overflow-hidden">
+            <div
+              className="h-full rounded-full bg-brand-orange transition-[width] duration-150"
+              style={{ width: `${uploadProgress ?? 0}%` }}
+            />
+          </div>
+          <p className="text-[10.5px] text-slate mt-1">
+            {uploadProgress != null ? `Uploading… ${uploadProgress}%` : 'Uploading…'}
+          </p>
+        </div>
+      )}
+
       <div className="flex items-end gap-[8px]">
         <div className="flex-1 flex items-end gap-[4px] bg-cream rounded-[22px] px-[6px] py-[4px] min-h-[42px]">
           <EmojiPicker onSelect={emoji => onChange(value + emoji)} />
@@ -176,7 +193,7 @@ export function MessageInput({
             style={{ maxHeight: MAX_TEXTAREA_H }}
           />
 
-          <AttachmentMenu onFileSelected={onFileSelect} onShareProduct={onShareProduct} disabled={uploading} />
+          <AttachmentMenu onFileSelected={onFileSelect} onFileTooLarge={onFileTooLarge} onShareProduct={onShareProduct} disabled={uploading} />
         </div>
 
         {canSend ? (

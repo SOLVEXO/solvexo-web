@@ -8,7 +8,7 @@ import { ENDPOINTS } from '../endpoints';
 // ─────────────────────────────────────────────────────────────────────────────
 export type MessageType   = 'text' | 'image' | 'video' | 'pdf' | 'document' | 'voice' | 'product_share';
 export type SenderRole    = 'user' | 'seller' | 'admin';
-export type TargetType    = 'user' | 'message' | 'conversation';
+export type TargetType    = 'user' | 'message' | 'conversation' | 'review';
 export type ReportStatus  = 'pending' | 'reviewed' | 'resolved';
 
 export interface ConversationParticipantPreview {
@@ -120,6 +120,9 @@ export interface Report {
   details?:     string | null;
   status:       ReportStatus;
   adminNotes?:  string | null;
+  resolution?:  'approved' | 'removed' | null;
+  reviewedBy?:  string | null;
+  resolvedAt?:  string | null;
   createdAt:    string;
   updatedAt:    string;
 }
@@ -204,10 +207,14 @@ export function apiDeleteConversation(id: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 // ATTACHMENTS
 // ─────────────────────────────────────────────────────────────────────────────
-export function apiUploadAttachment(conversationId: string, file: File) {
+export function apiUploadAttachment(conversationId: string, file: File, onProgress?: (percent: number) => void) {
   const fd = new FormData();
   fd.append('file', file);
-  return client.post<never, MessageAttachment>(ENDPOINTS.MESSAGING.ATTACHMENTS.UPLOAD(conversationId), fd);
+  return client.post<never, MessageAttachment>(ENDPOINTS.MESSAGING.ATTACHMENTS.UPLOAD(conversationId), fd, {
+    onUploadProgress: onProgress
+      ? e => onProgress(e.total ? Math.round((e.loaded / e.total) * 100) : 0)
+      : undefined,
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -271,4 +278,8 @@ export function apiAdminGetConversationById(id: string) {
 
 export function apiAdminGetReports(params?: GetReportsParams) {
   return client.get<never, Paginated & { reports: Report[] }>(ENDPOINTS.MESSAGING.ADMIN.GET_REPORTS, { params });
+}
+
+export function apiAdminResolveReport(reportId: string, payload: { resolution?: 'approved' | 'removed'; adminNotes?: string } = {}) {
+  return client.patch<never, Report>(ENDPOINTS.MESSAGING.ADMIN.RESOLVE_REPORT(reportId), payload);
 }

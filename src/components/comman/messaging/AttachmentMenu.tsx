@@ -2,10 +2,15 @@ import { useRef, useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { Paperclip, Image as ImageIcon, FileText, Camera, ShoppingBag } from 'lucide-react';
 
+const DEFAULT_MAX_SIZE_BYTES = 100 * 1024 * 1024; // matches the backend's multer limit (messaging.controller.ts)
+
 interface AttachmentMenuProps {
   onFileSelected: (file: File) => void;
   onShareProduct?: () => void;
   disabled?: boolean;
+  /** Called instead of onFileSelected when a chosen file exceeds maxSizeBytes — lets the page show its own toast/error without this component depending on one. */
+  onFileTooLarge?: (file: File, maxSizeBytes: number) => void;
+  maxSizeBytes?: number;
 }
 
 interface MenuAction {
@@ -20,7 +25,7 @@ interface MenuAction {
 // Document, Camera, and (when the conversation has a store to browse)
 // Share Product — instead of one paperclip that opens a single generic
 // file picker.
-export function AttachmentMenu({ onFileSelected, onShareProduct, disabled }: AttachmentMenuProps) {
+export function AttachmentMenu({ onFileSelected, onShareProduct, disabled, onFileTooLarge, maxSizeBytes = DEFAULT_MAX_SIZE_BYTES }: AttachmentMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLInputElement>(null);
@@ -44,7 +49,9 @@ export function AttachmentMenu({ onFileSelected, onShareProduct, disabled }: Att
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
-    if (file) onFileSelected(file);
+    if (!file) return;
+    if (file.size > maxSizeBytes) { onFileTooLarge?.(file, maxSizeBytes); return; }
+    onFileSelected(file);
   };
 
   const actions: MenuAction[] = [

@@ -13,6 +13,7 @@ import { useRecentSearches } from '@/hooks/messaging/useRecentSearches';
 import { apiUploadAttachment, type Conversation, type MessageType } from '@/api/services/messaging';
 import { ChatList, ChatWindow, type ChatListEntry, type ChatListFilter } from '@/components/comman/messaging';
 import type { ActionMenuItem } from '@/components/comman/ui';
+import { useToast } from '@/contexts/ToastContext';
 
 const TYPE_PREVIEW: Partial<Record<MessageType, string>> = {
   voice: 'Voice note', image: 'Photo', video: 'Video', pdf: 'File', document: 'File', product_share: 'Product shared',
@@ -42,6 +43,7 @@ export function SellerMessages() {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
   const { profile } = useGetProfile();
+  const toast = useToast();
 
   const [filter, setFilter] = useState<FilterId>('all');
   // "All" hides archived (matches WhatsApp/Telegram convention); "Archived" shows only those.
@@ -87,6 +89,7 @@ export function SellerMessages() {
 
   const [blockedBuyerId, setBlockedBuyerId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | undefined>(undefined);
 
   const active = conversation ?? list.find(c => c._id === activeId) ?? null;
 
@@ -108,13 +111,21 @@ export function SellerMessages() {
   const handleUpload = async (file: File) => {
     if (!activeId) return;
     setUploading(true);
+    setUploadProgress(0);
     try {
-      const attachment = await apiUploadAttachment(activeId, file);
+      const attachment = await apiUploadAttachment(activeId, file, setUploadProgress);
       const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'voice' : file.type === 'application/pdf' ? 'pdf' : 'document';
       await send({ type: kind, attachments: [attachment] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to upload attachment.');
     } finally {
       setUploading(false);
+      setUploadProgress(undefined);
     }
+  };
+
+  const handleFileTooLarge = (file: File, maxSizeBytes: number) => {
+    toast.error(`"${file.name}" is too large — the limit is ${Math.round(maxSizeBytes / (1024 * 1024))}MB.`);
   };
 
   const handleBlock = () => {
@@ -200,8 +211,10 @@ export function SellerMessages() {
           onLoadMore={loadMore}
           sending={sending}
           uploading={uploading}
+          uploadProgress={uploadProgress}
           onSend={payload => void send(payload)}
           onUpload={file => void handleUpload(file)}
+          onFileTooLarge={handleFileTooLarge}
           onEditMessage={(id, text) => void edit(id, text)}
           onDeleteMessage={id => void removeMessage(id)}
           onRetry={(m, payload) => m._tempId && retry(m._tempId, payload)}

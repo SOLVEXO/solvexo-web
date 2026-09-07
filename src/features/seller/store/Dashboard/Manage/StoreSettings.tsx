@@ -460,6 +460,7 @@ export default function StoreSettings() {
   const [faviconUrl,   setFaviconUrl]   = useState('');
   const [categoryId,   setCategoryId]   = useState('');
   const [codEnabled,   setCodEnabled]   = useState(true);
+  const [reviewModerationEnabled, setReviewModerationEnabled] = useState(false);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [taxRate, setTaxRate] = useState(0);
   const [enabledCurrencies, setEnabledCurrencies] = useState<SupportedCurrency[]>([]);
@@ -490,6 +491,7 @@ export default function StoreSettings() {
     setFaviconUrl(store.faviconUrl ?? '');
     setCategoryId(store.categoryId ?? '');
     setCodEnabled(store.codEnabled !== false);
+    setReviewModerationEnabled(!!store.reviewModerationEnabled);
     setLowStockThreshold(store.lowStockThreshold ?? 10);
     setTaxRate(store.taxRate ?? 0);
     // "Nothing set yet" used to default to a hardcoded ['PKR','USD'] guess —
@@ -513,7 +515,7 @@ export default function StoreSettings() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, faviconUrl: faviconUrl || null, categoryId, codEnabled, lowStockThreshold, taxRate, enabledCurrencies });
+      await apiUpdateStore({ storeId, name, description, tagline, contactEmail, contactPhone, productTypes, logo, coverImage, faviconUrl: faviconUrl || null, categoryId, codEnabled, reviewModerationEnabled, lowStockThreshold, taxRate, enabledCurrencies });
       refetch();
       setSaveMsg({ ok: true, text: 'Store updated successfully.' });
     } catch (err) {
@@ -537,6 +539,7 @@ export default function StoreSettings() {
       JSON.stringify(productTypes.slice().sort()) !==
         JSON.stringify((store.productTypes ?? []).slice().sort()) ||
       codEnabled !== (store.codEnabled !== false) ||
+      reviewModerationEnabled !== !!store.reviewModerationEnabled ||
       lowStockThreshold !== (store.lowStockThreshold ?? 10) ||
       taxRate !== (store.taxRate ?? 0) ||
       JSON.stringify(enabledCurrencies.slice().sort()) !==
@@ -836,6 +839,18 @@ export default function StoreSettings() {
                     <p className="text-[11px] text-slate">Let buyers pay in cash when their physical order arrives.</p>
                   </div>
                   <Toggle checked={codEnabled} onChange={setCodEnabled} ariaLabel="Enable Cash on Delivery" />
+                </div>
+              </div>
+
+              {/* Review moderation */}
+              <div className="mt-6 border-t border-bone pt-[18px]">
+                <p className="text-[12px] font-semibold text-charcoal mb-3">Reviews</p>
+                <div className="flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
+                  <div>
+                    <p className="text-[13px] font-medium text-charcoal">Require review approval</p>
+                    <p className="text-[11px] text-slate">New reviews stay hidden until you approve them. Off by default — reviews publish instantly.</p>
+                  </div>
+                  <Toggle checked={reviewModerationEnabled} onChange={setReviewModerationEnabled} ariaLabel="Require review approval" />
                 </div>
               </div>
 

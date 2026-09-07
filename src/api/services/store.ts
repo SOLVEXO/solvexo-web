@@ -76,6 +76,7 @@ export interface UpdateStorePayload {
   contactPhone?: string;
   productTypes?: ProductType[];
   codEnabled?:  boolean;
+  reviewModerationEnabled?: boolean;
   lowStockThreshold?: number;
   taxRate?: number;
   /** "Markets" — which of the platform's supported currencies buyers may
@@ -113,6 +114,10 @@ export interface StoreData {
    *  by checkout (a multi-vendor cart's COD eligibility isn't scoped per
    *  seller there yet); this only persists the seller's preference so far. */
   codEnabled:   boolean;
+  /** Opt-in review moderation gate — off by default (reviews publish
+   *  instantly). On: new reviews start pending and need seller/admin
+   *  approval before they're publicly visible. See RatingService. */
+  reviewModerationEnabled: boolean;
   enabledTools: string[];
   plan:         string;
   aiCredits:    number;
@@ -483,20 +488,39 @@ export function apiGetPlatformStats() {
 
 export type StoreCustomerSegment = 'new' | 'returning' | 'vip' | 'at_risk';
 
+export type StoreCustomerView = 'active' | 'archived' | 'all';
+export type StoreCustomerSortBy = 'name' | 'totalSpent' | 'orderCount' | 'lastOrderAt' | 'createdAt';
+
 export interface StoreCustomer {
-  _id:         string;
-  name:        string;
-  email:       string;
-  phone:       string;
-  createdAt:   string | null;
-  orderCount:  number;
-  totalSpent:  number;
-  lastOrderAt: string | null;
+  _id:            string;
+  name:           string;
+  email:          string;
+  phone:          string;
+  createdAt:      string | null;
+  orderCount:     number;
+  totalSpent:     number;
+  lastOrderAt:    string | null;
   /** Computed at read time from order stats — never stored, see backend StoreCustomerMeta's doc comment. */
-  segment:     StoreCustomerSegment;
+  segment:        StoreCustomerSegment;
   /** Seller-private, scoped to this store only. */
-  tags:        string[];
-  notes:       string;
+  tags:           string[];
+  notes:          string;
+  isArchived:     boolean;
+  marketingOptIn: boolean;
+}
+
+export interface GetStoreCustomersParams {
+  page?:            number;
+  limit?:           number;
+  search?:          string;
+  segment?:         StoreCustomerSegment;
+  sortBy?:          StoreCustomerSortBy;
+  sortDir?:         'asc' | 'desc';
+  dateFrom?:        string;
+  dateTo?:          string;
+  view?:            StoreCustomerView;
+  /** Scopes the list/export to exactly these customer ids — used by "export selected". */
+  ids?:             string[];
 }
 
 export interface UpdateStoreCustomerPayload {
@@ -506,8 +530,20 @@ export interface UpdateStoreCustomerPayload {
 }
 
 export interface UpdateStoreCustomerMetaPayload {
-  tags?:  string[];
-  notes?: string;
+  tags?:           string[];
+  notes?:          string;
+  marketingOptIn?: boolean;
+}
+
+export interface BulkTagCustomersPayload {
+  customerIds: string[];
+  addTags?:    string[];
+  removeTags?: string[];
+}
+
+export interface BulkArchiveCustomersPayload {
+  customerIds: string[];
+  archived:    boolean;
 }
 
 interface PaginatedCustomers {
@@ -516,10 +552,47 @@ interface PaginatedCustomers {
   customers:  StoreCustomer[];
 }
 
+function customerQueryString(params: GetStoreCustomersParams) {
+  const qs = new URLSearchParams();
+  qs.set('page', String(params.page ?? 1));
+  qs.set('limit', String(params.limit ?? 20));
+  if (params.search)   qs.set('search', params.search);
+  if (params.segment)  qs.set('segment', params.segment);
+  if (params.sortBy)   qs.set('sortBy', params.sortBy);
+  if (params.sortDir)  qs.set('sortDir', params.sortDir);
+  if (params.dateFrom) qs.set('dateFrom', params.dateFrom);
+  if (params.dateTo)   qs.set('dateTo', params.dateTo);
+  if (params.view)     qs.set('view', params.view);
+  if (params.ids?.length) qs.set('ids', params.ids.join(','));
+  return qs.toString();
+}
+
 /** GET /api/store/:storeId/customers  (seller only) */
-export function apiGetStoreCustomers(storeId: string, page = 1, limit = 20) {
+export function apiGetStoreCustomers(storeId: string, params: GetStoreCustomersParams = {}) {
   return client.get<never, ApiResponse<PaginatedCustomers>>(
-    `${ENDPOINTS.STORE.CUSTOMERS.LIST(storeId)}?page=${page}&limit=${limit}`,
+    `${ENDPOINTS.STORE.CUSTOMERS.LIST(storeId)}?${customerQueryString(params)}`,
+  );
+}
+
+/** GET /api/store/:storeId/customers/export  (seller only) — CSV of the same filtered set as the list above. */
+export function apiExportStoreCustomers(storeId: string, params: GetStoreCustomersParams = {}) {
+  return client.get<never, Blob>(
+    `${ENDPOINTS.STORE.CUSTOMERS.EXPORT(storeId)}?${customerQueryString(params)}`,
+    { responseType: 'blob' },
+  );
+}
+
+/** POST /api/store/:storeId/customers/bulk-tag  (seller only) */
+export function apiBulkTagCustomers(storeId: string, payload: BulkTagCustomersPayload) {
+  return client.post<never, ApiResponse<{ updated: number }>>(
+    ENDPOINTS.STORE.CUSTOMERS.BULK_TAG(storeId), payload,
+  );
+}
+
+/** PATCH /api/store/:storeId/customers/bulk-archive  (seller only) */
+export function apiBulkArchiveCustomers(storeId: string, payload: BulkArchiveCustomersPayload) {
+  return client.patch<never, ApiResponse<{ updated: number }>>(
+    ENDPOINTS.STORE.CUSTOMERS.BULK_ARCHIVE(storeId), payload,
   );
 }
 
@@ -530,9 +603,9 @@ export function apiUpdateStoreCustomer(storeId: string, customerId: string, payl
   );
 }
 
-/** PATCH /api/store/:storeId/customers/:customerId/meta  (seller only) — tags/notes, private to this store. */
+/** PATCH /api/store/:storeId/customers/:customerId/meta  (seller only) — tags/notes/marketing opt-in, private to this store. */
 export function apiUpdateStoreCustomerMeta(storeId: string, customerId: string, payload: UpdateStoreCustomerMetaPayload) {
-  return client.patch<never, ApiResponse<{ tags: string[]; notes: string }>>(
+  return client.patch<never, ApiResponse<{ tags: string[]; notes: string; marketingOptIn: boolean }>>(
     ENDPOINTS.STORE.CUSTOMERS.UPDATE_META(storeId, customerId), payload,
   );
 }

@@ -7,7 +7,7 @@ import type { TableColumn } from '@/components/comman/ui';
 import type { BadgeColor } from '@/types';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { formatDate } from '@/components/comman/analytics/format';
-import { AlertCircle, AlertTriangle, Info, SearchX, Eye, Check, Trash2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info, SearchX, Eye, Check, Trash2, Star } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 const RISK: Record<RiskLevel, { label: string; color: BadgeColor; Icon: LucideIcon }> = {
@@ -62,6 +62,23 @@ function ReportDetailModal({ report, onClose, onApproved }: { report: Moderation
           <p className="text-[13px] font-semibold text-charcoal">{report.itemLabel}</p>
           {report.sellerName && <p className="text-[12px] text-slate">Seller: {report.sellerName}</p>}
         </div>
+        {report.targetType === 'review' && !report.reviewRemoved && (
+          <div className="rounded-lg bg-cream px-3 py-2.5 flex flex-col gap-1.5">
+            {report.reviewRating != null && (
+              <div className="flex items-center gap-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} size={12} className={i < report.reviewRating! ? 'fill-brand-orange text-brand-orange' : 'text-bone'} />
+                ))}
+              </div>
+            )}
+            <p className="text-[12.5px] text-charcoal leading-[1.5]">
+              {report.reviewComment || <span className="italic text-slate">No comment text</span>}
+            </p>
+          </div>
+        )}
+        {report.targetType === 'review' && report.reviewRemoved && (
+          <p className="text-[12px] text-slate italic">This review has already been removed.</p>
+        )}
         <div>
           <p className="text-[11px] font-medium text-graphite mb-1">Reason</p>
           <p className="text-[13px] text-charcoal">{report.reason}</p>
@@ -197,13 +214,15 @@ export function AdminModeration() {
           footer={<>
             <Button variant="ghost" onClick={() => setRemoving(null)}>Cancel</Button>
             <Button variant="danger" onClick={handleRemove} loading={processingId === removing._id}>
-              {removing.targetType === 'seller' ? 'Suspend Seller' : 'Remove Listing'}
+              {removing.targetType === 'seller' ? 'Suspend Seller' : removing.targetType === 'review' ? 'Remove Review' : 'Remove Listing'}
             </Button>
           </>}
         >
           <p className="text-[13px] text-charcoal leading-[1.6]">
             {removing.targetType === 'seller'
               ? <>Suspend "<strong>{removing.itemLabel}</strong>"? Their account will be immediately blocked from the platform.</>
+              : removing.targetType === 'review'
+              ? <>Remove this review permanently? This cannot be undone.</>
               : <>Remove "<strong>{removing.itemLabel}</strong>" from the marketplace? It will be delisted immediately.</>}
           </p>
         </Modal>

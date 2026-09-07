@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-  ShieldCheck, Pencil, Trash2, Star, ThumbsUp, ImageIcon, ChevronLeft, ChevronRight, X, Store, AlertTriangle,
+  ShieldCheck, Pencil, Trash2, Star, ThumbsUp, ImageIcon, ChevronLeft, ChevronRight, X, Store, AlertTriangle, Flag,
 } from 'lucide-react';
 import { StarRating, Button, Badge, EmptyState, SkeletonBox, Pagination, FilterDropdown, Modal } from '@/components/comman/ui';
 import { useFocusTrap } from '@/components/comman/ui/useFocusTrap';
 import { TokenStorage } from '@/api/services/auth';
-import { apiGetProductReviews, apiDeleteReview, apiToggleReviewHelpful, type ProductReviewEntry, type ProductReviewStats } from '@/api/services/rating';
+import { apiGetProductReviews, apiDeleteReview, apiToggleReviewHelpful, apiReportReview, type ProductReviewEntry, type ProductReviewStats } from '@/api/services/rating';
 import { ReviewFormModal } from '../components/ReviewFormModal';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -38,8 +38,12 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 ];
 
 const PAGE_SIZE = 10;
-// Fetched once per product and then filtered/sorted/paginated entirely client-side.
-const FETCH_LIMIT = 100;
+
+const SORT_TO_API: Record<SortOption, 'newest' | 'highest_rating' | 'lowest_rating'> = {
+  recent: 'newest',
+  highest: 'highest_rating',
+  lowest: 'lowest_rating',
+};
 
 // ── Fullscreen image lightbox ──────────────────────────────────────────────────
 function ReviewLightbox({ images, startIndex, onClose }: { images: string[]; startIndex: number; onClose: () => void }) {
@@ -208,12 +212,15 @@ function ReviewsToolbar({ hasReviews, sortBy, onChangeSort }: ReviewsToolbarProp
 interface ReviewCardProps {
   review: ProductReviewEntry;
   storeName?: string | null;
+  isLoggedIn: boolean;
+  reported: boolean;
   onToggleHelpful: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onOpenPhoto: (index: number) => void;
+  onReport: () => void;
 }
-function ReviewCard({ review: r, storeName, onToggleHelpful, onEdit, onDelete, onOpenPhoto }: ReviewCardProps) {
+function ReviewCard({ review: r, storeName, isLoggedIn, reported, onToggleHelpful, onEdit, onDelete, onOpenPhoto, onReport }: ReviewCardProps) {
   const av = avatarStyle(r.customerName);
   const initials = r.isOwn ? 'Y' : r.customerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
@@ -234,6 +241,12 @@ function ReviewCard({ review: r, storeName, onToggleHelpful, onEdit, onDelete, o
                   Verified Purchase
                 </Badge>
               )}
+              {r.isOwn && r.status === 'pending' && (
+                <Badge color="orange" size="sm">Awaiting approval</Badge>
+              )}
+              {r.isOwn && r.status === 'rejected' && (
+                <Badge color="red" size="sm">Not approved</Badge>
+              )}
             </div>
             <div className="flex items-center gap-2 mt-[3px]">
               {r.rating != null && <StarRating value={r.rating} size={12} />}
@@ -242,7 +255,7 @@ function ReviewCard({ review: r, storeName, onToggleHelpful, onEdit, onDelete, o
           </div>
         </div>
 
-        {r.isOwn && (
+        {r.isOwn ? (
           <div className="flex gap-1 shrink-0">
             <button onClick={onEdit} title="Edit your review" className="w-7 h-7 flex items-center justify-center rounded-lg border border-bone bg-white text-slate cursor-pointer hover:bg-cream transition-colors">
               <Pencil size={12} />
@@ -251,6 +264,15 @@ function ReviewCard({ review: r, storeName, onToggleHelpful, onEdit, onDelete, o
               <Trash2 size={12} />
             </button>
           </div>
+        ) : isLoggedIn && (
+          <button
+            onClick={onReport}
+            disabled={reported}
+            title={reported ? 'Reported' : 'Report this review'}
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-bone bg-white text-slate cursor-pointer hover:bg-cream transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+          >
+            <Flag size={12} />
+          </button>
         )}
       </div>
 
@@ -303,8 +325,9 @@ interface ProductReviewsSectionProps {
 
 export function ProductReviewsSection({ productId, storeName }: ProductReviewsSectionProps) {
   const toast = useToast();
-  const [allReviews, setAllReviews] = useState<ProductReviewEntry[]>([]);
+  const [reviews, setReviews] = useState<ProductReviewEntry[]>([]);
   const [stats, setStats] = useState<ProductReviewStats | null>(null);
+  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('recent');
@@ -318,41 +341,44 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
   const [deleting, setDeleting] = useState<ProductReviewEntry | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
 
   const isLoggedIn = TokenStorage.isLoggedIn();
-  const hasOwnReview = allReviews.some(r => r.isOwn);
+  const hasOwnReview = reviews.some(r => r.isOwn);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    // Fetched once (a generous batch) per product; rating/sort/photo filtering and
-    // pagination below all happen client-side against this already-fetched set.
-    apiGetProductReviews(productId, { limit: FETCH_LIMIT })
+    apiGetProductReviews(productId, {
+      page,
+      limit: PAGE_SIZE,
+      rating: ratingFilter ?? undefined,
+      sort: SORT_TO_API[sortBy],
+      hasMedia: withPhotosOnly || undefined,
+    })
       .then(res => {
         if (cancelled) return;
-        setAllReviews(res.data.reviews ?? []);
+        setReviews(res.data.reviews ?? []);
         setStats(res.data.stats);
+        setTotal(res.data.pagination.total);
       })
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load reviews.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [productId, refreshKey]);
+  }, [productId, page, ratingFilter, sortBy, withPhotosOnly, refreshKey]);
 
-  const hasPhotoReviews = useMemo(() => allReviews.some(r => r.media?.length > 0), [allReviews]);
-
-  const filteredSorted = useMemo(() => {
-    let list = allReviews;
-    if (ratingFilter) list = list.filter(r => r.rating === ratingFilter);
-    if (withPhotosOnly) list = list.filter(r => r.media?.length > 0);
-    return [...list].sort((a, b) => {
-      if (sortBy === 'highest') return (b.rating ?? 0) - (a.rating ?? 0);
-      if (sortBy === 'lowest') return (a.rating ?? 0) - (b.rating ?? 0);
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  }, [allReviews, ratingFilter, withPhotosOnly, sortBy]);
-
-  const pageItems = filteredSorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const filtersActive = ratingFilter !== null || withPhotosOnly;
+
+  async function handleReport(review: ProductReviewEntry) {
+    setReportedIds(prev => new Set(prev).add(review.reviewId));
+    try {
+      await apiReportReview(review.reviewId, 'other', 'Reported by a buyer from the product page');
+      toast.success('Review reported — our team will take a look.');
+    } catch (err) {
+      setReportedIds(prev => { const next = new Set(prev); next.delete(review.reviewId); return next; });
+      toast.error(err instanceof Error ? err.message : 'Failed to report review.');
+    }
+  }
 
   function selectRating(star: number) {
     setRatingFilter(prev => (prev === star ? null : star));
@@ -396,16 +422,16 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
   async function toggleHelpful(reviewId: string) {
     if (!isLoggedIn) return;
     // Optimistic update — flip immediately, roll back only if the request fails.
-    setAllReviews(prev => prev.map(r => r.reviewId === reviewId
+    setReviews(prev => prev.map(r => r.reviewId === reviewId
       ? { ...r, helpfulByMe: !r.helpfulByMe, helpfulCount: r.helpfulCount + (r.helpfulByMe ? -1 : 1) }
       : r));
     try {
       const res = await apiToggleReviewHelpful(reviewId);
-      setAllReviews(prev => prev.map(r => r.reviewId === reviewId
+      setReviews(prev => prev.map(r => r.reviewId === reviewId
         ? { ...r, helpfulByMe: res.data.helpfulByMe, helpfulCount: res.data.helpfulCount }
         : r));
     } catch {
-      setAllReviews(prev => prev.map(r => r.reviewId === reviewId
+      setReviews(prev => prev.map(r => r.reviewId === reviewId
         ? { ...r, helpfulByMe: !r.helpfulByMe, helpfulCount: r.helpfulCount + (r.helpfulByMe ? -1 : 1) }
         : r));
     }
@@ -445,7 +471,7 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
           stats={stats!}
           ratingFilter={ratingFilter}
           withPhotosOnly={withPhotosOnly}
-          hasPhotoReviews={hasPhotoReviews}
+          hasPhotoReviews={hasReviews}
           filtersActive={filtersActive}
           onSelectRating={selectRating}
           onToggleWithPhotos={toggleWithPhotos}
@@ -471,7 +497,7 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
           title="Be the first to review this product"
           description="Your feedback helps other customers make better decisions."
         />
-      ) : filteredSorted.length === 0 ? (
+      ) : reviews.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-4">
           <p className="text-[13px] text-slate">No reviews match your filters.</p>
           <button onClick={clearFilters} className="text-[12px] font-medium text-brand-orange bg-transparent border-0 cursor-pointer hover:opacity-75">
@@ -481,22 +507,25 @@ export function ProductReviewsSection({ productId, storeName }: ProductReviewsSe
       ) : (
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-4">
-            {pageItems.map(r => (
+            {reviews.map(r => (
               <ReviewCard
                 key={r.reviewId}
                 review={r}
                 storeName={storeName}
+                isLoggedIn={isLoggedIn}
+                reported={reportedIds.has(r.reviewId)}
                 onToggleHelpful={() => toggleHelpful(r.reviewId)}
                 onEdit={() => setEditingReview(r)}
                 onDelete={() => { setDeleting(r); setDeleteError(''); }}
                 onOpenPhoto={i => setLightbox({ images: r.media, index: i })}
+                onReport={() => handleReport(r)}
               />
             ))}
           </div>
 
-          {filteredSorted.length > PAGE_SIZE && (
+          {total > PAGE_SIZE && (
             <div className="flex items-center justify-center pt-1">
-              <Pagination page={page} total={filteredSorted.length} perPage={PAGE_SIZE} onChange={setPage} />
+              <Pagination page={page} total={total} perPage={PAGE_SIZE} onChange={setPage} />
             </div>
           )}
         </div>

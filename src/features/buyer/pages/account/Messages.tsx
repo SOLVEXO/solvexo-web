@@ -3,13 +3,13 @@ import { useSearchParams } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Ban, Flag, Trash2 } from 'lucide-react';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
-import { useConversations, useSearchConversations } from '@/hooks/messaging/useConversations';
+import { useConversations, useSearchConversations, useStartConversation } from '@/hooks/messaging/useConversations';
 import { useMessages } from '@/hooks/messaging/useMessages';
 import { useModeration } from '@/hooks/messaging/useModeration';
 import { usePresence } from '@/hooks/messaging/usePresence';
 import { useRecentSearches } from '@/hooks/messaging/useRecentSearches';
 import { apiUploadAttachment, apiDeleteConversation, type Conversation, type MessageType } from '@/api/services/messaging';
-import { ChatList, ChatWindow, type ChatListEntry, type ChatListFilter } from '@/components/comman/messaging';
+import { ChatList, ChatWindow, NewChatModal, type ChatListEntry, type ChatListFilter } from '@/components/comman/messaging';
 import { Card, PageHeader, type ActionMenuItem } from '@/components/comman/ui';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -82,9 +82,12 @@ export function Messages() {
     otherOnline, otherTyping, sendTyping, error: msgError,
   } = useMessages(activeId);
   const { block, unblock, report } = useModeration();
+  const { execute: startConversation, loading: startingConversation } = useStartConversation();
 
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | undefined>(undefined);
   const [blockedSellerId, setBlockedSellerId] = useState<string | null>(null);
+  const [showNewChat, setShowNewChat] = useState(false);
 
   useEffect(() => {
     if (!activeId || messages.length === 0) return;
@@ -106,13 +109,21 @@ export function Messages() {
   const handleUpload = async (file: File) => {
     if (!activeId) return;
     setUploading(true);
+    setUploadProgress(0);
     try {
-      const attachment = await apiUploadAttachment(activeId, file);
+      const attachment = await apiUploadAttachment(activeId, file, setUploadProgress);
       const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'voice' : file.type === 'application/pdf' ? 'pdf' : 'document';
       await send({ type: kind, attachments: [attachment] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to upload attachment.');
     } finally {
       setUploading(false);
+      setUploadProgress(undefined);
     }
+  };
+
+  const handleFileTooLarge = (file: File, maxSizeBytes: number) => {
+    toast.error(`"${file.name}" is too large — the limit is ${Math.round(maxSizeBytes / (1024 * 1024))}MB.`);
   };
 
   const handleBlock = () => {
@@ -135,6 +146,18 @@ export function Messages() {
       toast[ok ? 'success' : 'error'](ok ? 'Conversation reported' : 'Failed to report conversation');
     });
   };
+  const handleStartNewChat = async (storeId: string) => {
+    if (!storeId) return;
+    const conv = await startConversation({ storeId });
+    if (conv) {
+      setShowNewChat(false);
+      refetchList();
+      setActiveId(conv._id);
+    } else {
+      toast.error('Failed to start conversation — check the store ID and try again.');
+    }
+  };
+
   const handleDelete = async () => {
     if (!active) return;
     try {
@@ -178,6 +201,7 @@ export function Messages() {
               entries={list.map(c => toBuyerEntry(c, online))}
               activeId={activeId}
               onSelect={setActiveId}
+              onNew={() => setShowNewChat(true)}
               query={query}
               onQueryChange={handleSearch}
               loading={isSearching ? searching : listLoading}
@@ -209,8 +233,10 @@ export function Messages() {
             onLoadMore={loadMore}
             sending={sending}
             uploading={uploading}
+            uploadProgress={uploadProgress}
             onSend={payload => void send(payload)}
             onUpload={file => void handleUpload(file)}
+            onFileTooLarge={handleFileTooLarge}
             onEditMessage={(id, text) => void edit(id, text)}
             onDeleteMessage={id => void remove(id)}
             onRetry={(m, payload) => m._tempId && retry(m._tempId, payload)}
@@ -223,6 +249,14 @@ export function Messages() {
           />
         </div>
       </Card>
+
+      {showNewChat && (
+        <NewChatModal
+          onClose={() => setShowNewChat(false)}
+          onStart={handleStartNewChat}
+          starting={startingConversation}
+        />
+      )}
     </div>
   );
 }

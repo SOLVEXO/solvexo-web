@@ -4,11 +4,12 @@ import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLa
 import {
   StarRating, EmptyState, SkeletonBox, Card, Badge,
   Table, type TableColumn, ActionMenu, type ActionMenuItem,
-  Modal, Button,
+  Modal, Button, FilterDropdown, TabBar,
 } from '@/components/comman/ui';
-import { Star, Flag, MessageSquare, Trash2, ImageIcon } from 'lucide-react';
+import { Star, Flag, MessageSquare, Trash2, ImageIcon, Check, X as XIcon } from 'lucide-react';
 import {
   apiGetStoreReviews, apiReplyToReview, apiEditReply, apiFlagReview, apiUnflagReview, apiModerateDeleteReview,
+  apiApproveReview, apiRejectReview,
   type StoreReviewEntry, type StoreReviewStats,
 } from '@/api/services/rating';
 
@@ -23,14 +24,17 @@ const PER_PAGE = 10;
 
 export function StoreReviews() {
   usePageTitle('Reviews');
-  const { storeId } = useStoreWorkspace();
+  const { storeId, store } = useStoreWorkspace();
+  const moderationEnabled = !!store?.reviewModerationEnabled;
 
   const [reviews, setReviews] = useState<StoreReviewEntry[]>([]);
   const [stats, setStats]     = useState<StoreReviewStats | null>(null);
   const [page, setPage]       = useState(1);
   const [total, setTotal]     = useState(0);
   const [ratingFilter, setRatingFilter] = useState('');
-  const [sortFilter, setSortFilter]     = useState('');
+  const [replyStatusFilter, setReplyStatusFilter] = useState('');
+  const [productIdFilter, setProductIdFilter] = useState('');
+  const [statusTab, setStatusTab] = useState<'all' | 'pending'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -40,12 +44,19 @@ export function StoreReviews() {
   const [actionError, setActionError] = useState('');
   const [deletingReview, setDeletingReview] = useState<StoreReviewEntry | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [moderatingId, setModeratingId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError('');
-    apiGetStoreReviews(storeId, { page, rating: ratingFilter ? parseInt(ratingFilter) : undefined })
+    apiGetStoreReviews(storeId, {
+      page,
+      rating: ratingFilter ? parseInt(ratingFilter) : undefined,
+      productId: productIdFilter || undefined,
+      replyStatus: (replyStatusFilter || undefined) as any,
+      status: statusTab === 'pending' ? 'pending' : undefined,
+    })
       .then(res => {
         if (cancelled) return;
         setReviews(res.data.reviews ?? []);
@@ -55,16 +66,25 @@ export function StoreReviews() {
       .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load reviews.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [storeId, page, ratingFilter, refreshKey]);
+  }, [storeId, page, ratingFilter, replyStatusFilter, productIdFilter, statusTab, refreshKey]);
 
   function reload() { setRefreshKey(k => k + 1); }
 
-  const filtered = reviews.filter(r => {
-    if (sortFilter === 'replied'   && !r.sellerReply) return false;
-    if (sortFilter === 'unreplied' && r.sellerReply)   return false;
-    if (sortFilter === 'flagged'   && !r.isFlagged)    return false;
-    return true;
-  });
+  async function handleApprove(r: StoreReviewEntry) {
+    setActionError('');
+    setModeratingId(r.reviewId);
+    try { await apiApproveReview(r.reviewId); reload(); }
+    catch (err) { setActionError(err instanceof Error ? err.message : 'Failed to approve review.'); }
+    finally { setModeratingId(null); }
+  }
+
+  async function handleReject(r: StoreReviewEntry) {
+    setActionError('');
+    setModeratingId(r.reviewId);
+    try { await apiRejectReview(r.reviewId); reload(); }
+    catch (err) { setActionError(err instanceof Error ? err.message : 'Failed to reject review.'); }
+    finally { setModeratingId(null); }
+  }
 
   async function handleFlag(r: StoreReviewEntry) {
     setActionError('');
@@ -141,8 +161,10 @@ export function StoreReviews() {
       key: 'status', header: 'Status', width: '150px',
       render: r => (
         <div className="flex flex-wrap gap-1">
+          {r.status === 'pending' && <Badge color="orange">Pending</Badge>}
+          {r.status === 'rejected' && <Badge color="red">Rejected</Badge>}
           {r.isFlagged && <Badge color="red">Flagged</Badge>}
-          {r.sellerReply ? <Badge color="green">Replied</Badge> : <Badge color="gray">Awaiting reply</Badge>}
+          {r.status === 'published' && (r.sellerReply ? <Badge color="green">Replied</Badge> : <Badge color="gray">Awaiting reply</Badge>)}
         </div>
       ),
     },
@@ -153,22 +175,23 @@ export function StoreReviews() {
     {
       key: 'actions', header: '', align: 'right', width: '60px',
       render: r => {
-        const items: ActionMenuItem[] = r.sellerReply
+        const moderationItems: ActionMenuItem[] = r.status === 'pending'
           ? [
-              { label: 'Edit Reply', icon: <MessageSquare size={13} />, onClick: () => setEditingReplyOf(r) },
-              r.isFlagged
-                ? { label: 'Unflag', onClick: () => handleUnflag(r) }
-                : { label: 'Flag Review', icon: <Flag size={13} />, onClick: () => handleFlag(r) },
-              { label: 'Remove', icon: <Trash2 size={13} />, danger: true, onClick: () => { setDeletingReview(r); setActionError(''); } },
+              { label: 'Approve', icon: <Check size={13} />, onClick: () => handleApprove(r) },
+              { label: 'Reject', icon: <XIcon size={13} />, danger: true, onClick: () => handleReject(r) },
             ]
-          : [
-              { label: 'Reply', icon: <MessageSquare size={13} />, onClick: () => setReplyingTo(r) },
-              r.isFlagged
-                ? { label: 'Unflag', onClick: () => handleUnflag(r) }
-                : { label: 'Flag Review', icon: <Flag size={13} />, onClick: () => handleFlag(r) },
-              { label: 'Remove', icon: <Trash2 size={13} />, danger: true, onClick: () => { setDeletingReview(r); setActionError(''); } },
-            ];
-        return <ActionMenu items={items} />;
+          : [];
+        const items: ActionMenuItem[] = [
+          ...moderationItems,
+          ...(r.sellerReply
+            ? [{ label: 'Edit Reply', icon: <MessageSquare size={13} />, onClick: () => setEditingReplyOf(r) }]
+            : [{ label: 'Reply', icon: <MessageSquare size={13} />, onClick: () => setReplyingTo(r) }]),
+          r.isFlagged
+            ? { label: 'Unflag', onClick: () => handleUnflag(r) }
+            : { label: 'Flag Review', icon: <Flag size={13} />, onClick: () => handleFlag(r) },
+          { label: 'Remove', icon: <Trash2 size={13} />, danger: true, onClick: () => { setDeletingReview(r); setActionError(''); } },
+        ];
+        return <ActionMenu items={items.map(item => ({ ...item, disabled: moderatingId === r.reviewId }))} />;
       },
     },
   ];
@@ -236,6 +259,9 @@ export function StoreReviews() {
                   { value: stats?.fiveStarRate ?? '0%',    label: '5-Star Rate',       sub: '',                      color: '#2D8A4E' },
                   { value: String(stats?.reviewsThisMonth ?? 0), label: 'Reviews This Month', sub: '', color: '#141413' },
                   { value: String(stats?.flaggedReviews ?? 0),   label: 'Flagged Reviews',    sub: 'Under moderation', color: '#C08B1E' },
+                  ...(moderationEnabled
+                    ? [{ value: String(stats?.pendingReviews ?? 0), label: 'Pending Approval', sub: 'Awaiting your review', color: '#C08B1E' }]
+                    : []),
                   { value: String(stats?.totalReviews ?? 0),     label: 'Total Reviews',      sub: '',                 color: '#141413' },
                 ].map(item => (
                   <div key={item.label} className="bg-cream rounded-[10px] px-4 py-[14px]">
@@ -251,6 +277,18 @@ export function StoreReviews() {
 
         {/* ── Reviews table ── */}
         <Card padding="none">
+          {moderationEnabled && (
+            <TabBar
+              tabs={[
+                { id: 'all', label: 'All' },
+                { id: 'pending', label: 'Pending', count: stats?.pendingReviews ?? 0 },
+              ]}
+              active={statusTab}
+              onChange={id => { setStatusTab(id as 'all' | 'pending'); setPage(1); }}
+              className="px-5"
+            />
+          )}
+
           {/* Filters */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-[10px] px-5 py-4 border-b border-bone">
             <select
@@ -266,8 +304,8 @@ export function StoreReviews() {
               <option value="1">1 Star</option>
             </select>
             <select
-              value={sortFilter}
-              onChange={e => setSortFilter(e.target.value)}
+              value={replyStatusFilter}
+              onChange={e => { setReplyStatusFilter(e.target.value); setPage(1); }}
               className="w-full sm:w-[140px] px-3 py-2 text-[13px] border border-bone rounded-lg bg-white text-charcoal outline-none cursor-pointer"
             >
               <option value="">All</option>
@@ -275,6 +313,15 @@ export function StoreReviews() {
               <option value="unreplied">Unreplied</option>
               <option value="flagged">Flagged</option>
             </select>
+            {(stats?.reviewedProducts?.length ?? 0) > 0 && (
+              <FilterDropdown
+                placeholder="All Products"
+                options={(stats?.reviewedProducts ?? []).map(p => ({ value: p.productId, label: p.name }))}
+                value={productIdFilter}
+                onChange={v => { setProductIdFilter(v); setPage(1); }}
+                className="w-full sm:w-[180px]"
+              />
+            )}
           </div>
 
           {loading ? (
@@ -283,12 +330,12 @@ export function StoreReviews() {
             </div>
           ) : error ? (
             <p className="text-[13px] text-error p-5">{error}</p>
-          ) : filtered.length === 0 ? (
+          ) : reviews.length === 0 ? (
             <EmptyState icon={<Star size={28} className="text-brand-orange" />} title="No reviews found" description="Reviews matching your filters will show up here." />
           ) : (
             <Table
               columns={columns}
-              data={filtered}
+              data={reviews}
               keyExtractor={r => r.reviewId}
               pagination={{ page, total, perPage: PER_PAGE, onChange: setPage, label: 'reviews' }}
             />
