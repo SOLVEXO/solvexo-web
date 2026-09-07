@@ -2,7 +2,7 @@ import { MetricCard, Table, type TableColumn } from '@/components/comman/ui';
 import { LineChart } from '@/components/comman/charts';
 import { Users, MapPin } from 'lucide-react';
 import { useAdminAnalyticsCustomers } from '@/hooks/admin/useAdminAnalytics';
-import type { BaseAnalyticsParams, GeoBreakdownRow, TopCustomerRow } from '@/api/services/analytics/adminAnalytics';
+import type { BaseAnalyticsParams, GeoBreakdownRow, CountryBreakdownRow, TopCustomerRow } from '@/api/services/analytics/adminAnalytics';
 import { AnalyticsErrorState } from '@/components/comman/analytics/AnalyticsErrorState';
 import { ChartCardSkeleton } from '@/components/comman/analytics/AnalyticsSkeletons';
 import { formatCurrency, formatBucketLabel, formatPercent } from '@/components/comman/analytics/format';
@@ -24,6 +24,12 @@ export function CustomersTab({ params }: { params: BaseAnalyticsParams }) {
 
   const geoColumns: TableColumn<GeoBreakdownRow>[] = [
     { key: 'state', header: 'State' },
+    { key: 'orders', header: 'Orders', align: 'right' },
+    { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatCurrency(r.revenue) },
+  ];
+
+  const countryColumns: TableColumn<CountryBreakdownRow>[] = [
+    { key: 'country', header: 'Country' },
     { key: 'orders', header: 'Orders', align: 'right' },
     { key: 'revenue', header: 'Revenue', align: 'right', render: r => formatCurrency(r.revenue) },
   ];
@@ -73,7 +79,25 @@ export function CustomersTab({ params }: { params: BaseAnalyticsParams }) {
 
         <div className="bg-white border border-bone rounded-[10px]">
           <div className="px-5 pt-4 pb-3">
-            <p className="text-[14px] font-bold text-charcoal">Geographic Distribution</p>
+            <p className="text-[14px] font-bold text-charcoal">Customers by Country</p>
+            <p className="text-[12px] text-slate">Physical orders only — digital orders have no shipping address.</p>
+          </div>
+          <Table
+            columns={countryColumns}
+            data={d?.countryBreakdown ?? []}
+            keyExtractor={r => r.country}
+            loading={customers.loading}
+            emptyState={{
+              icon: <MapPin size={28} className="text-slate/50" />,
+              title: 'No geographic data',
+              description: 'No physical orders with shipping addresses were placed in this period.',
+            }}
+          />
+        </div>
+
+        <div className="bg-white border border-bone rounded-[10px] lg:col-span-2">
+          <div className="px-5 pt-4 pb-3">
+            <p className="text-[14px] font-bold text-charcoal">Geographic Distribution (by State)</p>
             <p className="text-[12px] text-slate">Physical orders only — digital orders have no shipping address.</p>
           </div>
           <Table

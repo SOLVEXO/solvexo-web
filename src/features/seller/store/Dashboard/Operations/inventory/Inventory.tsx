@@ -19,6 +19,7 @@ import {
 import {
   apiGetStoreInventory,
   apiGetLowStockSummary,
+  apiExportInventoryCsv,
   type InventoryProduct,
   type LowStockSummaryData,
 } from '@/api/services/product';
@@ -46,14 +47,28 @@ export function StoreInventory() {
   const [error,      setError]      = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [lowStock,   setLowStock]   = useState<LowStockSummaryData | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const LIMIT = 10;
+  const SEARCH_LIMIT = 1000;
+  // Search only ever ran against whatever page was already loaded (10
+  // products) with no way to reach the rest of the store, so a product that
+  // genuinely existed on a later page silently looked like "no results" —
+  // found during the Catalog audit. Same "widen the fetch to the whole
+  // catalog while searching" fix already used on the Products list.
+  const isSearching = debouncedSearch.trim().length > 0;
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(id);
+  }, [search]);
 
   useEffect(() => {
     if (!storeId) return;
     let cancelled = false;
+    const [fetchPage, fetchLimit] = isSearching ? [1, SEARCH_LIMIT] : [page, LIMIT];
 
-    apiGetStoreInventory(storeId, page, LIMIT)
+    apiGetStoreInventory(storeId, fetchPage, fetchLimit)
       .then(res => {
         if (cancelled) return;
         setProducts(res.data.products ?? []);
@@ -66,7 +81,7 @@ export function StoreInventory() {
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [storeId, page, refreshKey]);
+  }, [storeId, page, refreshKey, isSearching]);
 
   // Low-stock detail list — independent of pagination, only re-runs on store/refresh.
   useEffect(() => {
@@ -95,10 +110,29 @@ export function StoreInventory() {
     setRefreshKey(k => k + 1);
   };
 
-  const filtered = search.trim()
+  const [exporting, setExporting] = useState(false);
+  const handleExportCsv = () => {
+    setExporting(true);
+    setError('');
+    apiExportInventoryCsv(storeId)
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `inventory-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      })
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to export inventory.'))
+      .finally(() => setExporting(false));
+  };
+
+  const filtered = isSearching
     ? products.filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.sku.toLowerCase().includes(search.toLowerCase())
+        p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        p.sku.toLowerCase().includes(debouncedSearch.toLowerCase())
       )
     : products;
 
@@ -171,10 +205,12 @@ export function StoreInventory() {
           <>
             <button
               title="Export"
-              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+              onClick={handleExportCsv}
+              disabled={exporting}
+              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 disabled:opacity-60 disabled:cursor-wait"
             >
               <Download size={14} className="sm:hidden" />
-              <span className="hidden sm:inline">Export</span>
+              <span className="hidden sm:inline">{exporting ? 'Exporting…' : 'Export'}</span>
             </button>
             <button
               onClick={goAdd}
@@ -286,7 +322,7 @@ export function StoreInventory() {
                 columns={columns}
                 data={filtered}
                 keyExtractor={p => p.productId}
-                pagination={{
+                pagination={isSearching ? undefined : {
                   page,
                   total:    totalProducts,
                   perPage:  LIMIT,

@@ -164,6 +164,17 @@ export function apiUpdateOrderStatus(payload: UpdateStatusPayload) {
   return client.put<never, OrderActionResponse>(ENDPOINTS.ORDERS.UPDATE_STATUS, payload);
 }
 
+/** PUT /api/orders/purchase-shipping-label — real one-click "mark as
+ *  shipped": buys the cheapest live carrier label for this order via the
+ *  store's connected Shippo account and marks it shipped with the real
+ *  tracking number, no manual entry. Throws with a clear message whenever a
+ *  live label genuinely isn't available (see OrdersService.purchaseShippingLabel) —
+ *  callers should fall back to the existing manual `apiUpdateOrderStatus`
+ *  tracking-number form in that case, not treat it as a hard failure. */
+export function apiPurchaseShippingLabel(orderId: string, storeId: string) {
+  return client.put<never, OrderActionResponse>(ENDPOINTS.ORDERS.PURCHASE_SHIPPING_LABEL, { orderId, storeId });
+}
+
 export function apiGetDownloadUrl(orderId: string, productId: string) {
   return client.get<never, { success: boolean; message: string; data: { downloadUrl: string } }>(
     `${ENDPOINTS.ORDERS.DOWNLOAD_URL}?orderId=${orderId}&productId=${productId}`,

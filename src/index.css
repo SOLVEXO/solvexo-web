@@ -708,3 +708,53 @@
   100% { transform: scale(1); }
 }
 .filter-check-pop { animation: filter-check-pop 200ms var(--ease-out); }
+
+/* Shared PhoneInput (components/comman/ui/PhoneInput.tsx) — restyles
+   react-phone-number-input's unstyled-by-default markup to match Input.tsx's
+   own BASE look (same border/radius/text-size/focus-ring tokens) instead of
+   the library's default plain-underline appearance. */
+.solvexo-phone-input.PhoneInput {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-bone);
+  background: white;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.solvexo-phone-input.PhoneInput:focus-within {
+  border-color: var(--color-brand-orange);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand-orange) 10%, transparent);
+}
+.solvexo-phone-input--error.PhoneInput {
+  border-color: var(--color-error) !important;
+}
+.solvexo-phone-input--error.PhoneInput:focus-within {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-error) 10%, transparent);
+}
+.solvexo-phone-input .PhoneInputCountry {
+  margin-right: 0;
+}
+.solvexo-phone-input .PhoneInputCountryIcon {
+  --PhoneInputCountryFlag-height: 14px;
+}
+.solvexo-phone-input .PhoneInputCountrySelectArrow {
+  opacity: 0.6;
+}
+.solvexo-phone-input .PhoneInputInput {
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0;
+  font-size: 13px;
+  color: var(--color-charcoal);
+}
+.solvexo-phone-input .PhoneInputInput::placeholder {
+  color: var(--color-slate);
+}
+.solvexo-phone-input.PhoneInput:has(.PhoneInputInput:disabled) {
+  opacity: 0.5;
+  background: var(--color-cream);
+}

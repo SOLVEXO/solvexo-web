@@ -44,6 +44,7 @@ export interface UpdateCategoryPayload {
   description?: string;
   image?:       string;
   isActive?:    boolean;
+  sortOrder?:   number;
 }
 
 interface CategoryTreeListResponse { success: boolean; message: string; data: CategoryNode[] }

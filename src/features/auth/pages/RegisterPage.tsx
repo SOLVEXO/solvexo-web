@@ -5,7 +5,9 @@ import { useRegister } from '@/hooks/auth/useRegister';
 import { useSocialLogin } from '@/hooks/auth/useSocialLogin';
 import { Button }      from '@/components/comman/ui/Button';
 import { Input }       from '@/components/comman/ui/Input';
+import { PhoneInput }  from '@/components/comman/ui/PhoneInput';
 import { Avatar }      from '@/components/comman/ui/Avatar';
+import { useDetectedCountry } from '@/hooks/auth/useDetectedCountry';
 import { SocialLoginRow } from '@/components/comman/ui/SocialIcons';
 import { Eye, EyeOff, ArrowRight, ShoppingBag, Store, TrendingUp, AlertTriangle, Info } from 'lucide-react';
 import { useForm }     from '@/hooks/useForm';
@@ -73,7 +75,8 @@ export function RegisterPage() {
   const showChooser = !!remembered && remembered.role === role && !explicitNewAccount;
   const onDetailsStep = searchParams.get('step') === 'details';
 
-  const { values, errors, set, blur, handleSubmit } = useForm(
+  const detectedCountry = useDetectedCountry();
+  const { values, errors, set, setValue, blur, handleSubmit } = useForm(
     registerSchema,
     { name: '', email: '', password: '', phone: '', address: '', role },
     {
@@ -223,10 +226,10 @@ export function RegisterPage() {
               value={values.name} onChange={set('name')} onBlur={blur('name')}
               error={errors.name}
             />
-            <Input
-              label="Phone Number" type="tel" placeholder="Enter Your Phone Number" autoComplete="tel"
-              value={values.phone} onChange={set('phone')} onBlur={blur('phone')}
-              error={errors.phone}
+            <PhoneInput
+              label="Phone Number" placeholder="Enter Your Phone Number"
+              value={values.phone} onChange={v => setValue('phone', v)} onBlur={blur('phone')}
+              error={errors.phone} defaultCountry={detectedCountry}
             />
             <Input
               label="Address" placeholder="Enter Your Address" autoComplete="street-address"

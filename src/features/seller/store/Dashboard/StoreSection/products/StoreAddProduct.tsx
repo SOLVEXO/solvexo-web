@@ -522,13 +522,6 @@ export default function StoreAddProduct() {
                   </span>
                 </button>
               )}
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] text-charcoal">Also list in Solvexo Marketplace</span>
-                <Toggle
-                  checked={cur.isListedOnSolvexo}
-                  onChange={v => pType === 'physical' ? sp('isListedOnSolvexo', v) : sd('isListedOnSolvexo', v)}
-                />
-              </div>
             </div>
           </Card>
 

@@ -100,7 +100,11 @@ export function apiGetStoreAppRequests(storeId: string) {
  *  Stripe PaymentIntent client secret; the platform is only marked requested
  *  once apiConfirmPlatformPayment verifies the payment succeeded. */
 export function apiCreatePlatformPaymentIntent(storeId: string, platform: 'android' | 'ios') {
-  return client.post<never, ApiResponse<{ clientSecret: string; amount: number }>>(
+  // `amount`/`currency` are the REAL, actually-charged figures (the
+  // platform's flat USD fee converted into the seller's own store currency
+  // at charge time — see StoreAppRequestsService.createPlatformPaymentIntent)
+  // — always use these for display/Stripe Elements.
+  return client.post<never, ApiResponse<{ clientSecret: string; amount: number; currency: string }>>(
     ENDPOINTS.STORE_APP_REQUESTS.PLATFORM_PAY(storeId, platform),
     {},
   );

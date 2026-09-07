@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Layers } from 'lucide-react';
+import { Plus, Trash2, Pencil, Layers } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   Button, Table, type TableColumn, Modal, Input, Select, Field, Badge, EmptyState,
 } from '@/components/comman/ui';
 import {
-  apiListMetafieldDefinitions, apiCreateMetafieldDefinition, apiDeleteMetafieldDefinition,
+  apiListMetafieldDefinitions, apiCreateMetafieldDefinition, apiUpdateMetafieldDefinition, apiDeleteMetafieldDefinition,
   METAFIELD_TYPES, METAFIELD_TYPE_LABELS, METAFIELD_OWNER_RESOURCES,
   type MetafieldDefinition, type MetafieldType, type MetafieldOwnerResource,
 } from '@/api/services/metafields';
@@ -14,12 +14,17 @@ const RESOURCE_LABELS: Record<MetafieldOwnerResource, string> = {
   product: 'Products', category: 'Categories', collection: 'Collections', page: 'Pages',
 };
 
-function CreateDefinitionModal({ storeId, onClose, onCreated }: { storeId: string; onClose: () => void; onCreated: () => void }) {
-  const [ownerResource, setOwnerResource] = useState<MetafieldOwnerResource>('product');
-  const [key, setKey] = useState('');
-  const [name, setName] = useState('');
-  const [type, setType] = useState<MetafieldType>('single_line_text_field');
-  const [required, setRequired] = useState(false);
+/** Create AND edit — `editing` switches Save to call
+ *  apiUpdateMetafieldDefinition instead of create; "Applies to"/Key/Type
+ *  all become read-only in that mode since the backend only accepts
+ *  name/description/required on update (they're the stable identifier —
+ *  same "immutable once set" precedent as Metaobjects' own Type field). */
+function DefinitionFormModal({ storeId, editing, onClose, onSaved }: { storeId: string; editing?: MetafieldDefinition; onClose: () => void; onSaved: () => void }) {
+  const [ownerResource, setOwnerResource] = useState<MetafieldOwnerResource>(editing?.ownerResource ?? 'product');
+  const [key, setKey] = useState(editing?.key ?? '');
+  const [name, setName] = useState(editing?.name ?? '');
+  const [type, setType] = useState<MetafieldType>(editing?.type ?? 'single_line_text_field');
+  const [required, setRequired] = useState(editing?.required ?? false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -28,20 +33,24 @@ function CreateDefinitionModal({ storeId, onClose, onCreated }: { storeId: strin
     setSaving(true);
     setError('');
     try {
-      await apiCreateMetafieldDefinition(storeId, { ownerResource, key: key.trim(), name: name.trim(), type, required });
-      onCreated();
+      if (editing) {
+        await apiUpdateMetafieldDefinition(storeId, editing._id, { name: name.trim(), required });
+      } else {
+        await apiCreateMetafieldDefinition(storeId, { ownerResource, key: key.trim(), name: name.trim(), type, required });
+      }
+      onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create this field.');
+      setError(err instanceof Error ? err.message : `Could not ${editing ? 'save' : 'create'} this field.`);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal onClose={onClose} title="New Custom Field">
+    <Modal onClose={onClose} title={editing ? `Edit "${editing.name}"` : 'New Custom Field'}>
       <div className="flex flex-col gap-3">
         <Field label="Applies to">
-          <Select value={ownerResource} onChange={e => setOwnerResource(e.target.value as MetafieldOwnerResource)}>
+          <Select value={ownerResource} disabled={!!editing} onChange={e => setOwnerResource(e.target.value as MetafieldOwnerResource)}>
             {METAFIELD_OWNER_RESOURCES.map(r => <option key={r} value={r}>{RESOURCE_LABELS[r]}</option>)}
           </Select>
         </Field>
@@ -49,10 +58,10 @@ function CreateDefinitionModal({ storeId, onClose, onCreated }: { storeId: strin
           <Input value={name} onChange={e => setName(e.target.value)} placeholder="Fabric" />
         </Field>
         <Field label="Key" hint="Stable identifier — lowercase, no spaces. Cannot change once set.">
-          <Input value={key} onChange={e => setKey(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))} placeholder="fabric" />
+          <Input value={key} disabled={!!editing} onChange={e => setKey(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))} placeholder="fabric" />
         </Field>
         <Field label="Type">
-          <Select value={type} onChange={e => setType(e.target.value as MetafieldType)}>
+          <Select value={type} disabled={!!editing} onChange={e => setType(e.target.value as MetafieldType)}>
             {METAFIELD_TYPES.map(t => <option key={t} value={t}>{METAFIELD_TYPE_LABELS[t]}</option>)}
           </Select>
         </Field>
@@ -63,7 +72,7 @@ function CreateDefinitionModal({ storeId, onClose, onCreated }: { storeId: strin
         {error && <p className="text-[12px] text-error">{error}</p>}
         <div className="flex justify-end gap-2 mt-2">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={handleSave} loading={saving}>Create Field</Button>
+          <Button variant="primary" onClick={handleSave} loading={saving}>{editing ? 'Save Changes' : 'Create Field'}</Button>
         </div>
       </div>
     </Modal>
@@ -78,7 +87,10 @@ export function MetafieldDefinitionsPage() {
   const { storeId } = useStoreWorkspace();
   const [definitions, setDefinitions] = useState<MetafieldDefinition[] | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingDef, setEditingDef] = useState<MetafieldDefinition | null>(null);
   const [deleting, setDeleting] = useState<MetafieldDefinition | null>(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const load = useCallback(() => {
     apiListMetafieldDefinitions(storeId).then(res => setDefinitions(res.data)).catch(() => setDefinitions([]));
@@ -88,9 +100,17 @@ export function MetafieldDefinitionsPage() {
 
   const handleDelete = async () => {
     if (!deleting) return;
-    await apiDeleteMetafieldDefinition(storeId, deleting._id);
-    setDeleting(null);
-    load();
+    setDeleteBusy(true);
+    setDeleteError('');
+    try {
+      await apiDeleteMetafieldDefinition(storeId, deleting._id);
+      setDeleting(null);
+      load();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Could not delete this field.');
+    } finally {
+      setDeleteBusy(false);
+    }
   };
 
   const columns: TableColumn<MetafieldDefinition>[] = [
@@ -100,13 +120,22 @@ export function MetafieldDefinitionsPage() {
     { key: 'required', header: 'Required', render: d => d.required ? 'Yes' : '—' },
     {
       key: 'actions', header: '', render: d => (
-        <button
-          type="button" onClick={() => setDeleting(d)}
-          className="text-error bg-transparent border-none cursor-pointer p-1"
-          aria-label={`Delete ${d.name}`}
-        >
-          <Trash2 size={15} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button" onClick={() => setEditingDef(d)}
+            className="text-slate bg-transparent border-none cursor-pointer p-1 hover:text-charcoal"
+            aria-label={`Edit ${d.name}`}
+          >
+            <Pencil size={15} />
+          </button>
+          <button
+            type="button" onClick={() => { setDeleteError(''); setDeleting(d); }}
+            className="text-error bg-transparent border-none cursor-pointer p-1"
+            aria-label={`Delete ${d.name}`}
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
       ),
     },
   ];
@@ -135,17 +164,22 @@ export function MetafieldDefinitionsPage() {
       )}
 
       {modalOpen && (
-        <CreateDefinitionModal storeId={storeId} onClose={() => setModalOpen(false)} onCreated={() => { setModalOpen(false); load(); }} />
+        <DefinitionFormModal storeId={storeId} onClose={() => setModalOpen(false)} onSaved={() => { setModalOpen(false); load(); }} />
+      )}
+
+      {editingDef && (
+        <DefinitionFormModal storeId={storeId} editing={editingDef} onClose={() => setEditingDef(null)} onSaved={() => { setEditingDef(null); load(); }} />
       )}
 
       {deleting && (
-        <Modal onClose={() => setDeleting(null)} title="Delete this field?">
+        <Modal onClose={() => { if (!deleteBusy) { setDeleting(null); setDeleteError(''); } }} title="Delete this field?">
           <p className="text-[13px] text-slate mb-4">
             "{deleting.name}" and every value set on it will be permanently removed. This can't be undone.
           </p>
+          {deleteError && <p className="text-[12px] text-error mb-3">{deleteError}</p>}
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button variant="danger" onClick={handleDelete}>Delete</Button>
+            <Button variant="ghost" onClick={() => { setDeleting(null); setDeleteError(''); }} disabled={deleteBusy}>Cancel</Button>
+            <Button variant="danger" onClick={handleDelete} loading={deleteBusy}>Delete</Button>
           </div>
         </Modal>
       )}

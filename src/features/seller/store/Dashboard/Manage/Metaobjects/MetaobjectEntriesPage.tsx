@@ -27,8 +27,14 @@ function FieldValueInput({ type, value, onChange }: { type: MetafieldType; value
     case 'number_decimal':
       return <input type="number" step="any" className={inp} value={value} onChange={e => onChange(e.target.value)} />;
     case 'boolean':
+      // A genuinely empty `value` shows a real "not yet answered" option —
+      // it used to default the visible selection to "False" while leaving
+      // the actual state empty, so a required field silently failed its
+      // own "is required" check even though the dropdown plainly showed an
+      // answer already picked.
       return (
-        <select className={inp} value={value || 'false'} onChange={e => onChange(e.target.value)}>
+        <select className={inp} value={value} onChange={e => onChange(e.target.value)}>
+          {!value && <option value="">— Select —</option>}
           <option value="true">True</option>
           <option value="false">False</option>
         </select>
@@ -120,6 +126,8 @@ export function MetaobjectEntriesPage() {
   const [entries, setEntries] = useState<MetaobjectEntry[] | null>(null);
   const [modalEntry, setModalEntry] = useState<MetaobjectEntry | 'new' | null>(null);
   const [deleting, setDeleting] = useState<MetaobjectEntry | null>(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const load = useCallback(() => {
     if (!definitionId) return;
@@ -131,9 +139,17 @@ export function MetaobjectEntriesPage() {
 
   const handleDelete = async () => {
     if (!deleting) return;
-    await apiDeleteMetaobjectEntry(storeId, deleting._id);
-    setDeleting(null);
-    load();
+    setDeleteBusy(true);
+    setDeleteError('');
+    try {
+      await apiDeleteMetaobjectEntry(storeId, deleting._id);
+      setDeleting(null);
+      load();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Could not delete this entry.');
+    } finally {
+      setDeleteBusy(false);
+    }
   };
 
   if (!definitionId) return null;
@@ -207,11 +223,12 @@ export function MetaobjectEntriesPage() {
       )}
 
       {deleting && (
-        <Modal onClose={() => setDeleting(null)} title="Delete this entry?">
+        <Modal onClose={() => { if (!deleteBusy) { setDeleting(null); setDeleteError(''); } }} title="Delete this entry?">
           <p className="text-[13px] text-slate mb-4">"{deleting.displayName}" will be permanently deleted. This can't be undone.</p>
+          {deleteError && <p className="text-[12px] text-error mb-3">{deleteError}</p>}
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button variant="danger" onClick={handleDelete}>Delete</Button>
+            <Button variant="ghost" onClick={() => { setDeleting(null); setDeleteError(''); }} disabled={deleteBusy}>Cancel</Button>
+            <Button variant="danger" onClick={handleDelete} loading={deleteBusy}>Delete</Button>
           </div>
         </Modal>
       )}

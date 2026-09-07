@@ -17,8 +17,14 @@ function ValueInput({ entry, value, onChange }: { entry: MetafieldValueEntry; va
     case 'number_decimal':
       return <input type="number" step="any" className={inp} value={value} onChange={e => onChange(e.target.value)} />;
     case 'boolean':
+      // A genuinely empty `value` shows a real "not yet answered" option —
+      // it used to default the visible selection to "False" while leaving
+      // the actual state empty, so a required field silently failed its
+      // own "is required" check even though the dropdown plainly showed an
+      // answer already picked.
       return (
-        <select className={inp} value={value || 'false'} onChange={e => onChange(e.target.value)}>
+        <select className={inp} value={value} onChange={e => onChange(e.target.value)}>
+          {!value && <option value="">— Select —</option>}
           <option value="true">True</option>
           <option value="false">False</option>
         </select>

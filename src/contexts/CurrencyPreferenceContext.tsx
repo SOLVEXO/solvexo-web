@@ -12,7 +12,12 @@ import { getCurrencyDecimals } from '@/utils/currency';
 // comment).
 export type { SupportedCurrency };
 
-const STORAGE_KEY = 'solvexo_currency_preference';
+// Exported so a one-time "no saved preference yet" check (see
+// `StorefrontLayout`'s IP-suggestion effect) can use the exact same key
+// without duplicating it — that check must never fire after a real choice
+// (explicit or account-level) already exists.
+export const CURRENCY_STORAGE_KEY = 'solvexo_currency_preference';
+const STORAGE_KEY = CURRENCY_STORAGE_KEY;
 
 /**
  * Converts `amount` (denominated in `fromCurrency` — a product/cart item's

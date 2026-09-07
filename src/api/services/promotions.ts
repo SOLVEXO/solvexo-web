@@ -72,7 +72,11 @@ export function apiCreatePromotionRequest(storeId: string, fields: CreatePromoti
 }
 
 export function apiPayPromotionRequest(id: string, idempotencyKey: string) {
-  return client.post<never, { success: boolean; data: { clientSecret: string; amount: number } }>(
+  // `amount`/`currency` here are the REAL, actually-charged figures (the
+  // request's own `priceUSD` converted into the seller's store currency at
+  // charge time — see PromotionsService.createPaymentIntent) — always use
+  // these for display/Stripe Elements, never the request's own `priceUSD`.
+  return client.post<never, { success: boolean; data: { clientSecret: string; amount: number; currency: string } }>(
     ENDPOINTS.PROMOTIONS.PAY(id), {}, { headers: { 'Idempotency-Key': idempotencyKey } },
   );
 }

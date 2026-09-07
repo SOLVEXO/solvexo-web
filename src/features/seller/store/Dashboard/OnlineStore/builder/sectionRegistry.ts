@@ -238,19 +238,20 @@ export const BLOCK_SCHEMAS: Record<string, FieldSchema[]> = {
       { value: 'h2', label: 'Large (H2)' }, { value: 'h3', label: 'Medium (H3)' }, { value: 'h4', label: 'Small (H4)' },
     ] },
   ],
-  // "Dynamic Sources" — dynamicSourceNamespace/Key are optional and, when
-  // both are set, bind this paragraph to a real product metafield instead
-  // of static `text` (resolved at render time — see `AtelierProductPage.tsx`/
-  // `RichTextSection.tsx`). Two flat fields, not one nested object, to match
-  // this engine's flat settings model — see the backend type's own doc
-  // comment. Only meaningful inside a Product Template's sections; a plain
-  // Home-page paragraph has no single "current resource" to bind to, so a
-  // seller who fills these in on a Home section just gets an empty paragraph
-  // there — not validated against page context, a disclosed v1 limitation.
+  // "Dynamic Sources" — dynamicSourceKey, when set, binds this paragraph to
+  // one of the store's own real Product custom fields instead of static
+  // `text` (namespace is always 'custom' — resolved at render time, see
+  // `AtelierProductPage.tsx`/`RichTextSection.tsx`). A real dropdown of the
+  // store's own definitions, not two raw text inputs a seller had to type
+  // exact-match by hand (silently no-op'd on any typo — found during the
+  // Catalog audit). Only meaningful inside a Product Template's sections; a
+  // plain Home-page paragraph has no single "current resource" to bind to,
+  // so a seller who picks one on a Home section just gets an empty
+  // paragraph there — not validated against page context, a disclosed v1
+  // limitation.
   paragraph: [
-    { key: 'text', kind: 'textarea', label: 'Paragraph text', maxLength: 2000, hint: 'Formatting: **bold**, *italic*, [link text](https://…). Leave blank if binding to a product field below.' },
-    { key: 'dynamicSourceNamespace', kind: 'text', label: 'Metafield namespace (optional)', hint: 'On a Product Template only: shows that product’s own custom field instead of the text above.', half: true },
-    { key: 'dynamicSourceKey', kind: 'text', label: 'Metafield key (optional)', half: true },
+    { key: 'text', kind: 'textarea', label: 'Paragraph text', maxLength: 2000, hint: 'Formatting: **bold**, *italic*, [link text](https://…). Leave blank if binding to a product custom field below.' },
+    { key: 'dynamicSourceKey', kind: 'metafieldKeyPicker', label: 'Or bind to a product custom field (optional)' },
   ],
   image: [
     { key: 'imageUrl', kind: 'image', label: 'Image' },

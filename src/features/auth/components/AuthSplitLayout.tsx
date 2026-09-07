@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { SolvexoLogo, SolvexoIcon } from '@/components/comman/ui/SolvexoLogo';
 import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { BrandSplash } from '@/components/comman/motion/BrandSplash';
+import { useAuthVisual } from '@/hooks/auth/useAuthVisual';
 import { motion, useReducedMotion } from 'motion/react';
 
 interface AuthHighlight {
@@ -55,6 +56,11 @@ export function AuthSplitLayout({
   children,
 }: AuthSplitLayoutProps) {
   const reduceMotion = useReducedMotion();
+  // Real, region-appropriate background photo (IP-detected country → one of
+  // a handful of curated regions) — starts `null` (renders nothing extra
+  // until resolved), so a slow/failed lookup never shows a broken image,
+  // just the panel's existing gradient as before this feature existed.
+  const visualImageUrl = useAuthVisual();
   return (
     <div className="fixed inset-x-0 top-0 bottom-0 w-full overflow-hidden bg-cream flex flex-col lg:flex-row">
       <BrandSplash />
@@ -68,6 +74,12 @@ export function AuthSplitLayout({
          sheet below is pulled up over its bottom edge (rounded-t + negative
          margin) for the curved hero→sheet transition, not a flat seam. */}
       <div className={clsx('lg:hidden shrink-0 relative overflow-hidden bg-gradient-to-br px-5 text-center pt-[clamp(10px,2.5vh,20px)] pb-[clamp(14px,4vh,32px)]', panelGradient)}>
+        {visualImageUrl && (
+          <>
+            <img src={visualImageUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover" />
+            <div className={clsx('absolute inset-0 bg-gradient-to-br opacity-90', panelGradient)} />
+          </>
+        )}
         <div className="absolute inset-0 opacity-[0.07]" style={{
           backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
           backgroundSize: '20px 20px',
@@ -90,6 +102,16 @@ export function AuthSplitLayout({
 
       {/* ── Branding panel (desktop only, fixed 35%) ───────────────────────── */}
       <div className={clsx('hidden lg:flex lg:w-[35%] h-full min-w-0 relative overflow-hidden bg-gradient-to-br', panelGradient)}>
+        {/* Real, region-appropriate background photo — sits below everything
+           else in this panel; a dark tint (reusing the panel's own gradient,
+           at higher opacity) keeps every existing text element just as
+           readable as it was against the flat gradient alone. */}
+        {visualImageUrl && (
+          <>
+            <img src={visualImageUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover" />
+            <div className={clsx('absolute inset-0 bg-gradient-to-br opacity-90', panelGradient)} />
+          </>
+        )}
         {/* Dot-grid texture */}
         <div className="absolute inset-0 opacity-[0.07]" style={{
           backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',

@@ -3,9 +3,11 @@ import { useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useRegister } from '@/hooks/auth/useRegister';
+import { useDetectedCountry } from '@/hooks/auth/useDetectedCountry';
 import { safeRedirectPath } from '@/utils/safeRedirect';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { NovaButton } from '../components/NovaButton';
+import { PhoneInput } from '@/components/comman/ui/PhoneInput';
 import { novaInput, novaLabel } from '../components/novaFormStyles';
 import { novaTheme as t } from '../theme.config';
 
@@ -17,6 +19,7 @@ export function NovaRegisterPage() {
   const [searchParams] = useSearchParams();
   const redirectTo = safeRedirectPath(searchParams.get('redirect')) ?? '/';
   const register = useRegister();
+  const detectedCountry = useDetectedCountry();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -56,8 +59,15 @@ export function NovaRegisterPage() {
           <input id="nova-register-email" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} style={novaInput} />
         </div>
         <div>
-          <label htmlFor="nova-register-phone" style={novaLabel}>Phone Number</label>
-          <input id="nova-register-phone" required autoComplete="tel" value={phone} onChange={e => setPhone(e.target.value)} style={novaInput} />
+          <PhoneInput
+            unstyled
+            labelNode={<label htmlFor="nova-register-phone" style={novaLabel}>Phone Number</label>}
+            id="nova-register-phone" required
+            value={phone} onChange={setPhone}
+            defaultCountry={detectedCountry}
+            containerStyle={{ ...novaInput, display: 'flex', alignItems: 'center' }}
+            inputStyle={{ border: 'none', outline: 'none', background: 'transparent', padding: 0, fontFamily: t.fonts.body, fontSize: '14px', color: t.colors.ink }}
+          />
         </div>
         <div>
           <label htmlFor="nova-register-address" style={novaLabel}>Address</label>

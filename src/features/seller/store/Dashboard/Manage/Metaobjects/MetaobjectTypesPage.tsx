@@ -1,21 +1,34 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Boxes, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Trash2, Pencil, Boxes, ArrowUp, ArrowDown } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
   Button, Table, type TableColumn, Modal, Input, Select, Field, Badge, EmptyState,
 } from '@/components/comman/ui';
 import {
-  apiListMetaobjectDefinitions, apiCreateMetaobjectDefinition, apiDeleteMetaobjectDefinition,
+  apiListMetaobjectDefinitions, apiCreateMetaobjectDefinition, apiUpdateMetaobjectDefinition, apiDeleteMetaobjectDefinition,
   type MetaobjectDefinitionSummary, type MetaobjectFieldDefinition,
 } from '@/api/services/metaobjects';
 import { METAFIELD_TYPES, METAFIELD_TYPE_LABELS, type MetafieldType } from '@/api/services/metafields';
 
 const EMPTY_FIELD: MetaobjectFieldDefinition = { key: '', name: '', type: 'single_line_text_field', required: false };
 const sanitizeSlug = (value: string) => value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+// Real static routes on the public storefront API (GET :storeId/definitions,
+// GET :storeId/entry/:entryId) — a type named either would be unreachable
+// and crash any storefront section pointed at it (see the backend's own
+// identical check in MetaobjectsService.createDefinition). Checked here too
+// so the seller gets an immediate, inline message instead of a server error
+// after filling out the whole form.
+const RESERVED_TYPES = new Set(['definitions', 'entry']);
 
-function CreateTypeModal({ storeId, onClose, onCreated }: { storeId: string; onClose: () => void; onCreated: () => void }) {
-  const [type, setType] = useState('');
+/** Create AND edit — `editing` (a full row from the list, which already
+ *  carries every field via `MetaobjectDefinitionSummary extends
+ *  MetaobjectDefinition`) switches this into edit mode: Type becomes
+ *  read-only (it's the stable identifier, immutable once set — same
+ *  precedent as Coupon.code/discountType), and Save calls
+ *  apiUpdateMetaobjectDefinition instead of create. */
+function TypeFormModal({ storeId, editing, onClose, onSaved }: { storeId: string; editing?: MetaobjectDefinitionSummary; onClose: () => void; onSaved: () => void }) {
+  const [type, setType] = useState(editing?.type ?? '');
   // Once the seller types into Type directly, stop auto-deriving it from
   // Name — same "smart default until the user takes control" pattern real
   // slug fields use everywhere else in this app (e.g. product/category
@@ -23,10 +36,10 @@ function CreateTypeModal({ storeId, onClose, onCreated }: { storeId: string; onC
   // placeholder — it looked filled but the real value stayed empty, so
   // clicking "Create Type" always failed with a confusing "Name and type
   // are required" even though both fields visibly had text in them.
-  const [typeTouched, setTypeTouched] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [fields, setFields] = useState<MetaobjectFieldDefinition[]>([{ ...EMPTY_FIELD }]);
+  const [typeTouched, setTypeTouched] = useState(!!editing);
+  const [name, setName] = useState(editing?.name ?? '');
+  const [description, setDescription] = useState(editing?.description ?? '');
+  const [fields, setFields] = useState<MetaobjectFieldDefinition[]>(editing?.fieldDefinitions?.length ? editing.fieldDefinitions.map(f => ({ ...f })) : [{ ...EMPTY_FIELD }]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -45,24 +58,31 @@ function CreateTypeModal({ storeId, onClose, onCreated }: { storeId: string; onC
 
   const handleSave = async () => {
     if (!name.trim() || !type.trim()) { setError('Name and type are required.'); return; }
+    if (!editing && RESERVED_TYPES.has(type.trim())) { setError(`"${type.trim()}" is a reserved type name — please pick a different one.`); return; }
     const cleanFields = fields.filter(f => f.name.trim() && f.key.trim());
     if (cleanFields.length === 0) { setError('Add at least one field — a content type with no fields has nothing to store.'); return; }
     setSaving(true);
     setError('');
     try {
-      await apiCreateMetaobjectDefinition(storeId, {
-        type: type.trim(), name: name.trim(), description: description.trim() || undefined, fieldDefinitions: cleanFields,
-      });
-      onCreated();
+      if (editing) {
+        await apiUpdateMetaobjectDefinition(storeId, editing._id, {
+          name: name.trim(), description: description.trim() || undefined, fieldDefinitions: cleanFields,
+        });
+      } else {
+        await apiCreateMetaobjectDefinition(storeId, {
+          type: type.trim(), name: name.trim(), description: description.trim() || undefined, fieldDefinitions: cleanFields,
+        });
+      }
+      onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create this content type.');
+      setError(err instanceof Error ? err.message : `Could not ${editing ? 'save' : 'create'} this content type.`);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal onClose={onClose} title="New Content Type">
+    <Modal onClose={onClose} title={editing ? `Edit "${editing.name}"` : 'New Content Type'}>
       <div className="flex flex-col gap-3">
         <Field label="Name" hint='What you see, e.g. "Team Member".'>
           <Input
@@ -75,8 +95,8 @@ function CreateTypeModal({ storeId, onClose, onCreated }: { storeId: string; onC
             placeholder="Team Member"
           />
         </Field>
-        <Field label="Type" hint="Stable identifier — lowercase, no spaces. Cannot change once set.">
-          <Input value={type} onChange={e => { setType(sanitizeSlug(e.target.value)); setTypeTouched(true); }} placeholder="team_member" />
+        <Field label="Type" hint={editing ? 'Stable identifier — cannot change once set.' : 'Stable identifier — lowercase, no spaces. Cannot change once set.'}>
+          <Input value={type} disabled={!!editing} onChange={e => { setType(sanitizeSlug(e.target.value)); setTypeTouched(true); }} placeholder="team_member" />
         </Field>
         <Field label="Description (optional)">
           <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="A person on your team" />
@@ -131,7 +151,7 @@ function CreateTypeModal({ storeId, onClose, onCreated }: { storeId: string; onC
         {error && <p className="text-[12px] text-error">{error}</p>}
         <div className="flex justify-end gap-2 mt-2">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={handleSave} loading={saving}>Create Type</Button>
+          <Button variant="primary" onClick={handleSave} loading={saving}>{editing ? 'Save Changes' : 'Create Type'}</Button>
         </div>
       </div>
     </Modal>
@@ -149,7 +169,10 @@ export function MetaobjectTypesPage() {
   const navigate = useNavigate();
   const [definitions, setDefinitions] = useState<MetaobjectDefinitionSummary[] | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingDef, setEditingDef] = useState<MetaobjectDefinitionSummary | null>(null);
   const [deleting, setDeleting] = useState<MetaobjectDefinitionSummary | null>(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const load = useCallback(() => {
     apiListMetaobjectDefinitions(storeId).then(res => setDefinitions(res.data)).catch(() => setDefinitions([]));
@@ -159,9 +182,17 @@ export function MetaobjectTypesPage() {
 
   const handleDelete = async () => {
     if (!deleting) return;
-    await apiDeleteMetaobjectDefinition(storeId, deleting._id);
-    setDeleting(null);
-    load();
+    setDeleteBusy(true);
+    setDeleteError('');
+    try {
+      await apiDeleteMetaobjectDefinition(storeId, deleting._id);
+      setDeleting(null);
+      load();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Could not delete this content type.');
+    } finally {
+      setDeleteBusy(false);
+    }
   };
 
   const columns: TableColumn<MetaobjectDefinitionSummary>[] = [
@@ -171,13 +202,22 @@ export function MetaobjectTypesPage() {
     { key: 'entryCount', header: 'Entries', render: d => d.entryCount },
     {
       key: 'actions', header: '', render: d => (
-        <button
-          type="button" onClick={e => { e.stopPropagation(); setDeleting(d); }}
-          className="text-error bg-transparent border-none cursor-pointer p-1"
-          aria-label={`Delete ${d.name}`}
-        >
-          <Trash2 size={15} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button" onClick={e => { e.stopPropagation(); setEditingDef(d); }}
+            className="text-slate bg-transparent border-none cursor-pointer p-1 hover:text-charcoal"
+            aria-label={`Edit ${d.name}`}
+          >
+            <Pencil size={15} />
+          </button>
+          <button
+            type="button" onClick={e => { e.stopPropagation(); setDeleteError(''); setDeleting(d); }}
+            className="text-error bg-transparent border-none cursor-pointer p-1"
+            aria-label={`Delete ${d.name}`}
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
       ),
     },
   ];
@@ -206,17 +246,22 @@ export function MetaobjectTypesPage() {
       )}
 
       {modalOpen && (
-        <CreateTypeModal storeId={storeId} onClose={() => setModalOpen(false)} onCreated={() => { setModalOpen(false); load(); }} />
+        <TypeFormModal storeId={storeId} onClose={() => setModalOpen(false)} onSaved={() => { setModalOpen(false); load(); }} />
+      )}
+
+      {editingDef && (
+        <TypeFormModal storeId={storeId} editing={editingDef} onClose={() => setEditingDef(null)} onSaved={() => { setEditingDef(null); load(); }} />
       )}
 
       {deleting && (
-        <Modal onClose={() => setDeleting(null)} title="Delete this content type?">
+        <Modal onClose={() => { if (!deleteBusy) { setDeleting(null); setDeleteError(''); } }} title="Delete this content type?">
           <p className="text-[13px] text-slate mb-4">
             "{deleting.name}" and all {deleting.entryCount} of its {deleting.entryCount === 1 ? 'entry' : 'entries'} will be permanently deleted. This can't be undone.
           </p>
+          {deleteError && <p className="text-[12px] text-error mb-3">{deleteError}</p>}
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button variant="danger" onClick={handleDelete}>Delete</Button>
+            <Button variant="ghost" onClick={() => { setDeleting(null); setDeleteError(''); }} disabled={deleteBusy}>Cancel</Button>
+            <Button variant="danger" onClick={handleDelete} loading={deleteBusy}>Delete</Button>
           </div>
         </Modal>
       )}

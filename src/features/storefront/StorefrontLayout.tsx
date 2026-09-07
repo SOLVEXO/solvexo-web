@@ -2,11 +2,12 @@ import { useEffect, useState, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { SkeletonBox } from '@/components/comman/ui';
 import { Store } from 'lucide-react';
-import { apiGetPublicStore, apiResolveStoreByDomain, type PublicStoreData } from '@/api/services/store';
+import { apiGetPublicStore, apiResolveStoreByDomain, apiSuggestLocationForStore, type PublicStoreData } from '@/api/services/store';
 import { apiGetPublicStoreTheme, type StoreThemeData } from '@/api/services/storeTheme';
 import { getStoreSlugFromHost } from '@/utils/storefrontUrl';
 import { CartProvider } from '@/contexts/CartContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
+import { useCurrencyPreference, CURRENCY_STORAGE_KEY } from '@/contexts/CurrencyPreferenceContext';
 import { StorefrontProvider, resolveStorefrontCfg, resolveStorefrontLink, type StorefrontContextValue } from './StorefrontContext';
 import { NEW_THEME_REGISTRY, DEFAULT_THEME_ID } from '@/features/storefront-themes/registry';
 
@@ -47,6 +48,7 @@ export function StorefrontLayout() {
   // store never flashes its real content first. See `AtelierStorefrontGate`/
   // `NovaStorefrontGate`'s own doc comments for the full rationale.
   const [unlocked, setUnlocked] = useState(false);
+  const { setCurrency } = useCurrencyPreference();
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +66,32 @@ export function StorefrontLayout() {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [slug]);
+
+  // Real IP-based currency default — Shopify-style: a first-time visitor to
+  // this store sees prices in their own local currency automatically, no
+  // click needed. Only ever fires when there's genuinely no existing
+  // preference yet (a fresh browser/tab, guest or not-yet-logged-in) — an
+  // explicit choice (this tab) or a logged-in account's own saved preference
+  // (handled inside CurrencyPreferenceContext itself) always wins and this
+  // never overrides either. Best-effort only: any failure (geolocation
+  // unavailable, offline, etc.) silently leaves the existing default in
+  // place, same fail-open convention as every other currency-suggestion call
+  // in this app.
+  useEffect(() => {
+    if (!store?.storeId) return;
+    if (localStorage.getItem(CURRENCY_STORAGE_KEY)) return;
+    let cancelled = false;
+    apiSuggestLocationForStore(store.storeId)
+      .then(res => {
+        if (cancelled) return;
+        const suggested = res.data.suggestedCurrency;
+        if (suggested && !localStorage.getItem(CURRENCY_STORAGE_KEY)) {
+          setCurrency(suggested);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [store?.storeId, setCurrency]);
 
   useStorefrontFavicon(store?.faviconUrl, store?.logo);
 

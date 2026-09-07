@@ -4,6 +4,7 @@ import { EntityPickerModal, type EntityPickerMode } from './EntityPickerModal';
 import { LinkTargetFields, type LinkTarget } from './LinkTargetFields';
 import type { PageOption } from './BlockFields';
 import { apiGetPublicMetaobjectDefinitions, type PublicMetaobjectDefinition } from '@/api/services/metaobjects';
+import { apiListMetafieldDefinitions, type MetafieldDefinition } from '@/api/services/metafields';
 
 /**
  * The schema-driven settings engine — this is the piece that was entirely
@@ -33,7 +34,7 @@ export type FieldKind =
   | 'text' | 'textarea' | 'number' | 'select' | 'checkbox'
   | 'image' | 'url' | 'link' | 'datetime'
   | 'categoryPicker' | 'collectionPicker' | 'categoryMultiPicker' | 'productMultiPicker'
-  | 'metaobjectTypePicker'
+  | 'metaobjectTypePicker' | 'metafieldKeyPicker'
   | 'itemList';
 
 export interface FieldOption { value: string; label: string }
@@ -120,6 +121,33 @@ function MetaobjectTypePickerField({ value, storeId, onChange }: { value: string
     <select className={inp} value={value ?? ''} onChange={e => onChange(e.target.value)}>
       <option value="" disabled>Choose a content type…</option>
       {defs.map(d => <option key={d._id} value={d.type}>{d.name}</option>)}
+    </select>
+  );
+}
+
+// "Dynamic Sources" — binds a paragraph block to one of this store's own
+// real Product custom fields instead of static text (see
+// AtelierContentBlocks.tsx/NovaContentBlocks.tsx's identical consumer side).
+// Previously this was two raw text inputs (namespace + key) a seller had to
+// type by hand, exact-match, with a silent no-op on any typo — found during
+// the Catalog audit. A real dropdown of the store's own definitions removes
+// that entire error class; namespace is always 'custom' today (see
+// MetafieldDefinition's own doc comment), so this field only needs to store
+// the key.
+function MetafieldKeyPickerField({ value, storeId, onChange }: { value: string | undefined; storeId: string; onChange: (key: string) => void }) {
+  const [defs, setDefs] = useState<MetafieldDefinition[] | null>(null);
+
+  useEffect(() => {
+    apiListMetafieldDefinitions(storeId, 'product').then(res => setDefs(res.data)).catch(() => setDefs([]));
+  }, [storeId]);
+
+  if (defs === null) return <div className={inp}>Loading custom fields…</div>;
+  if (defs.length === 0) return <div className={`${inp} text-slate`}>No product custom fields yet — create one under "Custom Fields" in the sidebar first.</div>;
+
+  return (
+    <select className={inp} value={value ?? ''} onChange={e => onChange(e.target.value)}>
+      <option value="">— Use the plain text above —</option>
+      {defs.map(d => <option key={d._id} value={d.key}>{d.name}</option>)}
     </select>
   );
 }
@@ -226,6 +254,9 @@ function renderField(field: FieldSchema, settings: Record<string, any>, setRaw: 
 
     case 'metaobjectTypePicker':
       return <MetaobjectTypePickerField value={value} storeId={storeId} onChange={type => set({ [field.key]: type })} />;
+
+    case 'metafieldKeyPicker':
+      return <MetafieldKeyPickerField value={value} storeId={storeId} onChange={key => set({ [field.key]: key })} />;
 
     case 'itemList':
       return <ItemListField items={Array.isArray(value) ? value : []} onChange={next => set({ [field.key]: next })} max={field.max} />;

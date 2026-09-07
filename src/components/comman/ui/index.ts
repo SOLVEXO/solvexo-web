@@ -8,6 +8,7 @@ export { Badge, StatusBadge }                from './Badge';
 export { Card }                              from './Card';
 
 export { Input, Textarea, Select }           from './Input';
+export { PhoneInput }                        from './PhoneInput';
 
 export { Avatar }                            from './Avatar';
 

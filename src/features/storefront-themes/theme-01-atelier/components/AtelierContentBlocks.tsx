@@ -31,8 +31,15 @@ export function AtelierContentBlocks({ blocks, dynamicSourceValues }: { blocks: 
               </p>
             );
           case 'paragraph': {
-            const { dynamicSourceNamespace: ns, dynamicSourceKey: key } = block.settings;
-            const boundText = ns && key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
+            // Namespace is no longer a seller-editable field (the picker
+            // only ever writes `dynamicSourceKey` now — see
+            // sectionRegistry.ts's paragraph schema) — every real Metafield
+            // definition's namespace is 'custom' today regardless, so this
+            // fallback covers both a fresh block and any pre-existing block
+            // that still has an explicit namespace saved from before.
+            const ns = block.settings.dynamicSourceNamespace || 'custom';
+            const key = block.settings.dynamicSourceKey;
+            const boundText = key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
             const text = boundText !== undefined ? boundText : block.settings.text;
             return (
               <p key={i} style={{ fontFamily: t.fonts.body, fontSize: '14.5px', lineHeight: 1.75, color: t.colors.ink, whiteSpace: 'pre-wrap' }}>

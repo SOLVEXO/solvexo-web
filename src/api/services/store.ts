@@ -33,6 +33,17 @@ export function apiSuggestLocation() {
   return client.get<never, { success: boolean; data: { country: string | null; suggestedCurrency: string | null } }>(ENDPOINTS.STORE.SUGGEST_LOCATION);
 }
 
+/** GET /api/store/public/:storeId/suggest-location — public/no-auth. Same
+ *  IP-detected suggestion as `apiSuggestLocation`, but scoped to what THIS
+ *  store actually accepts (its own "Markets" restriction) — a real buyer
+ *  landing on a store's own subdomain, usually before logging in, is what
+ *  calls this. */
+export function apiSuggestLocationForStore(storeId: string) {
+  return client.get<never, { success: boolean; data: { country: string | null; suggestedCurrency: string | null } }>(
+    ENDPOINTS.STORE.SUGGEST_LOCATION_FOR_STORE(storeId),
+  );
+}
+
 export interface CreateStorePayload {
   name:         string;
   logo?:        string;

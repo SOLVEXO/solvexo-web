@@ -164,6 +164,7 @@ export interface AdminSellerRegistrationTrendsData { granularity: AnalyticsGranu
 export interface NewVsReturningPoint { date: string; newCustomers: number; returningCustomers: number }
 export interface TopCustomerRow { userId: string; name: string; email: string; totalOrders: number; lifetimeValue: number }
 export interface GeoBreakdownRow { state: string; orders: number; revenue: number }
+export interface CountryBreakdownRow { country: string; orders: number; revenue: number }
 
 export interface AdminCustomerAnalyticsData {
   granularity: AnalyticsGranularity;
@@ -173,6 +174,7 @@ export interface AdminCustomerAnalyticsData {
   averageLifetimeValue: number;
   topCustomersByLtv: TopCustomerRow[];
   geographicBreakdown: GeoBreakdownRow[];
+  countryBreakdown: CountryBreakdownRow[];
   note: string;
 }
 

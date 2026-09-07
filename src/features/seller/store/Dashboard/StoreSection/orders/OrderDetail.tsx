@@ -9,7 +9,7 @@ import {
   apiGetSellerOrderDetail,
   type SellerOrderDetail,
 } from '@/api/services/product';
-import { apiMarkOrderPaid, apiUpdateOrderStatus } from '@/api/services/orders';
+import { apiMarkOrderPaid, apiUpdateOrderStatus, apiPurchaseShippingLabel } from '@/api/services/orders';
 import {
   SkeletonBox, StatusBadge, Button, Modal, Field, Input,
 } from '@/components/comman/ui';
@@ -60,6 +60,12 @@ export function StoreOrderDetail() {
   const [trackingForm, setTrackingForm] = useState({ carrier: '', trackingNumber: '', trackingUrl: '' });
   const [trackingErrors, setTrackingErrors] = useState<{ carrier?: string; trackingNumber?: string }>({});
   const [confirmComplete, setConfirmComplete] = useState(false);
+  // Real one-click "buy a live carrier label" (Shippo) — a separate error
+  // slot from the manual form below it, since failing here (store hasn't
+  // connected Shippo, no live rate for this address, etc.) is expected to
+  // happen often and should never block the always-available manual entry.
+  const [liveLabelBusy, setLiveLabelBusy] = useState(false);
+  const [liveLabelError, setLiveLabelError] = useState('');
 
   const load = () => {
     setLoading(true);
@@ -116,6 +122,15 @@ export function StoreOrderDetail() {
       .then(() => { setShowShipModal(false); load(); })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to mark order as shipped.'))
       .finally(() => setBusyAction(null));
+  };
+
+  const handlePurchaseLiveLabel = () => {
+    setLiveLabelBusy(true);
+    setLiveLabelError('');
+    apiPurchaseShippingLabel(orderId, storeId)
+      .then(() => { setShowShipModal(false); load(); })
+      .catch((err: unknown) => setLiveLabelError(err instanceof Error ? err.message : 'Failed to buy a live shipping label.'))
+      .finally(() => setLiveLabelBusy(false));
   };
 
   if (loading) {
@@ -290,7 +305,16 @@ export function StoreOrderDetail() {
             </>
           }
         >
-          <p className="text-[12.5px] text-slate mb-4">Add the shipment's tracking details so the customer can follow their delivery.</p>
+          <div className="mb-4 pb-4 border-b border-bone">
+            <p className="text-[12.5px] text-slate mb-2.5">
+              Have a live carrier connected (Integrations → Shippo)? Buy a real label instantly instead of typing tracking details by hand.
+            </p>
+            <Button size="sm" variant="outline" onClick={handlePurchaseLiveLabel} loading={liveLabelBusy} disabled={busy}>
+              Buy Live Shipping Label
+            </Button>
+            {liveLabelError && <p className="text-[11.5px] text-error mt-2">{liveLabelError}</p>}
+          </div>
+          <p className="text-[12.5px] text-slate mb-4">Or add the shipment's tracking details manually so the customer can follow their delivery.</p>
           <Field label="Carrier" required error={trackingErrors.carrier}>
             <Input placeholder="e.g. DHL, FedEx, Local Courier" value={trackingForm.carrier} onChange={e => setTrackingForm(f => ({ ...f, carrier: e.target.value }))} disabled={busy} />
           </Field>

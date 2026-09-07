@@ -3,9 +3,11 @@ import { useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { useRegister } from '@/hooks/auth/useRegister';
+import { useDetectedCountry } from '@/hooks/auth/useDetectedCountry';
 import { safeRedirectPath } from '@/utils/safeRedirect';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { AtelierButton } from '../components/AtelierButton';
+import { PhoneInput } from '@/components/comman/ui/PhoneInput';
 import { atelierInput, atelierLabel } from '../components/atelierFormStyles';
 import { atelierTheme as t } from '../theme.config';
 
@@ -17,6 +19,7 @@ export function AtelierRegisterPage() {
   const [searchParams] = useSearchParams();
   const redirectTo = safeRedirectPath(searchParams.get('redirect')) ?? '/';
   const register = useRegister();
+  const detectedCountry = useDetectedCountry();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -56,8 +59,15 @@ export function AtelierRegisterPage() {
           <input id="atelier-register-email" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} style={atelierInput} />
         </div>
         <div>
-          <label htmlFor="atelier-register-phone" style={atelierLabel}>Phone Number</label>
-          <input id="atelier-register-phone" required autoComplete="tel" value={phone} onChange={e => setPhone(e.target.value)} style={atelierInput} />
+          <PhoneInput
+            unstyled
+            labelNode={<label htmlFor="atelier-register-phone" style={atelierLabel}>Phone Number</label>}
+            id="atelier-register-phone" required
+            value={phone} onChange={setPhone}
+            defaultCountry={detectedCountry}
+            containerStyle={{ ...atelierInput, display: 'flex', alignItems: 'center' }}
+            inputStyle={{ border: 'none', outline: 'none', background: 'transparent', padding: 0, fontFamily: t.fonts.body, fontSize: '13.5px', color: t.colors.ink }}
+          />
         </div>
         <div>
           <label htmlFor="atelier-register-address" style={atelierLabel}>Address</label>

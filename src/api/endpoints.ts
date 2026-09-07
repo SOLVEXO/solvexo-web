@@ -109,6 +109,7 @@ export const ENDPOINTS = {
     EDIT_PROFILE: '/api/auth/edit-profile',
     RESEND_OTP: '/api/auth/resend-otp',
     LOGOUT: '/api/auth/logout',
+    DETECT_COUNTRY: '/api/auth/detect-country',
   },
 
   // ── NOTIFICATIONS ──────────────────────────────────────────────────────────
@@ -141,6 +142,7 @@ export const ENDPOINTS = {
     MY_STORES: '/api/store/my-stores',
     ENABLED_CURRENCIES: '/api/store/public/enabled-currencies',
     SUGGEST_LOCATION: '/api/store/suggest-location',
+    SUGGEST_LOCATION_FOR_STORE: (storeId: string) => `/api/store/public/${storeId}/suggest-location`,
     CUSTOM_DOMAIN: (storeId: string) => `/api/store/${storeId}/custom-domain`,
     CUSTOM_DOMAIN_VERIFY: (storeId: string) => `/api/store/${storeId}/custom-domain/verify`,
     RESOLVE_DOMAIN: '/api/store/public/resolve-domain',
@@ -479,6 +481,9 @@ export const ENDPOINTS = {
     CREATE_DIGITAL: '/api/products/add-digital-product',
     EDIT_PRODUCT: '/api/products/edit-product',
     DELETE_PRODUCT: (id: string) => `/api/products/delete-product/${id}`,
+    DUPLICATE_PRODUCT: (id: string) => `/api/products/duplicate-product/${id}`,
+    EXPORT_CSV: (storeId: string) => `/api/products/store-products/${storeId}/export`,
+    IMPORT_CSV: (storeId: string) => `/api/products/store-products/${storeId}/import`,
     GET_MY_ALL_PRODUCT: (id: string) => `/api/inventory/getStoreInventory/${id}`,
     GET_MY_PRODUCT_BY_ID: (id: string) => `/api/products/get-my-product/${id}`,
     EDUCATION_FACETS: '/api/products/education/facets',
@@ -595,6 +600,7 @@ export const ENDPOINTS = {
   INVENTORY: {
     GET_STORE_INVENTORY: (id: string) => `/api/inventory/getStoreInventory/${id}`,
     LOW_STOCK_SUMMARY: (storeId: string) => `/api/inventory/low-stock-summary/${storeId}`,
+    EXPORT_CSV: (storeId: string) => `/api/inventory/export/${storeId}`,
   },
 
   SELLER_ACCOUNT: {
@@ -620,6 +626,7 @@ export const ENDPOINTS = {
   ORDERS: {
     MARK_PAID:     (id: string) => `/api/orders/mark-paid/${id}`,
     UPDATE_STATUS: '/api/orders/update-status',
+    PURCHASE_SHIPPING_LABEL: '/api/orders/purchase-shipping-label',
     DOWNLOAD_URL:  '/api/orders/download-url',
 
     MY_ORDERS:       '/api/orders/my-orders',

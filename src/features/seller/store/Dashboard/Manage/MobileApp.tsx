@@ -15,6 +15,7 @@ import {
 } from '@/api/services/storeAppRequests';
 import { apiGetPosAppInfo } from '@/api/services/store';
 import { GOOGLE_PLAY_URL } from '@/components/comman/ui/AppPromoParts';
+import { currencySymbol } from '@/utils/currency';
 
 // ── Two completely separate mobile-app products a seller can get, both
 // reachable only from this page — deliberately NOT sharing any
@@ -54,13 +55,18 @@ function isRequestResolved(request: StoreAppRequest) {
 function PlatformPayFlow({ label, priceLabel, onCreateIntent, onConfirm }: {
   label: string;
   priceLabel: string;
-  onCreateIntent: () => Promise<{ clientSecret: string; amount: number }>;
+  onCreateIntent: () => Promise<{ clientSecret: string; amount: number; currency: string }>;
   onConfirm: () => Promise<void>;
 }) {
   const [starting, setStarting] = useState(false);
   const [paying, setPaying] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
   const [amount, setAmount] = useState<number | null>(null);
+  // Real, actually-charged currency (the flat USD platform fee converted
+  // into the seller's own store currency at charge time) — never hardcoded
+  // '$', which would mismatch what this PaymentIntent really charges for
+  // any non-USD store.
+  const [currency, setCurrency] = useState('USD');
   const [error, setError] = useState('');
 
   const handleStart = async () => {
@@ -70,6 +76,7 @@ function PlatformPayFlow({ label, priceLabel, onCreateIntent, onConfirm }: {
       const res = await onCreateIntent();
       setClientSecret(res.clientSecret);
       setAmount(res.amount);
+      setCurrency(res.currency);
     } catch (e) {
       setError(e instanceof Error ? e.message : `Failed to start payment for ${label}.`);
     } finally {
@@ -100,9 +107,9 @@ function PlatformPayFlow({ label, priceLabel, onCreateIntent, onConfirm }: {
       <div className="max-w-[320px]">
         <div className="rounded-lg border border-bone bg-white px-3 py-2.5 mb-2.5 flex items-center justify-between gap-3">
           <span className="text-[11.5px] font-semibold text-charcoal">{priceLabel}</span>
-          <span className="text-[14px] font-bold text-charcoal shrink-0">${(amount ?? 0).toFixed(2)}</span>
+          <span className="text-[14px] font-bold text-charcoal shrink-0">{currencySymbol(currency)}{(amount ?? 0).toFixed(2)}</span>
         </div>
-        <StripeCardPayment clientSecret={clientSecret} submitLabel={`Pay $${(amount ?? 0).toFixed(2)}`} onConfirmed={handleConfirmed} />
+        <StripeCardPayment clientSecret={clientSecret} submitLabel={`Pay ${currencySymbol(currency)}${(amount ?? 0).toFixed(2)}`} onConfirmed={handleConfirmed} />
         {paying && <p className="mt-2 text-[11.5px] text-slate">Confirming your payment…</p>}
         {error && <p className="mt-2 text-[12px] text-error">{error}</p>}
       </div>

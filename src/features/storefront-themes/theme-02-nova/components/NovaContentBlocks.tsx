@@ -25,8 +25,11 @@ export function NovaContentBlocks({ blocks, dynamicSourceValues }: { blocks: Con
               </p>
             );
           case 'paragraph': {
-            const { dynamicSourceNamespace: ns, dynamicSourceKey: key } = block.settings;
-            const boundText = ns && key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
+            // See AtelierContentBlocks.tsx's identical comment — namespace
+            // is no longer seller-editable (always 'custom' in practice).
+            const ns = block.settings.dynamicSourceNamespace || 'custom';
+            const key = block.settings.dynamicSourceKey;
+            const boundText = key ? dynamicSourceValues?.[`${ns}:${key}`] : undefined;
             const text = boundText !== undefined ? boundText : block.settings.text;
             return (
               <p key={i} style={{ fontFamily: t.fonts.body, fontSize: '15px', lineHeight: 1.75, color: t.colors.ink, whiteSpace: 'pre-wrap' }}>

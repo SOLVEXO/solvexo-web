@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { FolderTree, Tag, Plus } from 'lucide-react';
+import { FolderTree, Tag, Plus, ArrowUp, ArrowDown } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { useStoreCategoryTree } from '@/hooks/store/useStoreCategoryTree';
 import { apiAddCategory, apiUpdateCategory, apiDeleteCategory, type CategoryNode } from '@/api/services/categories';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
-import { SkeletonBox, ImageUpload } from '@/components/comman/ui';
+import { SkeletonBox, ImageUpload, Toggle } from '@/components/comman/ui';
 import { ActionMenu, type ActionMenuItem } from '@/components/comman/ui/ActionMenu';
 import { ConfirmDialog } from '@/features/seller/store/Dashboard/OnlineStore/builder/ConfirmDialog';
 
@@ -21,6 +21,12 @@ function CategoryFormModal({ storeId, parentId, category, onClose, onSaved }: {
   const [name, setName]               = useState(category?.name ?? '');
   const [description, setDescription] = useState(category?.description ?? '');
   const [image, setImage]             = useState(category?.image ?? '');
+  // Real backend support for this already existed (UpdateCategoryPayload.isActive,
+  // CategoriesService.updateCategory) — the only way to make a category
+  // disappear was a hard delete (blocked outright if anything still
+  // references it), with no way to just temporarily hide a seasonal one
+  // and bring it back later. Found during the Catalog audit.
+  const [isActive, setIsActive]       = useState(category ? category.status !== 'inactive' : true);
   const [saving, setSaving]           = useState(false);
   const [error, setError]             = useState('');
 
@@ -31,7 +37,7 @@ function CategoryFormModal({ storeId, parentId, category, onClose, onSaved }: {
     try {
       if (category) {
         await apiUpdateCategory(category._id, storeId, {
-          name: name.trim(), description: description.trim() || undefined, image: image.trim() || undefined,
+          name: name.trim(), description: description.trim() || undefined, image: image.trim() || undefined, isActive,
         });
       } else {
         await apiAddCategory({
@@ -75,17 +81,47 @@ function CategoryFormModal({ storeId, parentId, category, onClose, onSaved }: {
           <label className="text-[12px] font-medium text-charcoal block mb-1.5">Image (optional)</label>
           <ImageUpload value={image ? [image] : []} onChange={urls => setImage(urls[0] ?? '')} maxFiles={1} storeId={storeId} />
         </div>
+        {category && (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[12.5px] font-medium text-charcoal">Active</p>
+              <p className="text-[11px] text-slate">Hide this category from your storefront without deleting it.</p>
+            </div>
+            <Toggle checked={isActive} onChange={setIsActive} ariaLabel="Category active" />
+          </div>
+        )}
         {error && <p className="text-[12px] text-error">{error}</p>}
       </div>
     </Modal>
   );
 }
 
-function CategoryCard({ category, onAddSub, onEdit, onDelete }: {
+function ReorderButtons({ onUp, onDown }: { onUp?: () => void; onDown?: () => void }) {
+  return (
+    <div className="flex items-center gap-0.5 shrink-0">
+      <button type="button" onClick={onUp} disabled={!onUp} aria-label="Move up"
+        className="text-slate bg-transparent border-none cursor-pointer p-1 disabled:opacity-25 disabled:cursor-not-allowed hover:text-charcoal">
+        <ArrowUp size={14} />
+      </button>
+      <button type="button" onClick={onDown} disabled={!onDown} aria-label="Move down"
+        className="text-slate bg-transparent border-none cursor-pointer p-1 disabled:opacity-25 disabled:cursor-not-allowed hover:text-charcoal">
+        <ArrowDown size={14} />
+      </button>
+    </div>
+  );
+}
+
+function CategoryCard({ category, onAddSub, onEdit, onDelete, onMoveUp, onMoveDown, onReorderSub }: {
   category: CategoryNode;
   onAddSub: (parentId: string) => void;
   onEdit: (category: CategoryNode) => void;
   onDelete: (category: CategoryNode) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  /** Reorders one of this category's own subcategories among its siblings —
+   *  `sortOrder` existed on the schema all along but nothing ever read or
+   *  wrote it from the UI (found during the Catalog audit). */
+  onReorderSub: (siblings: CategoryNode[], index: number, direction: 'up' | 'down') => void;
 }) {
   const rootActions: ActionMenuItem[] = [
     { label: 'Edit', onClick: () => onEdit(category) },
@@ -96,6 +132,7 @@ function CategoryCard({ category, onAddSub, onEdit, onDelete }: {
     <div className="bg-white border border-bone rounded-[10px] overflow-hidden">
       <div className="px-5 py-[14px] border-b border-bone flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
+          <ReorderButtons onUp={onMoveUp} onDown={onMoveDown} />
           <div className="w-9 h-9 rounded-[10px] bg-brand-pale-orange flex items-center justify-center shrink-0">
             <FolderTree size={16} style={{ color: '#D97757' }} />
           </div>
@@ -116,13 +153,17 @@ function CategoryCard({ category, onAddSub, onEdit, onDelete }: {
         <p className="px-5 py-6 text-center text-[12.5px] text-slate">No subcategories yet.</p>
       ) : (
         <div className="flex flex-col">
-          {category.children.map(sub => {
+          {category.children.map((sub, i) => {
             const subActions: ActionMenuItem[] = [
               { label: 'Edit', onClick: () => onEdit(sub) },
               { label: 'Delete', danger: true, onClick: () => onDelete(sub) },
             ];
             return (
               <div key={sub._id} className="flex items-center gap-2.5 px-5 py-3 border-b border-[#f0eee6] last:border-b-0 transition-colors duration-150 hover:bg-cream">
+                <ReorderButtons
+                  onUp={i > 0 ? () => onReorderSub(category.children, i, 'up') : undefined}
+                  onDown={i < category.children.length - 1 ? () => onReorderSub(category.children, i, 'down') : undefined}
+                />
                 <Tag size={13} className="text-slate shrink-0" />
                 <span className="text-[13px] font-medium text-carbon flex-1 truncate">{sub.name}</span>
                 {sub.description && <span className="hidden sm:inline text-[11px] text-slate truncate max-w-[220px]">{sub.description}</span>}
@@ -146,6 +187,24 @@ export default function StoreCategories() {
   const [pendingDelete, setPendingDelete] = useState<CategoryNode | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  async function handleReorder(siblings: CategoryNode[], index: number, direction: 'up' | 'down') {
+    if (!store) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= siblings.length) return;
+    const a = siblings[index];
+    const b = siblings[targetIndex];
+    // Swap by POSITION, not by each item's existing stored sortOrder value —
+    // every pre-existing category defaults to sortOrder 0 (never previously
+    // written from any UI), so swapping two identical 0s would silently do
+    // nothing. Assigning each side the other's current array index always
+    // produces a real, distinct change.
+    await Promise.all([
+      apiUpdateCategory(a._id, store._id, { sortOrder: targetIndex }),
+      apiUpdateCategory(b._id, store._id, { sortOrder: index }),
+    ]);
+    refetch();
+  }
 
   async function confirmDelete() {
     if (!pendingDelete || !store) return;
@@ -194,13 +253,16 @@ export default function StoreCategories() {
             </Button>
           </div>
         ) : (
-          tree.map(cat => (
+          tree.map((cat, i) => (
             <CategoryCard
               key={cat._id}
               category={cat}
               onAddSub={id => setAdding(id)}
               onEdit={c => setEditing(c)}
               onDelete={c => { setDeleteError(''); setPendingDelete(c); }}
+              onMoveUp={i > 0 ? () => handleReorder(tree, i, 'up') : undefined}
+              onMoveDown={i < tree.length - 1 ? () => handleReorder(tree, i, 'down') : undefined}
+              onReorderSub={handleReorder}
             />
           ))
         )}
@@ -227,12 +289,18 @@ export default function StoreCategories() {
       {pendingDelete && (
         <ConfirmDialog
           title="Delete category"
-          message={deleteError || `Delete "${pendingDelete.name}"? This can't be undone.`}
+          message={`Delete "${pendingDelete.name}"? This can't be undone.`}
           confirmLabel="Delete Category"
           loading={deleting}
           onCancel={() => setPendingDelete(null)}
           onConfirm={confirmDelete}
-        />
+        >
+          {/* The original question above stays visible even after a failed
+              attempt — it used to be fully REPLACED by the error text, so a
+              seller re-reading the dialog after a failure lost the "are you
+              sure" context entirely (found during the Catalog audit). */}
+          {deleteError && <p className="text-[12px] text-error mt-2">{deleteError}</p>}
+        </ConfirmDialog>
       )}
     </>
   );

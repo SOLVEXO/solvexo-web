@@ -338,6 +338,12 @@ function PromotionRequestFormModal({ storeId, onClose, onSaved }: { storeId: str
 // ── Promotion Request payment modal ────────────────────────────────────────────
 function PromotionPaymentModal({ request, onClose, onPaid }: { request: PromotionRequest; onClose: () => void; onPaid: () => void }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  // The real, actually-charged amount/currency (request.priceUSD converted
+  // into the seller's own store currency at charge time — see
+  // apiPayPromotionRequest's own doc comment) — never request.priceUSD
+  // directly, which would mismatch what this PaymentIntent really charges
+  // for any non-USD store.
+  const [charge, setCharge] = useState<{ amount: number; currency: string } | null>(null);
   const [error, setError] = useState('');
   const [confirming, setConfirming] = useState(false);
   // Unique per modal open (not just per request) — a fixed key would let one
@@ -350,7 +356,7 @@ function PromotionPaymentModal({ request, onClose, onPaid }: { request: Promotio
 
   useEffect(() => {
     apiPayPromotionRequest(request._id, idempotencyKey)
-      .then(res => setClientSecret(res.data.clientSecret))
+      .then(res => { setClientSecret(res.data.clientSecret); setCharge({ amount: res.data.amount, currency: res.data.currency }); })
       .catch(err => setError(err instanceof Error ? err.message : 'Failed to start payment.'));
   }, [request._id, idempotencyKey]);
 
@@ -371,12 +377,12 @@ function PromotionPaymentModal({ request, onClose, onPaid }: { request: Promotio
         <p className="text-[13px] text-slate">Online payments aren't configured yet.</p>
       ) : error ? (
         <p className="text-[13px] text-error">{error}</p>
-      ) : !clientSecret ? (
+      ) : !clientSecret || !charge ? (
         <p className="text-[13px] text-slate">Preparing payment…</p>
       ) : confirming ? (
         <p className="text-[13px] text-slate">Payment received — activating your promotion…</p>
       ) : (
-        <StripeCardPayment clientSecret={clientSecret} amount={request.priceUSD} currency="usd" onConfirmed={handleConfirmed} />
+        <StripeCardPayment clientSecret={clientSecret} amount={charge.amount} currency={charge.currency} onConfirmed={handleConfirmed} />
       )}
     </Modal>
   );

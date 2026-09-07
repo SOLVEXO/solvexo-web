@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShoppingBag, Plus,
+  ShoppingBag, Plus, Download, Upload,
   AlertCircle, RefreshCw, TrendingUp,
-  Eye, Pencil, Trash2,
+  Eye, Pencil, Trash2, Copy, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import {
@@ -20,7 +20,11 @@ import {
 import {
   apiGetStoreInventory,
   apiDeleteProduct,
+  apiDuplicateProduct,
+  apiExportProductsCsv,
+  apiImportProductsCsv,
   type InventoryProduct,
+  type ImportProductsCsvResult,
 } from '@/api/services/product';
 import { currencySymbol } from '@/utils/currency';
 import { ProductCell, ProductStatsGrid } from '../../components/ProductListShared';
@@ -48,6 +52,13 @@ export default function StoreProductList() {
   const isSearching = debouncedSearch.trim().length > 0;
 
   const [sort, setSort] = useState<TableSort | null>(null);
+  // Sorting a column header only makes sense across the WHOLE catalog, not
+  // just the currently-visible page of 10 — clicking "Price" used to
+  // silently reorder only that one page, which looked like it worked but
+  // never actually surfaced the real cheapest/priciest product store-wide
+  // (found during the Catalog audit). Reuses the exact same "widen the
+  // fetch to the whole catalog" mechanism search already uses below.
+  const isWideFetch = isSearching || sort !== null;
 
   const handleSortChange = (key: string) => {
     setSort(prev => (prev && prev.key === key)
@@ -63,9 +74,10 @@ export default function StoreProductList() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    // When searching, fetch a much larger page so the search covers the whole
-    // catalog rather than just the currently-visible page (no server-side search endpoint exists).
-    const [fetchPage, fetchLimit] = isSearching ? [1, SEARCH_LIMIT] : [page, LIMIT];
+    // When searching OR sorting, fetch a much larger page so both cover the
+    // whole catalog rather than just the currently-visible page (no
+    // server-side search/sort endpoint exists).
+    const [fetchPage, fetchLimit] = isWideFetch ? [1, SEARCH_LIMIT] : [page, LIMIT];
     apiGetStoreInventory(storeId, fetchPage, fetchLimit)
       .then(res => {
         if (cancelled) return;
@@ -78,7 +90,7 @@ export default function StoreProductList() {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [storeId, page, refreshKey, isSearching]);
+  }, [storeId, page, refreshKey, isWideFetch]);
 
   const goAdd    = () => navigate(`/store/${storeId}/products/add`);
   const goEdit   = (p: InventoryProduct) => navigate(`/store/${storeId}/products/edit/${p.productId}`);
@@ -95,6 +107,69 @@ export default function StoreProductList() {
     setLoading(true);
     setError('');
     setRefreshKey(k => k + 1);
+  };
+
+  const [exporting, setExporting] = useState(false);
+  const handleExportCsv = () => {
+    setExporting(true);
+    setError('');
+    apiExportProductsCsv(storeId)
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `products-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      })
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to export products.'))
+      .finally(() => setExporting(false));
+  };
+
+  // Real bulk CSV Import — was missing entirely (only Export existed, see
+  // the Catalog audit). Every row is a real, individually-validated product
+  // creation through the same `addPhysicalProduct` path a manual Add
+  // Product does — the backend returns a genuine partial-success summary
+  // (created count + a per-row error list) rather than an all-or-nothing
+  // result, shown to the seller in a results modal below.
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportProductsCsvResult | null>(null);
+  const handleImportClick = () => fileInputRef.current?.click();
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImporting(true);
+    setError('');
+    try {
+      const res = await apiImportProductsCsv(storeId, file);
+      setImportResult(res.data);
+      if (res.data.createdCount > 0) setRefreshKey(k => k + 1);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to import products.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  // Real "Duplicate" — was missing entirely (see the Catalog audit). Lands
+  // the seller straight on the new draft's Edit page, same as clicking
+  // "Duplicate" on Shopify's own product list does.
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const handleDuplicate = async (p: InventoryProduct) => {
+    setDuplicatingId(p.productId);
+    setError('');
+    try {
+      const res = await apiDuplicateProduct(p.productId);
+      navigate(`/store/${storeId}/products/edit/${res.data._id}`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to duplicate product.');
+    } finally {
+      setDuplicatingId(null);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -189,6 +264,7 @@ export default function StoreProductList() {
           items={[
             { label: 'View Detail',    onClick: () => goDetail(p),                icon: <Eye    size={13} /> },
             { label: 'Edit Product',   onClick: () => goEdit(p),                  icon: <Pencil size={13} /> },
+            { label: duplicatingId === p.productId ? 'Duplicating…' : 'Duplicate', onClick: () => handleDuplicate(p), icon: <Copy size={13} />, disabled: duplicatingId === p.productId },
             { label: 'Delete Product', onClick: () => { setDeleteError(''); setDeleteTarget(p); }, icon: <Trash2 size={13} />, danger: true },
           ]}
         />
@@ -202,12 +278,37 @@ export default function StoreProductList() {
         title="Products"
         subtitle={loading ? 'Loading…' : `${totalProducts} product${totalProducts !== 1 ? 's' : ''}`}
         actions={
-          <button
-            onClick={goAdd}
-            className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-4 py-[9px] text-[13px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-2"
-          >
-            <Plus size={15} /> Add Product
-          </button>
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={handleImportFile}
+            />
+            <button
+              onClick={handleImportClick}
+              disabled={importing}
+              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-60 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+            >
+              <Upload size={14} />
+              <span className="hidden sm:inline">{importing ? 'Importing…' : 'Import'}</span>
+            </button>
+            <button
+              onClick={handleExportCsv}
+              disabled={exporting}
+              className="flex items-center gap-1.5 bg-white text-graphite border border-bone rounded-[9px] px-2.5 sm:px-4 py-[9px] text-[13px] font-medium cursor-pointer transition-colors duration-150 hover:bg-cream disabled:opacity-60 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50"
+            >
+              <Download size={14} />
+              <span className="hidden sm:inline">{exporting ? 'Exporting…' : 'Export'}</span>
+            </button>
+            <button
+              onClick={goAdd}
+              className="flex items-center gap-1.5 bg-brand-orange text-white border-none rounded-[9px] px-4 py-[9px] text-[13px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-brand-deep-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange/50 focus-visible:ring-offset-2"
+            >
+              <Plus size={15} /> Add Product
+            </button>
+          </div>
         }
       />
 
@@ -284,7 +385,7 @@ export default function StoreProductList() {
                 keyExtractor={p => p.productId}
                 sort={sort ?? undefined}
                 onSortChange={handleSortChange}
-                pagination={isSearching ? undefined : {
+                pagination={isWideFetch ? undefined : {
                   page,
                   total:    totalProducts,
                   perPage:  LIMIT,
@@ -311,6 +412,33 @@ export default function StoreProductList() {
           {deleteError && (
             <p className="text-[12px] text-error mt-3">{deleteError}</p>
           )}
+        </Modal>
+      )}
+
+      {importResult && (
+        <Modal title="Import results" onClose={() => setImportResult(null)} footer={
+          <Button variant="primary" onClick={() => setImportResult(null)}>Done</Button>
+        }>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-[13px]">
+              <CheckCircle2 size={15} className="text-success shrink-0" />
+              <span className="text-charcoal">
+                <span className="font-semibold">{importResult.createdCount}</span> of {importResult.totalRows} product{importResult.totalRows !== 1 ? 's' : ''} imported successfully.
+              </span>
+            </div>
+            {importResult.failed.length > 0 && (
+              <div className="flex flex-col gap-1.5 max-h-[260px] overflow-y-auto border border-bone rounded-[8px] p-3">
+                {importResult.failed.map((f, i) => (
+                  <div key={i} className="flex items-start gap-2 text-[12px]">
+                    <XCircle size={13} className="text-error shrink-0 mt-[1px]" />
+                    <span className="text-slate">
+                      Row {f.row} <span className="font-medium text-charcoal">"{f.name}"</span> — {f.error}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </Modal>
       )}
     </>

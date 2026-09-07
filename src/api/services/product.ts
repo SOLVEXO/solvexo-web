@@ -301,6 +301,46 @@ export function apiDeleteProduct(id: string) {
   );
 }
 
+/** POST /api/products/duplicate-product/:id — real "Duplicate" (copies the
+ *  product + every real variant into a new draft) — was previously missing
+ *  entirely from the Products list. */
+export function apiDuplicateProduct(id: string) {
+  return client.post<never, ApiResponse<StoreProduct>>(
+    ENDPOINTS.PRODUCT.DUPLICATE_PRODUCT(id),
+  );
+}
+
+/** GET /api/products/store-products/:storeId/export — real CSV of the whole
+ *  store's product catalog. The Products list had no bulk export at all
+ *  (found during the Catalog audit). */
+export function apiExportProductsCsv(storeId: string) {
+  return client.get<never, Blob>(ENDPOINTS.PRODUCT.EXPORT_CSV(storeId), {
+    responseType: 'blob',
+  });
+}
+
+export interface ImportProductsCsvResult {
+  createdCount: number;
+  totalRows: number;
+  created: { row: number; name: string }[];
+  failed: { row: number; name: string; error: string }[];
+}
+
+/** POST /api/products/store-products/:storeId/import — bulk-create simple,
+ *  single-variant physical products from a seller-uploaded CSV (same column
+ *  shape `apiExportProductsCsv` produces, so export→edit→re-upload works as
+ *  a starting template). Every row is attempted independently — the result
+ *  is a real partial-success summary, never an all-or-nothing outcome. */
+export function apiImportProductsCsv(storeId: string, file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return client.post<never, ApiResponse<ImportProductsCsvResult>>(
+    ENDPOINTS.PRODUCT.IMPORT_CSV(storeId),
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  );
+}
+
 // ── Variant CRUD (physical products only, seller-owned) ────────────────────────
 // Add/edit/remove a variant after the product already exists — used by the
 // "Manage Variants" section on the Edit Product page. Creation of the first
@@ -333,6 +373,15 @@ export function apiGetLowStockSummary(storeId: string) {
   return client.get<never, ApiResponse<LowStockSummaryData>>(
     ENDPOINTS.INVENTORY.LOW_STOCK_SUMMARY(storeId),
   );
+}
+
+/** GET /api/inventory/export/:storeId — real CSV of the whole store's
+ *  inventory (unpaginated), seller/admin only. The Inventory page's
+ *  "Export" button previously had no handler at all. */
+export function apiExportInventoryCsv(storeId: string) {
+  return client.get<never, Blob>(ENDPOINTS.INVENTORY.EXPORT_CSV(storeId), {
+    responseType: 'blob',
+  });
 }
 
 // ── Seller Orders types ───────────────────────────────────────────────────────

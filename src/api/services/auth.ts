@@ -278,6 +278,16 @@ export function apiLogout() {
   return client.post<never, ApiResponse<Record<string, never>>>(ENDPOINTS.AUTH.LOGOUT);
 }
 
+/** GET /auth/detect-country — real IP-based country guess (ISO-3166 alpha-2), used to auto-select the Register form's phone dial code. Also returns `region` + `imageUrl` — a real, region-appropriate background photo for the shared auth-screen panel (`AuthSplitLayout`), resolved from a small curated region map, never a per-country lookup. `country` is null when it can't be resolved (local dev, unrecognized IP); `region`/`imageUrl` still resolve to a valid `'default'` in that case — callers must fail open on `country` but can always trust `imageUrl` to be a real, loadable photo. */
+export interface DetectCountryData {
+  country: string | null;
+  region: string;
+  imageUrl: string;
+}
+export function apiDetectCountry() {
+  return client.get<never, ApiResponse<DetectCountryData>>(ENDPOINTS.AUTH.DETECT_COUNTRY);
+}
+
 /** GET /auth/getprofile — returns logged-in user's profile */
 export interface ProfileData {
   _id:          string;

@@ -701,13 +701,6 @@ export default function StoreEditProduct() {
                   </span>
                 </button>
               )}
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] text-charcoal">Also list in Solvexo Marketplace</span>
-                <Toggle
-                  checked={cur.isListedOnSolvexo}
-                  onChange={v => pType === 'physical' ? sp('isListedOnSolvexo', v) : sd('isListedOnSolvexo', v)}
-                />
-              </div>
               <TemplateKeyPicker storeId={storeId} resourceType="product" value={templateKey} onChange={setTemplateKey} label="Product Page Template" />
             </div>
           </Card>
