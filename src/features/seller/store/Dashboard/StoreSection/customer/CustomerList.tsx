@@ -38,16 +38,6 @@ const SEGMENT_META: Record<StoreCustomerSegment, { label: string; color: 'green'
 
 const SEGMENT_OPTIONS = Object.entries(SEGMENT_META).map(([value, m]) => ({ value, label: m.label }));
 
-const SORT_OPTIONS = [
-  { value: 'lastOrderAt:desc', label: 'Most Recent Order' },
-  { value: 'lastOrderAt:asc',  label: 'Oldest Order' },
-  { value: 'totalSpent:desc',  label: 'Highest Spend' },
-  { value: 'totalSpent:asc',   label: 'Lowest Spend' },
-  { value: 'orderCount:desc',  label: 'Most Orders' },
-  { value: 'name:asc',         label: 'Name (A–Z)' },
-  { value: 'createdAt:desc',   label: 'Newest Customer' },
-];
-
 export default function StoreCustomerList() {
   usePageTitle('Customers');
   const navigate = useNavigate();
@@ -56,7 +46,9 @@ export default function StoreCustomerList() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [segment, setSegment] = useState('');
-  const [sortOption, setSortOption] = useState('lastOrderAt:desc');
+  // Click-to-sort table headers (Shopify convention) rather than a separate sort dropdown.
+  const [sortBy, setSortBy] = useState<NonNullable<GetStoreCustomersParams['sortBy']>>('lastOrderAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [view, setView] = useState<StoreCustomerView>('active');
@@ -102,9 +94,12 @@ export default function StoreCustomerList() {
   useEffect(() => {
     setPage(1);
     setSelectedKeys(new Set());
-  }, [debouncedSearch, segment, sortOption, dateFrom, dateTo, view]);
+  }, [debouncedSearch, segment, sortBy, sortDir, dateFrom, dateTo, view]);
 
-  const [sortBy, sortDir] = sortOption.split(':') as [GetStoreCustomersParams['sortBy'], 'asc' | 'desc'];
+  function handleSortChange(key: string) {
+    if (key === sortBy) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSortBy(key as NonNullable<GetStoreCustomersParams['sortBy']>); setSortDir('desc'); }
+  }
 
   const filterParams: GetStoreCustomersParams = {
     search: debouncedSearch || undefined,
@@ -251,7 +246,7 @@ export default function StoreCustomerList() {
 
   const columns: TableColumn<StoreCustomer>[] = [
     {
-      key: 'name', header: 'Customer',
+      key: 'name', header: 'Customer', sortable: true,
       render: c => (
         <div className="flex items-center gap-2.5">
           <div className="w-[30px] h-[30px] rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 bg-[#f0eee6] text-[#5a5852]">{initialsOf(c.name)}</div>
@@ -268,15 +263,15 @@ export default function StoreCustomerList() {
       render: c => <Badge color={SEGMENT_META[c.segment].color}>{SEGMENT_META[c.segment].label}</Badge>,
     },
     {
-      key: 'orderCount', header: 'Orders', align: 'center',
+      key: 'orderCount', header: 'Orders', align: 'center', sortable: true,
       render: c => <Badge color={c.orderCount > 1 ? 'green' : 'orange'}>{c.orderCount}</Badge>,
     },
     {
-      key: 'totalSpent', header: 'Total Spent', align: 'right',
+      key: 'totalSpent', header: 'Total Spent', align: 'right', sortable: true,
       render: c => <span className="font-semibold text-charcoal">{formatMoneyCompact(c.totalSpent, store?.baseCurrency)}</span>,
     },
-    { key: 'lastOrderAt', header: 'Last Order', render: c => <span className="text-slate">{fmtDate(c.lastOrderAt)}</span> },
-    { key: 'createdAt', header: 'Member Since', render: c => <span className="text-slate">{fmtDate(c.createdAt)}</span> },
+    { key: 'lastOrderAt', header: 'Last Order', sortable: true, render: c => <span className="text-slate">{fmtDate(c.lastOrderAt)}</span> },
+    { key: 'createdAt', header: 'Member Since', sortable: true, render: c => <span className="text-slate">{fmtDate(c.createdAt)}</span> },
     {
       key: 'actions', header: '', align: 'right',
       render: c => (
@@ -300,7 +295,7 @@ export default function StoreCustomerList() {
           <MetricCard label="Total Revenue"    value={formatMoneyCompact(summary.totalRevenue, store?.baseCurrency)} icon={<DollarSign size={16} />} loading={loading && page === 1 && customers.length === 0} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4 items-start">
+        <div className={`grid grid-cols-1 gap-4 items-start ${sel ? 'lg:grid-cols-[1fr_300px]' : ''}`}>
           <div className="bg-white border border-bone rounded-[10px] min-w-0 overflow-hidden">
             <TabBar
               tabs={[{ id: 'active', label: 'Active' }, { id: 'archived', label: 'Archived' }]}
@@ -311,7 +306,6 @@ export default function StoreCustomerList() {
             <div className="px-5 py-3.5 border-b border-bone flex flex-wrap items-center gap-2.5">
               <SearchInput value={search} onChange={setSearch} placeholder="Search customers…" className="max-w-[220px]" />
               <FilterDropdown placeholder="All Segments" options={SEGMENT_OPTIONS} value={segment} onChange={setSegment} />
-              <FilterDropdown options={SORT_OPTIONS} value={sortOption} onChange={setSortOption} />
               <div className="flex items-center gap-1.5 text-[12px] text-slate">
                 <span>Last order</span>
                 <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
@@ -334,6 +328,8 @@ export default function StoreCustomerList() {
                 keyExtractor={c => c._id}
                 onRowClick={select}
                 loading={loading}
+                sort={{ key: sortBy, direction: sortDir }}
+                onSortChange={handleSortChange}
                 selectable
                 selectedKeys={selectedKeys}
                 onSelectionChange={setSelectedKeys}

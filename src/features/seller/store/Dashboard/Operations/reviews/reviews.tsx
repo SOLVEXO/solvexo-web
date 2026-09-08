@@ -45,6 +45,8 @@ export function StoreReviews() {
   const [deletingReview, setDeletingReview] = useState<StoreReviewEntry | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [moderatingId, setModeratingId] = useState<string | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,6 +70,8 @@ export function StoreReviews() {
     return () => { cancelled = true; };
   }, [storeId, page, ratingFilter, replyStatusFilter, productIdFilter, statusTab, refreshKey]);
 
+  useEffect(() => { setSelectedKeys(new Set()); }, [page, ratingFilter, replyStatusFilter, productIdFilter, statusTab]);
+
   function reload() { setRefreshKey(k => k + 1); }
 
   async function handleApprove(r: StoreReviewEntry) {
@@ -84,6 +88,22 @@ export function StoreReviews() {
     try { await apiRejectReview(r.reviewId); reload(); }
     catch (err) { setActionError(err instanceof Error ? err.message : 'Failed to reject review.'); }
     finally { setModeratingId(null); }
+  }
+
+  // Only ever meaningful for rows that are actually pending — a selection
+  // mixing in already-published/rejected rows just quietly skips those
+  // rather than erroring the whole batch.
+  async function handleBulkModerate(ids: (string | number)[], action: 'approve' | 'reject') {
+    setActionError('');
+    setBulkBusy(true);
+    const pendingIds = reviews.filter(r => r.status === 'pending' && ids.includes(r.reviewId)).map(r => r.reviewId);
+    try {
+      await Promise.allSettled(pendingIds.map(id => (action === 'approve' ? apiApproveReview(id) : apiRejectReview(id))));
+      setSelectedKeys(new Set());
+      reload();
+    } finally {
+      setBulkBusy(false);
+    }
   }
 
   async function handleFlag(r: StoreReviewEntry) {
@@ -338,6 +358,19 @@ export function StoreReviews() {
               data={reviews}
               keyExtractor={r => r.reviewId}
               pagination={{ page, total, perPage: PER_PAGE, onChange: setPage, label: 'reviews' }}
+              selectable={moderationEnabled}
+              selectedKeys={selectedKeys}
+              onSelectionChange={setSelectedKeys}
+              bulkActions={keys => (
+                <>
+                  <Button size="xs" variant="secondary" icon={<Check size={12} />} loading={bulkBusy} onClick={() => handleBulkModerate(Array.from(keys), 'approve')}>
+                    Approve
+                  </Button>
+                  <Button size="xs" variant="danger" icon={<XIcon size={12} />} disabled={bulkBusy} onClick={() => handleBulkModerate(Array.from(keys), 'reject')}>
+                    Reject
+                  </Button>
+                </>
+              )}
             />
           )}
         </Card>
