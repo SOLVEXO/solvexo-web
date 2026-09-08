@@ -4,6 +4,18 @@ interface ResourceState<T> {
   data:    T | null;
   loading: boolean;
   error:   string;
+  /** True while a real fetch is in flight EVEN THOUGH `data` is already
+   *  populated (from the hydrated-from-storage cache, or a prior fetch) —
+   *  `loading` alone can't tell a caller this, by design (see `load()`
+   *  below: showing cached data with loading:false is the whole point of
+   *  this cache). That's fine for most cached data (a stores list looking
+   *  briefly stale is unnoticeable), but numeric summaries (KPI cards) are
+   *  exactly the case where a caller DOES want to know a silent background
+   *  refresh is happening — a stale/wrong number (this was written for the
+   *  "My Stores" KPI cards, which could hydrate a real but stale negative
+   *  revenue figure from before a since-settled refund) visibly swapping to
+   *  the correct one a few seconds later reads as broken, not fast. */
+  revalidating: boolean;
 }
 
 interface SharedResourceOptions {
@@ -29,6 +41,11 @@ export function createSharedResource<T>(fetcher: () => Promise<T>, options: Shar
   let cache: T | null      = null;
   let hasFetched           = false;
   let inflight: Promise<T> | null = null;
+  // Separate from `inflight !== null` on purpose: `inflight` is only
+  // assigned AFTER the first notify() call below fires (it's the return
+  // value of calling fetcher()), so reading `inflight` there would always
+  // see the previous request's already-cleared state, one call too late.
+  let fetching             = false;
   const listeners = new Set<(state: ResourceState<T>) => void>();
 
   // Synchronous hydration — runs once, at module load, before any component
@@ -55,7 +72,7 @@ export function createSharedResource<T>(fetcher: () => Promise<T>, options: Shar
   }
 
   function currentState(loading: boolean, error = ''): ResourceState<T> {
-    return { data: cache, loading, error };
+    return { data: cache, loading, error, revalidating: fetching };
   }
 
   function notify(state: ResourceState<T>) {
@@ -70,18 +87,21 @@ export function createSharedResource<T>(fetcher: () => Promise<T>, options: Shar
     // at all to display yet — a hydrated-from-storage value means this is
     // a silent background refresh over already-known data, which should
     // never blank out what's already on screen.
+    fetching = true;
     notify(currentState(cache === null));
     inflight = fetcher()
       .then(result => {
         cache = result;
         hasFetched = true;
         inflight = null;
+        fetching = false;
         persist(result);
         notify(currentState(false));
         return result;
       })
       .catch((err: unknown) => {
         inflight = null;
+        fetching = false;
         notify(currentState(false, err instanceof Error ? err.message : 'Failed to load.'));
         throw err;
       });

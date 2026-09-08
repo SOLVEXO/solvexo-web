@@ -22,6 +22,6 @@ const myStoresResource = createSharedResource<MyStoresData>(
 export const invalidateMyStoresCache = myStoresResource.invalidate;
 
 export function useMyStores() {
-  const { data, loading, error, refetch } = myStoresResource.useSharedResource();
-  return { stores: data?.stores ?? [], summary: data?.summary ?? EMPTY_SUMMARY, loading, error, refetch };
+  const { data, loading, error, revalidating, refetch } = myStoresResource.useSharedResource();
+  return { stores: data?.stores ?? [], summary: data?.summary ?? EMPTY_SUMMARY, loading, revalidating, error, refetch };
 }

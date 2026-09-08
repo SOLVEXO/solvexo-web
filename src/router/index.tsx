@@ -10,7 +10,6 @@ import { RootLayout }   from '@/components/layouts/RootLayout';
 // and needed the instant a seller/admin/buyer enters that section anyway.
 import { BuyerLayout }  from '@/components/layouts/BuyerLayout';
 import { PublicLayout } from '@/components/layouts/PublicLayout';
-import { SellerLayout } from '@/components/layouts/SellerLayout';
 import { AdminLayout }  from '@/components/layouts/AdminLayout';
 import { StoreLayout }  from '@/components/layouts/StoreLayout';
 import { RequireRole }  from './RequireRole';
@@ -61,8 +60,15 @@ const ThemedRoute = lazy(() => import('@/features/storefront-themes/ThemedRoute'
 const MaintenancePage = lazy(() => import('@/features/buyer/pages/MaintenancePage').then(m => ({ default: m.MaintenancePage })));
 
 // ── Seller ────────────────────────────────────────────────────────────────────
-const SellerAnalytics = lazy(() => import('@/features/seller/dashboard/SellerAnalytics').then(m => ({ default: m.SellerAnalytics })));
-const StoreBuilderRedirect = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/StoreBuilderRedirect').then(m => ({ default: m.StoreBuilderRedirect })));
+// No more cross-store "seller dashboard" — every old /seller/* URL (My
+// Stores grid, cross-store Analytics, cross-store Settings) now redirects
+// through SellerAreaRedirect straight to the seller's real active store's
+// own dashboard instead (see that component's doc comment). SellerAnalytics
+// and SellerStoreList (the old cross-store pages) and StoreBuilderRedirect
+// (only ever used by the now-removed `/seller/store` route) are no longer
+// reachable from anywhere and so aren't imported here any more — left on
+// disk, not deleted, in case anything else still needs them.
+const SellerAreaRedirect = lazy(() => import('@/features/seller/SellerAreaRedirect').then(m => ({ default: m.SellerAreaRedirect })));
 const PagesPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/pages/PagesPage').then(m => ({ default: m.PagesPage })));
 const MenuManagerPage = lazy(() => import('@/features/seller/store/Dashboard/Manage/MenuManagerPage').then(m => ({ default: m.MenuManagerPage })));
 const BlogPage = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/blog/BlogPage').then(m => ({ default: m.BlogPage })));
@@ -75,7 +81,6 @@ const ThemeSharePreviewPage = lazy(() => import('@/features/seller/store/Dashboa
 const SellerSettings = lazy(() => import('@/features/seller/dashboard/settings/SellerSettings').then(m => ({ default: m.SellerSettings })));
 const SellerShipping = lazy(() => import('@/features/seller/dashboard/SellerShipping').then(m => ({ default: m.SellerShipping })));
 const SellerMessages = lazy(() => import('@/features/seller/dashboard/SellerMessages').then(m => ({ default: m.SellerMessages })));
-const SellerStoreList = lazy(() => import('@/features/seller/store/Dashboard/OnlineStore/SellerStoreList').then(m => ({ default: m.SellerStoreList })));
 
 // ── Store Workspace ───────────────────────────────────────────────────────────
 const StoreDashboard = lazy(() => import('@/features/seller/store/Dashboard/StoreDashboard'));
@@ -265,24 +270,23 @@ const mainRouter = createBrowserRouter([
       { path: '/login',           element: <LoginPage /> },
       { path: '/admin/login',     element: <AdminLoginPage /> },
       { path: '/register',        element: <RegisterPage /> },
+      // Alias — visitors/marketing links typing/using the equally-common
+      // "/signup" spelling used to silently fall through to the catch-all
+      // and land on the homepage with no error, no signup form, nothing.
+      { path: '/signup',          element: <RegisterPage /> },
       { path: '/onboard',      element: <OnboardingEntry /> },
       { path: '/onboard/:sessionId', element: <OnboardingPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/verify-otp',      element: <VerifyOTPPage /> },
       { path: '/new-password',    element: <NewPasswordPage /> },
 
-      // ── Seller pages with dark sidebar ────────────────────────────────
-      {
-        path: '/seller',
-        element: <SellerLayout />,
-        children: [
-          { index: true,           element: <Navigate to="/seller/stores" replace /> },
-          { path: 'analytics',     element: <SellerAnalytics /> },
-          { path: 'stores',        element: <SellerStoreList /> },
-          { path: 'store',         element: <StoreBuilderRedirect /> },
-          { path: 'settings',      element: <SellerSettings /> },
-        ],
-      },
+      // ── Seller — no cross-store dashboard any more ─────────────────────
+      // Every old /seller/* URL (/seller, /seller/stores, /seller/analytics,
+      // /seller/store, /seller/settings — the whole cross-store "seller
+      // dashboard") redirects to the seller's real active store's own
+      // dashboard instead, via the same resolver login already uses. See
+      // SellerAreaRedirect's doc comment.
+      { path: '/seller/*',        element: <SellerAreaRedirect /> },
 
       // ── Store Workspace (each store's own mini-admin panel) ──────────
       {

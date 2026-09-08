@@ -3,6 +3,7 @@ import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useCreateStore } from '@/hooks/store/useCreateStore';
+import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { TokenStorage, getRoleRedirect, type AppRole } from '@/api/services/auth';
 import { Button } from '@/components/comman/ui/Button';
 import {
@@ -356,6 +357,16 @@ function Step3WhatYouSell({ form, setForm, onBack, submitting, submitError, onSu
   const toggle = (id: ProductType) =>
     setForm({ ...form, productTypes: form.productTypes.includes(id) ? form.productTypes.filter(x => x !== id) : [...form.productTypes, id] });
 
+  // One free platform-plan trial per SELLER, not per store (see
+  // SellerPlatformSubscriptionsService.ensureDefaultSubscription on the
+  // backend) — a seller creating a 2nd+ store has already used theirs, and
+  // that new store starts locked on a paid plan instead of trialing. This
+  // page has no way to know that in advance without asking, so it checks
+  // the logged-in seller's own profile rather than promising a trial this
+  // store won't get.
+  const { profile } = useGetProfile();
+  const hasUsedTrial = !!profile?.platformTrialUsedAt;
+
   return (
     <div className={clsx(STEP_WIDTH, 'w-full mx-auto')}>
       <div className="text-center mb-9">
@@ -405,7 +416,11 @@ function Step3WhatYouSell({ form, setForm, onBack, submitting, submitError, onSu
 
       <div className="flex items-start gap-2 text-left mb-5 bg-success-bg rounded-xl px-[14px] py-[12px]">
         <ShieldCheck size={16} className="text-success shrink-0 mt-[1px]" />
-        <p className="text-[12.5px] text-success leading-[1.6]">Your store goes live immediately — no waiting on review, no card needed. Your free 3-day trial starts the moment you launch.</p>
+        <p className="text-[12.5px] text-success leading-[1.6]">
+          {hasUsedTrial
+            ? "Your store goes live immediately — no waiting on review. Your free Solvexo trial was already used by an earlier store, so this one starts on a paid plan — choose one from Billing right after launch."
+            : 'Your store goes live immediately — no waiting on review, no card needed. Your free 3-day trial starts the moment you launch.'}
+        </p>
       </div>
 
       {submitError && (
@@ -459,6 +474,12 @@ function PostCreatePaymentStep({ onDone }: { onDone: () => void }) {
   const [cardConfirmed, setCardConfirmed] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const stripeReady = isStripeConfigured();
+  // Same one-trial-per-seller check as Step3WhatYouSell above — this screen
+  // otherwise unconditionally told every seller "optional, trial started",
+  // which is false the moment they've already used their one free trial on
+  // an earlier store (see ensureDefaultSubscription on the backend).
+  const { profile } = useGetProfile();
+  const hasUsedTrial = !!profile?.platformTrialUsedAt;
 
   useEffect(() => {
     if (!stripeReady) return;
@@ -487,7 +508,11 @@ function PostCreatePaymentStep({ onDone }: { onDone: () => void }) {
         <div className="flex items-start justify-between mb-9">
           <div>
             <h1 className="text-[28px] font-bold text-carbon mb-2">Add a payment method</h1>
-            <p className="text-[14px] text-slate">Optional — your store is already live and your free trial has started.</p>
+            <p className="text-[14px] text-slate">
+              {hasUsedTrial
+                ? "Recommended — this store didn't get a free trial (you've already used yours on an earlier store), so it's on a paid plan already. Add a card now, or choose/pay for a plan from Billing right after this."
+                : 'Optional — your store is already live and your free trial has started.'}
+            </p>
           </div>
           <button type="button" onClick={onDone} className="text-[12.5px] font-semibold text-slate hover:text-carbon shrink-0 mt-1">
             Skip
@@ -496,7 +521,11 @@ function PostCreatePaymentStep({ onDone }: { onDone: () => void }) {
 
         <div className="rounded-xl border border-bone px-[18px] py-[16px] mb-6">
           <p className="text-[13px] font-bold text-carbon mb-1">Add a card for your Solvexo subscription</p>
-          <p className="text-[12px] text-slate mb-3">You won't be charged during your free trial.</p>
+          <p className="text-[12px] text-slate mb-3">
+            {hasUsedTrial
+              ? "This store is on a paid plan, not a free trial — add a card now to keep it unlocked, or do it later from Billing."
+              : "You won't be charged during your free trial."}
+          </p>
 
           {cardConfirmed ? (
             <div className="flex items-center gap-2 rounded-lg bg-success-bg px-[14px] py-[12px]">
@@ -520,7 +549,7 @@ function PostCreatePaymentStep({ onDone }: { onDone: () => void }) {
             )
           ) : (
             <div className="flex items-center gap-2 rounded-lg bg-cream px-[14px] py-[10px] text-[12.5px] text-slate">
-              <CreditCard size={14} className="shrink-0" /> Card setup isn't available in this environment — add one later from Billing.
+              <CreditCard size={14} className="shrink-0" /> Card setup isn't available right now — you can add one any time from Billing.
             </div>
           )}
         </div>

@@ -21,6 +21,16 @@ import { motion } from 'motion/react';
 
 const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } };
 
+// Same spinner LoginPage.tsx uses in the identical situation — see the
+// blank-page fix on the `TokenStorage.isLoggedIn()` check below.
+function RedirectingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-[55vh]">
+      <div className="w-5 h-5 rounded-full border-2 border-brand-orange border-t-transparent animate-spin" />
+    </div>
+  );
+}
+
 // Same 3 lines Login and the onboarding wizard use (OnboardingPage.tsx) —
 // one consistent voice across the seller funnel. "Shop from thousands of
 // independent sellers" was real BUYER-marketplace language, stale here
@@ -133,9 +143,12 @@ export function RegisterPage() {
     });
   }, [setSearchParams]);
 
-  // Avoid a flash of the registration form for the (rare) already-signed-in
-  // visitor while the effect above resolves their real destination.
-  if (TokenStorage.isLoggedIn()) return null;
+  // Was `return null` — same blank-screen cause fixed in LoginPage.tsx: this
+  // is a real network call (resolveSellerDestinationRemote()) away from
+  // actually navigating, and any re-render of this page in that gap hits
+  // this check and blanks the whole page instead of showing anything. A
+  // spinner instead of null in the same slot is never blank while it waits.
+  if (TokenStorage.isLoggedIn()) return <RedirectingSpinner />;
 
   return (
     <AuthSplitLayout

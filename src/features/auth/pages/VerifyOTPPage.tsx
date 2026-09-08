@@ -6,7 +6,7 @@ import { Button } from '@/components/comman/ui/Button';
 import { OTPInput } from '@/components/comman/ui/OTPInput';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
 import { runSchema, otpSchema } from '@/utils/validation/schemas';
-import { AuthContext, apiResendOtp, apiForgotPassword, type AppRole } from '@/api/services/auth';
+import { AuthContext, apiResendOtp, apiForgotPassword, apiVerifyResetOtp, type AppRole } from '@/api/services/auth';
 import { AuthSplitLayout } from '@/features/auth/components/AuthSplitLayout';
 import { Mail, ShieldCheck, KeyRound, Fingerprint } from 'lucide-react';
 import { InboxMockup, IdentityMockup } from '@/features/auth/components/mockups/AuthMockups';
@@ -99,6 +99,10 @@ export function VerifyOTPPage() {
   const verifyOtp  = useVerifyOtp();
   const [otp, setOtp]     = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
+  // Only used by the isIdentity (forgot-password) branch below, which calls
+  // apiVerifyResetOtp directly instead of the useVerifyOtp hook — needs its
+  // own loading flag so the button shows a spinner during that call too.
+  const [checkingOtp, setCheckingOtp] = useState(false);
 
   const ctx        = AuthContext.get();
   const userEmail  = ctx?.email ?? '';
@@ -115,13 +119,22 @@ export function VerifyOTPPage() {
     if (errs.otp) { setError(errs.otp); return; }
 
     if (isIdentity) {
-      // There's no standalone "verify this reset code" backend endpoint —
-      // reset-password only accepts otp+newPassword together in one call.
-      // Carry the code forward instead of re-verifying it here; if it's
-      // actually wrong/expired, that surfaces on the next step when the
-      // combined request is made, with a way back to re-enter it.
-      AuthContext.set({ email: userEmail, role: userRole, flow: 'forgot', otp: code });
-      navigate('/new-password');
+      // Reject a wrong/expired code right here via the read-only
+      // verify-reset-otp endpoint, instead of silently carrying it forward
+      // to the new-password screen and only finding out after the user has
+      // already typed (and confirmed) a brand-new password. This call never
+      // marks the code used — reset-password still validates the same otp
+      // itself once the new password is actually submitted.
+      setCheckingOtp(true);
+      try {
+        await apiVerifyResetOtp({ email: userEmail, role: userRole, otp: code });
+        AuthContext.set({ email: userEmail, role: userRole, flow: 'forgot', otp: code });
+        navigate('/new-password');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Invalid or expired code.');
+      } finally {
+        setCheckingOtp(false);
+      }
       return;
     }
 
@@ -164,9 +177,9 @@ export function VerifyOTPPage() {
         <Button
           variant="primary" size="lg" fullWidth
           onClick={handleVerify}
-          disabled={otp.join('').length < 6}
-          loading={verifyOtp.loading}
-          iconRight={!verifyOtp.loading && <ArrowRight size={14} />}
+          disabled={otp.join('').length < 6 || checkingOtp}
+          loading={verifyOtp.loading || checkingOtp}
+          iconRight={!verifyOtp.loading && !checkingOtp && <ArrowRight size={14} />}
         >
           Verify Code
         </Button>

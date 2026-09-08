@@ -244,6 +244,8 @@ interface ForgotData            { userId: string; otp?: string }
 
 export interface ResetPayload   { email: string; role: AppRole; otp: string; newPassword: string; storeId?: string }
 
+export interface VerifyResetOtpPayload { email: string; role: AppRole; otp: string; storeId?: string }
+
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTH API FUNCTIONS  (all use Axios client → base URL from .env)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -271,6 +273,14 @@ export function apiForgotPassword(payload: ForgotPayload) {
 /** POST /auth/reset-password — verifies OTP + changes password in ONE call */
 export function apiResetPassword(payload: ResetPayload) {
   return client.post<never, ApiResponse<Record<string, never>>>(ENDPOINTS.AUTH.RESET_PASSWORD, payload);
+}
+
+/** POST /auth/verify-reset-otp — read-only check of a forgot-password OTP, so the
+ *  OTP-entry screen can reject a wrong/expired code immediately instead of only
+ *  finding out after the user has typed a new password on the next screen. Never
+ *  marks the code used — the eventual apiResetPassword call still validates it. */
+export function apiVerifyResetOtp(payload: VerifyResetOtpPayload) {
+  return client.post<never, ApiResponse<Record<string, never>>>(ENDPOINTS.AUTH.VERIFY_RESET_OTP, payload);
 }
 
 /** POST /auth/logout — invalidates the current access token's Redis session server-side */
@@ -308,6 +318,15 @@ export interface ProfileData {
   currencyPreference: string | null;
   createdAt:    string;
   updatedAt:    string;
+  /** Seller only — set the moment ANY of this seller's stores has ever
+   *  started a platform-plan trial (see SellerPlatformSubscriptionsService.
+   *  ensureDefaultSubscription: one trial per seller, not per store). Not
+   *  present on the buyer/admin profile shape, so always optional here.
+   *  null/undefined = trial still available for a new store; a timestamp =
+   *  already used, so a NEW store will start locked on a paid plan instead
+   *  of trialing — the onboarding screens read this to avoid promising a
+   *  free trial that store won't actually get. */
+  platformTrialUsedAt?: string | null;
 }
 
 export function apiGetProfile() {

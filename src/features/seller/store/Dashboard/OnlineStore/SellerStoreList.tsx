@@ -34,7 +34,15 @@ function StoreCell({ store }: { store: MyStoreItem }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function SellerStoreList() {
   const navigate = useNavigate();
-  const { stores, summary, loading, error, refetch } = useMyStores();
+  const { stores, summary, loading, revalidating, error, refetch } = useMyStores();
+  // Was `loading` alone — useMyStores hydrates an instantly-available but
+  // possibly stale cached summary (see createSharedResource.ts), so `loading`
+  // was already false on first render even while a real background refetch
+  // was still in flight. These three numbers specifically are what that made
+  // visibly wrong-then-right (reproduced once showing negative values) —
+  // unlike the table below, which can keep showing cached rows without
+  // anyone noticing.
+  const summaryLoading = loading || revalidating;
   usePageTitle('My Stores');
 
   const PER_PAGE = 10;
@@ -119,13 +127,13 @@ export function SellerStoreList() {
 
         {/* Summary */}
         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-          <MetricCard label="Total Stores" value={summary.storeCount} icon={<Store size={16} />} loading={loading} />
-          <MetricCard label="Total Products" value={summary.totalProducts.toLocaleString()} icon={<Package size={16} />} loading={loading} />
+          <MetricCard label="Total Stores" value={summary.storeCount} icon={<Store size={16} />} loading={summaryLoading} />
+          <MetricCard label="Total Products" value={summary.totalProducts.toLocaleString()} icon={<Package size={16} />} loading={summaryLoading} />
           <MetricCard
             label="Total Revenue"
             value={`$${summary.totalRevenueUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             icon={<DollarSign size={16} />}
-            loading={loading}
+            loading={summaryLoading}
           />
         </div>
 

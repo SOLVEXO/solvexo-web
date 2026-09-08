@@ -104,6 +104,12 @@ export const ENDPOINTS = {
     VERIFY_OTP: '/api/auth/verifyOtp',
     FORGOT_PASSWORD: '/api/auth/forgot-password',
     RESET_PASSWORD: '/api/auth/reset-password',
+    // Read-only OTP check for the forgot-password flow — lets the OTP-entry
+    // screen reject a wrong/expired code immediately instead of only finding
+    // out after the user has already typed a new password on the next screen.
+    // Never marks the code used, so reset-password's own validation of the
+    // same otp still runs and still matters.
+    VERIFY_RESET_OTP: '/api/auth/verify-reset-otp',
     REFRESH_TOKEN: '/api/auth/refresh',
     GET_PROFILE: '/api/auth/getprofile',
     EDIT_PROFILE: '/api/auth/edit-profile',

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wallet, ShoppingBag, Palette, CreditCard, Check, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { apiGetOnboardingProgress } from '@/api/services/platformPlans';
+import { apiGetOnboardingProgress, apiGetStorePlatformPlan } from '@/api/services/platformPlans';
 import { apiGetStripeConnectStatus } from '@/api/services/stripeConnect';
 
 // ── Persistent "Setup Guide" checklist — replaces the old mandatory Payment
@@ -59,16 +59,25 @@ export function SetupGuideCard({ storeId, totalProducts }: { storeId: string; to
   const [loaded, setLoaded] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [customized, toggleCustomized] = useCustomizeDone(storeId);
+  // This THIS store's own subscription is actually 'locked' (no free trial —
+  // the seller already used their one-per-account trial on an earlier
+  // store; see SellerPlatformSubscriptionsService.ensureDefaultSubscription)
+  // — previously this card always said "Optional... after the trial ends"
+  // regardless, which is actively false for a locked store: it's already
+  // not selling, and payment isn't optional, it's the way to unlock it.
+  const [storeLocked, setStoreLocked] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     Promise.all([
       apiGetOnboardingProgress().catch(() => null),
       apiGetStripeConnectStatus().catch(() => null),
-    ]).then(([progressRes, connectRes]) => {
+      apiGetStorePlatformPlan(storeId).catch(() => null),
+    ]).then(([progressRes, connectRes, planRes]) => {
       if (cancelled) return;
       setHasPlatformPaymentMethod(!!progressRes?.data?.hasPlatformPaymentMethod);
       setChargesEnabled(!!connectRes?.data?.chargesEnabled);
+      setStoreLocked(planRes?.data?.status === 'locked');
       setLoaded(true);
     });
     return () => { cancelled = true; };
@@ -91,8 +100,10 @@ export function SetupGuideCard({ storeId, totalProducts }: { storeId: string; to
       Icon: Palette, path: 'online-store/themes', done: customized, manual: true,
     },
     {
-      id: 'billing', label: 'Add a payment method',
-      desc: 'Optional — add a card for your Solvexo subscription after the trial ends.',
+      id: 'billing', label: storeLocked ? 'Unlock this store' : 'Add a payment method',
+      desc: storeLocked
+        ? "This store is locked (no free trial left on your account) — choose or pay for a plan to resume selling."
+        : 'Optional — add a card for your Solvexo subscription after the trial ends.',
       Icon: CreditCard, path: 'plan-billing', done: hasPlatformPaymentMethod, manual: false,
     },
   ];

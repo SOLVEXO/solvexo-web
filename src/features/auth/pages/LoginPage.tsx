@@ -18,6 +18,17 @@ import { MarketplaceMockup } from '@/features/auth/components/mockups/AuthMockup
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { motion } from 'motion/react';
 
+// Same spinner RootLayout.tsx shows for a lazy-loaded route (not exported
+// from there, so duplicated here rather than reworking that file's exports
+// for one shared line) — see the blank-page fix below for why this exists.
+function RedirectingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-[55vh]">
+      <div className="w-5 h-5 rounded-full border-2 border-brand-orange border-t-transparent animate-spin" />
+    </div>
+  );
+}
+
 const fadeSlide = { initial: { opacity: 0, y: -6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } };
 
 // Same 3 lines the onboarding wizard opens with (OnboardingPage.tsx) — one
@@ -170,7 +181,20 @@ export function LoginPage() {
     setValue('email', '');
   }, [setSearchParams, setValue]);
 
-  if (TokenStorage.isLoggedIn()) return null;
+  // Was `return null` — a real blank/white screen, not just a brief flash,
+  // for any seller: right after a successful sign-in, useLogin.execute()
+  // saves the token/user (so TokenStorage.isLoggedIn() flips true here)
+  // *before* it awaits resolveSellerDestinationRemote() (a real network
+  // call — "which store do I actually land on") and only navigates once
+  // that resolves. Any re-render of this page in that gap (e.g. the
+  // toast.success() call landing just before it, which updates a shared
+  // toast context every mounted consumer re-renders on) hit this exact
+  // check and returned null — a blank page for however long that lookup
+  // took, until the redirect finally fired. A buyer never saw this, since
+  // their redirect (getRoleRedirect()) isn't awaited. Same root cause, same
+  // fix, for the "already signed in, landed on /login directly" effect
+  // above. A spinner in the same slot is never blank, whichever path led here.
+  if (TokenStorage.isLoggedIn()) return <RedirectingSpinner />;
 
   const roleLabel = (r: AppRole) => (r === 'seller' ? 'seller' : 'buyer');
 
