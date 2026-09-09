@@ -460,7 +460,13 @@ export default function StoreSettings() {
   const [codEnabled,   setCodEnabled]   = useState(true);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [taxRate, setTaxRate] = useState(0);
-  const [enabledCurrencies, setEnabledCurrencies] = useState<SupportedCurrency[]>([]);
+  // `null` is a real, distinct state here — "no restriction, every platform
+  // currency is accepted" (the schema default) — never collapsed into an
+  // array like `[baseCurrency]` just because nothing is set yet. Doing that
+  // used to mean the very first unrelated General-tab save (e.g. just the
+  // tagline) silently narrowed a store's buyers to one currency, with no
+  // "Markets" action ever taken.
+  const [enabledCurrencies, setEnabledCurrencies] = useState<SupportedCurrency[] | null>(null);
   // The platform's real, dynamic Markets currency list (AdminConfigService.
   // getEnabledCurrencies) — replaces the old hardcoded ['PKR','USD'] this
   // card used to render, both as the checklist itself and as the "nothing
@@ -487,10 +493,10 @@ export default function StoreSettings() {
     setCodEnabled(store.codEnabled !== false);
     setLowStockThreshold(store.lowStockThreshold ?? 10);
     setTaxRate(store.taxRate ?? 0);
-    // "Nothing set yet" used to default to a hardcoded ['PKR','USD'] guess —
-    // now defaults to just this store's own real currency, always valid
-    // regardless of which platform currencies exist.
-    setEnabledCurrencies(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies : (store.baseCurrency ? [store.baseCurrency] : []));
+    // Mirror the store's real value exactly — `null`/empty stays `null`
+    // ("no restriction"), never collapsed into a guessed array. See this
+    // field's own useState comment above for why that collapse was a bug.
+    setEnabledCurrencies(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies : null);
   }, [store]);
 
   const toggleType = (t: ProductType) =>
@@ -526,8 +532,8 @@ export default function StoreSettings() {
       codEnabled !== (store.codEnabled !== false) ||
       lowStockThreshold !== (store.lowStockThreshold ?? 10) ||
       taxRate !== (store.taxRate ?? 0) ||
-      JSON.stringify(enabledCurrencies.slice().sort()) !==
-        JSON.stringify((store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies : (store.baseCurrency ? [store.baseCurrency] : [])).slice().sort()));
+      JSON.stringify(enabledCurrencies ? enabledCurrencies.slice().sort() : null) !==
+        JSON.stringify(store.enabledCurrencies && store.enabledCurrencies.length > 0 ? store.enabledCurrencies.slice().sort() : null));
 
   return (
     <div>
@@ -819,28 +825,54 @@ export default function StoreSettings() {
               <div className="mt-6 border-t border-bone pt-[18px]">
                 <p className="text-[12px] font-semibold text-charcoal mb-1">Markets</p>
                 <p className="text-[11px] text-slate mb-3">Which currencies can buyers pay in at checkout on your store?</p>
-                <div className="flex flex-col gap-2">
-                  {platformCurrencies.map(c => {
-                    const isBase = c === store?.baseCurrency;
-                    const checked = enabledCurrencies.includes(c);
-                    return (
-                      <div key={c} className="flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
-                        <div>
-                          <p className="text-[13px] font-medium text-charcoal">{c}{isBase ? ' (your store currency)' : ''}</p>
-                        </div>
-                        <Toggle
-                          checked={checked}
-                          disabled={isBase}
-                          ariaLabel={`Accept ${c} at checkout`}
-                          onChange={v => {
-                            if (isBase && !v) return; // can never disable your own store currency
-                            setEnabledCurrencies(prev => v ? [...prev, c] : prev.filter(x => x !== c));
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
+
+                <div className="flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream mb-2">
+                  <div>
+                    <p className="text-[13px] font-medium text-charcoal">Restrict to specific currencies</p>
+                    <p className="text-[11px] text-slate">
+                      {enabledCurrencies === null
+                        ? 'Off — buyers can pay in any currency this platform supports.'
+                        : 'On — buyers can only pay in the currencies checked below.'}
+                    </p>
+                  </div>
+                  <Toggle
+                    checked={enabledCurrencies !== null}
+                    ariaLabel="Restrict which currencies buyers can pay in"
+                    onChange={v => {
+                      // Turning restriction ON seeds the checklist from every
+                      // currently-accepted currency (i.e. "everything, as it
+                      // already was") so flipping this switch never itself
+                      // narrows anything — the seller then deselects what
+                      // they don't want. Turning it OFF clears back to `null`.
+                      setEnabledCurrencies(v ? [...platformCurrencies] : null);
+                    }}
+                  />
                 </div>
+
+                {enabledCurrencies !== null && (
+                  <div className="flex flex-col gap-2">
+                    {platformCurrencies.map(c => {
+                      const isBase = c === store?.baseCurrency;
+                      const checked = enabledCurrencies.includes(c);
+                      return (
+                        <div key={c} className="flex items-center justify-between gap-3 px-[14px] py-3 rounded-[9px] border border-bone bg-cream">
+                          <div>
+                            <p className="text-[13px] font-medium text-charcoal">{c}{isBase ? ' (your store currency)' : ''}</p>
+                          </div>
+                          <Toggle
+                            checked={checked}
+                            disabled={isBase}
+                            ariaLabel={`Accept ${c} at checkout`}
+                            onChange={v => {
+                              if (isBase && !v) return; // can never disable your own store currency
+                              setEnabledCurrencies(prev => (v ? [...(prev ?? []), c] : (prev ?? []).filter(x => x !== c)));
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Read-only info */}

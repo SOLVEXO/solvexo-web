@@ -74,8 +74,13 @@ export interface UpdateStorePayload {
   lowStockThreshold?: number;
   taxRate?: number;
   /** "Markets" — which of the platform's supported currencies buyers may
-   *  check out in on this store. Must include the store's own baseCurrency. */
-  enabledCurrencies?: SupportedCurrency[];
+   *  check out in on this store. Must include the store's own baseCurrency.
+   *  `null` explicitly means "no restriction — every platform currency is
+   *  accepted" (the schema default); omit this field entirely to leave it
+   *  untouched. A caller must never collapse `null` into an array (e.g.
+   *  `[baseCurrency]`) just because "nothing is set yet" — that silently
+   *  narrows a store that was previously unrestricted. */
+  enabledCurrencies?: SupportedCurrency[] | null;
 }
 
 export interface StoreData {

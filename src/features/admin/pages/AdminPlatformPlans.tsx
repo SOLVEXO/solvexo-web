@@ -1,10 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
+import { clsx } from 'clsx';
 import { Plus, Pencil, Archive, TrendingUp, Users, DollarSign, Eye, Check, Package, Layers, RotateCcw, Copy, Clock, Sparkles } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
 import { Input, Textarea } from '@/components/comman/ui/Input';
 import { SkeletonBox, Table, MetricCard, Card, Badge, AdminPageHeader, EmptyState, type TableColumn } from '@/components/comman/ui';
+import { Toggle } from '@/components/comman/ui/Toggle';
+import { ActionMenu } from '@/components/comman/ui/ActionMenu';
 import {
   apiAdminListPlatformPlans, apiAdminCreatePlatformPlan, apiAdminUpdatePlatformPlan, apiAdminArchivePlatformPlan,
   apiAdminGetPlatformPlanRevenue, apiAdminGetPlatformPlanSubscribers, apiAdminListAddonPurchases,
@@ -113,19 +116,22 @@ function TrialSettingsCard() {
           <div className="flex flex-col gap-2">{Array.from({ length: 2 }).map((_, i) => <SkeletonBox key={i} height={36} rounded="6px" />)}</div>
         ) : (
           <div className="flex flex-col gap-3">
-            <label className="flex items-center gap-2 text-[12.5px] font-medium text-charcoal">
-              <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
-              Offer a free trial on new stores
-            </label>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[12.5px] font-medium text-charcoal">Offer a free trial on new stores</p>
+                <p className="text-[11px] text-slate">{enabled ? 'ON — new stores get a trial automatically' : 'OFF — new stores skip straight to choosing a plan'}</p>
+              </div>
+              <Toggle checked={enabled} onChange={setEnabled} ariaLabel="Offer a free trial on new stores" />
+            </div>
             {enabled && (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input label="Trial duration (days)" type="number" min={0} value={durationDays} onChange={e => setDurationDays(e.target.value)} />
                 </div>
-                <label className="flex items-center gap-2 text-[12.5px] text-charcoal">
-                  <input type="checkbox" checked={paymentMethodRequired} onChange={e => setPaymentMethodRequired(e.target.checked)} />
-                  Require a payment method to start the trial
-                </label>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[12.5px] text-charcoal">Require a payment method to start the trial</p>
+                  <Toggle checked={paymentMethodRequired} onChange={setPaymentMethodRequired} ariaLabel="Require a payment method to start the trial" size="sm" />
+                </div>
                 <p className="text-[11px] text-slate leading-[1.5]">
                   During the trial, a store gets full access to every module regardless of which plan it later
                   chooses. When the trial ends, the seller is asked to choose a plan — nothing is auto-charged.
@@ -175,6 +181,37 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
 
   const setLimit = <K extends keyof PlatformPlanLimits>(k: K, v: PlatformPlanLimits[K]) => setLimits(prev => ({ ...prev, [k]: v }));
 
+  // A guided, one-thing-at-a-time wizard instead of one long dense form — the
+  // single-page version was confirmed confusing for a non-technical admin to
+  // fill out correctly. Every field/state variable above is unchanged and
+  // shared across all 4 steps; only the LAYOUT is split by `wizardStep`.
+  const WIZARD_STEPS = ['Basics', 'Pricing', 'Limits & Features', 'Review'] as const;
+  const [wizardStep, setWizardStep] = useState(1);
+
+  function validateStep(step: number): string {
+    if (step === 1 && !name.trim()) return 'Plan name is required.';
+    if (step === 2 && !isFree && !monthlyPrice.trim()) {
+      return 'Monthly price is required for a paid plan — or turn on "Free plan" if it should cost nothing.';
+    }
+    if (step === 2 && introOfferEnabled && (!introPriceUSD || !introDurationCycles)) {
+      return 'Intro price and duration are both required when the intro offer is on.';
+    }
+    if (step === 2 && introOfferEnabled && monthlyPrice && Number(introPriceUSD) >= Number(monthlyPrice)) {
+      return 'Intro price should be lower than the regular monthly price — otherwise it isn\'t really an intro discount.';
+    }
+    return '';
+  }
+  function goNext() {
+    const err = validateStep(wizardStep);
+    if (err) { setError(err); return; }
+    setError('');
+    setWizardStep(s => Math.min(s + 1, WIZARD_STEPS.length));
+  }
+  function goBack() {
+    setError('');
+    setWizardStep(s => Math.max(s - 1, 1));
+  }
+
   async function submit() {
     if (!name.trim()) { setError('Plan name is required.'); return; }
     if (!isFree && !monthlyPrice.trim()) {
@@ -213,169 +250,226 @@ function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
 
   return (
     <Modal mobileSheet title={isEdit ? 'Edit Platform Plan' : 'Create Platform Plan'} width={640} onClose={onClose}
-      footer={<><Button variant="outline" onClick={onClose}>Cancel</Button><Button onClick={submit} loading={saving}>{isEdit ? 'Save Changes' : 'Create Plan'}</Button></>}>
+      footer={
+        <>
+          {wizardStep > 1 && <Button variant="outline" onClick={goBack}>Back</Button>}
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          {wizardStep < WIZARD_STEPS.length ? (
+            <Button onClick={goNext}>Next</Button>
+          ) : (
+            <Button onClick={submit} loading={saving}>{isEdit ? 'Save Changes' : 'Create Plan'}</Button>
+          )}
+        </>
+      }>
       <div className="flex flex-col gap-5">
-        <div>
-          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Basics</p>
+        {/* Progress header — one thing at a time instead of one long dense
+           form, since a single-page version was confirmed confusing to fill
+           out correctly by a non-technical admin. */}
+        <div className="flex items-center gap-2">
+          {WIZARD_STEPS.map((label, i) => {
+            const stepNum = i + 1;
+            const isActive = stepNum === wizardStep;
+            const isDone = stepNum < wizardStep;
+            return (
+              <div key={label} className={clsx('flex items-center gap-2', stepNum < WIZARD_STEPS.length ? 'flex-1' : '')}>
+                <div className={clsx('flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap', isActive ? 'text-brand-orange' : isDone ? 'text-success' : 'text-slate')}>
+                  <span className={clsx(
+                    'size-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0',
+                    isActive ? 'bg-brand-orange text-white' : isDone ? 'bg-success text-white' : 'bg-bone text-slate',
+                  )}>
+                    {isDone ? <Check size={11} /> : stepNum}
+                  </span>
+                  <span className="hidden sm:inline">{label}</span>
+                </div>
+                {stepNum < WIZARD_STEPS.length && <div className={clsx('h-px flex-1', isDone ? 'bg-success' : 'bg-bone')} />}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Step 1 — Basics ── */}
+        {wizardStep === 1 && (
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input label="Plan Name" value={name} onChange={e => setName(e.target.value)} />
               <Input label="Badge (optional)" placeholder="Popular" value={badge} onChange={e => setBadge(e.target.value)} />
             </div>
-            <Textarea label="Description" rows={2} value={description} onChange={e => setDescription(e.target.value)} />
+            <Textarea label="Description" rows={3} value={description} onChange={e => setDescription(e.target.value)} />
           </div>
-        </div>
+        )}
 
-        <div>
-          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Pricing</p>
-          <div className="flex flex-col gap-3">
-            <div>
-              <label className="flex items-center gap-2 text-[12.5px] font-medium text-charcoal">
-                <input type="checkbox" checked={isFree} onChange={e => setIsFree(e.target.checked)} /> Free plan (no charge)
-              </label>
-              <p className="text-[11px] text-slate mt-1 leading-[1.5]">
-                Only check this if you want a permanent $0 tier. It's a one-way door — a free plan can't be archived later
-                (the platform always needs a fallback).
-              </p>
-            </div>
-            {isFree ? (
-              <div className="text-[12px] text-slate bg-cream/60 border border-bone rounded-lg px-3 py-2.5">
-                This plan is free — sellers on it are never billed, so pricing fields are hidden.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input label="Monthly $" type="number" min={0} value={monthlyPrice} onChange={e => setMonthlyPrice(e.target.value)} />
-                <Input label="Yearly $ (optional)" type="number" min={0} value={yearlyPrice} onChange={e => setYearlyPrice(e.target.value)} />
-              </div>
-            )}
-            <p className="text-[11px] text-slate bg-cream/60 border border-bone rounded-lg px-3 py-2 leading-[1.5]">
-              Free-trial length is no longer set per plan — it's one platform-wide setting now.
-              See <strong>Trial Settings</strong> above.
-            </p>
-          </div>
-        </div>
-
-        {!isFree && (
-          <div>
-            <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5 flex items-center gap-1.5">
-              <Sparkles size={12} className="text-brand-orange" /> Intro offer (optional)
-            </p>
+        {/* ── Step 2 — Pricing ── */}
+        {wizardStep === 2 && (
+          <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-3">
-              <label className="flex items-center gap-2 text-[12.5px] font-medium text-charcoal">
-                <input type="checkbox" checked={introOfferEnabled} onChange={e => setIntroOfferEnabled(e.target.checked)} />
-                Offer a discounted intro price (e.g. "$1/mo for 3 months, then full price")
-              </label>
-              {introOfferEnabled && (
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[12.5px] font-medium text-charcoal">Free plan (no charge)</p>
+                  <p className="text-[11px] text-slate mt-1 leading-[1.5]">
+                    Only turn this on if you want a permanent $0 tier. It's a one-way door — a free plan can't be archived later
+                    (the platform always needs a fallback).
+                  </p>
+                </div>
+                <Toggle checked={isFree} onChange={setIsFree} ariaLabel="Free plan (no charge)" />
+              </div>
+              {isFree ? (
+                <div className="text-[12px] text-slate bg-cream/60 border border-bone rounded-lg px-3 py-2.5">
+                  This plan is free — sellers on it are never billed, so pricing fields are hidden.
+                </div>
+              ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Input label="Intro price $/mo" type="number" min={0} value={introPriceUSD} onChange={e => setIntroPriceUSD(e.target.value)} />
-                  <Input label="Duration (months)" type="number" min={1} value={introDurationCycles} onChange={e => setIntroDurationCycles(e.target.value)} />
+                  <Input label="Monthly $" type="number" min={0} value={monthlyPrice} onChange={e => setMonthlyPrice(e.target.value)} />
+                  <Input label="Yearly $ (optional)" type="number" min={0} value={yearlyPrice} onChange={e => setYearlyPrice(e.target.value)} />
                 </div>
               )}
-              <p className="text-[11px] text-slate leading-[1.5]">
-                Monthly billing only — matches how this kind of intro pricing normally works. A seller who chooses
-                yearly billing always pays the regular price.
+              <p className="text-[11px] text-slate bg-cream/60 border border-bone rounded-lg px-3 py-2 leading-[1.5]">
+                Free-trial length is no longer set per plan — it's one platform-wide setting now.
+                See <strong>Trial Settings</strong> above.
               </p>
             </div>
-          </div>
-        )}
 
-        {!isFree && monthlyPrice && (
-          <div>
-            <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Live preview — what a seller will see</p>
-            <div className="rounded-xl border border-bone bg-cream/40 px-4 py-3.5">
-              <div className="flex items-center gap-2 mb-1">
-                <p className="text-[14px] font-bold text-carbon">{name.trim() || 'Plan name'}</p>
-                {badge.trim() && <Badge color="orange" size="sm">{badge.trim()}</Badge>}
-              </div>
-              <p className="flex items-baseline gap-1 mb-1">
-                <span className="text-[20px] font-bold text-brand-orange">${monthlyPrice || 0}</span>
-                <span className="text-[11px] text-slate">/mo</span>
-              </p>
-              {introOfferEnabled && introPriceUSD && introDurationCycles && (
-                <p className="text-[11.5px] font-medium text-success mb-1">
-                  ${introPriceUSD}/mo for {introDurationCycles} month{Number(introDurationCycles) === 1 ? '' : 's'}, then ${monthlyPrice}/mo
+            {!isFree && (
+              <div>
+                <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5 flex items-center gap-1.5">
+                  <Sparkles size={12} className="text-brand-orange" /> Intro offer (optional)
                 </p>
-              )}
-              {description.trim() && <p className="text-[11.5px] text-slate mb-2">{description.trim()}</p>}
-              <ul className="flex flex-col gap-1 list-none p-0">
-                {featuresText.split('\n').map(f => f.trim()).filter(Boolean).slice(0, 4).map(f => (
-                  <li key={f} className="flex items-start gap-1.5 text-[11.5px] text-graphite">
-                    <Check size={12} className="text-success shrink-0 mt-[2px]" /><span>{f}</span>
-                  </li>
-                ))}
-              </ul>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[12.5px] font-medium text-charcoal">Offer a discounted intro price (e.g. "$1/mo for 3 months, then full price")</p>
+                    <Toggle checked={introOfferEnabled} onChange={setIntroOfferEnabled} ariaLabel="Offer a discounted intro price" />
+                  </div>
+                  {introOfferEnabled && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Input label="Intro price $/mo" type="number" min={0} value={introPriceUSD} onChange={e => setIntroPriceUSD(e.target.value)} />
+                      <Input label="Duration (months)" type="number" min={1} value={introDurationCycles} onChange={e => setIntroDurationCycles(e.target.value)} />
+                    </div>
+                  )}
+                  <p className="text-[11px] text-slate leading-[1.5]">
+                    Monthly billing only — matches how this kind of intro pricing normally works. A seller who chooses
+                    yearly billing always pays the regular price.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Step 3 — Limits & Features ── */}
+        {wizardStep === 3 && (
+          <div className="flex flex-col gap-5">
+            <div>
+              <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-1">Limits</p>
+              <p className="text-[11px] text-slate mb-2.5">Enter <span className="font-semibold text-charcoal">-1</span> in any limit field for unlimited.</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+                <Input label="Max products (-1=∞)" type="number" value={limits.maxProducts ?? ''} onChange={e => setLimit('maxProducts', Number(e.target.value))} />
+                <Input label="Max staff (-1=∞)" type="number" value={limits.maxStaffAccounts ?? ''} onChange={e => setLimit('maxStaffAccounts', Number(e.target.value))} />
+                <Input label="Max POS locations" type="number" value={limits.maxPosLocations ?? ''} onChange={e => setLimit('maxPosLocations', Number(e.target.value))} />
+                <Input label="AI credits/mo" type="number" value={limits.aiCreditsPerMonth ?? ''} onChange={e => setLimit('aiCreditsPerMonth', Number(e.target.value))} />
+                <Input
+                  label="Solvexo's fee (%)" type="number" step="0.1" min={0} max={100}
+                  value={limits.transactionFeeRate != null ? Math.round(limits.transactionFeeRate * 1000) / 10 : ''}
+                  onChange={e => setLimit('transactionFeeRate', e.target.value === '' ? 0 : Number(e.target.value) / 100)}
+                />
+                <Input
+                  label="Uptime guarantee % (optional)" type="number" step="0.1" min={0} max={100}
+                  value={limits.slaUptimePercent ?? ''} onChange={e => setLimit('slaUptimePercent', e.target.value === '' ? undefined : Number(e.target.value))}
+                />
+                <Input label="Max store banners (-1=∞)" type="number" value={limits.maxActiveStoreBanners ?? ''} onChange={e => setLimit('maxActiveStoreBanners', Number(e.target.value))} />
+                <Input label="Max active promotions (-1=∞)" type="number" value={limits.maxActivePromotions ?? ''} onChange={e => setLimit('maxActivePromotions', Number(e.target.value))} />
+              </div>
+              <p className="text-[11px] text-slate leading-[1.5]">
+                <span className="font-semibold text-charcoal">Solvexo's fee</span> is the cut Solvexo keeps from every sale a
+                seller makes on this plan — e.g. 5 means Solvexo keeps $5 out of every $100 sold. <span className="font-semibold text-charcoal">Uptime guarantee</span> is
+                just a marketing number shown to sellers (e.g. "99.9% uptime") — leave it blank to not show one.
+              </p>
+            </div>
+
+            <div>
+              <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Features</p>
+              <p className="text-[11px] text-slate mb-1.5">Tap a feature below to turn it on (orange) or off for this plan:</p>
+              <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-bone bg-cream/50">
+                {BOOL_FLAGS.map(f => {
+                  const active = !!limits[f.key];
+                  return (
+                    <button key={f.key} type="button" onClick={() => setLimit(f.key, !active)}
+                      title={f.soon ? 'Not built yet — turning this on saves the setting but doesn\'t unlock anything for the seller today.' : undefined}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border cursor-pointer transition-colors duration-fast"
+                      style={{ background: active ? '#D97757' : '#fff', color: active ? '#fff' : '#5A5852', borderColor: active ? '#D97757' : '#E8E6DC' }}>
+                      {active && <Check size={11} className="shrink-0" />}
+                      {f.label}
+                      {f.soon && <span className="opacity-70">(soon)</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10.5px] text-slate mt-1.5">
+                "(soon)" tags aren't built yet — toggling them saves the setting but doesn't change anything for the seller today.
+              </p>
+            </div>
+
+            <Textarea label="Feature bullets (one per line — shown as a checklist on the plan card)" rows={3} value={featuresText} onChange={e => setFeaturesText(e.target.value)} />
+          </div>
+        )}
+
+        {/* ── Step 4 — Review ── */}
+        {wizardStep === 4 && (
+          <div className="flex flex-col gap-5">
+            <div>
+              <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Display &amp; visibility</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Input
+                    label="Sort order (lower = shown first)" type="number" value={sortOrder}
+                    onChange={e => setSortOrder(e.target.value)}
+                  />
+                  <p className="text-[11px] text-slate mt-1">Controls left-to-right order on the pricing page and plan cards here.</p>
+                </div>
+                <div>
+                  <p className="block text-[12px] font-medium text-charcoal mb-1.5">Visibility</p>
+                  <div className="flex items-center justify-between gap-2 text-[12.5px] text-charcoal h-[38px] px-3 rounded-lg border border-bone bg-cream/60">
+                    Show on public pricing page
+                    <Toggle checked={isPubliclyVisible} onChange={setIsPubliclyVisible} ariaLabel="Show on public pricing page" size="sm" />
+                  </div>
+                  <p className="text-[11px] text-slate mt-1">Turn off to keep a plan usable (e.g. for one seller) without listing it publicly.</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Live preview — what a seller will see</p>
+              <div className="rounded-xl border border-bone bg-cream/40 px-4 py-3.5">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-[14px] font-bold text-carbon">{name.trim() || 'Plan name'}</p>
+                  {badge.trim() && <Badge color="orange" size="sm">{badge.trim()}</Badge>}
+                </div>
+                <p className="flex items-baseline gap-1 mb-1">
+                  {isFree ? (
+                    <span className="text-[20px] font-bold text-brand-orange">Free</span>
+                  ) : (
+                    <>
+                      <span className="text-[20px] font-bold text-brand-orange">${monthlyPrice || 0}</span>
+                      <span className="text-[11px] text-slate">/mo</span>
+                    </>
+                  )}
+                </p>
+                {!isFree && introOfferEnabled && introPriceUSD && introDurationCycles && (
+                  <p className="text-[11.5px] font-medium text-success mb-1">
+                    ${introPriceUSD}/mo for {introDurationCycles} month{Number(introDurationCycles) === 1 ? '' : 's'}, then ${monthlyPrice}/mo
+                  </p>
+                )}
+                {description.trim() && <p className="text-[11.5px] text-slate mb-2">{description.trim()}</p>}
+                <ul className="flex flex-col gap-1 list-none p-0">
+                  {featuresText.split('\n').map(f => f.trim()).filter(Boolean).slice(0, 4).map(f => (
+                    <li key={f} className="flex items-start gap-1.5 text-[11.5px] text-graphite">
+                      <Check size={12} className="text-success shrink-0 mt-[2px]" /><span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         )}
 
-        <div>
-          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Display &amp; visibility</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Input
-                label="Sort order (lower = shown first)" type="number" value={sortOrder}
-                onChange={e => setSortOrder(e.target.value)}
-              />
-              <p className="text-[11px] text-slate mt-1">Controls left-to-right order on the pricing page and plan cards here.</p>
-            </div>
-            <div>
-              <p className="block text-[12px] font-medium text-charcoal mb-1.5">Visibility</p>
-              <label className="flex items-center gap-2 text-[12.5px] text-charcoal h-[38px] px-3 rounded-lg border border-bone bg-cream/60">
-                <input type="checkbox" checked={isPubliclyVisible} onChange={e => setIsPubliclyVisible(e.target.checked)} />
-                Show on public pricing page
-              </label>
-              <p className="text-[11px] text-slate mt-1">Turn off to keep a plan usable (e.g. for one seller) without listing it publicly.</p>
-            </div>
-          </div>
-        </div>
-
-        <Textarea label="Feature bullets (one per line)" rows={3} value={featuresText} onChange={e => setFeaturesText(e.target.value)} />
-
-        <div>
-          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-1">Limits &amp; feature access</p>
-          <p className="text-[11px] text-slate mb-2.5">Enter <span className="font-semibold text-charcoal">-1</span> in any limit field for unlimited.</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
-            <Input label="Max products (-1=∞)" type="number" value={limits.maxProducts ?? ''} onChange={e => setLimit('maxProducts', Number(e.target.value))} />
-            <Input label="Max staff (-1=∞)" type="number" value={limits.maxStaffAccounts ?? ''} onChange={e => setLimit('maxStaffAccounts', Number(e.target.value))} />
-            <Input label="Max POS locations" type="number" value={limits.maxPosLocations ?? ''} onChange={e => setLimit('maxPosLocations', Number(e.target.value))} />
-            <Input label="AI credits/mo" type="number" value={limits.aiCreditsPerMonth ?? ''} onChange={e => setLimit('aiCreditsPerMonth', Number(e.target.value))} />
-            <Input
-              label="Solvexo's fee (%)" type="number" step="0.1" min={0} max={100}
-              value={limits.transactionFeeRate != null ? Math.round(limits.transactionFeeRate * 1000) / 10 : ''}
-              onChange={e => setLimit('transactionFeeRate', e.target.value === '' ? 0 : Number(e.target.value) / 100)}
-            />
-            <Input
-              label="Uptime guarantee % (optional)" type="number" step="0.1" min={0} max={100}
-              value={limits.slaUptimePercent ?? ''} onChange={e => setLimit('slaUptimePercent', e.target.value === '' ? undefined : Number(e.target.value))}
-            />
-            <Input label="Max store banners (-1=∞)" type="number" value={limits.maxActiveStoreBanners ?? ''} onChange={e => setLimit('maxActiveStoreBanners', Number(e.target.value))} />
-            <Input label="Max active promotions (-1=∞)" type="number" value={limits.maxActivePromotions ?? ''} onChange={e => setLimit('maxActivePromotions', Number(e.target.value))} />
-          </div>
-          <p className="text-[11px] text-slate mb-2.5 leading-[1.5]">
-            <span className="font-semibold text-charcoal">Solvexo's fee</span> is the cut Solvexo keeps from every sale a
-            seller makes on this plan — e.g. 5 means Solvexo keeps $5 out of every $100 sold. <span className="font-semibold text-charcoal">Uptime guarantee</span> is
-            just a marketing number shown to sellers (e.g. "99.9% uptime") — leave it blank to not show one.
-          </p>
-          <p className="text-[11px] text-slate mb-1.5">Tap a feature below to turn it on (orange) or off for this plan:</p>
-          <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-bone bg-cream/50">
-            {BOOL_FLAGS.map(f => {
-              const active = !!limits[f.key];
-              return (
-                <button key={f.key} type="button" onClick={() => setLimit(f.key, !active)}
-                  title={f.soon ? 'Not built yet — turning this on saves the setting but doesn\'t unlock anything for the seller today.' : undefined}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border cursor-pointer transition-colors duration-fast"
-                  style={{ background: active ? '#D97757' : '#fff', color: active ? '#fff' : '#5A5852', borderColor: active ? '#D97757' : '#E8E6DC' }}>
-                  {active && <Check size={11} className="shrink-0" />}
-                  {f.label}
-                  {f.soon && <span className="opacity-70">(soon)</span>}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-[10.5px] text-slate mt-1.5">
-            "(soon)" tags aren't built yet — toggling them saves the setting but doesn't change anything for the seller today.
-          </p>
-        </div>
         {error && <p className="text-[12px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">{error}</p>}
       </div>
     </Modal>
@@ -684,23 +778,45 @@ export function AdminPlatformPlans() {
                       </div>
 
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" fullWidth icon={<Pencil size={12} />} onClick={() => setEditing(plan)}>Edit</Button>
-                        <Button variant="outline" size="sm" fullWidth icon={<Eye size={12} />} onClick={() => setViewingSubscribersFor(plan)}>Subscribers</Button>
-                        <Button variant="outline" size="sm" icon={<Copy size={12} />} aria-label="Duplicate plan" onClick={() => setDuplicateSource(plan)} />
-                        {plan.status === 'archived' ? (
-                          <Button
-                            variant="outline" size="sm" icon={<RotateCcw size={12} />}
-                            loading={restoringId === plan._id}
-                            aria-label="Restore plan"
-                            onClick={() => handleRestore(plan)}
-                          />
-                        ) : !plan.isFree && (
-                          <Button
-                            variant="outline" size="sm" icon={<Archive size={12} />}
-                            aria-label="Archive plan"
-                            onClick={() => { setArchiving(plan); setArchiveError(''); setArchiveForceNeeded(false); }}
-                          />
-                        )}
+                        {/* Only ONE text button stays inline — "Edit" (the action
+                           an admin needs most). Subscribers/Duplicate/Archive/
+                           Restore all live in the kebab menu instead, so this row
+                           is exactly 2 items (one fullWidth text button + one
+                           fixed 32px icon button) and can never overflow a
+                           card, regardless of how narrow the grid column gets.
+                           An earlier version tried 3-4 inline buttons — on a
+                           real ~300px card two of them silently overflowed
+                           outside the clipped card boundary, which is exactly
+                           why Archive was reported as "nowhere to be found." */}
+                        {/* `flex-1` here, NOT the `fullWidth` prop — `fullWidth` sets
+                           `width: 100%`, which in a flex row claims the ENTIRE
+                           row's width regardless of the ActionMenu sibling next
+                           to it, pushing that sibling out past the Card's
+                           `overflow-hidden` boundary (invisible, not just
+                           squeezed) — the real reason the kebab menu never
+                           showed up no matter how few buttons were in the row.
+                           `flex-1` grows to fill only the space left over
+                           after the fixed-width sibling, which is what this
+                           row actually needs. */}
+                        <Button variant="outline" size="sm" className="flex-1" icon={<Pencil size={12} />} onClick={() => setEditing(plan)}>Edit</Button>
+                        <ActionMenu
+                          className="shrink-0"
+                          ariaLabel={`More actions for ${plan.name}`}
+                          items={[
+                            { label: 'Subscribers', icon: <Eye size={13} />, onClick: () => setViewingSubscribersFor(plan) },
+                            { label: 'Duplicate', icon: <Copy size={13} />, onClick: () => setDuplicateSource(plan) },
+                            plan.status === 'archived'
+                              ? {
+                                  label: restoringId === plan._id ? 'Restoring…' : 'Restore', icon: <RotateCcw size={13} />,
+                                  disabled: restoringId === plan._id, onClick: () => handleRestore(plan),
+                                }
+                              : {
+                                  label: 'Archive', icon: <Archive size={13} />, danger: true,
+                                  disabled: plan.isFree, title: plan.isFree ? 'The free/default plan cannot be archived' : undefined,
+                                  onClick: () => { setArchiving(plan); setArchiveError(''); setArchiveForceNeeded(false); },
+                                },
+                          ]}
+                        />
                       </div>
                       {plan.status === 'archived' && (
                         <p className="text-[10.5px] text-slate mt-2 text-center">

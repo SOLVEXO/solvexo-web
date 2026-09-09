@@ -32,6 +32,13 @@ export const ENDPOINTS = {
     UPDATE_PAYOUT: '/api/admin/platform-config/payout',
     UPDATE_MANUAL_PAYMENT: '/api/admin/platform-config/manual-payment',
     UPDATE_FX: '/api/admin/platform-config/fx',
+
+    // Dynamic, admin-managed currency list ("Markets") — see
+    // AdminConfigService's getEnabledCurrencies/addCurrency/updateCurrencyBand/
+    // removeCurrency/enableAllCurrencies doc comments.
+    CURRENCIES: '/api/admin/platform-config/currencies',
+    CURRENCIES_ENABLE_ALL: '/api/admin/platform-config/currencies/enable-all',
+    CURRENCY_BAND: (code: string) => `/api/admin/platform-config/currencies/${code}`,
   },
 
   // ── EXCHANGE RATE ───────────────────────────────────────────────────────────

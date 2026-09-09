@@ -288,12 +288,13 @@ export function apiLogout() {
   return client.post<never, ApiResponse<Record<string, never>>>(ENDPOINTS.AUTH.LOGOUT);
 }
 
-/** GET /auth/detect-country — real IP-based country guess (ISO-3166 alpha-2), used to auto-select the Register form's phone dial code. Also returns `region` + `imageUrl` — a real, region-appropriate background photo for the shared auth-screen panel (`AuthSplitLayout`), resolved from a small curated region map, never a per-country lookup. The optional `context` param picks WHICH of that region's 3 curated photos comes back (`register`/`login`/`onboarding`) — so the same visitor sees a different, but same-region, photo depending on which auth screen they're on. `country` is null when it can't be resolved (local dev, unrecognized IP); `region`/`imageUrl` still resolve to a valid `'default'` in that case — callers must fail open on `country` but can always trust `imageUrl` to be a real, loadable photo. */
+/** GET /auth/detect-country — real IP-based country guess (ISO-3166 alpha-2), used to auto-select the Register form's phone dial code. Also returns `imageUrl` — a real, LIVE, country-specific background photo for the shared auth-screen panel (`AuthSplitLayout`), resolved server-side per request via the Unsplash Random Photo API keyed off the visitor's actual country name + the current screen (see `AuthVisualService` on the backend) — not a lookup into a small pre-curated region list. The optional `context` param (`register`/`login`/`onboarding`/`forgot_password`/`otp`/`new_password`) is folded into that search query, so the same visitor sees a different, country-appropriate photo depending on which auth screen they're on. `country` is null when it can't be resolved (local dev, unrecognized IP); `imageUrl` still resolves to a real, loadable photo in that case (a curated fallback) — callers must fail open on `country` but can always trust `imageUrl`. `region` is a legacy field, kept only for backward compatibility with the earlier curated-region-only version of this endpoint — don't build new logic on it. `attribution` (photographer name + Unsplash profile link) is only present when `imageUrl` came from a live Unsplash lookup — render it small/dismissable when present, per Unsplash's API attribution requirement; it's `null` for a curated fallback photo. */
 export type AuthPageContext = 'register' | 'login' | 'onboarding' | 'forgot_password' | 'otp' | 'new_password';
 export interface DetectCountryData {
   country: string | null;
   region: string;
   imageUrl: string;
+  attribution: { name: string; profileUrl: string } | null;
 }
 export function apiDetectCountry(context?: AuthPageContext) {
   const qs = context ? `?context=${context}` : '';

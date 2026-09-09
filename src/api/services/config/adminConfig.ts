@@ -92,6 +92,12 @@ export interface PlatformConfig {
   updatedAt: string;
 }
 
+export interface EnabledCurrency {
+  code: string;
+  sanityBandMin: number | null;
+  sanityBandMax: number | null;
+}
+
 interface ApiResponse<T> { success: boolean; message?: string; data: T }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -131,4 +137,27 @@ export function apiUpdateManualPaymentConfig(payload: Partial<ManualPaymentConfi
 
 export function apiUpdateFxConfig(payload: Partial<FxConfig>) {
   return client.put<never, ApiResponse<PlatformConfig>>(ENDPOINTS.PLATFORM_CONFIG.UPDATE_FX, payload);
+}
+
+// ── Dynamic, admin-managed currency list ("Markets") ──────────────────────────
+export function apiGetAdminCurrencies() {
+  return client.get<never, ApiResponse<EnabledCurrency[]>>(ENDPOINTS.PLATFORM_CONFIG.CURRENCIES);
+}
+
+export function apiAddCurrency(code: string, sanityBandMin: number, sanityBandMax: number) {
+  return client.post<never, ApiResponse<FxConfig>>(ENDPOINTS.PLATFORM_CONFIG.CURRENCIES, { code, sanityBandMin, sanityBandMax });
+}
+
+export function apiUpdateCurrencyBand(code: string, sanityBandMin: number, sanityBandMax: number) {
+  return client.patch<never, ApiResponse<FxConfig>>(ENDPOINTS.PLATFORM_CONFIG.CURRENCY_BAND(code), { sanityBandMin, sanityBandMax });
+}
+
+export function apiRemoveCurrency(code: string) {
+  return client.delete<never, ApiResponse<FxConfig | undefined>>(ENDPOINTS.PLATFORM_CONFIG.CURRENCY_BAND(code));
+}
+
+// Enables every real ISO-4217 currency the platform's own metadata table
+// knows about that isn't already enabled — see AdminConfigService.enableAllCurrencies.
+export function apiEnableAllCurrencies() {
+  return client.post<never, ApiResponse<{ added: string[]; alreadyEnabledCount: number }>>(ENDPOINTS.PLATFORM_CONFIG.CURRENCIES_ENABLE_ALL);
 }

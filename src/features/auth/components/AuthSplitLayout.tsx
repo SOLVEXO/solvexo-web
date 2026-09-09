@@ -71,7 +71,7 @@ export function AuthSplitLayout({
   // region's 3 photos) — starts `null` (renders nothing extra until
   // resolved), so a slow/failed lookup never shows a broken image, just the
   // panel's existing gradient as before this feature existed.
-  const visualImageUrl = useAuthVisual(pageContext);
+  const { imageUrl: visualImageUrl, attribution } = useAuthVisual(pageContext);
   return (
     <div className="fixed inset-x-0 top-0 bottom-0 w-full overflow-hidden bg-cream flex flex-col lg:flex-row">
       <BrandSplash />
@@ -193,7 +193,18 @@ export function AuthSplitLayout({
 
             </div>
 
-            <p className="text-[11px] text-white/40 shrink-0">© {new Date().getFullYear()} Solvexo. All rights reserved.</p>
+            <p className="text-[11px] text-white/40 shrink-0">
+              © {new Date().getFullYear()} Solvexo. All rights reserved.
+              {attribution && (
+                <>
+                  {' · Photo: '}
+                  <a href={attribution.profileUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-white/70">
+                    {attribution.name}
+                  </a>
+                  {' / Unsplash'}
+                </>
+              )}
+            </p>
           </div>
         </div>
       </div>

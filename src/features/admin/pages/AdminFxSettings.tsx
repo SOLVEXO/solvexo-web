@@ -1,8 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
-import { RefreshCw, History, AlertTriangle } from 'lucide-react';
+import { RefreshCw, History, AlertTriangle, Globe2, Plus } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button, Input, Toggle, StatusBadge, SkeletonBox, EmptyState, Table, AdminPageHeader, type TableColumn } from '@/components/comman/ui';
-import { apiGetPlatformConfig, apiUpdateFxConfig, type FxConfig } from '@/api/services/config/adminConfig';
+import {
+  apiGetPlatformConfig, apiUpdateFxConfig, apiGetAdminCurrencies, apiAddCurrency, apiEnableAllCurrencies,
+  type FxConfig, type EnabledCurrency,
+} from '@/api/services/config/adminConfig';
 import { apiGetCurrentRates, apiGetFxHistory, apiGetFxStaleness, apiOverrideFxRate, type CurrentRatesMap, type ExchangeRateHistoryRow } from '@/api/services/exchangeRate';
 
 function formatDate(iso: string) {
@@ -40,11 +43,29 @@ function RateCard({ currency, rate, staleness }: {
 }
 
 // ── Manual override form ──────────────────────────────────────────────────────
-function OverrideForm({ onDone }: { onDone: () => void }) {
+// `currencies` is the platform's real, dynamic Markets list (see
+// AdminConfigService.getEnabledCurrencies) — this used to be a single
+// hardcoded <option value="PKR">, which meant an admin literally could not
+// set/refresh a manual rate for any other enabled currency from this page.
+function OverrideForm({ currencies, onDone }: { currencies: string[]; onDone: () => void }) {
   const [currency, setCurrency] = useState('PKR');
   const [rate, setRate] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // USD excluded — it's the fixed pivot (requireCurrentRate always treats
+  // it as 1 regardless of any DB row), so "overriding" it would be a no-op
+  // that could only confuse an admin.
+  const selectable = currencies.filter(c => c !== 'USD');
+
+  // Keep the selection valid as the real currency list loads in (starts
+  // empty on first render) or changes.
+  useEffect(() => {
+    if (selectable.length > 0 && !selectable.includes(currency)) {
+      setCurrency(selectable.includes('PKR') ? 'PKR' : selectable[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectable.join(',')]);
 
   async function submit() {
     const value = Number(rate);
@@ -78,15 +99,77 @@ function OverrideForm({ onDone }: { onDone: () => void }) {
       <div className="flex items-end gap-3 flex-wrap">
         <div className="w-[110px]">
           <label className="block text-[11px] font-medium text-charcoal mb-1">Currency</label>
-          <select value={currency} onChange={e => setCurrency(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10">
-            <option value="PKR">PKR</option>
+          <select value={currency} onChange={e => setCurrency(e.target.value)} disabled={selectable.length === 0}
+            className="w-full px-3 py-2 rounded-lg border border-bone text-[13px] bg-white outline-none cursor-pointer focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/10 disabled:opacity-50 disabled:cursor-not-allowed">
+            {selectable.length === 0
+              ? <option value="PKR">PKR</option>
+              : selectable.map(code => <option key={code} value={code}>{code}</option>)}
           </select>
         </div>
         <div className="w-[160px]">
           <Input label="Rate (per 1 USD)" type="number" min="1" value={rate} onChange={e => setRate(e.target.value)} placeholder="278" />
         </div>
         <Button variant="primary" loading={submitting} onClick={submit}>Apply</Button>
+      </div>
+      {error && <p className="text-[12px] text-error mt-2 flex items-center gap-1"><AlertTriangle size={13} />{error}</p>}
+    </div>
+  );
+}
+
+// ── Add a single currency ─────────────────────────────────────────────────────
+// The one-at-a-time counterpart to the "Enable All Currencies" button above —
+// for an admin who wants just one more real currency live with a specific
+// sanity band, rather than every currency Solvexo's metadata table knows.
+function AddCurrencyForm({ existing, onDone }: { existing: string[]; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [code, setCode] = useState('');
+  const [min, setMin] = useState('');
+  const [max, setMax] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit() {
+    const normalized = code.trim().toUpperCase();
+    const minVal = Number(min);
+    const maxVal = Number(max);
+    if (!/^[A-Z]{3}$/.test(normalized)) { setError('Enter a real 3-letter ISO currency code'); return; }
+    if (existing.includes(normalized)) { setError(`${normalized} is already enabled`); return; }
+    if (!minVal || !maxVal || maxVal <= minVal) { setError('Enter a valid band — max must be greater than min'); return; }
+    setSubmitting(true);
+    setError('');
+    try {
+      await apiAddCurrency(normalized, minVal, maxVal);
+      setCode(''); setMin(''); setMax(''); setOpen(false);
+      onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add currency.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="mt-3 text-[12px] font-medium text-brand-orange flex items-center gap-1 hover:underline">
+        <Plus size={13} /> Add a single currency with a custom band
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-bone">
+      <div className="flex items-end gap-3 flex-wrap">
+        <div className="w-[100px]">
+          <Input label="Code" value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="SEK" maxLength={3} />
+        </div>
+        <div className="w-[130px]">
+          <Input label="Band Min (per USD)" type="number" min="0.0001" step="any" value={min} onChange={e => setMin(e.target.value)} placeholder="0.0001" />
+        </div>
+        <div className="w-[130px]">
+          <Input label="Band Max (per USD)" type="number" min="0.0001" step="any" value={max} onChange={e => setMax(e.target.value)} placeholder="1000000" />
+        </div>
+        <Button variant="primary" size="sm" loading={submitting} onClick={submit}>Add</Button>
+        <Button variant="outline" size="sm" onClick={() => { setOpen(false); setError(''); }}>Cancel</Button>
       </div>
       {error && <p className="text-[12px] text-error mt-2 flex items-center gap-1"><AlertTriangle size={13} />{error}</p>}
     </div>
@@ -100,22 +183,27 @@ export function AdminFxSettings() {
   const [staleness, setStaleness] = useState<Record<string, { hoursOld: number; isStale: boolean } | null>>({});
   const [fxConfig, setFxConfig] = useState<FxConfig | null>(null);
   const [history, setHistory] = useState<ExchangeRateHistoryRow[]>([]);
+  const [currencies, setCurrencies] = useState<EnabledCurrency[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
+  const [enablingAll, setEnablingAll] = useState(false);
+  const [enableAllMessage, setEnableAllMessage] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [ratesRes, staleRes, configRes, historyRes] = await Promise.all([
+      const [ratesRes, staleRes, configRes, historyRes, currenciesRes] = await Promise.all([
         apiGetCurrentRates(),
         apiGetFxStaleness(),
         apiGetPlatformConfig(),
         apiGetFxHistory({ limit: 15 }),
+        apiGetAdminCurrencies(),
       ]);
       setRates(ratesRes.data);
       setStaleness(staleRes.data);
       setFxConfig(configRes.data.fxConfig);
       setHistory(historyRes.data.items);
+      setCurrencies(currenciesRes.data);
     } catch {
       // handled per-section below via empty states
     } finally {
@@ -124,6 +212,30 @@ export function AdminFxSettings() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Enables every real ISO-4217 currency Solvexo's own metadata table knows
+  // about that isn't already enabled here — the one-click counterpart to
+  // adding ~120 currencies by hand (see AdminConfigService.enableAllCurrencies).
+  // Newly-enabled currencies auto-refresh going forward via the daily FX
+  // cron (Frankfurter + ExchangeRate-API, covering all but a rare currency
+  // neither free provider prices) — no need to set a rate for each by hand.
+  async function enableAllCurrencies() {
+    setEnablingAll(true);
+    setEnableAllMessage('');
+    try {
+      const res = await apiEnableAllCurrencies();
+      setEnableAllMessage(
+        res.data.added.length > 0
+          ? `Enabled ${res.data.added.length} new currencies. They'll get a real rate on the next FX refresh.`
+          : 'Every real currency was already enabled.',
+      );
+      await load();
+    } catch (err) {
+      setEnableAllMessage(err instanceof Error ? err.message : 'Failed to enable all currencies.');
+    } finally {
+      setEnablingAll(false);
+    }
+  }
 
   async function toggleAutoRefresh(value: boolean) {
     if (!fxConfig) return;
@@ -173,7 +285,28 @@ export function AdminFxSettings() {
           )}
         </div>
 
-        <OverrideForm onDone={load} />
+        <OverrideForm currencies={currencies.map(c => c.code)} onDone={load} />
+
+        <div className="bg-white border border-bone rounded-[10px] px-5 py-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <p className="text-[13px] font-bold text-carbon flex items-center gap-2"><Globe2 size={15} className="text-slate" /> Enabled Currencies</p>
+              <p className="text-[11px] text-slate mt-[2px]">
+                {loading ? 'Loading…' : `${currencies.length} of 152 real ISO-4217 currencies enabled for checkout/settlement.`}
+              </p>
+            </div>
+            <Button variant="primary" size="sm" loading={enablingAll} onClick={enableAllCurrencies}>Enable All Currencies</Button>
+          </div>
+          {enableAllMessage && <p className="text-[12px] text-slate mt-2">{enableAllMessage}</p>}
+          {currencies.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {currencies.map(c => (
+                <span key={c.code} className="px-2 py-[3px] rounded-md bg-bone/60 text-[11px] font-medium text-charcoal border border-bone">{c.code}</span>
+              ))}
+            </div>
+          )}
+          <AddCurrencyForm existing={currencies.map(c => c.code)} onDone={load} />
+        </div>
 
         {fxConfig && (
           <div className="bg-white border border-bone rounded-[10px] px-5 py-4 flex items-center justify-between">
