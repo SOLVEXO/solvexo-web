@@ -10,6 +10,7 @@ import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { TokenStorage, apiLogout } from '@/api/services/auth';
 import { resolveSellerDestinationRemote } from '@/utils/sellerRouting';
 import { useNotification } from '@/contexts/NotificationContext';
+import { apiGetUnreadCount } from '@/api/services/notifications';
 import { CopyIconButton } from './CopyIconButton';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -279,7 +280,32 @@ export function ProfileAvatar() {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { profile, loading } = useGetProfile();
-  const { unreadCount } = useNotification();
+  const { unreadCount: accountUnreadCount } = useNotification();
+  // A seller landing here has a specific store waiting behind "My Store" /
+  // this bell — showing the sum across every store they own would be a
+  // confusing, un-actionable number on a page with no store context at all.
+  // Scope the badge to that same resolved store instead (falls back to the
+  // account-wide count for a buyer/admin, or until this resolves).
+  const [sellerStoreUnreadCount, setSellerStoreUnreadCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (profile?.role !== 'seller') { setSellerStoreUnreadCount(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const destination = await resolveSellerDestinationRemote();
+        const idMatch = destination.match(/^\/store\/([^/]+)/);
+        if (!idMatch) { if (!cancelled) setSellerStoreUnreadCount(null); return; }
+        const res = await apiGetUnreadCount(idMatch[1]);
+        if (!cancelled) setSellerStoreUnreadCount(res.data.unreadCount);
+      } catch {
+        if (!cancelled) setSellerStoreUnreadCount(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [profile?.role]);
+  const unreadCount = profile?.role === 'seller' && sellerStoreUnreadCount !== null
+    ? sellerStoreUnreadCount
+    : accountUnreadCount;
 
   const clearCloseTimer = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } };
   const scheduleClose = () => { clearCloseTimer(); closeTimer.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS); };

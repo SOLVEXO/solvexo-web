@@ -105,8 +105,8 @@ export function AtelierBlogPostPage() {
   }, [store.storeId]);
 
   useStorefrontSeo({
-    title: post ? post.title : 'Journal',
-    description: post?.excerpt || undefined,
+    title: post ? (post.seoTitle || post.title) : 'Journal',
+    description: (post?.seoDescription || post?.excerpt) || undefined,
     image: post?.coverImage || undefined,
   });
 
@@ -130,7 +130,13 @@ export function AtelierBlogPostPage() {
 
   return (
     <article className="mx-auto" style={{ maxWidth: '720px', padding: `48px ${t.layout.containerPadX}` }}>
-      {post.publishedAt && <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, marginBottom: '8px' }}>{new Date(post.publishedAt).toLocaleDateString()}</p>}
+      {(post.publishedAt || post.authorName) && (
+        <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: t.colors.inkMuted, marginBottom: '8px' }}>
+          {post.authorName && <span>By {post.authorName}</span>}
+          {post.authorName && post.publishedAt && <span> · </span>}
+          {post.publishedAt && new Date(post.publishedAt).toLocaleDateString()}
+        </p>
+      )}
       <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 600, color: t.colors.ink, lineHeight: 1.15, marginBottom: '20px' }}>{post.title}</h1>
       {post.coverImage && <img src={post.coverImage} alt={post.title} className="w-full object-cover" style={{ maxHeight: '440px', marginBottom: '28px' }} />}
       <div className="flex flex-col gap-5">

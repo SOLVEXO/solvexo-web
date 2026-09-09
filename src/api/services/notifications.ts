@@ -5,6 +5,7 @@ export interface NotificationItem {
   _id:           string;
   recipientId:   string;
   recipientRole: 'user' | 'seller';
+  storeId:       string | null;
   type:          string;
   title:         string;
   body:          string;
@@ -20,6 +21,8 @@ export interface ListNotificationsQuery {
   limit?:      number;
   unreadOnly?: boolean;
   type?:       string;
+  /** Scope to one store's own notifications — omit for the account-wide inbox across every store. */
+  storeId?:    string;
 }
 
 export interface ListNotificationsData {
@@ -61,12 +64,15 @@ export function apiListNotifications(query?: ListNotificationsQuery) {
   if (query?.limit) params.limit = String(query.limit);
   if (query?.unreadOnly !== undefined) params.unreadOnly = String(query.unreadOnly);
   if (query?.type) params.type = query.type;
+  if (query?.storeId) params.storeId = query.storeId;
 
   return client.get<never, ApiResponse<ListNotificationsData>>(ENDPOINTS.NOTIFICATIONS.LIST, { params });
 }
 
-export function apiGetUnreadCount() {
-  return client.get<never, ApiResponse<{ unreadCount: number }>>(ENDPOINTS.NOTIFICATIONS.UNREAD_COUNT);
+export function apiGetUnreadCount(storeId?: string) {
+  const params: Record<string, string> = {};
+  if (storeId) params.storeId = storeId;
+  return client.get<never, ApiResponse<{ unreadCount: number }>>(ENDPOINTS.NOTIFICATIONS.UNREAD_COUNT, { params });
 }
 
 export function apiGetPreferences() {
@@ -85,8 +91,10 @@ export function apiRemoveDeviceToken(fcmToken: string) {
   return client.delete<never, ApiResponse<{ message: string }>>(ENDPOINTS.NOTIFICATIONS.REMOVE_DEVICE_TOKEN, { data: { fcmToken } });
 }
 
-export function apiMarkAllNotificationsRead() {
-  return client.patch<never, ApiResponse<{ message: string }>>(ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ);
+export function apiMarkAllNotificationsRead(storeId?: string) {
+  const params: Record<string, string> = {};
+  if (storeId) params.storeId = storeId;
+  return client.patch<never, ApiResponse<{ message: string }>>(ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ, undefined, { params });
 }
 
 export function apiMarkNotificationRead(id: string) {

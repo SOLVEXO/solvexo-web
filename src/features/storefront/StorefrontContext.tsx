@@ -163,6 +163,7 @@ export interface StorefrontLinkSettings {
   url?:          string;
   categoryId?:   string;
   collectionId?: string;
+  productId?:    string;
 }
 
 /** Resolves a nav_link/footer-link/CTA block's link settings into a real
@@ -176,9 +177,11 @@ export interface StorefrontLinkSettings {
 export function resolveStorefrontLink(link: StorefrontLinkSettings): { to?: string; href?: string } {
   if (link.linkType === 'external') return { href: link.url };
   if (link.linkType === 'blog') return { to: `/blog` };
+  if (link.linkType === 'search') return { to: `/search` };
   if (link.linkType === 'page' && link.pageSlug) return { to: `/${link.pageSlug}` };
   if (link.linkType === 'category' && link.categoryId) return { to: `/category/${link.categoryId}` };
   if (link.linkType === 'collection' && link.collectionId) return { to: `/collections/${link.collectionId}` };
+  if (link.linkType === 'product' && link.productId) return { to: `/product/${link.productId}` };
   return { to: `/` }; // 'home' (and any unrecognized/incomplete fallback)
 }
 

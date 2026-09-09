@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Image as ImageIcon, Upload, Search, Trash2, Loader2, AlertTriangle, Video } from 'lucide-react';
+import { Image as ImageIcon, Upload, Search, Trash2, Loader2, AlertTriangle, Video, FileText as FileIcon, Copy, Check } from 'lucide-react';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { SkeletonBox, EmptyState, Modal } from '@/components/comman/ui';
 import { Button } from '@/components/comman/ui/Button';
@@ -27,6 +27,17 @@ function AssetDetailModal({ asset, storeId, onClose, onSaved, onDeleted }: {
   const [usage, setUsage] = useState<MediaAssetUsage[] | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(asset.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error('Could not copy the link — copy it from the address bar instead.');
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -74,11 +85,18 @@ function AssetDetailModal({ asset, storeId, onClose, onSaved, onDeleted }: {
         <div className="rounded-lg overflow-hidden border border-bone bg-cream max-h-[280px] flex items-center justify-center">
           {asset.resourceType === 'video'
             ? <video src={asset.url} controls className="max-h-[280px] max-w-full" />
-            : <img src={asset.url} alt={asset.altText} className="max-h-[280px] max-w-full object-contain" />}
+            : asset.resourceType === 'image'
+            ? <img src={asset.url} alt={asset.altText} className="max-h-[280px] max-w-full object-contain" />
+            : <div className="flex flex-col items-center gap-2 py-14"><FileIcon size={36} className="text-slate" /><span className="text-[11.5px] text-slate">No preview available</span></div>}
         </div>
         <p className="text-[11px] text-slate">
           {asset.width && asset.height ? `${asset.width}×${asset.height} · ` : ''}{formatSize(asset.sizeBytes)}{asset.mimeType ? ` · ${asset.mimeType}` : ''}
         </p>
+
+        <button type="button" onClick={handleCopyUrl}
+          className="flex items-center gap-1.5 self-start px-2.5 py-1.5 rounded-lg text-[12px] font-semibold text-charcoal bg-cream border border-bone cursor-pointer hover:bg-bone/60 transition-colors">
+          {copied ? <><Check size={13} className="text-success" /> Copied</> : <><Copy size={13} /> Copy URL</>}
+        </button>
 
         <div>
           <label className="text-[12px] font-medium text-charcoal block mb-1.5">Alt text</label>
@@ -140,9 +158,10 @@ export default function FilesLibrary() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'image' | 'video' | undefined>(undefined);
+  const [typeFilter, setTypeFilter] = useState<'image' | 'video' | 'raw' | undefined>(undefined);
   const [uploading, setUploading] = useState(false);
   const [selected, setSelected] = useState<MediaAsset | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(() => {
@@ -167,6 +186,12 @@ export default function FilesLibrary() {
       .finally(() => setUploading(false));
   };
 
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragOver(false);
+    handleUpload(e.dataTransfer.files);
+  };
+
   return (
     <>
       <StorePageHeader
@@ -178,9 +203,19 @@ export default function FilesLibrary() {
           </Button>
         }
       />
-      <input ref={fileRef} type="file" multiple accept="image/*,video/*" className="hidden" onChange={e => { handleUpload(e.target.files); e.target.value = ''; }} />
+      <input ref={fileRef} type="file" multiple accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip" className="hidden" onChange={e => { handleUpload(e.target.files); e.target.value = ''; }} />
 
-      <div className="px-4 lg:px-7 pt-5 pb-8">
+      <div
+        className="px-4 lg:px-7 pt-5 pb-8 relative"
+        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+      >
+        {dragOver && (
+          <div className="absolute inset-4 lg:inset-7 z-10 rounded-2xl border-2 border-dashed border-brand-orange bg-brand-pale-orange/70 flex items-center justify-center pointer-events-none">
+            <p className="text-[14px] font-bold text-brand-deep-orange flex items-center gap-2"><Upload size={16} /> Drop files to upload</p>
+          </div>
+        )}
         <div className="flex items-center gap-2 mb-4">
           <div className="relative flex-1 max-w-[320px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate" />
@@ -188,10 +223,10 @@ export default function FilesLibrary() {
               className="w-full pl-9 pr-3 py-2 text-[13px] border border-bone rounded-lg outline-none text-charcoal bg-white" />
           </div>
           <div className="flex gap-1">
-            {(['all', 'image', 'video'] as const).map(t => (
+            {(['all', 'image', 'video', 'raw'] as const).map(t => (
               <button key={t} type="button" onClick={() => setTypeFilter(t === 'all' ? undefined : t)}
                 className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold border cursor-pointer ${((t === 'all' && !typeFilter) || t === typeFilter) ? 'border-brand-orange bg-brand-pale-orange text-brand-deep-orange' : 'border-bone bg-white text-slate'}`}>
-                {t === 'all' ? 'All' : t === 'image' ? 'Images' : 'Videos'}
+                {t === 'all' ? 'All' : t === 'image' ? 'Images' : t === 'video' ? 'Videos' : 'Files'}
               </button>
             ))}
           </div>
@@ -205,7 +240,7 @@ export default function FilesLibrary() {
           <EmptyState
             icon={<ImageIcon size={28} className="text-brand-orange opacity-55" />}
             title={search ? 'No matches' : 'No files yet'}
-            description={search ? 'Try a different search term.' : 'Upload images and videos here to reuse them across your Theme, products, and pages.'}
+            description={search ? 'Try a different search term.' : 'Drag and drop, or upload images, videos, and documents here to reuse them across your Theme, products, and pages.'}
             action={search ? undefined : { label: 'Upload files', onClick: () => fileRef.current?.click(), icon: <Upload size={14} /> }}
           />
         ) : (
@@ -215,8 +250,10 @@ export default function FilesLibrary() {
                 className="group relative aspect-square rounded-lg overflow-hidden border border-bone hover:border-brand-orange transition-colors bg-cream text-left">
                 {item.resourceType === 'video' ? (
                   <div className="w-full h-full flex items-center justify-center"><Video size={24} className="text-slate" /></div>
-                ) : (
+                ) : item.resourceType === 'image' ? (
                   <img src={item.url} alt={item.altText} className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center"><FileIcon size={24} className="text-slate" /></div>
                 )}
                 <span className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[10px] px-2 py-1 truncate opacity-0 group-hover:opacity-100 transition-opacity">
                   {item.filename || 'Untitled'}

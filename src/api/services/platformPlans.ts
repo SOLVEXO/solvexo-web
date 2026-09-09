@@ -18,10 +18,16 @@ export interface PlatformPlanLimits {
 export interface PlatformPlan {
   _id: string; name: string; description: string | null; badge: string | null;
   sortOrder: number; isFree: boolean; isCustomPricing: boolean;
-  monthlyPriceUSD: number | null; yearlyPriceUSD: number | null; trialDays: number;
+  monthlyPriceUSD: number | null; yearlyPriceUSD: number | null;
+  /** @deprecated no longer read anywhere — trial duration is platform-wide now, see PublicTrialSettings/apiGetPublicTrialSettings. */
+  trialDays: number;
   featureBullets: string[]; limits: PlatformPlanLimits;
   status: 'active' | 'archived'; isPubliclyVisible: boolean; createdAt: string; updatedAt: string;
   subscriberCount?: number; mrrUSD?: number;
+  /** Shopify-style "$1/mo for 3 months, then full price" — monthly billing only. */
+  introOfferEnabled: boolean;
+  introPriceUSD: number | null;
+  introDurationCycles: number | null;
 }
 
 export type AddonType = 'extra_ai_credits' | 'extra_staff_seat' | 'priority_marketplace_placement' | 'advanced_tax_compliance' | 'sms_notifications';
@@ -41,11 +47,13 @@ export interface PlatformPlanInvoice {
 }
 
 export interface StorePlatformSubscription {
-  _id: string; storeId: string; platformPlanId: string; billingInterval: 'monthly' | 'yearly';
-  amountUSD: number; status: string; trialEndsAt: string | null; currentPeriodEnd: string; nextBillingDate: string;
+  // Null while trialing — see PlatformTrialSettings; trial is not attached
+  // to any plan (never "the Pro plan's trial").
+  _id: string; storeId: string; platformPlanId: string | null; billingInterval: 'monthly' | 'yearly';
+  amountUSD: number; status: string; startedAt: string; trialEndsAt: string | null; currentPeriodEnd: string; nextBillingDate: string;
   cancelAtPeriodEnd: boolean; cancelReason: string | null; failedPaymentAttempts: number;
   creditBalanceUSD: number; stripeCustomerId: string | null;
-  plan?: PlatformPlan;
+  plan?: PlatformPlan | null;
 }
 
 export interface PlanChangePreview {
@@ -55,6 +63,8 @@ export interface PlanChangePreview {
   remainingDaysInCurrentPeriod: number;
   unusedCreditFromCurrentPlanUSD: number; existingCreditBalanceUSD: number; totalCreditAppliedUSD: number;
   amountDueTodayUSD: number; creditAppliedToBalanceUSD: number; effectiveImmediately: boolean;
+  /** Only populated for a downgrade — usage that already exceeds the target plan's limit. Nothing is ever deleted; this is purely a heads-up before confirming. */
+  usageWarnings: { label: string; used: number; newLimit: number }[];
 }
 
 export interface EntitlementsSummary {
@@ -77,6 +87,16 @@ interface ApiResponse<T> { success: boolean; message?: string; data: T }
 // ── Public ────────────────────────────────────────────────────────────────────
 export function apiBrowsePlatformPlans() {
   return client.get<never, ApiResponse<PlatformPlan[]>>(`${BASE}/public`);
+}
+
+export interface PublicTrialSettings {
+  enabled: boolean;
+  durationDays: number;
+}
+
+/** Public, unauthenticated — onboarding's "your free N-day trial" copy reads this instead of a hardcoded number. */
+export function apiGetPublicTrialSettings() {
+  return client.get<never, ApiResponse<PublicTrialSettings>>(`${BASE}/public/trial-settings`);
 }
 
 // ── Seller ────────────────────────────────────────────────────────────────────
@@ -144,8 +164,15 @@ export function apiGetStoreInvoices(storeId: string, query: { page?: number; lim
   );
 }
 
-export function apiChangePlatformPlan(storeId: string, newPlatformPlanId: string, newBillingInterval: 'monthly' | 'yearly') {
-  return client.patch<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/${storeId}/change-plan`, { newPlatformPlanId, newBillingInterval });
+/**
+ * `billImmediately` — the confirmed Solvexo trial model: trial and a paid
+ * plan never run concurrently. Every "Choose a plan" action in this app
+ * (mid-trial or at trial-end) passes `true` here so a real charge happens
+ * right now and the trial ends immediately, never a "pick now, pay when the
+ * trial ends" deferred commitment.
+ */
+export function apiChangePlatformPlan(storeId: string, newPlatformPlanId: string, newBillingInterval: 'monthly' | 'yearly', billImmediately = true) {
+  return client.patch<never, ApiResponse<StorePlatformSubscription>>(`${BASE}/${storeId}/change-plan`, { newPlatformPlanId, newBillingInterval, billImmediately });
 }
 
 /** Exact proration math for a would-be plan change — no charge, no write. Call this before showing a confirm dialog. */
@@ -186,10 +213,29 @@ export interface CreatePlatformPlanPayload {
   isFree?: boolean; isCustomPricing?: boolean; monthlyPriceUSD?: number; yearlyPriceUSD?: number;
   trialDays?: number; featureBullets?: string[]; limits: PlatformPlanLimits;
   isPubliclyVisible?: boolean;
+  introOfferEnabled?: boolean; introPriceUSD?: number; introDurationCycles?: number;
 }
 
 export function apiAdminCreatePlatformPlan(payload: CreatePlatformPlanPayload) {
   return client.post<never, ApiResponse<PlatformPlan>>(`${BASE}/admin`, payload);
+}
+
+// ── Trial Settings (admin) — the one platform-wide "Solvexo Free Trial" policy, separate from any Plan ──
+
+export interface TrialSettings extends PublicTrialSettings {
+  _id: string;
+  paymentMethodRequired: boolean;
+  eligibility: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function apiAdminGetTrialSettings() {
+  return client.get<never, ApiResponse<TrialSettings>>(`${BASE}/admin/trial-settings`);
+}
+
+export function apiAdminUpdateTrialSettings(payload: { enabled?: boolean; durationDays?: number; paymentMethodRequired?: boolean }) {
+  return client.patch<never, ApiResponse<TrialSettings>>(`${BASE}/admin/trial-settings`, payload);
 }
 
 export function apiAdminListPlatformPlans(includeArchived = false) {

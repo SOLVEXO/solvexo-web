@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Eye, EyeOff, ExternalLink, UploadCloud, RotateCcw, Undo2, Redo2, History } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ExternalLink, UploadCloud, RotateCcw, Undo2, Redo2, History, Settings } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { useStoreWorkspace, StorePageHeader } from '@/components/layouts/StoreLayout';
 import { SkeletonBox } from '@/components/comman/ui';
@@ -10,9 +10,10 @@ import {
   apiListStorePageVersions, apiRestoreStorePageVersion,
   type StorePageData, type StorePageVersionData,
 } from '@/api/services/storePages';
-import type { Section } from '@/api/services/storefrontTypes';
+import type { Section, SectionType } from '@/api/services/storefrontTypes';
 import { PagesList } from '../builder/PagesList';
 import { PageSectionsEditor } from '../builder/PageSectionsEditor';
+import { PageSettingsModal } from '../builder/PageSettingsModal';
 import { ConfirmDialog } from '../builder/ConfirmDialog';
 import { VersionHistoryModal } from '../builder/VersionHistoryModal';
 import { useEditorState } from '../builder/editor/useEditorState';
@@ -70,6 +71,20 @@ export function PagesPage() {
       .catch(() => {});
   }, [storeId]);
   const supportedSectionTypes = getThemePreviewComponents(themeDefinitionId, DEFAULT_THEME_ID).supportedSectionTypes;
+  // A CUSTOM page (About Us, Shipping Policy, ...) is rendered on the live
+  // storefront by AtelierCustomPage/NovaCustomPage, which — by design, same
+  // as Shopify's own "Pages" resource — only ever shows a page's `rich_text`
+  // sections; every other section type on a custom page is invisible to
+  // buyers. The Home page, in contrast, renders through the full
+  // AtelierSectionRenderer/NovaSectionRenderer and genuinely supports every
+  // theme section. Previously this "Add a Section" picker offered the same
+  // full theme-supported catalogue for BOTH page types, so a seller editing
+  // a custom page could add a Hero/Testimonials/etc. section, save it,
+  // publish it — and have it silently render as nothing on their live
+  // store. Restrict the picker to what the selected page type can actually
+  // display, so what a seller adds here always matches what buyers see.
+  const effectiveSupportedSectionTypes: SectionType[] | undefined =
+    selectedPage?.type === 'custom' ? (['rich_text'] as SectionType[]) : supportedSectionTypes;
 
   const loadPages = useCallback(() => {
     setPagesLoading(true);
@@ -256,6 +271,11 @@ export function PagesPage() {
     }
   };
 
+  // Title/slug rename + SEO + nav/footer visibility — all fully supported
+  // by `apiUpdateStorePage` on the backend already, just never surfaced
+  // anywhere in this UI until now (see PageSettingsModal's own doc comment).
+  const [showPageSettings, setShowPageSettings] = useState(false);
+
   const pagesEditorBusy = pagesEditor.phase === 'saving' || pagesEditor.phase === 'publishing' || discardingPageDraft;
   useUndoRedoShortcuts(pagesEditor.undo, pagesEditor.redo, true);
 
@@ -343,6 +363,14 @@ export function PagesPage() {
                   </button>
                   <SaveButton onClick={handleSaveSections} saving={pagesEditor.phase === 'saving'} label="Save Changes" />
                   <button
+                    onClick={() => setShowPageSettings(true)}
+                    title="Page settings — title, URL, SEO, nav/footer visibility"
+                    aria-label="Page settings"
+                    className="flex items-center justify-center w-9 h-9 rounded-[10px] border border-bone bg-white text-charcoal hover:bg-cream cursor-pointer transition-colors"
+                  >
+                    <Settings size={15} />
+                  </button>
+                  <button
                     onClick={pagesEditor.undo}
                     disabled={!pagesEditor.canUndo}
                     title="Undo (Ctrl/Cmd+Z)"
@@ -371,7 +399,7 @@ export function PagesPage() {
                   )}
                 </div>
               </div>
-              <PageSectionsEditor sections={pagesEditor.workingCopy ?? []} onChange={pagesEditor.edit} onPersist={persistSections} pageOptions={pageOptions} storeId={storeId} supportedSectionTypes={supportedSectionTypes} colorSchemes={colorSchemes} />
+              <PageSectionsEditor sections={pagesEditor.workingCopy ?? []} onChange={pagesEditor.edit} onPersist={persistSections} pageOptions={pageOptions} storeId={storeId} supportedSectionTypes={effectiveSupportedSectionTypes} colorSchemes={colorSchemes} />
             </>
           ) : (
             <div className="bg-white border border-bone rounded-2xl p-10 text-center">
@@ -380,6 +408,15 @@ export function PagesPage() {
           )}
         </div>
       </div>
+
+      {showPageSettings && selectedPage && (
+        <PageSettingsModal
+          page={selectedPage}
+          storeId={storeId}
+          onClose={() => setShowPageSettings(false)}
+          onSaved={next => setPages(prev => prev.map(p => p._id === next._id ? next : p))}
+        />
+      )}
 
       <VersionHistoryModal
         title="Page Version History"

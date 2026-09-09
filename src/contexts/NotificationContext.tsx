@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { io } from 'socket.io-client';
 import { TokenStorage } from '@/api/services/auth';
 import {
@@ -29,6 +29,15 @@ interface NotificationContextValue {
   updatePreferences: (dto: Partial<NotificationPreferenceFlags> & { pushEnabled?: boolean; emailEnabled?: boolean }) => Promise<void>;
   toast:         NotificationItem | null;
   clearToast:    () => void;
+  /**
+   * The store currently "in view" — set by the store dashboard (see
+   * `useNotificationStoreScope`), null everywhere else (cross-store seller
+   * pages, the public website). While set, every read here (list/unread
+   * count/mark-all-read) is scoped to just that store's own notifications
+   * instead of the seller's full cross-store inbox.
+   */
+  activeStoreId: string | null;
+  setActiveStoreId: (storeId: string | null) => void;
 }
 
 const NotificationCtx = createContext<NotificationContextValue | null>(null);
@@ -39,19 +48,40 @@ export function useNotification(): NotificationContextValue {
   return ctx;
 }
 
+/**
+ * Scopes the shared notification bell/inbox to one store for as long as the
+ * calling component is mounted — call once, near the top of a store
+ * workspace (e.g. `StoreWorkspaceProvider`). Automatically un-scopes back to
+ * the account-wide view (every store) on unmount, so leaving the store's
+ * dashboard restores the normal cross-store bell everywhere else in the app
+ * (the seller-wide `/seller/*` pages, the public website's profile dropdown).
+ */
+export function useNotificationStoreScope(storeId: string | null): void {
+  const { setActiveStoreId } = useNotification();
+  useEffect(() => {
+    setActiveStoreId(storeId || null);
+    return () => setActiveStoreId(null);
+  }, [storeId, setActiveStoreId]);
+}
+
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount,   setUnreadCount]   = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [preferences,   setPreferences]   = useState<NotificationPreferenceData | null>(null);
   const [toast,         setToast]         = useState<NotificationItem | null>(null);
+  const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
+  // Read inside socket callbacks (registered once, on mount) without making
+  // the socket effect below re-run/reconnect on every store switch.
+  const activeStoreIdRef = useRef<string | null>(null);
+  activeStoreIdRef.current = activeStoreId;
 
   const clearToast = useCallback(() => setToast(null), []);
 
-  const fetchUnreadCount = useCallback(async () => {
+  const fetchUnreadCount = useCallback(async (storeId?: string | null) => {
     if (!TokenStorage.isLoggedIn()) return;
     try {
-      const res = await apiGetUnreadCount();
+      const res = await apiGetUnreadCount(storeId ?? undefined);
       setUnreadCount(res.data.unreadCount);
     } catch {
       // Ignore count fetch errors
@@ -62,7 +92,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     if (!TokenStorage.isLoggedIn()) return;
     setNotificationsLoading(true);
     try {
-      const res = await apiListNotifications({ unreadOnly, limit: 50 });
+      const res = await apiListNotifications({ unreadOnly, limit: 50, storeId: activeStoreId ?? undefined });
       setNotifications(res.data?.items ?? []);
       setUnreadCount(res.data?.unreadCount ?? 0);
     } catch {
@@ -70,7 +100,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     } finally {
       setNotificationsLoading(false);
     }
-  }, []);
+  }, [activeStoreId]);
 
   const fetchPreferences = useCallback(async () => {
     if (!TokenStorage.isLoggedIn()) return;
@@ -96,15 +126,24 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const markAllAsRead = useCallback(async () => {
     try {
-      await apiMarkAllNotificationsRead();
+      await apiMarkAllNotificationsRead(activeStoreId ?? undefined);
+      // Scoped to the active store — only mark that store's items as read
+      // locally too, so a background cross-store item doesn't get silently
+      // marked read by an action taken while viewing a different store.
       setNotifications(prev =>
-        prev.map(item => ({ ...item, isRead: true, readAt: new Date().toISOString() }))
+        prev.map(item => (!activeStoreId || item.storeId === activeStoreId)
+          ? { ...item, isRead: true, readAt: new Date().toISOString() }
+          : item)
       );
-      setUnreadCount(0);
+      if (activeStoreId) {
+        await fetchUnreadCount(activeStoreId);
+      } else {
+        setUnreadCount(0);
+      }
     } catch {
       // Ignore errors
     }
-  }, []);
+  }, [activeStoreId, fetchUnreadCount]);
 
   const deleteNotification = useCallback(async (id: string) => {
     try {
@@ -152,17 +191,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Fetch initial stats when logged in
+  // Fetch initial stats when logged in, and again whenever the active store
+  // scope changes (e.g. the seller switches stores via the dashboard's store
+  // switcher, or navigates into/out of a store's own workspace).
   useEffect(() => {
     if (TokenStorage.isLoggedIn()) {
-      fetchUnreadCount();
+      fetchUnreadCount(activeStoreId);
       fetchPreferences();
     } else {
       setNotifications([]);
       setUnreadCount(0);
       setPreferences(null);
     }
-  }, [fetchUnreadCount, fetchPreferences]);
+  }, [fetchUnreadCount, fetchPreferences, activeStoreId]);
 
   // Real-time Sockets
   useEffect(() => {
@@ -180,10 +221,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     });
 
     socket.on('notification:unread-count', (data: { unreadCount: number }) => {
-      setUnreadCount(data.unreadCount);
+      // This push is always the recipient's account-wide total across every
+      // store — only trust it while unscoped. While a store scope is active,
+      // `notification:new` below increments the scoped count locally instead.
+      if (!activeStoreIdRef.current) setUnreadCount(data.unreadCount);
     });
 
     socket.on('notification:new', (notification: NotificationItem) => {
+      const scope = activeStoreIdRef.current;
+      if (scope && notification.storeId !== scope) return;
       setNotifications(prev => [notification, ...prev]);
       setUnreadCount(prev => prev + 1);
       setToast(notification);
@@ -210,6 +256,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         updatePreferences: updatePrefs,
         toast,
         clearToast,
+        activeStoreId,
+        setActiveStoreId,
       }}
     >
       {children}

@@ -368,6 +368,18 @@ export function NovaCheckoutPage() {
   const total = Math.max(0, orderSubtotal + (isDigital ? 0 : shipping) + tax - couponDiscount - giftCardDiscount);
   const currency = checkout?.currency ?? store.baseCurrency ?? 'USD';
   const symbol = currencySymbol(currency);
+  // Order Summary's line items must read from the SAME source/currency as
+  // Subtotal/Shipping/Total above (`symbol`, from `currency`) — before a
+  // Checkout exists that's the cart (`CartItem.currency` is only a "display
+  // snapshot at add-to-cart time", per its own doc comment); once a real
+  // Checkout is created, `checkout.items[].totalPrice` is the authoritative,
+  // already-converted-to-`checkout.currency` figure. Previously this block
+  // rendered from `cartItems` + `currencySymbol(item.currency)` even after a
+  // Checkout existed, which is what produced a "$" line item next to a "Rs"
+  // Subtotal/Shipping/Total on the same page.
+  const summaryLineItems = checkout
+    ? checkout.items.map(i => ({ key: i.variantId, name: i.name, quantity: i.quantity, amount: i.totalPrice }))
+    : cartItems.map(i => ({ key: i.productVariantId, name: i.name, quantity: i.quantity, amount: i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity }));
 
   if (!loggedIn) {
     return <Navigate to={`/login?redirect=${encodeURIComponent('/checkout')}`} replace />;
@@ -575,10 +587,10 @@ export function NovaCheckoutPage() {
         <div className="flex flex-col gap-4" style={{ border: `1.5px solid ${t.colors.border}`, borderRadius: t.radius.md, padding: '22px' }}>
           <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 700, color: t.colors.ink }}>Order Summary</p>
           <div className="flex flex-col gap-2">
-            {cartItems.map(item => (
-              <div key={item.productVariantId} className="flex justify-between gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12.5px' }}>
+            {summaryLineItems.map(item => (
+              <div key={item.key} className="flex justify-between gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12.5px' }}>
                 <span className="truncate" style={{ color: t.colors.inkMuted }}>{item.name} ×{item.quantity}</span>
-                <span className="shrink-0" style={{ color: t.colors.ink }}>{currencySymbol(item.currency)}{fmt2(item.itemTotal ?? (item.unitPrice ?? item.price ?? 0) * item.quantity)}</span>
+                <span className="shrink-0" style={{ color: t.colors.ink }}>{symbol}{fmt2(item.amount)}</span>
               </div>
             ))}
           </div>

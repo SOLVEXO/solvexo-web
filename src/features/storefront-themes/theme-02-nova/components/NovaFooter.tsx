@@ -1,9 +1,17 @@
 import { Link } from 'react-router-dom';
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Link2 } from 'lucide-react';
 import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 import { apiSubscribeNewsletter } from '@/api/services/newsletter';
+import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { novaTheme as t } from '../theme.config';
+
+const POLICY_LABELS: Record<string, string> = {
+  privacy_policy: 'Privacy Policy',
+  terms_of_service: 'Terms of Service',
+  refund_policy: 'Refund Policy',
+  shipping_policy: 'Shipping Policy',
+};
 
 /** Theme 02's own footer — bold indigo-tinted panel rather than Atelier's
  *  near-black one, same real functional content: the identity column and
@@ -15,6 +23,19 @@ export function NovaFooter() {
   const { store, theme, resolveLink } = useStorefront();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  // Real, previously-unwired data: `showInFooter`/`policyType` have existed
+  // on StorePage (and been editable from Page Settings) with no consumer
+  // anywhere — a seller could tag their Privacy Policy page and toggle "Show
+  // in footer" and nothing would ever change on the live storefront. This is
+  // that missing consumer: any page flagged `showInFooter` (not just
+  // policy-tagged ones) gets a real link in a small legal row under the
+  // copyright line, same place Shopify puts its auto-linked policies.
+  const [footerPages, setFooterPages] = useState<PublicPageSummary[]>([]);
+  useEffect(() => {
+    apiListPublicStorePages(store.storeId)
+      .then(res => setFooterPages(res.data.filter(p => p.showInFooter)))
+      .catch(() => setFooterPages([]));
+  }, [store.storeId]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -130,12 +151,28 @@ export function NovaFooter() {
       </div>
 
       <div style={{ borderTop: '1px solid #2E2A4F' }}>
-        <p
-          className="mx-auto text-center"
-          style={{ maxWidth: t.layout.maxWidth, padding: `18px ${t.layout.containerPadX}`, fontFamily: t.fonts.body, fontSize: '12px', color: '#847EA8' }}
+        <div
+          className="mx-auto flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center"
+          style={{ maxWidth: t.layout.maxWidth, padding: `18px ${t.layout.containerPadX}` }}
         >
-          {copyrightBlock?.settings.text || `© ${new Date().getFullYear()} ${store.name}. All rights reserved.`}
-        </p>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: '#847EA8' }}>
+            {copyrightBlock?.settings.text || `© ${new Date().getFullYear()} ${store.name}. All rights reserved.`}
+          </p>
+          {footerPages.length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1">
+              {footerPages.map(p => (
+                <Link
+                  key={p._id}
+                  to={`/${p.slug}`}
+                  className="no-underline"
+                  style={{ fontFamily: t.fonts.body, fontSize: '12px', color: '#ABA6C9' }}
+                >
+                  {(p.policyType && POLICY_LABELS[p.policyType]) || p.title}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </footer>
   );

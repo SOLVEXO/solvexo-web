@@ -18,6 +18,11 @@ export interface BlogPostData {
   slug:        string;
   coverImage:  string | null;
   excerpt:     string;
+  /** Shown as the article's byline. Empty string = not set. */
+  authorName:  string;
+  /** Search-engine listing overrides — null falls back to `title`/`excerpt` on render, same convention as StorePage's `seo` block. */
+  seoTitle:       string | null;
+  seoDescription: string | null;
   content:     Block[];
   status:      BlogPostStatus;
   publishedAt: string | null;
@@ -35,6 +40,7 @@ export interface BlogPostSummary {
   excerpt:     string;
   tags:        string[];
   publishedAt: string | null;
+  authorName?: string;
 }
 
 export interface PaginatedBlogPosts {
@@ -94,11 +100,11 @@ export function apiGetBlogPost(storeId: string, postId: string) {
   return client.get<never, ApiResponse<BlogPostData>>(ENDPOINTS.STORE_BLOG.GET(storeId, postId));
 }
 
-export function apiCreateBlogPost(storeId: string, payload: { title: string; slug: string; excerpt?: string; coverImage?: string; blogId?: string }) {
+export function apiCreateBlogPost(storeId: string, payload: { title: string; slug: string; excerpt?: string; coverImage?: string; blogId?: string; authorName?: string; seoTitle?: string; seoDescription?: string }) {
   return client.post<never, ApiResponse<BlogPostData>>(ENDPOINTS.STORE_BLOG.CREATE(storeId), payload);
 }
 
-export function apiUpdateBlogPost(storeId: string, postId: string, payload: Partial<{ title: string; slug: string; excerpt: string; coverImage: string; tags: string[] }>) {
+export function apiUpdateBlogPost(storeId: string, postId: string, payload: Partial<{ title: string; slug: string; excerpt: string; coverImage: string; tags: string[]; authorName: string; seoTitle: string; seoDescription: string }>) {
   return client.patch<never, ApiResponse<BlogPostData>>(ENDPOINTS.STORE_BLOG.UPDATE(storeId, postId), payload);
 }
 

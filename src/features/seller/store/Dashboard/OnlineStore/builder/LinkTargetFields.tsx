@@ -3,13 +3,15 @@ import { Field } from '@/components/comman/ui';
 import { EntityPickerModal } from './EntityPickerModal';
 import { apiGetCategoryById } from '@/api/services/categories';
 import { apiGetCollection } from '@/api/services/collections';
+import { apiGetMyProductById } from '@/api/services/product';
 
 export interface LinkTarget {
-  linkType: 'home' | 'page' | 'blog' | 'external' | 'category' | 'collection';
+  linkType: 'home' | 'page' | 'blog' | 'search' | 'external' | 'category' | 'collection' | 'product';
   pageSlug?: string;
   url?: string;
   categoryId?: string;
   collectionId?: string;
+  productId?: string;
 }
 
 const inp = 'w-full px-3 py-2 text-[13px] border border-bone rounded-lg text-charcoal bg-white outline-none';
@@ -35,12 +37,14 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId }: {
       apiGetCategoryById(value.categoryId).then(res => setResolvedLabel(res.data.category.name)).catch(() => setBroken(true));
     } else if (value.linkType === 'collection' && value.collectionId) {
       apiGetCollection(storeId, value.collectionId).then(res => setResolvedLabel(res.data.name)).catch(() => setBroken(true));
+    } else if (value.linkType === 'product' && value.productId) {
+      apiGetMyProductById(value.productId).then(res => setResolvedLabel(res.data.product.name)).catch(() => setBroken(true));
     } else if (value.linkType === 'page' && value.pageSlug) {
       setBroken(!pageOptions.some(p => p.slug === value.pageSlug));
     } else if (value.linkType === 'external' && value.url) {
       setBroken(!/^https?:\/\//i.test(value.url));
     }
-  }, [value.linkType, value.categoryId, value.collectionId, value.pageSlug, value.url, storeId, pageOptions]);
+  }, [value.linkType, value.categoryId, value.collectionId, value.productId, value.pageSlug, value.url, storeId, pageOptions]);
 
   return (
     <div className="grid grid-cols-2 gap-2">
@@ -48,7 +52,9 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId }: {
         <select className={inp} value={value.linkType} onChange={e => onChange({ ...value, linkType: e.target.value as LinkTarget['linkType'] })}>
           <option value="home">Home page</option>
           <option value="blog">Blog</option>
+          <option value="search">Search results</option>
           <option value="page">A page…</option>
+          <option value="product">A product…</option>
           <option value="category">A category…</option>
           <option value="collection">A collection…</option>
           <option value="external">External URL</option>
@@ -67,14 +73,16 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId }: {
           <input className={inp} placeholder="https://…" value={value.url ?? ''} onChange={e => onChange({ ...value, url: e.target.value })} />
         </Field>
       )}
-      {(value.linkType === 'category' || value.linkType === 'collection') && (
-        <Field label={value.linkType === 'category' ? 'Category' : 'Collection'}>
+      {(value.linkType === 'category' || value.linkType === 'collection' || value.linkType === 'product') && (
+        <Field label={value.linkType === 'category' ? 'Category' : value.linkType === 'collection' ? 'Collection' : 'Product'}>
           <button type="button" onClick={() => setPickerOpen(true)}
             className={`w-full px-3 py-2 text-[13px] border rounded-lg text-left bg-white cursor-pointer hover:bg-cream transition-colors truncate ${broken ? 'border-error text-error' : 'border-bone text-charcoal'}`}>
             {broken ? '⚠ Broken link — choose again'
               : value.linkType === 'category'
               ? (value.categoryId ? (resolvedLabel || 'Selected') : 'Choose a category…')
-              : (value.collectionId ? (resolvedLabel || 'Selected') : 'Choose a collection…')}
+              : value.linkType === 'collection'
+              ? (value.collectionId ? (resolvedLabel || 'Selected') : 'Choose a collection…')
+              : (value.productId ? (resolvedLabel || 'Selected') : 'Choose a product…')}
           </button>
         </Field>
       )}
@@ -91,13 +99,18 @@ export function LinkTargetFields({ value, onChange, pageOptions, storeId }: {
         <EntityPickerModal
           open={pickerOpen}
           onClose={() => setPickerOpen(false)}
-          mode={value.linkType === 'category' ? 'categories' : 'collections'}
+          mode={value.linkType === 'category' ? 'categories' : value.linkType === 'collection' ? 'collections' : 'products'}
           storeId={storeId}
           multiple={false}
-          initialSelectedIds={value.linkType === 'category' ? (value.categoryId ? [value.categoryId] : []) : (value.collectionId ? [value.collectionId] : [])}
+          initialSelectedIds={
+            value.linkType === 'category' ? (value.categoryId ? [value.categoryId] : [])
+              : value.linkType === 'collection' ? (value.collectionId ? [value.collectionId] : [])
+              : (value.productId ? [value.productId] : [])
+          }
           onConfirm={(ids) => {
             if (value.linkType === 'category') onChange({ ...value, categoryId: ids[0] });
-            else onChange({ ...value, collectionId: ids[0] });
+            else if (value.linkType === 'collection') onChange({ ...value, collectionId: ids[0] });
+            else onChange({ ...value, productId: ids[0] });
             setPickerOpen(false);
           }}
         />

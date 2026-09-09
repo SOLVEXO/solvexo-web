@@ -22,7 +22,8 @@ export interface MediaAssetUsage { type: string; label: string }
 
 export interface ListMediaAssetsQuery {
   search?: string;
-  type?: 'image' | 'video';
+  /** 'raw' = anything that isn't an image or video (PDF, Word/Excel/PowerPoint, zip, plain text). */
+  type?: 'image' | 'video' | 'raw';
   tag?: string;
   page?: number;
   limit?: number;

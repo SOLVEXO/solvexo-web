@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { ArrowRight, Sparkles, User, Lock, Receipt, MessageSquare, Check, ChevronDown } from 'lucide-react';
+import { ArrowRight, Sparkles, User, Lock, Receipt, MessageSquare, ChevronDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useFaqs } from '@/hooks/useFaqs';
@@ -10,9 +10,8 @@ import { apiBrowsePlatformPlans, type PlatformPlan } from '@/api/services/platfo
 import { Reveal, RevealStagger } from '@/components/comman/motion/Reveal';
 import { MagneticButton } from '@/components/comman/motion/MagneticButton';
 import { SectionHeading } from '@/components/comman/motion/SectionHeading';
-import { PremiumCard } from '@/components/comman/motion/PremiumCard';
-import { AnimatedCounter } from '@/components/comman/motion/AnimatedCounter';
 import { Marquee } from '@/components/comman/motion/Marquee';
+import { PlanCard } from '@/components/comman/ui/PlanCard';
 
 const SERIF = "'Lora', Georgia, serif";
 
@@ -54,8 +53,8 @@ const FALLBACK_FAQS = [
     a: 'We accept all major credit cards (Visa, Mastercard, Amex), PayPal, Apple Pay, and bank transfer for annual plans.',
   },
   {
-    q: 'Is there a free trial on paid plans?',
-    a: 'Yes — both Professional and Business plans include a 14-day free trial with full access. No credit card required to start.',
+    q: 'Is there a free trial?',
+    a: "Yes — every new store gets a free trial with full platform access the moment it's created, no credit card required. Choose a plan whenever you're ready, during the trial or after it ends.",
   },
 ];
 
@@ -80,15 +79,6 @@ export function PricingPage() {
   const faqs = liveFaqs.length > 0
     ? liveFaqs.map(f => ({ q: f.question, a: f.answer }))
     : FALLBACK_FAQS;
-
-  // `yearlyPriceUSD` is the full annual charge (not a monthly-equivalent) — the
-  // toggle shows a per-month figure either way, with the real annual total below it.
-  const monthlyEquivalent = (plan: PlatformPlan): number =>
-    billing === 'annual'
-      ? Math.round((plan.yearlyPriceUSD ?? (plan.monthlyPriceUSD ?? 0) * 12) / 12)
-      : (plan.monthlyPriceUSD ?? 0);
-  const yearlyTotal = (plan: PlatformPlan): number =>
-    plan.yearlyPriceUSD ?? (plan.monthlyPriceUSD ?? 0) * 12;
 
   return (
     <div className="bg-cream min-h-full">
@@ -145,7 +135,9 @@ export function PricingPage() {
           A flex-wrap row (not a fixed 4-column grid) so however many real
           plans exist — 2 today, maybe more later — always sit centered as a
           deliberate row instead of left-aligned with a lopsided dead gap
-          where the missing columns would have been. ── */}
+          where the missing columns would have been. Card visuals live in the
+          shared `PlanCard` component (also used by onboarding's plan picker)
+          so the two can never visually drift apart. ── */}
       <RevealStagger className="flex flex-wrap justify-center gap-4 px-4 md:px-8 lg:px-12 pb-16 max-w-[1200px] mx-auto" step={0.1} y={22}>
         {plansLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
@@ -155,89 +147,17 @@ export function PricingPage() {
           <div className="text-center py-10 text-[13px] text-slate">
             Pricing is being updated — check back shortly, or <a href="mailto:support@solvexo.com" className="text-brand-orange underline">contact sales</a>.
           </div>
-        ) : plans.map(plan => {
-          const isFeatured = !!plan.badge;
-          return (
-            <PremiumCard
-              key={plan._id}
-              tone={isFeatured ? 'dark' : 'light'}
-              className={clsx('w-full sm:w-[300px] p-7', isFeatured && 'border-brand-orange!')}
-            >
-              {/* Badge */}
-              {plan.badge && (
-                <div className="absolute top-[-12px] left-1/2 -translate-x-1/2 bg-brand-orange text-white rounded-[20px] px-[14px] py-1 text-[11px] font-bold whitespace-nowrap">
-                  {plan.badge}
-                </div>
-              )}
-
-              {/* Plan name */}
-              <p className={clsx('text-[15px] font-bold mb-2', isFeatured ? 'text-white' : 'text-carbon')}>
-                {plan.name}
-              </p>
-              <p className={clsx('text-[11px] mb-5 leading-[1.5]', isFeatured ? 'text-[#b0aea8]' : 'text-slate')}>
-                {plan.description ?? ' '}
-              </p>
-
-              {/* Price */}
-              <div className="mb-6">
-                {plan.isCustomPricing ? (
-                  <p className={clsx('text-[28px] font-bold', isFeatured ? 'text-white' : 'text-carbon')}>Custom</p>
-                ) : plan.isFree ? (
-                  <p className={clsx('text-[36px] font-bold', isFeatured ? 'text-white' : 'text-carbon')}>Free</p>
-                ) : (
-                  <div className="flex items-baseline gap-1">
-                    <span className={clsx('text-[36px] font-bold', isFeatured ? 'text-brand-orange' : 'text-carbon')}>
-                      <AnimatedCounter value={monthlyEquivalent(plan)} format={n => `$${Math.round(n)}`} duration={0.8} />
-                    </span>
-                    <span className={clsx('text-[13px]', isFeatured ? 'text-[#b0aea8]' : 'text-slate')}>
-                      /month
-                    </span>
-                  </div>
-                )}
-                {billing === 'annual' && !plan.isFree && !plan.isCustomPricing && (
-                  <p className={clsx('text-[11px] mt-1', isFeatured ? 'text-brand-orange' : 'text-success')}>
-                    Billed ${yearlyTotal(plan)}/year
-                  </p>
-                )}
-                {plan.trialDays > 0 && !plan.isFree && !plan.isCustomPricing && (
-                  <p className={clsx('text-[11px] mt-1', isFeatured ? 'text-[#b0aea8]' : 'text-slate')}>
-                    {plan.trialDays}-day free trial
-                  </p>
-                )}
-              </div>
-
-              {/* CTA Button */}
-              <MagneticButton className="block mb-6">
-                <button
-                  onClick={() => plan.isCustomPricing
-                    ? (window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${plan.name} Plan Inquiry`)}`)
-                    : sellEntry.go()}
-                  className={clsx(
-                    'w-full py-[10px] rounded-lg text-[13px] font-semibold cursor-pointer flex justify-center transition-all duration-[180ms] border',
-                    isFeatured ? 'border-brand-orange bg-brand-orange text-white' : 'border-bone bg-transparent text-charcoal',
-                  )}
-                >
-                  {plan.isCustomPricing ? 'Contact Sales' : plan.isFree ? 'Start Free' : 'Start Free Trial'}
-                </button>
-              </MagneticButton>
-
-              {/* Divider */}
-              <div className={clsx('h-px mb-5', isFeatured ? 'bg-[rgba(255,255,255,0.1)]' : 'bg-bone')} />
-
-              {/* Features — admin-authored bullets for this plan */}
-              <div className="flex flex-col gap-[10px]">
-                {(plan.featureBullets ?? []).map(f => (
-                  <div key={f} className="flex gap-2 items-start">
-                    <Check size={13} className="text-success flex-shrink-0 mt-[1px]" />
-                    <span className={clsx('text-[12px] leading-[1.5]', isFeatured ? 'text-[#d0cec8]' : 'text-charcoal')}>
-                      {f}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </PremiumCard>
-          );
-        })}
+        ) : plans.map(plan => (
+          <PlanCard
+            key={plan._id}
+            plan={plan}
+            billing={billing === 'annual' ? 'annual' : 'monthly'}
+            ctaLabel={plan.isCustomPricing ? 'Contact Sales' : plan.isFree ? 'Start Free' : 'Start Free Trial'}
+            onCta={() => plan.isCustomPricing
+              ? (window.location.href = `mailto:support@solvexo.com?subject=${encodeURIComponent(`${plan.name} Plan Inquiry`)}`)
+              : sellEntry.go()}
+          />
+        ))}
       </RevealStagger>
 
       {/* ── Add-ons — a slow ambient marquee instead of a 6-up card grid,

@@ -1,9 +1,17 @@
 import { Link } from 'react-router-dom';
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Link2 } from 'lucide-react';
 import { useStorefront, type StorefrontLinkSettings } from '@/features/storefront/StorefrontContext';
 import { apiSubscribeNewsletter } from '@/api/services/newsletter';
+import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { atelierTheme as t } from '../theme.config';
+
+const POLICY_LABELS: Record<string, string> = {
+  privacy_policy: 'Privacy Policy',
+  terms_of_service: 'Terms of Service',
+  refund_policy: 'Refund Policy',
+  shipping_policy: 'Shipping Policy',
+};
 
 // lucide-react ships no brand/social icons in this version — every platform
 // uses the same generic link glyph rather than pulling in a second icon
@@ -20,6 +28,15 @@ export function AtelierFooter() {
   const { store, theme, resolveLink } = useStorefront();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  // Same fix as NovaFooter.tsx: `showInFooter`/`policyType` existed on
+  // StorePage (editable from Page Settings) with no storefront consumer —
+  // this wires those flagged pages into a real legal-links row.
+  const [footerPages, setFooterPages] = useState<PublicPageSummary[]>([]);
+  useEffect(() => {
+    apiListPublicStorePages(store.storeId)
+      .then(res => setFooterPages(res.data.filter(p => p.showInFooter)))
+      .catch(() => setFooterPages([]));
+  }, [store.storeId]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -127,12 +144,28 @@ export function AtelierFooter() {
       </div>
 
       <div style={{ borderTop: '1px solid #3A362F' }}>
-        <p
-          className="mx-auto text-center"
-          style={{ maxWidth: t.layout.maxWidth, padding: `18px ${t.layout.containerPadX}`, fontFamily: t.fonts.body, fontSize: '12px', color: '#8A8477' }}
+        <div
+          className="mx-auto flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center"
+          style={{ maxWidth: t.layout.maxWidth, padding: `18px ${t.layout.containerPadX}` }}
         >
-          {copyrightBlock?.settings.text || `© ${new Date().getFullYear()} ${store.name}. All rights reserved.`}
-        </p>
+          <p style={{ fontFamily: t.fonts.body, fontSize: '12px', color: '#8A8477' }}>
+            {copyrightBlock?.settings.text || `© ${new Date().getFullYear()} ${store.name}. All rights reserved.`}
+          </p>
+          {footerPages.length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1">
+              {footerPages.map(p => (
+                <Link
+                  key={p._id}
+                  to={`/${p.slug}`}
+                  className="no-underline"
+                  style={{ fontFamily: t.fonts.body, fontSize: '12px', color: '#8A8477' }}
+                >
+                  {(p.policyType && POLICY_LABELS[p.policyType]) || p.title}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </footer>
   );

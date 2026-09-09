@@ -174,6 +174,18 @@ const storefrontRouter = createBrowserRouter([
           { index: true, element: <ThemedRoute routeKey="home" /> },
           { path: 'blog', element: <ThemedRoute routeKey="blogIndex" /> },
           { path: 'blog/:postSlug', element: <ThemedRoute routeKey="blogPost" /> },
+          // A store can run more than one named blog (Blog.schema.ts's own
+          // "multiple blogs" concept — News, Recipes, ...), fully supported
+          // by the backend (`listPublic(storeId, blogSlug, ...)`) and by the
+          // seller's own BlogTab editor (`apiCreateBlog`) — but until these
+          // two routes existed, any blog past the auto-created default one
+          // had a working admin editor and a working public API, and no URL
+          // on the live storefront that would ever show its posts. Same
+          // `blogIndex`/`blogPost` components as above — they read
+          // `:blogSlug` from the URL themselves and just fall back to the
+          // default blog when it's absent (the routes right above this).
+          { path: 'blogs/:blogSlug', element: <ThemedRoute routeKey="blogIndex" /> },
+          { path: 'blogs/:blogSlug/:postSlug', element: <ThemedRoute routeKey="blogPost" /> },
           { path: 'cart', element: <ThemedRoute routeKey="cart" /> },
           { path: 'checkout', element: <ThemedRoute routeKey="checkout" /> },
           { path: 'checkout/:checkoutId/return', element: <ThemedRoute routeKey="checkoutReturn" /> },

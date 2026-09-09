@@ -418,7 +418,19 @@ export function AtelierCustomizePage() {
             </div>
 
             {scope !== 'theme' && (
-              <div className="flex items-center gap-2 shrink-0">
+              // `relative z-20`: this group sits in the same top-bar flex row
+              // as `StoreLayout`'s `<StoreSwitcher>` (its trigger has no
+              // z-index of its own, i.e. z-auto). The row to its left
+              // (scope/template selects, device icons, undo/redo/history)
+              // wraps internally on narrow/mid viewports — see the
+              // `flex-wrap` note above — which can push this button group's
+              // real hit-box to visually sit right where StoreSwitcher's
+              // trigger renders. Without an explicit higher stacking order,
+              // whichever element is later in paint order can win the click
+              // at that overlap, which is what let a click squarely on the
+              // visible "Publish" button open "Switch Store" instead of
+              // publishing. Publish/Save Draft/Discard must always win.
+              <div className="relative z-20 flex items-center gap-2 shrink-0">
                 {editor.hasUnpublishedChanges && (
                   <button onClick={handleDiscard} disabled={busy} className="flex items-center gap-1.5 px-3.5 py-[9px] rounded-[10px] text-[12.5px] font-semibold border border-bone bg-white text-charcoal cursor-pointer disabled:opacity-60">
                     <RotateCcw size={13} /> Discard Draft

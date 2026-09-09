@@ -6,11 +6,12 @@ import { motion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, BarChart2,
-  Settings, Sparkles, ChevronLeft, ChevronRight,
+  Settings, Sparkles, ChevronLeft, ChevronRight, ChevronDown,
   ClipboardList, Megaphone, Star, Plug, Search, Wallet,
   Truck, MessageSquare, FolderTree, RefreshCw, Undo2, CreditCard,
   PanelLeftClose, PanelLeftOpen, AlertTriangle, AlertCircle, XCircle, Clock, LogOut, Layers, Image as ImageIcon, FileText,
-  LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, SlidersHorizontal, ListTree, Boxes,
+  LayoutGrid, Newspaper, Palette, Percent, Gift, Smartphone, SlidersHorizontal, ListTree, Boxes, MoreHorizontal,
+  Store, TrendingUp,
 } from 'lucide-react';
 import { apiGetStoreById, type StoreData } from '@/api/services/store';
 import { apiGetStorePlatformPlan, type StorePlatformSubscription } from '@/api/services/platformPlans';
@@ -19,6 +20,7 @@ import { useLogout } from '@/hooks/auth/useLogout';
 import { useMyStores } from '@/hooks/store/useMyStores';
 import { useGetProfile } from '@/hooks/auth/useGetProfile';
 import { NotificationBell, AnnouncementBanner, Modal, Button, CopyIconButton } from '@/components/comman/ui';
+import { useNotificationStoreScope } from '@/contexts/NotificationContext';
 import { CommandPalette, type CommandPaletteItem } from '@/components/comman/ui/CommandPalette';
 import { StoreSwitcher } from '@/components/layouts/StoreSwitcher';
 
@@ -42,7 +44,24 @@ export function useStoreWorkspace(): StoreWorkspaceValue {
 // ── Sidebar Nav ───────────────────────────────────────────────────────────────
 export interface NavItem { id: string; Icon: LucideIcon; label: string; path: string }
 
-export const NAV: { group: string; items: NavItem[] }[] = [
+// ── Sidebar structure ──────────────────────────────────────────────────────
+// Restructured to match Shopify's admin nav: a short, always-visible flat
+// list of the sections a seller opens every day, plus two COLLAPSIBLE
+// groups (`collapsible: true`, closed by default — see `DEFAULT_COLLAPSED_GROUPS`
+// below) for the two clusters that used to make this list feel long —
+// "Online Store"'s 5 sub-pages (mirrors Shopify tucking Themes/Pages/Blog/
+// Navigation behind its collapsible "Sales channels ▸ Online Store" tree)
+// and a new "Growth Tools" group holding the niche/occasional Growth items
+// (mirrors Shopify keeping only Marketing + Discounts flat and pushing
+// Gift Cards, and app-provided tools like SEO/loyalty, out of the always-
+// visible rail). "Custom Fields"/"Content Types" (metafields/metaobjects)
+// moved from Catalog into Settings — Shopify's own Settings hub lists
+// "Metafields and metaobjects" there too (see shopify_audit_notes.md), it's
+// config a seller sets up once, not a daily Catalog destination.
+// IMPORTANT: every `id` and `path` below is UNCHANGED from before this
+// restructure — only which `group` an item lives under (and whether that
+// group collapses) moved. No route, no page, no functionality was removed.
+export const NAV: { group: string; items: NavItem[]; collapsible?: boolean; groupIcon?: LucideIcon }[] = [
   {
     group: 'Overview',
     items: [
@@ -66,12 +85,12 @@ export const NAV: { group: string; items: NavItem[] }[] = [
       { id: 'inventory',     Icon: ClipboardList, label: 'Inventory',     path: 'inventory'    },
       { id: 'categories',    Icon: FolderTree,    label: 'Categories',    path: 'categories'   },
       { id: 'collections',   Icon: Layers,        label: 'Collections',   path: 'collections'  },
-      { id: 'metafields',    Icon: SlidersHorizontal, label: 'Custom Fields', path: 'metafields' },
-      { id: 'metaobjects',   Icon: Boxes,         label: 'Content Types', path: 'metaobjects' },
     ],
   },
   {
     group: 'Online Store',
+    collapsible: true,
+    groupIcon: Store,
     items: [
       { id: 'online-store-themes',    Icon: Palette,    label: 'Themes',    path: 'online-store/themes'    },
       { id: 'online-store-pages',     Icon: LayoutGrid, label: 'Pages',     path: 'online-store/pages'     },
@@ -89,10 +108,25 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     ],
   },
   {
-    group: 'Growth',
+    // Only the two items a seller touches often stay flat here, matching
+    // Shopify's own flat "Marketing"/"Discounts" top-level items — the rest
+    // of the old 7-item "Growth" group moved to the new collapsible
+    // "Growth Tools" group below.
+    group: 'Marketing',
     items: [
       { id: 'marketing',     Icon: Megaphone, label: 'Marketing',     path: 'marketing'     },
       { id: 'discounts',     Icon: Percent,   label: 'Discounts',     path: 'discounts'     },
+    ],
+  },
+  {
+    // The occasional/niche growth tools — properly grouped under their own
+    // collapsible section instead of sitting flat alongside Marketing/
+    // Discounts, which is what made the old "Growth" group the single
+    // longest cluster in the sidebar (7 items).
+    group: 'Growth Tools',
+    collapsible: true,
+    groupIcon: TrendingUp,
+    items: [
       { id: 'gift-cards',    Icon: Gift,      label: 'Gift Cards',    path: 'gift-cards'    },
       { id: 'loyalty',       Icon: Star,      label: 'Loyalty',       path: 'loyalty'       },
       { id: 'subscriptions', Icon: RefreshCw, label: 'Subscriptions', path: 'subscriptions' },
@@ -105,8 +139,8 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { id: 'finance',      Icon: Wallet,     label: 'Finance',  path: 'finance'      },
       // Renamed from "Plan & Billing" — that name read as the same thing as
-      // Growth's "Subscriptions" item above, but they're unrelated: this is
-      // the SELLER's own Solvexo plan/invoices (`StorePlanBilling.tsx`),
+      // Marketing's "Subscriptions" item above, but they're unrelated: this
+      // is the SELLER's own Solvexo plan/invoices (`StorePlanBilling.tsx`),
       // "Subscriptions" is a customer-facing recurring-order feature for
       // THIS store's shoppers (`Operations/subscriptions/Subscriptions.tsx`).
       // Kept as two separate pages (merging them would combine two
@@ -117,6 +151,9 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     ],
   },
   {
+    // Catch-all for one-time setup / configuration, not day-to-day work —
+    // Custom Fields and Content Types (metafields/metaobjects) joined this
+    // group from Catalog, matching where Shopify itself puts them.
     group: 'Settings',
     items: [
       { id: 'integrations',  Icon: Plug,        label: 'Integrations', path: 'integrations'  },
@@ -124,6 +161,8 @@ export const NAV: { group: string; items: NavItem[] }[] = [
       // independent mobile-app products, both applied for from one page
       // (see MobileApp.tsx's own doc comment for the distinction).
       { id: 'mobile-app',    Icon: Smartphone,  label: 'Mobile App',   path: 'mobile-app'    },
+      { id: 'metafields',    Icon: SlidersHorizontal, label: 'Custom Fields', path: 'metafields' },
+      { id: 'metaobjects',   Icon: Boxes,         label: 'Content Types', path: 'metaobjects' },
       // 'verification' and 'account' were removed from here — see the doc
       // comment above `StoreVerificationBanner`'s old call site (deleted
       // below) and `StorePageHeader`'s new account button for why.
@@ -131,6 +170,24 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     ],
   },
 ];
+
+// Groups a seller has never touched the toggle for start closed — everything
+// else (including every non-collapsible group, which ignores this entirely)
+// starts open, so this restructure changes *layout*, not what's reachable.
+const DEFAULT_COLLAPSED_GROUPS = ['Online Store', 'Growth Tools'];
+const SIDEBAR_COLLAPSED_GROUPS_KEY = 'solvexo:sidebar:collapsed-groups';
+
+function loadCollapsedGroups(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SIDEBAR_COLLAPSED_GROUPS_KEY);
+    if (raw) return new Set(JSON.parse(raw));
+  } catch { /* per-viewer convenience only — falls back to the default below */ }
+  return new Set(DEFAULT_COLLAPSED_GROUPS);
+}
+
+function saveCollapsedGroups(groups: Set<string>) {
+  try { localStorage.setItem(SIDEBAR_COLLAPSED_GROUPS_KEY, JSON.stringify([...groups])); } catch { /* per-viewer convenience only */ }
+}
 
 // ── Shared grouped nav menu — the mobile "account hub" content for a store
 // workspace, reused wherever the full list of store sections needs to be
@@ -187,16 +244,28 @@ export function StoreNavMenu({ storeId, onNavigate, excludeGroups = [], excludeI
 
 // ── Mobile bottom tab bar — real navigation for the most frequent
 // destinations, same icon-only pattern as SellerBottomNav. The last tab
-// ("Settings") is where every OTHER section lives (Sales/Catalog/Customers/
-// Growth/Finance, plus Integrations) via StoreSettings'
-// own mobile menu — Dashboard itself stays a pure metrics page, it doesn't
-// double as a menu of everything.
+// ("More") is where every OTHER section lives (Online Store — Themes/Pages/
+// Menus/Blog/Files — plus Sales/Catalog/Customers/Growth/Finance/Settings)
+// via StoreSettings' own mobile menu (`MobileStoreMenu` + `StoreNavMenu`) —
+// Dashboard itself stays a pure metrics page, it doesn't double as a menu of
+// everything.
+//
+// This was previously labeled "Settings" (same icon, same `settings` path)
+// even though tapping it already opens that full cross-section menu, not
+// just Settings — a merchant looking for Menus/Blog/Themes/Categories/
+// Collections/Pages/Files had no reason to think "Settings" was where those
+// lived, so on a narrow viewport they were only reachable from the
+// desktop-width sidebar. The destination screen already lists every one of
+// those sections (see `StoreNavMenu`'s full `NAV`, and `StoreSettings.tsx`'s
+// `!mobileDrilledIn` view) — this only renames+re-icons the tab so a mobile
+// admin has an honest, Shopify-style "More" entry point into it, rather than
+// building a second/duplicate menu.
 const STORE_TABS: { id: string; Icon: LucideIcon; label: string; path: string }[] = [
   { id: 'dashboard', Icon: LayoutDashboard, label: 'Dashboard', path: 'dashboard' },
   { id: 'orders',    Icon: Package,         label: 'Orders',    path: 'orders'    },
   { id: 'products',  Icon: ShoppingBag,     label: 'Products',  path: 'products'  },
   { id: 'messages',  Icon: MessageSquare,   label: 'Messages',  path: 'messages'  },
-  { id: 'settings',  Icon: Settings,        label: 'Settings',  path: 'settings'  },
+  { id: 'settings',  Icon: MoreHorizontal,  label: 'More',      path: 'settings'  },
 ];
 
 function StoreBottomNav() {
@@ -274,6 +343,18 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
   const logout = useLogout();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  // Which collapsible NAV groups (Online Store, Growth Tools) are closed —
+  // see `DEFAULT_COLLAPSED_GROUPS`. Lazy-init reads localStorage once; every
+  // toggle re-persists so the seller's open/closed choice survives a reload.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(loadCollapsedGroups);
+  const toggleGroup = (group: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(group)) next.delete(group); else next.add(group);
+      saveCollapsedGroups(next);
+      return next;
+    });
+  };
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -288,9 +369,41 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
       : pathname === `/store/${storeId}/${seg}`;
 
   const initials   = store?.name?.slice(0, 2).toUpperCase() ?? '..';
-  const credits    = store?.aiCredits ?? 0;
-  const maxCredits = 1000;
-  const pct        = Math.min(100, Math.round((credits / maxCredits) * 100));
+
+  // Shopify-style trial nudge card, sidebar-bottom — same subscription data
+  // `PlatformBillingBanner` (top of every store page) already fetches, just
+  // a second independent call here since that banner is a sibling component,
+  // not a shared ancestor of this sidebar.
+  const [platformSub, setPlatformSub] = useState<StorePlatformSubscription | null>(null);
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    apiGetStorePlatformPlan(storeId).then(res => { if (!cancelled) setPlatformSub(res.data); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [storeId]);
+  const trialDaysLeft = platformSub?.trialEndsAt
+    ? Math.max(0, Math.ceil((new Date(platformSub.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+    : null;
+  const isTrialing = platformSub?.status === 'trialing' && trialDaysLeft !== null;
+  const isTrialEndedSidebar = platformSub?.status === 'trial_ended';
+  // Real elapsed-vs-total from the subscription's own `startedAt`/`trialEndsAt`
+  // — trial has no plan attached (see PlatformTrialSettings), so this can no
+  // longer derive from a plan's `trialDays` the way it used to.
+  const trialProgressPct = platformSub?.startedAt && platformSub?.trialEndsAt
+    ? (() => {
+        const start = new Date(platformSub.startedAt).getTime();
+        const end = new Date(platformSub.trialEndsAt!).getTime();
+        const total = end - start;
+        if (total <= 0) return 0;
+        return Math.min(100, Math.max(0, Math.round(((Date.now() - start) / total) * 100)));
+      })()
+    : 0;
+  // Outside a real trial, this card drops back to a plain plan-name row — no
+  // fabricated day count, and deliberately not AI credits either (a separate
+  // concept the seller was clear shouldn't be mixed into this trial card).
+  const currentPlanLabel = platformSub?.plan
+    ? (platformSub.plan.isFree ? 'Free Plan' : `${platformSub.plan.name} Plan`)
+    : null;
 
   const toggleBtn = (
     <button
@@ -318,35 +431,36 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
         {open ? (
           <div className="px-4 pt-[14px] pb-3 shrink-0">
             <div className="flex items-center gap-[10px]">
-              <div className="size-9 rounded-[9px] shrink-0 bg-brand-orange overflow-hidden flex items-center justify-center text-[13px] font-bold text-white">
+              {/* Logo only now — no store name, no plan/slug text. Fills the
+                 whole identity row (flex-1, fixed row height) rather than
+                 staying a small fixed square with empty space around it.
+                 The tinted square is only a FALLBACK behind the two-letter
+                 initials when there's no logo at all — a real uploaded logo
+                 renders on its own with no colored box behind it. */}
+              <div className={clsx(
+                'flex-1 h-11 min-w-0 rounded-[9px] overflow-hidden flex items-center justify-center text-[15px] font-bold text-white',
+                !loading && !store?.logo && 'bg-brand-orange',
+              )}>
                 {loading
-                  ? <div className="animate-pulse size-9 bg-charcoal rounded-[9px]" />
+                  ? <div className="animate-pulse w-full h-full bg-charcoal rounded-[9px]" />
                   : store?.logo
-                    ? <img loading="lazy" decoding="async" src={store.logo} className="w-full h-full object-cover" alt="" />
+                    // object-contain (not object-cover) — the whole logo
+                    // shows, scaled to fit this larger area, never cropped
+                    // or stretched the way a non-square logo would be under
+                    // object-cover.
+                    ? <img loading="lazy" decoding="async" src={store.logo} className="max-w-full max-h-full object-contain" alt={store?.name ?? 'Store logo'} />
                     : initials}
-              </div>
-              <div className="flex-1 min-w-0">
-                {loading ? (
-                  <>
-                    <div className="animate-pulse w-[90px] h-3 rounded-[3px] bg-charcoal mb-[5px]" />
-                    <div className="animate-pulse w-[55px] h-[10px] rounded-[3px] bg-charcoal" />
-                  </>
-                ) : (
-                  <>
-                    <p className="text-[12px] font-bold text-white leading-[1.3] truncate">{store?.name ?? 'Loading…'}</p>
-                    <p className="text-[10px] text-slate leading-[1.3]">
-                      {store?.plan ?? ''}{store?.slug ? ` · /${store.slug}` : ''}
-                    </p>
-                  </>
-                )}
               </div>
               {toggleBtn}
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 pt-3 pb-2 shrink-0">
-            <div className="size-8 rounded-[8px] shrink-0 bg-brand-orange overflow-hidden flex items-center justify-center text-[11px] font-bold text-white">
-              {loading ? '…' : store?.logo ? <img loading="lazy" decoding="async" src={store.logo} className="w-full h-full object-cover" alt="" /> : initials}
+            <div className={clsx(
+              'size-8 rounded-[8px] shrink-0 overflow-hidden flex items-center justify-center text-[11px] font-bold text-white',
+              !loading && !store?.logo && 'bg-brand-orange',
+            )}>
+              {loading ? '…' : store?.logo ? <img loading="lazy" decoding="async" src={store.logo} className="w-full h-full object-contain" alt="" /> : initials}
             </div>
             {toggleBtn}
           </div>
@@ -356,80 +470,158 @@ function StoreSidebar({ open, onToggle }: StoreSidebarProps) {
 
         {/* Nav */}
         <nav data-lenis-prevent className={clsx('flex-1 overflow-y-auto', open ? 'px-[10px] pt-1' : 'px-[10px] pt-2')}>
-          {NAV.map(section => (
-            <div key={section.group} className="mb-1">
+          {NAV.map((section, sectionIdx) => {
+            // A collapsed group whose own page is currently open still shows
+            // its items — collapse state is a tidiness preference, never a
+            // way to lose track of where you are. Only applies at full
+            // sidebar width; the icon-only rail (open===false) always shows
+            // every icon regardless of collapse state, same as before this
+            // restructure — there's no room for a header/chevron at 60px.
+            const groupHasActiveItem = section.items.some(item => isActive(item.path));
+            const isCollapsed = !!section.collapsible && open && collapsedGroups.has(section.group) && !groupHasActiveItem;
+            const GroupIcon = section.groupIcon;
+            return (
+            <div key={section.group} className={clsx('mb-1', section.collapsible && sectionIdx > 0 && 'mt-1.5')}>
               {open
-                ? <p className="text-[10px] font-semibold text-dark-label px-2 py-1 uppercase tracking-[0.08em] mb-0.5">{section.group}</p>
+                ? (section.collapsible && GroupIcon ? (
+                    // Collapsible groups render as a full nav-item-styled ROW
+                    // (icon + label + chevron), not the small uppercase label
+                    // used below — that reads unmistakably as "click to
+                    // expand" the way Shopify's own "Sales channels" row
+                    // does, instead of looking like an empty/broken section
+                    // when collapsed (a plain label with nothing under it).
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(section.group)}
+                      aria-expanded={!isCollapsed}
+                      className={clsx(
+                        'relative w-full flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer border-0 bg-transparent',
+                        'hover:bg-[#1a1917] transition-colors duration-fast',
+                      )}
+                    >
+                      <GroupIcon size={15} className="shrink-0 text-slate opacity-55" />
+                      <span className="text-[13px] flex-1 font-normal text-slate text-left">{section.group}</span>
+                      <ChevronDown
+                        size={14}
+                        className={clsx('text-slate opacity-70 transition-transform duration-200 shrink-0', !isCollapsed && 'rotate-180')}
+                      />
+                    </button>
+                  ) : (
+                    <p className="text-[10px] font-semibold text-dark-label px-2 py-1 uppercase tracking-[0.08em] mb-0.5">{section.group}</p>
+                  ))
                 : <div className="h-px bg-dark-active mx-1 mb-2" />
               }
-              {section.items.map(item => {
-                const active = isActive(item.path);
-                const goToItem = () => navigate(item.path.startsWith('/') ? item.path : `/store/${storeId}/${item.path}`);
-                return (
-                  <div
-                    key={item.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={goToItem}
-                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToItem(); } }}
-                    title={!open ? item.label : undefined}
-                    aria-label={item.label}
-                    aria-current={active ? 'page' : undefined}
-                    className={clsx(
-                      'relative flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer',
-                      !open && 'lg:justify-center lg:px-0',
-                      !active && 'hover:bg-[#1a1917] transition-colors duration-fast',
-                    )}
-                  >
-                    {active && (
-                      <motion.div
-                        layoutId={`store-nav-pill-${navPillId}`}
-                        className="absolute inset-0 rounded-md bg-dark-active"
-                        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+              <div className={clsx(open && section.collapsible && 'ml-[11px] pl-[10px] border-l border-dark-active')}>
+                {!isCollapsed && section.items.map(item => {
+                  const active = isActive(item.path);
+                  const goToItem = () => navigate(item.path.startsWith('/') ? item.path : `/store/${storeId}/${item.path}`);
+                  return (
+                    <div
+                      key={item.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={goToItem}
+                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToItem(); } }}
+                      title={!open ? item.label : undefined}
+                      aria-label={item.label}
+                      aria-current={active ? 'page' : undefined}
+                      className={clsx(
+                        'relative flex items-center gap-[10px] py-[9px] px-[10px] rounded-md mb-0.5 cursor-pointer',
+                        !open && 'lg:justify-center lg:px-0',
+                        !active && 'hover:bg-[#1a1917] transition-colors duration-fast',
+                      )}
+                    >
+                      {active && (
+                        <motion.div
+                          layoutId={`store-nav-pill-${navPillId}`}
+                          className="absolute inset-0 rounded-md bg-dark-active"
+                          transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                        />
+                      )}
+                      <item.Icon
+                        size={15}
+                        className={clsx('relative shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')}
                       />
-                    )}
-                    <item.Icon
-                      size={15}
-                      className={clsx('relative shrink-0', active ? 'text-brand-orange opacity-100' : 'text-slate opacity-55')}
-                    />
-                    {open && (
-                      <>
-                        <span className={clsx('relative text-[13px] flex-1 font-normal text-slate', active && 'font-semibold text-white')}>
-                          {item.label}
-                        </span>
-                        {active && (
-                          <div className="relative w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })}
+                      {open && (
+                        <>
+                          <span className={clsx('relative text-[13px] flex-1 font-normal text-slate', active && 'font-semibold text-white')}>
+                            {item.label}
+                          </span>
+                          {active && (
+                            <div className="relative w-[3px] h-[14px] rounded-[2px] bg-brand-orange shrink-0" />
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          ))}
+            );
+          })}
         </nav>
 
-        {/* Footer: AI credits + seller identity (email/logout) — the seller's
-           own account, never a separate cross-store "seller dashboard" page,
-           lives right here in this store's sidebar (clicking it opens the
-           per-store Account page). */}
+        {/* Footer: trial nudge (real day-count, only while actually trialing
+           — a plain plan-name row otherwise, never a fabricated day count)
+           + seller identity (email/logout) — the seller's own account, never
+           a separate cross-store "seller dashboard" page, lives right here
+           in this store's sidebar (clicking it opens the per-store Account
+           page). */}
         {open ? (
           <div className="px-4 py-3 border-t border-dark-active shrink-0">
-            <div className="bg-dark-active rounded-md px-3 py-[10px] mb-[10px]">
-              <div className="flex justify-between mb-[6px]">
-                <div className="flex items-center gap-[5px]">
-                  <Sparkles size={11} className="text-brand-orange" />
-                  <span className="text-[11px] text-slate">AI Credits</span>
+            {isTrialing ? (
+              <div className="bg-brand-orange rounded-[10px] px-3 py-[10px] mb-[10px]">
+                <div className="flex items-center justify-between gap-2 mb-[10px]">
+                  <span className="inline-flex items-center px-[9px] py-[4px] rounded-full bg-white/20 text-white text-[9.5px] font-extrabold uppercase tracking-[0.05em]">
+                    Trial
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-[8px] py-[3px] rounded-full bg-white/15 text-white text-[9.5px] font-semibold shrink-0">
+                    <Clock size={10} className="text-white" />
+                    {trialDaysLeft} day{trialDaysLeft === 1 ? '' : 's'} left
+                  </span>
                 </div>
-                <span className="text-[11px] font-semibold text-brand-orange">{credits}/{maxCredits}</span>
+                <div className="h-[5px] bg-white/25 rounded-full overflow-hidden mb-[11px]">
+                  <div
+                    className="h-full bg-white rounded-full transition-[width] duration-300"
+                    style={{ width: `${trialProgressPct}%` }}
+                  />
+                </div>
+                <button
+                  onClick={() => navigate(`/store/${storeId}/plan-billing`)}
+                  className="w-full rounded-[8px] py-[7px] text-[11.5px] font-semibold text-brand-deep-orange bg-white hover:bg-cream active:scale-[0.98] transition-all duration-150 cursor-pointer border-0"
+                >
+                  Choose a Plan
+                </button>
               </div>
-              <div className="h-1 bg-charcoal rounded-[2px]">
-                <div
-                  className="h-full bg-brand-orange rounded-[2px] transition-[width] duration-300"
-                  style={{ width: `${pct}%` }}
-                />
+            ) : isTrialEndedSidebar ? (
+              <div className="bg-brand-orange rounded-[10px] px-3 py-[10px] mb-[10px]">
+                <div className="mb-[10px]">
+                  <span className="inline-flex items-center px-[9px] py-[4px] rounded-full bg-white/20 text-white text-[9.5px] font-extrabold uppercase tracking-[0.05em]">
+                    Trial Ended
+                  </span>
+                </div>
+                <button
+                  onClick={() => navigate(`/store/${storeId}/plan-billing`)}
+                  className="w-full rounded-[8px] py-[7px] text-[11.5px] font-semibold text-brand-deep-orange bg-white hover:bg-cream active:scale-[0.98] transition-all duration-150 cursor-pointer border-0"
+                >
+                  Choose a Plan
+                </button>
               </div>
-            </div>
+            ) : currentPlanLabel && (
+              <div className="bg-brand-orange rounded-[10px] px-3 py-[10px] mb-[10px]">
+                <div className="mb-[10px]">
+                  <span className="inline-flex items-center px-[9px] py-[4px] rounded-full bg-white/20 text-white text-[9.5px] font-extrabold uppercase tracking-[0.05em]">
+                    {currentPlanLabel}
+                  </span>
+                </div>
+                <button
+                  onClick={() => navigate(`/store/${storeId}/plan-billing`)}
+                  className="w-full rounded-[8px] py-[7px] text-[11.5px] font-semibold text-brand-deep-orange bg-white hover:bg-cream active:scale-[0.98] transition-all duration-150 cursor-pointer border-0"
+                >
+                  Manage Plan
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate(`/store/${storeId}/account`)}
@@ -610,6 +802,10 @@ function readCachedStore(storeId: string): StoreData | null {
 // ── Provider ──────────────────────────────────────────────────────────────────
 function StoreWorkspaceProvider({ children }: { children: ReactNode }) {
   const { storeId = '' } = useParams<{ storeId: string }>();
+  // Scopes the shared notification bell (top navbar + Account "Notifications"
+  // tab) to just this store for as long as the seller is inside its
+  // dashboard — restored to the account-wide cross-store view on leaving.
+  useNotificationStoreScope(storeId || null);
   const [store,   setStore]   = useState<StoreData | null>(() => readCachedStore(storeId));
   const [loading, setLoading] = useState(() => readCachedStore(storeId) === null);
   const [error,   setError]   = useState('');
@@ -681,6 +877,15 @@ function PlatformBillingBanner() {
   if (!sub) return null;
   const goToBilling = () => navigate(`/store/${storeId}/plan-billing`);
 
+  if (sub.status === 'trial_ended') {
+    return (
+      <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer">
+        <AlertTriangle size={14} className="shrink-0" />
+        Your free trial has ended — choose a plan to continue selling. Your data is safe.
+        <span className="underline font-semibold">Choose a plan</span>
+      </button>
+    );
+  }
   if (sub.status === 'locked') {
     return (
       <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-error bg-error-bg border-b border-error-border cursor-pointer">
@@ -708,14 +913,14 @@ function PlatformBillingBanner() {
       </button>
     );
   }
-  if (sub.trialEndsAt) {
+  if (sub.status === 'trialing' && sub.trialEndsAt) {
     const daysLeft = Math.max(0, Math.ceil((new Date(sub.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
     if (daysLeft <= 7) {
       return (
         <button onClick={goToBilling} className="flex w-full items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-[#1a5a8a] bg-info-bg border-b border-[#bfdcf3] cursor-pointer">
           <Clock size={14} className="shrink-0" />
-          Your trial ends in {daysLeft} day{daysLeft === 1 ? '' : 's'}.
-          <span className="underline font-semibold">Add a payment method</span>
+          Your free trial ends in {daysLeft} day{daysLeft === 1 ? '' : 's'}.
+          <span className="underline font-semibold">Choose a plan</span>
         </button>
       );
     }

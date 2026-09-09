@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Newspaper, ImageOff } from 'lucide-react';
 import { useStorefrontSeo } from '../hooks/useStorefrontSeo';
 import { apiListPublicBlogPosts, type BlogPostSummary } from '@/api/services/storeBlog';
@@ -21,18 +21,27 @@ function PostImage({ src, alt }: { src?: string | null; alt: string }) {
 }
 
 /** Theme 02's own Stories (blog) index — same real posts/pagination cap as
- *  `AtelierBlogIndexPage` (this platform's own 20-per-page precedent). */
+ *  `AtelierBlogIndexPage` (this platform's own 20-per-page precedent).
+ *  Serves both `/blog` (the store's default blog — `blogSlug` undefined)
+ *  and `/blogs/:blogSlug` (any additional named blog the seller created in
+ *  BlogTab) — see router/index.tsx's own comment on why the second route
+ *  exists. Heading falls back to "Stories" until the real blog's title
+ *  comes back from the API, so a named blog shows its own title instead of
+ *  always saying "Stories". */
 export function NovaBlogIndexPage() {
   const { store } = useStorefront();
-  useStorefrontSeo({ title: 'Stories' });
+  const { blogSlug } = useParams<{ blogSlug?: string }>();
+  const [blogTitle, setBlogTitle] = useState<string | null>(null);
+  useStorefrontSeo({ title: blogTitle ?? 'Stories' });
   const [posts, setPosts] = useState<BlogPostSummary[] | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
 
   useEffect(() => {
-    apiListPublicBlogPosts(store.storeId, undefined, 1, 20)
-      .then(res => setPosts(res.data.posts))
+    setPosts(null);
+    apiListPublicBlogPosts(store.storeId, blogSlug, 1, 20)
+      .then(res => { setPosts(res.data.posts); setBlogTitle(res.data.blog?.title ?? null); })
       .catch(() => setPosts([]));
-  }, [store.storeId]);
+  }, [store.storeId, blogSlug]);
 
   useEffect(() => {
     apiGetPublicCollectionTemplate(store.storeId, 'page', 'blog-index')
@@ -42,7 +51,7 @@ export function NovaBlogIndexPage() {
 
   return (
     <main className="mx-auto" style={{ maxWidth: t.layout.maxWidth, padding: `48px ${t.layout.containerPadX}` }}>
-      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 36px)', fontWeight: 700, color: t.colors.ink, marginBottom: '36px' }}>Stories</h1>
+      <h1 style={{ fontFamily: t.fonts.display, fontSize: 'clamp(26px, 3vw, 36px)', fontWeight: 700, color: t.colors.ink, marginBottom: '36px' }}>{blogTitle ?? 'Stories'}</h1>
 
       {sections.length > 0 && <div style={{ marginBottom: '40px' }}><NovaSectionRenderer sections={sections} /></div>}
 
@@ -67,7 +76,7 @@ export function NovaBlogIndexPage() {
       {posts !== null && posts.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
           {posts.map(post => (
-            <Link key={post.slug} to={`/blog/${post.slug}`} className="block no-underline">
+            <Link key={post.slug} to={blogSlug ? `/blogs/${blogSlug}/${post.slug}` : `/blog/${post.slug}`} className="block no-underline">
               <PostImage src={post.coverImage} alt={post.title} />
               <div style={{ paddingTop: '14px' }}>
                 {post.publishedAt && (

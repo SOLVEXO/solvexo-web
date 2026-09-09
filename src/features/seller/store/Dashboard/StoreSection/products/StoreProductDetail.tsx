@@ -67,9 +67,19 @@ export default function StoreProductDetail() {
     const cached = getCachedProducts(storeId).find(e => e.product._id === productId);
     if (cached) { setEntry(cached); setFetching(false); return; }
     apiGetMyProductById(productId)
+      // Source of truth for a product's real price is `defaultVariant` (or,
+      // failing that, the first real variant) from GetProductData — same
+      // field the Products list and Edit Product page both read. This used
+      // to build a hardcoded zero-priced placeholder variant here instead of
+      // reading either of those, which is why "View Detail" (which never
+      // passes cached/navigation state — see `StoreProductList.tsx`'s
+      // `goDetail`) always showed "Rs0" while the list/storefront showed the
+      // real price from this exact same endpoint.
       .then(res => setEntry({
         product: res.data.product,
-        variant: { _id: '', productId, sku: '—', price: 0, compareAtPrice: null, options: [], stock: 0, unlimitedStock: false, shippingWeight: null, images: [], isDefault: true, status: 'active', isDelete: false, createdAt: '', updatedAt: '' },
+        variant: res.data.defaultVariant ?? res.data.variants?.[0] ?? {
+          _id: '', productId, sku: '—', price: 0, compareAtPrice: null, options: [], stock: 0, unlimitedStock: false, shippingWeight: null, images: [], isDefault: true, status: 'active', isDelete: false, createdAt: '', updatedAt: '',
+        },
       }))
       .catch(() => navigate(`/store/${storeId}/products`, { replace: true }))
       .finally(() => setFetching(false));

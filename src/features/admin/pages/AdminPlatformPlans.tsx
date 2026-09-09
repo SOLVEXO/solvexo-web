@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, Pencil, Archive, TrendingUp, Users, DollarSign, Eye, Check, Package, Layers, RotateCcw } from 'lucide-react';
+import { Plus, Pencil, Archive, TrendingUp, Users, DollarSign, Eye, Check, Package, Layers, RotateCcw, Copy, Clock, Sparkles } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Modal } from '@/components/comman/ui/Modal';
 import { Button } from '@/components/comman/ui/Button';
@@ -8,8 +8,8 @@ import { SkeletonBox, Table, MetricCard, Card, Badge, AdminPageHeader, EmptyStat
 import {
   apiAdminListPlatformPlans, apiAdminCreatePlatformPlan, apiAdminUpdatePlatformPlan, apiAdminArchivePlatformPlan,
   apiAdminGetPlatformPlanRevenue, apiAdminGetPlatformPlanSubscribers, apiAdminListAddonPurchases,
-  apiAdminRefundPlatformInvoice,
-  type PlatformPlan, type PlatformPlanLimits, type StorePlatformSubscription, type AddonPurchase,
+  apiAdminRefundPlatformInvoice, apiAdminGetTrialSettings, apiAdminUpdateTrialSettings,
+  type PlatformPlan, type PlatformPlanLimits, type StorePlatformSubscription, type AddonPurchase, type TrialSettings,
 } from '@/api/services/platformPlans';
 
 const ADDON_LABELS: Record<string, string> = {
@@ -29,38 +29,147 @@ const DEFAULT_LIMITS: PlatformPlanLimits = {
 
 type BooleanKeys<T> = { [K in keyof T]-?: NonNullable<T[K]> extends boolean ? K : never }[keyof T];
 
-const BOOL_FLAGS: { key: BooleanKeys<PlatformPlanLimits>; label: string }[] = [
+// `soon: true` = verified (by grepping every call site in the backend) that
+// NO feature module actually checks this flag yet — the underlying feature
+// (abandoned-cart recovery, email campaigns, seller-facing API/webhooks,
+// tiered analytics, marketplace-featured-badge placement) doesn't exist in
+// the codebase at all today. Toggling it in the admin form saves the value
+// but changes nothing for the seller — marked "(soon)" so admin never
+// mistakes it for a working gate. `dedicatedAccountManager`/`prioritySupport`
+// are deliberately NOT marked `soon` — those are real ops/human promises
+// (route a seller to priority support queue, assign an account manager),
+// exactly like Shopify's own plan tiers, never meant to be code-enforced.
+const BOOL_FLAGS: { key: BooleanKeys<PlatformPlanLimits>; label: string; soon?: boolean }[] = [
   { key: 'customDomainAllowed', label: 'Custom domain' },
   { key: 'whiteLabelAllowed', label: 'White label' },
   { key: 'loyaltyProgramAllowed', label: 'Loyalty program' },
   { key: 'subscriptionProductsAllowed', label: 'Store subscriptions' },
-  { key: 'advancedAnalyticsAllowed', label: 'Advanced analytics' },
-  { key: 'abandonedCartRecoveryAllowed', label: 'Abandoned cart recovery' },
-  { key: 'emailCampaignsAllowed', label: 'Email campaigns' },
-  { key: 'apiWebhooksAllowed', label: 'API & webhooks' },
+  { key: 'advancedAnalyticsAllowed', label: 'Advanced analytics', soon: true },
+  { key: 'abandonedCartRecoveryAllowed', label: 'Abandoned cart recovery', soon: true },
+  { key: 'emailCampaignsAllowed', label: 'Email campaigns', soon: true },
+  { key: 'apiWebhooksAllowed', label: 'API & webhooks', soon: true },
   { key: 'dedicatedAccountManager', label: 'Dedicated account manager' },
   { key: 'prioritySupport', label: 'Priority support' },
-  { key: 'marketplaceFeaturedBadge', label: 'Marketplace featured badge' },
+  { key: 'marketplaceFeaturedBadge', label: 'Marketplace featured badge', soon: true },
   { key: 'advancedSeoToolsAllowed', label: 'Advanced SEO tools' },
   { key: 'seoAiSuggestionsAllowed', label: 'AI SEO suggestions' },
   { key: 'searchConsoleIntegrationAllowed', label: 'Search Console integration' },
   { key: 'customRedirectsAllowed', label: 'Custom redirects' },
 ];
 
-function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new'; onClose: () => void; onSaved: () => void }) {
+// ── Trial Settings — the ONE platform-wide "Solvexo Free Trial" policy.
+// Deliberately a separate section from Plans below: trial is not the name of
+// any plan (no "Pro Trial") — every new store gets this same trial,
+// independent of which plan it later chooses. ────────────────────────────
+function TrialSettingsCard() {
+  const [settings, setSettings] = useState<TrialSettings | null>(null);
+  const [enabled, setEnabled] = useState(true);
+  const [durationDays, setDurationDays] = useState('3');
+  const [paymentMethodRequired, setPaymentMethodRequired] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    apiAdminGetTrialSettings()
+      .then(res => {
+        setSettings(res.data);
+        setEnabled(res.data.enabled);
+        setDurationDays(String(res.data.durationDays));
+        setPaymentMethodRequired(res.data.paymentMethodRequired);
+      })
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load trial settings.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function save() {
+    setSaving(true); setError(''); setSaved(false);
+    try {
+      const res = await apiAdminUpdateTrialSettings({
+        enabled, durationDays: Math.max(0, Number(durationDays) || 0), paymentMethodRequired,
+      });
+      setSettings(res.data);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save trial settings.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card padding="none" className="overflow-hidden">
+      <div className="px-5 py-[14px] border-b border-bone flex items-center gap-2">
+        <Clock size={15} className="text-brand-orange shrink-0" />
+        <div>
+          <p className="text-[14px] font-bold text-charcoal">Trial Settings</p>
+          <p className="text-[11px] text-slate">Applies to every new store — not tied to any specific plan.</p>
+        </div>
+      </div>
+      <div className="p-5">
+        {loading ? (
+          <div className="flex flex-col gap-2">{Array.from({ length: 2 }).map((_, i) => <SkeletonBox key={i} height={36} rounded="6px" />)}</div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <label className="flex items-center gap-2 text-[12.5px] font-medium text-charcoal">
+              <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
+              Offer a free trial on new stores
+            </label>
+            {enabled && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Input label="Trial duration (days)" type="number" min={0} value={durationDays} onChange={e => setDurationDays(e.target.value)} />
+                </div>
+                <label className="flex items-center gap-2 text-[12.5px] text-charcoal">
+                  <input type="checkbox" checked={paymentMethodRequired} onChange={e => setPaymentMethodRequired(e.target.checked)} />
+                  Require a payment method to start the trial
+                </label>
+                <p className="text-[11px] text-slate leading-[1.5]">
+                  During the trial, a store gets full access to every module regardless of which plan it later
+                  chooses. When the trial ends, the seller is asked to choose a plan — nothing is auto-charged.
+                </p>
+              </>
+            )}
+            {!enabled && (
+              <p className="text-[11px] text-slate leading-[1.5]">
+                New stores will go straight to choosing a plan — no free trial period.
+              </p>
+            )}
+            {error && <p className="text-[12px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">{error}</p>}
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={save} loading={saving}>Save Trial Settings</Button>
+              {saved && <span className="text-[11.5px] font-medium text-success">Saved</span>}
+              {settings && <span className="text-[10.5px] text-slate ml-auto">Last updated {new Date(settings.updatedAt).toLocaleString()}</span>}
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function PlanFormModal({ plan, duplicateFrom, onClose, onSaved }: {
+  plan: PlatformPlan | 'new'; duplicateFrom?: PlatformPlan; onClose: () => void; onSaved: () => void;
+}) {
   const isEdit = plan !== 'new';
-  const p = isEdit ? plan : null;
-  const [name, setName] = useState(p?.name ?? '');
+  // `duplicateFrom` pre-fills every field from an existing plan, but `isEdit`
+  // stays false — submit() below always creates a brand-new plan document.
+  const p = isEdit ? plan : (duplicateFrom ?? null);
+  const [name, setName] = useState(p ? (isEdit ? p.name : `${p.name} (Copy)`) : '');
   const [description, setDescription] = useState(p?.description ?? '');
   const [badge, setBadge] = useState(p?.badge ?? '');
   const [isFree, setIsFree] = useState(p?.isFree ?? false);
   const [monthlyPrice, setMonthlyPrice] = useState(p?.monthlyPriceUSD != null ? String(p.monthlyPriceUSD) : '');
   const [yearlyPrice, setYearlyPrice] = useState(p?.yearlyPriceUSD != null ? String(p.yearlyPriceUSD) : '');
-  const [trialDays, setTrialDays] = useState(p ? String(p.trialDays ?? 0) : '0');
   const [sortOrder, setSortOrder] = useState(p ? String(p.sortOrder ?? 0) : '0');
   const [isPubliclyVisible, setIsPubliclyVisible] = useState(p?.isPubliclyVisible ?? true);
   const [featuresText, setFeaturesText] = useState(p?.featureBullets?.join('\n') ?? '');
   const [limits, setLimits] = useState<PlatformPlanLimits>(p?.limits ?? DEFAULT_LIMITS);
+  const [introOfferEnabled, setIntroOfferEnabled] = useState(p?.introOfferEnabled ?? false);
+  const [introPriceUSD, setIntroPriceUSD] = useState(p?.introPriceUSD != null ? String(p.introPriceUSD) : '');
+  const [introDurationCycles, setIntroDurationCycles] = useState(p?.introDurationCycles != null ? String(p.introDurationCycles) : '3');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -68,17 +177,31 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
 
   async function submit() {
     if (!name.trim()) { setError('Plan name is required.'); return; }
+    if (!isFree && !monthlyPrice.trim()) {
+      setError('Monthly price is required for a paid plan — or check "Free plan" if it should cost nothing.');
+      return;
+    }
+    if (introOfferEnabled && (!introPriceUSD || !introDurationCycles)) {
+      setError('Intro price and duration are both required when the intro offer is on.');
+      return;
+    }
+    if (introOfferEnabled && monthlyPrice && Number(introPriceUSD) >= Number(monthlyPrice)) {
+      setError('Intro price should be lower than the regular monthly price — otherwise it isn\'t really an intro discount.');
+      return;
+    }
     setError(''); setSaving(true);
     try {
       const payload = {
         name: name.trim(), description: description.trim() || undefined, badge: badge.trim() || undefined,
         isFree, monthlyPriceUSD: monthlyPrice ? Number(monthlyPrice) : undefined,
         yearlyPriceUSD: yearlyPrice ? Number(yearlyPrice) : undefined,
-        trialDays: Number(trialDays) || 0,
         sortOrder: Number(sortOrder) || 0,
         isPubliclyVisible,
         featureBullets: featuresText.split('\n').map(f => f.trim()).filter(Boolean),
         limits,
+        introOfferEnabled,
+        introPriceUSD: introOfferEnabled && introPriceUSD ? Number(introPriceUSD) : undefined,
+        introDurationCycles: introOfferEnabled && introDurationCycles ? Number(introDurationCycles) : undefined,
       };
       if (isEdit) await apiAdminUpdatePlatformPlan(p!._id, payload);
       else await apiAdminCreatePlatformPlan(payload);
@@ -104,7 +227,7 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
         </div>
 
         <div>
-          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Pricing &amp; trial</p>
+          <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Pricing</p>
           <div className="flex flex-col gap-3">
             <div>
               <label className="flex items-center gap-2 text-[12.5px] font-medium text-charcoal">
@@ -112,7 +235,7 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
               </label>
               <p className="text-[11px] text-slate mt-1 leading-[1.5]">
                 Only check this if you want a permanent $0 tier. It's a one-way door — a free plan can't be archived later
-                (the platform always needs a fallback), so leave it unchecked for a normal paid plan with a free trial.
+                (the platform always needs a fallback).
               </p>
             </div>
             {isFree ? (
@@ -125,15 +248,65 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
                 <Input label="Yearly $ (optional)" type="number" min={0} value={yearlyPrice} onChange={e => setYearlyPrice(e.target.value)} />
               </div>
             )}
-            <div>
-              <Input label="Trial Days" type="number" min={0} value={trialDays} onChange={e => setTrialDays(e.target.value)} />
-              <p className="text-[11px] text-slate mt-1 leading-[1.5]">
-                How many days a new seller gets full access to this plan before they must pay. Leave at 0 to use the
-                platform default (3 days) — set a number to override it just for this plan.
+            <p className="text-[11px] text-slate bg-cream/60 border border-bone rounded-lg px-3 py-2 leading-[1.5]">
+              Free-trial length is no longer set per plan — it's one platform-wide setting now.
+              See <strong>Trial Settings</strong> above.
+            </p>
+          </div>
+        </div>
+
+        {!isFree && (
+          <div>
+            <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5 flex items-center gap-1.5">
+              <Sparkles size={12} className="text-brand-orange" /> Intro offer (optional)
+            </p>
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-2 text-[12.5px] font-medium text-charcoal">
+                <input type="checkbox" checked={introOfferEnabled} onChange={e => setIntroOfferEnabled(e.target.checked)} />
+                Offer a discounted intro price (e.g. "$1/mo for 3 months, then full price")
+              </label>
+              {introOfferEnabled && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Input label="Intro price $/mo" type="number" min={0} value={introPriceUSD} onChange={e => setIntroPriceUSD(e.target.value)} />
+                  <Input label="Duration (months)" type="number" min={1} value={introDurationCycles} onChange={e => setIntroDurationCycles(e.target.value)} />
+                </div>
+              )}
+              <p className="text-[11px] text-slate leading-[1.5]">
+                Monthly billing only — matches how this kind of intro pricing normally works. A seller who chooses
+                yearly billing always pays the regular price.
               </p>
             </div>
           </div>
-        </div>
+        )}
+
+        {!isFree && monthlyPrice && (
+          <div>
+            <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Live preview — what a seller will see</p>
+            <div className="rounded-xl border border-bone bg-cream/40 px-4 py-3.5">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-[14px] font-bold text-carbon">{name.trim() || 'Plan name'}</p>
+                {badge.trim() && <Badge color="orange" size="sm">{badge.trim()}</Badge>}
+              </div>
+              <p className="flex items-baseline gap-1 mb-1">
+                <span className="text-[20px] font-bold text-brand-orange">${monthlyPrice || 0}</span>
+                <span className="text-[11px] text-slate">/mo</span>
+              </p>
+              {introOfferEnabled && introPriceUSD && introDurationCycles && (
+                <p className="text-[11.5px] font-medium text-success mb-1">
+                  ${introPriceUSD}/mo for {introDurationCycles} month{Number(introDurationCycles) === 1 ? '' : 's'}, then ${monthlyPrice}/mo
+                </p>
+              )}
+              {description.trim() && <p className="text-[11.5px] text-slate mb-2">{description.trim()}</p>}
+              <ul className="flex flex-col gap-1 list-none p-0">
+                {featuresText.split('\n').map(f => f.trim()).filter(Boolean).slice(0, 4).map(f => (
+                  <li key={f} className="flex items-start gap-1.5 text-[11.5px] text-graphite">
+                    <Check size={12} className="text-success shrink-0 mt-[2px]" /><span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
 
         <div>
           <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-2.5">Display &amp; visibility</p>
@@ -166,25 +339,42 @@ function PlanFormModal({ plan, onClose, onSaved }: { plan: PlatformPlan | 'new';
             <Input label="Max staff (-1=∞)" type="number" value={limits.maxStaffAccounts ?? ''} onChange={e => setLimit('maxStaffAccounts', Number(e.target.value))} />
             <Input label="Max POS locations" type="number" value={limits.maxPosLocations ?? ''} onChange={e => setLimit('maxPosLocations', Number(e.target.value))} />
             <Input label="AI credits/mo" type="number" value={limits.aiCreditsPerMonth ?? ''} onChange={e => setLimit('aiCreditsPerMonth', Number(e.target.value))} />
-            <Input label="Txn fee (0-1)" type="number" step="0.01" min={0} max={1} value={limits.transactionFeeRate ?? ''} onChange={e => setLimit('transactionFeeRate', Number(e.target.value))} />
-            <Input label="SLA uptime %" type="number" value={limits.slaUptimePercent ?? ''} onChange={e => setLimit('slaUptimePercent', Number(e.target.value))} />
+            <Input
+              label="Solvexo's fee (%)" type="number" step="0.1" min={0} max={100}
+              value={limits.transactionFeeRate != null ? Math.round(limits.transactionFeeRate * 1000) / 10 : ''}
+              onChange={e => setLimit('transactionFeeRate', e.target.value === '' ? 0 : Number(e.target.value) / 100)}
+            />
+            <Input
+              label="Uptime guarantee % (optional)" type="number" step="0.1" min={0} max={100}
+              value={limits.slaUptimePercent ?? ''} onChange={e => setLimit('slaUptimePercent', e.target.value === '' ? undefined : Number(e.target.value))}
+            />
             <Input label="Max store banners (-1=∞)" type="number" value={limits.maxActiveStoreBanners ?? ''} onChange={e => setLimit('maxActiveStoreBanners', Number(e.target.value))} />
             <Input label="Max active promotions (-1=∞)" type="number" value={limits.maxActivePromotions ?? ''} onChange={e => setLimit('maxActivePromotions', Number(e.target.value))} />
           </div>
+          <p className="text-[11px] text-slate mb-2.5 leading-[1.5]">
+            <span className="font-semibold text-charcoal">Solvexo's fee</span> is the cut Solvexo keeps from every sale a
+            seller makes on this plan — e.g. 5 means Solvexo keeps $5 out of every $100 sold. <span className="font-semibold text-charcoal">Uptime guarantee</span> is
+            just a marketing number shown to sellers (e.g. "99.9% uptime") — leave it blank to not show one.
+          </p>
           <p className="text-[11px] text-slate mb-1.5">Tap a feature below to turn it on (orange) or off for this plan:</p>
           <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-bone bg-cream/50">
             {BOOL_FLAGS.map(f => {
               const active = !!limits[f.key];
               return (
                 <button key={f.key} type="button" onClick={() => setLimit(f.key, !active)}
+                  title={f.soon ? 'Not built yet — turning this on saves the setting but doesn\'t unlock anything for the seller today.' : undefined}
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border cursor-pointer transition-colors duration-fast"
                   style={{ background: active ? '#D97757' : '#fff', color: active ? '#fff' : '#5A5852', borderColor: active ? '#D97757' : '#E8E6DC' }}>
                   {active && <Check size={11} className="shrink-0" />}
                   {f.label}
+                  {f.soon && <span className="opacity-70">(soon)</span>}
                 </button>
               );
             })}
           </div>
+          <p className="text-[10.5px] text-slate mt-1.5">
+            "(soon)" tags aren't built yet — toggling them saves the setting but doesn't change anything for the seller today.
+          </p>
         </div>
         {error && <p className="text-[12px] text-error bg-error-bg border border-error-border rounded-lg px-3 py-2">{error}</p>}
       </div>
@@ -317,6 +507,7 @@ export function AdminPlatformPlans() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState<PlatformPlan | 'new' | null>(null);
+  const [duplicateSource, setDuplicateSource] = useState<PlatformPlan | null>(null);
   const [viewingSubscribersFor, setViewingSubscribersFor] = useState<PlatformPlan | null>(null);
   const [showAddons, setShowAddons] = useState(false);
 
@@ -408,6 +599,8 @@ export function AdminPlatformPlans() {
             ))}
         </div>
 
+        <TrialSettingsCard />
+
         <div>
           <p className="text-[11px] font-bold text-slate uppercase tracking-[0.06em] mb-3 flex items-center gap-1.5">
             <Layers size={13} /> Plans{!loading && plans.length > 0 && <span className="text-slate/70 font-medium normal-case tracking-normal">({plans.length})</span>}
@@ -493,6 +686,7 @@ export function AdminPlatformPlans() {
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" fullWidth icon={<Pencil size={12} />} onClick={() => setEditing(plan)}>Edit</Button>
                         <Button variant="outline" size="sm" fullWidth icon={<Eye size={12} />} onClick={() => setViewingSubscribersFor(plan)}>Subscribers</Button>
+                        <Button variant="outline" size="sm" icon={<Copy size={12} />} aria-label="Duplicate plan" onClick={() => setDuplicateSource(plan)} />
                         {plan.status === 'archived' ? (
                           <Button
                             variant="outline" size="sm" icon={<RotateCcw size={12} />}
@@ -523,6 +717,13 @@ export function AdminPlatformPlans() {
       </div>
 
       {editing && <PlanFormModal plan={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
+      {duplicateSource && (
+        <PlanFormModal
+          plan="new" duplicateFrom={duplicateSource}
+          onClose={() => setDuplicateSource(null)}
+          onSaved={() => { setDuplicateSource(null); load(); }}
+        />
+      )}
       {viewingSubscribersFor && <SubscribersModal plan={viewingSubscribersFor} onClose={() => setViewingSubscribersFor(null)} />}
 
       {archiving && (

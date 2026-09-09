@@ -10,6 +10,12 @@ interface ApiResponse<T> {
 
 export type StorePageType   = 'home' | 'custom';
 export type StorePageStatus = 'draft' | 'published';
+/** Tags a custom page as one of the standard legal/policy roles — at most
+ *  one page per store per type (enforced on the backend). Used to
+ *  auto-surface real links in the storefront footer/checkout and to make a
+ *  policy page easy to find from the seller's Menu editor, without a
+ *  separate hardcoded "Policies" content system of its own. */
+export type StorePagePolicyType = 'privacy_policy' | 'terms_of_service' | 'refund_policy' | 'shipping_policy';
 
 export interface StorePageSeo {
   metaTitle: string | null;
@@ -44,6 +50,7 @@ export interface StorePageData {
   status:          StorePageStatus;
   showInNav:       boolean;
   showInFooter:    boolean;
+  policyType:      StorePagePolicyType | null;
   createdAt:       string;
   updatedAt:       string;
 }
@@ -54,6 +61,7 @@ export interface PublicPageSummary {
   title:        string;
   showInNav:    boolean;
   showInFooter: boolean;
+  policyType:   StorePagePolicyType | null;
 }
 
 // ── Seller ───────────────────────────────────────────────────────────────────
@@ -70,7 +78,7 @@ export function apiCreateStorePage(storeId: string, payload: { title: string; sl
   return client.post<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.CREATE(storeId), payload);
 }
 
-export function apiUpdateStorePage(storeId: string, pageId: string, payload: Partial<{ title: string; slug: string; seo: Partial<StorePageSeo>; showInNav: boolean; showInFooter: boolean }>) {
+export function apiUpdateStorePage(storeId: string, pageId: string, payload: Partial<{ title: string; slug: string; seo: Partial<StorePageSeo>; showInNav: boolean; showInFooter: boolean; policyType: StorePagePolicyType | null }>) {
   return client.patch<never, ApiResponse<StorePageData>>(ENDPOINTS.STORE_PAGES.UPDATE(storeId, pageId), payload);
 }
 

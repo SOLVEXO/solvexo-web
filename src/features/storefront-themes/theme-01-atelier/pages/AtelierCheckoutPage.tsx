@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, Link } from 'react-router-dom';
 import {
   MapPin, Truck, CreditCard, Banknote, Loader2, AlertCircle,
   CheckCircle2, PackageCheck, ChevronRight, Plus,
@@ -18,6 +18,7 @@ import { apiPlaceCodOrder, apiInitiatePayment, apiGetPaymentStatus, type PlacedO
 import { apiGetCheckoutPaymentMethods, apiInitiateCheckoutPaymentMethod, type PublicPaymentMethod } from '@/api/services/integrations';
 import { StripeCardPayment, isStripeConfigured } from '@/features/buyer/components/StripeCardPayment';
 import { currencySymbol, fmt2 } from '@/utils/currency';
+import { apiListPublicStorePages, type PublicPageSummary } from '@/api/services/storePages';
 import { useStorefront } from '@/features/storefront/StorefrontContext';
 import { AtelierButton } from '../components/AtelierButton';
 import { atelierTheme as t } from '../theme.config';
@@ -64,6 +65,17 @@ export function AtelierCheckoutPage() {
   const { store } = useStorefront();
   const { cart, cartCount, clearCart } = useCartContext();
   const cartItems = cart?.items ?? [];
+
+  // Same previously-unwired `policyType` data AtelierFooter.tsx now consumes
+  // — link a tagged Privacy Policy/Terms of Service page from checkout too.
+  const [policyPages, setPolicyPages] = useState<PublicPageSummary[]>([]);
+  useEffect(() => {
+    apiListPublicStorePages(store.storeId)
+      .then(res => setPolicyPages(res.data.filter(p => p.policyType === 'privacy_policy' || p.policyType === 'terms_of_service')))
+      .catch(() => setPolicyPages([]));
+  }, [store.storeId]);
+  const privacyPage = policyPages.find(p => p.policyType === 'privacy_policy');
+  const termsPage = policyPages.find(p => p.policyType === 'terms_of_service');
   const isDigital = cartItems.length > 0 && cartItems.every(i => i.type === 'digital');
 
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -393,6 +405,15 @@ export function AtelierCheckoutPage() {
   const total = Math.max(0, orderSubtotal + (isDigital ? 0 : shipping) + tax - couponDiscount - giftCardDiscount);
   const currency = checkout?.currency ?? store.baseCurrency ?? 'USD';
   const symbol = currencySymbol(currency);
+  // Same fix as NovaCheckoutPage.tsx: Order Summary's line items must read
+  // from the SAME source/currency as Subtotal/Shipping/Total (`symbol`) —
+  // `CartItem.currency` is only a pre-checkout "display snapshot", per its
+  // own doc comment, so rendering line items from `cartItems` after a real
+  // Checkout (with its own authoritative, converted `checkout.currency`)
+  // exists is what produced the "$" line item next to a "Rs" Subtotal.
+  const summaryLineItems = checkout
+    ? checkout.items.map(i => ({ key: i.variantId, name: i.name, quantity: i.quantity, amount: i.totalPrice }))
+    : cartItems.map(i => ({ key: i.productVariantId, name: i.name, quantity: i.quantity, amount: i.itemTotal ?? (i.unitPrice ?? i.price ?? 0) * i.quantity }));
 
   if (!loggedIn) {
     return <Navigate to={`/login?redirect=${encodeURIComponent('/checkout')}`} replace />;
@@ -592,6 +613,16 @@ export function AtelierCheckoutPage() {
                     </div>
                   );
                 })()}
+
+                {(privacyPage || termsPage) && (
+                  <p style={{ fontFamily: t.fonts.body, fontSize: '11px', color: t.colors.inkMuted, textAlign: 'center' }}>
+                    By placing your order, you agree to our{' '}
+                    {privacyPage && <Link to={`/${privacyPage.slug}`} style={{ color: t.colors.inkMuted, textDecoration: 'underline' }}>Privacy Policy</Link>}
+                    {privacyPage && termsPage && ' and '}
+                    {termsPage && <Link to={`/${termsPage.slug}`} style={{ color: t.colors.inkMuted, textDecoration: 'underline' }}>Terms of Service</Link>}
+                    .
+                  </p>
+                )}
               </div>
             )}
           </SectionCard>
@@ -600,10 +631,10 @@ export function AtelierCheckoutPage() {
         <div className="flex flex-col gap-4" style={{ border: `1px solid ${t.colors.border}`, padding: '22px' }}>
           <p style={{ fontFamily: t.fonts.display, fontSize: '16px', fontWeight: 600, color: t.colors.ink }}>Order Summary</p>
           <div className="flex flex-col gap-2">
-            {cartItems.map(item => (
-              <div key={item.productVariantId} className="flex justify-between gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12.5px' }}>
+            {summaryLineItems.map(item => (
+              <div key={item.key} className="flex justify-between gap-2" style={{ fontFamily: t.fonts.body, fontSize: '12.5px' }}>
                 <span className="truncate" style={{ color: t.colors.inkMuted }}>{item.name} ×{item.quantity}</span>
-                <span className="shrink-0" style={{ color: t.colors.ink }}>{currencySymbol(item.currency)}{fmt2(item.itemTotal ?? (item.unitPrice ?? item.price ?? 0) * item.quantity)}</span>
+                <span className="shrink-0" style={{ color: t.colors.ink }}>{symbol}{fmt2(item.amount)}</span>
               </div>
             ))}
           </div>

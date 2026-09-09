@@ -188,11 +188,25 @@ export default function StorePlanBilling() {
   }
 
   const trialDaysLeft = current?.trialEndsAt ? daysUntil(current.trialEndsAt) : null;
+  const isTrialing = current?.status === 'trialing';
+  const isTrialEnded = current?.status === 'trial_ended';
   const isLocked = current?.status === 'locked';
   const isPastDue = current?.status === 'past_due';
   const isCancelPending = !!current?.cancelAtPeriodEnd;
 
   const banner = useMemo(() => {
+    // Distinct from `isLocked` purely in framing — nothing was ever charged
+    // here (no plan was ever attached during the trial), so "payment
+    // failed"/"locked" copy would be a false claim. Same restriction, same
+    // "choose a plan" action.
+    if (isTrialEnded) {
+      return {
+        tone: 'error' as const, Icon: AlertTriangle,
+        text: 'Your free trial has ended — choose a plan below to continue selling. Every product, order, and setting is untouched.',
+        actionLabel: 'Choose a plan',
+        onAction: () => document.getElementById('platform-plans-list')?.scrollIntoView({ behavior: 'smooth' }),
+      };
+    }
     if (isLocked) {
       return {
         tone: 'error' as const, Icon: AlertTriangle,
@@ -215,16 +229,17 @@ export default function StorePlanBilling() {
         actionLabel: 'Reactivate', onAction: submitReactivate,
       };
     }
-    if (trialDaysLeft != null && trialDaysLeft <= 7) {
+    if (isTrialing && trialDaysLeft != null && trialDaysLeft <= 7) {
       return {
         tone: 'info' as const, Icon: Clock,
-        text: `Your trial ends in ${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'}. Add a payment method to keep your plan active after that.`,
-        actionLabel: 'Add payment method', onAction: openBillingPortal,
+        text: `Your free trial ends in ${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'}. Choose a plan below before then to keep selling without interruption.`,
+        actionLabel: 'Choose a plan',
+        onAction: () => document.getElementById('platform-plans-list')?.scrollIntoView({ behavior: 'smooth' }),
       };
     }
     return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLocked, isPastDue, isCancelPending, trialDaysLeft, current]);
+  }, [isTrialEnded, isLocked, isPastDue, isCancelPending, isTrialing, trialDaysLeft, current]);
 
   const BANNER_STYLE = {
     error:   { bg: 'bg-error-bg', border: 'border-error-border', text: 'text-error', icon: 'text-error' },
@@ -291,9 +306,9 @@ export default function StorePlanBilling() {
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`text-[11px] font-semibold px-2 py-[3px] rounded-full capitalize ${
-                  isPastDue ? 'bg-error-bg text-error' : isCancelPending ? 'bg-[#fdf2da] text-[#946200]' : 'bg-[#e3f4ea] text-[#1e7a3c]'
+                  isPastDue || isTrialEnded ? 'bg-error-bg text-error' : isCancelPending ? 'bg-[#fdf2da] text-[#946200]' : 'bg-[#e3f4ea] text-[#1e7a3c]'
                 }`}>
-                  {isCancelPending ? 'Canceling' : current.status}
+                  {isCancelPending ? 'Canceling' : isTrialEnded ? 'Trial ended' : current.status === 'trialing' ? 'Trial' : current.status}
                 </span>
                 {current.stripeCustomerId && (
                   <Button size="sm" variant="outline" icon={<CreditCard size={13} />} loading={portalBusy} onClick={openBillingPortal}>
@@ -478,6 +493,22 @@ export default function StorePlanBilling() {
               </div>
             </div>
           ) : null}
+
+          {preview && preview.usageWarnings.length > 0 && (
+            <div className="mt-3 bg-error-bg border border-error-border rounded-lg p-3 flex flex-col gap-1.5">
+              <p className="text-[12px] font-semibold text-error flex items-center gap-1.5">
+                <AlertTriangle size={13} className="shrink-0" /> You're currently over this plan's limits
+              </p>
+              {preview.usageWarnings.map(w => (
+                <p key={w.label} className="text-[11.5px] text-error/90 pl-[19px]">
+                  {w.label}: you have {w.used}, {w.newLimit === -1 ? 'unlimited' : w.newLimit} allowed on this plan
+                </p>
+              ))}
+              <p className="text-[11px] text-error/80 pl-[19px]">
+                Nothing will be deleted — you just won't be able to add more until you're back under the limit.
+              </p>
+            </div>
+          )}
 
           {actionError && <p className="text-[12px] text-error mt-2">{actionError}</p>}
         </Modal>
